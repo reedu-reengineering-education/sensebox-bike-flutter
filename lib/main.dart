@@ -1,0 +1,38 @@
+import 'package:ble_app/blocs/sensor_bloc.dart';
+import 'package:ble_app/providers/recording_state_provider.dart';
+import 'package:ble_app/services/isar_service.dart';
+import 'package:flutter/material.dart';
+import 'ui/screens/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'blocs/ble_bloc.dart';
+import 'blocs/geolocation_bloc.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final bleBloc = BleBloc();
+    final isarService = IsarService();
+    final geolocationBloc = GeolocationBloc(isarService);
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => bleBloc),
+        ChangeNotifierProvider(create: (_) => geolocationBloc),
+        ChangeNotifierProvider(create: (_) => RecordingState()),
+        ChangeNotifierProvider(create: (_) => SensorBloc(bleBloc)),
+      ],
+      child: MaterialApp(
+        title: 'BLE App',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.teal, brightness: Brightness.light),
+        ),
+        home: HomeScreen(),
+      ),
+    );
+  }
+}
