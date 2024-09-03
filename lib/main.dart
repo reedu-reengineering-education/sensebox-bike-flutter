@@ -1,5 +1,6 @@
 import 'package:ble_app/blocs/sensor_bloc.dart';
-import 'package:ble_app/providers/recording_state_provider.dart';
+import 'package:ble_app/blocs/track_bloc.dart';
+import 'package:ble_app/blocs/recording_bloc.dart';
 import 'package:ble_app/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'ui/screens/home_screen.dart';
@@ -16,24 +17,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final recordingProvider = RecordingStateProvider();
-    final bleBloc = BleBloc();
     final isarService = IsarService();
-    final geolocationBloc = GeolocationBloc(isarService, recordingProvider);
+    final bleBloc = BleBloc();
+    final recordingBloc = RecordingBloc(isarService);
+    final geolocationBloc = GeolocationBloc(isarService, recordingBloc);
 
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => bleBloc),
         ChangeNotifierProvider(create: (_) => geolocationBloc),
-        ChangeNotifierProvider(create: (_) => recordingProvider),
+        ChangeNotifierProvider(create: (_) => recordingBloc),
+        Provider(create: (_) => TrackBloc(isarService)),
         ChangeNotifierProvider(
             create: (_) => SensorBloc(bleBloc, geolocationBloc)),
       ],
       child: MaterialApp(
         title: 'senseBox:bike',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.green, brightness: Brightness.light),
+          primaryColor: Colors.black,
         ),
         home: const HomeScreen(),
       ),

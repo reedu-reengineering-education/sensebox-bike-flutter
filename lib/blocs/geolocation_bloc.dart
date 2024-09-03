@@ -1,8 +1,7 @@
 // File: lib/blocs/geolocation_bloc.dart
 import 'dart:async';
-import 'package:ble_app/providers/recording_state_provider.dart';
+import 'package:ble_app/blocs/recording_bloc.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:ble_app/models/geolocation_data.dart';
 import 'package:ble_app/services/isar_service.dart';
@@ -14,9 +13,9 @@ class GeolocationBloc with ChangeNotifier {
       _geolocationController.stream;
 
   final IsarService isarService;
-  final RecordingStateProvider recordingProvider;
+  final RecordingBloc recordingBloc;
 
-  GeolocationBloc(this.isarService, this.recordingProvider) {
+  GeolocationBloc(this.isarService, this.recordingBloc) {
     // Start listening to geolocation changes
     _startListening();
   }
@@ -69,12 +68,13 @@ class GeolocationBloc with ChangeNotifier {
     // Listen to position stream
     Geolocator.getPositionStream(locationSettings: locationSettings)
         .listen((Position position) async {
-      if (recordingProvider.isRecording) {
+      if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
         GeolocationData geolocationData = GeolocationData()
           ..latitude = position.latitude
           ..longitude = position.longitude
           ..speed = position.speed
-          ..timestamp = position.timestamp;
+          ..timestamp = position.timestamp
+          ..track.value = recordingBloc.currentTrack!;
 
         await _saveGeolocationData(geolocationData); // Save to database
         _geolocationController.add(geolocationData);

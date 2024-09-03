@@ -44,7 +44,14 @@ const GeolocationDataSchema = CollectionSchema(
   deserializeProp: _geolocationDataDeserializeProp,
   idName: r'id',
   indexes: {},
-  links: {},
+  links: {
+    r'track': LinkSchema(
+      id: -7806568654854392854,
+      name: r'track',
+      target: r'TrackData',
+      single: true,
+    )
+  },
   embeddedSchemas: {},
   getId: _geolocationDataGetId,
   getLinks: _geolocationDataGetLinks,
@@ -113,12 +120,13 @@ Id _geolocationDataGetId(GeolocationData object) {
 }
 
 List<IsarLinkBase<dynamic>> _geolocationDataGetLinks(GeolocationData object) {
-  return [];
+  return [object.track];
 }
 
 void _geolocationDataAttach(
     IsarCollection<dynamic> col, Id id, GeolocationData object) {
   object.id = id;
+  object.track.attach(col, col.isar.collection<TrackData>(), r'track', id);
 }
 
 extension GeolocationDataQueryWhereSort
@@ -518,7 +526,21 @@ extension GeolocationDataQueryObject
     on QueryBuilder<GeolocationData, GeolocationData, QFilterCondition> {}
 
 extension GeolocationDataQueryLinks
-    on QueryBuilder<GeolocationData, GeolocationData, QFilterCondition> {}
+    on QueryBuilder<GeolocationData, GeolocationData, QFilterCondition> {
+  QueryBuilder<GeolocationData, GeolocationData, QAfterFilterCondition> track(
+      FilterQuery<TrackData> q) {
+    return QueryBuilder.apply(this, (query) {
+      return query.link(q, r'track');
+    });
+  }
+
+  QueryBuilder<GeolocationData, GeolocationData, QAfterFilterCondition>
+      trackIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.linkLength(r'track', 0, true, 0, true);
+    });
+  }
+}
 
 extension GeolocationDataQuerySortBy
     on QueryBuilder<GeolocationData, GeolocationData, QSortBy> {

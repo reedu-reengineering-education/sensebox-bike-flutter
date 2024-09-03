@@ -1,10 +1,9 @@
 import 'dart:math';
 import 'package:ble_app/blocs/ble_bloc.dart';
 import 'package:ble_app/blocs/sensor_bloc.dart';
-import 'package:ble_app/providers/recording_state_provider.dart';
+import 'package:ble_app/blocs/recording_bloc.dart';
 import 'package:ble_app/ui/widgets/ble_device_selection_dialog_widget.dart';
 import 'package:flutter/material.dart';
-***REMOVED***
 import 'package:provider/provider.dart';
 import '../widgets/geolocation_widget.dart';
 
@@ -14,7 +13,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bleBloc = Provider.of<BleBloc>(context);
-    final recordingProvider = Provider.of<RecordingStateProvider>(context);
+    final recordingBloc = Provider.of<RecordingBloc>(context);
     final sensorBloc = Provider.of<SensorBloc>(context);
 
     return Scaffold(
@@ -41,18 +40,20 @@ class HomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     FloatingActionButton(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
                         onPressed: bleBloc.disconnectDevice,
                         child: const Icon(Icons.bluetooth_disabled)),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     FloatingActionButton.extended(
-                      label: Text(recordingProvider.isRecording
+                      label: Text(recordingBloc.isRecording
                           ? 'Stop recording'
                           : 'Start recording'),
-                      icon: Icon(recordingProvider.isRecording
+                      icon: Icon(recordingBloc.isRecording
                           ? Icons.stop
                           : Icons.fiber_manual_record),
                       onPressed: () {
-                        recordingProvider.toggleRecording();
+                        recordingBloc.toggleRecording();
                       },
                     )
                   ]);
