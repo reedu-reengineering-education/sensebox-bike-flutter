@@ -54,7 +54,7 @@ class IsarService {
     });
   }
 
-  Future<List<TrackData>> geoTrackData() async {
+  Future<List<TrackData>> getTrackData() async {
     final isar = await db;
     return await isar.trackDatas.where().findAll();
   }

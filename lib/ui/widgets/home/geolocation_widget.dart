@@ -6,8 +6,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
-import '../../blocs/geolocation_bloc.dart';
-import '../../secrets.dart'; // File containing the Mapbox token
+import '../../../blocs/geolocation_bloc.dart';
+import '../../../secrets.dart'; // File containing the Mapbox token
 
 class GeolocationMapWidget extends StatefulWidget {
   const GeolocationMapWidget({super.key});

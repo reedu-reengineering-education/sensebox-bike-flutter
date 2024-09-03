@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:ble_app/secrets.dart';
 import 'package:flutter/material.dart';
 ***REMOVED***
 
@@ -47,11 +48,17 @@ class BleBloc with ChangeNotifier {
     try {
       await FlutterBluePlus.stopScan();
       await device.connect();
+
       await device.discoverServices().then((services) {
-        for (var service in services) {
-          for (var characteristic in service.characteristics) {
-            _listenToCharacteristic(characteristic);
-          }
+        print(services);
+        // find senseBox service
+        var senseBoxService = services
+            .firstWhere((service) => service.uuid == senseBoxServiceUUID);
+
+        print(senseBoxService);
+
+        for (var characteristic in senseBoxService.characteristics) {
+          _listenToCharacteristic(characteristic);
         }
       });
       selectedDevice = device;
