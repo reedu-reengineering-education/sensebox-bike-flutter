@@ -6,8 +6,10 @@ import 'package:ble_app/models/geolocation_data.dart';
 import 'package:ble_app/services/isar_service.dart';
 
 class GeolocationBloc with ChangeNotifier {
-  final StreamController<GeolocationData> _geolocationController = StreamController.broadcast();
-  Stream<GeolocationData> get geolocationStream => _geolocationController.stream;
+  final StreamController<GeolocationData> _geolocationController =
+      StreamController.broadcast();
+  Stream<GeolocationData> get geolocationStream =>
+      _geolocationController.stream;
 
   final IsarService isarService;
 
@@ -40,15 +42,15 @@ class GeolocationBloc with ChangeNotifier {
     }
 
     // Listen to position stream
-    Geolocator.getPositionStream().listen((Position position) {
+    Geolocator.getPositionStream().listen((Position position) async {
       GeolocationData geolocationData = GeolocationData()
         ..latitude = position.latitude
         ..longitude = position.longitude
         ..speed = position.speed
         ..timestamp = position.timestamp;
 
+      await _saveGeolocationData(geolocationData); // Save to database
       _geolocationController.add(geolocationData);
-      _saveGeolocationData(geolocationData); // Save to database
       notifyListeners();
     });
   }

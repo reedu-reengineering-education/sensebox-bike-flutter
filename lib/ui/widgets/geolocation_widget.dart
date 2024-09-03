@@ -37,7 +37,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
       mapInstance.flyTo(
         CameraOptions(
           zoom: 16.0,
-          pitch: 45,
+          pitch: 0,
           center: Point(
               coordinates: Position(
                   geolocationData.longitude, geolocationData.latitude)),
@@ -64,7 +64,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
         mapInstance.location.updateSettings(LocationComponentSettings(
           enabled: true,
           showAccuracyRing: true,
-          
         ));
       },
       gestureRecognizers: Set()

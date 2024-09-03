@@ -29,7 +29,9 @@ class IsarService {
   Future<int> saveSensorData(SensorData sensorData) async {
     final isar = await db;
     return await isar.writeTxn(() async {
-      return await isar.sensorDatas.put(sensorData);
+      int sensorDataId = await isar.sensorDatas.put(sensorData);
+      await sensorData.geolocationData.save();
+      return sensorDataId;
     });
   }
 

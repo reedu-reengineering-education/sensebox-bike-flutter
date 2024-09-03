@@ -1,16 +1,21 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 ***REMOVED***
-import 'package:ble_app/sensors/sensor.dart';
 
 class BleBloc with ChangeNotifier {
   final List<BluetoothDevice> devicesList = [];
-  final StreamController<List<BluetoothDevice>> _devicesListController = StreamController.broadcast();
-
-  Stream<List<BluetoothDevice>> get devicesListStream => _devicesListController.stream;
+  final StreamController<List<BluetoothDevice>> _devicesListController =
+      StreamController.broadcast();
+  Stream<List<BluetoothDevice>> get devicesListStream =>
+      _devicesListController.stream;
 
   BluetoothDevice? selectedDevice;
   final Map<String, StreamController<List<double>>> _characteristicStreams = {};
+
+  // ValueNotifier to notify about the selected device's connection state
+  final ValueNotifier<BluetoothDevice?> selectedDeviceNotifier =
+      ValueNotifier(null);
 
   BleBloc() {
     startScanning();
@@ -23,7 +28,7 @@ class BleBloc with ChangeNotifier {
     FlutterBluePlus.scanResults.listen((results) {
       devicesList.clear();
       for (ScanResult result in results) {
-        if (result.device.name.startsWith("senseBox")) {
+        if (result.device.platformName.startsWith("senseBox")) {
           devicesList.add(result.device);
         }
       }
@@ -35,12 +40,12 @@ class BleBloc with ChangeNotifier {
   void disconnectDevice() {
     selectedDevice?.disconnect();
     selectedDevice = null;
+    selectedDeviceNotifier.value = null; // Notify disconnection
   }
 
   Future<void> connectToDevice(BluetoothDevice device) async {
     try {
       await device.connect();
-      selectedDevice = device;
       await device.discoverServices().then((services) {
         for (var service in services) {
           for (var characteristic in service.characteristics) {
@@ -48,6 +53,8 @@ class BleBloc with ChangeNotifier {
           }
         }
       });
+      selectedDevice = device;
+      selectedDeviceNotifier.value = selectedDevice; // Notify connection
     } catch (e) {
       // Handle connection error
     }
@@ -58,14 +65,30 @@ class BleBloc with ChangeNotifier {
     _characteristicStreams[characteristic.uuid.toString()] = controller;
 
     characteristic.setNotifyValue(true);
-    characteristic.value.listen((value) {
-      final doubleValues = value.map((e) => e.toDouble()).toList();
-      controller.add(doubleValues);
+    characteristic.onValueReceived.listen((value) {
+      List<double> parsedData = _parseData(Uint8List.fromList(value));
+      controller.add(parsedData);
     });
   }
 
-  StreamController<List<double>> getCharacteristicStream(String characteristicUuid) {
+  StreamController<List<double>> getCharacteristicStream(
+      String characteristicUuid) {
+    if (!_characteristicStreams.containsKey(characteristicUuid)) {
+      throw Exception('Characteristic stream not found');
+    }
     return _characteristicStreams[characteristicUuid]!;
+  }
+
+  List<double> _parseData(Uint8List value) {
+    // This method will convert the incoming data to a list of doubles
+    List<double> parsedValues = [];
+    for (int i = 0; i < value.length; i += 4) {
+      if (i + 4 <= value.length) {
+        parsedValues.add(
+            ByteData.sublistView(value, i, i + 4).getFloat32(0, Endian.little));
+      }
+    }
+    return parsedValues;
   }
 
   @override
@@ -74,6 +97,7 @@ class BleBloc with ChangeNotifier {
     for (var controller in _characteristicStreams.values) {
       controller.close();
     }
+    selectedDeviceNotifier.dispose(); // Dispose of the notifier
     super.dispose();
   }
 }

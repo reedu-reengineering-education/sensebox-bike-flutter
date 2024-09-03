@@ -23,13 +23,14 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => bleBloc),
         ChangeNotifierProvider(create: (_) => geolocationBloc),
         ChangeNotifierProvider(create: (_) => RecordingState()),
-        ChangeNotifierProvider(create: (_) => SensorBloc(bleBloc)),
+        ChangeNotifierProvider(
+            create: (_) => SensorBloc(bleBloc, geolocationBloc)),
       ],
       child: MaterialApp(
-        title: 'BLE App',
+        title: 'senseBox:bike',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.teal, brightness: Brightness.light),
+              seedColor: Colors.green, brightness: Brightness.light),
         ),
         home: HomeScreen(),
       ),

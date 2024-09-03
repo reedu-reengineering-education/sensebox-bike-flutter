@@ -1,23 +1,47 @@
 import 'dart:async';
-
 import 'package:ble_app/blocs/ble_bloc.dart';
-import 'package:ble_app/models/geolocation_data.dart';
+import 'package:ble_app/blocs/geolocation_bloc.dart';
 import 'package:ble_app/models/sensor_data.dart';
+import 'package:ble_app/models/geolocation_data.dart';
 import 'package:ble_app/services/isar_service.dart';
 import 'package:flutter/material.dart';
 
 abstract class Sensor {
   final String characteristicUuid;
   final BleBloc bleBloc;
-  final IsarService isarService; // To store aggregated data
+  final GeolocationBloc geolocationBloc;
+  final IsarService isarService;
   StreamSubscription<List<double>>? _subscription;
-  List<double> _dataBuffer = [];
 
-  Sensor(this.characteristicUuid, this.bleBloc, this.isarService);
+  final StreamController<double> _valueController =
+      StreamController<double>.broadcast();
+  Stream<double> get valueStream => _valueController.stream;
+
+  List<List<double>> _sensorValues = [];
+
+  Sensor(
+    this.characteristicUuid,
+    this.bleBloc,
+    this.geolocationBloc,
+    this.isarService,
+  );
 
   void startListening() {
-    _subscription = bleBloc.getCharacteristicStream(characteristicUuid).stream.listen((data) {
+    // Listen to the sensor data stream
+    _subscription = bleBloc
+        .getCharacteristicStream(characteristicUuid)
+        .stream
+        .listen((data) {
       onDataReceived(data);
+    });
+
+    // Listen to geolocation updates
+    geolocationBloc.geolocationStream.listen((geolocationData) {
+      if (_sensorValues.isNotEmpty) {
+        _aggregateAndStoreData(
+            geolocationData); // Aggregate and store sensor data
+        _sensorValues.clear(); // Clear the list after aggregation
+      }
     });
   }
 
@@ -25,41 +49,39 @@ abstract class Sensor {
     _subscription?.cancel();
   }
 
+  // Method to handle incoming sensor data
   void onDataReceived(List<double> data) {
     if (data.isNotEmpty) {
-      _dataBuffer.addAll(data);
+      _sensorValues.add(data); // Buffer the sensor data
+      _valueController
+          .add(data[0]); // Emit the latest sensor value to the stream
     }
   }
 
-  void onNewGeolocation(GeolocationData geoData) {
-    if (_dataBuffer.isNotEmpty) {
-      // Aggregate data
-      double aggregatedValue = aggregateData(_dataBuffer);
+  // Aggregate sensor data and store it with the latest geolocation
+  void _aggregateAndStoreData(GeolocationData geolocationData) {
+    double aggregatedValue = aggregateData(_sensorValues);
+    // Additional aggregations can be added here
 
-      SensorData sensorData = SensorData()
-        ..characteristicUuid = characteristicUuid
-        ..value = aggregatedValue
-        ..geolocationData.value = geoData;
-        
-      isarService.saveSensorData(sensorData);
+    // Create a SensorData object to store in the database
+    final sensorData = SensorData()
+      ..characteristicUuid = characteristicUuid
+      ..value = aggregatedValue
+      ..geolocationData.value = geolocationData;
 
-      // Clear the buffer after storing
-      _dataBuffer.clear();
-    }
+    isarService
+        .saveSensorData(sensorData); // Save aggregated data to the database
   }
 
-  double aggregateData(List<double> data) {
-    // Override this method in subclasses for specific aggregation logic
-    // Default to calculating mean
-    return data.reduce((a, b) => a + b) / data.length;
-  }
+  // Abstract method to build a widget for the sensor (UI representation)
+  Widget buildWidget();
 
-  Widget buildWidget() {
-    // Override this method in subclasses to build a widget for the sensor
-    return Container();
-  }
+  // Abstract method to aggregate sensor data
+  double aggregateData(List<List<double>> sensorValues);
 
   void dispose() {
     stopListening();
+    _valueController
+        .close(); // Close the stream controller to prevent memory leaks
   }
 }

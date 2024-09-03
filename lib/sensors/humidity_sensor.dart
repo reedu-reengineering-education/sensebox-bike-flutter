@@ -4,13 +4,13 @@ import 'package:ble_app/sensors/sensor.dart';
 import 'package:ble_app/services/isar_service.dart';
 import 'package:flutter/material.dart';
 
-class TemperatureSensor extends Sensor {
+class HumiditySensor extends Sensor {
   double _latestValue = 0.0;
 
   static const String sensorCharacteristicUuid =
-      '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8';
+      '772df7ec-8cdc-4ea9-86af-410abe0ba257';
 
-  TemperatureSensor(
+  HumiditySensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
       : super(sensorCharacteristicUuid, bleBloc, geolocationBloc, isarService);
 
@@ -18,7 +18,7 @@ class TemperatureSensor extends Sensor {
   void onDataReceived(List<double> data) {
     super.onDataReceived(data); // Call the parent class to handle buffering
     if (data.isNotEmpty) {
-      _latestValue = data[0]; // Assuming the first value is temperature
+      _latestValue = data[0]; // Assuming the first value is the value
     }
   }
 
@@ -42,7 +42,7 @@ class TemperatureSensor extends Sensor {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Temperature',
+                'Humidity',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               Row(
@@ -50,11 +50,11 @@ class TemperatureSensor extends Sensor {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    '${displayValue.toStringAsFixed(1)}',
+                    '${_latestValue.toStringAsFixed(1)}',
                     style: TextStyle(fontSize: 64),
                   ),
                   Text(
-                    '°C',
+                    '%',
                   ),
                 ],
               ),

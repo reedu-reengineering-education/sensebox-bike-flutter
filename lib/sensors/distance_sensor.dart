@@ -4,13 +4,13 @@ import 'package:ble_app/sensors/sensor.dart';
 import 'package:ble_app/services/isar_service.dart';
 import 'package:flutter/material.dart';
 
-class TemperatureSensor extends Sensor {
+class DistanceSensor extends Sensor {
   double _latestValue = 0.0;
 
   static const String sensorCharacteristicUuid =
-      '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8';
+      'b3491b60-c0f3-4306-a30d-49c91f37a62b';
 
-  TemperatureSensor(
+  DistanceSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
       : super(sensorCharacteristicUuid, bleBloc, geolocationBloc, isarService);
 
@@ -18,21 +18,21 @@ class TemperatureSensor extends Sensor {
   void onDataReceived(List<double> data) {
     super.onDataReceived(data); // Call the parent class to handle buffering
     if (data.isNotEmpty) {
-      _latestValue = data[0]; // Assuming the first value is temperature
+      _latestValue = data[0]; // Assuming the first value is the distance
     }
   }
 
   @override
   double aggregateData(List<List<double>> sensorValues) {
     List<double> myValues = sensorValues.map((e) => e[0]).toList();
-    // Example aggregation logic: calculating the mean temperature
+    // Example aggregation logic: calculating the mean distance
     return myValues.reduce((a, b) => a + b) / myValues.length;
   }
 
   @override
   Widget buildWidget() {
     return StreamBuilder<double>(
-      stream: valueStream,
+      stream: valueStream, // Listen to the stream of distance values
       initialData: _latestValue,
       builder: (context, snapshot) {
         double displayValue = snapshot.data ?? _latestValue;
@@ -42,7 +42,7 @@ class TemperatureSensor extends Sensor {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Temperature',
+                'Distance',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               Row(
@@ -50,11 +50,11 @@ class TemperatureSensor extends Sensor {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    '${displayValue.toStringAsFixed(1)}',
+                    '${displayValue.toStringAsFixed(0)}',
                     style: TextStyle(fontSize: 64),
                   ),
                   Text(
-                    '°C',
+                    'cm',
                   ),
                 ],
               ),

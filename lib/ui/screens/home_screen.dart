@@ -15,45 +15,29 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final bleBloc = Provider.of<BleBloc>(context);
     final recordingState = Provider.of<RecordingState>(context);
-    final geolocationBloc = Provider.of<GeolocationBloc>(context);
     final sensorBloc = Provider.of<SensorBloc>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('BLE & Geolocation Data'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.bluetooth),
-            onPressed: () => showDeviceSelectionDialog(context, bleBloc),
-          ),
-        ],
+        title: const Text('senseBox:bike'),
+        forceMaterialTransparency: true,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: MyScrollablePage(sensorBloc: sensorBloc),
+        child: HomeScrollableScreen(sensorBloc: sensorBloc),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (recordingState.isRecording) {
-            recordingState.stopRecording();
-            // Optionally, you might want to stop sensor data collection
-          } else {
-            recordingState.startRecording();
-            // Optionally, you might want to start sensor data collection
-          }
-        },
-        child: recordingState.isRecording
-            ? const Icon(Icons.stop)
-            : const Icon(Icons.play_arrow),
+        child: const Icon(Icons.bluetooth),
+        onPressed: () => showDeviceSelectionDialog(context, bleBloc),
       ),
     );
   }
 }
 
-class MyScrollablePage extends StatelessWidget {
+class HomeScrollableScreen extends StatelessWidget {
   final SensorBloc sensorBloc;
 
-  MyScrollablePage({required this.sensorBloc});
+  const HomeScrollableScreen({super.key, required this.sensorBloc});
 
   @override
   Widget build(BuildContext context) {
@@ -64,21 +48,22 @@ class MyScrollablePage extends StatelessWidget {
           SliverPersistentHeader(
             delegate: _SliverAppBarDelegate(
               minHeight: 200.0,
-              maxHeight: MediaQuery.of(context).size.height / 2,
-              child: Card(
-                elevation: 4,
-                child: Container(
+              maxHeight: MediaQuery.of(context).size.height / 3,
+              child: const Card(
+                elevation: 0,
+                clipBehavior: Clip.hardEdge,
+                child: SizedBox(
                   width: double.infinity,
                   child: GeolocationMapWidget(), // Directly use the map widget
                 ),
-                clipBehavior: Clip.hardEdge,
               ),
             ),
             pinned: true,
           ),
           SliverSafeArea(
+            minimum: EdgeInsets.fromLTRB(4, 24, 4, 0),
             sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2, // Number of columns
                 crossAxisSpacing: 8, // Spacing between columns
                 mainAxisSpacing: 8, // Spacing between rows
@@ -116,7 +101,8 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => max(maxHeight, minHeight);
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return SizedBox.expand(child: child);
   }
 
