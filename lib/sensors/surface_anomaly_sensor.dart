@@ -4,13 +4,13 @@ import 'package:ble_app/sensors/sensor.dart';
 import 'package:ble_app/services/isar_service.dart';
 import 'package:flutter/material.dart';
 
-class HumiditySensor extends Sensor {
-  List<double> _latestValue = [0.0];
+class SurfaceAnomalySensor extends Sensor {
+  List<double> _latestAnomalyValue = [0.0];
 
   static const String sensorCharacteristicUuid =
-      '772df7ec-8cdc-4ea9-86af-410abe0ba257';
+      'b944af10-f495-4560-968f-2f0d18cab523';
 
-  HumiditySensor(
+  SurfaceAnomalySensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
       : super(sensorCharacteristicUuid, bleBloc, geolocationBloc, isarService);
 
@@ -18,14 +18,15 @@ class HumiditySensor extends Sensor {
   void onDataReceived(List<double> data) {
     super.onDataReceived(data); // Call the parent class to handle buffering
     if (data.isNotEmpty) {
-      _latestValue = data; // Assuming the first value is the value
+      _latestAnomalyValue =
+          data; // Assuming the first value indicates surface anomaly
     }
   }
 
   @override
   double aggregateData(List<List<double>> sensorValues) {
     List<double> myValues = sensorValues.map((e) => e[0]).toList();
-    // Example aggregation logic: calculating the mean temperature
+    // Example aggregation logic: calculating the mean surface anomaly value
     return myValues.reduce((a, b) => a + b) / myValues.length;
   }
 
@@ -33,15 +34,16 @@ class HumiditySensor extends Sensor {
   Widget buildWidget() {
     return StreamBuilder<List<double>>(
       stream: valueStream,
-      initialData: _latestValue,
+      initialData: _latestAnomalyValue,
       builder: (context, snapshot) {
+        double displayValue = snapshot.data?[0] ?? _latestAnomalyValue[0];
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Humidity',
+                'Surface Anomaly',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               Row(
@@ -49,11 +51,11 @@ class HumiditySensor extends Sensor {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    _latestValue[0].toStringAsFixed(1),
+                    displayValue.toStringAsFixed(1),
                     style: const TextStyle(fontSize: 64),
                   ),
                   const Text(
-                    '%',
+                    '', // Add any specific unit if applicable
                   ),
                 ],
               ),

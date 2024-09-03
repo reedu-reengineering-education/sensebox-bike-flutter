@@ -1,3 +1,4 @@
+import 'package:ble_app/models/sensor_data.dart';
 import 'package:ble_app/models/track_data.dart';
 import 'package:isar/isar.dart';
 
@@ -13,4 +14,7 @@ class GeolocationData {
   late DateTime timestamp;
 
   final track = IsarLink<TrackData>();
+
+  @Backlink(to: "geolocationData")
+  final sensorData = IsarLinks<SensorData>();
 }

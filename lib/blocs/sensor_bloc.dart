@@ -1,8 +1,13 @@
 // File: lib/blocs/sensor_bloc.dart
 import 'package:ble_app/blocs/geolocation_bloc.dart';
+import 'package:ble_app/sensors/accelerometer_sensor.dart';
 import 'package:ble_app/sensors/distance_sensor.dart';
+import 'package:ble_app/sensors/finedust_sensor.dart';
 import 'package:ble_app/sensors/humidity_sensor.dart';
+import 'package:ble_app/sensors/overtaking_prediction_sensor.dart';
 import 'package:ble_app/sensors/sensor.dart';
+import 'package:ble_app/sensors/surface_anomaly_sensor.dart';
+import 'package:ble_app/sensors/surface_classification_sensor.dart';
 import 'package:ble_app/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:ble_app/sensors/temperature_sensor.dart';
@@ -33,6 +38,13 @@ class SensorBloc with ChangeNotifier {
     _sensors.add(TemperatureSensor(bleBloc, geolocationBloc, isarService));
     _sensors.add(HumiditySensor(bleBloc, geolocationBloc, isarService));
     _sensors.add(DistanceSensor(bleBloc, geolocationBloc, isarService));
+    _sensors.add(
+        SurfaceClassificationSensor(bleBloc, geolocationBloc, isarService));
+    // _sensors.add(AccelerometerSensor(bleBloc, geolocationBloc, isarService));
+    _sensors
+        .add(OvertakingPredictionSensor(bleBloc, geolocationBloc, isarService));
+    _sensors.add(SurfaceAnomalySensor(bleBloc, geolocationBloc, isarService));
+    _sensors.add(FinedustSensor(bleBloc, geolocationBloc, isarService));
   }
 
   void _startListening() {

@@ -50,6 +50,13 @@ const GeolocationDataSchema = CollectionSchema(
       name: r'track',
       target: r'TrackData',
       single: true,
+    ),
+    r'sensorData': LinkSchema(
+      id: -8666232759066516871,
+      name: r'sensorData',
+      target: r'SensorData',
+      single: false,
+      linkName: r'geolocationData',
     )
   },
   embeddedSchemas: {},
@@ -120,13 +127,15 @@ Id _geolocationDataGetId(GeolocationData object) {
 }
 
 List<IsarLinkBase<dynamic>> _geolocationDataGetLinks(GeolocationData object) {
-  return [object.track];
+  return [object.track, object.sensorData];
 }
 
 void _geolocationDataAttach(
     IsarCollection<dynamic> col, Id id, GeolocationData object) {
   object.id = id;
   object.track.attach(col, col.isar.collection<TrackData>(), r'track', id);
+  object.sensorData
+      .attach(col, col.isar.collection<SensorData>(), r'sensorData', id);
 }
 
 extension GeolocationDataQueryWhereSort
@@ -538,6 +547,67 @@ extension GeolocationDataQueryLinks
       trackIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.linkLength(r'track', 0, true, 0, true);
+    });
+  }
+
+  QueryBuilder<GeolocationData, GeolocationData, QAfterFilterCondition>
+      sensorData(FilterQuery<SensorData> q) {
+    return QueryBuilder.apply(this, (query) {
+      return query.link(q, r'sensorData');
+    });
+  }
+
+  QueryBuilder<GeolocationData, GeolocationData, QAfterFilterCondition>
+      sensorDataLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.linkLength(r'sensorData', length, true, length, true);
+    });
+  }
+
+  QueryBuilder<GeolocationData, GeolocationData, QAfterFilterCondition>
+      sensorDataIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.linkLength(r'sensorData', 0, true, 0, true);
+    });
+  }
+
+  QueryBuilder<GeolocationData, GeolocationData, QAfterFilterCondition>
+      sensorDataIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.linkLength(r'sensorData', 0, false, 999999, true);
+    });
+  }
+
+  QueryBuilder<GeolocationData, GeolocationData, QAfterFilterCondition>
+      sensorDataLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.linkLength(r'sensorData', 0, true, length, include);
+    });
+  }
+
+  QueryBuilder<GeolocationData, GeolocationData, QAfterFilterCondition>
+      sensorDataLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.linkLength(r'sensorData', length, include, 999999, true);
+    });
+  }
+
+  QueryBuilder<GeolocationData, GeolocationData, QAfterFilterCondition>
+      sensorDataLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.linkLength(
+          r'sensorData', lower, includeLower, upper, includeUpper);
     });
   }
 }

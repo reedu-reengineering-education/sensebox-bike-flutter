@@ -5,7 +5,7 @@ import 'package:ble_app/services/isar_service.dart';
 import 'package:flutter/material.dart';
 
 class TemperatureSensor extends Sensor {
-  double _latestValue = 0.0;
+  List<double> _latestValue = [0.0];
 
   static const String sensorCharacteristicUuid =
       '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8';
@@ -18,7 +18,7 @@ class TemperatureSensor extends Sensor {
   void onDataReceived(List<double> data) {
     super.onDataReceived(data); // Call the parent class to handle buffering
     if (data.isNotEmpty) {
-      _latestValue = data[0]; // Assuming the first value is temperature
+      _latestValue = data; // Assuming the first value is temperature
     }
   }
 
@@ -31,11 +31,11 @@ class TemperatureSensor extends Sensor {
 
   @override
   Widget buildWidget() {
-    return StreamBuilder<double>(
+    return StreamBuilder<List<double>>(
       stream: valueStream,
       initialData: _latestValue,
       builder: (context, snapshot) {
-        double displayValue = snapshot.data ?? _latestValue;
+        double displayValue = snapshot.data?[0] ?? _latestValue[0];
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(

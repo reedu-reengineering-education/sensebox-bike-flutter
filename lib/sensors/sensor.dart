@@ -13,9 +13,9 @@ abstract class Sensor {
   final IsarService isarService;
   StreamSubscription<List<double>>? _subscription;
 
-  final StreamController<double> _valueController =
-      StreamController<double>.broadcast();
-  Stream<double> get valueStream => _valueController.stream;
+  final StreamController<List<double>> _valueController =
+      StreamController<List<double>>.broadcast();
+  Stream<List<double>> get valueStream => _valueController.stream;
 
   final List<List<double>> _sensorValues = [];
 
@@ -53,8 +53,7 @@ abstract class Sensor {
   void onDataReceived(List<double> data) {
     if (data.isNotEmpty) {
       _sensorValues.add(data); // Buffer the sensor data
-      _valueController
-          .add(data[0]); // Emit the latest sensor value to the stream
+      _valueController.add(data); // Emit the latest sensor value to the stream
     }
   }
 

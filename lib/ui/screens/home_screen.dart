@@ -19,7 +19,7 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('senseBox:bike'),
-        forceMaterialTransparency: true,
+        // forceMaterialTransparency: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.track_changes),
@@ -49,7 +49,6 @@ class HomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     FloatingActionButton(
-                        // inverse background color than theme color, using theme from context
                         backgroundColor: Theme.of(context).primaryColorLight,
                         onPressed: bleBloc.disconnectDevice,
                         child: const Icon(Icons.bluetooth_disabled)),

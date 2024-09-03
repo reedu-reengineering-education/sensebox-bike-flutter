@@ -50,12 +50,9 @@ class BleBloc with ChangeNotifier {
       await device.connect();
 
       await device.discoverServices().then((services) {
-        print(services);
         // find senseBox service
         var senseBoxService = services
             .firstWhere((service) => service.uuid == senseBoxServiceUUID);
-
-        print(senseBoxService);
 
         for (var characteristic in senseBoxService.characteristics) {
           _listenToCharacteristic(characteristic);
