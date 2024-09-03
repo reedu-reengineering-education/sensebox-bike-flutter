@@ -16,15 +16,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final recordingProvider = RecordingStateProvider();
     final bleBloc = BleBloc();
     final isarService = IsarService();
-    final geolocationBloc = GeolocationBloc(isarService);
+    final geolocationBloc = GeolocationBloc(isarService, recordingProvider);
 
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => bleBloc),
         ChangeNotifierProvider(create: (_) => geolocationBloc),
-        ChangeNotifierProvider(create: (_) => RecordingState()),
+        ChangeNotifierProvider(create: (_) => recordingProvider),
         ChangeNotifierProvider(
             create: (_) => SensorBloc(bleBloc, geolocationBloc)),
       ],

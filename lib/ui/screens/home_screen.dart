@@ -4,6 +4,7 @@ import 'package:ble_app/blocs/sensor_bloc.dart';
 import 'package:ble_app/providers/recording_state_provider.dart';
 import 'package:ble_app/ui/widgets/ble_device_selection_dialog_widget.dart';
 import 'package:flutter/material.dart';
+***REMOVED***
 import 'package:provider/provider.dart';
 import '../widgets/geolocation_widget.dart';
 
@@ -13,7 +14,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bleBloc = Provider.of<BleBloc>(context);
-    Provider.of<RecordingState>(context);
+    final recordingProvider = Provider.of<RecordingStateProvider>(context);
     final sensorBloc = Provider.of<SensorBloc>(context);
 
     return Scaffold(
@@ -25,10 +26,38 @@ class HomeScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: HomeScrollableScreen(sensorBloc: sensorBloc),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.bluetooth),
-        onPressed: () => showDeviceSelectionDialog(context, bleBloc),
-      ),
+      floatingActionButton: ValueListenableBuilder(
+          valueListenable: bleBloc.selectedDeviceNotifier,
+          builder: (context, selectedDevice, child) {
+            if (selectedDevice == null) {
+              return FloatingActionButton.extended(
+                label: const Text('Connect'),
+                icon: const Icon(Icons.bluetooth),
+                onPressed: () => showDeviceSelectionDialog(context, bleBloc),
+              );
+            } else {
+              return Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    FloatingActionButton(
+                        onPressed: bleBloc.disconnectDevice,
+                        child: const Icon(Icons.bluetooth_disabled)),
+                    SizedBox(height: 12),
+                    FloatingActionButton.extended(
+                      label: Text(recordingProvider.isRecording
+                          ? 'Stop recording'
+                          : 'Start recording'),
+                      icon: Icon(recordingProvider.isRecording
+                          ? Icons.stop
+                          : Icons.fiber_manual_record),
+                      onPressed: () {
+                        recordingProvider.toggleRecording();
+                      },
+                    )
+                  ]);
+            }
+          }),
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class RecordingState with ChangeNotifier {
+class RecordingStateProvider with ChangeNotifier {
   bool _isRecording = false;
 
   bool get isRecording => _isRecording;
@@ -12,6 +12,11 @@ class RecordingState with ChangeNotifier {
 
   void stopRecording() {
     _isRecording = false;
+    notifyListeners();
+  }
+
+  void toggleRecording() {
+    _isRecording = !_isRecording;
     notifyListeners();
   }
 }

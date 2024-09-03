@@ -1,5 +1,7 @@
 // File: lib/blocs/geolocation_bloc.dart
 import 'dart:async';
+import 'package:ble_app/providers/recording_state_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:ble_app/models/geolocation_data.dart';
@@ -12,8 +14,9 @@ class GeolocationBloc with ChangeNotifier {
       _geolocationController.stream;
 
   final IsarService isarService;
+  final RecordingStateProvider recordingProvider;
 
-  GeolocationBloc(this.isarService) {
+  GeolocationBloc(this.isarService, this.recordingProvider) {
     // Start listening to geolocation changes
     _startListening();
   }
@@ -41,16 +44,41 @@ class GeolocationBloc with ChangeNotifier {
       return Future.error('Location permissions are permanently denied.');
     }
 
-    // Listen to position stream
-    Geolocator.getPositionStream().listen((Position position) async {
-      GeolocationData geolocationData = GeolocationData()
-        ..latitude = position.latitude
-        ..longitude = position.longitude
-        ..speed = position.speed
-        ..timestamp = position.timestamp;
+    late LocationSettings locationSettings;
 
-      await _saveGeolocationData(geolocationData); // Save to database
-      _geolocationController.add(geolocationData);
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      locationSettings = AndroidSettings(
+          accuracy: LocationAccuracy.high,
+          forceLocationManager: true,
+          foregroundNotificationConfig: const ForegroundNotificationConfig(
+            notificationText:
+                "Example app will continue to receive your location even when you aren't using it",
+            notificationTitle: "Running in Background",
+            enableWakeLock: true,
+          ));
+    } else if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.high,
+        activityType: ActivityType.fitness,
+        // Only set to true if our app will be started up in the background.
+        showBackgroundLocationIndicator: false,
+      );
+    }
+
+    // Listen to position stream
+    Geolocator.getPositionStream(locationSettings: locationSettings)
+        .listen((Position position) async {
+      if (recordingProvider.isRecording) {
+        GeolocationData geolocationData = GeolocationData()
+          ..latitude = position.latitude
+          ..longitude = position.longitude
+          ..speed = position.speed
+          ..timestamp = position.timestamp;
+
+        await _saveGeolocationData(geolocationData); // Save to database
+        _geolocationController.add(geolocationData);
+      }
       notifyListeners();
     });
   }

@@ -23,7 +23,7 @@ class BleBloc with ChangeNotifier {
 
   void startScanning() {
     disconnectDevice();
-    FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+    FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
 
     FlutterBluePlus.scanResults.listen((results) {
       devicesList.clear();
@@ -45,6 +45,7 @@ class BleBloc with ChangeNotifier {
 
   Future<void> connectToDevice(BluetoothDevice device) async {
     try {
+      await FlutterBluePlus.stopScan();
       await device.connect();
       await device.discoverServices().then((services) {
         for (var service in services) {
@@ -55,6 +56,19 @@ class BleBloc with ChangeNotifier {
       });
       selectedDevice = device;
       selectedDeviceNotifier.value = selectedDevice; // Notify connection
+      notifyListeners();
+
+      // implement reconnecting to the device if the connection is lost
+      // try 5 times to reconnect to the device
+      // ignore when the user disconnects the device
+      device.connectionState.listen((state) async {
+        if (state == BluetoothConnectionState.disconnected &&
+            selectedDevice != null) {
+          for (int i = 0; i < 5; i++) {
+            await device.connect(timeout: const Duration(seconds: 5));
+          }
+        }
+      });
     } catch (e) {
       // Handle connection error
     }
