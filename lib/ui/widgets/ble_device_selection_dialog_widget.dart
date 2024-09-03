@@ -21,9 +21,9 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) {
                 if (snapshot.connectionState == ConnectionState.waiting ||
                     !snapshot.hasData ||
                     snapshot.data!.isEmpty) {
-                  return Center(
-                    child: CircularProgressIndicator(),
+                  return const Center(
                     heightFactor: 0,
+                    child: CircularProgressIndicator(),
                   );
                 }
                 return ListView.builder(

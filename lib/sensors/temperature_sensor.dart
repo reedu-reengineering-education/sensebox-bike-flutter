@@ -41,7 +41,7 @@ class TemperatureSensor extends Sensor {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Temperature',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
@@ -50,10 +50,10 @@ class TemperatureSensor extends Sensor {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    '${displayValue.toStringAsFixed(1)}',
-                    style: TextStyle(fontSize: 64),
+                    displayValue.toStringAsFixed(1),
+                    style: const TextStyle(fontSize: 64),
                   ),
-                  Text(
+                  const Text(
                     '°C',
                   ),
                 ],

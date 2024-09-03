@@ -35,13 +35,12 @@ class HumiditySensor extends Sensor {
       stream: valueStream,
       initialData: _latestValue,
       builder: (context, snapshot) {
-        double displayValue = snapshot.data ?? _latestValue;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Humidity',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
@@ -50,10 +49,10 @@ class HumiditySensor extends Sensor {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    '${_latestValue.toStringAsFixed(1)}',
-                    style: TextStyle(fontSize: 64),
+                    _latestValue.toStringAsFixed(1),
+                    style: const TextStyle(fontSize: 64),
                   ),
-                  Text(
+                  const Text(
                     '%',
                   ),
                 ],

@@ -41,7 +41,7 @@ class DistanceSensor extends Sensor {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Distance',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
@@ -50,10 +50,10 @@ class DistanceSensor extends Sensor {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    '${displayValue.toStringAsFixed(0)}',
-                    style: TextStyle(fontSize: 64),
+                    displayValue.toStringAsFixed(0),
+                    style: const TextStyle(fontSize: 64),
                   ),
-                  Text(
+                  const Text(
                     'cm',
                   ),
                 ],

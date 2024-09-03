@@ -9,17 +9,18 @@ class BleDataWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<double>>(
-      stream: bleBloc.getCharacteristicStream('b3491b60-c0f3-4306-a30d-49c91f37a62b').stream,
+      stream: bleBloc
+          .getCharacteristicStream('b3491b60-c0f3-4306-a30d-49c91f37a62b')
+          .stream,
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Text('No data received from characteristic.');
+          return const Text('No data received from characteristic.');
         }
-    
+
         // Display data
         return Text('Data: ${snapshot.data!.join(', ')}');
       },
     );
-
 
     // return StreamBuilder<List<Map<String, List<double>>>>(
     //     stream: bleBloc.bleDataStream,
@@ -41,6 +42,6 @@ class BleDataWidget extends StatelessWidget {
     //         );
     //       }
     //     },
-    //   ); 
-       }
+    //   );
+  }
 }

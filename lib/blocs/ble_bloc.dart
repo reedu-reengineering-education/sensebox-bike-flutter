@@ -23,7 +23,7 @@ class BleBloc with ChangeNotifier {
 
   void startScanning() {
     disconnectDevice();
-    FlutterBluePlus.startScan(timeout: Duration(seconds: 4));
+    FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
 
     FlutterBluePlus.scanResults.listen((results) {
       devicesList.clear();

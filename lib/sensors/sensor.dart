@@ -17,7 +17,7 @@ abstract class Sensor {
       StreamController<double>.broadcast();
   Stream<double> get valueStream => _valueController.stream;
 
-  List<List<double>> _sensorValues = [];
+  final List<List<double>> _sensorValues = [];
 
   Sensor(
     this.characteristicUuid,

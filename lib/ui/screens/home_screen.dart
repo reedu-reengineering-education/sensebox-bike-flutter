@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:ble_app/blocs/ble_bloc.dart';
-import 'package:ble_app/blocs/geolocation_bloc.dart';
 import 'package:ble_app/blocs/sensor_bloc.dart';
 import 'package:ble_app/providers/recording_state_provider.dart';
 import 'package:ble_app/ui/widgets/ble_device_selection_dialog_widget.dart';
@@ -14,7 +13,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bleBloc = Provider.of<BleBloc>(context);
-    final recordingState = Provider.of<RecordingState>(context);
+    Provider.of<RecordingState>(context);
     final sensorBloc = Provider.of<SensorBloc>(context);
 
     return Scaffold(
@@ -61,7 +60,7 @@ class HomeScrollableScreen extends StatelessWidget {
             pinned: true,
           ),
           SliverSafeArea(
-            minimum: EdgeInsets.fromLTRB(4, 24, 4, 0),
+            minimum: const EdgeInsets.fromLTRB(4, 24, 4, 0),
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2, // Number of columns

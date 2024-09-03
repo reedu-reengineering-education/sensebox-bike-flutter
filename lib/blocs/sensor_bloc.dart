@@ -1,5 +1,4 @@
 // File: lib/blocs/sensor_bloc.dart
-import 'dart:async';
 import 'package:ble_app/blocs/geolocation_bloc.dart';
 import 'package:ble_app/sensors/distance_sensor.dart';
 import 'package:ble_app/sensors/humidity_sensor.dart';
@@ -8,7 +7,6 @@ import 'package:ble_app/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:ble_app/sensors/temperature_sensor.dart';
 import 'package:ble_app/blocs/ble_bloc.dart';
-import 'package:isar/isar.dart';
 
 class SensorBloc with ChangeNotifier {
   final BleBloc bleBloc;

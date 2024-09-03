@@ -8,10 +8,12 @@ import 'blocs/ble_bloc.dart';
 import 'blocs/geolocation_bloc.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     final bleBloc = BleBloc();
@@ -32,7 +34,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(
               seedColor: Colors.green, brightness: Brightness.light),
         ),
-        home: HomeScreen(),
+        home: const HomeScreen(),
       ),
     );
   }
