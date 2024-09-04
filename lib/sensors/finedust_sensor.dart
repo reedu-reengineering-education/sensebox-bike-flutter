@@ -15,7 +15,13 @@ class FinedustSensor extends Sensor {
 
   FinedustSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
-      : super(sensorCharacteristicUuid, bleBloc, geolocationBloc, isarService);
+      : super(
+            sensorCharacteristicUuid,
+            "finedust",
+            ['pm1', 'pm2.5', 'pm4', 'pm10'],
+            bleBloc,
+            geolocationBloc,
+            isarService);
 
   @override
   void onDataReceived(List<double> data) {
@@ -29,11 +35,11 @@ class FinedustSensor extends Sensor {
   }
 
   @override
-  double aggregateData(List<List<double>> sensorValues) {
+  List<double> aggregateData(List<List<double>> valueBuffer) {
     List<double> sumValues = [0.0, 0.0, 0.0, 0.0];
-    int count = sensorValues.length;
+    int count = valueBuffer.length;
 
-    for (var values in sensorValues) {
+    for (var values in valueBuffer) {
       sumValues[0] += values[0];
       sumValues[1] += values[1];
       sumValues[2] += values[2];
@@ -41,7 +47,7 @@ class FinedustSensor extends Sensor {
     }
 
     // Calculate the mean for pm1, pm2.5, pm4, and pm10
-    return sumValues.map((value) => value / count).reduce((a, b) => a + b);
+    return sumValues.map((value) => value / count).toList();
   }
 
   @override

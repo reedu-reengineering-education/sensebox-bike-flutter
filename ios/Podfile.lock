@@ -72,7 +72,7 @@ SPEC CHECKSUMS:
   flutter_blue_plus: 4837da7d00cf5d441fdd6635b3a57f936778ea96
   flutter_local_notifications: 4cde75091f6327eb8517fa068a0a5950212d2086
   geolocator_apple: 6cbaf322953988e009e5ecb481f07efece75c450
-  isar_flutter_libs: fdf730ca925d05687f36d7f1d355e482529ed097
+  isar_flutter_libs: b69f437aeab9c521821c3f376198c4371fa21073
   mapbox_maps_flutter: 943324063065b4ef15e146be95ed87f5bae1a6ba
   MapboxCommon: 6008e74b1312a093dec291497a036fc8b47f344f
   MapboxCoreMaps: bd097795c5ae4f002181769e7151474a33ce878a

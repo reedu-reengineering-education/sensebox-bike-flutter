@@ -34,7 +34,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
     // Subscribe to the geolocation stream
     _geolocationSubscription =
         geolocationBloc.geolocationStream.listen((geolocationData) {
-      print('Geolocation data: $geolocationData');
       mapInstance.flyTo(
         CameraOptions(
           zoom: 16.0,

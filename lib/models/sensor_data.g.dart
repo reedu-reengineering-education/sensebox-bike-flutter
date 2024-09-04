@@ -17,13 +17,23 @@ const SensorDataSchema = CollectionSchema(
   name: r'SensorData',
   id: -4425084427627382434,
   properties: {
-    r'characteristicUuid': PropertySchema(
+    r'attribute': PropertySchema(
       id: 0,
+      name: r'attribute',
+      type: IsarType.string,
+    ),
+    r'characteristicUuid': PropertySchema(
+      id: 1,
       name: r'characteristicUuid',
       type: IsarType.string,
     ),
+    r'title': PropertySchema(
+      id: 2,
+      name: r'title',
+      type: IsarType.string,
+    ),
     r'value': PropertySchema(
-      id: 1,
+      id: 3,
       name: r'value',
       type: IsarType.double,
     )
@@ -46,7 +56,7 @@ const SensorDataSchema = CollectionSchema(
   getId: _sensorDataGetId,
   getLinks: _sensorDataGetLinks,
   attach: _sensorDataAttach,
-  version: '3.1.8',
+  version: '3.1.0+1',
 );
 
 int _sensorDataEstimateSize(
@@ -55,7 +65,14 @@ int _sensorDataEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.attribute;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.characteristicUuid.length * 3;
+  bytesCount += 3 + object.title.length * 3;
   return bytesCount;
 }
 
@@ -65,8 +82,10 @@ void _sensorDataSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.characteristicUuid);
-  writer.writeDouble(offsets[1], object.value);
+  writer.writeString(offsets[0], object.attribute);
+  writer.writeString(offsets[1], object.characteristicUuid);
+  writer.writeString(offsets[2], object.title);
+  writer.writeDouble(offsets[3], object.value);
 }
 
 SensorData _sensorDataDeserialize(
@@ -76,9 +95,11 @@ SensorData _sensorDataDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = SensorData();
-  object.characteristicUuid = reader.readString(offsets[0]);
+  object.attribute = reader.readStringOrNull(offsets[0]);
+  object.characteristicUuid = reader.readString(offsets[1]);
   object.id = id;
-  object.value = reader.readDouble(offsets[1]);
+  object.title = reader.readString(offsets[2]);
+  object.value = reader.readDouble(offsets[3]);
   return object;
 }
 
@@ -90,8 +111,12 @@ P _sensorDataDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 1:
+      return (reader.readString(offset)) as P;
+    case 2:
+      return (reader.readString(offset)) as P;
+    case 3:
       return (reader.readDouble(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -191,6 +216,158 @@ extension SensorDataQueryWhere
 
 extension SensorDataQueryFilter
     on QueryBuilder<SensorData, SensorData, QFilterCondition> {
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition>
+      attributeIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'attribute',
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition>
+      attributeIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'attribute',
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> attributeEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'attribute',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition>
+      attributeGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'attribute',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> attributeLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'attribute',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> attributeBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'attribute',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition>
+      attributeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'attribute',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> attributeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'attribute',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> attributeContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'attribute',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> attributeMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'attribute',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition>
+      attributeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'attribute',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition>
+      attributeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'attribute',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<SensorData, SensorData, QAfterFilterCondition>
       characteristicUuidEqualTo(
     String value, {
@@ -380,6 +557,137 @@ extension SensorDataQueryFilter
     });
   }
 
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> titleEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'title',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> titleGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'title',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> titleLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'title',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> titleBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'title',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> titleStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'title',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> titleEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'title',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> titleContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'title',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> titleMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'title',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition> titleIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'title',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterFilterCondition>
+      titleIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'title',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<SensorData, SensorData, QAfterFilterCondition> valueEqualTo(
     double value, {
     double epsilon = Query.epsilon,
@@ -465,6 +773,18 @@ extension SensorDataQueryLinks
 
 extension SensorDataQuerySortBy
     on QueryBuilder<SensorData, SensorData, QSortBy> {
+  QueryBuilder<SensorData, SensorData, QAfterSortBy> sortByAttribute() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'attribute', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterSortBy> sortByAttributeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'attribute', Sort.desc);
+    });
+  }
+
   QueryBuilder<SensorData, SensorData, QAfterSortBy>
       sortByCharacteristicUuid() {
     return QueryBuilder.apply(this, (query) {
@@ -476,6 +796,18 @@ extension SensorDataQuerySortBy
       sortByCharacteristicUuidDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'characteristicUuid', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterSortBy> sortByTitle() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'title', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterSortBy> sortByTitleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'title', Sort.desc);
     });
   }
 
@@ -494,6 +826,18 @@ extension SensorDataQuerySortBy
 
 extension SensorDataQuerySortThenBy
     on QueryBuilder<SensorData, SensorData, QSortThenBy> {
+  QueryBuilder<SensorData, SensorData, QAfterSortBy> thenByAttribute() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'attribute', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterSortBy> thenByAttributeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'attribute', Sort.desc);
+    });
+  }
+
   QueryBuilder<SensorData, SensorData, QAfterSortBy>
       thenByCharacteristicUuid() {
     return QueryBuilder.apply(this, (query) {
@@ -520,6 +864,18 @@ extension SensorDataQuerySortThenBy
     });
   }
 
+  QueryBuilder<SensorData, SensorData, QAfterSortBy> thenByTitle() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'title', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QAfterSortBy> thenByTitleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'title', Sort.desc);
+    });
+  }
+
   QueryBuilder<SensorData, SensorData, QAfterSortBy> thenByValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'value', Sort.asc);
@@ -535,11 +891,25 @@ extension SensorDataQuerySortThenBy
 
 extension SensorDataQueryWhereDistinct
     on QueryBuilder<SensorData, SensorData, QDistinct> {
+  QueryBuilder<SensorData, SensorData, QDistinct> distinctByAttribute(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'attribute', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<SensorData, SensorData, QDistinct> distinctByCharacteristicUuid(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'characteristicUuid',
           caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<SensorData, SensorData, QDistinct> distinctByTitle(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'title', caseSensitive: caseSensitive);
     });
   }
 
@@ -558,10 +928,22 @@ extension SensorDataQueryProperty
     });
   }
 
+  QueryBuilder<SensorData, String?, QQueryOperations> attributeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'attribute');
+    });
+  }
+
   QueryBuilder<SensorData, String, QQueryOperations>
       characteristicUuidProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'characteristicUuid');
+    });
+  }
+
+  QueryBuilder<SensorData, String, QQueryOperations> titleProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'title');
     });
   }
 

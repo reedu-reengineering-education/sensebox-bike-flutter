@@ -12,7 +12,8 @@ class TemperatureSensor extends Sensor {
 
   TemperatureSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
-      : super(sensorCharacteristicUuid, bleBloc, geolocationBloc, isarService);
+      : super(sensorCharacteristicUuid, "temperature", [], bleBloc,
+            geolocationBloc, isarService);
 
   @override
   void onDataReceived(List<double> data) {
@@ -23,10 +24,11 @@ class TemperatureSensor extends Sensor {
   }
 
   @override
-  double aggregateData(List<List<double>> sensorValues) {
-    List<double> myValues = sensorValues.map((e) => e[0]).toList();
+  List<double> aggregateData(List<List<double>> valueBuffer) {
+    List<double> myValues = valueBuffer.map((e) => e[0]).toList();
+
     // Example aggregation logic: calculating the mean temperature
-    return myValues.reduce((a, b) => a + b) / myValues.length;
+    return [myValues.reduce((a, b) => a + b) / myValues.length];
   }
 
   @override

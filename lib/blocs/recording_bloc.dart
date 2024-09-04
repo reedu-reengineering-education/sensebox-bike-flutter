@@ -16,7 +16,7 @@ class RecordingBloc with ChangeNotifier {
   void startRecording() {
     _isRecording = true;
     _currentTrack = TrackData();
-    isarService.saveTrack(_currentTrack!);
+    isarService.trackService.saveTrack(_currentTrack!);
     notifyListeners();
   }
 

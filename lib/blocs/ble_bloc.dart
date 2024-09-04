@@ -73,6 +73,12 @@ class BleBloc with ChangeNotifier {
             await device.connect(timeout: const Duration(seconds: 5));
           }
         }
+
+        if (state == BluetoothConnectionState.disconnected) {
+          selectedDevice = null;
+          selectedDeviceNotifier.value = null; // Notify disconnection
+          notifyListeners();
+        }
       });
     } catch (e) {
       // Handle connection error

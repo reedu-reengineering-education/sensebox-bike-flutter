@@ -8,6 +8,9 @@ import 'package:flutter/material.dart';
 
 abstract class Sensor {
   final String characteristicUuid;
+  final String title;
+  final List<String> attributes;
+
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
   final IsarService isarService;
@@ -17,10 +20,12 @@ abstract class Sensor {
       StreamController<List<double>>.broadcast();
   Stream<List<double>> get valueStream => _valueController.stream;
 
-  final List<List<double>> _sensorValues = [];
+  final List<List<double>> _valueBuffer = [];
 
   Sensor(
     this.characteristicUuid,
+    this.title,
+    this.attributes,
     this.bleBloc,
     this.geolocationBloc,
     this.isarService,
@@ -37,10 +42,10 @@ abstract class Sensor {
 
     // Listen to geolocation updates
     geolocationBloc.geolocationStream.listen((geolocationData) {
-      if (_sensorValues.isNotEmpty) {
+      if (_valueBuffer.isNotEmpty) {
         _aggregateAndStoreData(
             geolocationData); // Aggregate and store sensor data
-        _sensorValues.clear(); // Clear the list after aggregation
+        _valueBuffer.clear(); // Clear the list after aggregation
       }
     });
   }
@@ -52,31 +57,49 @@ abstract class Sensor {
   // Method to handle incoming sensor data
   void onDataReceived(List<double> data) {
     if (data.isNotEmpty) {
-      _sensorValues.add(data); // Buffer the sensor data
+      _valueBuffer.add(data); // Buffer the sensor data
       _valueController.add(data); // Emit the latest sensor value to the stream
     }
   }
 
   // Aggregate sensor data and store it with the latest geolocation
   void _aggregateAndStoreData(GeolocationData geolocationData) {
-    double aggregatedValue = aggregateData(_sensorValues);
-    // Additional aggregations can be added here
+    List<double> aggregatedValues = aggregateData(_valueBuffer);
 
-    // Create a SensorData object to store in the database
-    final sensorData = SensorData()
-      ..characteristicUuid = characteristicUuid
-      ..value = aggregatedValue
-      ..geolocationData.value = geolocationData;
+    // some sensors have attributes, some do not. If they dont have one, store the value as is and attribute is null
+    if (attributes.isEmpty) {
+      final sensorData = SensorData()
+        ..characteristicUuid = characteristicUuid
+        ..title = title
+        ..value = aggregatedValues[0]
+        ..attribute = null
+        ..geolocationData.value = geolocationData;
 
-    isarService
-        .saveSensorData(sensorData); // Save aggregated data to the database
+      isarService.sensorService.saveSensorData(sensorData);
+    } else {
+      if (attributes.length != aggregatedValues.length) {
+        throw Exception(
+            'Number of attributes does not match the number of aggregated values');
+      }
+
+      for (int i = 0; i < attributes.length; i++) {
+        final sensorData = SensorData()
+          ..characteristicUuid = characteristicUuid
+          ..title = title
+          ..value = aggregatedValues[i]
+          ..attribute = attributes[i]
+          ..geolocationData.value = geolocationData;
+
+        isarService.sensorService.saveSensorData(sensorData);
+      }
+    }
   }
 
   // Abstract method to build a widget for the sensor (UI representation)
   Widget buildWidget();
 
   // Abstract method to aggregate sensor data
-  double aggregateData(List<List<double>> sensorValues);
+  List<double> aggregateData(List<List<double>> valueBuffer);
 
   void dispose() {
     stopListening();

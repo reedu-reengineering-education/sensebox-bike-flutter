@@ -1,6 +1,7 @@
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
 
 class TracksScreen extends StatefulWidget {
   const TracksScreen({super.key});
@@ -16,7 +17,13 @@ class _TracksScreenState extends State<TracksScreen> {
   void initState() {
     super.initState();
     // Initialize the future in initState to avoid re-fetching data unnecessarily
-    _tracksFuture = IsarService().getTrackData();
+    _tracksFuture = IsarService().trackService.getAllTracks();
+  }
+
+  Future<void> _handleRefresh() async {
+    setState(() {
+      _tracksFuture = IsarService().trackService.getAllTracks();
+    });
   }
 
   @override
@@ -25,7 +32,8 @@ class _TracksScreenState extends State<TracksScreen> {
       appBar: AppBar(
         title: const Text('Tracks'),
       ),
-      body: Center(
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
         child: FutureBuilder<List<TrackData>>(
           future: _tracksFuture,
           builder: (context, snapshot) {
@@ -44,10 +52,18 @@ class _TracksScreenState extends State<TracksScreen> {
               return ListView.builder(
                 itemCount: tracks.length,
                 itemBuilder: (context, index) {
+                  TrackData track = tracks[index];
                   return ListTile(
-                    title: Text('Track ${tracks[index].id}'),
-                    subtitle: Text(
-                        'Geolocations: ${tracks[index].geolocations.length}'),
+                    title: Text('Track ${track.id}'),
+                    subtitle:
+                        Text('Geolocations: ${track.geolocations.length}'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => TrackDetailScreen(
+                                id: track.id,
+                              )),
+                    ),
                   );
                 },
               );

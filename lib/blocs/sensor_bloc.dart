@@ -1,6 +1,5 @@
 // File: lib/blocs/sensor_bloc.dart
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
-import 'package:sensebox_bike/sensors/accelerometer_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
 import 'package:sensebox_bike/sensors/finedust_sensor.dart';
 import 'package:sensebox_bike/sensors/humidity_sensor.dart';

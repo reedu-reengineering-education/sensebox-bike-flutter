@@ -8,6 +8,8 @@ class SensorData {
   Id id = Isar.autoIncrement;
 
   late String characteristicUuid;
+  late String title;
+  late String? attribute;
   late double value;
 
   final geolocationData = IsarLink<GeolocationData>();

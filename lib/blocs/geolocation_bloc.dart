@@ -73,27 +73,26 @@ class GeolocationBloc with ChangeNotifier {
     // Listen to position stream
     Geolocator.getPositionStream(locationSettings: locationSettings)
         .listen((Position position) async {
-      print('Position: $position');
-      print(recordingBloc.isRecording);
-      print(recordingBloc.currentTrack);
-      if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
-        GeolocationData geolocationData = GeolocationData()
-          ..latitude = position.latitude
-          ..longitude = position.longitude
-          ..speed = position.speed
-          ..timestamp = position.timestamp
-          ..track.value = recordingBloc.currentTrack!;
+      // TODO: this is not a good practice to create a new object and not save it
+      GeolocationData geolocationData = GeolocationData()
+        ..latitude = position.latitude
+        ..longitude = position.longitude
+        ..speed = position.speed
+        ..timestamp = position.timestamp
+        ..track.value = recordingBloc.currentTrack;
 
+      if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
         await _saveGeolocationData(geolocationData); // Save to database
-        _geolocationController.add(geolocationData);
       }
+
+      _geolocationController.add(geolocationData);
       notifyListeners();
     });
   }
 
   Future<void> _saveGeolocationData(GeolocationData data) async {
     try {
-      await isarService.saveGeolocationData(data);
+      await isarService.geolocationService.saveGeolocationData(data);
     } catch (e) {
       print('Error saving geolocation data: $e');
     }

@@ -14,7 +14,7 @@ class TrackBloc with ChangeNotifier {
 
   void startNewTrack() {
     _currentTrack = TrackData();
-    isarService.saveTrack(_currentTrack!);
+    isarService.trackService.saveTrack(_currentTrack!);
     notifyListeners();
   }
 

@@ -19,19 +19,15 @@ class HomeScrollableScreen extends StatelessWidget {
             delegate: _SliverAppBarDelegate(
               minHeight: 200.0,
               maxHeight: MediaQuery.of(context).size.height / 3,
-              child: const Card(
-                elevation: 0,
-                clipBehavior: Clip.hardEdge,
-                child: SizedBox(
-                  width: double.infinity,
-                  child: GeolocationMapWidget(), // Directly use the map widget
-                ),
+              child: const SizedBox(
+                width: double.infinity,
+                child: GeolocationMapWidget(), // Directly use the map widget
               ),
             ),
             pinned: true,
           ),
           SliverSafeArea(
-            minimum: const EdgeInsets.fromLTRB(4, 24, 4, 0),
+            minimum: const EdgeInsets.fromLTRB(12, 24, 12, 24),
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2, // Number of columns

@@ -14,7 +14,8 @@ class AccelerometerSensor extends Sensor {
 
   AccelerometerSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
-      : super(sensorCharacteristicUuid, bleBloc, geolocationBloc, isarService);
+      : super(sensorCharacteristicUuid, "accelerometer", ["x", "y", "z"],
+            bleBloc, geolocationBloc, isarService);
 
   @override
   void onDataReceived(List<double> data) {
@@ -27,18 +28,18 @@ class AccelerometerSensor extends Sensor {
   }
 
   @override
-  double aggregateData(List<List<double>> sensorValues) {
+  List<double> aggregateData(List<List<double>> valueBuffer) {
     List<double> sumValues = [0.0, 0.0, 0.0];
-    int count = sensorValues.length;
+    int count = valueBuffer.length;
 
-    for (var values in sensorValues) {
+    for (var values in valueBuffer) {
       sumValues[0] += values[0];
       sumValues[1] += values[1];
       sumValues[2] += values[2];
     }
 
     // Calculate the mean for x, y, and z
-    return sumValues.map((value) => value / count).reduce((a, b) => a + b);
+    return sumValues.map((value) => value / count).toList();
   }
 
   @override

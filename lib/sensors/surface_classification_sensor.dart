@@ -16,7 +16,13 @@ class SurfaceClassificationSensor extends Sensor {
 
   SurfaceClassificationSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
-      : super(sensorCharacteristicUuid, bleBloc, geolocationBloc, isarService);
+      : super(
+            sensorCharacteristicUuid,
+            "surface_classification",
+            ["asphalt", "compacted", "paving", "sett", "standing"],
+            bleBloc,
+            geolocationBloc,
+            isarService);
 
   @override
   void onDataReceived(List<double> data) {
@@ -31,11 +37,11 @@ class SurfaceClassificationSensor extends Sensor {
   }
 
   @override
-  double aggregateData(List<List<double>> sensorValues) {
+  List<double> aggregateData(List<List<double>> valueBuffer) {
     List<double> sumValues = [0.0, 0.0, 0.0, 0.0, 0.0];
-    int count = sensorValues.length;
+    int count = valueBuffer.length;
 
-    for (var values in sensorValues) {
+    for (var values in valueBuffer) {
       sumValues[0] += values[0];
       sumValues[1] += values[1];
       sumValues[2] += values[2];
@@ -44,7 +50,7 @@ class SurfaceClassificationSensor extends Sensor {
     }
 
     // Calculate the mean for asphalt, compacted, paving, sett, and standing
-    return sumValues.map((value) => value / count).reduce((a, b) => a + b);
+    return sumValues.map((value) => value / count).toList();
   }
 
   @override

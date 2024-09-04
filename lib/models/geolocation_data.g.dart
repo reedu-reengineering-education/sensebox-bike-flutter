@@ -63,7 +63,7 @@ const GeolocationDataSchema = CollectionSchema(
   getId: _geolocationDataGetId,
   getLinks: _geolocationDataGetLinks,
   attach: _geolocationDataAttach,
-  version: '3.1.8',
+  version: '3.1.0+1',
 );
 
 int _geolocationDataEstimateSize(
