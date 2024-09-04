@@ -36,7 +36,7 @@ const TrackDataSchema = CollectionSchema(
   getId: _trackDataGetId,
   getLinks: _trackDataGetLinks,
   attach: _trackDataAttach,
-  version: '3.1.0+1',
+  version: '3.1.8',
 );
 
 int _trackDataEstimateSize(

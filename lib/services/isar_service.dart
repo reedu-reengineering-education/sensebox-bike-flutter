@@ -1,7 +1,7 @@
 // File: lib/services/isar_service.dart
-import 'package:ble_app/models/geolocation_data.dart';
-import 'package:ble_app/models/sensor_data.dart';
-import 'package:ble_app/models/track_data.dart';
+import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
+import 'package:sensebox_bike/models/track_data.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 

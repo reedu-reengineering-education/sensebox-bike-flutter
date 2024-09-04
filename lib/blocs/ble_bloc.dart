@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:ble_app/secrets.dart';
+import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
 ***REMOVED***
 
@@ -20,6 +20,7 @@ class BleBloc with ChangeNotifier {
 
   BleBloc() {
     startScanning();
+    FlutterBluePlus.setLogLevel(LogLevel.none);
   }
 
   void startScanning() {

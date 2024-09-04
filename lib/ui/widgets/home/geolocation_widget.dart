@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:ble_app/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +34,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
     // Subscribe to the geolocation stream
     _geolocationSubscription =
         geolocationBloc.geolocationStream.listen((geolocationData) {
+      print('Geolocation data: $geolocationData');
       mapInstance.flyTo(
         CameraOptions(
           zoom: 16.0,
@@ -67,6 +68,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
         ));
       },
       gestureRecognizers: Set()
+        ..add(Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()))
         ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
         ..add(Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()))
         ..add(Factory<TapGestureRecognizer>(() => TapGestureRecognizer()))

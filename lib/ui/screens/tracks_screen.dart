@@ -1,5 +1,5 @@
-import 'package:ble_app/models/track_data.dart';
-import 'package:ble_app/services/isar_service.dart';
+import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 
 class TracksScreen extends StatefulWidget {

@@ -1,4 +1,4 @@
-import 'package:ble_app/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:flutter/material.dart';
 ***REMOVED***
 

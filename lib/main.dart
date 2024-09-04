@@ -1,7 +1,7 @@
-import 'package:ble_app/blocs/sensor_bloc.dart';
-import 'package:ble_app/blocs/track_bloc.dart';
-import 'package:ble_app/blocs/recording_bloc.dart';
-import 'package:ble_app/services/isar_service.dart';
+import 'package:sensebox_bike/blocs/sensor_bloc.dart';
+import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'ui/screens/home_screen.dart';
 import 'package:provider/provider.dart';
@@ -24,12 +24,13 @@ class MyApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => bleBloc),
+        ChangeNotifierProvider(
+            create: (_) => recordingBloc), // Initialize first
         ChangeNotifierProvider(create: (_) => geolocationBloc),
-        ChangeNotifierProvider(create: (_) => recordingBloc),
-        Provider(create: (_) => TrackBloc(isarService)),
+        ChangeNotifierProvider(create: (_) => bleBloc),
         ChangeNotifierProvider(
             create: (_) => SensorBloc(bleBloc, geolocationBloc)),
+        ChangeNotifierProvider(create: (_) => TrackBloc(isarService)),
       ],
       child: MaterialApp(
         title: 'senseBox:bike',

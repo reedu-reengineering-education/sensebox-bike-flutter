@@ -1,5 +1,5 @@
-import 'package:ble_app/models/sensor_data.dart';
-import 'package:ble_app/models/track_data.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
+import 'package:sensebox_bike/models/track_data.dart';
 import 'package:isar/isar.dart';
 
 part 'geolocation_data.g.dart';

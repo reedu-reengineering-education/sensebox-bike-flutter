@@ -1,9 +1,9 @@
-import 'package:ble_app/blocs/ble_bloc.dart';
-import 'package:ble_app/blocs/sensor_bloc.dart';
-import 'package:ble_app/blocs/recording_bloc.dart';
-import 'package:ble_app/ui/screens/tracks_screen.dart';
-import 'package:ble_app/ui/widgets/home/ble_device_selection_dialog_widget.dart';
-import 'package:ble_app/ui/widgets/home/home_scrollable_screen_widget.dart';
+import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/sensor_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
+import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
+import 'package:sensebox_bike/ui/widgets/home/home_scrollable_screen_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

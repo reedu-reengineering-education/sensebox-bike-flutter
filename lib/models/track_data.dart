@@ -1,4 +1,4 @@
-import 'package:ble_app/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:isar/isar.dart';
 
 part 'track_data.g.dart';

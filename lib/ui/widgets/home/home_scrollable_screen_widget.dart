@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'package:ble_app/blocs/sensor_bloc.dart';
-import 'package:ble_app/ui/widgets/home/geolocation_widget.dart';
+import 'package:sensebox_bike/blocs/sensor_bloc.dart';
+import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
 
 class HomeScrollableScreen extends StatelessWidget {

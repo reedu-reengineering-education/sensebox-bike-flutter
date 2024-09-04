@@ -1,17 +1,17 @@
 // File: lib/blocs/sensor_bloc.dart
-import 'package:ble_app/blocs/geolocation_bloc.dart';
-import 'package:ble_app/sensors/accelerometer_sensor.dart';
-import 'package:ble_app/sensors/distance_sensor.dart';
-import 'package:ble_app/sensors/finedust_sensor.dart';
-import 'package:ble_app/sensors/humidity_sensor.dart';
-import 'package:ble_app/sensors/overtaking_prediction_sensor.dart';
-import 'package:ble_app/sensors/sensor.dart';
-import 'package:ble_app/sensors/surface_anomaly_sensor.dart';
-import 'package:ble_app/sensors/surface_classification_sensor.dart';
-import 'package:ble_app/services/isar_service.dart';
+import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/sensors/accelerometer_sensor.dart';
+import 'package:sensebox_bike/sensors/distance_sensor.dart';
+import 'package:sensebox_bike/sensors/finedust_sensor.dart';
+import 'package:sensebox_bike/sensors/humidity_sensor.dart';
+import 'package:sensebox_bike/sensors/overtaking_prediction_sensor.dart';
+import 'package:sensebox_bike/sensors/sensor.dart';
+import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
+import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
+import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
-import 'package:ble_app/sensors/temperature_sensor.dart';
-import 'package:ble_app/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/sensors/temperature_sensor.dart';
+import 'package:sensebox_bike/blocs/ble_bloc.dart';
 
 class SensorBloc with ChangeNotifier {
   final BleBloc bleBloc;

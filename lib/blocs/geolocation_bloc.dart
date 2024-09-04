@@ -1,10 +1,11 @@
 // File: lib/blocs/geolocation_bloc.dart
 import 'dart:async';
-import 'package:ble_app/blocs/recording_bloc.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:ble_app/models/geolocation_data.dart';
-import 'package:ble_app/services/isar_service.dart';
+import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/services/isar_service.dart';
 
 class GeolocationBloc with ChangeNotifier {
   final StreamController<GeolocationData> _geolocationController =
@@ -46,15 +47,19 @@ class GeolocationBloc with ChangeNotifier {
     late LocationSettings locationSettings;
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      locationSettings = AndroidSettings(
-          accuracy: LocationAccuracy.high,
-          forceLocationManager: true,
-          foregroundNotificationConfig: const ForegroundNotificationConfig(
-            notificationText:
-                "Example app will continue to receive your location even when you aren't using it",
-            notificationTitle: "Running in Background",
-            enableWakeLock: true,
-          ));
+      PermissionStatus status = await Permission.notification.request();
+      if (status.isGranted) {
+        locationSettings = AndroidSettings(
+            accuracy: LocationAccuracy.high,
+            foregroundNotificationConfig: const ForegroundNotificationConfig(
+              notificationText:
+                  "Example app will continue to receive your location even when you aren't using it",
+              notificationTitle: "Running in Background",
+              enableWakeLock: true,
+            ));
+      } else {
+        return Future.error('Notification permissions are denied');
+      }
     } else if (defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.macOS) {
       locationSettings = AppleSettings(
@@ -68,6 +73,9 @@ class GeolocationBloc with ChangeNotifier {
     // Listen to position stream
     Geolocator.getPositionStream(locationSettings: locationSettings)
         .listen((Position position) async {
+      print('Position: $position');
+      print(recordingBloc.isRecording);
+      print(recordingBloc.currentTrack);
       if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
         GeolocationData geolocationData = GeolocationData()
           ..latitude = position.latitude
