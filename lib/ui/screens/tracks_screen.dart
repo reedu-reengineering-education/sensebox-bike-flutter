@@ -53,18 +53,61 @@ class _TracksScreenState extends State<TracksScreen> {
                 itemCount: tracks.length,
                 itemBuilder: (context, index) {
                   TrackData track = tracks[index];
-                  return ListTile(
-                    title: Text('Track ${track.id}'),
-                    subtitle:
-                        Text('Geolocations: ${track.geolocations.length}'),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => TrackDetailScreen(
-                                id: track.id,
-                              )),
-                    ),
-                  );
+                  return Dismissible(
+                      key: Key(track.id.toString()),
+                      background: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20.0),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      confirmDismiss: (DismissDirection direction) async {
+                        return await showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text("Delete Track"),
+                              content: const Text(
+                                  "Are you sure you wish to delete this track?"),
+                              actions: <Widget>[
+                                FilledButton(
+                                    style: const ButtonStyle(
+                                        backgroundColor: WidgetStatePropertyAll(
+                                            Colors.redAccent)),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(true),
+                                    child: const Text("Delete")),
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(false),
+                                  child: const Text("Cancel"),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      onDismissed: (direction) async => {
+                            await IsarService()
+                                .trackService
+                                .deleteTrack(track.id),
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Track ${track.id} deleted')),
+                            )
+                          },
+                      child: ListTile(
+                        title: Text('Track ${track.id}'),
+                        subtitle:
+                            Text('Geolocations: ${track.geolocations.length}'),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => TrackDetailScreen(
+                                    id: track.id,
+                                  )),
+                        ),
+                      ));
                 },
               );
             }

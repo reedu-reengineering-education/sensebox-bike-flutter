@@ -22,4 +22,11 @@ class TrackService {
     final isar = await _isarProvider.getDatabase();
     return await isar.trackDatas.where().findAll();
   }
+
+  Future<void> deleteTrack(int id) async {
+    final isar = await _isarProvider.getDatabase();
+    await isar.writeTxn(() async {
+      await isar.trackDatas.delete(id);
+    });
+  }
 }
