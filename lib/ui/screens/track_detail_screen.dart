@@ -3,6 +3,7 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
+import 'package:share_plus/share_plus.dart';
 
 class TrackDetailScreen extends StatefulWidget {
   final int id;
@@ -34,6 +35,17 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Track $id'),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          // Implement a way to export the track data to a CSV file
+          final isarService = IsarService();
+          final csvFilePath = await isarService.exportTrackToCsv(id);
+          print('CSV file saved at: $csvFilePath');
+          await Share.shareXFiles([XFile(csvFilePath)],
+              text: 'Here is the CSV export of your track data.');
+        },
+        child: const Icon(Icons.file_download),
       ),
       body: FutureBuilder<TrackData?>(
         future: _trackFuture,
@@ -76,18 +88,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                         // If the future completed with data, display the list
                         List<SensorData> sensorData = snapshot.data!;
 
-                        return ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: sensorData.length,
-                          itemBuilder: (context, index) {
-                            SensorData sensor = sensorData[index];
-                            return ListTile(
-                              title:
-                                  Text('${sensor.title} ${sensor.attribute}'),
-                              subtitle: Text(sensor.value.toString()),
-                            );
-                          },
-                        );
+                        return Text(sensorData.length.toString());
                       }
                     },
                   ),

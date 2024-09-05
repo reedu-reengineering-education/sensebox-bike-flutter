@@ -22,6 +22,14 @@ class SensorService {
     return await isar.sensorDatas.where().findAll();
   }
 
+  Future<List<SensorData>> getSensorDataByGeolocationId(
+      int geolocationId) async {
+    final isar = await _isarProvider.getDatabase();
+    return await isar.sensorDatas.where().filter().geolocationData((q) {
+      return q.idEqualTo(geolocationId);
+    }).findAll();
+  }
+
   Future<List<SensorData>> getSensorDataByTrackId(int trackId) async {
     final isar = await _isarProvider.getDatabase();
 
