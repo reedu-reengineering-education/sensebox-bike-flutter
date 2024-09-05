@@ -36,7 +36,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       appBar: AppBar(
         title: Text('Track $id'),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
+        label: const Text('Export to CSV'),
         onPressed: () async {
           // Implement a way to export the track data to a CSV file
           final isarService = IsarService();
@@ -45,7 +46,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           await Share.shareXFiles([XFile(csvFilePath)],
               text: 'Here is the CSV export of your track data.');
         },
-        child: const Icon(Icons.file_download),
+        icon: const Icon(Icons.file_download),
       ),
       body: FutureBuilder<TrackData?>(
         future: _trackFuture,

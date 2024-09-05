@@ -41,24 +41,30 @@ class HomeScreen extends StatelessWidget {
                 onPressed: () => showDeviceSelectionDialog(context, bleBloc),
               );
             } else {
-              return Column(
+              return Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    FloatingActionButton(
-                        backgroundColor: Theme.of(context).primaryColorLight,
-                        onPressed: bleBloc.disconnectDevice,
-                        child: const Icon(Icons.bluetooth_disabled)),
-                    const SizedBox(height: 12),
                     FloatingActionButton.extended(
                       label: Text(recordingBloc.isRecording ? 'Stop' : 'Start'),
                       icon: Icon(recordingBloc.isRecording
                           ? Icons.stop
                           : Icons.fiber_manual_record),
+                      backgroundColor: recordingBloc.isRecording
+                          ? Colors.redAccent
+                          : Colors.greenAccent,
                       onPressed: () {
-                        recordingBloc.toggleRecording();
+                        recordingBloc.isRecording
+                            ? recordingBloc.stopRecording()
+                            : recordingBloc.startRecording();
                       },
-                    )
+                    ),
+                    const SizedBox(width: 12),
+                    FloatingActionButton.extended(
+                        label: const Text('Disconnect'),
+                        backgroundColor: Theme.of(context).primaryColorLight,
+                        onPressed: bleBloc.disconnectDevice,
+                        icon: const Icon(Icons.bluetooth_disabled)),
                   ]);
             }
           }),

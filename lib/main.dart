@@ -19,7 +19,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final isarService = IsarService();
     final bleBloc = BleBloc();
-    final recordingBloc = RecordingBloc(isarService);
+    final trackBloc = TrackBloc(isarService);
+    final recordingBloc = RecordingBloc(isarService, bleBloc, trackBloc);
     final geolocationBloc = GeolocationBloc(isarService, recordingBloc);
 
     return MultiProvider(
@@ -30,7 +31,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => bleBloc),
         ChangeNotifierProvider(
             create: (_) => SensorBloc(bleBloc, geolocationBloc)),
-        ChangeNotifierProvider(create: (_) => TrackBloc(isarService)),
+        ChangeNotifierProvider(create: (_) => trackBloc),
       ],
       child: MaterialApp(
         title: 'senseBox:bike',

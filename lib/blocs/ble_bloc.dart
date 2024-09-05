@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
 ***REMOVED***
+import 'package:provider/provider.dart'; // Assuming you're using Provider for state management
+import 'package:sensebox_bike/blocs/recording_bloc.dart'; // Import the RecordingBloc
 
 class BleBloc with ChangeNotifier {
   final List<BluetoothDevice> devicesList = [];
@@ -12,11 +14,16 @@ class BleBloc with ChangeNotifier {
       _devicesListController.stream;
 
   BluetoothDevice? selectedDevice;
+  bool _isConnected = false; // Track the connection status
+  bool _userInitiatedDisconnect =
+      false; // Track if disconnect was user-initiated
   final Map<String, StreamController<List<double>>> _characteristicStreams = {};
 
   // ValueNotifier to notify about the selected device's connection state
   final ValueNotifier<BluetoothDevice?> selectedDeviceNotifier =
       ValueNotifier(null);
+
+  bool get isConnected => _isConnected; // Expose the connection status
 
   BleBloc() {
     startScanning();
@@ -24,7 +31,7 @@ class BleBloc with ChangeNotifier {
   }
 
   void startScanning() {
-    disconnectDevice();
+    disconnectDevice(); // Disconnect if there's a current connection
     FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
 
     FlutterBluePlus.scanResults.listen((results) {
@@ -40,49 +47,80 @@ class BleBloc with ChangeNotifier {
   }
 
   void disconnectDevice() {
+    _userInitiatedDisconnect = true; // Mark this as a user-initiated disconnect
     selectedDevice?.disconnect();
+    _isConnected = false; // Mark the device as disconnected
     selectedDevice = null;
     selectedDeviceNotifier.value = null; // Notify disconnection
+    notifyListeners();
   }
 
-  Future<void> connectToDevice(BluetoothDevice device) async {
+  Future<void> connectToDevice(
+      BluetoothDevice device, BuildContext context) async {
     try {
       await FlutterBluePlus.stopScan();
       await device.connect();
+      _isConnected = true; // Mark as connected
+      _userInitiatedDisconnect =
+          false; // Reset this since it's a new connection
 
-      await device.discoverServices().then((services) {
-        // find senseBox service
-        var senseBoxService = services
-            .firstWhere((service) => service.uuid == senseBoxServiceUUID);
+      _discoverAndListenToCharacteristics(device);
 
-        for (var characteristic in senseBoxService.characteristics) {
-          _listenToCharacteristic(characteristic);
-        }
-      });
       selectedDevice = device;
       selectedDeviceNotifier.value = selectedDevice; // Notify connection
       notifyListeners();
 
-      // implement reconnecting to the device if the connection is lost
-      // try 5 times to reconnect to the device
-      // ignore when the user disconnects the device
-      device.connectionState.listen((state) async {
-        if (state == BluetoothConnectionState.disconnected &&
-            selectedDevice != null) {
-          for (int i = 0; i < 5; i++) {
+      // Handle reconnection if the connection is lost
+      _handleDeviceReconnection(device, context);
+    } catch (e) {
+      _isConnected = false; // Ensure the flag is set correctly on failure
+      // Handle connection error
+    }
+  }
+
+  void _discoverAndListenToCharacteristics(BluetoothDevice device) async {
+    await device.discoverServices().then((services) {
+      // find senseBox service
+      var senseBoxService =
+          services.firstWhere((service) => service.uuid == senseBoxServiceUUID);
+
+      for (var characteristic in senseBoxService.characteristics) {
+        _listenToCharacteristic(characteristic);
+      }
+    });
+  }
+
+  void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
+    device.connectionState.listen((state) async {
+      if (state == BluetoothConnectionState.disconnected &&
+          !_userInitiatedDisconnect) {
+        _isConnected = false; // Mark as disconnected
+
+        // Attempt to reconnect the device (up to 5 tries)
+        for (int i = 0; i < 5; i++) {
+          try {
             await device.connect(timeout: const Duration(seconds: 5));
+            _isConnected = true; // Mark as connected if successful
+            _discoverAndListenToCharacteristics(device);
+            break; // Stop retrying if reconnection is successful
+          } catch (e) {
+            // Retry logic continues if reconnection fails
           }
         }
 
-        if (state == BluetoothConnectionState.disconnected) {
-          selectedDevice = null;
+        if (!_isConnected) {
           selectedDeviceNotifier.value = null; // Notify disconnection
           notifyListeners();
+
+          // Notify RecordingBloc to stop recording if Bluetooth disconnects
+          RecordingBloc recordingBloc =
+              Provider.of<RecordingBloc>(context, listen: false);
+          if (recordingBloc.isRecording) {
+            recordingBloc.stopRecording();
+          }
         }
-      });
-    } catch (e) {
-      // Handle connection error
-    }
+      }
+    });
   }
 
   void _listenToCharacteristic(BluetoothCharacteristic characteristic) {

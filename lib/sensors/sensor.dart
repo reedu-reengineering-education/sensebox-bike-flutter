@@ -32,22 +32,26 @@ abstract class Sensor {
   );
 
   void startListening() {
-    // Listen to the sensor data stream
-    _subscription = bleBloc
-        .getCharacteristicStream(characteristicUuid)
-        .stream
-        .listen((data) {
-      onDataReceived(data);
-    });
+    try {
+      // Listen to the sensor data stream
+      _subscription = bleBloc
+          .getCharacteristicStream(characteristicUuid)
+          .stream
+          .listen((data) {
+        onDataReceived(data);
+      });
 
-    // Listen to geolocation updates
-    geolocationBloc.geolocationStream.listen((geolocationData) {
-      if (_valueBuffer.isNotEmpty) {
-        _aggregateAndStoreData(
-            geolocationData); // Aggregate and store sensor data
-        _valueBuffer.clear(); // Clear the list after aggregation
-      }
-    });
+      // Listen to geolocation updates
+      geolocationBloc.geolocationStream.listen((geolocationData) {
+        if (_valueBuffer.isNotEmpty) {
+          _aggregateAndStoreData(
+              geolocationData); // Aggregate and store sensor data
+          _valueBuffer.clear(); // Clear the list after aggregation
+        }
+      });
+    } catch (e) {
+      print('Error starting sensor: $e');
+    }
   }
 
   void stopListening() {

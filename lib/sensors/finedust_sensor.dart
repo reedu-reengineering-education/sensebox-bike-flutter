@@ -68,42 +68,42 @@ class FinedustSensor extends Sensor {
                 'Finedust Levels',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              Row(
+              Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Column(
+                  Row(
                     children: [
                       const Text('PM1'),
                       Text(
                         displayValues[0].toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 24),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
-                  Column(
+                  Row(
                     children: [
                       const Text('PM2.5'),
                       Text(
                         displayValues[1].toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 24),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
-                  Column(
+                  Row(
                     children: [
                       const Text('PM4'),
                       Text(
                         displayValues[2].toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 24),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
-                  Column(
+                  Row(
                     children: [
                       const Text('PM10'),
                       Text(
                         displayValues[3].toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 24),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),

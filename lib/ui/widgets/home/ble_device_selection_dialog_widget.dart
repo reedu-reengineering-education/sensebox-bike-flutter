@@ -34,7 +34,7 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) {
                     return ListTile(
                       title: Text(device.platformName),
                       onTap: () {
-                        bleBloc.connectToDevice(device);
+                        bleBloc.connectToDevice(device, context);
                         Navigator.pop(context);
                       },
                     );
