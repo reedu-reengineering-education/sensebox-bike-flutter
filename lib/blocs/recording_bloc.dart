@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/services/live_upload_service.dart';
+import 'package:sensebox_bike/services/opensensemap_service.dart';
 
 class RecordingBloc with ChangeNotifier {
   final BleBloc bleBloc;
   final IsarService isarService;
   final TrackBloc trackBloc;
+  final OpenSenseMapBloc openSenseMapBloc;
 
   bool _isRecording = false;
   TrackData? _currentTrack;
@@ -15,7 +20,8 @@ class RecordingBloc with ChangeNotifier {
   bool get isRecording => _isRecording;
   TrackData? get currentTrack => _currentTrack;
 
-  RecordingBloc(this.isarService, this.bleBloc, this.trackBloc) {
+  RecordingBloc(
+      this.isarService, this.bleBloc, this.trackBloc, this.openSenseMapBloc) {
     bleBloc.addListener(_onBluetoothConnectionChanged);
   }
 
@@ -25,13 +31,24 @@ class RecordingBloc with ChangeNotifier {
     }
   }
 
-  void startRecording() {
+  void startRecording() async {
     if (_isRecording) return;
 
     _isRecording = true;
-    trackBloc.startNewTrack();
+    await trackBloc.startNewTrack();
 
     _currentTrack = trackBloc.currentTrack;
+
+    print("Started recording track with ID: ${_currentTrack!.id}");
+
+    SenseBox senseBox = await openSenseMapBloc.getSelectedSenseBox();
+
+    LiveUploadService liveUploadService = LiveUploadService(
+        openSenseMapService: OpenSenseMapService(),
+        senseBox: senseBox,
+        trackId: trackBloc.currentTrack!.id);
+
+    liveUploadService.startUploading();
 
     notifyListeners();
   }

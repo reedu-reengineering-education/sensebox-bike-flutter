@@ -1,6 +1,8 @@
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/ui/screens/login_screen.dart';
+import 'package:sensebox_bike/ui/screens/sensebox_selection_screen.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/home_scrollable_screen_widget.dart';
@@ -21,6 +23,13 @@ class HomeScreen extends StatelessWidget {
         title: const Text('senseBox:bike'),
         // forceMaterialTransparency: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => LoginScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.track_changes),
             onPressed: () => Navigator.push(

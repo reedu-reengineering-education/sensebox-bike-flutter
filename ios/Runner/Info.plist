@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>We use Bluetooth to connect to your devices</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>The app uses bluetooth to find, connect and transfer data between different devices</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>We use your location to provide services</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
@@ -38,6 +40,7 @@
 	<array>
 		<string>bluetooth-central</string>
 		<string>location</string>
+		<string>processing</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

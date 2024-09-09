@@ -1,4 +1,6 @@
 // File: lib/services/isar_service/geolocation_service.dart
+import 'dart:async';
+
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
@@ -6,6 +8,11 @@ import 'package:isar/isar.dart';
 
 class GeolocationService {
   final IsarProvider _isarProvider = IsarProvider();
+
+  Future<Stream<void>> getGeolocationStream() async {
+    final isar = await _isarProvider.getDatabase();
+    return isar.geolocationDatas.watchLazy();
+  }
 
   Future<Id> saveGeolocationData(GeolocationData geolocationData) async {
     final isar = await _isarProvider.getDatabase();

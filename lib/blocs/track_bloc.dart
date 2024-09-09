@@ -12,10 +12,13 @@ class TrackBloc with ChangeNotifier {
 
   TrackData? get currentTrack => _currentTrack;
 
-  void startNewTrack() {
+  Future<int> startNewTrack() async {
     _currentTrack = TrackData();
-    isarService.trackService.saveTrack(_currentTrack!);
+
+    int id = await isarService.trackService.saveTrack(_currentTrack!);
     notifyListeners();
+
+    return id;
   }
 
   void endTrack() {
