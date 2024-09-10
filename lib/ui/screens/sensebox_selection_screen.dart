@@ -4,6 +4,8 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 
 class SenseBoxSelectionScreen extends StatefulWidget {
+  const SenseBoxSelectionScreen({super.key});
+
   @override
   _SenseBoxSelectionScreenState createState() =>
       _SenseBoxSelectionScreenState();
@@ -13,7 +15,7 @@ class _SenseBoxSelectionScreenState extends State<SenseBoxSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance?.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       // Fetch senseBoxes when the widget is built
       Provider.of<OpenSenseMapBloc>(context, listen: false)
           .fetchAndSelectSenseBox();
@@ -24,7 +26,7 @@ class _SenseBoxSelectionScreenState extends State<SenseBoxSelectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Select a SenseBox'),
+        title: const Text('Select a SenseBox'),
       ),
       body: Consumer<OpenSenseMapBloc>(
         builder: (context, bloc, child) {
@@ -32,7 +34,7 @@ class _SenseBoxSelectionScreenState extends State<SenseBoxSelectionScreen> {
             // if (bloc.isFetching) {
             //   return Center(child: CircularProgressIndicator());
             // } else {
-            return Center(child: Text('No senseBoxes available'));
+            return const Center(child: Text('No senseBoxes available'));
             // }
           }
 

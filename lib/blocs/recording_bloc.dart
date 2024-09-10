@@ -39,8 +39,6 @@ class RecordingBloc with ChangeNotifier {
 
     _currentTrack = trackBloc.currentTrack;
 
-    print("Started recording track with ID: ${_currentTrack!.id}");
-
     SenseBox senseBox = await openSenseMapBloc.getSelectedSenseBox();
 
     LiveUploadService liveUploadService = LiveUploadService(

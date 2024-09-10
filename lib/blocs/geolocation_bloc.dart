@@ -90,6 +90,11 @@ class GeolocationBloc with ChangeNotifier {
     });
   }
 
+  // function to get the current location
+  Future<Position> getCurrentLocation() async {
+    return Geolocator.getCurrentPosition();
+  }
+
   Future<void> _saveGeolocationData(GeolocationData data) async {
     try {
       await isarService.geolocationService.saveGeolocationData(data);

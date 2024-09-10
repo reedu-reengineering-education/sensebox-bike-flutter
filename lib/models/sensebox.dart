@@ -40,12 +40,12 @@ class SenseBox {
     name = json['name'];
     updatedAt = json['updatedAt'];
     currentLocation = json['currentLocation'] != null
-        ? new CurrentLocation.fromJson(json['currentLocation'])
+        ? CurrentLocation.fromJson(json['currentLocation'])
         : null;
     if (json['sensors'] != null) {
       sensors = <Sensor>[];
       json['sensors'].forEach((v) {
-        sensors!.add(new Sensor.fromJson(v));
+        sensors!.add(Sensor.fromJson(v));
       });
     }
     lastMeasurementAt = json['lastMeasurementAt'];
@@ -53,40 +53,40 @@ class SenseBox {
     if (json['loc'] != null) {
       loc = <Loc>[];
       json['loc'].forEach((v) {
-        loc!.add(new Loc.fromJson(v));
+        loc!.add(Loc.fromJson(v));
       });
     }
     integrations = json['integrations'] != null
-        ? new Integrations.fromJson(json['integrations'])
+        ? Integrations.fromJson(json['integrations'])
         : null;
     accessToken = json['access_token'];
     useAuth = json['useAuth'];
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['createdAt'] = this.createdAt;
-    data['exposure'] = this.exposure;
-    data['model'] = this.model;
-    data['grouptag'] = this.grouptag;
-    data['name'] = this.name;
-    data['updatedAt'] = this.updatedAt;
-    if (this.currentLocation != null) {
-      data['currentLocation'] = this.currentLocation!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['createdAt'] = createdAt;
+    data['exposure'] = exposure;
+    data['model'] = model;
+    data['grouptag'] = grouptag;
+    data['name'] = name;
+    data['updatedAt'] = updatedAt;
+    if (currentLocation != null) {
+      data['currentLocation'] = currentLocation!.toJson();
     }
-    if (this.sensors != null) {
-      data['sensors'] = this.sensors!.map((v) => v.toJson()).toList();
+    if (sensors != null) {
+      data['sensors'] = sensors!.map((v) => v.toJson()).toList();
     }
-    data['lastMeasurementAt'] = this.lastMeasurementAt;
-    data['_id'] = this.sId;
-    if (this.loc != null) {
-      data['loc'] = this.loc!.map((v) => v.toJson()).toList();
+    data['lastMeasurementAt'] = lastMeasurementAt;
+    data['_id'] = sId;
+    if (loc != null) {
+      data['loc'] = loc!.map((v) => v.toJson()).toList();
     }
-    if (this.integrations != null) {
-      data['integrations'] = this.integrations!.toJson();
+    if (integrations != null) {
+      data['integrations'] = integrations!.toJson();
     }
-    data['access_token'] = this.accessToken;
-    data['useAuth'] = this.useAuth;
+    data['access_token'] = accessToken;
+    data['useAuth'] = useAuth;
     return data;
   }
 }
@@ -105,10 +105,10 @@ class CurrentLocation {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['type'] = this.type;
-    data['coordinates'] = this.coordinates;
-    data['timestamp'] = this.timestamp;
+    final Map<String, dynamic> data = Map<String, dynamic>();
+    data['type'] = type;
+    data['coordinates'] = coordinates;
+    data['timestamp'] = timestamp;
     return data;
   }
 }
@@ -137,7 +137,7 @@ class Sensor {
     id = json['_id'];
     createdAt = json['createdAt'];
     lastMeasurement = json['lastMeasurement'] != null
-        ? new LastMeasurement.fromJson(json['lastMeasurement'])
+        ? LastMeasurement.fromJson(json['lastMeasurement'])
         : null;
     sensorType = json['sensorType'];
     title = json['title'];
@@ -147,17 +147,17 @@ class Sensor {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['_id'] = this.id;
-    data['createdAt'] = this.createdAt;
-    if (this.lastMeasurement != null) {
-      data['lastMeasurement'] = this.lastMeasurement!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['_id'] = id;
+    data['createdAt'] = createdAt;
+    if (lastMeasurement != null) {
+      data['lastMeasurement'] = lastMeasurement!.toJson();
     }
-    data['sensorType'] = this.sensorType;
-    data['title'] = this.title;
-    data['unit'] = this.unit;
-    data['updatedAt'] = this.updatedAt;
-    data['icon'] = this.icon;
+    data['sensorType'] = sensorType;
+    data['title'] = title;
+    data['unit'] = unit;
+    data['updatedAt'] = updatedAt;
+    data['icon'] = icon;
     return data;
   }
 }
@@ -174,9 +174,9 @@ class LastMeasurement {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['createdAt'] = this.createdAt;
-    data['value'] = this.value;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['createdAt'] = createdAt;
+    data['value'] = value;
     return data;
   }
 }
@@ -189,17 +189,17 @@ class Loc {
 
   Loc.fromJson(Map<String, dynamic> json) {
     geometry = json['geometry'] != null
-        ? new CurrentLocation.fromJson(json['geometry'])
+        ? CurrentLocation.fromJson(json['geometry'])
         : null;
     type = json['type'];
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.geometry != null) {
-      data['geometry'] = this.geometry!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    if (geometry != null) {
+      data['geometry'] = geometry!.toJson();
     }
-    data['type'] = this.type;
+    data['type'] = type;
     return data;
   }
 }
@@ -211,17 +211,17 @@ class Integrations {
   Integrations({this.mqtt, this.ttn});
 
   Integrations.fromJson(Map<String, dynamic> json) {
-    mqtt = json['mqtt'] != null ? new Mqtt.fromJson(json['mqtt']) : null;
-    ttn = json['ttn'] != null ? new Ttn.fromJson(json['ttn']) : null;
+    mqtt = json['mqtt'] != null ? Mqtt.fromJson(json['mqtt']) : null;
+    ttn = json['ttn'] != null ? Ttn.fromJson(json['ttn']) : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.mqtt != null) {
-      data['mqtt'] = this.mqtt!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    if (mqtt != null) {
+      data['mqtt'] = mqtt!.toJson();
     }
-    if (this.ttn != null) {
-      data['ttn'] = this.ttn!.toJson();
+    if (ttn != null) {
+      data['ttn'] = ttn!.toJson();
     }
     return data;
   }
@@ -237,8 +237,8 @@ class Mqtt {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['enabled'] = this.enabled;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['enabled'] = enabled;
     return data;
   }
 }
@@ -255,7 +255,7 @@ class Ttn {
     if (json['decodeOptions'] != null) {
       decodeOptions = <DecodeOptions>[];
       json['decodeOptions'].forEach((v) {
-        decodeOptions!.add(new DecodeOptions.fromJson(v));
+        decodeOptions!.add(DecodeOptions.fromJson(v));
       });
     }
     profile = json['profile'];
@@ -264,14 +264,13 @@ class Ttn {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.decodeOptions != null) {
-      data['decodeOptions'] =
-          this.decodeOptions!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    if (decodeOptions != null) {
+      data['decodeOptions'] = decodeOptions!.map((v) => v.toJson()).toList();
     }
-    data['profile'] = this.profile;
-    data['dev_id'] = this.devId;
-    data['app_id'] = this.appId;
+    data['profile'] = profile;
+    data['dev_id'] = devId;
+    data['app_id'] = appId;
     return data;
   }
 }
@@ -293,11 +292,11 @@ class DecodeOptions {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['channel'] = this.channel;
-    data['decoder'] = this.decoder;
-    data['sensor_type'] = this.sensorType;
-    data['sensor_title'] = this.sensorTitle;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['channel'] = channel;
+    data['decoder'] = decoder;
+    data['sensor_type'] = sensorType;
+    data['sensor_title'] = sensorTitle;
     return data;
   }
 }

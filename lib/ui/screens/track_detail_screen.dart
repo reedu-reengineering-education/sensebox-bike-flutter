@@ -66,7 +66,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
             return Column(
               children: [
-                Container(
+                SizedBox(
                   height: 300,
                   child: TrajectoryWidget(
                     geolocationData: track.geolocations.toList(),

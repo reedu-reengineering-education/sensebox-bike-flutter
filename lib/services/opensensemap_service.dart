@@ -140,8 +140,8 @@ class OpenSenseMapService {
   // Start processing the upload queue
   void _startProcessingQueue() {
     if (_timer == null || !_timer!.isActive) {
-      _timer =
-          Timer.periodic(Duration(milliseconds: requestIntervalMs), (timer) {
+      _timer = Timer.periodic(const Duration(milliseconds: requestIntervalMs),
+          (timer) {
         if (_uploadQueue.isNotEmpty && !_isWaiting) {
           var uploadTask = _uploadQueue.removeFirst();
           uploadTask();

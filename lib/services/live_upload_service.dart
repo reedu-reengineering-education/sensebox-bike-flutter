@@ -33,26 +33,15 @@ class LiveUploadService {
         // remove latest item from the list, as it may still be filled with new data
         geoData.removeLast();
 
-        print("Geolocation data length for trackId $trackId: ");
-        print(geoData.length);
-
         List<GeolocationData> geoDataToUpload = geoData
             .where((element) => !_uploadedIds.contains(element.id))
             .toList();
-
-        print("Geolocation data to upload length for trackId $trackId: ");
-        print(geoDataToUpload.length);
 
         if (geoDataToUpload.isNotEmpty) {
           try {
             Map<String, dynamic> data = prepareDataToUpload(geoDataToUpload);
 
-            print("Data to upload for trackId $trackId:");
-            print(data);
-
             await uploadDataToOpenSenseMap(data);
-
-            print("Uploaded geolocation data for trackId $trackId");
 
             _uploadedIds.addAll(geoDataToUpload.map((e) => e.id));
           } catch (e) {
