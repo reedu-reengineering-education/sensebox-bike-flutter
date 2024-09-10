@@ -18,7 +18,7 @@ class HomeScrollableScreen extends StatelessWidget {
           SliverPersistentHeader(
             delegate: _SliverAppBarDelegate(
               minHeight: 200.0,
-              maxHeight: MediaQuery.of(context).size.height / 3,
+              maxHeight: MediaQuery.of(context).size.height / 2,
               child: const SizedBox(
                 width: double.infinity,
                 child: GeolocationMapWidget(), // Directly use the map widget

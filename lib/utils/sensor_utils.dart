@@ -27,7 +27,7 @@ String? getTitleFromSensorKey(String key, String? attribute) {
       return 'Surface Sett';
     case 'surface_classification_compacted':
       return 'Surface Compacted';
-    case 'surface_classification_paved':
+    case 'surface_classification_paving':
       return 'Surface Paving';
     case 'surface_classification_standing':
       return 'Standing';

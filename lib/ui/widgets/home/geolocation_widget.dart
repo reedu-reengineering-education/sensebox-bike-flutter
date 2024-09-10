@@ -37,7 +37,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
       mapInstance.flyTo(
         CameraOptions(
           zoom: 16.0,
-          pitch: 0,
+          pitch: 45,
           center: Point(
               coordinates: Position(
                   geolocationData.longitude, geolocationData.latitude)),

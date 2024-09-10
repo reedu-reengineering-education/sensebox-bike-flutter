@@ -2,9 +2,18 @@ import 'package:http/http.dart' as http;
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
+import 'dart:collection';
 
 class OpenSenseMapService {
   static const String _baseUrl = 'https://api.opensensemap.org';
+  static const int maxRequestsPerMinute = 6;
+  static const int requestIntervalMs = 60000 ~/ maxRequestsPerMinute;
+
+  // Queue to manage the upload requests
+  final Queue<Function> _uploadQueue = Queue();
+  Timer? _timer;
+  bool _isWaiting = false;
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(
@@ -23,7 +32,6 @@ class OpenSenseMapService {
       final String accessToken = responseData['token'];
       final String refreshToken = responseData['refreshToken'];
 
-      // Store tokens in SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('accessToken', accessToken);
       await prefs.setString('refreshToken', refreshToken);
@@ -95,6 +103,16 @@ class OpenSenseMapService {
 
   Future<void> uploadData(
       String senseBoxId, Map<String, dynamic> sensorData) async {
+    // Add the upload task to the queue
+    _uploadQueue.add(() async {
+      await _performUpload(senseBoxId, sensorData);
+    });
+    _startProcessingQueue();
+  }
+
+  // Private function to handle the actual uploading of data
+  Future<void> _performUpload(
+      String senseBoxId, Map<String, dynamic> sensorData) async {
     final accessToken = await getAccessToken();
     if (accessToken == null) throw Exception('Not authenticated');
 
@@ -109,9 +127,41 @@ class OpenSenseMapService {
       },
     );
 
-    if (response.statusCode != 201) {
+    if (response.statusCode == 201) {
+      print('Data uploaded successfully');
+    } else if (response.statusCode == 429) {
+      _handleRateLimitError(response);
+    } else {
       throw Exception(
           'Failed to upload data (${response.statusCode}) ${response.body}');
     }
+  }
+
+  // Start processing the upload queue
+  void _startProcessingQueue() {
+    if (_timer == null || !_timer!.isActive) {
+      _timer =
+          Timer.periodic(Duration(milliseconds: requestIntervalMs), (timer) {
+        if (_uploadQueue.isNotEmpty && !_isWaiting) {
+          var uploadTask = _uploadQueue.removeFirst();
+          uploadTask();
+        }
+      });
+    }
+  }
+
+  // Handle rate limit (429) response
+  void _handleRateLimitError(http.Response response) {
+    _isWaiting = true;
+    var retryAfter = response.headers['retry-after'];
+    int delay = (retryAfter != null)
+        ? int.parse(retryAfter) * 1000
+        : 60000; // Default to 1 minute
+
+    print('Rate limit hit, retrying after $delay ms');
+
+    Future.delayed(Duration(milliseconds: delay), () {
+      _isWaiting = false;
+    });
   }
 }

@@ -45,51 +45,12 @@ class LiveUploadService {
 
         if (geoDataToUpload.isNotEmpty) {
           try {
-            // prepare and upload geolocation data
-            Map<String, dynamic> data = {};
-
-            print(
-                "Iterating over geolocation data to upload for trackId $trackId");
-
-            for (var geoData in geoDataToUpload) {
-              for (var sensorData in geoData.sensorData) {
-                // get sensorId from sensorData title and attribute pair
-
-                String? sensorTitle = getTitleFromSensorKey(
-                    sensorData.title, sensorData.attribute);
-
-                if (sensorTitle == null) {
-                  continue;
-                }
-
-                print("Sensor title: $sensorTitle");
-
-                Sensor sensor = senseBox.sensors!.firstWhere((sensor) =>
-                    sensor.title!.toLowerCase() == sensorTitle.toLowerCase());
-
-                print("Matching sensor: ${sensor.title}");
-
-                if (sensor.id == null) {
-                  continue;
-                }
-
-                data[sensor.id! + geoData.timestamp.toIso8601String()] = {
-                  'sensor': sensor.id,
-                  // round the value to 2 decimal places
-                  'value': sensorData.value.toStringAsFixed(2),
-                  'createdAt': geoData.timestamp.toUtc().toIso8601String(),
-                  'location': {
-                    'lat': geoData.latitude,
-                    'lng': geoData.longitude,
-                  }
-                };
-              }
-            }
+            Map<String, dynamic> data = prepareDataToUpload(geoDataToUpload);
 
             print("Data to upload for trackId $trackId:");
             print(data);
 
-            await openSenseMapService.uploadData(senseBox.id, data);
+            await uploadDataToOpenSenseMap(data);
 
             print("Uploaded geolocation data for trackId $trackId");
 
@@ -101,6 +62,67 @@ class LiveUploadService {
         }
       });
     });
+  }
+
+  Map<String, dynamic> prepareDataToUpload(
+      List<GeolocationData> geoDataToUpload) {
+    Map<String, dynamic> data = {};
+
+    for (var geoData in geoDataToUpload) {
+      for (var sensorData in geoData.sensorData) {
+        String? sensorTitle =
+            getTitleFromSensorKey(sensorData.title, sensorData.attribute);
+
+        if (sensorTitle == null) {
+          continue;
+        }
+
+        Sensor sensor = getMatchingSensor(sensorTitle);
+
+        if (sensor.id == null) {
+          continue;
+        }
+
+        data[sensor.id! + geoData.timestamp.toIso8601String()] = {
+          'sensor': sensor.id,
+          'value': sensorData.value.toStringAsFixed(2),
+          'createdAt': geoData.timestamp.toUtc().toIso8601String(),
+          'location': {
+            'lat': geoData.latitude,
+            'lng': geoData.longitude,
+          }
+        };
+      }
+
+      String speedSensorId = getSpeedSensorId();
+
+      data['speed_${geoData.timestamp.toIso8601String()}'] = {
+        'sensor': speedSensorId,
+        'value': geoData.speed.toStringAsFixed(2),
+        'createdAt': geoData.timestamp.toUtc().toIso8601String(),
+        'location': {
+          'lat': geoData.latitude,
+          'lng': geoData.longitude,
+        }
+      };
+    }
+
+    return data;
+  }
+
+  Sensor getMatchingSensor(String sensorTitle) {
+    return senseBox.sensors!.firstWhere(
+        (sensor) => sensor.title!.toLowerCase() == sensorTitle.toLowerCase());
+  }
+
+  String getSpeedSensorId() {
+    return senseBox.sensors!
+        .firstWhere((sensor) => sensor.title == 'Speed')
+        .id!;
+  }
+
+  Future<void> uploadDataToOpenSenseMap(Map<String, dynamic> data) async {
+    await openSenseMapService.uploadData(senseBox.id, data);
   }
 
   void stopUploading() {
