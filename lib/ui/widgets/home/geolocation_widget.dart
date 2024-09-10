@@ -66,7 +66,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
           showAccuracyRing: true,
         ));
       },
-      gestureRecognizers: Set()
+      gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{}
         ..add(Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()))
         ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
         ..add(Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()))

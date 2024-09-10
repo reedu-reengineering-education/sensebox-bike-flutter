@@ -53,19 +53,15 @@ class OpenSenseMapBloc with ChangeNotifier {
         prefs.setString('selectedSenseBox', jsonEncode(senseBox.toJson())));
   }
 
-  Future<SenseBox> getSelectedSenseBox() async {
+  Future<SenseBox?> getSelectedSenseBox() async {
     final prefs = SharedPreferences.getInstance();
-    final selectedSenseBoxJson = prefs.then((prefs) =>
-        prefs.getString('selectedSenseBox') ?? jsonEncode(<String, dynamic>{}));
-    return selectedSenseBoxJson
-        .then((json) => SenseBox.fromJson(jsonDecode(json)));
-  }
+    final selectedSenseBoxJson =
+        await prefs.then((prefs) => prefs.getString('selectedSenseBox'));
 
-  Future<void> uploadLiveData(Map<String, dynamic> data) async {
-    final senseBox = await getSelectedSenseBox();
-    if (senseBox.id == null) {
-      throw Exception('No senseBox selected');
+    if (selectedSenseBoxJson == null) {
+      return null;
     }
-    await _service.uploadData(senseBox.id, data);
+
+    return SenseBox.fromJson(jsonDecode(selectedSenseBoxJson));
   }
 }

@@ -39,14 +39,22 @@ class RecordingBloc with ChangeNotifier {
 
     _currentTrack = trackBloc.currentTrack;
 
-    SenseBox senseBox = await openSenseMapBloc.getSelectedSenseBox();
+    try {
+      SenseBox? senseBox = await openSenseMapBloc.getSelectedSenseBox();
 
-    LiveUploadService liveUploadService = LiveUploadService(
-        openSenseMapService: OpenSenseMapService(),
-        senseBox: senseBox,
-        trackId: trackBloc.currentTrack!.id);
+      if (senseBox == null) {
+        throw Exception("No senseBox selected");
+      }
 
-    liveUploadService.startUploading();
+      LiveUploadService liveUploadService = LiveUploadService(
+          openSenseMapService: OpenSenseMapService(),
+          senseBox: senseBox,
+          trackId: trackBloc.currentTrack!.id);
+
+      liveUploadService.startUploading();
+    } catch (e) {
+      print("Error while uploading: $e");
+    }
 
     notifyListeners();
   }
@@ -55,9 +63,6 @@ class RecordingBloc with ChangeNotifier {
     if (!_isRecording) return;
 
     _isRecording = false;
-
-    // trackBloc.endTrack();
-
     _currentTrack = null;
 
     notifyListeners();

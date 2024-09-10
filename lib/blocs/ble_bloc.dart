@@ -64,7 +64,7 @@ class BleBloc with ChangeNotifier {
       _userInitiatedDisconnect =
           false; // Reset this since it's a new connection
 
-      _discoverAndListenToCharacteristics(device);
+      await _discoverAndListenToCharacteristics(device);
 
       selectedDevice = device;
       selectedDeviceNotifier.value = selectedDevice; // Notify connection
@@ -78,14 +78,15 @@ class BleBloc with ChangeNotifier {
     }
   }
 
-  void _discoverAndListenToCharacteristics(BluetoothDevice device) async {
-    await device.discoverServices().then((services) {
+  Future<void> _discoverAndListenToCharacteristics(
+      BluetoothDevice device) async {
+    await device.discoverServices().then((services) async {
       // find senseBox service
       var senseBoxService =
           services.firstWhere((service) => service.uuid == senseBoxServiceUUID);
 
       for (var characteristic in senseBoxService.characteristics) {
-        _listenToCharacteristic(characteristic);
+        await _listenToCharacteristic(characteristic);
       }
     });
   }
@@ -123,11 +124,12 @@ class BleBloc with ChangeNotifier {
     });
   }
 
-  void _listenToCharacteristic(BluetoothCharacteristic characteristic) {
+  Future<void> _listenToCharacteristic(
+      BluetoothCharacteristic characteristic) async {
     final controller = StreamController<List<double>>();
     _characteristicStreams[characteristic.uuid.toString()] = controller;
 
-    characteristic.setNotifyValue(true);
+    await characteristic.setNotifyValue(true);
     characteristic.onValueReceived.listen((value) {
       List<double> parsedData = _parseData(Uint8List.fromList(value));
       controller.add(parsedData);

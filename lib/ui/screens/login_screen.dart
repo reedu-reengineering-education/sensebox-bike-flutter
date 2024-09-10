@@ -15,7 +15,7 @@ class LoginScreen extends StatelessWidget {
 
     // redirect to SenseBoxSelectionScreen if already logged in
     if (openSenseMapBloc.isAuthenticated) {
-      return SenseBoxSelectionScreen();
+      return const SenseBoxSelectionScreen();
     }
 
     return Scaffold(
@@ -41,7 +41,7 @@ class LoginScreen extends StatelessWidget {
                     passwordController.text,
                   );
                   MaterialPageRoute(
-                      builder: (context) => SenseBoxSelectionScreen());
+                      builder: (context) => const SenseBoxSelectionScreen());
                 } catch (e) {
                   print(e);
                 }

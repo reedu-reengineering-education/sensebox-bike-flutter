@@ -15,7 +15,7 @@ import 'blocs/ble_bloc.dart';
 import 'blocs/geolocation_bloc.dart';
 
 void main() async {
-  await dotenv.load(mergeWith: Platform.environment);
+  await dotenv.load(fileName: ".env", mergeWith: Platform.environment);
 
   await SentryFlutter.init(
     (options) {
