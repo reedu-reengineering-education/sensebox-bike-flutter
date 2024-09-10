@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
-***REMOVED***
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart'; // Assuming you're using Provider for state management
 import 'package:sensebox_bike/blocs/recording_bloc.dart'; // Import the RecordingBloc
 

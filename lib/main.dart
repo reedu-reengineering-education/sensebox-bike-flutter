@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -12,6 +15,8 @@ import 'blocs/ble_bloc.dart';
 import 'blocs/geolocation_bloc.dart';
 
 void main() async {
+  await dotenv.load(mergeWith: Platform.environment);
+
   await SentryFlutter.init(
     (options) {
       options.dsn = sentryDsn;

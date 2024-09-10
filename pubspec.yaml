@@ -21,9 +21,6 @@ version: 1.0.0+1
 environment:
   sdk: ^3.5.1
 
-isar_version: &isar_version 3.1.8 # define the version to be used
-
-
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
@@ -48,16 +45,17 @@ dependencies:
   cupertino_icons: ^1.0.8
   mapbox_maps_flutter: ^2.2.1
   isar: 
-    version: *isar_version
+    version: 3.1.8
     hosted: https://pub.isar-community.dev/
   isar_flutter_libs: # contains Isar Core
-    version: *isar_version
+    version: 3.1.8
     hosted: https://pub.isar-community.dev/
   csv: ^6.0.0
   share_plus: ^10.0.2
   shared_preferences: ^2.3.2
   http: ^1.2.2
   sentry_flutter: ^8.8.0
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -70,7 +68,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
   isar_generator: 
-    version: *isar_version
+    version: 3.1.8
     hosted: https://pub.isar-community.dev/
   build_runner: any
 

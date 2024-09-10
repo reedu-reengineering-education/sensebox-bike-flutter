@@ -1,6 +1,6 @@
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:flutter/material.dart';
-***REMOVED***
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) {
   bleBloc.startScanning();
