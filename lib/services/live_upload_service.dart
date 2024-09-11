@@ -9,11 +9,8 @@ class LiveUploadService {
   final OpenSenseMapService openSenseMapService;
   final IsarService isarService = IsarService();
   final SenseBox senseBox; // ID of the senseBox to upload data to
-  final List<Map<String, dynamic>> _buffer = []; // Buffer to store measurements
 
   final int trackId;
-
-  Timer? _uploadTimer;
 
   // save uploaded ids to prevent double uploads
   final List<int> _uploadedIds = [];
@@ -113,27 +110,4 @@ class LiveUploadService {
   Future<void> uploadDataToOpenSenseMap(Map<String, dynamic> data) async {
     await openSenseMapService.uploadData(senseBox.id, data);
   }
-
-  void stopUploading() {
-    _uploadTimer?.cancel();
-  }
-
-  void addMeasurement(Map<String, dynamic> measurement) {
-    _buffer.add(measurement);
-
-    // Optionally, upload immediately or based on certain conditions
-    // _uploadBufferedData();
-  }
-
-  // Future<void> _uploadBufferedData() async {
-  //   if (_buffer.isEmpty) return;
-
-  //   try {
-  //     await openSenseMapService.uploadMeasurements(senseBoxId, _buffer);
-  //     _buffer.clear(); // Clear the buffer after successful upload
-  //   } catch (e) {
-  //     // Handle upload error
-  //     print('Failed to upload data: $e');
-  //   }
-  // }
 }

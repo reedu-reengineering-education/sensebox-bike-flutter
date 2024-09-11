@@ -102,16 +102,6 @@ class OpenSenseMapService {
 
   Future<void> uploadData(
       String senseBoxId, Map<String, dynamic> sensorData) async {
-    // Add the upload task to the queue
-    _uploadQueue.add(() async {
-      await _performUpload(senseBoxId, sensorData);
-    });
-    _startProcessingQueue();
-  }
-
-  // Private function to handle the actual uploading of data
-  Future<void> _performUpload(
-      String senseBoxId, Map<String, dynamic> sensorData) async {
     final accessToken = await getAccessToken();
     if (accessToken == null) throw Exception('Not authenticated');
 
@@ -127,40 +117,16 @@ class OpenSenseMapService {
     );
 
     if (response.statusCode == 201) {
-      print('Data uploaded successfully');
+      print('Data uploaded');
+    } else if (response.statusCode == 401) {
+      await refreshToken();
+      return uploadData(senseBoxId, sensorData);
     } else if (response.statusCode == 429) {
-      _handleRateLimitError(response);
+      throw Exception(
+          'Failed to upload data (${response.statusCode}) ${response.body}');
     } else {
       throw Exception(
           'Failed to upload data (${response.statusCode}) ${response.body}');
     }
-  }
-
-  // Start processing the upload queue
-  void _startProcessingQueue() {
-    if (_timer == null || !_timer!.isActive) {
-      _timer = Timer.periodic(const Duration(milliseconds: requestIntervalMs),
-          (timer) {
-        if (_uploadQueue.isNotEmpty && !_isWaiting) {
-          var uploadTask = _uploadQueue.removeFirst();
-          uploadTask();
-        }
-      });
-    }
-  }
-
-  // Handle rate limit (429) response
-  void _handleRateLimitError(http.Response response) {
-    _isWaiting = true;
-    var retryAfter = response.headers['retry-after'];
-    int delay = (retryAfter != null)
-        ? int.parse(retryAfter) * 1000
-        : 60000; // Default to 1 minute
-
-    print('Rate limit hit, retrying after $delay ms');
-
-    Future.delayed(Duration(milliseconds: delay), () {
-      _isWaiting = false;
-    });
   }
 }
