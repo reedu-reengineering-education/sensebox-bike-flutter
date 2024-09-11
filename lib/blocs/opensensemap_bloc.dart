@@ -13,12 +13,27 @@ class OpenSenseMapBloc with ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   List<dynamic> get senseBoxes => _senseBoxes;
 
+  OpenSenseMapBloc() {
+    _service.refreshToken().then((_) => _isAuthenticated = true);
+  }
+
   Future<SenseBox>? get selectedSenseBox {
     final prefs = SharedPreferences.getInstance();
     final selectedSenseBoxJson = prefs.then((prefs) =>
         prefs.getString('selectedSenseBox') ?? jsonEncode(<String, dynamic>{}));
     return selectedSenseBoxJson
         .then((json) => SenseBox.fromJson(jsonDecode(json)));
+  }
+
+  Future<void> register(String name, String email, String password) async {
+    try {
+      await _service.register(name, email, password);
+      _isAuthenticated = true;
+      notifyListeners();
+    } catch (e) {
+      _isAuthenticated = false;
+      rethrow;
+    }
   }
 
   Future<void> login(String email, String password) async {
@@ -38,10 +53,20 @@ class OpenSenseMapBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchAndSelectSenseBox() async {
+  Future<void> createSenseBoxBike(String name, double latitude,
+      double longitude, SenseBoxBikeModel model) async {
+    try {
+      await _service.createSenseBoxBike(name, latitude, longitude, model);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List> fetchAndSelectSenseBox() async {
     try {
       _senseBoxes = await _service.getSenseBoxes();
       notifyListeners();
+      return _senseBoxes;
     } catch (e) {
       throw Exception('Failed to fetch senseBoxes');
     }

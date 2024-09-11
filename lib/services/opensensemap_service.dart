@@ -1,18 +1,42 @@
 import 'package:http/http.dart' as http;
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:collection';
 
+enum SenseBoxBikeModel { defaultModel, atrai }
+
 class OpenSenseMapService {
   static const String _baseUrl = 'https://api.opensensemap.org';
-  static const int maxRequestsPerMinute = 6;
-  static const int requestIntervalMs = 60000 ~/ maxRequestsPerMinute;
 
-  // Queue to manage the upload requests
-  final Queue<Function> _uploadQueue = Queue();
-  Timer? _timer;
-  bool _isWaiting = false;
+  Future<void> register(String name, String email, String password) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/users/register'),
+      body: jsonEncode({
+        'name': name,
+        'email': email,
+        'password': password,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 201) {
+      throw Exception('Failed to register ${response.body}');
+    }
+
+    final responseData = jsonDecode(response.body);
+    final String accessToken = responseData['token'];
+    final String refreshToken = responseData['refreshToken'];
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('accessToken', accessToken);
+    await prefs.setString('refreshToken', refreshToken);
+
+    return responseData;
+  }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(
@@ -61,8 +85,8 @@ class OpenSenseMapService {
     }
 
     final response = await http.post(
-      Uri.parse('$_baseUrl/users/refresh-token'),
-      body: jsonEncode({'refreshToken': refreshToken}),
+      Uri.parse('$_baseUrl/users/refresh-auth'),
+      body: jsonEncode({'token': refreshToken}),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -71,10 +95,37 @@ class OpenSenseMapService {
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
       final String newAccessToken = responseData['token'];
+      final String newRefreshToken = responseData['refreshToken'];
 
       await prefs.setString('accessToken', newAccessToken);
+      await prefs.setString('refreshToken', newRefreshToken);
     } else {
       throw Exception('Failed to refresh token');
+    }
+  }
+
+  Future<void> createSenseBoxBike(String name, double latitude,
+      double longitude, SenseBoxBikeModel model) async {
+    final accessToken = await getAccessToken();
+    if (accessToken == null) throw Exception('Not authenticated');
+
+    final response = await http.post(
+      Uri.parse('$_baseUrl/boxes'),
+      body: jsonEncode(
+          createSenseBoxBikeModel(name, latitude, longitude, model: model)),
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 201) {
+      print('SenseBox created');
+    } else if (response.statusCode == 401) {
+      await refreshToken();
+      return createSenseBoxBike(name, latitude, longitude, model);
+    } else {
+      throw Exception('Failed to create senseBox');
     }
   }
 
@@ -128,5 +179,216 @@ class OpenSenseMapService {
       throw Exception(
           'Failed to upload data (${response.statusCode}) ${response.body}');
     }
+  }
+
+  // Define the available sensors for each model
+  final Map<SenseBoxBikeModel, List<dynamic>> sensors = {
+    SenseBoxBikeModel.defaultModel: [
+      {
+        "id": "0",
+        "icon": 'osem-thermometer',
+        "title": 'Temperatur',
+        "unit": '°C',
+        "sensorType": 'HDC1080'
+      },
+      {
+        "id": "1",
+        "icon": 'osem-humidity',
+        "title": 'rel. Luftfeuchte',
+        "unit": '%',
+        "sensorType": 'HDC1080'
+      },
+      {
+        "id": "2",
+        "icon": 'osem-cloud',
+        "title": 'PM1',
+        "unit": 'µg/m³',
+        "sensorType": 'SPS30'
+      },
+      {
+        "id": "3",
+        "icon": 'osem-cloud',
+        "title": 'PM25',
+        "unit": 'µg/m³',
+        "sensorType": 'SPS30'
+      },
+      {
+        "id": "4",
+        "icon": 'osem-cloud',
+        "title": 'PM4',
+        "unit": 'µg/m³',
+        "sensorType": 'SPS30'
+      },
+      {
+        "id": "5",
+        "icon": 'osem-cloud',
+        "title": 'PM10',
+        "unit": 'µg/m³',
+        "sensorType": 'SPS30'
+      },
+      {
+        "id": "6",
+        "icon": 'osem-signal',
+        "title": 'Distanz Links',
+        "unit": 'cm',
+        "sensorType": 'HC-SR04'
+      },
+      {
+        "id": "7",
+        "icon": 'osem-shock',
+        "title": 'Beschleunigung X',
+        "unit": 'm/s²',
+        "sensorType": 'MPU-6050'
+      },
+      {
+        "id": "8",
+        "icon": 'osem-shock',
+        "title": 'Beschleunigung Y',
+        "unit": 'm/s²',
+        "sensorType": 'MPU-6050'
+      },
+      {
+        "id": "9",
+        "icon": 'osem-shock',
+        "title": 'Beschleunigung Z',
+        "unit": 'm/s²',
+        "sensorType": 'MPU-6050'
+      },
+      {
+        "id": "10",
+        "icon": 'osem-dashboard',
+        "title": 'Geschwindigkeit',
+        "unit": 'km/h',
+        "sensorType": 'GPS'
+      }
+    ],
+    SenseBoxBikeModel.atrai: [
+      {
+        "id": "0",
+        "icon": 'osem-thermometer',
+        "title": 'Temperature',
+        "unit": '°C',
+        "sensorType": 'HDC1080'
+      },
+      {
+        "id": "1",
+        "icon": 'osem-humidity',
+        "title": 'Rel. Humidity',
+        "unit": '%',
+        "sensorType": 'HDC1080'
+      },
+      {
+        "id": "2",
+        "icon": 'osem-cloud',
+        "title": 'Finedust PM1',
+        "unit": 'µg/m³',
+        "sensorType": 'SPS30'
+      },
+      {
+        "id": "3",
+        "icon": 'osem-cloud',
+        "title": 'Finedust PM2.5',
+        "unit": 'µg/m³',
+        "sensorType": 'SPS30'
+      },
+      {
+        "id": "4",
+        "icon": 'osem-cloud',
+        "title": 'Finedust PM4',
+        "unit": 'µg/m³',
+        "sensorType": 'SPS30'
+      },
+      {
+        "id": "5",
+        "icon": 'osem-cloud',
+        "title": 'Finedust PM10',
+        "unit": 'µg/m³',
+        "sensorType": 'SPS30'
+      },
+      {
+        "id": "6",
+        "icon": 'osem-shock',
+        "title": 'Overtaking Manoeuvre',
+        "unit": '%',
+        "sensorType": 'VL53L8CX'
+      },
+      {
+        "id": "7",
+        "icon": 'osem-shock',
+        "title": 'Overtaking Distance',
+        "unit": 'cm',
+        "sensorType": 'VL53L8CX'
+      },
+      {
+        "id": "8",
+        "icon": 'osem-shock',
+        "title": 'Surface Asphalt',
+        "unit": '%',
+        "sensorType": 'MPU-6050'
+      },
+      {
+        "id": "9",
+        "icon": 'osem-shock',
+        "title": 'Surface Sett',
+        "unit": '%',
+        "sensorType": 'MPU-6050'
+      },
+      {
+        "id": "10",
+        "icon": 'osem-shock',
+        "title": 'Surface Compacted',
+        "unit": '%',
+        "sensorType": 'MPU-6050'
+      },
+      {
+        "id": "11",
+        "icon": 'osem-shock',
+        "title": 'Surface Paving',
+        "unit": '%',
+        "sensorType": 'MPU-6050'
+      },
+      {
+        "id": "12",
+        "icon": 'osem-shock',
+        "title": 'Standing',
+        "unit": '%',
+        "sensorType": 'MPU-6050'
+      },
+      {
+        "id": "13",
+        "icon": 'osem-shock',
+        "title": 'Surface Anomaly',
+        "unit": 'Δ',
+        "sensorType": 'MPU-6050'
+      },
+      {
+        "id": "14",
+        "icon": 'osem-dashboard',
+        "title": 'Speed',
+        "unit": 'm/s',
+        "sensorType": 'GPS'
+      }
+    ],
+  };
+
+// Factory function
+  Map<String, dynamic> createSenseBoxBikeModel(
+    String name,
+    double longitude,
+    double latitude, {
+    List<String>? grouptags,
+    SenseBoxBikeModel model = SenseBoxBikeModel.defaultModel,
+  }) {
+    final baseProperties = {
+      'name': name,
+      'exposure': 'mobile',
+      'location': [latitude, longitude],
+      'grouptag': grouptags ?? ['bike', "atrai"],
+    };
+
+    return {
+      ...baseProperties,
+      'sensors': sensors[model]!,
+    };
   }
 }
