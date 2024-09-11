@@ -24,9 +24,24 @@ class HomeScreen extends StatelessWidget {
         title: const Text('senseBox:bike'),
         // forceMaterialTransparency: true,
         actions: [
-          IconButton(
+          TextButton.icon(
+            // with background color
+            style: TextButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColorLight,
+            ),
             icon: const Icon(Icons.person),
             onPressed: () => showLoginOrSenseBoxSelection(context, osemBloc),
+            // TODO: fix flickering
+            label: FutureBuilder(
+              future: osemBloc.getSelectedSenseBox(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Text('Error');
+                } else {
+                  return Text(snapshot.data?.name ?? 'No senseBox');
+                }
+              },
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.track_changes),
