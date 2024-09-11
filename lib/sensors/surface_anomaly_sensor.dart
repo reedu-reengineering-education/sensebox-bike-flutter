@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 class SurfaceAnomalySensor extends Sensor {
   List<double> _latestAnomalyValue = [0.0];
 
+  @override
+  get uiPriority => 60;
+
   static const String sensorCharacteristicUuid =
       'b944af10-f495-4560-968f-2f0d18cab523';
 

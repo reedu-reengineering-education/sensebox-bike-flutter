@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 class OvertakingPredictionSensor extends Sensor {
   List<double> _latestPrediction = [0.0];
 
+  @override
+  get uiPriority => 40;
+
   static const String sensorCharacteristicUuid =
       'fc01c688-2c44-4965-ae18-373af9fed18d';
 

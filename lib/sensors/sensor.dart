@@ -22,6 +22,8 @@ abstract class Sensor {
 
   final List<List<double>> _valueBuffer = [];
 
+  late int uiPriority;
+
   Sensor(
     this.characteristicUuid,
     this.title,

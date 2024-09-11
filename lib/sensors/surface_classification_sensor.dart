@@ -11,6 +11,9 @@ class SurfaceClassificationSensor extends Sensor {
   double _latestSett = 0.0;
   double _latestStanding = 0.0;
 
+  @override
+  get uiPriority => 50;
+
   static const String sensorCharacteristicUuid =
       'b944af10-f495-4560-968f-2f0d18cab521';
 

@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 class TemperatureSensor extends Sensor {
   List<double> _latestValue = [0.0];
 
+  @override
+  get uiPriority => 10;
+
   static const String sensorCharacteristicUuid =
       '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8';
 

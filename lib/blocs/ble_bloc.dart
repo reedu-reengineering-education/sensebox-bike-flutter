@@ -19,6 +19,10 @@ class BleBloc with ChangeNotifier {
       false; // Track if disconnect was user-initiated
   final Map<String, StreamController<List<double>>> _characteristicStreams = {};
 
+  // create a value notifier that stores the available characteristics
+  final ValueNotifier<List<BluetoothCharacteristic>> availableCharacteristics =
+      ValueNotifier([]);
+
   // ValueNotifier to notify about the selected device's connection state
   final ValueNotifier<BluetoothDevice?> selectedDeviceNotifier =
       ValueNotifier(null);
@@ -54,6 +58,7 @@ class BleBloc with ChangeNotifier {
     _isConnected = false; // Mark the device as disconnected
     selectedDevice = null;
     selectedDeviceNotifier.value = null; // Notify disconnection
+    availableCharacteristics.value = [];
     notifyListeners();
   }
 
@@ -92,6 +97,9 @@ class BleBloc with ChangeNotifier {
       // find senseBox service
       var senseBoxService =
           services.firstWhere((service) => service.uuid == senseBoxServiceUUID);
+
+      availableCharacteristics.value = senseBoxService.characteristics;
+      notifyListeners();
 
       for (var characteristic in senseBoxService.characteristics) {
         await _listenToCharacteristic(characteristic);

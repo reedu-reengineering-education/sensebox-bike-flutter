@@ -59,7 +59,22 @@ class SensorBloc with ChangeNotifier {
   }
 
   List<Widget> getSensorWidgets() {
-    return _sensors.map((sensor) => sensor.buildWidget()).toList();
+    // get available characteristics from bleBloc
+    final availableCharacteristics = bleBloc.availableCharacteristics.value;
+
+    final List<Sensor> availableSensors = [];
+
+    // get all sensors with this characteristic
+    for (var sensor in _sensors) {
+      if (availableCharacteristics
+          .map((e) => e.uuid.toString())
+          .contains(sensor.characteristicUuid)) {
+        availableSensors.add(sensor);
+      }
+    }
+
+    availableSensors.sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
+    return availableSensors.map((sensor) => sensor.buildWidget()).toList();
   }
 
   @override

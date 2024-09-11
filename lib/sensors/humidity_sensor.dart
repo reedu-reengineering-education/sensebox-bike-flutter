@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 class HumiditySensor extends Sensor {
   List<double> _latestValue = [0.0];
 
+  @override
+  get uiPriority => 20;
+
   static const String sensorCharacteristicUuid =
       '772df7ec-8cdc-4ea9-86af-410abe0ba257';
 

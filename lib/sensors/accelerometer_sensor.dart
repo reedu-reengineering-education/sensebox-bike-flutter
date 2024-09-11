@@ -9,6 +9,9 @@ class AccelerometerSensor extends Sensor {
   double _latestY = 0.0;
   double _latestZ = 0.0;
 
+  @override
+  get uiPriority => 25;
+
   static const String sensorCharacteristicUuid =
       'B944AF10-F495-4560-968F-2F0D18CAB522';
 
