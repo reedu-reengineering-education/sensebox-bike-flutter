@@ -43,11 +43,24 @@ class HomeScreen extends StatelessWidget {
           valueListenable: bleBloc.selectedDeviceNotifier,
           builder: (context, selectedDevice, child) {
             if (selectedDevice == null) {
-              return FloatingActionButton.extended(
-                label: const Text('Connect'),
-                icon: const Icon(Icons.bluetooth),
-                onPressed: () => showDeviceSelectionDialog(context, bleBloc),
-              );
+              return ValueListenableBuilder<bool>(
+                  valueListenable: bleBloc.isConnectingNotifier,
+                  builder: (context, isConnecting, child) {
+                    if (isConnecting) {
+                      return const FloatingActionButton.extended(
+                        label: Text('Connecting...'),
+                        icon: CircularProgressIndicator(),
+                        onPressed: null,
+                      );
+                    } else {
+                      return FloatingActionButton.extended(
+                        label: const Text('Connect'),
+                        icon: const Icon(Icons.bluetooth),
+                        onPressed: () =>
+                            showDeviceSelectionDialog(context, bleBloc),
+                      );
+                    }
+                  });
             } else {
               return Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -59,7 +72,7 @@ class HomeScreen extends StatelessWidget {
                           ? Icons.stop
                           : Icons.fiber_manual_record),
                       backgroundColor: recordingBloc.isRecording
-                          ? Colors.redAccent
+                          ? const Color.fromARGB(255, 255, 124, 124)
                           : Colors.greenAccent,
                       onPressed: () {
                         recordingBloc.isRecording

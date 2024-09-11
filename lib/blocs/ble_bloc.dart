@@ -25,6 +25,8 @@ class BleBloc with ChangeNotifier {
 
   bool get isConnected => _isConnected; // Expose the connection status
 
+  final ValueNotifier<bool> isConnectingNotifier = ValueNotifier(false);
+
   BleBloc() {
     startScanning();
     FlutterBluePlus.setLogLevel(LogLevel.none);
@@ -58,6 +60,9 @@ class BleBloc with ChangeNotifier {
   Future<void> connectToDevice(
       BluetoothDevice device, BuildContext context) async {
     try {
+      isConnectingNotifier.value = true; // Notify that we're connecting
+      notifyListeners();
+
       await FlutterBluePlus.stopScan();
       await device.connect();
       _isConnected = true; // Mark as connected
@@ -75,7 +80,10 @@ class BleBloc with ChangeNotifier {
     } catch (e) {
       _isConnected = false; // Ensure the flag is set correctly on failure
       // Handle connection error
+    } finally {
+      isConnectingNotifier.value = false; // Notify that we're done connecting
     }
+    notifyListeners();
   }
 
   Future<void> _discoverAndListenToCharacteristics(
