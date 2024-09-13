@@ -98,6 +98,6 @@ Future<void> _showCreateSenseBoxDialog(
   return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return CreateBikeBoxDialog();
+        return const CreateBikeBoxDialog();
       });
 }

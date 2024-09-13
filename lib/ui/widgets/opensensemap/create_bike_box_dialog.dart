@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 
 class CreateBikeBoxDialog extends StatefulWidget {
+  const CreateBikeBoxDialog({super.key});
+
   @override
   _CreateBikeBoxDialogState createState() => _CreateBikeBoxDialogState();
 }
@@ -62,7 +63,7 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
     // final localization = AppLocalizations.of(context);
 
     return AlertDialog(
-      title: Text('Create Bike Box'),
+      title: const Text('Create Bike Box'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -70,8 +71,8 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
             children: [
               DropdownButtonFormField<String>(
                 value: _selectedModel,
-                decoration: InputDecoration(labelText: 'Model'),
-                items: [
+                decoration: const InputDecoration(labelText: 'Model'),
+                items: const [
                   DropdownMenuItem(value: 'default', child: Text('Default')),
                   DropdownMenuItem(value: 'atrai', child: Text('Atrai')),
                 ],
@@ -85,7 +86,7 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
               ),
               TextFormField(
                 controller: _nameController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Name',
                   hintText: 'senseBox:bike',
                 ),
@@ -99,8 +100,8 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
                   return null;
                 },
               ),
-              SizedBox(height: 20),
-              Row(
+              const SizedBox(height: 20),
+              const Row(
                 children: [
                   Icon(Icons.info_outline),
                   SizedBox(width: 8),
@@ -116,11 +117,13 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: Text('Cancel'),
+          child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: _loading ? null : _submitForm,
-          child: _loading ? CircularProgressIndicator() : Text('Create'),
+          child: _loading
+              ? const CircularProgressIndicator()
+              : const Text('Create'),
         ),
       ],
     );

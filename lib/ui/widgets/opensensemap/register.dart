@@ -4,7 +4,7 @@ import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart
 
 class RegisterForm extends StatefulWidget {
   final OpenSenseMapBloc bloc;
-  const RegisterForm({Key? key, required this.bloc}) : super(key: key);
+  const RegisterForm({super.key, required this.bloc});
 
   @override
   _RegisterFormState createState() => _RegisterFormState();

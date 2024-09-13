@@ -59,8 +59,6 @@ class LiveUploadService {
         String? sensorTitle =
             getTitleFromSensorKey(sensorData.title, sensorData.attribute);
 
-        print("Sensor title: $sensorTitle");
-
         if (sensorTitle == null) {
           continue;
         }

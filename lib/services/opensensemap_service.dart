@@ -1,9 +1,7 @@
 import 'package:http/http.dart' as http;
-import 'package:sensebox_bike/models/sensebox.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
-import 'dart:collection';
 
 enum SenseBoxBikeModel { defaultModel, atrai }
 

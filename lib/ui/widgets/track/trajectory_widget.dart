@@ -1,89 +1,191 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 import '../../../secrets.dart'; // File containing the Mapbox token
 
 class TrajectoryWidget extends StatefulWidget {
   final List<GeolocationData> geolocationData;
+  final String sensorType;
 
-  const TrajectoryWidget({super.key, required this.geolocationData});
+  const TrajectoryWidget({
+    super.key,
+    required this.geolocationData,
+    required this.sensorType,
+  });
 
   @override
-  State<TrajectoryWidget> createState() =>
-      _TrajectoryWidgetState(geolocationData);
+  State<TrajectoryWidget> createState() => _TrajectoryWidgetState();
 }
 
 class _TrajectoryWidgetState extends State<TrajectoryWidget> {
-  late final MapboxMap mapInstance;
-
-  List<GeolocationData> geolocationData;
-
-  _TrajectoryWidgetState(this.geolocationData);
+  late MapboxMap mapInstance;
 
   @override
   void initState() {
     super.initState();
-
     // Set the access token for Mapbox
     MapboxOptions.setAccessToken(mapboxAccessToken);
   }
 
   @override
-  void dispose() {
-    super.dispose();
+  void didUpdateWidget(TrajectoryWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.sensorType != widget.sensorType ||
+        oldWidget.geolocationData != widget.geolocationData) {
+      addLayer();
+    }
   }
 
-  void addLayer() async {
-    GeoJsonSource data = GeoJsonSource(
-      id: "line",
+  double getMinSensorValue() {
+    double minVal = double.infinity;
+    for (GeolocationData data in widget.geolocationData) {
+      for (SensorData sensor in data.sensorData) {
+        if (sensor.title == widget.sensorType) {
+          minVal = min(minVal, sensor.value);
+        }
+      }
+    }
+    return minVal;
+  }
+
+  double getMaxSensorValue() {
+    double maxVal = double.negativeInfinity;
+    for (GeolocationData data in widget.geolocationData) {
+      for (SensorData sensor in data.sensorData) {
+        if (sensor.title == widget.sensorType) {
+          maxVal = max(maxVal, sensor.value);
+        }
+      }
+    }
+    return maxVal;
+  }
+
+  Future<void> addLayer() async {
+    try {
+      // Remove existing layers and sources
+      await mapInstance.style.removeStyleLayer("line_layer");
+      await mapInstance.style.removeStyleLayer("point_layer");
+      await mapInstance.style.removeStyleSource("lineSource");
+      await mapInstance.style.removeStyleSource("pointSource");
+    } catch (e) {
+      print("Error removing sources and layers: $e");
+    }
+
+    // Add new layers
+    GeoJsonSource pointSource = GeoJsonSource(
+      id: "pointSource",
+      data: jsonEncode({
+        "type": "FeatureCollection",
+        "features": widget.geolocationData
+            .map(
+              (e) => {
+                'type': 'Feature',
+                'geometry': {
+                  "type": "Point",
+                  "coordinates": [
+                    e.longitude,
+                    e.latitude,
+                  ],
+                },
+                'properties': {
+                  for (var sensor in e.sensorData) sensor.title: sensor.value,
+                },
+              },
+            )
+            .toList(),
+      }),
+    );
+
+    GeoJsonSource lineSource = GeoJsonSource(
+      id: "lineSource",
       data: jsonEncode({
         "type": "Feature",
         "properties": {},
         "geometry": {
           "type": "LineString",
-          "coordinates":
-              geolocationData.map((e) => [e.longitude, e.latitude]).toList()
-        }
+          "coordinates": widget.geolocationData
+              .map((e) => [e.longitude, e.latitude])
+              .toList(),
+        },
       }),
     );
 
-    await mapInstance.style.addSource(data);
-    await mapInstance.style.addLayer(LineLayer(
-        id: "line_layer",
-        sourceId: "line",
-        lineJoin: LineJoin.ROUND,
-        lineCap: LineCap.ROUND,
-        lineColor: Colors.blue.value,
-        lineOpacity: 0.9,
-        lineWidth: 8.0));
+    await mapInstance.style.addSource(pointSource);
+    await mapInstance.style.addSource(lineSource);
 
-    // calculate bounds
-    GeolocationData southwest = geolocationData.first;
-    GeolocationData northeast = geolocationData.first;
-    for (GeolocationData data in geolocationData) {
-      if (data.latitude < southwest.latitude) {
-        southwest = data;
+    await mapInstance.style.addLayer(LineLayer(
+      id: "line_layer",
+      sourceId: "lineSource",
+    ));
+
+    await mapInstance.style.addLayer(CircleLayer(
+      id: "point_layer",
+      sourceId: "pointSource",
+      circleRadius: 5.0,
+      circleColorExpression: [
+        "case",
+        [
+          "to-boolean",
+          ["get", widget.sensorType]
+        ],
+        [
+          "interpolate",
+          ["linear"],
+          ["get", widget.sensorType],
+          getMinSensorValue(),
+          "blue",
+          getMaxSensorValue(),
+          "red"
+        ],
+        "transparent"
+      ],
+    ));
+
+    // Calculate bounds
+    GeolocationData south = widget.geolocationData.first;
+    GeolocationData west = widget.geolocationData.first;
+    GeolocationData north = widget.geolocationData.first;
+    GeolocationData east = widget.geolocationData.first;
+
+    for (GeolocationData data in widget.geolocationData) {
+      if (data.latitude < south.latitude) {
+        south = data;
       }
-      if (data.latitude > northeast.latitude) {
-        northeast = data;
+      if (data.latitude > north.latitude) {
+        north = data;
+      }
+      if (data.longitude < west.longitude) {
+        west = data;
+      }
+      if (data.longitude > east.longitude) {
+        east = data;
       }
     }
 
+    Point southwest = Point(
+      coordinates: Position(west.longitude, south.latitude),
+    );
+
+    Point northeast = Point(
+      coordinates: Position(east.longitude, north.latitude),
+    );
+
     CameraOptions fitBoundsCamera = await mapInstance.cameraForCoordinateBounds(
-        CoordinateBounds(
-            southwest: Point(
-              coordinates: Position(southwest.longitude, southwest.latitude),
-            ),
-            northeast: Point(
-                coordinates: Position(northeast.longitude, northeast.latitude)),
-            infiniteBounds: true),
-        MbxEdgeInsets(top: 16, left: 16, right: 16, bottom: 16),
-        0,
-        0,
-        null,
-        null);
+      CoordinateBounds(
+        southwest: southwest,
+        northeast: northeast,
+        infiniteBounds: true,
+      ),
+      MbxEdgeInsets(top: 16, left: 32, right: 32, bottom: 16),
+      0,
+      0,
+      null,
+      null,
+    );
 
     await mapInstance.setCamera(fitBoundsCamera);
   }
@@ -99,7 +201,7 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
           enabled: true,
           showAccuracyRing: true,
         ));
-        addLayer();
+        addLayer(); // Call addLayer when the map is created
       },
     );
   }
