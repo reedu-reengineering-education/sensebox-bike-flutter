@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -60,7 +59,6 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'senseBox:bike',
         theme: ThemeData(
-          textTheme: GoogleFonts.syneTextTheme(),
           colorSchemeSeed: Colors.teal,
           cardTheme: CardTheme(
             shape: RoundedRectangleBorder(

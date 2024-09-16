@@ -21,7 +21,7 @@ class LiveUploadService {
     required this.trackId,
   });
 
-  void startUploading({Duration interval = const Duration(seconds: 10)}) {
+  void startUploading() {
     isarService.geolocationService.getGeolocationStream().then((stream) {
       stream.listen((e) async {
         List<GeolocationData> geoData = await isarService.geolocationService
@@ -63,9 +63,10 @@ class LiveUploadService {
           continue;
         }
 
-        Sensor sensor = getMatchingSensor(sensorTitle);
+        Sensor? sensor = getMatchingSensor(sensorTitle);
 
-        if (sensor.id == null) {
+        // Skip if sensor is not found
+        if (sensor == null) {
           continue;
         }
 
@@ -93,12 +94,16 @@ class LiveUploadService {
       };
     }
 
+    print('Data to upload: $data');
+
     return data;
   }
 
-  Sensor getMatchingSensor(String sensorTitle) {
-    return senseBox.sensors!.firstWhere(
-        (sensor) => sensor.title!.toLowerCase() == sensorTitle.toLowerCase());
+  Sensor? getMatchingSensor(String sensorTitle) {
+    return senseBox.sensors!
+        .where((sensor) =>
+            sensor.title!.toLowerCase() == sensorTitle.toLowerCase())
+        .firstOrNull;
   }
 
   String getSpeedSensorId() {

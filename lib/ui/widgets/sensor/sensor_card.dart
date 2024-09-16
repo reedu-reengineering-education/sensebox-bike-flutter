@@ -20,9 +20,10 @@ class SensorCard extends StatelessWidget {
       elevation: 1,
       color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          // crossAxisAlignment: CrossAxisAlignment.center,
+          // mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Row(
               children: [
@@ -52,8 +53,9 @@ class SensorCard extends StatelessWidget {
                 ),
               ],
             ),
-            // Custom child widget
             child,
+
+            // Custom child widget
           ],
         ),
       ),

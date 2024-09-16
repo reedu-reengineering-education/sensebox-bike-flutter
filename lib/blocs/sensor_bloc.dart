@@ -1,6 +1,6 @@
 // File: lib/blocs/sensor_bloc.dart
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
-import 'package:sensebox_bike/sensors/accelerometer_sensor.dart';
+import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
 import 'package:sensebox_bike/sensors/finedust_sensor.dart';
 import 'package:sensebox_bike/sensors/gps_sensor.dart';
@@ -41,7 +41,7 @@ class SensorBloc with ChangeNotifier {
     _sensors.add(DistanceSensor(bleBloc, geolocationBloc, isarService));
     _sensors.add(
         SurfaceClassificationSensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(AccelerometerSensor(bleBloc, geolocationBloc, isarService));
+    _sensors.add(AccelerationSensor(bleBloc, geolocationBloc, isarService));
     _sensors
         .add(OvertakingPredictionSensor(bleBloc, geolocationBloc, isarService));
     _sensors.add(SurfaceAnomalySensor(bleBloc, geolocationBloc, isarService));

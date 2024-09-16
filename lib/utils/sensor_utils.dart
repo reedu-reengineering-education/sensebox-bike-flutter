@@ -35,7 +35,20 @@ String? getTitleFromSensorKey(String key, String? attribute) {
       return 'Surface Anomaly';
     case 'speed':
       return 'Speed';
+    case 'acceleration_x':
+      return 'Acceleration X';
+    case 'acceleration_y':
+      return 'Acceleration Y';
+    case 'acceleration_z':
+      return 'Acceleration Z';
+    case 'gps_latitude':
+      return 'GPS Latitude';
+    case 'gps_longitude':
+      return 'GPS Longitude';
+    case 'gps_speed':
+      return 'GPS Speed';
     default:
+      print("Unknown sensor key: $searchKey");
       return null;
   }
 }

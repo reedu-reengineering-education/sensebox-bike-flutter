@@ -5,6 +5,7 @@ import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 
 class GPSSensor extends Sensor {
   double _latestLat = 0.0;
@@ -18,6 +19,8 @@ class GPSSensor extends Sensor {
 
   static const String sensorCharacteristicUuid =
       '8edf8ebb-1246-4329-928d-ee0c91db2389';
+
+  PointAnnotationManager? pointAnnotationManager;
 
   GPSSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
@@ -33,7 +36,7 @@ class GPSSensor extends Sensor {
   }
 
   @override
-  void onDataReceived(List<double> data) {
+  void onDataReceived(List<double> data) async {
     super.onDataReceived(data); // Call the parent class to handle buffering
     if (data.length >= 3) {
       _latestLat = data[0];
@@ -50,6 +53,15 @@ class GPSSensor extends Sensor {
           duration: 1000,
         ),
       );
+
+      PointAnnotationOptions option = PointAnnotationOptions(
+        geometry: Point(coordinates: Position(_latestLng, _latestLat)),
+      );
+
+      pointAnnotationManager!.deleteAll();
+
+      // Create new annotations
+      await pointAnnotationManager!.createMulti([option]);
     }
   }
 
@@ -70,12 +82,26 @@ class GPSSensor extends Sensor {
 
   @override
   Widget buildWidget() {
+    if (_latestLat == 0.0 && _latestLng == 0.0) {
+      return const SensorCard(
+        color: Colors.blueAccent,
+        icon: Icons.gps_off,
+        title: 'GPS',
+        child: Center(
+          child: Text("No GPS Fix"),
+        ),
+      );
+    }
     return Card(
-      child: MapWidget(onMapCreated: (mapInstance) {
+      elevation: 1,
+      clipBehavior: Clip.hardEdge,
+      child: MapWidget(onMapCreated: (mapInstance) async {
         this.mapInstance = mapInstance;
         mapInstance.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+
+        pointAnnotationManager ??=
+            await mapInstance.annotations.createPointAnnotationManager();
       }),
-      clipBehavior: Clip.hardEdge,
     );
   }
 }

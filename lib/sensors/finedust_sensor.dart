@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
@@ -67,56 +68,172 @@ class FinedustSensor extends Sensor {
             title: "Finedust",
             icon: Icons.grain,
             color: Colors.blueGrey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'PM1',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+            child: AspectRatio(
+                aspectRatio: 1.3,
+                child: BarChart(
+                  BarChartData(
+                    borderData: FlBorderData(show: false),
+                    barTouchData: BarTouchData(enabled: false),
+                    gridData: const FlGridData(
+                      show: false,
                     ),
-                    Text(
-                      displayValues[0].toStringAsFixed(1),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          getTitlesWidget: (value, _abc) {
+                            switch (value.toInt()) {
+                              case 0:
+                                return const Text(
+                                  'PM1',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold, fontSize: 8),
+                                );
+                              case 1:
+                                return const Text(
+                                  'PM2.5',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold, fontSize: 8),
+                                );
+                              case 2:
+                                return const Text(
+                                  'PM4',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold, fontSize: 8),
+                                );
+                              case 3:
+                                return const Text(
+                                  'PM10',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold, fontSize: 8),
+                                );
+                            }
+                            return const Text('');
+                          },
+                        ),
+                      ),
+                      // leftTitles: const AxisTitles(
+                      //   sideTitles: SideTitles(showTitles: false),
+                      // ),
+                      rightTitles: AxisTitles(
+                        drawBelowEverything: true,
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 16,
+                          getTitlesWidget: (value, meta) {
+                            return Text(
+                              value.toStringAsFixed(1),
+                              textAlign: TextAlign.left,
+                              style: const TextStyle(
+                                fontSize: 10,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      leftTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Text(
-                      'PM2.5',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      displayValues[1].toStringAsFixed(1),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Text(
-                      'PM4',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      displayValues[2].toStringAsFixed(1),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Text(
-                      'PM10',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      displayValues[3].toStringAsFixed(1),
-                    ),
-                  ],
-                ),
-              ],
-            ));
+                    barGroups: [
+                      BarChartGroupData(
+                        x: 0,
+                        barRods: [
+                          BarChartRodData(
+                            toY: displayValues[0],
+                            color: Colors.blueGrey,
+                          )
+                        ],
+                      ),
+                      BarChartGroupData(
+                        x: 1,
+                        barRods: [
+                          BarChartRodData(
+                            toY: displayValues[1],
+                            color: Colors.blueGrey,
+                          )
+                        ],
+                      ),
+                      BarChartGroupData(
+                        x: 2,
+                        barRods: [
+                          BarChartRodData(
+                            toY: displayValues[2],
+                            color: Colors.blueGrey,
+                          )
+                        ],
+                      ),
+                      BarChartGroupData(
+                        x: 3,
+                        barRods: [
+                          BarChartRodData(
+                            toY: displayValues[3],
+                            color: Colors.blueGrey,
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
+                  swapAnimationDuration:
+                      const Duration(milliseconds: 250), // Optional
+                  swapAnimationCurve: Curves.easeOut, // Optional
+                )));
+
+        // child: Column(
+        //   crossAxisAlignment: CrossAxisAlignment.baseline,
+        //   textBaseline: TextBaseline.alphabetic,
+        //   children: [
+        //     Row(
+        //       children: [
+        //         const Text(
+        //           'PM1',
+        //           style: TextStyle(fontWeight: FontWeight.bold),
+        //         ),
+        //         Text(
+        //           displayValues[0].toStringAsFixed(1),
+        //         ),
+        //       ],
+        //     ),
+        //     Row(
+        //       children: [
+        //         const Text(
+        //           'PM2.5',
+        //           style: TextStyle(fontWeight: FontWeight.bold),
+        //         ),
+        //         Text(
+        //           displayValues[1].toStringAsFixed(1),
+        //         ),
+        //       ],
+        //     ),
+        //     Row(
+        //       children: [
+        //         const Text(
+        //           'PM4',
+        //           style: TextStyle(fontWeight: FontWeight.bold),
+        //         ),
+        //         Text(
+        //           displayValues[2].toStringAsFixed(1),
+        //         ),
+        //       ],
+        //     ),
+        //     Row(
+        //       children: [
+        //         const Text(
+        //           'PM10',
+        //           style: TextStyle(fontWeight: FontWeight.bold),
+        //         ),
+        //         Text(
+        //           displayValues[3].toStringAsFixed(1),
+        //         ),
+        //       ],
+        //     ),
+        //   ],
+        // ));
       },
     );
   }

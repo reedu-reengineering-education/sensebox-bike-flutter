@@ -44,7 +44,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.track_changes),
+            icon: const Icon(Icons.route),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const TracksScreen()),

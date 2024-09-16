@@ -226,7 +226,7 @@ class OpenSenseMapService {
       {
         "id": "6",
         "icon": 'osem-signal',
-        "title": 'Distance Left',
+        "title": 'Overtaking Distance',
         "unit": 'cm',
         "sensorType": 'HC-SR04'
       },
