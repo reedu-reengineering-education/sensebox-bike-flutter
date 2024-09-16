@@ -80,6 +80,11 @@ class OpenSenseMapBloc with ChangeNotifier {
 
   Future<SenseBox?> getSelectedSenseBox() async {
     final prefs = SharedPreferences.getInstance();
+    if (!_isAuthenticated) {
+      await prefs.then((prefs) => prefs.remove('selectedSenseBox'));
+      return null;
+    }
+
     final selectedSenseBoxJson =
         await prefs.then((prefs) => prefs.getString('selectedSenseBox'));
 

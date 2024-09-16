@@ -67,6 +67,7 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () async => {
                   await bloc.logout(),
+                  Navigator.pop(context),
                   showLoginOrSenseBoxSelection(context, bloc)
                 },
               ),

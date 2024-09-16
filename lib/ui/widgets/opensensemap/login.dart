@@ -68,23 +68,45 @@ class _LoginFormState extends State<LoginForm> {
                 },
               ),
               const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () async {
-                  if (formKey.currentState?.validate() == true) {
-                    try {
-                      await widget.bloc.login(
-                        emailController.text,
-                        passwordController.text,
-                      );
-                      Navigator.pop(context); // Close after login
-                      showLoginOrSenseBoxSelection(context, widget.bloc);
-                    } catch (e) {
-                      print(e);
+              Builder(builder: (BuildContext context) {
+                return FilledButton(
+                  onPressed: () async {
+                    if (formKey.currentState?.validate() == true) {
+                      try {
+                        await widget.bloc.login(
+                          emailController.text,
+                          passwordController.text,
+                        );
+                        Navigator.pop(context); // Close after login
+                        showLoginOrSenseBoxSelection(context, widget.bloc);
+                      } catch (e) {
+                        showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.error,
+                                          color: Colors.red),
+                                      const SizedBox(height: 8),
+                                      Text("Login failed",
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineMedium),
+                                      SizedBox(height: 16),
+                                      Text(e.toString(),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium),
+                                    ],
+                                  ),
+                                ));
+                      }
                     }
-                  }
-                },
-                child: const Text('Login'),
-              ),
+                  },
+                  child: const Text('Login'),
+                );
+              }),
             ],
           ),
         ),

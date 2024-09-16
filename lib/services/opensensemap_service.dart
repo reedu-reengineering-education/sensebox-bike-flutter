@@ -59,7 +59,7 @@ class OpenSenseMapService {
 
       return responseData;
     } else {
-      throw Exception('Failed to log in');
+      throw Exception(json.decode(response.body)['message']);
     }
   }
 
@@ -184,77 +184,77 @@ class OpenSenseMapService {
       {
         "id": "0",
         "icon": 'osem-thermometer',
-        "title": 'Temperatur',
+        "title": 'Temperature',
         "unit": '°C',
         "sensorType": 'HDC1080'
       },
       {
         "id": "1",
         "icon": 'osem-humidity',
-        "title": 'rel. Luftfeuchte',
+        "title": 'Rel. Humidity',
         "unit": '%',
         "sensorType": 'HDC1080'
       },
       {
         "id": "2",
         "icon": 'osem-cloud',
-        "title": 'PM1',
+        "title": 'Finedust PM1',
         "unit": 'µg/m³',
         "sensorType": 'SPS30'
       },
       {
         "id": "3",
         "icon": 'osem-cloud',
-        "title": 'PM25',
+        "title": 'Finedust PM2.5',
         "unit": 'µg/m³',
         "sensorType": 'SPS30'
       },
       {
         "id": "4",
         "icon": 'osem-cloud',
-        "title": 'PM4',
+        "title": 'Finedust PM4',
         "unit": 'µg/m³',
         "sensorType": 'SPS30'
       },
       {
         "id": "5",
         "icon": 'osem-cloud',
-        "title": 'PM10',
+        "title": 'Finedust PM10',
         "unit": 'µg/m³',
         "sensorType": 'SPS30'
       },
       {
         "id": "6",
         "icon": 'osem-signal',
-        "title": 'Distanz Links',
+        "title": 'Distance Left',
         "unit": 'cm',
         "sensorType": 'HC-SR04'
       },
       {
         "id": "7",
         "icon": 'osem-shock',
-        "title": 'Beschleunigung X',
+        "title": 'Acceleration X',
         "unit": 'm/s²',
         "sensorType": 'MPU-6050'
       },
       {
         "id": "8",
         "icon": 'osem-shock',
-        "title": 'Beschleunigung Y',
+        "title": 'Acceleration Y',
         "unit": 'm/s²',
         "sensorType": 'MPU-6050'
       },
       {
         "id": "9",
         "icon": 'osem-shock',
-        "title": 'Beschleunigung Z',
+        "title": 'Acceleration Z',
         "unit": 'm/s²',
         "sensorType": 'MPU-6050'
       },
       {
         "id": "10",
         "icon": 'osem-dashboard',
-        "title": 'Geschwindigkeit',
+        "title": 'Speed',
         "unit": 'km/h',
         "sensorType": 'GPS'
       }
