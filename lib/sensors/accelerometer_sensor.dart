@@ -3,6 +3,7 @@ import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 
 class AccelerometerSensor extends Sensor {
   double _latestX = 0.0;
@@ -13,7 +14,7 @@ class AccelerometerSensor extends Sensor {
   get uiPriority => 25;
 
   static const String sensorCharacteristicUuid =
-      'B944AF10-F495-4560-968F-2F0D18CAB522';
+      'b944af10-f495-4560-968f-2f0d18cab522';
 
   AccelerometerSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
@@ -53,50 +54,50 @@ class AccelerometerSensor extends Sensor {
       builder: (context, snapshot) {
         List<double> displayValues =
             snapshot.data ?? [_latestX, _latestY, _latestZ];
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Accelerometer',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Column(
-                    children: [
-                      const Text('X'),
-                      Text(
-                        displayValues[0].toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      const Text('Y'),
-                      Text(
-                        displayValues[1].toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      const Text('Z'),
-                      Text(
-                        displayValues[2].toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
+
+        return SensorCard(
+            title: "Acceleration",
+            icon: Icons.vibration,
+            color: Colors.greenAccent,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'X',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      displayValues[0].toStringAsFixed(1),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Text(
+                      'Y',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      displayValues[1].toStringAsFixed(1),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Text(
+                      'Z',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      displayValues[2].toStringAsFixed(1),
+                    ),
+                  ],
+                ),
+              ],
+            ));
       },
     );
   }

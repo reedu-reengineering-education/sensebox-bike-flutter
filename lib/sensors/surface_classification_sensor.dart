@@ -3,6 +3,7 @@ import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 
 class SurfaceClassificationSensor extends Sensor {
   double _latestAsphalt = 0.0;
@@ -77,35 +78,29 @@ class SurfaceClassificationSensor extends Sensor {
               _latestSett,
               _latestStanding
             ];
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Surface',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildAttributeRow('Asphalt', displayValues[0]),
-                  _buildAttributeRow('Compacted', displayValues[1]),
-                  _buildAttributeRow('Paving', displayValues[2]),
-                  _buildAttributeRow('Sett', displayValues[3]),
-                  _buildAttributeRow('Standing', displayValues[4]),
-                ],
-              ),
-            ],
-          ),
-        );
+
+        return SensorCard(
+            title: "Surface",
+            icon: Icons.water,
+            color: Colors.brown,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                _buildAttributeRow('Asphalt', displayValues[0]),
+                _buildAttributeRow('Compacted', displayValues[1]),
+                _buildAttributeRow('Paving', displayValues[2]),
+                _buildAttributeRow('Sett', displayValues[3]),
+                _buildAttributeRow('Standing', displayValues[4]),
+              ],
+            ));
       },
     );
   }
 
   Widget _buildAttributeRow(String attribute, double value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 1.0),
       child: Row(
         children: [
           Text(

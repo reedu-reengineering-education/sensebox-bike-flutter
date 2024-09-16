@@ -3,6 +3,7 @@ import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 
 class FinedustSensor extends Sensor {
   double _latestPM1 = 0.0;
@@ -62,59 +63,60 @@ class FinedustSensor extends Sensor {
       builder: (context, snapshot) {
         List<double> displayValues = snapshot.data ??
             [_latestPM1, _latestPM2_5, _latestPM4, _latestPM10];
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Finedust Levels',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Row(
-                    children: [
-                      const Text('PM1'),
-                      Text(
-                        displayValues[0].toStringAsFixed(1),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Text('PM2.5'),
-                      Text(
-                        displayValues[1].toStringAsFixed(1),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Text('PM4'),
-                      Text(
-                        displayValues[2].toStringAsFixed(1),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Text('PM10'),
-                      Text(
-                        displayValues[3].toStringAsFixed(1),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
+        return SensorCard(
+            title: "Finedust",
+            icon: Icons.grain,
+            color: Colors.blueGrey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'PM1',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      displayValues[0].toStringAsFixed(1),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Text(
+                      'PM2.5',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      displayValues[1].toStringAsFixed(1),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Text(
+                      'PM4',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      displayValues[2].toStringAsFixed(1),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Text(
+                      'PM10',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      displayValues[3].toStringAsFixed(1),
+                    ),
+                  ],
+                ),
+              ],
+            ));
       },
     );
   }

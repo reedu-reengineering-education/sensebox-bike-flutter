@@ -118,7 +118,6 @@ class OpenSenseMapService {
     );
 
     if (response.statusCode == 201) {
-      print('SenseBox created');
     } else if (response.statusCode == 401) {
       await refreshToken();
       return createSenseBoxBike(name, latitude, longitude, model);

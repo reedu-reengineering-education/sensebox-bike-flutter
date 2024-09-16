@@ -52,7 +52,9 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: HomeScrollableScreen(sensorBloc: sensorBloc),
+      body: Padding(
+          padding: const EdgeInsets.only(bottom: 86),
+          child: HomeScrollableScreen(sensorBloc: sensorBloc)), // room for FAB
       floatingActionButton: ValueListenableBuilder(
           valueListenable: bleBloc.selectedDeviceNotifier,
           builder: (context, selectedDevice, child) {

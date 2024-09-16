@@ -3,6 +3,7 @@ import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 
 class HumiditySensor extends Sensor {
   List<double> _latestValue = [0.0];
@@ -39,31 +40,23 @@ class HumiditySensor extends Sensor {
       stream: valueStream,
       initialData: _latestValue,
       builder: (context, snapshot) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Humidity',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    _latestValue[0].toStringAsFixed(1),
-                    style: const TextStyle(fontSize: 64),
-                  ),
-                  const Text(
-                    '%',
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
+        return SensorCard(
+            title: "rel. Humidity",
+            icon: Icons.water_drop,
+            color: Colors.blueAccent,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  _latestValue[0].toStringAsFixed(1),
+                  style: const TextStyle(fontSize: 48),
+                ),
+                const Text(
+                  '%',
+                ),
+              ],
+            ));
       },
     );
   }

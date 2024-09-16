@@ -102,6 +102,7 @@ class BleBloc with ChangeNotifier {
       notifyListeners();
 
       for (var characteristic in senseBoxService.characteristics) {
+        print("Listening to characteristic: ${characteristic.uuid}");
         await _listenToCharacteristic(characteristic);
       }
     });

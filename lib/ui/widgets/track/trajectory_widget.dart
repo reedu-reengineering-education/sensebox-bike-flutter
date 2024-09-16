@@ -67,10 +67,18 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   Future<void> addLayer() async {
     try {
       // Remove existing layers and sources
-      await mapInstance.style.removeStyleLayer("line_layer");
-      await mapInstance.style.removeStyleLayer("point_layer");
-      await mapInstance.style.removeStyleSource("lineSource");
-      await mapInstance.style.removeStyleSource("pointSource");
+      if (await mapInstance.style.getLayer("line_layer") != null) {
+        await mapInstance.style.removeStyleLayer("line_layer");
+      }
+      if (await mapInstance.style.getLayer("point_layer") != null) {
+        await mapInstance.style.removeStyleLayer("point_layer");
+      }
+      if (await mapInstance.style.getSource("lineSource") != null) {
+        await mapInstance.style.removeStyleSource("lineSource");
+      }
+      if (await mapInstance.style.getSource("pointSource") != null) {
+        await mapInstance.style.removeStyleSource("pointSource");
+      }
     } catch (e) {
       print("Error removing sources and layers: $e");
     }

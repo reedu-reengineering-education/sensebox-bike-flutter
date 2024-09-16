@@ -59,7 +59,12 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'senseBox:bike',
         theme: ThemeData(
-          primaryColor: Colors.black,
+          colorSchemeSeed: Colors.teal,
+          cardTheme: CardTheme(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+          ),
         ),
         home: const HomeScreen(),
       ),

@@ -3,6 +3,7 @@ import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 
 class SurfaceAnomalySensor extends Sensor {
   List<double> _latestAnomalyValue = [0.0];
@@ -41,31 +42,14 @@ class SurfaceAnomalySensor extends Sensor {
       initialData: _latestAnomalyValue,
       builder: (context, snapshot) {
         double displayValue = snapshot.data?[0] ?? _latestAnomalyValue[0];
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Surface Anomaly',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    displayValue.toStringAsFixed(1),
-                    style: const TextStyle(fontSize: 64),
-                  ),
-                  const Text(
-                    '', // Add any specific unit if applicable
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
+        return SensorCard(
+            title: "Surface Anomaly",
+            icon: Icons.swap_horiz,
+            color: Colors.yellow.shade700,
+            child: Text(
+              displayValue.toStringAsFixed(1),
+              style: const TextStyle(fontSize: 48),
+            ));
       },
     );
   }

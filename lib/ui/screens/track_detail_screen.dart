@@ -125,8 +125,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                                           onPressed: () {
                                             setState(() {
                                               _sensorType = sensorTitles[index];
-                                              print(
-                                                  'Updated sensorType: $_sensorType'); // Debugging
                                             });
                                           },
                                           child: Text(sensorTitles[index]));
