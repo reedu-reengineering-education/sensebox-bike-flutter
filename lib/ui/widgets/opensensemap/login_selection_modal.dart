@@ -57,10 +57,6 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
-          // create a row with two buttons and a text in the middle
-          // left is a back button called Logout and right is a plus button called Add SenseBox
-          // the text in the middle is called Select a SenseBox
-
           Row(
             children: [
               IconButton(
@@ -81,11 +77,6 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
               ),
             ],
           ),
-
-          // const Text('Select a SenseBox', style: TextStyle(fontSize: 18)),
-          // FilledButton(
-          //     onPressed: () async => {await bloc.logout()},
-          //     child: const Text("Logout")),
           const SizedBox(height: 16),
           const Expanded(child: SenseBoxSelectionWidget())
         ],

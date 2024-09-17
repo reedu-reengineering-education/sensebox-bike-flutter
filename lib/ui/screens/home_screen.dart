@@ -1,7 +1,9 @@
+import 'package:flutter_svg/svg.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
@@ -21,21 +23,25 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('senseBox:bike'),
+        title: SvgPicture.asset(
+          'assets/images/sensebox_bike_logo.svg',
+          height: 32,
+        ),
+
+        // title: const Text('senseBox:bike'),
         // forceMaterialTransparency: true,
+        scrolledUnderElevation: 0,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         actions: [
           TextButton.icon(
-            // with background color
-            style: TextButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColorLight,
-            ),
             icon: const Icon(Icons.person),
             onPressed: () => showLoginOrSenseBoxSelection(context, osemBloc),
-            // TODO: fix flickering
-            label: FutureBuilder(
-              future: osemBloc.getSelectedSenseBox(),
+            label: StreamBuilder<SenseBox?>(
+              stream: osemBloc.senseBoxStream,
               builder: (context, snapshot) {
-                if (snapshot.hasError) {
+                if (!osemBloc.isAuthenticated) {
+                  return const Text('Login');
+                } else if (snapshot.hasError) {
                   return const Text('Error');
                 } else {
                   return Text(snapshot.data?.name ?? 'No senseBox');
@@ -43,8 +49,10 @@ class HomeScreen extends StatelessWidget {
               },
             ),
           ),
-          IconButton(
+          // const Spacer(),
+          TextButton.icon(
             icon: const Icon(Icons.route),
+            label: const Text('Tracks'),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const TracksScreen()),

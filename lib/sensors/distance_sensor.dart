@@ -49,7 +49,7 @@ class DistanceSensor extends Sensor {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  _latestValue[0].toStringAsFixed(1),
+                  _latestValue[0].toStringAsFixed(0),
                   style: const TextStyle(fontSize: 48),
                 ),
                 const Text(

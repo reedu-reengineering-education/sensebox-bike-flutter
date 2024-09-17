@@ -156,6 +156,7 @@ class BleBloc with ChangeNotifier {
   StreamController<List<double>> getCharacteristicStream(
       String characteristicUuid) {
     if (!_characteristicStreams.containsKey(characteristicUuid)) {
+      print(characteristicUuid);
       throw Exception('Characteristic stream not found');
     }
     return _characteristicStreams[characteristicUuid]!;

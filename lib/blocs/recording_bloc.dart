@@ -16,19 +16,28 @@ class RecordingBloc with ChangeNotifier {
 
   bool _isRecording = false;
   TrackData? _currentTrack;
+  SenseBox? _selectedSenseBox;
 
   bool get isRecording => _isRecording;
   TrackData? get currentTrack => _currentTrack;
+  SenseBox? get selectedSenseBox => _selectedSenseBox;
 
   RecordingBloc(
       this.isarService, this.bleBloc, this.trackBloc, this.openSenseMapBloc) {
     bleBloc.addListener(_onBluetoothConnectionChanged);
+    openSenseMapBloc.senseBoxStream
+        .listen(_onSenseBoxChanged); // Listen to senseBoxStream
   }
 
   void _onBluetoothConnectionChanged() {
     if (!bleBloc.isConnected && _isRecording) {
       stopRecording();
     }
+  }
+
+  void _onSenseBoxChanged(SenseBox? senseBox) {
+    _selectedSenseBox = senseBox;
+    notifyListeners(); // If you want to notify listeners when the senseBox changes
   }
 
   void startRecording() async {
@@ -40,15 +49,14 @@ class RecordingBloc with ChangeNotifier {
     _currentTrack = trackBloc.currentTrack;
 
     try {
-      SenseBox? senseBox = await openSenseMapBloc.getSelectedSenseBox();
-
-      if (senseBox == null) {
+      if (_selectedSenseBox == null) {
         throw Exception("No senseBox selected");
       }
 
       LiveUploadService liveUploadService = LiveUploadService(
           openSenseMapService: OpenSenseMapService(),
-          senseBox: senseBox,
+          senseBox:
+              _selectedSenseBox!, // Use the cached value of selectedSenseBox
           trackId: trackBloc.currentTrack!.id);
 
       liveUploadService.startUploading();

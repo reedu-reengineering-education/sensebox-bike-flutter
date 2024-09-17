@@ -63,7 +63,7 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
     // final localization = AppLocalizations.of(context);
 
     return AlertDialog(
-      title: const Text('Create Bike Box'),
+      title: const Text('Create senseBox:bike'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -119,7 +119,7 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
           },
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        FilledButton(
           onPressed: _loading ? null : _submitForm,
           child: _loading
               ? const CircularProgressIndicator()
