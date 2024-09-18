@@ -101,6 +101,7 @@ class OpenSenseMapBloc with ChangeNotifier {
     }
   }
 
+  @override
   void dispose() {
     _senseBoxController.close(); // Close the stream when done
     super.dispose();

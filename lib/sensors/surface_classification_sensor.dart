@@ -4,6 +4,7 @@ import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class SurfaceClassificationSensor extends Sensor {
   double _latestAsphalt = 0.0;
@@ -81,8 +82,8 @@ class SurfaceClassificationSensor extends Sensor {
 
         return SensorCard(
             title: "Surface",
-            icon: Icons.water,
-            color: Colors.brown,
+            icon: getSensorIcon(title),
+            color: getSensorColor(title),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,

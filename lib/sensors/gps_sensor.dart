@@ -6,6 +6,7 @@ import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class GPSSensor extends Sensor {
   double _latestLat = 0.0;
@@ -83,11 +84,11 @@ class GPSSensor extends Sensor {
   @override
   Widget buildWidget() {
     if (_latestLat == 0.0 && _latestLng == 0.0) {
-      return const SensorCard(
-        color: Colors.blueAccent,
-        icon: Icons.gps_off,
+      return SensorCard(
+        icon: getSensorIcon(title),
+        color: getSensorColor(title),
         title: 'GPS',
-        child: Center(
+        child: const Center(
           child: Text("No GPS Fix"),
         ),
       );

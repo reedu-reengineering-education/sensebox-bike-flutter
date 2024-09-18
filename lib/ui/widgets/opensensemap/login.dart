@@ -93,7 +93,7 @@ class _LoginFormState extends State<LoginForm> {
                                           style: Theme.of(context)
                                               .textTheme
                                               .headlineMedium),
-                                      SizedBox(height: 16),
+                                      const SizedBox(height: 16),
                                       Text(e.toString(),
                                           style: Theme.of(context)
                                               .textTheme

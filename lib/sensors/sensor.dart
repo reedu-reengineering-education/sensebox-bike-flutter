@@ -24,6 +24,9 @@ abstract class Sensor {
 
   late int uiPriority;
 
+  late Icon uiIcon;
+  late Color uiColor;
+
   Sensor(
     this.characteristicUuid,
     this.title,

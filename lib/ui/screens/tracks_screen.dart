@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -97,9 +98,34 @@ class _TracksScreenState extends State<TracksScreen> {
                             )
                           },
                       child: ListTile(
-                        title: Text('Track ${track.id}'),
-                        subtitle:
-                            Text('Geolocations: ${track.geolocations.length}'),
+                        title: Text(
+                          DateFormat('yyyy-MM-dd HH:mm:ss')
+                              .format(track.geolocations.first.timestamp),
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        subtitle: Column(
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.timer_outlined),
+                                const SizedBox(width: 8),
+                                Text(
+                                    '${DateFormat('mm:ss').format(DateTime.fromMillisecondsSinceEpoch(track.duration.inMilliseconds))} min',
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                const Icon(Icons.route),
+                                const SizedBox(width: 8),
+                                Text('${track.distance.toStringAsFixed(2)} km',
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium),
+                              ],
+                            ),
+                          ],
+                        ),
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(

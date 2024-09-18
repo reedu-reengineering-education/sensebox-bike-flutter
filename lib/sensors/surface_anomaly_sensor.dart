@@ -4,6 +4,7 @@ import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class SurfaceAnomalySensor extends Sensor {
   List<double> _latestAnomalyValue = [0.0];
@@ -44,8 +45,8 @@ class SurfaceAnomalySensor extends Sensor {
         double displayValue = snapshot.data?[0] ?? _latestAnomalyValue[0];
         return SensorCard(
             title: "Surface Anomaly",
-            icon: Icons.swap_horiz,
-            color: Colors.yellow.shade700,
+            icon: getSensorIcon(title),
+            color: getSensorColor(title),
             child: Text(
               displayValue.toStringAsFixed(1),
               style: const TextStyle(fontSize: 48),

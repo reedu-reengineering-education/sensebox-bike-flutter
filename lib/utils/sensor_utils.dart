@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 String? getTitleFromSensorKey(String key, String? attribute) {
   String searchKey = key;
   if (attribute != null) {
@@ -50,5 +52,55 @@ String? getTitleFromSensorKey(String key, String? attribute) {
     default:
       print("Unknown sensor key: $searchKey");
       return null;
+  }
+}
+
+IconData getSensorIcon(String sensorType) {
+  switch (sensorType) {
+    case 'temperature':
+      return Icons.thermostat_outlined;
+    case 'humidity':
+      return Icons.water_drop_outlined;
+    case 'distance':
+      return Icons.sensors;
+    case 'acceleration':
+      return Icons.vibration;
+    case 'finedust':
+      return Icons.grain;
+    case 'gps':
+      return Icons.gps_off;
+    case 'overtaking':
+      return Icons.directions_car;
+    case 'surface_anomaly':
+      return Icons.swap_horiz;
+    case 'surface_classification':
+      return Icons.water;
+    default:
+      return Icons.sensors;
+  }
+}
+
+Color getSensorColor(String sensorType) {
+  switch (sensorType) {
+    case 'temperature':
+      return Colors.redAccent;
+    case 'humidity':
+      return Colors.blueAccent;
+    case 'distance':
+      return Colors.deepPurpleAccent;
+    case 'acceleration':
+      return Colors.greenAccent;
+    case 'finedust':
+      return Colors.blueGrey;
+    case 'gps':
+      return Colors.blue;
+    case 'overtaking':
+      return Colors.teal;
+    case 'surface_anomaly':
+      return Colors.yellow.shade700;
+    case 'surface_classification':
+      return Colors.brown;
+    default:
+      return Colors.grey;
   }
 }

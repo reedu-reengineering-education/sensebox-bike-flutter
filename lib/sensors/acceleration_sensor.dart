@@ -5,6 +5,7 @@ import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class AccelerationSensor extends Sensor {
   double _latestX = 0.0;
@@ -58,8 +59,8 @@ class AccelerationSensor extends Sensor {
 
         return SensorCard(
             title: "Acceleration",
-            icon: Icons.vibration,
-            color: Colors.greenAccent,
+            icon: getSensorIcon(title),
+            color: getSensorColor(title),
             child: AspectRatio(
                 aspectRatio: 1.4,
                 child: BarChart(
@@ -73,7 +74,7 @@ class AccelerationSensor extends Sensor {
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 30,
-                            getTitlesWidget: (value, _abc) {
+                            getTitlesWidget: (value, _) {
                               switch (value.toInt()) {
                                 case 0:
                                   return const Text(
@@ -94,7 +95,7 @@ class AccelerationSensor extends Sensor {
                                         TextStyle(fontWeight: FontWeight.bold),
                                   );
                               }
-                              return Text('');
+                              return const Text('');
                             },
                           ),
                         ),

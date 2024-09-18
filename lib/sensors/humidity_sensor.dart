@@ -4,6 +4,7 @@ import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class HumiditySensor extends Sensor {
   List<double> _latestValue = [0.0];
@@ -42,8 +43,8 @@ class HumiditySensor extends Sensor {
       builder: (context, snapshot) {
         return SensorCard(
             title: "rel. Humidity",
-            icon: Icons.water_drop,
-            color: Colors.blueAccent,
+            icon: getSensorIcon(title),
+            color: getSensorColor(title),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,

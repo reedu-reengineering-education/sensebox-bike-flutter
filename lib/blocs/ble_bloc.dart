@@ -102,7 +102,6 @@ class BleBloc with ChangeNotifier {
       notifyListeners();
 
       for (var characteristic in senseBoxService.characteristics) {
-        print("Listening to characteristic: ${characteristic.uuid}");
         await _listenToCharacteristic(characteristic);
       }
     });
@@ -156,7 +155,6 @@ class BleBloc with ChangeNotifier {
   StreamController<List<double>> getCharacteristicStream(
       String characteristicUuid) {
     if (!_characteristicStreams.containsKey(characteristicUuid)) {
-      print(characteristicUuid);
       throw Exception('Characteristic stream not found');
     }
     return _characteristicStreams[characteristicUuid]!;

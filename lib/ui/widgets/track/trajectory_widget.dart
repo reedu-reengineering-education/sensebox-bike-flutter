@@ -44,7 +44,8 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     double minVal = double.infinity;
     for (GeolocationData data in widget.geolocationData) {
       for (SensorData sensor in data.sensorData) {
-        if (sensor.title == widget.sensorType) {
+        if ('${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}' ==
+            widget.sensorType) {
           minVal = min(minVal, sensor.value);
         }
       }
@@ -56,7 +57,8 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     double maxVal = double.negativeInfinity;
     for (GeolocationData data in widget.geolocationData) {
       for (SensorData sensor in data.sensorData) {
-        if (sensor.title == widget.sensorType) {
+        if ('${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}' ==
+            widget.sensorType) {
           maxVal = max(maxVal, sensor.value);
         }
       }
@@ -67,93 +69,82 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   Future<void> addLayer() async {
     try {
       // Remove existing layers and sources
-      if (await mapInstance.style.getLayer("line_layer") != null) {
+      if (await mapInstance.style.styleLayerExists("line_layer")) {
         await mapInstance.style.removeStyleLayer("line_layer");
       }
-      if (await mapInstance.style.getLayer("point_layer") != null) {
-        await mapInstance.style.removeStyleLayer("point_layer");
-      }
-      if (await mapInstance.style.getSource("lineSource") != null) {
+      if (await mapInstance.style.styleSourceExists("lineSource")) {
         await mapInstance.style.removeStyleSource("lineSource");
-      }
-      if (await mapInstance.style.getSource("pointSource") != null) {
-        await mapInstance.style.removeStyleSource("pointSource");
       }
     } catch (e) {
       print("Error removing sources and layers: $e");
     }
 
-    // Add new layers
-    GeoJsonSource pointSource = GeoJsonSource(
-      id: "pointSource",
-      data: jsonEncode({
-        "type": "FeatureCollection",
-        "features": widget.geolocationData
-            .map(
-              (e) => {
-                'type': 'Feature',
-                'geometry': {
-                  "type": "Point",
-                  "coordinates": [
-                    e.longitude,
-                    e.latitude,
-                  ],
-                },
-                'properties': {
-                  for (var sensor in e.sensorData) sensor.title: sensor.value,
-                },
-              },
-            )
-            .toList(),
-      }),
-    );
-
+    // Add new GeoJson source
     GeoJsonSource lineSource = GeoJsonSource(
       id: "lineSource",
       data: jsonEncode({
-        "type": "Feature",
-        "properties": {},
-        "geometry": {
-          "type": "LineString",
-          "coordinates": widget.geolocationData
-              .map((e) => [e.longitude, e.latitude])
-              .toList(),
-        },
+        "type": "FeatureCollection",
+        "features": List.generate(widget.geolocationData.length - 1, (index) {
+          GeolocationData current = widget.geolocationData[index];
+          GeolocationData next = widget.geolocationData[index + 1];
+
+          return {
+            "type": "Feature",
+            'properties': {
+              for (var sensor in current.sensorData)
+                '${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}':
+                    sensor.value,
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [current.longitude, current.latitude],
+                [next.longitude, next.latitude]
+              ],
+            },
+          };
+        })
       }),
     );
 
-    await mapInstance.style.addSource(pointSource);
     await mapInstance.style.addSource(lineSource);
 
+    // Add a LineLayer with color interpolation based on sensor values
     await mapInstance.style.addLayer(LineLayer(
       id: "line_layer",
       sourceId: "lineSource",
-    ));
-
-    await mapInstance.style.addLayer(CircleLayer(
-      id: "point_layer",
-      sourceId: "pointSource",
-      circleRadius: 5.0,
-      circleColorExpression: [
+      // Use the sensor type as the property for the color expression
+      // This will be used to interpolate the color of the line based on the sensor values
+      // If the sensor value is not a number, the line will be transparent
+      lineColorExpression: [
         "case",
         [
-          "to-boolean",
-          ["get", widget.sensorType]
+          "==",
+          [
+            "typeof",
+            ["get", widget.sensorType]
+          ],
+          "number"
         ],
         [
           "interpolate",
           ["linear"],
           ["get", widget.sensorType],
           getMinSensorValue(),
-          "blue",
+          'green',
+          getMinSensorValue() +
+              (getMaxSensorValue() - getMinSensorValue()) * 0.5,
+          'orange',
           getMaxSensorValue(),
-          "red"
+          'red'
         ],
         "transparent"
       ],
+      lineWidth: 4.0, // Adjust the width as needed
+      lineCap: LineCap.ROUND,
     ));
 
-    // Calculate bounds
+    // Adjust the camera to fit the bounds of the trajectory
     GeolocationData south = widget.geolocationData.first;
     GeolocationData west = widget.geolocationData.first;
     GeolocationData north = widget.geolocationData.first;

@@ -94,8 +94,6 @@ class LiveUploadService {
       };
     }
 
-    print('Data to upload: $data');
-
     return data;
   }
 

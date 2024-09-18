@@ -5,6 +5,7 @@ import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class FinedustSensor extends Sensor {
   double _latestPM1 = 0.0;
@@ -66,8 +67,8 @@ class FinedustSensor extends Sensor {
             [_latestPM1, _latestPM2_5, _latestPM4, _latestPM10];
         return SensorCard(
             title: "Finedust",
-            icon: Icons.grain,
-            color: Colors.blueGrey,
+            icon: getSensorIcon(title),
+            color: getSensorColor(title),
             child: AspectRatio(
                 aspectRatio: 1.3,
                 child: BarChart(
@@ -83,7 +84,7 @@ class FinedustSensor extends Sensor {
                         sideTitles: SideTitles(
                           showTitles: true,
                           reservedSize: 30,
-                          getTitlesWidget: (value, _abc) {
+                          getTitlesWidget: (value, _) {
                             switch (value.toInt()) {
                               case 0:
                                 return const Text(
