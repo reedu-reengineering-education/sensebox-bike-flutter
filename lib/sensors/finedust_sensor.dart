@@ -122,13 +122,13 @@ class FinedustSensor extends Sensor {
                         drawBelowEverything: true,
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 16,
+                          reservedSize: 20,
                           getTitlesWidget: (value, meta) {
                             return Text(
                               value.toStringAsFixed(1),
                               textAlign: TextAlign.left,
                               style: const TextStyle(
-                                fontSize: 10,
+                                fontSize: 8,
                               ),
                             );
                           },

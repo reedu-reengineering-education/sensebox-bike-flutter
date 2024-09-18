@@ -46,7 +46,9 @@ class _TracksScreenState extends State<TracksScreen> {
               return Text('Error: ${snapshot.error}');
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
               // If the future completed but returned no data, show a message
-              return const Text('No tracks available.');
+              return Center(
+                  child: Text('No tracks available.',
+                      style: Theme.of(context).textTheme.bodyMedium));
             } else {
               // If the future completed with data, display the list
               List<TrackData> tracks = snapshot.data!;

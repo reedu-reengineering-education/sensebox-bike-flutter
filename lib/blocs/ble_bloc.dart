@@ -4,7 +4,8 @@ import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart'; // Assuming you're using Provider for state management
-import 'package:sensebox_bike/blocs/recording_bloc.dart'; // Import the RecordingBloc
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:vibration/vibration.dart'; // Import the RecordingBloc
 
 class BleBloc with ChangeNotifier {
   final List<BluetoothDevice> devicesList = [];
@@ -93,18 +94,41 @@ class BleBloc with ChangeNotifier {
 
   Future<void> _discoverAndListenToCharacteristics(
       BluetoothDevice device) async {
-    await device.discoverServices().then((services) async {
-      // find senseBox service
-      var senseBoxService =
-          services.firstWhere((service) => service.uuid == senseBoxServiceUUID);
+    _characteristicStreams.clear();
+    availableCharacteristics.value = [];
 
-      availableCharacteristics.value = senseBoxService.characteristics;
-      notifyListeners();
+    int maxAttempts = 5;
 
-      for (var characteristic in senseBoxService.characteristics) {
-        await _listenToCharacteristic(characteristic);
+    int attempts = 0;
+    while (attempts < maxAttempts) {
+      try {
+        List<BluetoothService> services = await device.discoverServices();
+
+        // find senseBox service
+        var senseBoxService = services.firstWhere(
+            (service) => service.uuid == senseBoxServiceUUID,
+            orElse: () => throw Exception('Service not found'));
+
+        availableCharacteristics.value = senseBoxService.characteristics;
+
+        notifyListeners();
+
+        for (var characteristic in senseBoxService.characteristics) {
+          await _listenToCharacteristic(characteristic);
+        }
+
+        break; // Exit the loop if successful
+      } catch (e) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          // Handle the error after max attempts
+          print('Failed to discover services after $attempts attempts: $e');
+          break;
+        }
+        print('Error discovering services, attempt $attempts: $e');
+        await Future.delayed(const Duration(seconds: 5));
       }
-    });
+    }
   }
 
   void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
@@ -113,15 +137,24 @@ class BleBloc with ChangeNotifier {
           !_userInitiatedDisconnect) {
         _isConnected = false; // Mark as disconnected
 
+        Vibration.vibrate();
+
         // Attempt to reconnect the device (up to 5 tries)
         for (int i = 0; i < 5; i++) {
           try {
-            await device.connect(timeout: const Duration(seconds: 5));
-            _isConnected = true; // Mark as connected if successful
-            _discoverAndListenToCharacteristics(device);
-            break; // Stop retrying if reconnection is successful
+            await device.connect(timeout: const Duration(seconds: 10));
+            await Future.delayed(const Duration(seconds: 10));
+
+            // If the device is successfully connected, break out of the loop
+            if (await device.connectionState.first ==
+                BluetoothConnectionState.connected) {
+              _isConnected = true; // Mark as connected
+              await _discoverAndListenToCharacteristics(device);
+              break;
+            }
           } catch (e) {
             // Retry logic continues if reconnection fails
+            print('Reconnection attempt ${i} failed: $e');
           }
         }
 
