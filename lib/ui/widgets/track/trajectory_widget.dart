@@ -1,10 +1,9 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:sensebox_bike/models/sensor_data.dart';
+import 'package:sensebox_bike/utils/track_utils.dart';
 import '../../../secrets.dart'; // File containing the Mapbox token
 
 class TrajectoryWidget extends StatefulWidget {
@@ -23,12 +22,19 @@ class TrajectoryWidget extends StatefulWidget {
 
 class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   late MapboxMap mapInstance;
+  double? minSensorValue;
+  double? maxSensorValue;
 
   @override
   void initState() {
     super.initState();
     // Set the access token for Mapbox
     MapboxOptions.setAccessToken(mapboxAccessToken);
+
+    minSensorValue =
+        getMinSensorValue(widget.geolocationData, widget.sensorType);
+    maxSensorValue =
+        getMaxSensorValue(widget.geolocationData, widget.sensorType);
   }
 
   @override
@@ -38,32 +44,6 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
         oldWidget.geolocationData != widget.geolocationData) {
       addLayer();
     }
-  }
-
-  double getMinSensorValue() {
-    double minVal = double.infinity;
-    for (GeolocationData data in widget.geolocationData) {
-      for (SensorData sensor in data.sensorData) {
-        if ('${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}' ==
-            widget.sensorType) {
-          minVal = min(minVal, sensor.value);
-        }
-      }
-    }
-    return minVal;
-  }
-
-  double getMaxSensorValue() {
-    double maxVal = double.negativeInfinity;
-    for (GeolocationData data in widget.geolocationData) {
-      for (SensorData sensor in data.sensorData) {
-        if ('${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}' ==
-            widget.sensorType) {
-          maxVal = max(maxVal, sensor.value);
-        }
-      }
-    }
-    return maxVal;
   }
 
   Future<void> addLayer() async {
@@ -109,6 +89,11 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
 
     await mapInstance.style.addSource(lineSource);
 
+    minSensorValue =
+        getMinSensorValue(widget.geolocationData, widget.sensorType);
+    maxSensorValue =
+        getMaxSensorValue(widget.geolocationData, widget.sensorType);
+
     // Add a LineLayer with color interpolation based on sensor values
     await mapInstance.style.addLayer(LineLayer(
       id: "line_layer",
@@ -130,12 +115,15 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
           "interpolate",
           ["linear"],
           ["get", widget.sensorType],
-          getMinSensorValue(),
+          minSensorValue!,
           'green',
-          getMinSensorValue() +
-              (getMaxSensorValue() - getMinSensorValue()) * 0.5,
+          minSensorValue! +
+              (maxSensorValue! -
+                      getMinSensorValue(
+                          widget.geolocationData, widget.sensorType)) *
+                  0.5,
           'orange',
-          getMaxSensorValue(),
+          maxSensorValue!,
           'red'
         ],
         "transparent"

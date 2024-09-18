@@ -5,6 +5,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
+import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:share_plus/share_plus.dart';
 
 class TrackDetailScreen extends StatefulWidget {
@@ -109,76 +110,113 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 ),
         ],
       ),
-      body: _buildFutureBuilder<TrackData?>(
-        future: _trackFuture,
-        builder: (track) => Column(
-          children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Card.filled(
-                  clipBehavior: Clip.hardEdge,
-                  elevation: 4,
-                  child: TrajectoryWidget(
-                    geolocationData: track!.geolocations.toList(),
-                    sensorType: _sensorType,
+      body: SafeArea(
+        child: _buildFutureBuilder<TrackData?>(
+          future: _trackFuture,
+          builder: (track) => Column(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Card.filled(
+                    clipBehavior: Clip.hardEdge,
+                    elevation: 4,
+                    child: TrajectoryWidget(
+                      geolocationData: track!.geolocations.toList(),
+                      sensorType: _sensorType,
+                    ),
                   ),
                 ),
               ),
-            ),
-            SafeArea(
-              child: _buildFutureBuilder<List<SensorData>>(
-                future: _sensorDataFuture,
-                builder: (sensorData) {
-                  // Your sensorData processing and UI logic here
-                  List<Map<String, String?>> sensorTitles = sensorData
-                      .map((e) => {'title': e.title, 'attribute': e.attribute})
-                      .map((map) => map.entries
-                          .map((e) => '${e.key}:${e.value}')
-                          .join(','))
-                      .toSet()
-                      .map((str) {
-                    var entries = str.split(',').map((e) => e.split(':'));
-                    return Map<String, String?>.fromEntries(
-                      entries.map(
-                          (e) => MapEntry(e[0], e[1] == 'null' ? null : e[1])),
-                    );
-                  }).toList();
+              Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Column(children: [
+                    Container(
+                        height: 12,
+                        decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(20),
+                            ),
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: <Color>[
+                                Colors.green,
+                                Colors.orange,
+                                Colors.red,
+                              ], // Gradient from https://learnui.design/tools/gradient-generator.html
+                              tileMode: TileMode.mirror,
+                            ))),
+                    _buildFutureBuilder<TrackData?>(
+                      future: _trackFuture,
+                      builder: (track) => Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(getMinSensorValue(
+                                    track!.geolocations.toList(), _sensorType)
+                                .toStringAsFixed(1)),
+                            const Spacer(),
+                            Text(getMaxSensorValue(
+                                    track!.geolocations.toList(), _sensorType)
+                                .toStringAsFixed(1)),
+                          ]),
+                      errorText: 'Error loading track',
+                      noDataText: 'No track available',
+                    )
+                  ])),
+              SizedBox(
+                height: 100,
+                child: _buildFutureBuilder<List<SensorData>>(
+                  future: _sensorDataFuture,
+                  builder: (sensorData) {
+                    // Your sensorData processing and UI logic here
+                    List<Map<String, String?>> sensorTitles = sensorData
+                        .map(
+                            (e) => {'title': e.title, 'attribute': e.attribute})
+                        .map((map) => map.entries
+                            .map((e) => '${e.key}:${e.value}')
+                            .join(','))
+                        .toSet()
+                        .map((str) {
+                      var entries = str.split(',').map((e) => e.split(':'));
+                      return Map<String, String?>.fromEntries(
+                        entries.map((e) =>
+                            MapEntry(e[0], e[1] == 'null' ? null : e[1])),
+                      );
+                    }).toList();
 
-                  List<String> order = [
-                    'temperature',
-                    'humidity',
-                    'distance',
-                    'overtaking',
-                    'surface_classification_asphalt',
-                    'surface_classification_compacted',
-                    'surface_classification_paving',
-                    'surface_classification_sett',
-                    'surface_classification_standing',
-                    'surface_anomaly',
-                    'acceleration_x',
-                    'acceleration_y',
-                    'acceleration_z',
-                    'finedust_pm1',
-                    'finedust_pm2.5',
-                    'finedust_pm4',
-                    'finedust_pm10',
-                    'gps_latitude',
-                    'gps_longitude',
-                    'gps_speed',
-                  ];
+                    List<String> order = [
+                      'temperature',
+                      'humidity',
+                      'distance',
+                      'overtaking',
+                      'surface_classification_asphalt',
+                      'surface_classification_compacted',
+                      'surface_classification_paving',
+                      'surface_classification_sett',
+                      'surface_classification_standing',
+                      'surface_anomaly',
+                      'acceleration_x',
+                      'acceleration_y',
+                      'acceleration_z',
+                      'finedust_pm1',
+                      'finedust_pm2.5',
+                      'finedust_pm4',
+                      'finedust_pm10',
+                      'gps_latitude',
+                      'gps_longitude',
+                      'gps_speed',
+                    ];
 
-                  sensorTitles.sort((a, b) {
-                    int indexA = order.indexOf(
-                        '${a['title']}${a['attribute'] == null ? '' : '_${a['attribute']}'}');
-                    int indexB = order.indexOf(
-                        '${b['title']}${b['attribute'] == null ? '' : '_${b['attribute']}'}');
-                    return indexA.compareTo(indexB);
-                  });
+                    sensorTitles.sort((a, b) {
+                      int indexA = order.indexOf(
+                          '${a['title']}${a['attribute'] == null ? '' : '_${a['attribute']}'}');
+                      int indexB = order.indexOf(
+                          '${b['title']}${b['attribute'] == null ? '' : '_${b['attribute']}'}');
+                      return indexA.compareTo(indexB);
+                    });
 
-                  return SizedBox(
-                    height: 100,
-                    child: ListView.builder(
+                    return ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: sensorTitles.length,
                       itemBuilder: (context, index) {
@@ -234,15 +272,15 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                           ),
                         );
                       },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+                    );
+                  },
+                ),
+              )
+            ],
+          ),
+          errorText: 'Error loading track',
+          noDataText: 'No track available',
         ),
-        errorText: 'Error loading track',
-        noDataText: 'No track available',
       ),
     );
   }
