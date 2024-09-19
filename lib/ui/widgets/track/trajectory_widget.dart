@@ -174,7 +174,8 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
       null,
     );
 
-    await mapInstance.setCamera(fitBoundsCamera);
+    await mapInstance.flyTo(
+        fitBoundsCamera, MapAnimationOptions(duration: 1000));
   }
 
   @override
@@ -188,6 +189,8 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
           enabled: true,
           showAccuracyRing: true,
         ));
+        // wait for some time to ensure the map is fully loaded
+        await Future.delayed(const Duration(milliseconds: 500));
         addLayer(); // Call addLayer when the map is created
       },
     );
