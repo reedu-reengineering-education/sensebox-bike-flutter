@@ -22,12 +22,14 @@ class HomeScrollableScreen extends StatelessWidget {
                 child: Container(
                   // use theme color
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  child: const Padding(
-                      padding: EdgeInsets.fromLTRB(8, 8, 8, 0),
+                  child: Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                       child: Card(
                           elevation: 12,
                           clipBehavior: Clip.hardEdge,
-                          child: SizedBox(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          child: const SizedBox(
                             width: double.infinity,
                             child:
                                 GeolocationMapWidget(), // Directly use the map widget

@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
@@ -58,6 +59,26 @@ class SurfaceClassificationSensor extends Sensor {
     return sumValues.map((value) => value / count).toList();
   }
 
+  Widget _buildLegendEntry(
+      String title, Color color, double value, BuildContext context) {
+    return Row(children: [
+      Container(
+        height: 16,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: color,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.5),
+          child: Text(value.toStringAsFixed(1),
+              style: Theme.of(context).textTheme.labelSmall),
+        ),
+      ),
+      const SizedBox(width: 8),
+      Text(title)
+    ]);
+  }
+
   @override
   Widget buildWidget() {
     return StreamBuilder<List<double>>(
@@ -85,36 +106,66 @@ class SurfaceClassificationSensor extends Sensor {
             icon: getSensorIcon(title),
             color: getSensorColor(title),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
               children: [
-                _buildAttributeRow('Asphalt', displayValues[0]),
-                _buildAttributeRow('Compacted', displayValues[1]),
-                _buildAttributeRow('Paving', displayValues[2]),
-                _buildAttributeRow('Sett', displayValues[3]),
-                _buildAttributeRow('Standing', displayValues[4]),
+                const SizedBox(
+                  height: 4,
+                ),
+                for (int i = 0; i < displayValues.length; i++)
+                  _buildLegendEntry(
+                      ["Asphalt", "Compacted", "Paving", "Sett", "Standing"][i],
+                      [
+                        Colors.blue,
+                        Colors.green,
+                        Colors.purpleAccent,
+                        Colors.orange,
+                        Colors.blueGrey
+                      ][i],
+                      displayValues[i],
+                      context),
+                SizedBox(
+                  width: double.infinity,
+                  height: 18,
+                  child: RotatedBox(
+                    quarterTurns: 1,
+                    child: BarChart(BarChartData(
+                      borderData: FlBorderData(show: false),
+                      barTouchData: BarTouchData(enabled: false),
+                      gridData: const FlGridData(show: false),
+                      titlesData: const FlTitlesData(show: false),
+                      barGroups: [
+                        BarChartGroupData(
+                          x: 0,
+                          barRods: [
+                            BarChartRodData(
+                              toY: 1,
+                              rodStackItems: [
+                                for (int i = 0; i < displayValues.length; i++)
+                                  BarChartRodStackItem(
+                                    displayValues
+                                        .take(i)
+                                        .fold(0.0, (a, b) => a + b),
+                                    displayValues
+                                        .take(i + 1)
+                                        .fold(0.0, (a, b) => a + b),
+                                    [
+                                      Colors.blue,
+                                      Colors.green,
+                                      Colors.purpleAccent,
+                                      Colors.orange,
+                                      Colors.blueGrey
+                                    ][i],
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    )),
+                  ),
+                ),
               ],
             ));
       },
-    );
-  }
-
-  Widget _buildAttributeRow(String attribute, double value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1.0),
-      child: Row(
-        children: [
-          Text(
-            attribute,
-            style: const TextStyle(fontSize: 12),
-          ),
-          const SizedBox(width: 8.0),
-          Text(
-            value.toStringAsFixed(1),
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
     );
   }
 }
