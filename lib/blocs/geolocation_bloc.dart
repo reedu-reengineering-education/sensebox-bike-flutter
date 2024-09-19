@@ -1,5 +1,6 @@
 // File: lib/blocs/geolocation_bloc.dart
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:flutter/foundation.dart';
@@ -52,11 +53,13 @@ class GeolocationBloc with ChangeNotifier {
         locationSettings = AndroidSettings(
             accuracy: LocationAccuracy.high,
             foregroundNotificationConfig: const ForegroundNotificationConfig(
-              notificationText:
-                  "Example app will continue to receive your location even when you aren't using it",
-              notificationTitle: "Running in Background",
-              enableWakeLock: true,
-            ));
+                notificationText:
+                    "senseBox:bike will record your location in the background",
+                notificationTitle: "Running in the background",
+                enableWakeLock: true,
+                notificationIcon:
+                    AndroidResource(name: "@mipmap/ic_stat_sensebox_bike_logo"),
+                color: Colors.blue));
       } else {
         return Future.error('Notification permissions are denied');
       }

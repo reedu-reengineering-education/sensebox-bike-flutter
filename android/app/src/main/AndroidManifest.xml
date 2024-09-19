@@ -21,11 +21,24 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" android:maxSdkVersion="34"/>
+
+
     <application
         android:label="senseBox:bike"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <service android:name="de.reedu.senseboxbike" android:exported="true" />
+
+        <meta-data
+          android:name="com.google.firebase.messaging.default_notification_icon"
+          android:resource="@mipmap/ic_stat_sensebox_bike_logo" />
+
+        <meta-data
+          android:name="com.google.firebase.messaging.default_notification_color"
+          android:resource="@android:color/holo_blue_dark" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
