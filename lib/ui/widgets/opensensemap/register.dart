@@ -112,7 +112,26 @@ class _RegisterFormState extends State<RegisterForm> {
                       Navigator.pop(context); // Close after registration
                       showLoginOrSenseBoxSelection(context, widget.bloc);
                     } catch (e) {
-                      print(e);
+                      showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.error, color: Colors.red),
+                                    const SizedBox(height: 8),
+                                    Text("Registration failed",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineMedium),
+                                    const SizedBox(height: 16),
+                                    Text(e.toString(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium),
+                                  ],
+                                ),
+                              ));
                     }
                   }
                 },
