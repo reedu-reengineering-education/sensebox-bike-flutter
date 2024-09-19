@@ -1,4 +1,9 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -50,8 +55,56 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     try {
       final isarService = IsarService();
       final csvFilePath = await isarService.exportTrackToCsv(id);
-      await Share.shareXFiles([XFile(csvFilePath)],
-          text: 'Track data CSV export.');
+
+      // if android, save to external storage
+      // if ios, open share dialog
+
+      if (Platform.isAndroid) {
+        try {
+          PermissionStatus status =
+              await Permission.manageExternalStorage.request();
+
+          if (!status.isGranted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: const Text(
+                  'Permission denied to save file to external storage.'),
+              action: SnackBarAction(
+                  label: "Settings", onPressed: () => openAppSettings()),
+            ));
+            return;
+          }
+
+          Directory? directory;
+
+          if (defaultTargetPlatform == TargetPlatform.android) {
+            //downloads folder - android only - API>30
+            directory = Directory('/storage/emulated/0/Download');
+          } else {
+            directory = await getExternalStorageDirectory();
+          }
+          // copy file to external storage
+          final file = File(csvFilePath);
+          final newPath = '${directory!.path}/$id.csv';
+          await file.copy(newPath);
+          // show snackbar
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('CSV file saved to Downloads folder.'),
+            action: SnackBarAction(
+              label: 'Share instead',
+              onPressed: () {
+                Share.shareXFiles([XFile(newPath)],
+                    text: 'Track data CSV export.');
+              },
+            ),
+          ));
+        } catch (e) {
+          Share.shareXFiles([XFile(csvFilePath)],
+              text: 'Track data CSV export.');
+        }
+      } else if (Platform.isIOS) {
+        await Share.shareXFiles([XFile(csvFilePath)],
+            text: 'Track data CSV export.');
+      }
     } catch (e) {
       print('Error exporting CSV: $e');
     } finally {
@@ -111,6 +164,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         ],
       ),
       body: SafeArea(
+        minimum: const EdgeInsets.only(bottom: 8),
         child: _buildFutureBuilder<TrackData?>(
           future: _trackFuture,
           builder: (track) => Column(
