@@ -52,6 +52,18 @@ class _TracksScreenState extends State<TracksScreen> {
             } else {
               // If the future completed with data, display the list
               List<TrackData> tracks = snapshot.data!;
+
+              // filter tracks without geolocation data
+              tracks = tracks
+                  .where((track) => track.geolocations.isNotEmpty)
+                  .toList();
+
+              if (tracks.isEmpty) {
+                return Center(
+                    child: Text('No tracks available.',
+                        style: Theme.of(context).textTheme.bodyMedium));
+              }
+
               return ListView.builder(
                 itemCount: tracks.length,
                 itemBuilder: (context, index) {
