@@ -84,7 +84,10 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           }
           // copy file to external storage
           final file = File(csvFilePath);
-          final newPath = '${directory!.path}/$id.csv';
+
+          final newName = file.path.split('/').last;
+
+          final newPath = '${directory!.path}/$newName';
           await file.copy(newPath);
           // show snackbar
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
