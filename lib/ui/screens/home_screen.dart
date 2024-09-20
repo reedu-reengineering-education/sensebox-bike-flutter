@@ -105,11 +105,27 @@ class HomeScreen extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 12),
-                    FloatingActionButton.extended(
-                        label: const Text('Disconnect'),
-                        backgroundColor: Theme.of(context).primaryColorLight,
-                        onPressed: bleBloc.disconnectDevice,
-                        icon: const Icon(Icons.bluetooth_disabled)),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: bleBloc.isReconnectingNotifier,
+                      builder: (context, isReconnecting, child) {
+                        return FloatingActionButton.extended(
+                          // Show the CircularProgressIndicator instead of the icon during reconnection
+                          icon: isReconnecting
+                              ? const CircularProgressIndicator()
+                              : const Icon(Icons
+                                  .bluetooth_disabled), // Default icon when not reconnecting
+
+                          label: isReconnecting
+                              ? const Text('Reconnecting...')
+                              : const Text('Disconnect'),
+
+                          backgroundColor: Theme.of(context).primaryColorLight,
+
+                          // Disconnect action
+                          onPressed: bleBloc.disconnectDevice,
+                        );
+                      },
+                    )
                   ]);
             }
           }),

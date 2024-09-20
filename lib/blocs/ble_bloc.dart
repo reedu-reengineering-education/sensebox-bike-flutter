@@ -32,6 +32,8 @@ class BleBloc with ChangeNotifier {
 
   final ValueNotifier<bool> isConnectingNotifier = ValueNotifier(false);
 
+  final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
+
   BleBloc() {
     startScanning();
     FlutterBluePlus.setLogLevel(LogLevel.none);
@@ -132,33 +134,56 @@ class BleBloc with ChangeNotifier {
   }
 
   void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
+    bool hasVibrated = false; // Flag to track vibration
+    int reconnectionAttempts = 0; // Track the number of reconnection attempts
+    const int maxReconnectionAttempts = 5;
+
     device.connectionState.listen((state) async {
       if (state == BluetoothConnectionState.disconnected &&
           !_userInitiatedDisconnect) {
         _isConnected = false; // Mark as disconnected
 
-        Vibration.vibrate();
+        // Set isReconnecting to true and notify listeners
+        isReconnectingNotifier.value = true;
 
-        // Attempt to reconnect the device (up to 5 tries)
-        for (int i = 0; i < 5; i++) {
+        // Vibrate only once after the disconnection
+        if (!hasVibrated) {
+          Vibration.vibrate();
+          hasVibrated = true; // Set the flag to prevent repeated vibration
+        }
+
+        // Attempt to reconnect the device (up to maxReconnectionAttempts)
+        while (
+            reconnectionAttempts < maxReconnectionAttempts && !_isConnected) {
           try {
-            await device.connect(timeout: const Duration(seconds: 10));
-            await Future.delayed(const Duration(seconds: 10));
+            reconnectionAttempts++;
+            print('Reconnection attempt $reconnectionAttempts');
 
-            // If the device is successfully connected, break out of the loop
+            await device.connect(timeout: const Duration(seconds: 10));
+
+            // Check if the device is successfully connected
             if (await device.connectionState.first ==
                 BluetoothConnectionState.connected) {
               _isConnected = true; // Mark as connected
+              hasVibrated = false; // Reset the flag on successful reconnection
+              reconnectionAttempts =
+                  0; // Reset attempts on successful reconnection
               await _discoverAndListenToCharacteristics(device);
-              break;
+              break; // Exit the loop if reconnected
             }
           } catch (e) {
-            // Retry logic continues if reconnection fails
-            print('Reconnection attempt ${i} failed: $e');
+            // If reconnection fails, log the error and continue
+            print('Reconnection attempt $reconnectionAttempts failed: $e');
           }
+          // Add a delay between reconnection attempts
+          await Future.delayed(const Duration(seconds: 5));
         }
 
-        if (!_isConnected) {
+        // Once done, set isReconnecting to false and notify listeners
+        isReconnectingNotifier.value = false;
+
+        if (!_isConnected && reconnectionAttempts >= maxReconnectionAttempts) {
+          print('Failed to reconnect after $maxReconnectionAttempts attempts');
           selectedDeviceNotifier.value = null; // Notify disconnection
           notifyListeners();
 
