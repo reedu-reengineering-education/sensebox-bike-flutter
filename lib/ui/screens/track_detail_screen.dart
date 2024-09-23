@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -61,17 +62,22 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
       if (Platform.isAndroid) {
         try {
-          PermissionStatus status =
-              await Permission.manageExternalStorage.request();
+          DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+          final androidInfo = await deviceInfoPlugin.androidInfo;
 
-          if (!status.isGranted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: const Text(
-                  'Permission denied to save file to external storage.'),
-              action: SnackBarAction(
-                  label: "Settings", onPressed: () => openAppSettings()),
-            ));
-            return;
+          // check if api level is smaller than 33
+          if (androidInfo.version.sdkInt < 33) {
+            PermissionStatus status = await Permission.storage.request();
+
+            if (!status.isGranted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: const Text(
+                    'Permission denied to save file to external storage.'),
+                action: SnackBarAction(
+                    label: "Settings", onPressed: () => openAppSettings()),
+              ));
+              return;
+            }
           }
 
           Directory? directory;
@@ -79,6 +85,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           if (defaultTargetPlatform == TargetPlatform.android) {
             //downloads folder - android only - API>30
             directory = Directory('/storage/emulated/0/Download');
+            // directory = await getDownloadsDirectory();
           } else {
             directory = await getExternalStorageDirectory();
           }
@@ -86,14 +93,14 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           final file = File(csvFilePath);
 
           final newName = file.path.split('/').last;
-
           final newPath = '${directory!.path}/$newName';
+
           await file.copy(newPath);
           // show snackbar
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('CSV file saved to Downloads folder.'),
+            content: const Text('CSV file saved to Downloads folder.'),
             action: SnackBarAction(
-              label: 'Share instead',
+              label: 'Share',
               onPressed: () {
                 Share.shareXFiles([XFile(newPath)],
                     text: 'Track data CSV export.');

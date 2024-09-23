@@ -35,8 +35,7 @@ class BleBloc with ChangeNotifier {
   final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
 
   BleBloc() {
-    startScanning();
-    FlutterBluePlus.setLogLevel(LogLevel.none);
+    FlutterBluePlus.setLogLevel(LogLevel.error);
   }
 
   void startScanning() {
