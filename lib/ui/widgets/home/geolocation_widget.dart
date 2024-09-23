@@ -93,7 +93,16 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
         mapInstance.compass.updateSettings(CompassSettings(enabled: false));
         mapInstance.attribution
             .updateSettings(AttributionSettings(marginBottom: 75));
-        mapInstance.logo.updateSettings(LogoSettings(marginBottom: 75));
+        mapInstance.logo
+            .updateSettings(LogoSettings(marginBottom: 75, marginLeft: 8));
+
+        mapInstance.setCamera(CameraOptions(
+          center: Point(
+            coordinates: Position(7, 35),
+          ),
+          zoom: 3.0,
+          pitch: 25,
+        ));
       },
       gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{}
         ..add(Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()))

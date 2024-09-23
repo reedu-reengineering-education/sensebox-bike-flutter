@@ -42,7 +42,16 @@ class SenseBoxBikeApp extends StatefulWidget {
 }
 
 class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
-  static const List<Widget> _pages = <Widget>[HomeScreen(), TracksScreen()];
+  static final List<Widget> _pages = <Widget>[
+    const PopScope(
+      canPop: false,
+      child: HomeScreen(),
+    ),
+    const PopScope(
+      canPop: false,
+      child: TracksScreen(),
+    ),
+  ];
 
   int _selectedIndex = 0;
 
@@ -80,9 +89,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
       child: MaterialApp(
           title: 'senseBox:bike',
           theme: ThemeData(
-            brightness: platformBrightness == Brightness.light
-                ? Brightness.light
-                : Brightness.dark,
+            brightness: platformBrightness,
             canvasColor: platformBrightness == Brightness.light
                 ? Colors.grey[200]
                 : Colors.grey[900],
@@ -98,30 +105,30 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
               bottomNavigationBar: Container(
                 decoration: const BoxDecoration(
                   borderRadius: BorderRadius.only(
-                      topRight: Radius.circular(16),
-                      topLeft: Radius.circular(16)),
+                      topRight: Radius.circular(24),
+                      topLeft: Radius.circular(24)),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black38, spreadRadius: 0, blurRadius: 4),
+                        color: Colors.black38, spreadRadius: 0, blurRadius: 12),
                   ],
                 ),
                 child: ClipRRect(
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
                   ),
-                  child: BottomNavigationBar(
-                    selectedFontSize: 0,
-                    onTap: (value) {
+                  child: NavigationBar(
+                    onDestinationSelected: (value) {
                       setState(() {
                         _selectedIndex = value;
                       });
                     },
-                    currentIndex: _selectedIndex,
-                    items: const <BottomNavigationBarItem>[
-                      BottomNavigationBarItem(icon: Icon(Icons.map), label: ""),
-                      BottomNavigationBarItem(
-                          icon: Icon(Icons.route), label: "")
+                    selectedIndex: _selectedIndex,
+                    destinations: const [
+                      NavigationDestination(
+                          icon: Icon(Icons.map), label: 'Home'),
+                      NavigationDestination(
+                          icon: Icon(Icons.route), label: 'Tracks')
                     ],
                   ),
                 ),
