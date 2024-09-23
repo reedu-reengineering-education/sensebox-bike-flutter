@@ -108,7 +108,7 @@ class SurfaceClassificationSensor extends Sensor {
             child: Column(
               children: [
                 const SizedBox(
-                  height: 4,
+                  height: 2,
                 ),
                 for (int i = 0; i < displayValues.length; i++)
                   _buildLegendEntry(

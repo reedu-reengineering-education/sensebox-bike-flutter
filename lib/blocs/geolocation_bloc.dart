@@ -14,15 +14,17 @@ class GeolocationBloc with ChangeNotifier {
   Stream<GeolocationData> get geolocationStream =>
       _geolocationController.stream;
 
+  StreamSubscription<Position>? _positionStreamSubscription;
+
   final IsarService isarService;
   final RecordingBloc recordingBloc;
 
   GeolocationBloc(this.isarService, this.recordingBloc) {
     // Start listening to geolocation changes
-    _startListening();
+    // _startListening();
   }
 
-  void _startListening() async {
+  void startListening() async {
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -74,8 +76,9 @@ class GeolocationBloc with ChangeNotifier {
     }
 
     // Listen to position stream
-    Geolocator.getPositionStream(locationSettings: locationSettings)
-        .listen((Position position) async {
+    _positionStreamSubscription =
+        Geolocator.getPositionStream(locationSettings: locationSettings)
+            .listen((Position position) async {
       // TODO: this is not a good practice to create a new object and not save it
       GeolocationData geolocationData = GeolocationData()
         ..latitude = position.latitude
@@ -96,6 +99,11 @@ class GeolocationBloc with ChangeNotifier {
   // function to get the current location
   Future<Position> getCurrentLocation() async {
     return Geolocator.getCurrentPosition();
+  }
+
+  // function to stop listening to geolocation changes
+  void stopListening() {
+    _positionStreamSubscription?.cancel();
   }
 
   Future<void> _saveGeolocationData(GeolocationData data) async {

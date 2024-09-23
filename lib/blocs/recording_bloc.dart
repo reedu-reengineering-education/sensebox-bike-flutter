@@ -19,6 +19,9 @@ class RecordingBloc with ChangeNotifier {
   SenseBox? _selectedSenseBox;
 
   bool get isRecording => _isRecording;
+
+  ValueNotifier<bool> get isRecordingNotifier => ValueNotifier(_isRecording);
+
   TrackData? get currentTrack => _currentTrack;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
 

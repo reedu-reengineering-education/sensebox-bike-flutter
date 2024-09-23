@@ -28,8 +28,10 @@ class SensorBloc with ChangeNotifier {
       if (bleBloc.selectedDevice != null &&
           bleBloc.selectedDevice!.isConnected) {
         _startListening();
+        geolocationBloc.startListening();
       } else {
         _stopListening();
+        geolocationBloc.stopListening();
       }
     });
   }

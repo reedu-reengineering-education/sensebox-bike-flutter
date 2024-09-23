@@ -17,8 +17,8 @@ class SensorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 1,
-      color: Colors.white,
+      elevation: 0,
+      color: Theme.of(context).canvasColor,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
         child: Column(

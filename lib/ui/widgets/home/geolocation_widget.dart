@@ -16,13 +16,31 @@ class GeolocationMapWidget extends StatefulWidget {
   _GeolocationMapWidgetState createState() => _GeolocationMapWidgetState();
 }
 
-class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
+class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
+    with WidgetsBindingObserver {
   late final MapboxMap mapInstance;
   late final StreamSubscription<GeolocationData> _geolocationSubscription;
 
   @override
+  void didChangePlatformBrightness() async {
+    super.didChangePlatformBrightness();
+
+    if (!await mapInstance.style.isStyleLoaded()) {
+      return;
+    }
+
+    String style =
+        Theme.of(context).brightness == Brightness.dark ? "day" : "night";
+
+    mapInstance.style
+        .setStyleImportConfigProperty("basemap", "lightPreset", style);
+  }
+
+  @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addObserver(this);
 
     // Get the GeolocationBloc from the context
     final geolocationBloc =
@@ -58,13 +76,24 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   @override
   Widget build(BuildContext context) {
     return MapWidget(
+      styleUri: MapboxStyles.STANDARD,
+      onStyleLoadedListener: (styleLoadedEventData) async {
+        String style =
+            Theme.of(context).brightness == Brightness.dark ? "night" : "day";
+        mapInstance.style
+            .setStyleImportConfigProperty("basemap", "lightPreset", style);
+      },
       onMapCreated: (mapInstance) {
         this.mapInstance = mapInstance;
         mapInstance.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-        mapInstance.location.updateSettings(LocationComponentSettings(
-          enabled: true,
-          showAccuracyRing: true,
-        ));
+        // mapInstance.location.updateSettings(LocationComponentSettings(
+        //   enabled: true,
+        //   showAccuracyRing: true,
+        // ));
+        mapInstance.compass.updateSettings(CompassSettings(enabled: false));
+        mapInstance.attribution
+            .updateSettings(AttributionSettings(marginBottom: 75));
+        mapInstance.logo.updateSettings(LogoSettings(marginBottom: 75));
       },
       gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{}
         ..add(Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()))
