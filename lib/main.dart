@@ -59,8 +59,8 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
   Widget build(BuildContext context) {
     final isarService = IsarService();
     final bleBloc = BleBloc();
-    final trackBloc = TrackBloc(isarService);
     final OpenSenseMapBloc openSenseMapBloc = OpenSenseMapBloc();
+    final trackBloc = TrackBloc(isarService);
     final recordingBloc =
         RecordingBloc(isarService, bleBloc, trackBloc, openSenseMapBloc);
     final geolocationBloc = GeolocationBloc(isarService, recordingBloc);
