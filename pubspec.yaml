@@ -63,6 +63,8 @@ dependencies:
   turf: ^0.0.10
   vibration: ^2.0.0
   device_info_plus: ^10.1.2
+  url_launcher: ^6.3.0
+  package_info_plus: ^8.0.2
 
 dev_dependencies:
   flutter_test:

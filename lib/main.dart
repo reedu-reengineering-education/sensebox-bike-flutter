@@ -9,6 +9,7 @@ import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'ui/screens/home_screen.dart';
@@ -50,6 +51,10 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     const PopScope(
       canPop: false,
       child: TracksScreen(),
+    ),
+    PopScope(
+      canPop: false,
+      child: SettingsScreen(),
     ),
   ];
 
@@ -128,7 +133,9 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
                       NavigationDestination(
                           icon: Icon(Icons.map), label: 'Home'),
                       NavigationDestination(
-                          icon: Icon(Icons.route), label: 'Tracks')
+                          icon: Icon(Icons.route), label: 'Tracks'),
+                      NavigationDestination(
+                          icon: Icon(Icons.settings), label: 'Settings')
                     ],
                   ),
                 ),
