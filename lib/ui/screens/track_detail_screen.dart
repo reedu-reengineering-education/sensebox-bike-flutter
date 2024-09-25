@@ -140,7 +140,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         } else if (!snapshot.hasData) {
           return Text(noDataText ?? 'No data available.');
         } else {
-          return builder(snapshot.data!);
+          return builder(snapshot.data as T);
         }
       },
     );
@@ -221,7 +221,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                                 .toStringAsFixed(1)),
                             const Spacer(),
                             Text(getMaxSensorValue(
-                                    track!.geolocations.toList(), _sensorType)
+                                    track.geolocations.toList(), _sensorType)
                                 .toStringAsFixed(1)),
                           ]),
                       errorText: 'Error loading track',

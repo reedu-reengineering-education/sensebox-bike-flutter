@@ -85,6 +85,11 @@ class _TracksScreenState extends State<TracksScreen> {
                               content: const Text(
                                   "Are you sure you wish to delete this track?"),
                               actions: <Widget>[
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(false),
+                                  child: const Text("Cancel"),
+                                ),
                                 FilledButton(
                                     style: const ButtonStyle(
                                         backgroundColor: WidgetStatePropertyAll(
@@ -92,11 +97,6 @@ class _TracksScreenState extends State<TracksScreen> {
                                     onPressed: () =>
                                         Navigator.of(context).pop(true),
                                     child: const Text("Delete")),
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(false),
-                                  child: const Text("Cancel"),
-                                ),
                               ],
                             );
                           },

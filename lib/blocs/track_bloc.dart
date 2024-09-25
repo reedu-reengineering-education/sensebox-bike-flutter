@@ -44,6 +44,7 @@ class TrackBloc with ChangeNotifier {
   }
 
   // Dispose the StreamController when no longer needed
+  @override
   void dispose() {
     _currentTrackController.close();
     super.dispose();
