@@ -293,8 +293,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                           clipBehavior: Clip.hardEdge,
                           color: _sensorType ==
                                   '$title${attribute == null ? '' : '_$attribute'}'
-                              ? getSensorColor(title).withOpacity(0.1)
-                              : Colors.white,
+                              ? getSensorColor(title).withOpacity(0.25)
+                              : Theme.of(context).canvasColor,
                           child: InkWell(
                             onTap: () => setState(() {
                               _sensorType =
