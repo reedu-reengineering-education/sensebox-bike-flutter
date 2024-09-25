@@ -43,7 +43,7 @@ class SenseBoxBikeApp extends StatefulWidget {
 
 class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
   static final List<Widget> _pages = <Widget>[
-    const PopScope(
+    PopScope(
       canPop: false,
       child: HomeScreen(),
     ),

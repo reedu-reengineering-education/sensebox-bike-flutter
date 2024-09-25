@@ -4,10 +4,7 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
-import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
-import 'package:sensebox_bike/models/track_data.dart';
-import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
@@ -15,15 +12,11 @@ import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
     final BleBloc bleBloc = Provider.of<BleBloc>(context);
     final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
-    final OpenSenseMapBloc osemBloc = Provider.of<OpenSenseMapBloc>(context);
-    final TrackBloc trackBloc = Provider.of<TrackBloc>(context);
 
     return Scaffold(
       body: CustomScrollView(
@@ -45,7 +38,7 @@ class HomeScreen extends StatelessWidget {
                     top: 0,
                     right: 8,
                     child: SafeArea(
-                      child: _SenseBoxLoginButton(osemBloc: osemBloc),
+                      child: _SenseBoxLoginButton(),
                     ),
                   ),
                   const Positioned(
@@ -81,15 +74,15 @@ class HomeScreen extends StatelessWidget {
 
 // Widget for login or senseBox selection
 class _SenseBoxLoginButton extends StatelessWidget {
-  final OpenSenseMapBloc osemBloc;
-  const _SenseBoxLoginButton({required this.osemBloc});
-
   @override
   Widget build(BuildContext context) {
+    final OpenSenseMapBloc osemBloc = Provider.of<OpenSenseMapBloc>(context);
+
     return FilledButton.icon(
       onPressed: () => showLoginOrSenseBoxSelection(context, osemBloc),
       label: StreamBuilder<SenseBox?>(
         stream: osemBloc.senseBoxStream,
+        initialData: osemBloc.selectedSenseBox,
         builder: (context, snapshot) {
           if (!osemBloc.isAuthenticated) {
             return const Text('Login');

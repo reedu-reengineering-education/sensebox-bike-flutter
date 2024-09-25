@@ -14,17 +14,21 @@ class OpenSenseMapBloc with ChangeNotifier {
   final _senseBoxController =
       StreamController<SenseBox?>.broadcast(); // StreamController
 
+  Stream<SenseBox?> get senseBoxStream =>
+      _senseBoxController.stream; // Expose stream
+
+  // get selected sensebox
+  SenseBox? _selectedSenseBox = null;
+
+  SenseBox? get selectedSenseBox => _selectedSenseBox;
+
   bool get isAuthenticated => _isAuthenticated;
   List<dynamic> get senseBoxes => _senseBoxes;
 
   OpenSenseMapBloc() {
-    _service
-        .refreshToken()
-        .then((_) => {_isAuthenticated = true, loadSelectedSenseBox()});
+    _service.refreshToken().then(
+        (_) async => {_isAuthenticated = true, await loadSelectedSenseBox()});
   }
-
-  Stream<SenseBox?> get senseBoxStream =>
-      _senseBoxController.stream; // Expose stream
 
   Future<void> register(String name, String email, String password) async {
     try {
@@ -52,6 +56,7 @@ class OpenSenseMapBloc with ChangeNotifier {
     await _service.logout();
     _isAuthenticated = false;
     _senseBoxController.add(null); // Clear senseBox on logout
+    _selectedSenseBox = null;
     notifyListeners();
   }
 
@@ -79,26 +84,32 @@ class OpenSenseMapBloc with ChangeNotifier {
     prefs.then((prefs) =>
         prefs.setString('selectedSenseBox', jsonEncode(senseBox.toJson())));
     _senseBoxController.add(senseBox); // Push selected senseBox to the stream
+    _selectedSenseBox = senseBox;
   }
 
   Future<void> loadSelectedSenseBox() async {
-    final prefs = SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     if (!_isAuthenticated) {
-      await prefs.then((prefs) => prefs.remove('selectedSenseBox'));
+      await prefs.remove('selectedSenseBox');
       _senseBoxController.add(null);
+      _selectedSenseBox = null;
+
       return;
     }
 
-    final selectedSenseBoxJson =
-        await prefs.then((prefs) => prefs.getString('selectedSenseBox'));
+    final selectedSenseBoxJson = prefs.getString('selectedSenseBox');
 
     if (selectedSenseBoxJson == null) {
       _senseBoxController.add(null); // Push null if no senseBox is selected
+      _selectedSenseBox = null;
     } else {
       _senseBoxController.add(SenseBox.fromJson(jsonDecode(
           selectedSenseBoxJson))); // Push selected senseBox to the stream
+
+      _selectedSenseBox = SenseBox.fromJson(jsonDecode(selectedSenseBoxJson));
     }
+    notifyListeners();
   }
 
   @override
