@@ -5,6 +5,7 @@ import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 
@@ -21,7 +22,7 @@ class GPSSensor extends Sensor {
   static const String sensorCharacteristicUuid =
       '8edf8ebb-1246-4329-928d-ee0c91db2389';
 
-  PointAnnotationManager? pointAnnotationManager;
+  CircleAnnotationManager? circleAnnotationManager;
 
   GPSSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
@@ -44,6 +45,10 @@ class GPSSensor extends Sensor {
       _latestLng = data[1];
       _latestSpd = data[2];
 
+      if (_latestLat == 0.0 && _latestLng == 0.0) {
+        return;
+      }
+
       mapInstance.flyTo(
         CameraOptions(
           zoom: 16.0,
@@ -55,14 +60,16 @@ class GPSSensor extends Sensor {
         ),
       );
 
-      PointAnnotationOptions option = PointAnnotationOptions(
-        geometry: Point(coordinates: Position(_latestLng, _latestLat)),
-      );
+      CircleAnnotationOptions option = CircleAnnotationOptions(
+          geometry: Point(coordinates: Position(_latestLng, _latestLat)),
+          circleColor: Colors.blue.value,
+          circleStrokeColor: Colors.white.value,
+          circleStrokeWidth: 1);
 
-      pointAnnotationManager!.deleteAll();
+      circleAnnotationManager!.deleteAll();
 
       // Create new annotations
-      await pointAnnotationManager!.createMulti([option]);
+      await circleAnnotationManager!.createMulti([option]);
     }
   }
 
@@ -96,12 +103,12 @@ class GPSSensor extends Sensor {
     return Card(
       elevation: 1,
       clipBehavior: Clip.hardEdge,
-      child: MapWidget(onMapCreated: (mapInstance) async {
+      child: ReusableMapWidget(onMapCreated: (mapInstance) async {
         this.mapInstance = mapInstance;
         mapInstance.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
 
-        pointAnnotationManager ??=
-            await mapInstance.annotations.createPointAnnotationManager();
+        circleAnnotationManager ??=
+            await mapInstance.annotations.createCircleAnnotationManager();
       }),
     );
   }

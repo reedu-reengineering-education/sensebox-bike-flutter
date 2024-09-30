@@ -84,14 +84,16 @@ class GeolocationBloc with ChangeNotifier {
         ..latitude = position.latitude
         ..longitude = position.longitude
         ..speed = position.speed
-        ..timestamp = position.timestamp
-        ..track.value = recordingBloc.currentTrack;
+        ..timestamp = position.timestamp;
+      // ..track.value = recordingBloc.currentTrack;
 
       if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
+        geolocationData.track.value = recordingBloc.currentTrack;
         await _saveGeolocationData(geolocationData); // Save to database
       }
 
       _geolocationController.add(geolocationData);
+
       notifyListeners();
     });
   }

@@ -18,7 +18,7 @@ class OpenSenseMapBloc with ChangeNotifier {
       _senseBoxController.stream; // Expose stream
 
   // get selected sensebox
-  SenseBox? _selectedSenseBox = null;
+  SenseBox? _selectedSenseBox;
 
   SenseBox? get selectedSenseBox => _selectedSenseBox;
 

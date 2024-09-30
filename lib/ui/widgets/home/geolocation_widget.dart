@@ -4,14 +4,12 @@ import 'dart:convert';
 import 'package:geolocator/geolocator.dart' as Geolocator;
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 import '../../../blocs/track_bloc.dart'; // Import TrackBloc
-import '../../../secrets.dart'; // File containing the Mapbox token
 import '../../../services/isar_service.dart'; // Import your Isar service
 
 class GeolocationMapWidget extends StatefulWidget {
@@ -21,8 +19,7 @@ class GeolocationMapWidget extends StatefulWidget {
   _GeolocationMapWidgetState createState() => _GeolocationMapWidgetState();
 }
 
-class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
-    with WidgetsBindingObserver {
+class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   late final MapboxMap mapInstance;
   StreamSubscription<List<GeolocationData>>? _isarGeolocationSubscription;
   StreamSubscription<TrackData?>? _trackSubscription; // Track ID subscription
@@ -32,11 +29,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-
-    // Set the access token for Mapbox
-    MapboxOptions.setAccessToken(mapboxAccessToken);
-
     // Listen to track changes from the TrackBloc
     _trackSubscription =
         context.read<TrackBloc>().currentTrackStream.listen((track) {
@@ -164,37 +156,21 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
   @override
   Widget build(BuildContext context) {
-    return MapWidget(
-      styleUri: MapboxStyles.STANDARD,
-      onStyleLoadedListener: (styleLoadedEventData) async {
-        String style =
-            Theme.of(context).brightness == Brightness.dark ? "night" : "day";
-        mapInstance.style
-            .setStyleImportConfigProperty("basemap", "lightPreset", style);
-      },
-      onMapCreated: (mapInstance) {
-        this.mapInstance = mapInstance;
-        mapInstance.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-        mapInstance.compass.updateSettings(CompassSettings(enabled: false));
-        mapInstance.attribution
-            .updateSettings(AttributionSettings(marginBottom: 75));
-        mapInstance.logo
-            .updateSettings(LogoSettings(marginBottom: 75, marginLeft: 8));
+    return ReusableMapWidget(onMapCreated: (mapInstance) {
+      this.mapInstance = mapInstance;
+      mapInstance.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+      mapInstance.compass.updateSettings(CompassSettings(enabled: false));
+      mapInstance.attribution
+          .updateSettings(AttributionSettings(marginBottom: 75));
+      mapInstance.logo
+          .updateSettings(LogoSettings(marginBottom: 75, marginLeft: 8));
 
-        // Set initial camera position
-        mapInstance.setCamera(CameraOptions(
-          center: Point(coordinates: Position(7, 35)),
-          zoom: 3.0,
-          pitch: 25,
-        ));
-      },
-      gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{}
-        ..add(Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()))
-        ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
-        ..add(Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()))
-        ..add(Factory<TapGestureRecognizer>(() => TapGestureRecognizer()))
-        ..add(Factory<VerticalDragGestureRecognizer>(
-            () => VerticalDragGestureRecognizer())),
-    );
+      // Set initial camera position
+      mapInstance.setCamera(CameraOptions(
+        center: Point(coordinates: Position(7, 35)),
+        zoom: 3.0,
+        pitch: 25,
+      ));
+    });
   }
 }

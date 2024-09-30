@@ -1,8 +1,7 @@
-import 'package:intl/intl.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
-import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
+import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 
 class TracksScreen extends StatefulWidget {
   const TracksScreen({super.key});
@@ -32,6 +31,116 @@ class _TracksScreenState extends State<TracksScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tracks'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(4.0),
+          child: Padding(
+            padding:
+                const EdgeInsets.only(bottom: 4.0), // Adds padding to the top
+            child: FutureBuilder<List<TrackData>>(
+              future: _tracksFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.center, // Center elements
+                    children: [
+                      const Icon(Icons.route),
+                      const SizedBox(width: 8),
+                      Text('Loading...',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(width: 24), // Space between entries
+                      const Icon(Icons.timer_outlined),
+                      const SizedBox(width: 8),
+                      Text('Loading...',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(width: 24), // Space between entries
+                      const Icon(Icons.straighten),
+                      const SizedBox(width: 8),
+                      Text('Loading...',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                    ],
+                  );
+                } else if (snapshot.hasError) {
+                  return Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.center, // Center elements
+                    children: [
+                      const Icon(Icons.route),
+                      const SizedBox(width: 8),
+                      Text('Error: ${snapshot.error}',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(width: 24), // Space between entries
+                      const Icon(Icons.timer_outlined),
+                      const SizedBox(width: 8),
+                      Text('Error: ${snapshot.error}',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(width: 24), // Space between entries
+                      const Icon(Icons.straighten),
+                      const SizedBox(width: 8),
+                      Text('Error: ${snapshot.error}',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                    ],
+                  );
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.center, // Center elements
+                    children: [
+                      const Icon(Icons.route),
+                      const SizedBox(width: 8),
+                      Text('0 Tracks',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(width: 24), // Space between entries
+                      const Icon(Icons.timer_outlined),
+                      const SizedBox(width: 8),
+                      Text('0h 00min',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(width: 24), // Space between entries
+                      const Icon(Icons.straighten),
+                      const SizedBox(width: 8),
+                      Text('0.00 km',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                    ],
+                  );
+                } else {
+                  List<TrackData> tracks = snapshot.data!;
+                  // Calculate total duration and distance
+                  const zeroDuration = Duration(milliseconds: 0);
+                  Duration totalDuration = tracks.fold(
+                      zeroDuration, (prev, track) => prev + track.duration);
+                  double totalDistance =
+                      tracks.fold(0.0, (prev, track) => prev + track.distance);
+
+                  // Format duration as '1h 27min'
+                  int hours = totalDuration.inHours;
+                  int minutes = totalDuration.inMinutes.remainder(60);
+                  String formattedDuration = '${hours}h ${minutes}min';
+
+                  return Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.center, // Center elements
+                    children: [
+                      const Icon(Icons.route),
+                      const SizedBox(width: 8),
+                      Text('${tracks.length} Tracks',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(width: 24), // Space between entries
+                      const Icon(Icons.timer_outlined),
+                      const SizedBox(width: 8),
+                      Text(formattedDuration,
+                          style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(width: 24), // Space between entries
+                      const Icon(Icons.straighten),
+                      const SizedBox(width: 8),
+                      Text('${totalDistance.toStringAsFixed(2)} km',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                    ],
+                  );
+                }
+              },
+            ),
+          ),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
@@ -56,6 +165,8 @@ class _TracksScreenState extends State<TracksScreen> {
               // filter tracks without geolocation data
               tracks = tracks
                   .where((track) => track.geolocations.isNotEmpty)
+                  .toList()
+                  .reversed
                   .toList();
 
               if (tracks.isEmpty) {
@@ -64,90 +175,22 @@ class _TracksScreenState extends State<TracksScreen> {
                         style: Theme.of(context).textTheme.bodyMedium));
               }
 
-              return ListView.builder(
+              return ListView.separated(
+                separatorBuilder: (context, index) => const SizedBox(
+                  height: 24,
+                ),
+                padding: const EdgeInsets.only(top: 24),
                 itemCount: tracks.length,
                 itemBuilder: (context, index) {
                   TrackData track = tracks[index];
-                  return Dismissible(
-                      key: Key(track.id.toString()),
-                      background: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20.0),
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      confirmDismiss: (DismissDirection direction) async {
-                        return await showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text("Delete Track"),
-                              content: const Text(
-                                  "Are you sure you wish to delete this track?"),
-                              actions: <Widget>[
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(false),
-                                  child: const Text("Cancel"),
-                                ),
-                                FilledButton(
-                                    style: const ButtonStyle(
-                                        backgroundColor: WidgetStatePropertyAll(
-                                            Colors.redAccent)),
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(true),
-                                    child: const Text("Delete")),
-                              ],
-                            );
-                          },
+                  return TrackListItem(
+                      track: track,
+                      onDismissed: () async {
+                        await IsarService().trackService.deleteTrack(track.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Track ${track.id} deleted')),
                         );
-                      },
-                      onDismissed: (direction) async => {
-                            await IsarService()
-                                .trackService
-                                .deleteTrack(track.id),
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text('Track ${track.id} deleted')),
-                            )
-                          },
-                      child: ListTile(
-                        title: Text(
-                          DateFormat('yyyy-MM-dd HH:mm:ss')
-                              .format(track.geolocations.first.timestamp),
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        subtitle: Column(
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.timer_outlined),
-                                const SizedBox(width: 8),
-                                Text(
-                                    '${DateFormat('mm:ss').format(DateTime.fromMillisecondsSinceEpoch(track.duration.inMilliseconds))} min',
-                                    style:
-                                        Theme.of(context).textTheme.bodyMedium),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                const Icon(Icons.route),
-                                const SizedBox(width: 8),
-                                Text('${track.distance.toStringAsFixed(2)} km',
-                                    style:
-                                        Theme.of(context).textTheme.bodyMedium),
-                              ],
-                            ),
-                          ],
-                        ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => TrackDetailScreen(
-                                    id: track.id,
-                                  )),
-                        ),
-                      ));
+                      });
                 },
               );
             }

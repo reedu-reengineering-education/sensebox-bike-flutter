@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import '../../../secrets.dart'; // File containing the Mapbox token
 
@@ -49,6 +50,9 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   Future<void> addLayer() async {
     try {
       // Remove existing layers and sources
+      if (await mapInstance.style.styleLayerExists("line_layer_bg")) {
+        await mapInstance.style.removeStyleLayer("line_layer_bg");
+      }
       if (await mapInstance.style.styleLayerExists("line_layer")) {
         await mapInstance.style.removeStyleLayer("line_layer");
       }
@@ -96,41 +100,52 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
 
     // Add a LineLayer with color interpolation based on sensor values
     await mapInstance.style.addLayer(LineLayer(
-      id: "line_layer",
-      sourceId: "lineSource",
-      // Use the sensor type as the property for the color expression
-      // This will be used to interpolate the color of the line based on the sensor values
-      // If the sensor value is not a number, the line will be transparent
-      lineColorExpression: [
-        "case",
-        [
-          "==",
+        id: "line_layer_bg",
+        sourceId: "lineSource",
+        lineColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.blueGrey[50]?.value
+            : Colors.blueGrey[900]?.value,
+        lineWidth: 2.0, // Adjust the width as needed
+        lineCap: LineCap.ROUND,
+        lineEmissiveStrength: 1));
+
+    // Add a LineLayer with color interpolation based on sensor values
+    await mapInstance.style.addLayer(LineLayer(
+        id: "line_layer",
+        sourceId: "lineSource",
+        // Use the sensor type as the property for the color expression
+        // This will be used to interpolate the color of the line based on the sensor values
+        // If the sensor value is not a number, the line will be transparent
+        lineColorExpression: [
+          "case",
           [
-            "typeof",
-            ["get", widget.sensorType]
+            "==",
+            [
+              "typeof",
+              ["get", widget.sensorType]
+            ],
+            "number"
           ],
-          "number"
+          [
+            "interpolate",
+            ["linear"],
+            ["get", widget.sensorType],
+            minSensorValue!,
+            'green',
+            minSensorValue! +
+                (maxSensorValue! -
+                        getMinSensorValue(
+                            widget.geolocationData, widget.sensorType)) *
+                    0.5,
+            'orange',
+            maxSensorValue!,
+            'red'
+          ],
+          "transparent"
         ],
-        [
-          "interpolate",
-          ["linear"],
-          ["get", widget.sensorType],
-          minSensorValue!,
-          'green',
-          minSensorValue! +
-              (maxSensorValue! -
-                      getMinSensorValue(
-                          widget.geolocationData, widget.sensorType)) *
-                  0.5,
-          'orange',
-          maxSensorValue!,
-          'red'
-        ],
-        "transparent"
-      ],
-      lineWidth: 4.0, // Adjust the width as needed
-      lineCap: LineCap.ROUND,
-    ));
+        lineWidth: 12.0, // Adjust the width as needed
+        lineCap: LineCap.ROUND,
+        lineEmissiveStrength: 1));
 
     // Adjust the camera to fit the bounds of the trajectory
     GeolocationData south = widget.geolocationData.first;
@@ -180,7 +195,7 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return MapWidget(
+    return ReusableMapWidget(
       onMapCreated: (mapInstance) async {
         this.mapInstance = mapInstance;
         await mapInstance.scaleBar

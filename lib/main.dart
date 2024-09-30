@@ -36,7 +36,7 @@ void main() async {
 }
 
 class SenseBoxBikeApp extends StatefulWidget {
-  const SenseBoxBikeApp({Key? key}) : super(key: key);
+  const SenseBoxBikeApp({super.key});
 
   @override
   _SenseBoxBikeAppState createState() => _SenseBoxBikeAppState();
@@ -44,7 +44,7 @@ class SenseBoxBikeApp extends StatefulWidget {
 
 class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
   static final List<Widget> _pages = <Widget>[
-    PopScope(
+    const PopScope(
       canPop: false,
       child: HomeScreen(),
     ),
@@ -52,7 +52,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
       canPop: false,
       child: TracksScreen(),
     ),
-    PopScope(
+    const PopScope(
       canPop: false,
       child: SettingsScreen(),
     ),

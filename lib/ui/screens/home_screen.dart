@@ -12,6 +12,8 @@ import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final BleBloc bleBloc = Provider.of<BleBloc>(context);
