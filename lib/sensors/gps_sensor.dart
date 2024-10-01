@@ -49,6 +49,23 @@ class GPSSensor extends Sensor {
         return;
       }
 
+      CircleAnnotationOptions option = CircleAnnotationOptions(
+          geometry: Point(coordinates: Position(_latestLng, _latestLat)),
+          circleColor: Colors.blue.value,
+          circleRadius: 8,
+          circleStrokeColor: Colors.white.value,
+          circleStrokeWidth: 2);
+
+      circleAnnotationManager!.deleteAll();
+
+      circleAnnotationManager
+          ?.setCirclePitchAlignment(CirclePitchAlignment.MAP);
+
+      circleAnnotationManager!.setCircleEmissiveStrength(1);
+
+      // Create new annotations
+      circleAnnotationManager!.createMulti([option]);
+
       mapInstance.flyTo(
         CameraOptions(
           zoom: 16.0,
@@ -59,17 +76,6 @@ class GPSSensor extends Sensor {
           duration: 1000,
         ),
       );
-
-      CircleAnnotationOptions option = CircleAnnotationOptions(
-          geometry: Point(coordinates: Position(_latestLng, _latestLat)),
-          circleColor: Colors.blue.value,
-          circleStrokeColor: Colors.white.value,
-          circleStrokeWidth: 1);
-
-      circleAnnotationManager!.deleteAll();
-
-      // Create new annotations
-      await circleAnnotationManager!.createMulti([option]);
     }
   }
 
@@ -103,13 +109,18 @@ class GPSSensor extends Sensor {
     return Card(
       elevation: 1,
       clipBehavior: Clip.hardEdge,
-      child: ReusableMapWidget(onMapCreated: (mapInstance) async {
-        this.mapInstance = mapInstance;
-        mapInstance.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-
-        circleAnnotationManager ??=
-            await mapInstance.annotations.createCircleAnnotationManager();
-      }),
+      child: ReusableMapWidget(
+          logoMargins: const EdgeInsets.all(4),
+          attributionMargins: const EdgeInsets.all(4),
+          onStyleLoadedCallback: (mapInstance) async {
+            circleAnnotationManager ??=
+                await mapInstance.annotations.createCircleAnnotationManager();
+          },
+          onMapCreated: (mapInstance) async {
+            this.mapInstance = mapInstance;
+            mapInstance.scaleBar
+                .updateSettings(ScaleBarSettings(enabled: false));
+          }),
     );
   }
 }

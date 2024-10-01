@@ -53,7 +53,7 @@ class SensorCard extends StatelessWidget {
                 ),
               ],
             ),
-            child,
+            Expanded(child: child)
 
             // Custom child widget
           ],
