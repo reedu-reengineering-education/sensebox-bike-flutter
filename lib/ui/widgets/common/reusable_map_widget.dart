@@ -49,8 +49,8 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget>
 
     // Adjust map theme based on app's brightness (dark/light)
     String style = MediaQuery.platformBrightnessOf(context) == Brightness.dark
-        ? "night"
-        : "day";
+        ? "day"
+        : "night";
     mapInstance.style
         .setStyleImportConfigProperty("basemap", "lightPreset", style);
   }
