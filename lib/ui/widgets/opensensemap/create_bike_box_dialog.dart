@@ -38,15 +38,9 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
               : SenseBoxBikeModel.atrai,
         );
 
-        // final newBox = await createSenseBoxBike(
-        //   _nameController.text,
-        //   position.latitude,
-        //   position.longitude,
-        //   _selectedModel,
-        // );
+        // fetchAndSelectSenseBox
+        await opensensemapBloc.fetchAndSelectSenseBox();
 
-        // await context.read<AuthStore>().refreshBoxes();
-        // context.read<AuthStore>().setSelectedBox(newBox);
         Navigator.of(context).pop();
       } catch (error) {
         // showToast(context, 'Failed to create SenseBox Bike');
