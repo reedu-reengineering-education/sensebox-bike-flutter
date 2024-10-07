@@ -8,6 +8,7 @@ import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection.dart';
 void showLoginOrSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
   showModalBottomSheet(
     context: context,
+    clipBehavior: Clip.antiAlias,
     isScrollControlled: true,
     builder: (BuildContext context) {
       if (bloc.isAuthenticated) {
@@ -21,15 +22,11 @@ void showLoginOrSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
 
 Widget _buildLoginRegisterTabs(BuildContext context, OpenSenseMapBloc bloc) {
   return SizedBox(
-    height: MediaQuery.of(context).size.height * 0.7,
+    height: MediaQuery.of(context).size.height * 0.8,
     child: DefaultTabController(
       length: 2,
       child: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(0, 32, 0, 8),
-            child: Text('Login or Register', style: TextStyle(fontSize: 18)),
-          ),
           const TabBar(
             tabs: [
               Tab(text: 'Login'),
@@ -59,8 +56,9 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
         children: [
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
+              TextButton.icon(
+                label: const Text('Logout'),
+                icon: const Icon(Icons.logout),
                 onPressed: () async => {
                   await bloc.logout(),
                   Navigator.pop(context),
@@ -68,9 +66,7 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
                 },
               ),
               const Spacer(),
-              const Text('Select a senseBox', style: TextStyle(fontSize: 18)),
-              const Spacer(),
-              IconButton(
+              IconButton.filled(
                 icon: const Icon(Icons.add),
                 onPressed: () async =>
                     {_showCreateSenseBoxDialog(context, bloc)},

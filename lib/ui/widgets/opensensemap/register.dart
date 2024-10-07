@@ -77,6 +77,9 @@ class _RegisterFormState extends State<RegisterForm> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your password';
                   }
+                  if (value.length < 8) {
+                    return 'Password must be at least 8 characters long';
+                  }
                   return null;
                 },
               ),
@@ -123,7 +126,7 @@ class _RegisterFormState extends State<RegisterForm> {
                                     Text("Registration failed",
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headlineMedium),
+                                            .headlineSmall),
                                     const SizedBox(height: 16),
                                     Text(e.toString(),
                                         style: Theme.of(context)

@@ -22,7 +22,8 @@ class OpenSenseMapService {
     );
 
     if (response.statusCode != 201) {
-      throw Exception('Failed to register ${response.body}');
+      final errorResponse = jsonDecode(response.body);
+      throw Exception(errorResponse['message']);
     }
 
     final responseData = jsonDecode(response.body);
