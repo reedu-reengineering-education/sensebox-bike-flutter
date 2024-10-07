@@ -24,7 +24,7 @@ class GeolocationBloc with ChangeNotifier {
     // _startListening();
   }
 
-  void startListening() async {
+  _checkPermissions() async {
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -46,6 +46,10 @@ class GeolocationBloc with ChangeNotifier {
     if (permission == LocationPermission.deniedForever) {
       return Future.error('Location permissions are permanently denied.');
     }
+  }
+
+  void startListening() async {
+    await _checkPermissions();
 
     late LocationSettings locationSettings;
 
@@ -100,6 +104,8 @@ class GeolocationBloc with ChangeNotifier {
 
   // function to get the current location
   Future<Position> getCurrentLocation() async {
+    await _checkPermissions();
+
     return Geolocator.getCurrentPosition();
   }
 
