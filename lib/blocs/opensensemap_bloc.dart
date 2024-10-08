@@ -9,7 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamCo
 class OpenSenseMapBloc with ChangeNotifier {
   final OpenSenseMapService _service = OpenSenseMapService();
   bool _isAuthenticated = false;
-  List<dynamic> _senseBoxes = [];
+
+  // make senseboxes a key value store. key is the page number, value is the list of senseboxes
+  final Map<int, List<dynamic>> _senseBoxes = {};
 
   final _senseBoxController =
       StreamController<SenseBox?>.broadcast(); // StreamController
@@ -23,7 +25,7 @@ class OpenSenseMapBloc with ChangeNotifier {
   SenseBox? get selectedSenseBox => _selectedSenseBox;
 
   bool get isAuthenticated => _isAuthenticated;
-  List<dynamic> get senseBoxes => _senseBoxes;
+  List<dynamic> get senseBoxes => _senseBoxes.values.expand((e) => e).toList();
 
   OpenSenseMapBloc() {
     _service.refreshToken().then(
@@ -69,11 +71,12 @@ class OpenSenseMapBloc with ChangeNotifier {
     }
   }
 
-  Future<List> fetchAndSelectSenseBox() async {
+  Future<List> fetchSenseBoxes({int page = 0}) async {
     try {
-      _senseBoxes = await _service.getSenseBoxes();
+      var myBoxes = await _service.getSenseBoxes(page: page);
+      _senseBoxes[page] = myBoxes;
       notifyListeners();
-      return _senseBoxes;
+      return myBoxes;
     } catch (e) {
       throw Exception('Failed to fetch senseBoxes');
     }

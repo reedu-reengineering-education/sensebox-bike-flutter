@@ -38,12 +38,27 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
               : SenseBoxBikeModel.atrai,
         );
 
-        // fetchAndSelectSenseBox
-        await opensensemapBloc.fetchAndSelectSenseBox();
+        await opensensemapBloc.fetchSenseBoxes();
 
         Navigator.of(context).pop();
       } catch (error) {
-        // showToast(context, 'Failed to create SenseBox Bike');
+        // alert
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Error'),
+                content: Text(error.toString()),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            });
       } finally {
         setState(() {
           _loading = false;
@@ -82,7 +97,6 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
                 controller: _nameController,
                 decoration: const InputDecoration(
                   labelText: 'Name',
-                  hintText: 'senseBox:bike',
                 ),
                 validator: (value) {
                   if (value == null ||

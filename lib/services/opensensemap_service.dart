@@ -127,12 +127,12 @@ class OpenSenseMapService {
     }
   }
 
-  Future<List<dynamic>> getSenseBoxes() async {
+  Future<List<dynamic>> getSenseBoxes({int page = 0}) async {
     final accessToken = await getAccessToken();
     if (accessToken == null) throw Exception('Not authenticated');
 
     final response = await http.get(
-      Uri.parse('$_baseUrl/users/me/boxes'),
+      Uri.parse('$_baseUrl/users/me/boxes?page=$page'),
       headers: {
         'Authorization': 'Bearer $accessToken',
       },
@@ -381,7 +381,8 @@ class OpenSenseMapService {
       'name': name,
       'exposure': 'mobile',
       'location': [latitude, longitude],
-      'grouptag': grouptags ?? ['bike', "atrai"],
+      'grouptag':
+          grouptags ?? ['bike', if (model == SenseBoxBikeModel.atrai) 'atrai'],
     };
 
     return {
