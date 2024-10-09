@@ -94,16 +94,19 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
       child: MaterialApp(
           title: 'senseBox:bike',
           theme: ThemeData(
-            brightness: platformBrightness,
-            canvasColor: platformBrightness == Brightness.light
-                ? Colors.grey[200]
-                : Colors.grey[900],
-            colorSchemeSeed: Colors.teal,
+            colorScheme: const ColorScheme.light(
+                primary: Colors.black, secondary: Colors.black12),
             cardTheme: CardTheme(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
             ),
+          ),
+          darkTheme: ThemeData(
+            colorScheme: const ColorScheme.dark(
+                primary: Colors.white,
+                secondary: Colors.white70,
+                surface: Color(0xFF121212)),
           ),
           home: Scaffold(
               body: _pages.elementAt(_selectedIndex),

@@ -39,7 +39,7 @@ class _LoginFormState extends State<LoginForm> {
                 controller: emailController,
                 decoration: const InputDecoration(
                   labelText: 'Email',
-                  border: OutlineInputBorder(),
+                  border: UnderlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
@@ -57,7 +57,7 @@ class _LoginFormState extends State<LoginForm> {
                 controller: passwordController,
                 decoration: const InputDecoration(
                   labelText: 'Password',
-                  border: OutlineInputBorder(),
+                  border: UnderlineInputBorder(),
                 ),
                 obscureText: true,
                 validator: (value) {

@@ -29,9 +29,16 @@ Widget _buildLoginRegisterTabs(BuildContext context, OpenSenseMapBloc bloc) {
         children: [
           const TabBar(
             tabs: [
-              Tab(text: 'Login'),
-              Tab(text: 'Register'),
+              Tab(
+                text: 'Login',
+                height: 64,
+              ),
+              Tab(
+                text: 'Register',
+                height: 64,
+              ),
             ],
+            dividerHeight: 0,
           ),
           Expanded(
             child: TabBarView(

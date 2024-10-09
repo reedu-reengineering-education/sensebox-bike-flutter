@@ -80,7 +80,10 @@ class _SenseBoxLoginButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final OpenSenseMapBloc osemBloc = Provider.of<OpenSenseMapBloc>(context);
 
-    return FilledButton.icon(
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      ),
       onPressed: () => showLoginOrSenseBoxSelection(context, osemBloc),
       label: StreamBuilder<SenseBox?>(
         stream: osemBloc.senseBoxStream,
