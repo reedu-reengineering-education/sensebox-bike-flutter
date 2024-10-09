@@ -44,7 +44,6 @@ class _RegisterFormState extends State<RegisterForm> {
                 controller: nameController,
                 decoration: const InputDecoration(
                   labelText: 'Name',
-                  border: UnderlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
@@ -52,7 +51,6 @@ class _RegisterFormState extends State<RegisterForm> {
                 controller: emailController,
                 decoration: const InputDecoration(
                   labelText: 'Email',
-                  border: UnderlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
@@ -70,7 +68,6 @@ class _RegisterFormState extends State<RegisterForm> {
                 controller: passwordController,
                 decoration: const InputDecoration(
                   labelText: 'Password',
-                  border: UnderlineInputBorder(),
                 ),
                 obscureText: true,
                 validator: (value) {
@@ -88,7 +85,6 @@ class _RegisterFormState extends State<RegisterForm> {
                 controller: confirmPasswordController,
                 decoration: const InputDecoration(
                   labelText: 'Confirm Password',
-                  border: UnderlineInputBorder(),
                 ),
                 obscureText: true,
                 validator: (value) {

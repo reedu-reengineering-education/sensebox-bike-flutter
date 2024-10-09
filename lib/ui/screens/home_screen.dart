@@ -142,13 +142,25 @@ class _ConnectButton extends StatelessWidget {
       valueListenable: bleBloc.isConnectingNotifier,
       builder: (context, isConnecting, child) {
         if (isConnecting) {
-          return const FloatingActionButton.extended(
-            label: Text('Connecting...'),
-            icon: CircularProgressIndicator(),
-            onPressed: null,
+          return FilledButton.icon(
+            style: const ButtonStyle(
+              padding: WidgetStatePropertyAll(
+                EdgeInsets.all(12),
+              ),
+            ),
+            label: const Text('Connecting...'),
+            icon: CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+            onPressed: () {},
           );
         } else {
-          return FloatingActionButton.extended(
+          return FilledButton.icon(
+            style: const ButtonStyle(
+              padding: WidgetStatePropertyAll(
+                EdgeInsets.all(12),
+              ),
+            ),
             label: const Text('Connect'),
             icon: const Icon(Icons.bluetooth),
             onPressed: () => showDeviceSelectionDialog(context, bleBloc),
@@ -166,13 +178,18 @@ class _StartStopButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton.extended(
+    return FilledButton.icon(
+      style: const ButtonStyle(
+        padding: WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        ),
+      ),
       label: Text(recordingBloc.isRecording ? 'Stop' : 'Start'),
       icon: Icon(
           recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
-      backgroundColor: recordingBloc.isRecording
-          ? Colors.redAccent
-          : Theme.of(context).colorScheme.primaryContainer,
+      // : recordingBloc.isRecording
+      //     ? Colors.redAccent
+      //     : Theme.of(context).colorScheme.primaryContainer,
       onPressed: () {
         recordingBloc.isRecording
             ? recordingBloc.stopRecording()
@@ -192,14 +209,18 @@ class _DisconnectButton extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: bleBloc.isReconnectingNotifier,
       builder: (context, isReconnecting, child) {
-        return FloatingActionButton.extended(
+        return OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          ),
           icon: isReconnecting
               ? const CircularProgressIndicator()
               : const Icon(Icons.bluetooth_disabled),
           label: isReconnecting
               ? const Text('Reconnecting...')
               : const Text('Disconnect'),
-          backgroundColor: Theme.of(context).secondaryHeaderColor,
+          // backgroundColor: Theme.of(context).colorScheme.primary,
           onPressed: bleBloc.disconnectDevice,
         );
       },
