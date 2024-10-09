@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
-enum SenseBoxBikeModel { defaultModel, atrai }
+enum SenseBoxBikeModel { classic, atrai }
 
 class OpenSenseMapService {
   static const String _baseUrl = 'https://api.opensensemap.org';
@@ -181,7 +181,7 @@ class OpenSenseMapService {
 
   // Define the available sensors for each model
   final Map<SenseBoxBikeModel, List<dynamic>> sensors = {
-    SenseBoxBikeModel.defaultModel: [
+    SenseBoxBikeModel.classic: [
       {
         "id": "0",
         "icon": 'osem-thermometer',
@@ -375,14 +375,14 @@ class OpenSenseMapService {
     double longitude,
     double latitude, {
     List<String>? grouptags,
-    SenseBoxBikeModel model = SenseBoxBikeModel.defaultModel,
+    SenseBoxBikeModel model = SenseBoxBikeModel.classic,
   }) {
     final baseProperties = {
       'name': name,
       'exposure': 'mobile',
       'location': [latitude, longitude],
-      'grouptag':
-          grouptags ?? ['bike', if (model == SenseBoxBikeModel.atrai) 'atrai'],
+      'grouptag': grouptags ??
+          ['bike', model == SenseBoxBikeModel.classic ? 'classic' : 'atrai'],
     };
 
     return {
