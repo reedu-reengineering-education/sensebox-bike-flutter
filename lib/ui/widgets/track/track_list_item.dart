@@ -15,7 +15,7 @@ class TrackListItem extends StatelessWidget {
   String buildStaticMapboxUrl(BuildContext context) {
     bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    String style = isDarkMode ? 'dark-v11' : 'streets-v12';
+    String style = isDarkMode ? 'dark-v11' : 'light-v11';
     String lineColor = isDarkMode ? 'fff' : '111';
     String polyline = Uri.encodeComponent(track.encodedPolyline);
 

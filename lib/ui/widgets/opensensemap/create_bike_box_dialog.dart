@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
+import 'package:sensebox_bike/ui/widgets/form/image_select_form_field.dart';
 
 class CreateBikeBoxDialog extends StatefulWidget {
   const CreateBikeBoxDialog({super.key});
@@ -14,7 +15,8 @@ class CreateBikeBoxDialog extends StatefulWidget {
 class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  String _selectedModel = 'atrai';
+  final _modelController = ImageSelectController<SenseBoxBikeModel>();
+
   bool _loading = false;
 
   Future<void> _submitForm() async {
@@ -29,13 +31,15 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
 
         final position = await geolocationBloc.getCurrentLocation();
 
+        if (_modelController.value == null) {
+          throw 'Please select a model';
+        }
+
         await opensensemapBloc.createSenseBoxBike(
           _nameController.text,
           position.latitude,
           position.longitude,
-          _selectedModel == "default"
-              ? SenseBoxBikeModel.defaultModel
-              : SenseBoxBikeModel.atrai,
+          _modelController.value ?? SenseBoxBikeModel.classic,
         );
 
         await opensensemapBloc.fetchSenseBoxes();
@@ -78,20 +82,27 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
           key: _formKey,
           child: Column(
             children: [
-              DropdownButtonFormField<String>(
-                value: _selectedModel,
-                decoration: const InputDecoration(labelText: 'Model'),
-                items: const [
-                  DropdownMenuItem(value: 'default', child: Text('Default')),
-                  DropdownMenuItem(value: 'atrai', child: Text('Atrai')),
+              ImageSelectFormField(
+                controller: _modelController,
+                label: 'Model',
+                items: [
+                  ImageSelectItem(
+                    value: SenseBoxBikeModel.classic,
+                    label: 'Classic',
+                    imagePath: 'assets/images/sensebox_bike_classic.webp',
+                  ),
+                  ImageSelectItem(
+                    value: SenseBoxBikeModel.atrai,
+                    label: 'ATRAI',
+                    imagePath: 'assets/images/sensebox_bike_atrai.webp',
+                  ),
                 ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedModel = value!;
-                  });
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select an option';
+                  }
+                  return null;
                 },
-                validator: (value) =>
-                    value == null ? 'Please select a model' : null,
               ),
               TextFormField(
                 controller: _nameController,

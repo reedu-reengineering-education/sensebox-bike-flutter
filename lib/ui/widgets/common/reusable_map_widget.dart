@@ -65,7 +65,7 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget>
   @override
   Widget build(BuildContext context) {
     return MapWidget(
-      styleUri: MapboxStyles.STANDARD,
+      styleUri: 'mapbox://styles/felixaetem/cm20uojq2004201o132dw50nl',
       onStyleLoadedListener: (styleLoadedEventData) {
         // Adjust map theme based on app's brightness (dark/light)
         String style =

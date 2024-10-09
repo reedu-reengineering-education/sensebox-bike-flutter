@@ -106,9 +106,7 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
                       ? Wrap(
                           spacing: 8,
                           children: senseBox.grouptag!
-                              .map((tag) => Badge(
-                                  label: Text(tag),
-                                  backgroundColor: Colors.primaries.first))
+                              .map((tag) => Badge(label: Text(tag)))
                               .toList(),
                         )
                       : null,
