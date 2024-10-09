@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -8,6 +9,8 @@ import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:vibration/vibration.dart'; // Import the RecordingBloc
 
 class BleBloc with ChangeNotifier {
+  final SettingsBloc settingsBloc;
+
   final List<BluetoothDevice> devicesList = [];
   final StreamController<List<BluetoothDevice>> _devicesListController =
       StreamController.broadcast();
@@ -34,7 +37,7 @@ class BleBloc with ChangeNotifier {
 
   final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
 
-  BleBloc() {
+  BleBloc(this.settingsBloc) {
     FlutterBluePlus.setLogLevel(LogLevel.error);
   }
 
@@ -146,7 +149,7 @@ class BleBloc with ChangeNotifier {
         isReconnectingNotifier.value = true;
 
         // Vibrate only once after the disconnection
-        if (!hasVibrated) {
+        if (!hasVibrated && settingsBloc.vibrateOnDisconnect) {
           Vibration.vibrate();
           hasVibrated = true; // Set the flag to prevent repeated vibration
         }

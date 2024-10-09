@@ -64,7 +64,8 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
   @override
   Widget build(BuildContext context) {
     final isarService = IsarService();
-    final bleBloc = BleBloc();
+    final settingsBloc = SettingsBloc();
+    final bleBloc = BleBloc(settingsBloc);
     final OpenSenseMapBloc openSenseMapBloc = OpenSenseMapBloc();
     final trackBloc = TrackBloc(isarService);
     final recordingBloc =
@@ -83,7 +84,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => SettingsBloc()),
+        ChangeNotifierProvider(create: (_) => settingsBloc),
         ChangeNotifierProvider(create: (_) => trackBloc),
         ChangeNotifierProvider(
             create: (_) => recordingBloc), // Initialize first
