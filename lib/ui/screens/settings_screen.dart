@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -40,6 +41,14 @@ class SettingsScreen extends StatelessWidget {
                 ),
               );
             },
+          ),
+          ListTile(
+            leading: const Icon(Icons.polyline),
+            title: const Text('Exclusion Zones'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => ExclusionZonesScreen()),
+            ),
           ),
 
           // Other Section
