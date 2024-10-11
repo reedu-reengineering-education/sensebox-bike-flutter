@@ -43,7 +43,7 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.polyline),
+            leading: const Icon(Icons.block),
             title: const Text('Exclusion Zones'),
             onTap: () => Navigator.push(
               context,

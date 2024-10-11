@@ -1,124 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart' as Geolocator;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 
 class ExclusionZonesScreen extends StatefulWidget {
-  ExclusionZonesScreen({super.key});
+  const ExclusionZonesScreen({super.key});
 
   @override
   State<ExclusionZonesScreen> createState() => _ExclusionZonesScreenState();
 }
 
 class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
-  List<Point> polygonPoints = []; // To store the tapped points
-  List<CircleAnnotation> circleAnnotations = []; // To store circle annotations
+  // Private Variables
+  final List<Point> _polygonPoints = []; // To store the tapped points
+  final List<CircleAnnotation> _circleAnnotations =
+      []; // To store circle annotations
   PolygonAnnotation? _currentPolygon;
-  bool isEditing = false; // To track editing state
-  bool isLoading = false; // To track loading state
+  bool _isEditing = false; // To track editing state
+  bool _isLoading = false; // To track loading state
 
-  CircleAnnotationManager? circleAnnotationManager; // Storing polygon corners
-  PolygonAnnotationManager? polygonAnnotationManager; // Storing the polygon
-
-  void _onMapCreated(MapboxMap controller) async {
-    circleAnnotationManager =
-        await controller.annotations.createCircleAnnotationManager();
-
-    circleAnnotationManager!.setCircleEmissiveStrength(1);
-    circleAnnotationManager!.setCirclePitchAlignment(CirclePitchAlignment.MAP);
-
-    polygonAnnotationManager =
-        await controller.annotations.createPolygonAnnotationManager();
-
-    polygonAnnotationManager!.setFillEmissiveStrength(1);
-
-    controller.setOnMapTapListener(_onMapTapListener);
-  }
-
-  void _onMapTapListener(MapContentGestureContext context) async {
-    if (!isEditing || isLoading)
-      return; // Only add points when editing and not loading
-
-    setState(() {
-      isLoading = true; // Start loading
-      polygonPoints.add(context.point); // Add the tapped point to the list
-    });
-
-    try {
-      // If there are more than 2 points, update the polygon
-      if (polygonPoints.length > 2) {
-        print('Updating polygon with ${polygonPoints.length} points');
-
-        // create a polygon with the points if not exists
-        _currentPolygon ??= await polygonAnnotationManager!.create(
-          PolygonAnnotationOptions(
-            geometry: Polygon.fromPoints(points: [polygonPoints.toList()]),
-            fillColor: Colors.blue.value,
-            fillOpacity: 0.5,
-          ),
-        );
-
-        // update the polygon with the new points
-        _currentPolygon?.geometry =
-            Polygon.fromPoints(points: [polygonPoints.toList()]);
-
-        await polygonAnnotationManager!.update(_currentPolygon!);
-      }
-
-      // Create a visual marker (circle) at the tapped point
-      final circleAnnotation = await circleAnnotationManager!.create(
-        CircleAnnotationOptions(
-          geometry: context.point,
-          circleColor: Colors.blue.value,
-          circleStrokeColor: Colors.white.value,
-          circleStrokeWidth: 2,
-          circleRadius: 6,
-        ),
-      );
-
-      // Store the circle annotation for future removal
-      circleAnnotations.add(circleAnnotation);
-    } finally {
-      setState(() {
-        isLoading = false; // End loading
-      });
-    }
-  }
-
-  // Undo the last added point and remove the corresponding circle
-  void _undoLastPoint() async {
-    if (polygonPoints.isEmpty || isLoading) return;
-
-    setState(() {
-      isLoading = true; // Start loading
-      polygonPoints.removeLast(); // Remove the last point
-    });
-
-    try {
-      // Remove the last circle annotation
-      if (circleAnnotations.isNotEmpty) {
-        final lastCircle = circleAnnotations.removeLast();
-        await circleAnnotationManager!.delete(lastCircle);
-      }
-
-      if (polygonPoints.length >= 2) {
-        // Update the polygon with the remaining points
-        _currentPolygon?.geometry =
-            Polygon.fromPoints(points: [polygonPoints.toList()]);
-
-        await polygonAnnotationManager!.update(_currentPolygon!);
-      } else {
-        // If less than 2 points, remove the polygon completely
-        if (_currentPolygon != null) {
-          await polygonAnnotationManager!.delete(_currentPolygon!);
-          _currentPolygon = null;
-        }
-      }
-    } finally {
-      setState(() {
-        isLoading = false; // End loading
-      });
-    }
-  }
+  CircleAnnotationManager?
+      _circleAnnotationManager; // Managing circle annotations
+  PolygonAnnotationManager?
+      _polygonAnnotationManager; // Managing polygon annotations
 
   @override
   Widget build(BuildContext context) {
@@ -132,69 +36,22 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
             onMapCreated: _onMapCreated,
           ),
           Positioned(
+            right: 8,
+            top: 8,
             child: Column(
               children: [
-                // Toggle button for editing state
+                // Toggle Editing Button
                 IconButton.filled(
-                  icon: isEditing
+                  icon: _isEditing
                       ? const Icon(Icons.done) // Show "done" when editing
                       : const Icon(Icons.add), // Show "add" when not editing
-                  onPressed: isLoading
-                      ? null // Disable button when loading
-                      : () async {
-                          if (polygonAnnotationManager == null) {
-                            return;
-                          }
-
-                          setState(() {
-                            isLoading = true; // Start loading
-                          });
-
-                          try {
-                            if (isEditing && polygonPoints.isEmpty) {
-                              // If editing and no points, cancel the editing
-                              setState(() {
-                                isEditing = false; // Toggle editing state off
-                              });
-                            } else if (isEditing && polygonPoints.isNotEmpty) {
-                              await polygonAnnotationManager!
-                                  .delete(_currentPolygon!);
-                              _currentPolygon = null;
-
-                              // If editing, create the polygon and complete the editing
-                              await polygonAnnotationManager!.create(
-                                PolygonAnnotationOptions(
-                                  geometry: Polygon.fromPoints(
-                                      points: [polygonPoints.toList()]),
-                                  fillColor: Colors.blue.value,
-                                  fillOpacity: 0.5,
-                                ),
-                              );
-
-                              setState(() {
-                                polygonPoints.clear();
-                                circleAnnotations.clear();
-                                isEditing = false; // Toggle editing state off
-                              });
-                            } else {
-                              // Start editing mode
-                              setState(() {
-                                isEditing = true; // Toggle editing state on
-                                _currentPolygon = null; // Reset polygon
-                              });
-                            }
-                          } finally {
-                            setState(() {
-                              isLoading = false; // End loading
-                            });
-                          }
-                        },
+                  onPressed: _isLoading ? null : _toggleEditing,
                 ),
-                // Undo button
+                // Undo Button
                 IconButton(
                   icon: const Icon(Icons.undo),
-                  onPressed: isLoading || polygonPoints.isEmpty
-                      ? null // Disable if loading or no points to undo
+                  onPressed: _isLoading || _polygonPoints.isEmpty
+                      ? null
                       : _undoLastPoint,
                 ),
               ],
@@ -203,5 +60,194 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
         ],
       ),
     );
+  }
+
+  /// Initializes the map and sets up annotation managers.
+  Future<void> _onMapCreated(MapboxMap controller) async {
+    await controller.location.updateSettings(LocationComponentSettings(
+      enabled: true,
+      showAccuracyRing: true,
+    ));
+
+    // Get current position
+    Geolocator.Position geoPosition =
+        await Geolocator.Geolocator.getCurrentPosition();
+    await controller.flyTo(
+      CameraOptions(
+        center: Point(
+          coordinates: Position(geoPosition.longitude, geoPosition.latitude),
+        ),
+        zoom: 14.0,
+      ),
+      MapAnimationOptions(duration: 1000),
+    );
+
+    // Initialize annotation managers
+    _circleAnnotationManager = await controller.annotations
+        .createCircleAnnotationManager(id: 'exclusion_zones_circle');
+
+    _circleAnnotationManager!
+      ..setCircleEmissiveStrength(1)
+      ..setCirclePitchAlignment(CirclePitchAlignment.MAP);
+
+    _polygonAnnotationManager = await controller.annotations
+        .createPolygonAnnotationManager(below: 'exclusion_zones_circle');
+
+    _polygonAnnotationManager!.setFillEmissiveStrength(1);
+
+    _polygonAnnotationManager!
+        .addOnPolygonAnnotationClickListener(_AnnotationClickListener());
+
+    // Set map tap listener
+    controller.setOnMapTapListener(_onMapTapListener);
+  }
+
+  /// Handles map tap events to add points to the polygon.
+  Future<void> _onMapTapListener(MapContentGestureContext context) async {
+    if (!_isEditing || _isLoading) {
+      return; // Only add points when editing and not loading
+    }
+
+    setState(() {
+      _isLoading = true; // Start loading
+      _polygonPoints.add(context.point); // Add the tapped point to the list
+    });
+
+    try {
+      // If there are more than 2 points, update the polygon
+      if (_polygonPoints.length > 2) {
+        print('Updating polygon with ${_polygonPoints.length} points');
+
+        // Create a polygon if it doesn't exist
+        _currentPolygon ??= await _polygonAnnotationManager!.create(
+          PolygonAnnotationOptions(
+            geometry: Polygon.fromPoints(points: [_polygonPoints.toList()]),
+            fillColor: Colors.redAccent.value,
+            fillOpacity: 0.5,
+          ),
+        );
+
+        // Update the polygon with the new points
+        _currentPolygon?.geometry =
+            Polygon.fromPoints(points: [_polygonPoints.toList()]);
+
+        await _polygonAnnotationManager!.update(_currentPolygon!);
+      }
+
+      // Create a visual marker (circle) at the tapped point
+      final circleAnnotation = await _circleAnnotationManager!.create(
+        CircleAnnotationOptions(
+          geometry: context.point,
+          circleColor: Colors.redAccent.value,
+          circleStrokeColor: Colors.white.value,
+          circleStrokeWidth: 2,
+          circleRadius: 6,
+        ),
+      );
+
+      // Store the circle annotation for future removal
+      _circleAnnotations.add(circleAnnotation);
+    } finally {
+      setState(() {
+        _isLoading = false; // End loading
+      });
+    }
+  }
+
+  /// Toggles the editing state and handles related UI changes.
+  Future<void> _toggleEditing() async {
+    if (_polygonAnnotationManager == null) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true; // Start loading
+    });
+
+    try {
+      if (_isEditing && _polygonPoints.isEmpty) {
+        // If editing and no points, cancel the editing
+        setState(() {
+          _isEditing = false; // Toggle editing state off
+        });
+      } else if (_isEditing && _polygonPoints.isNotEmpty) {
+        // Finalize editing by creating/updating the polygon
+        if (_currentPolygon != null) {
+          await _polygonAnnotationManager!.delete(_currentPolygon!);
+          _currentPolygon = null;
+        }
+
+        // Create the final polygon
+        await _polygonAnnotationManager!.create(
+          PolygonAnnotationOptions(
+            geometry: Polygon.fromPoints(points: [_polygonPoints.toList()]),
+            fillColor: Colors.redAccent.value,
+            fillOpacity: 0.5,
+          ),
+        );
+
+        // Remove all circle annotations
+        await _circleAnnotationManager!.deleteAll();
+        _circleAnnotations.clear();
+        _polygonPoints.clear();
+
+        setState(() {
+          _isEditing = false; // Toggle editing state off
+        });
+      } else {
+        // Start editing mode
+        setState(() {
+          _isEditing = true; // Toggle editing state on
+          _currentPolygon = null; // Reset polygon
+        });
+      }
+    } finally {
+      setState(() {
+        _isLoading = false; // End loading
+      });
+    }
+  }
+
+  /// Undoes the last added point and removes the corresponding circle.
+  Future<void> _undoLastPoint() async {
+    if (_polygonPoints.isEmpty || _isLoading) return;
+
+    setState(() {
+      _isLoading = true; // Start loading
+      _polygonPoints.removeLast(); // Remove the last point
+    });
+
+    try {
+      // Remove the last circle annotation
+      if (_circleAnnotations.isNotEmpty) {
+        final lastCircle = _circleAnnotations.removeLast();
+        await _circleAnnotationManager!.delete(lastCircle);
+      }
+
+      if (_polygonPoints.length > 2) {
+        // Update the polygon with the remaining points
+        _currentPolygon?.geometry =
+            Polygon.fromPoints(points: [_polygonPoints.toList()]);
+
+        await _polygonAnnotationManager!.update(_currentPolygon!);
+      } else {
+        // If less than 3 points, remove the polygon completely
+        if (_currentPolygon != null) {
+          await _polygonAnnotationManager!.delete(_currentPolygon!);
+          _currentPolygon = null;
+        }
+      }
+    } finally {
+      setState(() {
+        _isLoading = false; // End loading
+      });
+    }
+  }
+}
+
+final class _AnnotationClickListener extends OnPolygonAnnotationClickListener {
+  @override
+  void onPolygonAnnotationClick(PolygonAnnotation annotation) {
+    print('Polygon clicked: $annotation');
   }
 }
