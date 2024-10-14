@@ -170,8 +170,8 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
       // Set initial camera position
       mapInstance.setCamera(CameraOptions(
-        center: Point(coordinates: Position(9, 35)),
-        zoom: 3.0,
+        center: Point(coordinates: Position(9, 45)),
+        zoom: 3.25,
         pitch: 25,
       ));
 
