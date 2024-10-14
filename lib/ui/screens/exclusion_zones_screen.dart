@@ -57,7 +57,7 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Exclusion Zones'),
+        title: const Text('Privacy Zones'),
       ),
       body: Stack(
         children: [
@@ -83,15 +83,32 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
                           EditingMode.DRAW_POLYGON
                       ? const Icon(Icons.check)
                       : const Icon(Icons.crop_square_outlined),
-                  onPressed: () => mapboxDrawController
-                      .toggleEditing(EditingMode.DRAW_POLYGON),
+                  onPressed: () {
+                    if (mapboxDrawController.editingMode == EditingMode.NONE) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text(
+                            'Tap on the map to start drawing a zone. Tap the checkmark to finish.'),
+                      ));
+                    }
+                    mapboxDrawController
+                        .toggleEditing(EditingMode.DRAW_POLYGON);
+                  },
                 ),
                 IconButton.filled(
-                  icon: mapboxDrawController.editingMode == EditingMode.DELETE
-                      ? const Icon(Icons.check)
-                      : const Icon(Icons.delete),
-                  onPressed: () => mapboxDrawController.toggleDeleteMode(),
-                ),
+                    icon: mapboxDrawController.editingMode == EditingMode.DELETE
+                        ? const Icon(Icons.check)
+                        : const Icon(Icons.delete),
+                    onPressed: () {
+                      if (mapboxDrawController.editingMode ==
+                          EditingMode.NONE) {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text(
+                              'Tap on a zone to delete it. Tap the checkmark to finish.'),
+                        ));
+                      }
+                      mapboxDrawController.toggleDeleteMode();
+                    }),
               ],
             ),
           ),

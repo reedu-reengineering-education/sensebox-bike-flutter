@@ -43,8 +43,8 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.block),
-            title: const Text('Exclusion Zones'),
+            leading: const Icon(Icons.admin_panel_settings),
+            title: const Text('Privacy Zones'),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => ExclusionZonesScreen()),
