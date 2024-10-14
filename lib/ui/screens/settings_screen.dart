@@ -49,6 +49,10 @@ class SettingsScreen extends StatelessWidget {
               context,
               MaterialPageRoute(builder: (context) => ExclusionZonesScreen()),
             ),
+            trailing: Badge.count(
+              count: settingsBloc.privacyZones.length,
+              backgroundColor: Theme.of(context).iconTheme.color,
+            ),
           ),
 
           // Other Section

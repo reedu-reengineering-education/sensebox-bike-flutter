@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:geolocator/geolocator.dart' as Geolocator;
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -156,7 +157,9 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return ReusableMapWidget(onMapCreated: (mapInstance) {
+    final settingsBloc = Provider.of<SettingsBloc>(context);
+
+    return ReusableMapWidget(onMapCreated: (mapInstance) async {
       this.mapInstance = mapInstance;
       mapInstance.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
       mapInstance.compass.updateSettings(CompassSettings(enabled: false));
@@ -167,10 +170,31 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
       // Set initial camera position
       mapInstance.setCamera(CameraOptions(
-        center: Point(coordinates: Position(7, 35)),
+        center: Point(coordinates: Position(9, 35)),
         zoom: 3.0,
         pitch: 25,
       ));
+
+      // Add privacy zones to the map
+      try {
+        if (settingsBloc.privacyZones.isEmpty) {
+          return;
+        }
+
+        final polygonAnnotationManager =
+            await mapInstance.annotations.createPolygonAnnotationManager();
+        polygonAnnotationManager.setFillColor(Colors.red.value);
+        polygonAnnotationManager.setFillOpacity(0.5);
+        polygonAnnotationManager.setFillEmissiveStrength(1);
+
+        final polygonOptions = settingsBloc.privacyZones.map((e) {
+          final polygon = Polygon.fromJson(jsonDecode(e));
+          return PolygonAnnotationOptions(geometry: polygon);
+        }).toList();
+        polygonAnnotationManager.createMulti(polygonOptions);
+      } catch (e) {
+        print(e);
+      }
     });
   }
 }

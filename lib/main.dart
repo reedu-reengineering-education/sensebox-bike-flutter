@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:mapbox_maps_flutter_draw/mapbox_maps_flutter_draw.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
@@ -63,14 +64,16 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
 
   @override
   Widget build(BuildContext context) {
-    final isarService = IsarService();
     final settingsBloc = SettingsBloc();
+    final isarService = IsarService();
     final bleBloc = BleBloc(settingsBloc);
     final OpenSenseMapBloc openSenseMapBloc = OpenSenseMapBloc();
     final trackBloc = TrackBloc(isarService);
     final recordingBloc =
         RecordingBloc(isarService, bleBloc, trackBloc, openSenseMapBloc);
-    final geolocationBloc = GeolocationBloc(isarService, recordingBloc);
+    final geolocationBloc =
+        GeolocationBloc(isarService, recordingBloc, settingsBloc);
+    final MapboxDrawController mapboxDrawController = MapboxDrawController();
 
     final Brightness platformBrightness =
         MediaQuery.platformBrightnessOf(context);
@@ -93,6 +96,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
         ChangeNotifierProvider(
             create: (_) => SensorBloc(bleBloc, geolocationBloc)),
         ChangeNotifierProvider(create: (_) => openSenseMapBloc),
+        ChangeNotifierProvider(create: (_) => mapboxDrawController),
       ],
       child: MaterialApp(
           title: 'senseBox:bike',
