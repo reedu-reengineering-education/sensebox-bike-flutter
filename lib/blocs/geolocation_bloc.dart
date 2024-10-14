@@ -1,12 +1,15 @@
 // File: lib/blocs/geolocation_bloc.dart
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:turf/turf.dart' as Turf;
 
 class GeolocationBloc with ChangeNotifier {
   final StreamController<GeolocationData> _geolocationController =
@@ -18,11 +21,9 @@ class GeolocationBloc with ChangeNotifier {
 
   final IsarService isarService;
   final RecordingBloc recordingBloc;
+  final SettingsBloc settingsBloc;
 
-  GeolocationBloc(this.isarService, this.recordingBloc) {
-    // Start listening to geolocation changes
-    // _startListening();
-  }
+  GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc);
 
   _checkPermissions() async {
     bool serviceEnabled;
@@ -114,8 +115,29 @@ class GeolocationBloc with ChangeNotifier {
     _positionStreamSubscription?.cancel();
   }
 
+  /// Save the geolocation data to the database
+  /// Check if the current location is in a privacy zone
   Future<void> _saveGeolocationData(GeolocationData data) async {
     try {
+      // Get the privacy zones from the settings bloc
+      final privacyZones = settingsBloc.privacyZones
+          .map((e) => Turf.Polygon.fromJson(jsonDecode(e)));
+
+      // Close the privacy zones
+      final closedZones = privacyZones.map((e) {
+        final coordinates = e.coordinates.first.first;
+        e.coordinates.first.add(coordinates);
+        return e;
+      }).toList();
+
+      // Check if the current location is in a privacy zone
+      for (var zone in closedZones) {
+        if (Turf.booleanPointInPolygon(
+            Turf.Position(data.longitude, data.latitude), zone)) {
+          return;
+        }
+      }
+
       await isarService.geolocationService.saveGeolocationData(data);
     } catch (e) {
       print('Error saving geolocation data: $e');

@@ -196,8 +196,8 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   @override
   Widget build(BuildContext context) {
     return ReusableMapWidget(
-      logoMargins: EdgeInsets.all(4),
-      attributionMargins: EdgeInsets.all(4),
+      logoMargins: const EdgeInsets.all(4),
+      attributionMargins: const EdgeInsets.all(4),
       onMapCreated: (mapInstance) async {
         this.mapInstance = mapInstance;
         await mapInstance.scaleBar
