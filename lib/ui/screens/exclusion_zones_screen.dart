@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:mapbox_maps_flutter_draw/mapbox_maps_flutter_draw.dart';
 import 'package:provider/provider.dart';
+import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 
@@ -19,6 +20,7 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
   Widget build(BuildContext context) {
     final mapboxDrawController = Provider.of<MapboxDrawController>(context);
     final settingsBloc = Provider.of<SettingsBloc>(context);
+    final geolocationBloc = Provider.of<GeolocationBloc>(context);
 
     void onMapCreated(MapboxMap controller) async {
       await mapboxDrawController.initialize(
@@ -35,6 +37,22 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
           .map((e) => Polygon.fromJson(jsonDecode(e)))
           .toList();
       await mapboxDrawController.addPolygons(existingPolygons);
+
+      controller.location.updateSettings(LocationComponentSettings(
+        enabled: true,
+        showAccuracyRing: true,
+      ));
+      await Future.delayed(const Duration(milliseconds: 20));
+      final currentPosition = await geolocationBloc.getCurrentLocation();
+      await controller.flyTo(
+          CameraOptions(
+            center: Point(
+                coordinates: Position(
+                    currentPosition.longitude, currentPosition.latitude)),
+            zoom: 16.0,
+            pitch: 0,
+          ),
+          MapAnimationOptions(duration: 1000));
     }
 
     return Scaffold(
