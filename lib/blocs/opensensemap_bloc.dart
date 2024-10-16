@@ -93,6 +93,21 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
+  bool isSenseBoxBikeCompatible(SenseBox sensebox) {
+    // check the sensor names if they are compatible with the SenseBoxBike
+    final validSensorNames = _service.sensors.values
+        .expand((sensorList) => sensorList.map((sensor) => sensor['title']))
+        .toSet()
+        .toList();
+
+    for (var sensor in sensebox.sensors!) {
+      if (!validSensorNames.contains(sensor.title)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   Future<List> fetchSenseBoxes({int page = 0}) async {
     try {
       var myBoxes = await _service.getSenseBoxes(page: page);
