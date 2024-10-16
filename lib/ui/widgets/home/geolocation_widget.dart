@@ -22,7 +22,7 @@ class GeolocationMapWidget extends StatefulWidget {
 
 class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   late final MapboxMap mapInstance;
-  StreamSubscription<List<GeolocationData>>? _isarGeolocationSubscription;
+  StreamSubscription? _isarGeolocationSubscription;
   StreamSubscription<TrackData?>? _trackSubscription; // Track ID subscription
 
   final isarService = IsarService();
@@ -64,17 +64,20 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   }
 
   // Listen to the Isar geolocation stream and update the map
-  _listenToGeolocationStream(int trackId) {
-    return isarService.geolocationService.getGeolocationStream().then((stream) {
-      stream.listen((e) async {
-        List<GeolocationData> geoData = await isarService.geolocationService
-            .getGeolocationDataByTrackId(trackId);
+  StreamSubscription _listenToGeolocationStream(int trackId) {
+    // Access the geolocation stream from the service
+    return isarService.geolocationService
+        .getGeolocationStream()
+        .asStream()
+        .listen((event) async {
+      // Fetch geolocation data for the given track ID
+      List<GeolocationData> geoData = await isarService.geolocationService
+          .getGeolocationDataByTrackId(trackId);
 
-        // If geolocation data is available, update the map source and layer
-        if (geoData.isNotEmpty) {
-          _updateMapWithGeolocationData(geoData);
-        }
-      });
+      // If geolocation data is available, update the map source and layer
+      if (geoData.isNotEmpty) {
+        _updateMapWithGeolocationData(geoData);
+      }
     });
   }
 

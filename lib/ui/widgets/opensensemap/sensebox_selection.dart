@@ -98,15 +98,31 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
 
             final senseBox = SenseBox.fromJson(bloc.senseBoxes[index]);
             final isSelected = senseBox.id == bloc.selectedSenseBox?.id;
+            final isSenseBoxBikeCompatible =
+                bloc.isSenseBoxBikeCompatible(senseBox);
 
             return ListTile(
               title: Text(senseBox.name ?? 'Unnamed senseBox'),
-              subtitle:
-                  senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
+              subtitle: !isSenseBoxBikeCompatible
+                  ? const Row(
+                      children: [
+                        Icon(
+                          Icons.warning,
+                          size: 12,
+                        ),
+                        SizedBox(width: 8),
+                        Text('Not compatible with senseBox:bike')
+                      ],
+                    )
+                  : senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
                       ? Wrap(
                           spacing: 8,
                           children: senseBox.grouptag!
-                              .map((tag) => Badge(label: Text(tag)))
+                              .map((tag) => Badge(
+                                    label: Text(tag),
+                                    backgroundColor:
+                                        Theme.of(context).iconTheme.color,
+                                  ))
                               .toList(),
                         )
                       : null,
@@ -114,10 +130,13 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
                   ? Icon(Icons.check,
                       color: Theme.of(context).colorScheme.primary)
                   : null,
-              onTap: () {
-                bloc.setSelectedSenseBox(senseBox);
-                Navigator.pop(context); // Go back after selecting
-              },
+              enabled: isSenseBoxBikeCompatible,
+              onTap: isSenseBoxBikeCompatible
+                  ? () {
+                      bloc.setSelectedSenseBox(senseBox);
+                      Navigator.pop(context); // Go back after selecting
+                    }
+                  : null,
             );
           },
         );

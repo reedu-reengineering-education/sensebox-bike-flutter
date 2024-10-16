@@ -6,7 +6,7 @@ import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamController
 
-class OpenSenseMapBloc with ChangeNotifier {
+class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   final OpenSenseMapService _service = OpenSenseMapService();
   bool _isAuthenticated = false;
 
@@ -30,6 +30,28 @@ class OpenSenseMapBloc with ChangeNotifier {
   OpenSenseMapBloc() {
     _service.refreshToken().then(
         (_) async => {_isAuthenticated = true, await loadSelectedSenseBox()});
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        await _service.refreshToken();
+        _isAuthenticated = true;
+        await loadSelectedSenseBox();
+        break;
+      case AppLifecycleState.inactive:
+        print("app in inactive");
+        break;
+      case AppLifecycleState.paused:
+        print("app in paused");
+        break;
+      case AppLifecycleState.detached:
+        print("app in detached");
+        break;
+      case AppLifecycleState.hidden:
+      // TODO: Handle this case.
+    }
   }
 
   Future<void> register(String name, String email, String password) async {
@@ -69,6 +91,21 @@ class OpenSenseMapBloc with ChangeNotifier {
     } catch (e) {
       rethrow;
     }
+  }
+
+  bool isSenseBoxBikeCompatible(SenseBox sensebox) {
+    // check the sensor names if they are compatible with the SenseBoxBike
+    final validSensorNames = _service.sensors.values
+        .expand((sensorList) => sensorList.map((sensor) => sensor['title']))
+        .toSet()
+        .toList();
+
+    for (var sensor in sensebox.sensors!) {
+      if (!validSensorNames.contains(sensor.title)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<List> fetchSenseBoxes({int page = 0}) async {
