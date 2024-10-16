@@ -75,16 +75,8 @@ abstract class Sensor {
   void _aggregateAndStoreData(GeolocationData geolocationData) {
     List<double> aggregatedValues = aggregateData(_valueBuffer);
 
-    // some sensors have attributes, some do not. If they dont have one, store the value as is and attribute is null
     if (attributes.isEmpty) {
-      final sensorData = SensorData()
-        ..characteristicUuid = characteristicUuid
-        ..title = title
-        ..value = aggregatedValues[0]
-        ..attribute = null
-        ..geolocationData.value = geolocationData;
-
-      isarService.sensorService.saveSensorData(sensorData);
+      _saveSensorData(aggregatedValues[0], null, geolocationData);
     } else {
       if (attributes.length != aggregatedValues.length) {
         throw Exception(
@@ -92,16 +84,24 @@ abstract class Sensor {
       }
 
       for (int i = 0; i < attributes.length; i++) {
-        final sensorData = SensorData()
-          ..characteristicUuid = characteristicUuid
-          ..title = title
-          ..value = aggregatedValues[i]
-          ..attribute = attributes[i]
-          ..geolocationData.value = geolocationData;
-
-        isarService.sensorService.saveSensorData(sensorData);
+        _saveSensorData(aggregatedValues[i], attributes[i], geolocationData);
       }
     }
+  }
+
+  // Helper method to save sensor data
+  void _saveSensorData(
+      double value, String? attribute, GeolocationData geolocationData) {
+    isarService.geolocationService.saveGeolocationData(geolocationData);
+
+    final sensorData = SensorData()
+      ..characteristicUuid = characteristicUuid
+      ..title = title
+      ..value = value
+      ..attribute = attribute
+      ..geolocationData.value = geolocationData;
+
+    isarService.sensorService.saveSensorData(sensorData);
   }
 
   // Abstract method to build a widget for the sensor (UI representation)
