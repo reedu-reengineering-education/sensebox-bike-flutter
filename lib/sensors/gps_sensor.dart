@@ -14,7 +14,7 @@ class GPSSensor extends Sensor {
   double _latestLng = 0.0;
   double _latestSpd = 0.0;
 
-  late final MapboxMap mapInstance;
+  late final MapboxMap? mapInstance;
 
   @override
   get uiPriority => 25;
@@ -49,33 +49,37 @@ class GPSSensor extends Sensor {
         return;
       }
 
-      CircleAnnotationOptions option = CircleAnnotationOptions(
+      if (circleAnnotationManager != null) {
+        CircleAnnotationOptions option = CircleAnnotationOptions(
           geometry: Point(coordinates: Position(_latestLng, _latestLat)),
           circleColor: Colors.blue.value,
           circleRadius: 8,
           circleStrokeColor: Colors.white.value,
-          circleStrokeWidth: 2);
+          circleStrokeWidth: 2,
+        );
 
-      circleAnnotationManager!.deleteAll();
+        circleAnnotationManager!.deleteAll();
 
-      circleAnnotationManager
-          ?.setCirclePitchAlignment(CirclePitchAlignment.MAP);
+        circleAnnotationManager!
+            .setCirclePitchAlignment(CirclePitchAlignment.MAP);
+        circleAnnotationManager!.setCircleEmissiveStrength(1);
 
-      circleAnnotationManager!.setCircleEmissiveStrength(1);
+        // Create new annotations
+        circleAnnotationManager!.createMulti([option]);
+      }
 
-      // Create new annotations
-      circleAnnotationManager!.createMulti([option]);
-
-      mapInstance.flyTo(
-        CameraOptions(
-          zoom: 16.0,
-          pitch: 45,
-          center: Point(coordinates: Position(_latestLng, _latestLat)),
-        ),
-        MapAnimationOptions(
-          duration: 1000,
-        ),
-      );
+      if (mapInstance != null) {
+        mapInstance!.flyTo(
+          CameraOptions(
+            zoom: 16.0,
+            pitch: 45,
+            center: Point(coordinates: Position(_latestLng, _latestLat)),
+          ),
+          MapAnimationOptions(
+            duration: 1000,
+          ),
+        );
+      }
     }
   }
 
