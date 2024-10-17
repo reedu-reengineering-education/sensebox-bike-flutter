@@ -21,8 +21,10 @@ String? getTitleFromSensorKey(String key, String? attribute) {
       return 'Finedust PM1';
     case 'distance':
       return 'Overtaking Distance';
-    case 'overtaking':
-      return 'Overtaking Manoeuvre';
+    case 'overtaking_car':
+      return 'Overtaking Car';
+    case 'overtaking_bike':
+      return 'Overtaking Bike';
     case 'surface_classification_asphalt':
       return 'Surface Asphalt';
     case 'surface_classification_sett':

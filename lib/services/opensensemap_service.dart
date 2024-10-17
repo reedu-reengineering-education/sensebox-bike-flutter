@@ -306,61 +306,68 @@ class OpenSenseMapService {
       {
         "id": "6",
         "icon": 'osem-shock',
-        "title": 'Overtaking Manoeuvre',
+        "title": 'Overtaking Car',
         "unit": '%',
         "sensorType": 'VL53L8CX'
       },
       {
         "id": "7",
         "icon": 'osem-shock',
+        "title": 'Overtaking Bike',
+        "unit": '%',
+        "sensorType": 'VL53L8CX'
+      },
+      {
+        "id": "8",
+        "icon": 'osem-shock',
         "title": 'Overtaking Distance',
         "unit": 'cm',
         "sensorType": 'VL53L8CX'
       },
       {
-        "id": "8",
+        "id": "9",
         "icon": 'osem-shock',
         "title": 'Surface Asphalt',
         "unit": '%',
         "sensorType": 'MPU-6050'
       },
       {
-        "id": "9",
+        "id": "10",
         "icon": 'osem-shock',
         "title": 'Surface Sett',
         "unit": '%',
         "sensorType": 'MPU-6050'
       },
       {
-        "id": "10",
+        "id": "11",
         "icon": 'osem-shock',
         "title": 'Surface Compacted',
         "unit": '%',
         "sensorType": 'MPU-6050'
       },
       {
-        "id": "11",
+        "id": "12",
         "icon": 'osem-shock',
         "title": 'Surface Paving',
         "unit": '%',
         "sensorType": 'MPU-6050'
       },
       {
-        "id": "12",
+        "id": "13",
         "icon": 'osem-shock',
         "title": 'Standing',
         "unit": '%',
         "sensorType": 'MPU-6050'
       },
       {
-        "id": "13",
+        "id": "14",
         "icon": 'osem-shock',
         "title": 'Surface Anomaly',
         "unit": 'Δ',
         "sensorType": 'MPU-6050'
       },
       {
-        "id": "14",
+        "id": "15",
         "icon": 'osem-dashboard',
         "title": 'Speed',
         "unit": 'm/s',

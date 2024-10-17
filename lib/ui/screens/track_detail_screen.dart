@@ -254,6 +254,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                       'humidity',
                       'distance',
                       'overtaking',
+                      'overtaking_bike',
                       'surface_classification_asphalt',
                       'surface_classification_compacted',
                       'surface_classification_paving',
