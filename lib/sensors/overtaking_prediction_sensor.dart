@@ -10,6 +10,9 @@ import 'package:sensebox_bike/utils/sensor_utils.dart';
 class OvertakingPredictionSensor extends Sensor {
   double _latestCarPrediction = 0.0;
   double _latestBikePrediction = 0.0;
+  final _carPredictions = <FlSpot>[];
+  final _bikePredictions = <FlSpot>[];
+  double currTime = DateTime.now().millisecondsSinceEpoch.toDouble();
 
   @override
   get uiPriority => 40;
@@ -26,8 +29,15 @@ class OvertakingPredictionSensor extends Sensor {
   void onDataReceived(List<double> data) {
     super.onDataReceived(data); // Call the parent class to handle buffering
     if (data.isNotEmpty) {
+      currTime = DateTime.now().millisecondsSinceEpoch.toDouble();
       _latestCarPrediction = data[0];
       _latestBikePrediction = data[1];
+      while (_carPredictions[0].x < currTime - 3000) {
+        _carPredictions.removeAt(0);
+        _bikePredictions.removeAt(0);
+      }
+      _carPredictions.add(FlSpot(currTime, _latestCarPrediction));
+      _bikePredictions.add(FlSpot(currTime, _latestBikePrediction));
     }
   }
 
@@ -101,47 +111,48 @@ class OvertakingPredictionSensor extends Sensor {
                       context),
                 SizedBox(
                   width: double.infinity,
-                  height: 18,
-                  child: RotatedBox(
-                    quarterTurns: 1,
-                    child: BarChart(BarChartData(
+                  height: 80,
+                  child: LineChart(
+                    LineChartData(
+                      minY: 0,
+                      maxY: 1,
+                      minX: _carPredictions.first.x,
+                      maxX: _bikePredictions.last.x,
+                      clipData: const FlClipData.all(),
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: 0.25,
+                      ),
                       borderData: FlBorderData(show: false),
-                      barTouchData: BarTouchData(enabled: false),
-                      gridData: const FlGridData(show: false),
-                      titlesData: const FlTitlesData(show: false),
-                      barGroups: [
-                        BarChartGroupData(
-                          x: 0,
-                          barRods: [
-                            BarChartRodData(
-                              toY: 1,
-                              rodStackItems: [
-                                for (int i = 0; i < displayValues.length; i++)
-                                  BarChartRodStackItem(
-                                    displayValues
-                                        .take(i)
-                                        .fold(0.0, (a, b) => a + b),
-                                    displayValues
-                                        .take(i + 1)
-                                        .fold(0.0, (a, b) => a + b),
-                                    [
-                                      Colors.red,
-                                      Colors.blue,
-                                    ][i],
-                                  ),
-                                BarChartRodStackItem(
-                                  displayValues
-                                      .take(displayValues.length)
-                                      .fold(0.0, (a, b) => a + b),
-                                  1.0,
-                                  Colors.white,
-                                ),
-                              ],
-                            ),
-                          ],
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: _carPredictions,
+                          dotData: const FlDotData(
+                            show: false,
+                          ),
+                          color: Colors.red,
+                          barWidth: 4,
+                          isCurved: true,
+                          isStrokeCapRound: true,
                         ),
+                        LineChartBarData(
+                          spots: _bikePredictions,
+                          dotData: const FlDotData(
+                            show: false,
+                          ),
+                          color: Colors.blue,
+                          barWidth: 4,
+                          isCurved: true,
+                          isStrokeCapRound: true,
+                        )
                       ],
-                    )),
+                      titlesData: const FlTitlesData(
+                        show: false,
+                      ),
+                    ),
+                    duration: Duration(milliseconds: 0),
+                    curve: Curves.linear,
                   ),
                 ),
               ],
