@@ -12,7 +12,7 @@ class OvertakingPredictionSensor extends Sensor {
   double _latestBikePrediction = 0.0;
   final _carPredictions = <FlSpot>[];
   final _bikePredictions = <FlSpot>[];
-  double currTime = DateTime.now().millisecondsSinceEpoch.toDouble();
+  double currTime = 0.0;
 
   @override
   get uiPriority => 40;
@@ -32,7 +32,8 @@ class OvertakingPredictionSensor extends Sensor {
       currTime = DateTime.now().millisecondsSinceEpoch.toDouble();
       _latestCarPrediction = data[0];
       _latestBikePrediction = data[1];
-      while (_carPredictions[0].x < currTime - 3000) {
+      while (_carPredictions.length > 0 &&
+          _carPredictions[0].x < currTime - 3000) {
         _carPredictions.removeAt(0);
         _bikePredictions.removeAt(0);
       }
@@ -116,8 +117,12 @@ class OvertakingPredictionSensor extends Sensor {
                     LineChartData(
                       minY: 0,
                       maxY: 1,
-                      minX: _carPredictions.first.x,
-                      maxX: _bikePredictions.last.x,
+                      minX: _carPredictions.length > 0
+                          ? _carPredictions.first.x
+                          : 0.0,
+                      maxX: _carPredictions.length > 0
+                          ? _carPredictions.last.x
+                          : 0.0,
                       clipData: const FlClipData.all(),
                       gridData: FlGridData(
                         show: true,
