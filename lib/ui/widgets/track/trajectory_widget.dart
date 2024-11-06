@@ -63,35 +63,39 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
       print("Error removing sources and layers: $e");
     }
 
+    List features = List.generate(widget.geolocationData.length - 1, (index) {
+      GeolocationData current = widget.geolocationData[index];
+      GeolocationData next = widget.geolocationData[index + 1];
+
+      return {
+        "type": "Feature",
+        'properties': {
+          for (var sensor in current.sensorData)
+            if (!sensor.value.isNaN)
+              '${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}':
+                  sensor.value,
+        },
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [current.longitude, current.latitude],
+            [next.longitude, next.latitude]
+          ],
+        },
+      };
+    });
+
     // Add new GeoJson source
     GeoJsonSource lineSource = GeoJsonSource(
       id: "lineSource",
-      data: jsonEncode({
-        "type": "FeatureCollection",
-        "features": List.generate(widget.geolocationData.length - 1, (index) {
-          GeolocationData current = widget.geolocationData[index];
-          GeolocationData next = widget.geolocationData[index + 1];
-
-          return {
-            "type": "Feature",
-            'properties': {
-              for (var sensor in current.sensorData)
-                '${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}':
-                    sensor.value,
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [current.longitude, current.latitude],
-                [next.longitude, next.latitude]
-              ],
-            },
-          };
-        })
-      }),
+      data: jsonEncode({"type": "FeatureCollection", "features": features}),
     );
 
-    await mapInstance.style.addSource(lineSource);
+    try {
+      await mapInstance.style.addSource(lineSource);
+    } catch (e) {
+      print("Error adding source: $e");
+    }
 
     minSensorValue =
         getMinSensorValue(widget.geolocationData, widget.sensorType);

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
@@ -31,8 +33,7 @@ class DistanceSensor extends Sensor {
   @override
   List<double> aggregateData(List<List<double>> valueBuffer) {
     List<double> myValues = valueBuffer.map((e) => e[0]).toList();
-    // Example aggregation logic: calculating the mean distance
-    return [myValues.reduce((a, b) => a + b) / myValues.length];
+    return [myValues.reduce(min)];
   }
 
   @override

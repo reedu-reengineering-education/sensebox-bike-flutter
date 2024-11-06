@@ -43,8 +43,8 @@ class SenseBoxBikeApp extends StatelessWidget {
     final bleBloc = BleBloc(settingsBloc);
     final openSenseMapBloc = OpenSenseMapBloc();
     final trackBloc = TrackBloc(isarService);
-    final recordingBloc =
-        RecordingBloc(isarService, bleBloc, trackBloc, openSenseMapBloc);
+    final recordingBloc = RecordingBloc(
+        isarService, bleBloc, trackBloc, openSenseMapBloc, settingsBloc);
     final geolocationBloc =
         GeolocationBloc(isarService, recordingBloc, settingsBloc);
     final sensorBloc = SensorBloc(bleBloc, geolocationBloc);

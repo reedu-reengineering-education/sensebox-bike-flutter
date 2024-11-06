@@ -41,6 +41,7 @@ class _RegisterFormState extends State<RegisterForm> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
+                autofillHints: const [AutofillHints.name],
                 controller: nameController,
                 decoration: const InputDecoration(
                   labelText: 'Name',
@@ -48,6 +49,7 @@ class _RegisterFormState extends State<RegisterForm> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                autofillHints: const [AutofillHints.email],
                 controller: emailController,
                 decoration: const InputDecoration(
                   labelText: 'Email',
@@ -65,6 +67,7 @@ class _RegisterFormState extends State<RegisterForm> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                autofillHints: const [AutofillHints.password],
                 controller: passwordController,
                 decoration: const InputDecoration(
                   labelText: 'Password',
@@ -82,6 +85,7 @@ class _RegisterFormState extends State<RegisterForm> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                autofillHints: const [AutofillHints.password],
                 controller: confirmPasswordController,
                 decoration: const InputDecoration(
                   labelText: 'Confirm Password',

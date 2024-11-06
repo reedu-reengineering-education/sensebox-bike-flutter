@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
@@ -13,6 +14,7 @@ class RecordingBloc with ChangeNotifier {
   final IsarService isarService;
   final TrackBloc trackBloc;
   final OpenSenseMapBloc openSenseMapBloc;
+  final SettingsBloc settingsBloc;
 
   bool _isRecording = false;
   TrackData? _currentTrack;
@@ -25,8 +27,8 @@ class RecordingBloc with ChangeNotifier {
   TrackData? get currentTrack => _currentTrack;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
 
-  RecordingBloc(
-      this.isarService, this.bleBloc, this.trackBloc, this.openSenseMapBloc) {
+  RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
+      this.openSenseMapBloc, this.settingsBloc) {
     bleBloc.addListener(_onBluetoothConnectionChanged);
     openSenseMapBloc.senseBoxStream
         .listen(_onSenseBoxChanged); // Listen to senseBoxStream
@@ -58,6 +60,7 @@ class RecordingBloc with ChangeNotifier {
 
       LiveUploadService liveUploadService = LiveUploadService(
           openSenseMapService: OpenSenseMapService(),
+          settingsBloc: settingsBloc,
           senseBox:
               _selectedSenseBox!, // Use the cached value of selectedSenseBox
           trackId: trackBloc.currentTrack!.id);

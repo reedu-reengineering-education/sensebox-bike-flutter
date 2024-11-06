@@ -9,13 +9,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/utils/geo_utils.dart';
 import 'package:turf/turf.dart' as Turf;
 
 class GeolocationBloc with ChangeNotifier {
-  final StreamController<GeolocationData> _geolocationController =
-      StreamController.broadcast();
-  Stream<GeolocationData> get geolocationStream =>
-      _geolocationController.stream;
+  // final StreamController<GeolocationData> _geolocationController =
+  //     StreamController.broadcast();
+  // Stream<GeolocationData> get geolocationStream =>
+  //     _geolocationController.stream;
 
   StreamSubscription<Position>? _positionStreamSubscription;
 
@@ -85,19 +86,19 @@ class GeolocationBloc with ChangeNotifier {
         Geolocator.getPositionStream(locationSettings: locationSettings)
             .listen((Position position) async {
       // TODO: this is not a good practice to create a new object and not save it
-      GeolocationData geolocationData = GeolocationData()
-        ..latitude = position.latitude
-        ..longitude = position.longitude
-        ..speed = position.speed
-        ..timestamp = position.timestamp;
-      // ..track.value = recordingBloc.currentTrack;
 
       if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
-        geolocationData.track.value = recordingBloc.currentTrack;
+        GeolocationData geolocationData = GeolocationData()
+          ..latitude = position.latitude
+          ..longitude = position.longitude
+          ..speed = position.speed
+          ..timestamp = position.timestamp
+          ..track.value = recordingBloc.currentTrack;
+
         await _saveGeolocationData(geolocationData); // Save to database
       }
 
-      _geolocationController.add(geolocationData);
+      // _geolocationController.add(geolocationData);
 
       notifyListeners();
     });
@@ -124,21 +125,11 @@ class GeolocationBloc with ChangeNotifier {
           .map((e) => Turf.Polygon.fromJson(jsonDecode(e)));
 
       // Close the privacy zones
-      final closedZones = privacyZones.map((e) {
-        final coordinates = e.coordinates.first.first;
-        e.coordinates.first.add(coordinates);
-        return e;
-      }).toList();
+      bool isInZone = isInsidePrivacyZone(privacyZones, data);
 
-      // Check if the current location is in a privacy zone
-      for (var zone in closedZones) {
-        if (Turf.booleanPointInPolygon(
-            Turf.Position(data.longitude, data.latitude), zone)) {
-          return;
-        }
+      if (!isInZone) {
+        await isarService.geolocationService.saveGeolocationData(data);
       }
-
-      await isarService.geolocationService.saveGeolocationData(data);
     } catch (e) {
       print('Error saving geolocation data: $e');
     }
@@ -146,7 +137,7 @@ class GeolocationBloc with ChangeNotifier {
 
   @override
   void dispose() {
-    _geolocationController.close();
+    // _geolocationController.close();
     super.dispose();
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
@@ -22,6 +23,9 @@ class BleBloc with ChangeNotifier {
   bool _userInitiatedDisconnect =
       false; // Track if disconnect was user-initiated
   final Map<String, StreamController<List<double>>> _characteristicStreams = {};
+
+  final Map<String, StreamController<List<String>>>
+      _characteristicStringStreams = {};
 
   // create a value notifier that stores the available characteristics
   final ValueNotifier<List<BluetoothCharacteristic>> availableCharacteristics =
@@ -65,6 +69,18 @@ class BleBloc with ChangeNotifier {
     selectedDeviceNotifier.value = null; // Notify disconnection
     availableCharacteristics.value = [];
     notifyListeners();
+  }
+
+  Future<void> connectToId(String id, BuildContext context) async {
+    await FlutterBluePlus.startScan(withNames: [id]);
+    FlutterBluePlus.scanResults.listen((results) async {
+      for (ScanResult result in results) {
+        if (result.device.advName.toString() == id) {
+          await connectToDevice(result.device, context);
+          break;
+        }
+      }
+    });
   }
 
   Future<void> connectToDevice(
@@ -120,6 +136,14 @@ class BleBloc with ChangeNotifier {
         for (var characteristic in senseBoxService.characteristics) {
           await _listenToCharacteristic(characteristic);
         }
+
+        // var deviceInfoService = services.firstWhere(
+        //     (service) => service.uuid == deviceInfoServiceUUID,
+        //     orElse: () => throw Exception('Device Info Service not found'));
+
+        // for (var characteristic in deviceInfoService.characteristics) {
+        //   await _listenToDeviceInfoCharacteristic(characteristic);
+        // }
 
         break; // Exit the loop if successful
       } catch (e) {
@@ -208,6 +232,20 @@ class BleBloc with ChangeNotifier {
     await characteristic.setNotifyValue(true);
     characteristic.onValueReceived.listen((value) {
       List<double> parsedData = _parseData(Uint8List.fromList(value));
+      controller.add(parsedData);
+    });
+  }
+
+  Future<void> _listenToDeviceInfoCharacteristic(
+      BluetoothCharacteristic characteristic) async {
+    final controller = StreamController<List<String>>();
+    _characteristicStringStreams[characteristic.uuid.toString()] = controller;
+
+    await characteristic.setNotifyValue(true);
+    characteristic.onValueReceived.listen((value) {
+      print('Received value: $value');
+      print('Decoded value: ${utf8.decode(value)}');
+      List<String> parsedData = [utf8.decode(value)];
       controller.add(parsedData);
     });
   }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -7,6 +8,7 @@ import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class LiveUploadService {
   final OpenSenseMapService openSenseMapService;
+  final SettingsBloc settingsBloc;
   final IsarService isarService = IsarService();
   final SenseBox senseBox; // ID of the senseBox to upload data to
 
@@ -17,18 +19,30 @@ class LiveUploadService {
 
   LiveUploadService({
     required this.openSenseMapService,
+    required this.settingsBloc,
     required this.senseBox,
     required this.trackId,
   });
 
   void startUploading() {
+    // a lock to prevent multiple uploads at the same time
+    bool isUploading = false;
+
     isarService.geolocationService.getGeolocationStream().then((stream) {
       stream.listen((e) async {
+        if (isUploading) {
+          return;
+        }
+
+        isUploading = true;
+
         List<GeolocationData> geoData = await isarService.geolocationService
             .getGeolocationDataByTrackId(trackId);
 
         // remove latest item from the list, as it may still be filled with new data
-        geoData.removeLast();
+        if (geoData.isNotEmpty) {
+          geoData.removeLast();
+        }
 
         List<GeolocationData> geoDataToUpload = geoData
             .where((element) => !_uploadedIds.contains(element.id))
@@ -46,6 +60,8 @@ class LiveUploadService {
             print('Failed to upload data: $e');
           }
         }
+
+        isUploading = false;
       });
     });
   }
@@ -66,7 +82,7 @@ class LiveUploadService {
         Sensor? sensor = getMatchingSensor(sensorTitle);
 
         // Skip if sensor is not found
-        if (sensor == null) {
+        if (sensor == null || sensorData.value.isNaN) {
           continue;
         }
 
