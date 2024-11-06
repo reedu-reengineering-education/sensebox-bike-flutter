@@ -1,4 +1,6 @@
 PODS:
+  - app_links (0.0.2):
+    - Flutter
   - device_info_plus (0.0.1):
     - Flutter
   - Flutter (1.0.0)
@@ -48,6 +50,7 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
+  - app_links (from `.symlinks/plugins/app_links/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
   - flutter_blue_plus (from `.symlinks/plugins/flutter_blue_plus/ios`)
@@ -74,6 +77,8 @@ SPEC REPOS:
     - Turf
 
 EXTERNAL SOURCES:
+  app_links:
+    :path: ".symlinks/plugins/app_links/ios"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
   Flutter:
@@ -108,6 +113,7 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/vibration/ios"
 
 SPEC CHECKSUMS:
+  app_links: e7a6750a915a9e161c58d91bc610e8cd1d4d0ad0
   device_info_plus: 97af1d7e84681a90d0693e63169a5d50e0839a0d
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   flutter_blue_plus: 4837da7d00cf5d441fdd6635b3a57f936778ea96
