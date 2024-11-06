@@ -36,6 +36,7 @@ class _LoginFormState extends State<LoginForm> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
+                autofillHints: const [AutofillHints.email],
                 controller: emailController,
                 decoration: const InputDecoration(
                   labelText: 'Email',
@@ -54,6 +55,7 @@ class _LoginFormState extends State<LoginForm> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                autofillHints: const [AutofillHints.password],
                 controller: passwordController,
                 decoration: const InputDecoration(
                   labelText: 'Password',

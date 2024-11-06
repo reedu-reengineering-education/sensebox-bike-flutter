@@ -25,6 +25,8 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   StreamSubscription? _isarGeolocationSubscription;
   StreamSubscription<TrackData?>? _trackSubscription; // Track ID subscription
 
+  late PolylineAnnotationManager lineAnnotationManager;
+
   final isarService = IsarService();
 
   @override
@@ -32,12 +34,13 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
     super.initState();
     // Listen to track changes from the TrackBloc
     _trackSubscription =
-        context.read<TrackBloc>().currentTrackStream.listen((track) {
+        context.read<TrackBloc>().currentTrackStream.listen((track) async {
       // Handle trackId changes
       if (track != null) {
-        _isarGeolocationSubscription = _listenToGeolocationStream(track.id);
+        _isarGeolocationSubscription =
+            await _listenToGeolocationStream(track.id);
       } else {
-        _clearMapSourcesAndLayers(); // Clear map if trackId is null
+        await lineAnnotationManager.deleteAll();
       }
     });
 
@@ -64,12 +67,10 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   }
 
   // Listen to the Isar geolocation stream and update the map
-  StreamSubscription _listenToGeolocationStream(int trackId) {
+  Future _listenToGeolocationStream(int trackId) async {
     // Access the geolocation stream from the service
-    return isarService.geolocationService
-        .getGeolocationStream()
-        .asStream()
-        .listen((event) async {
+    return (await isarService.geolocationService.getGeolocationStream())
+        .listen((_) async {
       // Fetch geolocation data for the given track ID
       List<GeolocationData> geoData = await isarService.geolocationService
           .getGeolocationDataByTrackId(trackId);
@@ -83,43 +84,18 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
   // Create or update the map source with new geolocation data
   void _updateMapWithGeolocationData(List<GeolocationData> geoData) async {
-    // Create the GeoJSON FeatureCollection
-    final geoJsonData = jsonEncode({
-      "type": "Feature",
-      "properties": {},
-      "geometry": {
-        "type": "LineString",
-        "coordinates": geoData.map((location) {
-          return [location.longitude, location.latitude];
-        }).toList(),
-      }
-    });
+    lineAnnotationManager.deleteAll();
 
-    // Remove the old source and layer if they exist
-    await _clearMapSourcesAndLayers();
+    List<Point> points = geoData.map((location) {
+      return Point(
+          coordinates: Position(location.longitude, location.latitude));
+    }).toList();
 
-    // Create a new source with the updated GeoJSON data
-    GeoJsonSource lineSource = GeoJsonSource(
-      id: "lineSource",
-      data: geoJsonData,
+    PolylineAnnotationOptions polyline = PolylineAnnotationOptions(
+      geometry: LineString.fromPoints(points: points),
     );
 
-    // Add the new source to the map
-    await mapInstance.style.addSource(lineSource);
-
-    // // Add a line layer to display the geolocation points on the map
-    LineLayer lineLayer = LineLayer(
-        id: "lineLayer",
-        sourceId: "lineSource",
-        lineColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white.value
-            : Colors.black.value,
-        lineWidth: 4.0,
-        lineEmissiveStrength: 1,
-        lineCap: LineCap.ROUND);
-
-    // Add the layer to the map
-    await mapInstance.style.addLayer(lineLayer);
+    lineAnnotationManager.create(polyline);
 
     // get last geolocation data
     GeolocationData lastLocation = geoData.last;
@@ -134,21 +110,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
           pitch: 45,
         ),
         MapAnimationOptions(duration: 1000));
-  }
-
-  // Clear the map by removing the source and layers
-  Future<void> _clearMapSourcesAndLayers() async {
-    try {
-      // Remove existing layers and sources
-      if (await mapInstance.style.styleLayerExists("lineLayer")) {
-        await mapInstance.style.removeStyleLayer("lineLayer");
-      }
-      if (await mapInstance.style.styleSourceExists("lineSource")) {
-        await mapInstance.style.removeStyleSource("lineSource");
-      }
-    } catch (e) {
-      print("Error removing sources and layers: $e");
-    }
   }
 
   @override
@@ -177,6 +138,16 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
         zoom: 3.25,
         pitch: 25,
       ));
+
+      lineAnnotationManager = await mapInstance.annotations
+          .createPolylineAnnotationManager(id: 'lineAnnotationManager');
+      lineAnnotationManager.setLineColor(
+          Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.value
+              : Colors.black.value);
+      lineAnnotationManager.setLineWidth(4.0);
+      lineAnnotationManager.setLineEmissiveStrength(1);
+      lineAnnotationManager.setLineCap(LineCap.ROUND);
 
       // Add privacy zones to the map
       try {

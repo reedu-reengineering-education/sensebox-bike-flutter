@@ -36,7 +36,7 @@ abstract class Sensor {
     this.isarService,
   );
 
-  void startListening() {
+  void startListening() async {
     try {
       // Listen to the sensor data stream
       _subscription = bleBloc
@@ -47,8 +47,17 @@ abstract class Sensor {
       });
 
       // Listen to geolocation updates
-      geolocationBloc.geolocationStream.listen((geolocationData) {
+      (await isarService.geolocationService.getGeolocationStream())
+          .listen((_) async {
         if (_valueBuffer.isNotEmpty) {
+          GeolocationData? geolocationData = await isarService
+              .geolocationService
+              .getLastGeolocationData(); // Get the latest geolocation data
+
+          if (geolocationData == null) {
+            return;
+          }
+
           _aggregateAndStoreData(
               geolocationData); // Aggregate and store sensor data
           _valueBuffer.clear(); // Clear the list after aggregation
@@ -73,6 +82,10 @@ abstract class Sensor {
 
   // Aggregate sensor data and store it with the latest geolocation
   void _aggregateAndStoreData(GeolocationData geolocationData) {
+    if (_valueBuffer.isEmpty) {
+      return;
+    }
+
     List<double> aggregatedValues = aggregateData(_valueBuffer);
 
     if (attributes.isEmpty) {
@@ -93,6 +106,10 @@ abstract class Sensor {
   void _saveSensorData(
       double value, String? attribute, GeolocationData geolocationData) {
     isarService.geolocationService.saveGeolocationData(geolocationData);
+
+    if (value.isNaN) {
+      return;
+    }
 
     final sensorData = SensorData()
       ..characteristicUuid = characteristicUuid

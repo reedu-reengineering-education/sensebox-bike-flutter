@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
@@ -32,8 +34,7 @@ class OvertakingPredictionSensor extends Sensor {
   @override
   List<double> aggregateData(List<List<double>> valueBuffer) {
     List<double> myValues = valueBuffer.map((e) => e[0]).toList();
-    // Example aggregation logic: calculating the mean prediction score
-    return [myValues.reduce((a, b) => a + b) / myValues.length];
+    return [myValues.reduce(max)];
   }
 
   @override
@@ -53,7 +54,7 @@ class OvertakingPredictionSensor extends Sensor {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  displayValue.toStringAsFixed(1),
+                  (displayValue * 100).toStringAsFixed(0),
                   style: const TextStyle(fontSize: 48),
                 ),
                 const Text(

@@ -11,7 +11,15 @@ class GeolocationService {
 
   Future<Stream<void>> getGeolocationStream() async {
     final isar = await _isarProvider.getDatabase();
-    return isar.geolocationDatas.watchLazy();
+    return isar.geolocationDatas.watchLazy(fireImmediately: true);
+  }
+
+  Future<GeolocationData?> getLastGeolocationData() async {
+    final isar = await _isarProvider.getDatabase();
+    return await isar.geolocationDatas
+        .where()
+        .sortByTimestampDesc()
+        .findFirst();
   }
 
   Future<Id> saveGeolocationData(GeolocationData geolocationData) async {

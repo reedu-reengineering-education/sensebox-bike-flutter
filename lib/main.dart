@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mapbox_maps_flutter_draw/mapbox_maps_flutter_draw.dart';
@@ -34,18 +35,40 @@ class SenseBoxBikeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appLinks = AppLinks();
+
     // Initialize providers at the top level
     final settingsBloc = SettingsBloc();
     final isarService = IsarService();
     final bleBloc = BleBloc(settingsBloc);
     final openSenseMapBloc = OpenSenseMapBloc();
     final trackBloc = TrackBloc(isarService);
-    final recordingBloc =
-        RecordingBloc(isarService, bleBloc, trackBloc, openSenseMapBloc);
+    final recordingBloc = RecordingBloc(
+        isarService, bleBloc, trackBloc, openSenseMapBloc, settingsBloc);
     final geolocationBloc =
         GeolocationBloc(isarService, recordingBloc, settingsBloc);
     final sensorBloc = SensorBloc(bleBloc, geolocationBloc);
     final MapboxDrawController mapboxDrawController = MapboxDrawController();
+
+    // Subscribe to all events (initial link and further)
+    final sub = appLinks.uriLinkStream.listen((uri) async {
+      print('Received uri: $uri');
+      String action = uri.host;
+      if (action == "start") {
+        print('Connecting to device and starting recording');
+        final id = uri.queryParameters['id'];
+        if (id == null) {
+          print('No id provided');
+          return;
+        }
+
+        final fullId = "senseBox:bike [$id]";
+        print('Connecting to $fullId');
+        await bleBloc.connectToId(fullId, context);
+        await Future.delayed(const Duration(seconds: 2));
+        recordingBloc.startRecording();
+      }
+    });
 
     return MultiProvider(
       providers: [

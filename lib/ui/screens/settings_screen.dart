@@ -47,7 +47,8 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('Privacy Zones'),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => ExclusionZonesScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const ExclusionZonesScreen()),
             ),
             trailing: Badge.count(
               count: settingsBloc.privacyZones.length,

@@ -70,7 +70,7 @@ class SurfaceClassificationSensor extends Sensor {
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.5),
-          child: Text(value.toStringAsFixed(1),
+          child: Text("${(value * 100).toStringAsFixed(0)}%",
               style: Theme.of(context).textTheme.labelSmall),
         ),
       ),
