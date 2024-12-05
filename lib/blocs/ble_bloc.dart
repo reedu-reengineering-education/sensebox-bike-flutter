@@ -258,6 +258,24 @@ class BleBloc with ChangeNotifier {
     return _characteristicStreams[characteristicUuid]!;
   }
 
+  Future<void> sendWifiCredentials(String ssid, String password) async {
+    if (selectedDevice == null) {
+      return;
+    }
+
+    // final wifiService = selectedDevice!.services
+    //     .firstWhere((service) => service.uuid == wifiServiceUUID);
+
+    // final ssidCharacteristic = wifiService.characteristics.firstWhere(
+    //     (characteristic) => characteristic.uuid == ssidCharacteristicUUID);
+
+    // final passwordCharacteristic = wifiService.characteristics.firstWhere(
+    //     (characteristic) => characteristic.uuid == passwordCharacteristicUUID);
+
+    // await ssidCharacteristic.write(utf8.encode(ssid));
+    // await passwordCharacteristic.write(utf8.encode(password));
+  }
+
   List<double> _parseData(Uint8List value) {
     // This method will convert the incoming data to a list of doubles
     List<double> parsedValues = [];
