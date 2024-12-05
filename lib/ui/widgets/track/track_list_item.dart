@@ -12,9 +12,7 @@ class TrackListItem extends StatelessWidget {
   const TrackListItem(
       {required this.track, required this.onDismissed, super.key});
 
-  String buildStaticMapboxUrl(BuildContext context) {
-    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
+  String buildStaticMapboxUrl(bool isDarkMode) {
     String style = isDarkMode ? 'dark-v11' : 'light-v11';
     String lineColor = isDarkMode ? 'fff' : '111';
     String polyline = Uri.encodeComponent(track.encodedPolyline);
@@ -91,7 +89,8 @@ class TrackListItem extends StatelessWidget {
                     Card.filled(
                       clipBehavior: Clip.antiAlias,
                       child: CachedNetworkImage(
-                        imageUrl: buildStaticMapboxUrl(context),
+                        imageUrl: buildStaticMapboxUrl(
+                            Theme.of(context).brightness == Brightness.dark),
                         progressIndicatorBuilder:
                             (context, url, downloadProgress) =>
                                 CircularProgressIndicator(
