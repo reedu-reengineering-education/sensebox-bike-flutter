@@ -14,8 +14,10 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() async {
   await dotenv.load(fileName: ".env", mergeWith: Platform.environment);
@@ -83,52 +85,10 @@ class SenseBoxBikeApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'senseBox:bike',
-        theme: ThemeData(
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: Colors.grey[50],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-          ),
-          snackBarTheme: SnackBarThemeData(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-          ),
-          colorScheme: const ColorScheme.light(
-              primary: Colors.black, secondary: Colors.black12),
-          canvasColor: Colors.grey[50],
-          cardTheme: CardTheme(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-          ),
-        ),
-        darkTheme: ThemeData(
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: const Color.fromARGB(255, 24, 24, 24),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-          ),
-          snackBarTheme: SnackBarThemeData(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-          ),
-          canvasColor: const Color.fromARGB(255, 24, 24, 24),
-          colorScheme: const ColorScheme.dark(
-              primary: Colors.white,
-              secondary: Colors.white,
-              surface: Color(0xFF121212)),
-          cardTheme: CardTheme(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-          ),
-        ),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: lightTheme,
+        darkTheme: darkTheme,
         home: const AppHome(),
       ),
     );

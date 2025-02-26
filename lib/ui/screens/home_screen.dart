@@ -9,6 +9,7 @@ import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
@@ -90,9 +91,9 @@ class _SenseBoxLoginButton extends StatelessWidget {
         initialData: osemBloc.selectedSenseBox,
         builder: (context, snapshot) {
           if (!osemBloc.isAuthenticated) {
-            return const Text('Login');
+            return Text(AppLocalizations.of(context)!.openSenseMapLogin);
           } else if (snapshot.hasError) {
-            return const Text('Error');
+            return Text(AppLocalizations.of(context)!.generalError);
           } else {
             return Text(snapshot.data?.name ?? 'No senseBox');
           }
@@ -148,7 +149,8 @@ class _ConnectButton extends StatelessWidget {
                 EdgeInsets.all(12),
               ),
             ),
-            label: const Text('Connecting...'),
+            label:
+                Text(AppLocalizations.of(context)!.connectionButtonConnecting),
             icon: CircularProgressIndicator(
               color: Theme.of(context).colorScheme.onPrimary,
             ),
@@ -161,7 +163,7 @@ class _ConnectButton extends StatelessWidget {
                 EdgeInsets.all(12),
               ),
             ),
-            label: const Text('Connect'),
+            label: Text(AppLocalizations.of(context)!.connectionButtonConnect),
             icon: const Icon(Icons.bluetooth),
             onPressed: () => showDeviceSelectionDialog(context, bleBloc),
           );
@@ -184,7 +186,9 @@ class _StartStopButton extends StatelessWidget {
           EdgeInsets.symmetric(vertical: 12, horizontal: 20),
         ),
       ),
-      label: Text(recordingBloc.isRecording ? 'Stop' : 'Start'),
+      label: Text(recordingBloc.isRecording
+          ? AppLocalizations.of(context)!.connectionButtonStop
+          : AppLocalizations.of(context)!.connectionButtonStart),
       icon: Icon(
           recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
       // : recordingBloc.isRecording
@@ -218,8 +222,8 @@ class _DisconnectButton extends StatelessWidget {
               ? const CircularProgressIndicator()
               : const Icon(Icons.bluetooth_disabled),
           label: isReconnecting
-              ? const Text('Reconnecting...')
-              : const Text('Disconnect'),
+              ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
+              : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
           // backgroundColor: Theme.of(context).colorScheme.primary,
           onPressed: bleBloc.disconnectDevice,
         );

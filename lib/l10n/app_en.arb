@@ -1,0 +1,40 @@
+{
+    "@@locale": "en",
+    "generalLoading": "Loading...",
+    "generalError": "Error",
+    "generalErrorWithDescription": "Error: {error}",
+    "@generalErrorWithDescription": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "generalRetry": "Retry",
+    "generalCancel": "Cancel",
+    "generalOk": "Ok",
+    "generalSave": "Save",
+    "generalDelete": "Delete",
+    "generalEdit": "Edit",
+    "generalAdd": "Add",
+    "generalClose": "Close",
+    "homeBottomBarHome": "Home",
+    "homeBottomBarTracks": "Tracks",
+    "homeBottomBarSettings": "Settings",
+    "tracksAppBarTitle": "Tracks",
+    "tracksAppBarSumTracks": "{count, plural, =0{No tracks} =1{1 track} other{{count} tracks}}",
+    "tracksNoTracks": "No tracks available",
+    "tracksTrackDeleted": "Track deleted",
+    "openSenseMapLogin": "Login with openSenseMap",
+    "openSenseMapLoginError": "Error while logging in with openSenseMap",
+    "openSenseMapRegister": "Register with openSenseMap",
+    "openSenseMapRegisterError": "Error while registering with openSenseMap",
+    "openSenseMapLogout": "Logout from openSenseMap",
+    "openSenseMapLogoutError": "Error while logging out from openSenseMap",
+    "connectionButtonConnect": "Connect",
+    "connectionButtonDisconnect": "Disconnect",
+    "connectionButtonConnecting": "Connecting...",
+    "connectionButtonReconnecting": "Reconnecting...",
+    "connectionButtonStart": "Start",
+    "connectionButtonStop": "Stop"
+}
