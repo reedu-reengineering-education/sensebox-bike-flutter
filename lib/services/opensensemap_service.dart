@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -80,7 +81,7 @@ class OpenSenseMapService {
     final refreshToken = prefs.getString('refreshToken');
 
     if (refreshToken == null) {
-      throw Exception('No refresh token found');
+      debugPrint('No refresh token found');
     }
 
     final response = await http.post(
@@ -99,7 +100,7 @@ class OpenSenseMapService {
       await prefs.setString('accessToken', newAccessToken);
       await prefs.setString('refreshToken', newRefreshToken);
     } else {
-      throw Exception('Failed to refresh token: ${response.body}');
+      debugPrint('Failed to refresh token: ${response.body}');
     }
   }
 

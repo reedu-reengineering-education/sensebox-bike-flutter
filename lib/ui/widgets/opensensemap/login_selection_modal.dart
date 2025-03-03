@@ -4,6 +4,7 @@ import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_dialog.dar
 import 'package:sensebox_bike/ui/widgets/opensensemap/login.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/register.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void showLoginOrSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
   showModalBottomSheet(
@@ -27,14 +28,14 @@ Widget _buildLoginRegisterTabs(BuildContext context, OpenSenseMapBloc bloc) {
       length: 2,
       child: Column(
         children: [
-          const TabBar(
+          TabBar(
             tabs: [
               Tab(
-                text: 'Login',
+                text: AppLocalizations.of(context)!.openSenseMapLoginShort,
                 height: 64,
               ),
               Tab(
-                text: 'Register',
+                text: AppLocalizations.of(context)!.openSenseMapRegister,
                 height: 64,
               ),
             ],
@@ -64,7 +65,7 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
           Row(
             children: [
               TextButton.icon(
-                label: const Text('Logout'),
+                label: Text(AppLocalizations.of(context)!.openSenseMapLogout),
                 icon: const Icon(Icons.logout),
                 onPressed: () async => {
                   await bloc.logout(),

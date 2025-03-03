@@ -37,13 +37,6 @@ class HomeScreen extends StatelessWidget {
                     width: double.infinity,
                     child: GeolocationMapWidget(), // The map
                   ),
-                  Positioned(
-                    top: 0,
-                    right: 8,
-                    child: SafeArea(
-                      child: _SenseBoxLoginButton(),
-                    ),
-                  ),
                   const Positioned(
                     bottom: 0,
                     left: 0,
@@ -81,26 +74,26 @@ class _SenseBoxLoginButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final OpenSenseMapBloc osemBloc = Provider.of<OpenSenseMapBloc>(context);
 
-    return OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-      ),
-      onPressed: () => showLoginOrSenseBoxSelection(context, osemBloc),
-      label: StreamBuilder<SenseBox?>(
-        stream: osemBloc.senseBoxStream,
-        initialData: osemBloc.selectedSenseBox,
-        builder: (context, snapshot) {
-          if (!osemBloc.isAuthenticated) {
-            return Text(AppLocalizations.of(context)!.openSenseMapLogin);
-          } else if (snapshot.hasError) {
-            return Text(AppLocalizations.of(context)!.generalError);
-          } else {
-            return Text(snapshot.data?.name ?? 'No senseBox');
-          }
-        },
-      ),
-      icon: const Icon(Icons.person),
-    );
+    return IconButton.outlined(
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        ),
+        onPressed: () => showLoginOrSenseBoxSelection(context, osemBloc),
+        icon: StreamBuilder<SenseBox?>(
+          stream: osemBloc.senseBoxStream,
+          initialData: osemBloc.selectedSenseBox,
+          builder: (context, snapshot) {
+            if (!osemBloc.isAuthenticated) {
+              return Icon(Icons.login);
+            } else if (snapshot.hasError) {
+              return Icon(Icons.error);
+            } else {
+              return snapshot.data?.name != null
+                  ? Icon(Icons.check)
+                  : Icon(Icons.link);
+            }
+          },
+        ));
   }
 }
 
@@ -116,7 +109,16 @@ class _FloatingButtons extends StatelessWidget {
       valueListenable: bleBloc.selectedDeviceNotifier,
       builder: (context, selectedDevice, child) {
         if (selectedDevice == null) {
-          return _ConnectButton(bleBloc: bleBloc);
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: _ConnectButton(bleBloc: bleBloc),
+              ),
+              const SizedBox(width: 12),
+              _SenseBoxLoginButton(),
+            ],
+          );
         } else {
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
