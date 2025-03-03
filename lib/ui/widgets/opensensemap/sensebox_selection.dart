@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SenseBoxSelectionWidget extends StatefulWidget {
   const SenseBoxSelectionWidget({super.key});
@@ -75,10 +76,13 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
               children: [
                 const Icon(Icons.directions_bike, size: 48),
                 const SizedBox(height: 16),
-                Text('No senseBoxes found',
+                Text(
+                    AppLocalizations.of(context)!
+                        .openSenseMapBoxSelectionNoBoxes,
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                const Text('Create one using the "+" button'),
+                Text(AppLocalizations.of(context)!
+                    .openSenseMapBoxSelectionCreateHint),
               ],
             ),
           );
@@ -102,16 +106,19 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
                 bloc.isSenseBoxBikeCompatible(senseBox);
 
             return ListTile(
-              title: Text(senseBox.name ?? 'Unnamed senseBox'),
+              title: Text(senseBox.name ??
+                  AppLocalizations.of(context)!
+                      .openSenseMapBoxSelectionUnnamedBox),
               subtitle: !isSenseBoxBikeCompatible
-                  ? const Row(
+                  ? Row(
                       children: [
                         Icon(
                           Icons.warning,
                           size: 12,
                         ),
                         SizedBox(width: 8),
-                        Text('Not compatible with senseBox:bike')
+                        Text(AppLocalizations.of(context)!
+                            .openSenseMapBoxSelectionIncompatible),
                       ],
                     )
                   : senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty

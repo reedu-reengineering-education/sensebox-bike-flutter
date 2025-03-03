@@ -55,5 +55,9 @@
     "createBoxModelErrorEmpty": "Please select a model",
     "createBoxName": "Name",
     "createBoxNameError": "Name must be between 2 and 50 characters",
-    "createBoxGeolocationCurrentPosition": "Your current position will be used"
+    "createBoxGeolocationCurrentPosition": "Your current position will be used",
+    "openSenseMapBoxSelectionNoBoxes": "No senseBoxes available",
+    "openSenseMapBoxSelectionCreateHint": "Create one using the '+' button",
+    "openSenseMapBoxSelectionUnnamedBox": "Unnamed senseBox",
+    "openSenseMapBoxSelectionIncompatible": "Not compatible with senseBox:bike"
 }
