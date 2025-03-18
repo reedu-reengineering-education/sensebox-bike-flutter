@@ -19,6 +19,7 @@
     "generalEdit": "Edit",
     "generalAdd": "Add",
     "generalClose": "Close",
+    "generalPrivacyZones": "Privacy Zones",
     "homeBottomBarHome": "Home",
     "homeBottomBarTracks": "Tracks",
     "homeBottomBarSettings": "Settings",
@@ -64,7 +65,6 @@
     "settingsGeneral": "General",
     "settingsOther": "Other",
     "settingsVibrateOnDisconnect": "Vibrate on disconnect",
-    "settingsPrivacyZones": "Privacy Zones",
     "settingsAbout": "About",
     "settingsPrivacyPolicy": "Privacy Policy",
     "settingsVersion": "Version: {versionNumber}",
@@ -75,5 +75,7 @@
             }
         }
     },
-    "settingsContact": "Contact"
+    "settingsContact": "Contact",
+    "privacyZonesStart": "Tap on the map to start drawing a zone. Tap the checkmark to finish.",
+    "privacyZonesDelete": "Tap on a zone to delete it. Tap the checkmark to finish."
 }

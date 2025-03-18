@@ -19,6 +19,7 @@
     "generalEdit": "Bearbeiten",
     "generalAdd": "Hinzufügen",
     "generalClose": "Schließen",
+    "generalPrivacyZones": "Privatzonen",
     "homeBottomBarHome": "Start",
     "homeBottomBarTracks": "Tracks",
     "homeBottomBarSettings": "Einstellungen",
@@ -64,7 +65,6 @@
     "settingsGeneral": "Allgemeine",
     "settingsOther": "Andere",
     "settingsVibrateOnDisconnect": "Vibration bei Verbindungsabbruch",
-    "settingsPrivacyZones": "Privatzonen",
     "settingsAbout": "Über die App",
     "settingsPrivacyPolicy": "Datenschutz",
     "settingsVersion": "Version: {versionNumber}",
@@ -75,5 +75,7 @@
             }
         }
     },
-    "settingsContact": "Kontakt"
+    "settingsContact": "Kontakt",
+    "privacyZonesStart": "Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.",
+    "privacyZonesDelete": "Tippen Sie auf eine Zone, um sie zu löschen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden."
 }

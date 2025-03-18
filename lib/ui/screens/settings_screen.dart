@@ -46,7 +46,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.admin_panel_settings),
-            title: Text(AppLocalizations.of(context)!.settingsPrivacyZones),
+            title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
