@@ -42,13 +42,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     _sensorDataFuture = IsarService().sensorService.getSensorDataByTrackId(id);
   }
 
-  List<String> getSensorTitles(List<SensorData> sensorData) {
-    return sensorData
-        .map((e) => getTitleFromSensorKey(e.title, e.attribute) ?? '')
-        .toSet()
-        .toList();
-  }
-
   Future<void> _exportTrackToCsv() async {
     setState(() {
       _isDownloading = true; // Show spinner
@@ -294,7 +287,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                         String title = sensorTitles[index]['title']!;
                         String? attribute = sensorTitles[index]['attribute'];
                         String displayTitle =
-                            getTitleFromSensorKey(title, attribute) ?? title;
+                            getTranslatedTitleFromSensorKey(
+                                title, attribute, context) ??
+                            title;
 
                         return Card.filled(
                           clipBehavior: Clip.hardEdge,

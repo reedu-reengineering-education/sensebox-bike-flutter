@@ -167,7 +167,7 @@ class OpenSenseMapService {
     );
 
     if (response.statusCode == 201) {
-      print('Data uploaded');
+      debugPrint('Data uploaded');
     } else if (response.statusCode == 401) {
       await refreshToken();
       return uploadData(senseBoxId, sensorData);

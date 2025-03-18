@@ -104,5 +104,28 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "sensorTemperature": "Temperatur",
+    "sensorHumidity": "Rel. Luftfeuchtigkeit",
+    "sensorFinedustPM10": "Feinstaub PM10",
+    "sensorFinedustPM4": "Feinstaub PM4",
+    "sensorFinedustPM25": "Feinstaub PM2,5",
+    "sensorFinedustPM1": "Feinstaub PM1",
+    "sensorDistance": "Überholabstand",
+    "sensorOvertaking": "Überholmanöver",
+    "sensorSurfaceAsphalt": "Oberfläche Asphalt",
+    "sensorSurfaceSett": "Oberfläche Pflasterstein",
+    "sensorSurfaceCompacted": "Oberfläche verdichtet",
+    "sensorSurfacePaving": "Oberfläche Pflasterung",
+    "sensorSurfaceStanding": "Stehend",
+    "sensorSurfaceAnomaly": "Oberflächenanomalie",
+    "sensorSpeed": "Geschwindigkeit",
+    "sensorAccelerationX": "Beschleunigung X",
+    "sensorAccelerationY": "Beschleunigung Y",
+    "sensorAccelerationZ": "Beschleunigung Z",
+    "sensorGPSLat": "GPS Breitengrad",
+    "sensorGPSLong": "GPS Längengrad",
+    "sensorGPSSpeed": "GPS Geschwindigkeit",
+    "sensorAcceleration": "Beschleunigung",
+    "sensorFinedust": "Feinstaub"
 }

@@ -104,5 +104,28 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "sensorTemperature": "Temperature",
+    "sensorHumidity": "Rel. Humidity",
+    "sensorFinedustPM10": "Finedust PM10",
+    "sensorFinedustPM4": "Finedust PM4",
+    "sensorFinedustPM25": "Finedust PM25",
+    "sensorFinedustPM1": "Finedust PM1",
+    "sensorDistance": "Overtaking Distance'",
+    "sensorOvertaking": "Overtaking Manoeuvre",
+    "sensorSurfaceAsphalt": "Surface Asphalt",
+    "sensorSurfaceSett": "Surface Sett",
+    "sensorSurfaceCompacted": "Surface Compacted",
+    "sensorSurfacePaving": "Surface Paving",
+    "sensorSurfaceStanding": "Standing",
+    "sensorSurfaceAnomaly": "Surface Anomaly",
+    "sensorSpeed": "Speed",
+    "sensorAccelerationX": "Acceleration X",
+    "sensorAccelerationY": "Acceleration Y",
+    "sensorAccelerationZ": "Acceleration Z",
+    "sensorGPSLat": "GPS Latitude",
+    "sensorGPSLong": "GPS Longitude",
+    "sensorGPSSpeed": "GPS Speed",
+    "sensorAcceleration": "Acceleration",
+    "sensorFinedust": "Finedust"
 }
