@@ -59,5 +59,21 @@
     "openSenseMapBoxSelectionNoBoxes": "No senseBoxes available",
     "openSenseMapBoxSelectionCreateHint": "Create one using the '+' button",
     "openSenseMapBoxSelectionUnnamedBox": "Unnamed senseBox",
-    "openSenseMapBoxSelectionIncompatible": "Not compatible with senseBox:bike"
+    "openSenseMapBoxSelectionIncompatible": "Not compatible with senseBox:bike",
+    "settingsTitle": "Settings",
+    "settingsGeneral": "General",
+    "settingsOther": "Other",
+    "settingsVibrateOnDisconnect": "Vibrate on disconnect",
+    "settingsPrivacyZones": "Privacy Zones",
+    "settingsAbout": "About",
+    "settingsPrivacyPolicy": "Privacy Policy",
+    "settingsVersion": "Version: {versionNumber}",
+    "@settingsVersion": {
+        "placeholders": {
+            "versionNumber": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsContact": "Contact"
 }

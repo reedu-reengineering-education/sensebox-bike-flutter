@@ -59,5 +59,21 @@
     "openSenseMapBoxSelectionNoBoxes": "Keine senseBox verfügbar",
     "openSenseMapBoxSelectionCreateHint": "Erstelle eine mit dem '+' Button",
     "openSenseMapBoxSelectionUnnamedBox": "Unbenannte senseBox",
-    "openSenseMapBoxSelectionIncompatible": "Nicht kompatibel mit senseBox:bike"
+    "openSenseMapBoxSelectionIncompatible": "Nicht kompatibel mit senseBox:bike",
+    "settingsTitle": "Einstellungen",
+    "settingsGeneral": "Allgemeine",
+    "settingsOther": "Andere",
+    "settingsVibrateOnDisconnect": "Vibration bei Verbindungsabbruch",
+    "settingsPrivacyZones": "Privatzonen",
+    "settingsAbout": "Über die App",
+    "settingsPrivacyPolicy": "Datenschutz",
+    "settingsVersion": "Version: {versionNumber}",
+    "@settingsVersion": {
+        "placeholders": {
+            "versionNumber": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsContact": "Kontakt"
 }
