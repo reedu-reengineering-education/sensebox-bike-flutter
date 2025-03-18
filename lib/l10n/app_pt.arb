@@ -1,0 +1,131 @@
+{
+    "@@locale": "pt",
+    "generalLoading": "Carregando...",
+    "generalError": "Erro",
+    "generalErrorWithDescription": "Erro: {error}",
+    "@generalErrorWithDescription": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "generalRetry": "Tentar novamente",
+    "generalCancel": "Cancelar",
+    "generalCreate": "Criar",
+    "generalOk": "Ok",
+    "generalSave": "Salvar",
+    "generalDelete": "Excluir",
+    "generalEdit": "Editar",
+    "generalAdd": "Adicionar",
+    "generalClose": "Fechar",
+    "generalPrivacyZones": "Zonas de Privacidade",
+    "generalSettings": "Configurações",
+    "generalShare": "Compartilhar",
+    "homeBottomBarHome": "Início",
+    "homeBottomBarTracks": "Trajetos",
+    "tracksAppBarTitle": "Trajetos",
+    "tracksAppBarSumTracks": "{count, plural, =0{Nenhum trajeto} =1{1 trajeto} other{{count} trajetos}}",
+    "tracksNoTracks": "Nenhum trajeto disponível",
+    "tracksTrackDeleted": "Trajeto excluído",
+    "openSenseMapLogin": "Entrar com openSenseMap",
+    "openSenseMapLoginShort": "Entrar",
+    "openSenseMapRegister": "Registrar-se no openSenseMap",
+    "openSenseMapLogout": "Sair",
+    "openSenseMapEmail": "E-mail",
+    "openSenseMapPassword": "Senha",
+    "openSenseMapEmailErrorEmpty": "O e-mail não pode estar vazio",
+    "openSenseMapEmailErrorInvalid": "Endereço de e-mail inválido",
+    "openSenseMapPasswordErrorEmpty": "A senha não pode estar vazia",
+    "openSenseMapLoginFailed": "Falha no login",
+    "openSenseMapRegisterName": "Nome",
+    "openSenseMapRegisterNameErrorEmpty": "O nome não pode estar vazio",
+    "openSenseMapRegisterPasswordConfirm": "Confirmar senha",
+    "openSenseMapRegisterPasswordConfirmErrorEmpty": "A confirmação da senha não pode estar vazia",
+    "openSenseMapRegisterPasswordErrorMismatch": "As senhas não coincidem",
+    "openSenseMapRegisterPasswordErrorCharacters": "A senha deve conter pelo menos 8 caracteres",
+    "openSenseMapRegisterFailed": "Falha no registro",
+    "connectionButtonConnect": "Conectar",
+    "connectionButtonDisconnect": "Desconectar",
+    "connectionButtonConnecting": "Conectando...",
+    "connectionButtonReconnecting": "Reconectando...",
+    "connectionButtonStart": "Iniciar",
+    "connectionButtonStop": "Parar",
+    "bleDeviceSelectTitle": "Conecte-se ao seu senseBox:bike",
+    "createBoxTitle": "Criar senseBox:bike",
+    "createBoxModel": "Modelo",
+    "createBoxModelErrorEmpty": "Por favor, selecione um modelo",
+    "createBoxName": "Nome",
+    "createBoxNameError": "O nome deve ter entre 2 e 50 caracteres",
+    "createBoxGeolocationCurrentPosition": "Sua posição atual será usada",
+    "openSenseMapBoxSelectionNoBoxes": "Nenhum senseBox disponível",
+    "openSenseMapBoxSelectionCreateHint": "Crie um usando o botão '+'",
+    "openSenseMapBoxSelectionUnnamedBox": "senseBox sem nome",
+    "openSenseMapBoxSelectionIncompatible": "Não compatível com senseBox:bike",
+    "settingsGeneral": "Geral",
+    "settingsOther": "Outros",
+    "settingsVibrateOnDisconnect": "Vibrar ao desconectar",
+    "settingsAbout": "Sobre",
+    "settingsPrivacyPolicy": "Política de Privacidade",
+    "settingsVersion": "Versão: {versionNumber}",
+    "@settingsVersion": {
+        "placeholders": {
+            "versionNumber": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsContact": "Contato",
+    "privacyZonesStart": "Toque no mapa para começar a desenhar uma zona. Toque na marca de seleção para finalizar.",
+    "privacyZonesDelete": "Toque em uma zona para excluí-la. Toque na marca de seleção para finalizar.",
+    "trackDetailsPermissionsError": "Permissão negada para salvar o arquivo no armazenamento externo.",
+    "trackDetailsFileSaved": "Arquivo CSV salvo na pasta Downloads.",
+    "trackDetailsExport": "Exportação de dados do trajeto em CSV.",
+    "trackDetailsNoData": "Nenhum dado disponível.",
+    "trackDetailsLoadingError": "Erro ao carregar o trajeto.",
+    "trackDetailsNoTrackData": "Nenhum trajeto disponível.",
+    "trackDelete": "Excluir Trajeto",
+    "trackDeleteConfirmation": "Tem certeza de que deseja excluir este trajeto?",
+    "trackDuration": "{hours}h{minutes}min",
+    "@trackDuration": {
+        "placeholders": {
+            "hours": {
+                "type": "int"
+            },
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "trackDistance": "{distance} km",
+    "@trackDistance": {
+        "placeholders": {
+            "distance": {
+                "type": "String"
+            }
+        }
+    },
+    "sensorTemperature": "Temperatura",
+    "sensorHumidity": "Umidade Rel.",
+    "sensorFinedustPM10": "Poeira Fina PM10",
+    "sensorFinedustPM4": "Poeira Fina PM4",
+    "sensorFinedustPM25": "Poeira Fina PM2,5",
+    "sensorFinedustPM1": "Poeira Fina PM1",
+    "sensorDistance": "Distância de Ultrapassagem",
+    "sensorOvertaking": "Manobra de Ultrapassagem",
+    "sensorSurfaceAsphalt": "Superfície Asfalto",
+    "sensorSurfaceSett": "Superfície Paralelepípedo",
+    "sensorSurfaceCompacted": "Superfície Compactada",
+    "sensorSurfacePaving": "Superfície Pavimentada",
+    "sensorSurfaceStanding": "Parado",
+    "sensorSurfaceAnomaly": "Anomalia de Superfície",
+    "sensorSpeed": "Velocidade",
+    "sensorAccelerationX": "Aceleração X",
+    "sensorAccelerationY": "Aceleração Y",
+    "sensorAccelerationZ": "Aceleração Z",
+    "sensorGPSLat": "Latitude GPS",
+    "sensorGPSLong": "Longitude GPS",
+    "sensorGPSSpeed": "Velocidade GPS",
+    "sensorAcceleration": "Aceleração",
+    "sensorFinedust": "Poeira Fina"
+}
