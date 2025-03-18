@@ -20,9 +20,10 @@
     "generalAdd": "Hinzufügen",
     "generalClose": "Schließen",
     "generalPrivacyZones": "Privatzonen",
+    "generalSettings": "Einstellungen",
+    "generalShare": "Teilen",
     "homeBottomBarHome": "Start",
     "homeBottomBarTracks": "Tracks",
-    "homeBottomBarSettings": "Einstellungen",
     "tracksAppBarTitle": "Tracks",
     "tracksAppBarSumTracks": "{count, plural, =0{Keine Tracks} =1{1 Track} other{{count} Tracks}}",
     "tracksNoTracks": "Keine Tracks verfügbar",
@@ -61,7 +62,6 @@
     "openSenseMapBoxSelectionCreateHint": "Erstelle eine mit dem '+' Button",
     "openSenseMapBoxSelectionUnnamedBox": "Unbenannte senseBox",
     "openSenseMapBoxSelectionIncompatible": "Nicht kompatibel mit senseBox:bike",
-    "settingsTitle": "Einstellungen",
     "settingsGeneral": "Allgemeine",
     "settingsOther": "Andere",
     "settingsVibrateOnDisconnect": "Vibration bei Verbindungsabbruch",
@@ -77,5 +77,11 @@
     },
     "settingsContact": "Kontakt",
     "privacyZonesStart": "Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.",
-    "privacyZonesDelete": "Tippen Sie auf eine Zone, um sie zu löschen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden."
+    "privacyZonesDelete": "Tippen Sie auf eine Zone, um sie zu löschen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.",
+    "trackDetailsPermissionsError": "Keine Berechtigung zum Speichern der Datei auf externem Speicher.",
+    "trackDetailsFileSaved": "Die CSV-Datei wird im Ordner Downloads gespeichert.",
+    "trackDetailsExport": "CSV-Export von Trackdaten.",
+    "trackDetailsNoData": "Daten nicht verfügbar.",
+    "trackDetailsLoadingError": "Fehler beim Laden des Tracks.",
+    "trackDetailsNoTrackData": "Kein Track verfügbar."
 }

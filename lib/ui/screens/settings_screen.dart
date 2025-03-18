@@ -15,7 +15,7 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.settingsTitle),
+        title: Text(AppLocalizations.of(context)!.generalSettings),
       ),
       body: ListView(
         children: <Widget>[

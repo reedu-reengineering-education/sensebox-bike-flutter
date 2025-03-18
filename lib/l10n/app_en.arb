@@ -20,9 +20,10 @@
     "generalAdd": "Add",
     "generalClose": "Close",
     "generalPrivacyZones": "Privacy Zones",
+    "generalSettings": "Settings",
+    "generalShare": "Share",
     "homeBottomBarHome": "Home",
     "homeBottomBarTracks": "Tracks",
-    "homeBottomBarSettings": "Settings",
     "tracksAppBarTitle": "Tracks",
     "tracksAppBarSumTracks": "{count, plural, =0{No tracks} =1{1 track} other{{count} tracks}}",
     "tracksNoTracks": "No tracks available",
@@ -61,7 +62,6 @@
     "openSenseMapBoxSelectionCreateHint": "Create one using the '+' button",
     "openSenseMapBoxSelectionUnnamedBox": "Unnamed senseBox",
     "openSenseMapBoxSelectionIncompatible": "Not compatible with senseBox:bike",
-    "settingsTitle": "Settings",
     "settingsGeneral": "General",
     "settingsOther": "Other",
     "settingsVibrateOnDisconnect": "Vibrate on disconnect",
@@ -77,5 +77,11 @@
     },
     "settingsContact": "Contact",
     "privacyZonesStart": "Tap on the map to start drawing a zone. Tap the checkmark to finish.",
-    "privacyZonesDelete": "Tap on a zone to delete it. Tap the checkmark to finish."
+    "privacyZonesDelete": "Tap on a zone to delete it. Tap the checkmark to finish.",
+    "trackDetailsPermissionsError": "Permission denied to save file to external storage.",
+    "trackDetailsFileSaved": "CSV file saved to Downloads folder.",
+    "trackDetailsExport": "Track data CSV export.",
+    "trackDetailsNoData": "No data available.",
+    "trackDetailsLoadingError": "Error loading track.",
+    "trackDetailsNoTrackData": "No track available."
 }

@@ -62,7 +62,7 @@ class _AppHomeState extends State<AppHome> {
                   label: AppLocalizations.of(context)!.homeBottomBarTracks),
               NavigationDestination(
                   icon: Icon(Icons.settings),
-                  label: AppLocalizations.of(context)!.homeBottomBarSettings)
+                  label: AppLocalizations.of(context)!.generalSettings)
             ],
           ),
         ),
