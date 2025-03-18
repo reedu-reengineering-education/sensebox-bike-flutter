@@ -83,5 +83,26 @@
     "trackDetailsExport": "CSV-Export von Trackdaten.",
     "trackDetailsNoData": "Daten nicht verfügbar.",
     "trackDetailsLoadingError": "Fehler beim Laden des Tracks.",
-    "trackDetailsNoTrackData": "Kein Track verfügbar."
+    "trackDetailsNoTrackData": "Kein Track verfügbar.",
+    "trackDelete": "Track löschen",
+    "trackDeleteConfirmation": "Wollen Sie diesen Track wirklich löschen?",
+    "trackDuration": "{hours} Std. {minutes} Min.",
+    "@trackDuration": {
+        "placeholders": {
+            "hours": {
+                "type": "int"
+            },
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "trackDistance": "{distance} km",
+    "@trackDistance": {
+        "placeholders": {
+            "distance": {
+                "type": "String"
+            }
+        }
+    }
 }

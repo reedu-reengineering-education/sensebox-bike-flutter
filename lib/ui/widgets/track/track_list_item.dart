@@ -4,6 +4,7 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class TrackListItem extends StatelessWidget {
   final TrackData track;
@@ -37,20 +38,20 @@ class TrackListItem extends StatelessWidget {
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: const Text("Delete Track"),
+                title: Text(AppLocalizations.of(context)!.trackDelete),
                 content:
-                    const Text("Are you sure you wish to delete this track?"),
+                    Text(AppLocalizations.of(context)!.trackDeleteConfirmation),
                 actions: <Widget>[
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text("Cancel"),
+                    child: Text(AppLocalizations.of(context)!.generalCancel),
                   ),
                   FilledButton(
                       style: const ButtonStyle(
                           backgroundColor:
                               WidgetStatePropertyAll(Colors.redAccent)),
                       onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text("Delete")),
+                      child: Text(AppLocalizations.of(context)!.generalDelete)),
                 ],
               );
             },
@@ -79,12 +80,16 @@ class TrackListItem extends StatelessWidget {
                         const Icon(Icons.timer_outlined),
                         const SizedBox(width: 8),
                         Text(
-                            '${track.duration.inHours}h ${track.duration.inMinutes.remainder(60)}min',
+                            AppLocalizations.of(context)!.trackDuration(
+                                track.duration.inHours,
+                                track.duration.inMinutes.remainder(60)),
                             style: Theme.of(context).textTheme.bodyMedium),
                         const SizedBox(width: 24),
                         const Icon(Icons.straighten),
                         const SizedBox(width: 8),
-                        Text('${track.distance.toStringAsFixed(2)} km',
+                        Text(
+                            AppLocalizations.of(context)!.trackDistance(
+                                track.distance.toStringAsFixed(2)),
                             style: Theme.of(context).textTheme.bodyMedium),
                       ],
                     ),

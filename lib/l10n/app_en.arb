@@ -83,5 +83,26 @@
     "trackDetailsExport": "Track data CSV export.",
     "trackDetailsNoData": "No data available.",
     "trackDetailsLoadingError": "Error loading track.",
-    "trackDetailsNoTrackData": "No track available."
+    "trackDetailsNoTrackData": "No track available.",
+    "trackDelete": "Delete Track",
+    "trackDeleteConfirmation": "Are you sure you wish to delete this track?",
+    "trackDuration": "{hours}h {minutes}min",
+    "@trackDuration": {
+        "placeholders": {
+            "hours": {
+                "type": "int"
+            },
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "trackDistance": "{distance} km",
+    "@trackDistance": {
+        "placeholders": {
+            "distance": {
+                "type": "String"
+            }
+        }
+    }
 }
