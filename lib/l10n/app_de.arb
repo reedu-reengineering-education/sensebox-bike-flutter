@@ -22,6 +22,25 @@
     "generalPrivacyZones": "Privatzonen",
     "generalSettings": "Einstellungen",
     "generalShare": "Teilen",
+    "generalTrackDuration": "{hours} Std. {minutes} Min.",
+    "@generalTrackDuration": {
+        "placeholders": {
+            "hours": {
+                "type": "int"
+            },
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "generalTrackDistance": "{distance} km",
+    "@generalTrackDistance": {
+        "placeholders": {
+            "distance": {
+                "type": "String"
+            }
+        }
+    },
     "homeBottomBarHome": "Start",
     "homeBottomBarTracks": "Tracks",
     "tracksAppBarTitle": "Tracks",
@@ -86,25 +105,6 @@
     "trackDetailsNoTrackData": "Kein Track verfügbar.",
     "trackDelete": "Track löschen",
     "trackDeleteConfirmation": "Wollen Sie diesen Track wirklich löschen?",
-    "trackDuration": "{hours} Std. {minutes} Min.",
-    "@trackDuration": {
-        "placeholders": {
-            "hours": {
-                "type": "int"
-            },
-            "minutes": {
-                "type": "int"
-            }
-        }
-    },
-    "trackDistance": "{distance} km",
-    "@trackDistance": {
-        "placeholders": {
-            "distance": {
-                "type": "String"
-            }
-        }
-    },
     "sensorTemperature": "Temperatur",
     "sensorHumidity": "Rel. Luftfeuchtigkeit",
     "sensorFinedustPM10": "Feinstaub PM10",

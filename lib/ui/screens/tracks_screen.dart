@@ -78,8 +78,8 @@ class _TracksScreenState extends State<TracksScreen> {
                   return buildTrackSummaryRow(
                     context,
                     AppLocalizations.of(context)!.tracksAppBarSumTracks(0),
-                    '0h 00min',
-                    '0.00 km',
+                    AppLocalizations.of(context)!.generalTrackDuration(0, 0),
+                    AppLocalizations.of(context)!.generalTrackDistance('0.00'),
                   );
                 } else {
                   List<TrackData> tracks = snapshot.data!;
@@ -89,15 +89,17 @@ class _TracksScreenState extends State<TracksScreen> {
                   double totalDistance =
                       tracks.fold(0.0, (prev, track) => prev + track.distance);
 
-                  String formattedDuration =
-                      '${totalDuration.inHours}h ${totalDuration.inMinutes.remainder(60)}min';
+                  String formattedDuration = AppLocalizations.of(context)!
+                      .generalTrackDuration(totalDuration.inHours,
+                          totalDuration.inMinutes.remainder(60));
 
                   return buildTrackSummaryRow(
                     context,
                     AppLocalizations.of(context)!
                         .tracksAppBarSumTracks(tracks.length),
                     formattedDuration,
-                    '${totalDistance.toStringAsFixed(2)} km',
+                    AppLocalizations.of(context)!
+                        .generalTrackDistance(totalDistance.toStringAsFixed(2)),
                   );
                 }
               },

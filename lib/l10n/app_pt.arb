@@ -22,6 +22,25 @@
     "generalPrivacyZones": "Zonas de Privacidade",
     "generalSettings": "Configurações",
     "generalShare": "Compartilhar",
+    "generalTrackDuration": "{hours}h{minutes}min",
+    "@generalTrackDuration": {
+        "placeholders": {
+            "hours": {
+                "type": "int"
+            },
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "generalTrackDistance": "{distance} km",
+    "@generalTrackDistance": {
+        "placeholders": {
+            "distance": {
+                "type": "String"
+            }
+        }
+    },
     "homeBottomBarHome": "Início",
     "homeBottomBarTracks": "Trajetos",
     "tracksAppBarTitle": "Trajetos",
@@ -86,25 +105,6 @@
     "trackDetailsNoTrackData": "Nenhum trajeto disponível.",
     "trackDelete": "Excluir Trajeto",
     "trackDeleteConfirmation": "Tem certeza de que deseja excluir este trajeto?",
-    "trackDuration": "{hours}h{minutes}min",
-    "@trackDuration": {
-        "placeholders": {
-            "hours": {
-                "type": "int"
-            },
-            "minutes": {
-                "type": "int"
-            }
-        }
-    },
-    "trackDistance": "{distance} km",
-    "@trackDistance": {
-        "placeholders": {
-            "distance": {
-                "type": "String"
-            }
-        }
-    },
     "sensorTemperature": "Temperatura",
     "sensorHumidity": "Umidade Rel.",
     "sensorFinedustPM10": "Poeira Fina PM10",

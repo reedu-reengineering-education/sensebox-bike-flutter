@@ -80,7 +80,7 @@ class TrackListItem extends StatelessWidget {
                         const Icon(Icons.timer_outlined),
                         const SizedBox(width: 8),
                         Text(
-                            AppLocalizations.of(context)!.trackDuration(
+                            AppLocalizations.of(context)!.generalTrackDuration(
                                 track.duration.inHours,
                                 track.duration.inMinutes.remainder(60)),
                             style: Theme.of(context).textTheme.bodyMedium),
@@ -88,7 +88,7 @@ class TrackListItem extends StatelessWidget {
                         const Icon(Icons.straighten),
                         const SizedBox(width: 8),
                         Text(
-                            AppLocalizations.of(context)!.trackDistance(
+                            AppLocalizations.of(context)!.generalTrackDistance(
                                 track.distance.toStringAsFixed(2)),
                             style: Theme.of(context).textTheme.bodyMedium),
                       ],
