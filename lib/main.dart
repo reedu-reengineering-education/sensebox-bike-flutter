@@ -85,6 +85,7 @@ class SenseBoxBikeApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'senseBox:bike',
+        locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: lightTheme,
