@@ -57,7 +57,7 @@ class LiveUploadService {
             _uploadedIds.addAll(geoDataToUpload.map((e) => e.id));
           } catch (e) {
             // Handle upload error
-            debugPrint('Failed to upload data: $e');
+            throw Exception('Failed to upload data: $e');
           }
         }
 
