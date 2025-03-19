@@ -29,6 +29,8 @@ Widget _buildLoginRegisterTabs(BuildContext context, OpenSenseMapBloc bloc) {
       child: Column(
         children: [
           TabBar(
+            tabAlignment: TabAlignment.start,
+            isScrollable: true,
             tabs: [
               Tab(
                 text: AppLocalizations.of(context)!.openSenseMapLoginShort,
