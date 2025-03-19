@@ -37,7 +37,14 @@ class _TracksScreenState extends State<TracksScreen> {
           children: [
             Icon(icon),
             const SizedBox(width: 8),
-            Text(text, style: Theme.of(context).textTheme.bodyMedium),
+            Expanded(
+              child: Text(
+                text,
+                style: Theme.of(context).textTheme.bodyMedium,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            )
           ],
         ),
       );
