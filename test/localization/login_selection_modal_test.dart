@@ -9,7 +9,7 @@ import '../mocks.dart';
 
 void main() {
   Provider.debugCheckInvalidValueType = null;
-  group('LoginSelectionModal Localization', () {
+  group('LoginSelectionModal', () {
     late OpenSenseMapBloc mockBloc;
 
     setUp(() {
@@ -21,7 +21,6 @@ void main() {
         localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
@@ -40,7 +39,6 @@ void main() {
 
     testWidgets('is translated in English', (WidgetTester tester) async {
       await tester.pumpWidget(createTestApp(const Locale('en')));
-
       // Tap the button to show the modal
       await tester.tap(find.text('Show Modal'));
       await tester.pumpAndSettle();
@@ -52,8 +50,6 @@ void main() {
 
     testWidgets('is translated in German', (WidgetTester tester) async {
       await tester.pumpWidget(createTestApp(const Locale('de')));
-
-      // Tap the button to show the modal
       await tester.tap(find.text('Show Modal'));
       await tester.pumpAndSettle();
 
@@ -64,8 +60,6 @@ void main() {
 
     testWidgets('is translated in Portugese', (WidgetTester tester) async {
       await tester.pumpWidget(createTestApp(const Locale('pt')));
-
-      // Tap the button to show the modal
       await tester.tap(find.text('Show Modal'));
       await tester.pumpAndSettle();
 

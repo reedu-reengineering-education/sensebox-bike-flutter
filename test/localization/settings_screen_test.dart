@@ -9,27 +9,30 @@ import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 
 void main() {
   group("SettingsScreen Widget", () {
-    testWidgets("is translated in English by default", (WidgetTester tester) async {
-      final mockSettingsBloc = SettingsBloc();
+    late SettingsBloc mockSettingsBloc;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: ChangeNotifierProvider<SettingsBloc>.value(
-            value: mockSettingsBloc,
-            child: const SettingsScreen(),
-          ),
+    setUp(() {
+      mockSettingsBloc = SettingsBloc();
+    });
+
+    Widget createTestApp(Locale locale) {
+      return MaterialApp(
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: locale,
+        home: ChangeNotifierProvider<SettingsBloc>.value(
+          value: mockSettingsBloc,
+          child: const SettingsScreen(),
         ),
       );
+    }
 
-      // Wait for any animations to complete
-      await tester.pumpAndSettle();
+    testWidgets("is translated in English", (WidgetTester tester) async {
+      await tester.pumpWidget(createTestApp(const Locale('en')));
 
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('General'), findsOneWidget);
@@ -40,29 +43,8 @@ void main() {
       expect(find.text('Privacy Policy'), findsOneWidget);
       expect(find.text('Contact'), findsOneWidget);
     });
-  
     testWidgets("is translated in German", (WidgetTester tester) async {
-      final mockSettingsBloc = SettingsBloc();
-      
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: Locale('de'),
-          home: ChangeNotifierProvider<SettingsBloc>.value(
-            value: mockSettingsBloc,
-            child: const SettingsScreen(),
-          ),
-        ),
-      );
-
-      // Wait for any animations to complete
-      await tester.pumpAndSettle();
+      await tester.pumpWidget(createTestApp(const Locale('de')));
 
       expect(find.text('Einstellungen'), findsOneWidget);
       expect(find.text('Allgemeine'), findsOneWidget);
@@ -73,28 +55,8 @@ void main() {
       expect(find.text('Datenschutz'), findsOneWidget);
       expect(find.text('Kontakt'), findsOneWidget);
     });
-  testWidgets("is translated in Portugese", (WidgetTester tester) async {
-      final mockSettingsBloc = SettingsBloc();
-      
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: Locale('pt'),
-          home: ChangeNotifierProvider<SettingsBloc>.value(
-            value: mockSettingsBloc,
-            child: const SettingsScreen(),
-          ),
-        ),
-      );
-
-      // Wait for any animations to complete
-      await tester.pumpAndSettle();
+    testWidgets("is translated in Portugese", (WidgetTester tester) async {
+      await tester.pumpWidget(createTestApp(const Locale('pt')));
 
       expect(find.text('Configurações'), findsOneWidget);
       expect(find.text('Geral'), findsOneWidget);
@@ -105,5 +67,6 @@ void main() {
       expect(find.text('Política de Privacidade'), findsOneWidget);
       expect(find.text('Contato'), findsOneWidget);
     });
+    
   });
 }

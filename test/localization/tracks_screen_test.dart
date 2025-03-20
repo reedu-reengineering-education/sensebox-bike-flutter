@@ -8,17 +8,17 @@ import 'package:provider/provider.dart';
 import '../mocks.dart';
 
 void main() {
-  testWidgets('TracksScreen localization test', (WidgetTester tester) async {
-    // Mock dependencies - this will be important later!
-    final mockIsarService = MockIsarService();
+  group('TracksScreen Widget', () {
+    late MockIsarService mockIsarService;
 
-    // Function to create the widget with a specific locale
-    Widget createWidgetUnderTest(Locale locale) {
+    setUp(() {
+      mockIsarService = MockIsarService();
+    });
+    Widget createTestApp(Locale locale) {
       return MaterialApp(
         localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
@@ -30,16 +30,19 @@ void main() {
       );
     }
 
-    // Test with English locale
-    await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
-    expect(find.text('Tracks'), findsOneWidget); // Or whatever the English title is
+    testWidgets("is translated in English", (WidgetTester tester) async {
+      await tester.pumpWidget(createTestApp(const Locale('en')));
+      expect(find.text('Tracks'), findsOneWidget);
+    });
 
-    // Test with German locale
-    await tester.pumpWidget(createWidgetUnderTest(const Locale('de')));
-    expect(find.text('Tracks'), findsOneWidget); // Or whatever the German title is
+    testWidgets("is translated in German", (WidgetTester tester) async {
+      await tester.pumpWidget(createTestApp(const Locale('de')));
+      expect(find.text('Tracks'), findsOneWidget);
+    });
 
-    // Test with Portugese locale
-    await tester.pumpWidget(createWidgetUnderTest(const Locale('pt')));
-    expect(find.text('Trajetos'), findsOneWidget); // Or whatever the German title is
+    testWidgets("is translated in Portugese", (WidgetTester tester) async {
+      await tester.pumpWidget(createTestApp(const Locale('pt')));
+      expect(find.text('Trajetos'), findsOneWidget);
+    });
   });
 }
