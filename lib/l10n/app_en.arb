@@ -113,10 +113,16 @@
     "sensorFinedustPM1": "Finedust PM1",
     "sensorDistance": "Overtaking Distance'",
     "sensorOvertaking": "Overtaking Manoeuvre",
+    "sensorOvertakingShort": "Overtaking",
+    "sensorSurface": "Surface",
     "sensorSurfaceAsphalt": "Surface Asphalt",
+    "sensorSurfaceAsphaltShort": "Asphalt",
     "sensorSurfaceSett": "Surface Sett",
+    "sensorSurfaceSettShort": "Sett",
     "sensorSurfaceCompacted": "Surface Compacted",
+    "sensorSurfaceCompactedShort": "Compacted",
     "sensorSurfacePaving": "Surface Paving",
+    "sensorSurfacePavingShort": "Paving",
     "sensorSurfaceStanding": "Standing",
     "sensorSurfaceAnomaly": "Surface Anomaly",
     "sensorSpeed": "Speed",
@@ -126,6 +132,8 @@
     "sensorGPSLat": "GPS Latitude",
     "sensorGPSLong": "GPS Longitude",
     "sensorGPSSpeed": "GPS Speed",
+    "sensorGPSError": "No GPS Fix",
     "sensorAcceleration": "Acceleration",
-    "sensorFinedust": "Finedust"
+    "sensorFinedust": "Finedust",
+    "sensorDistanceShort": "Distance"
 }

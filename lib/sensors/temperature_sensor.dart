@@ -5,6 +5,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class TemperatureSensor extends Sensor {
   List<double> _latestValue = [0.0];
@@ -43,7 +44,7 @@ class TemperatureSensor extends Sensor {
       initialData: _latestValue,
       builder: (context, snapshot) {
         return SensorCard(
-            title: "Temperature",
+            title: AppLocalizations.of(context)!.sensorTemperature,
             icon: getSensorIcon(title),
             color: getSensorColor(title),
             child: Row(

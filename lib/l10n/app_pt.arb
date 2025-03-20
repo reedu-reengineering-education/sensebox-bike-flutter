@@ -113,10 +113,16 @@
     "sensorFinedustPM1": "Poeira Fina PM1",
     "sensorDistance": "Distância de Ultrapassagem",
     "sensorOvertaking": "Manobra de Ultrapassagem",
+    "sensorOvertakingShort": "Ultrapassagem",
+    "sensorSurface": "Superfície",
     "sensorSurfaceAsphalt": "Superfície Asfalto",
+    "sensorSurfaceAsphaltShort": "Asfalto",
     "sensorSurfaceSett": "Superfície Paralelepípedo",
+    "sensorSurfaceSettShort": "Paralelepípedo",
     "sensorSurfaceCompacted": "Superfície Compactada",
+    "sensorSurfaceCompactedShort": "Compacted",
     "sensorSurfacePaving": "Superfície Pavimentada",
+    "sensorSurfacePavingShort": "Pavimentada",
     "sensorSurfaceStanding": "Parado",
     "sensorSurfaceAnomaly": "Anomalia de Superfície",
     "sensorSpeed": "Velocidade",
@@ -126,6 +132,8 @@
     "sensorGPSLat": "Latitude GPS",
     "sensorGPSLong": "Longitude GPS",
     "sensorGPSSpeed": "Velocidade GPS",
+    "sensorGPSError": "Sem GPS fixo",
     "sensorAcceleration": "Aceleração",
-    "sensorFinedust": "Poeira Fina"
+    "sensorFinedust": "Poeira Fina",
+    "sensorDistanceShort": "Distância"
 }
