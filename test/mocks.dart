@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -31,4 +32,14 @@ class MockTrackData extends TrackData {
 class MockGeolocation extends GeolocationData {
   @override
   DateTime get timestamp => DateTime.now();
+}
+
+class MockOpenSenseMapBloc extends OpenSenseMapBloc {
+  @override
+  bool isAuthenticated = false;
+
+  @override
+  Future<void> logout() async {
+    isAuthenticated = false;
+  }
 }
