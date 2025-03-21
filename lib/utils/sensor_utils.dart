@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+String? getSearchKey(String key, String? attribute) {
+  if (attribute != null) {
+    return '${key}_${attribute.replaceAll(".", "_")}';
+  }
+
+  return key;
+}
 
 String? getTitleFromSensorKey(String key, String? attribute) {
-  String searchKey = key;
-  if (attribute != null) {
-    searchKey = '${key}_${attribute.replaceAll(".", "_")}';
-  }
+  String searchKey = getSearchKey(key, attribute) ?? key;
 
   switch (searchKey) {
     case 'temperature':
@@ -50,7 +56,60 @@ String? getTitleFromSensorKey(String key, String? attribute) {
     case 'gps_speed':
       return 'GPS Speed';
     default:
-      print("Unknown sensor key: $searchKey");
+      debugPrint("Unknown sensor key: $searchKey");
+      return null;
+  }
+}
+
+String? getTranslatedTitleFromSensorKey(
+    String key, String? attribute, BuildContext context) {
+  String searchKey = getSearchKey(key, attribute) ?? key;
+
+  switch (searchKey) {
+    case 'temperature':
+      return AppLocalizations.of(context)!.sensorTemperature;
+    case 'humidity':
+      return AppLocalizations.of(context)!.sensorHumidity;
+    case 'finedust_pm10':
+      return AppLocalizations.of(context)!.sensorFinedustPM10;
+    case 'finedust_pm4':
+      return AppLocalizations.of(context)!.sensorFinedustPM4;
+    case 'finedust_pm2_5':
+      return AppLocalizations.of(context)!.sensorFinedustPM25;
+    case 'finedust_pm1':
+      return AppLocalizations.of(context)!.sensorFinedustPM1;
+    case 'distance':
+      return AppLocalizations.of(context)!.sensorDistance;
+    case 'overtaking':
+      return AppLocalizations.of(context)!.sensorOvertaking;
+    case 'surface_classification_asphalt':
+      return AppLocalizations.of(context)!.sensorSurfaceAsphalt;
+    case 'surface_classification_sett':
+      return AppLocalizations.of(context)!.sensorSurfaceSett;
+    case 'surface_classification_compacted':
+      return AppLocalizations.of(context)!.sensorSurfaceCompacted;
+    case 'surface_classification_paving':
+      return AppLocalizations.of(context)!.sensorSurfacePaving;
+    case 'surface_classification_standing':
+      return AppLocalizations.of(context)!.sensorSurfaceStanding;
+    case 'surface_anomaly':
+      return AppLocalizations.of(context)!.sensorSurfaceAnomaly;
+    case 'speed':
+      return AppLocalizations.of(context)!.sensorSpeed;
+    case 'acceleration_x':
+      return AppLocalizations.of(context)!.sensorAccelerationX;
+    case 'acceleration_y':
+      return AppLocalizations.of(context)!.sensorAccelerationY;
+    case 'acceleration_z':
+      return AppLocalizations.of(context)!.sensorAccelerationZ;
+    case 'gps_latitude':
+      return AppLocalizations.of(context)!.sensorGPSLat;
+    case 'gps_longitude':
+      return AppLocalizations.of(context)!.sensorGPSLong;
+    case 'gps_speed':
+      return AppLocalizations.of(context)!.sensorGPSSpeed;
+    default:
+      debugPrint("Unknown sensor key: $searchKey");
       return null;
   }
 }

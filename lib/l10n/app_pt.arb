@@ -1,0 +1,139 @@
+{
+    "@@locale": "pt",
+    "generalLoading": "Carregando...",
+    "generalError": "Erro",
+    "generalErrorWithDescription": "Erro: {error}",
+    "@generalErrorWithDescription": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "generalRetry": "Tentar de novo",
+    "generalCancel": "Cancelar",
+    "generalCreate": "Criar",
+    "generalOk": "Ok",
+    "generalSave": "Salvar",
+    "generalDelete": "Excluir",
+    "generalEdit": "Editar",
+    "generalAdd": "Adicionar",
+    "generalClose": "Fechar",
+    "generalPrivacyZones": "Áreas de Privacidade",
+    "generalSettings": "Configurações",
+    "generalShare": "Compartilhar",
+    "generalTrackDuration": "{hours}h{minutes}min",
+    "@generalTrackDuration": {
+        "placeholders": {
+            "hours": {
+                "type": "int"
+            },
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "generalTrackDistance": "{distance} km",
+    "@generalTrackDistance": {
+        "placeholders": {
+            "distance": {
+                "type": "String"
+            }
+        }
+    },
+    "homeBottomBarHome": "Início",
+    "homeBottomBarTracks": "Trajetos",
+    "tracksAppBarTitle": "Trajetos",
+    "tracksAppBarSumTracks": "{count, plural, =0{Nenhum trajeto} =1{1 trajeto} other{{count} trajetos}}",
+    "tracksNoTracks": "Nenhum trajeto disponível",
+    "tracksTrackDeleted": "Trajeto excluído",
+    "openSenseMapLogin": "Entrar com openSenseMap",
+    "openSenseMapLoginShort": "Entrar",
+    "openSenseMapRegister": "Registrar-se no openSenseMap",
+    "openSenseMapLogout": "Sair",
+    "openSenseMapEmail": "E-mail",
+    "openSenseMapPassword": "Senha",
+    "openSenseMapEmailErrorEmpty": "O e-mail não pode estar vazio",
+    "openSenseMapEmailErrorInvalid": "Endereço de e-mail inválido",
+    "openSenseMapPasswordErrorEmpty": "A senha não pode estar vazia",
+    "openSenseMapLoginFailed": "Falha no login",
+    "openSenseMapRegisterName": "Nome",
+    "openSenseMapRegisterNameErrorEmpty": "O nome não pode estar vazio",
+    "openSenseMapRegisterPasswordConfirm": "Confirmar senha",
+    "openSenseMapRegisterPasswordConfirmErrorEmpty": "A confirmação da senha não pode estar vazia",
+    "openSenseMapRegisterPasswordErrorMismatch": "As senhas não coincidem",
+    "openSenseMapRegisterPasswordErrorCharacters": "A senha deve conter pelo menos 8 caracteres",
+    "openSenseMapRegisterFailed": "Falha no registro",
+    "connectionButtonConnect": "Conectar",
+    "connectionButtonDisconnect": "Desconectar",
+    "connectionButtonConnecting": "Conectando...",
+    "connectionButtonReconnecting": "Reconectando...",
+    "connectionButtonStart": "Iniciar",
+    "connectionButtonStop": "Parar",
+    "bleDeviceSelectTitle": "Conecte-se ao seu senseBox:bike",
+    "createBoxTitle": "Criar senseBox:bike",
+    "createBoxModel": "Modelo",
+    "createBoxModelErrorEmpty": "Por favor, selecione um modelo",
+    "createBoxName": "Nome",
+    "createBoxNameError": "O nome deve ter entre 2 e 50 caracteres",
+    "createBoxGeolocationCurrentPosition": "Sua posição atual será usada",
+    "openSenseMapBoxSelectionNoBoxes": "Nenhum senseBox disponível",
+    "openSenseMapBoxSelectionCreateHint": "Crie um usando o botão '+'",
+    "openSenseMapBoxSelectionUnnamedBox": "senseBox sem nome",
+    "openSenseMapBoxSelectionIncompatible": "Não compatível com senseBox:bike",
+    "settingsGeneral": "Geral",
+    "settingsOther": "Outros",
+    "settingsVibrateOnDisconnect": "Vibrar ao desconectar",
+    "settingsAbout": "Sobre",
+    "settingsPrivacyPolicy": "Política de Privacidade",
+    "settingsVersion": "Versão: {versionNumber}",
+    "@settingsVersion": {
+        "placeholders": {
+            "versionNumber": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsContact": "Contato",
+    "privacyZonesStart": "Toque no mapa para começar a desenhar uma área. Toque na marca de seleção para finalizar.",
+    "privacyZonesDelete": "Toque em uma área para excluí-la. Toque na marca de seleção para finalizar.",
+    "trackDetailsPermissionsError": "Permissão negada para salvar o arquivo no armazenamento externo.",
+    "trackDetailsFileSaved": "Arquivo CSV salvo na pasta Downloads.",
+    "trackDetailsExport": "Exportação de dados do trajeto em CSV.",
+    "trackDetailsNoData": "Nenhum dado disponível.",
+    "trackDetailsLoadingError": "Erro ao carregar o trajeto.",
+    "trackDetailsNoTrackData": "Nenhum trajeto disponível.",
+    "trackDelete": "Excluir Trajeto",
+    "trackDeleteConfirmation": "Tem certeza de que deseja excluir este trajeto?",
+    "sensorTemperature": "Temperatura",
+    "sensorHumidity": "Umidade Rel.",
+    "sensorFinedustPM10": "Material Particulado PM10",
+    "sensorFinedustPM4": "Material Particulado PM4",
+    "sensorFinedustPM25": "Material Particulado PM2,5",
+    "sensorFinedustPM1": "Material Particulado PM1",
+    "sensorDistance": "Distância de Ultrapassagem",
+    "sensorOvertaking": "Manobra de Ultrapassagem",
+    "sensorOvertakingShort": "Ultrapassagem",
+    "sensorSurface": "Superfície",
+    "sensorSurfaceAsphalt": "Superfície: Asfalto",
+    "sensorSurfaceAsphaltShort": "Asfalto",
+    "sensorSurfaceSett": "Superfície: Paralelepípedo",
+    "sensorSurfaceSettShort": "Paralelepípedo",
+    "sensorSurfaceCompacted": "Superfície: Compactada",
+    "sensorSurfaceCompactedShort": "Compacted",
+    "sensorSurfacePaving": "Superfície: Pavimentada",
+    "sensorSurfacePavingShort": "Pavimentada",
+    "sensorSurfaceStanding": "Parado",
+    "sensorSurfaceAnomaly": "Irregularidade no Piso",
+    "sensorSpeed": "Velocidade",
+    "sensorAccelerationX": "Aceleração X",
+    "sensorAccelerationY": "Aceleração Y",
+    "sensorAccelerationZ": "Aceleração Z",
+    "sensorGPSLat": "Latitude GPS",
+    "sensorGPSLong": "Longitude GPS",
+    "sensorGPSSpeed": "Velocidade GPS",
+    "sensorGPSError": "Erro no GPS",
+    "sensorAcceleration": "Aceleração",
+    "sensorFinedust": "Material Particulado",
+    "sensorDistanceShort": "Distância"
+}

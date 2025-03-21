@@ -1,0 +1,139 @@
+{
+    "@@locale": "en",
+    "generalLoading": "Loading...",
+    "generalError": "Error",
+    "generalErrorWithDescription": "Error: {error}",
+    "@generalErrorWithDescription": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "generalRetry": "Retry",
+    "generalCancel": "Cancel",
+    "generalCreate": "Create",
+    "generalOk": "Ok",
+    "generalSave": "Save",
+    "generalDelete": "Delete",
+    "generalEdit": "Edit",
+    "generalAdd": "Add",
+    "generalClose": "Close",
+    "generalPrivacyZones": "Privacy Zones",
+    "generalSettings": "Settings",
+    "generalShare": "Share",
+    "generalTrackDuration": "{hours}h {minutes}min",
+    "@generalTrackDuration": {
+        "placeholders": {
+            "hours": {
+                "type": "int"
+            },
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "generalTrackDistance": "{distance} km",
+    "@generalTrackDistance": {
+        "placeholders": {
+            "distance": {
+                "type": "String"
+            }
+        }
+    },
+    "homeBottomBarHome": "Home",
+    "homeBottomBarTracks": "Tracks",
+    "tracksAppBarTitle": "Tracks",
+    "tracksAppBarSumTracks": "{count, plural, =0{No tracks} =1{1 track} other{{count} tracks}}",
+    "tracksNoTracks": "No tracks available",
+    "tracksTrackDeleted": "Track deleted",
+    "openSenseMapLogin": "Login with openSenseMap",
+    "openSenseMapLoginShort": "Login",
+    "openSenseMapRegister": "Register with openSenseMap",
+    "openSenseMapLogout": "Logout",
+    "openSenseMapEmail": "Email",
+    "openSenseMapPassword": "Password",
+    "openSenseMapEmailErrorEmpty": "Email must not be empty",
+    "openSenseMapEmailErrorInvalid": "Invalid email address",
+    "openSenseMapPasswordErrorEmpty": "Password must not be empty",
+    "openSenseMapLoginFailed": "Login failed",
+    "openSenseMapRegisterName": "Name",
+    "openSenseMapRegisterNameErrorEmpty": "Name must not be empty",
+    "openSenseMapRegisterPasswordConfirm": "Confirm password",
+    "openSenseMapRegisterPasswordConfirmErrorEmpty": "Password confirmation must not be empty",
+    "openSenseMapRegisterPasswordErrorMismatch": "Passwords do not match",
+    "openSenseMapRegisterPasswordErrorCharacters": "Password must contain at least 8 characters",
+    "openSenseMapRegisterFailed": "Registration failed",
+    "connectionButtonConnect": "Connect",
+    "connectionButtonDisconnect": "Disconnect",
+    "connectionButtonConnecting": "Connecting...",
+    "connectionButtonReconnecting": "Reconnecting...",
+    "connectionButtonStart": "Start",
+    "connectionButtonStop": "Stop",
+    "bleDeviceSelectTitle": "Connect to your senseBox:bike",
+    "createBoxTitle": "Create senseBox:bike",
+    "createBoxModel": "Model",
+    "createBoxModelErrorEmpty": "Please select a model",
+    "createBoxName": "Name",
+    "createBoxNameError": "Name must be between 2 and 50 characters",
+    "createBoxGeolocationCurrentPosition": "Your current position will be used",
+    "openSenseMapBoxSelectionNoBoxes": "No senseBoxes available",
+    "openSenseMapBoxSelectionCreateHint": "Create one using the '+' button",
+    "openSenseMapBoxSelectionUnnamedBox": "Unnamed senseBox",
+    "openSenseMapBoxSelectionIncompatible": "Not compatible with senseBox:bike",
+    "settingsGeneral": "General",
+    "settingsOther": "Other",
+    "settingsVibrateOnDisconnect": "Vibrate on disconnect",
+    "settingsAbout": "About",
+    "settingsPrivacyPolicy": "Privacy Policy",
+    "settingsVersion": "Version: {versionNumber}",
+    "@settingsVersion": {
+        "placeholders": {
+            "versionNumber": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsContact": "Contact",
+    "privacyZonesStart": "Tap on the map to start drawing a zone. Tap the checkmark to finish.",
+    "privacyZonesDelete": "Tap on a zone to delete it. Tap the checkmark to finish.",
+    "trackDetailsPermissionsError": "Permission denied to save file to external storage.",
+    "trackDetailsFileSaved": "CSV file saved to Downloads folder.",
+    "trackDetailsExport": "Track data CSV export.",
+    "trackDetailsNoData": "No data available.",
+    "trackDetailsLoadingError": "Error loading track.",
+    "trackDetailsNoTrackData": "No track available.",
+    "trackDelete": "Delete Track",
+    "trackDeleteConfirmation": "Are you sure you wish to delete this track?",
+    "sensorTemperature": "Temperature",
+    "sensorHumidity": "Rel. Humidity",
+    "sensorFinedustPM10": "Finedust PM10",
+    "sensorFinedustPM4": "Finedust PM4",
+    "sensorFinedustPM25": "Finedust PM25",
+    "sensorFinedustPM1": "Finedust PM1",
+    "sensorDistance": "Overtaking Distance'",
+    "sensorOvertaking": "Overtaking Manoeuvre",
+    "sensorOvertakingShort": "Overtaking",
+    "sensorSurface": "Surface",
+    "sensorSurfaceAsphalt": "Surface Asphalt",
+    "sensorSurfaceAsphaltShort": "Asphalt",
+    "sensorSurfaceSett": "Surface Sett",
+    "sensorSurfaceSettShort": "Sett",
+    "sensorSurfaceCompacted": "Surface Compacted",
+    "sensorSurfaceCompactedShort": "Compacted",
+    "sensorSurfacePaving": "Surface Paving",
+    "sensorSurfacePavingShort": "Paving",
+    "sensorSurfaceStanding": "Standing",
+    "sensorSurfaceAnomaly": "Surface Anomaly",
+    "sensorSpeed": "Speed",
+    "sensorAccelerationX": "Acceleration X",
+    "sensorAccelerationY": "Acceleration Y",
+    "sensorAccelerationZ": "Acceleration Z",
+    "sensorGPSLat": "GPS Latitude",
+    "sensorGPSLong": "GPS Longitude",
+    "sensorGPSSpeed": "GPS Speed",
+    "sensorGPSError": "No GPS Fix",
+    "sensorAcceleration": "Acceleration",
+    "sensorFinedust": "Finedust",
+    "sensorDistanceShort": "Distance"
+}

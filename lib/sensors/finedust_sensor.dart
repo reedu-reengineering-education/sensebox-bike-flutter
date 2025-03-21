@@ -6,6 +6,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class FinedustSensor extends Sensor {
   double _latestPM1 = 0.0;
@@ -66,7 +67,7 @@ class FinedustSensor extends Sensor {
         List<double> displayValues = snapshot.data ??
             [_latestPM1, _latestPM2_5, _latestPM4, _latestPM10];
         return SensorCard(
-            title: "Finedust",
+            title: AppLocalizations.of(context)!.sensorFinedust,
             icon: getSensorIcon(title),
             color: getSensorColor(title),
             child: AspectRatio(

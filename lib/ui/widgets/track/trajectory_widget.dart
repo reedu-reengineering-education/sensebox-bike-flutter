@@ -60,7 +60,7 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
         await mapInstance.style.removeStyleSource("lineSource");
       }
     } catch (e) {
-      print("Error removing sources and layers: $e");
+      debugPrint("Error removing sources and layers: $e");
     }
 
     List features = List.generate(widget.geolocationData.length - 1, (index) {
@@ -94,7 +94,7 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     try {
       await mapInstance.style.addSource(lineSource);
     } catch (e) {
-      print("Error adding source: $e");
+      debugPrint("Error adding source: $e");
     }
 
     minSensorValue =

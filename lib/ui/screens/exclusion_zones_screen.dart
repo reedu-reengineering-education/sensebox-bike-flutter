@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ExclusionZonesScreen extends StatefulWidget {
   const ExclusionZonesScreen({super.key});
@@ -57,7 +58,7 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Privacy Zones'),
+        title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
       ),
       body: Stack(
         children: [
@@ -85,9 +86,9 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
                       : const Icon(Icons.crop_square_outlined),
                   onPressed: () {
                     if (mapboxDrawController.editingMode == EditingMode.NONE) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(
-                            'Tap on the map to start drawing a zone. Tap the checkmark to finish.'),
+                            AppLocalizations.of(context)!.privacyZonesStart),
                       ));
                     }
                     mapboxDrawController
@@ -102,9 +103,9 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
                       if (mapboxDrawController.editingMode ==
                           EditingMode.NONE) {
                         ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(
+                            .showSnackBar(SnackBar(
                           content: Text(
-                              'Tap on a zone to delete it. Tap the checkmark to finish.'),
+                              AppLocalizations.of(context)!.privacyZonesDelete),
                         ));
                       }
                       mapboxDrawController.toggleDeleteMode();

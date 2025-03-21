@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -14,7 +15,7 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(AppLocalizations.of(context)!.generalSettings),
       ),
       body: ListView(
         children: <Widget>[
@@ -22,7 +23,7 @@ class SettingsScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              'Settings',
+              AppLocalizations.of(context)!.settingsGeneral,
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
@@ -32,7 +33,8 @@ class SettingsScreen extends StatelessWidget {
             builder: (context, snapshot) {
               return ListTile(
                 leading: const Icon(Icons.vibration),
-                title: const Text('Vibrate on disconnect'),
+                title: Text(
+                    AppLocalizations.of(context)!.settingsVibrateOnDisconnect),
                 trailing: Switch(
                   value: snapshot.data ?? false,
                   onChanged: (value) {
@@ -44,7 +46,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.admin_panel_settings),
-            title: const Text('Privacy Zones'),
+            title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -60,28 +62,29 @@ class SettingsScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              'Other',
+              AppLocalizations.of(context)!.settingsOther,
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
           ListTile(
             leading: const Icon(Icons.info),
-            title: const Text('About'),
+            title: Text(AppLocalizations.of(context)!.settingsAbout),
             subtitle: FutureBuilder(
               future: PackageInfo.fromPlatform(),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   return Text(
-                      'Version: ${snapshot.data!.version}+${snapshot.data!.buildNumber}');
+                    AppLocalizations.of(context)!.settingsVersion(
+                      '${snapshot.data!.version}+${snapshot.data!.buildNumber}'));
                 } else {
-                  return const Text('Loading...');
+                  return Text(AppLocalizations.of(context)!.generalLoading);
                 }
               },
             ),
           ),
           ListTile(
             leading: const Icon(Icons.privacy_tip),
-            title: const Text('Privacy Policy'),
+            title: Text(AppLocalizations.of(context)!.settingsPrivacyPolicy),
             onTap: () {
               launchUrl(Uri.parse(
                   'https://sensebox.de/sensebox-bike-privacy-policy'));
@@ -89,7 +92,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.contact_mail),
-            title: const Text('Contact'),
+            title: Text(AppLocalizations.of(context)!.settingsContact),
             onTap: () {
               launchUrl(Uri.parse(
                   'mailto:kontakt@reedu.de?subject=senseBox:bike%20App'));

@@ -6,6 +6,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SurfaceClassificationSensor extends Sensor {
   double _latestAsphalt = 0.0;
@@ -102,7 +103,7 @@ class SurfaceClassificationSensor extends Sensor {
             ];
 
         return SensorCard(
-            title: "Surface",
+            title: AppLocalizations.of(context)!.sensorSurface,
             icon: getSensorIcon(title),
             color: getSensorColor(title),
             child: Column(
@@ -112,7 +113,14 @@ class SurfaceClassificationSensor extends Sensor {
                 ),
                 for (int i = 0; i < displayValues.length; i++)
                   _buildLegendEntry(
-                      ["Asphalt", "Compacted", "Paving", "Sett", "Standing"][i],
+                      [
+                        AppLocalizations.of(context)!.sensorSurfaceAsphaltShort,
+                        AppLocalizations.of(context)!
+                            .sensorSurfaceCompactedShort,
+                        AppLocalizations.of(context)!.sensorSurfacePavingShort,
+                        AppLocalizations.of(context)!.sensorSurfaceSettShort,
+                        AppLocalizations.of(context)!.sensorSurfaceStanding
+                      ][i],
                       [
                         Colors.blue,
                         Colors.green,

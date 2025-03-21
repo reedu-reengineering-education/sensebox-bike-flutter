@@ -4,6 +4,7 @@ import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/ui/widgets/form/image_select_form_field.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class CreateBikeBoxDialog extends StatefulWidget {
   const CreateBikeBoxDialog({super.key});
@@ -32,7 +33,7 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
         final position = await geolocationBloc.getCurrentLocation();
 
         if (_modelController.value == null) {
-          throw 'Please select a model';
+          throw AppLocalizations.of(context)!.createBoxModelErrorEmpty;
         }
 
         await opensensemapBloc.createSenseBoxBike(
@@ -51,14 +52,14 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: const Text('Error'),
+                title: Text(AppLocalizations.of(context)!.generalError),
                 content: Text(error.toString()),
                 actions: [
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: const Text('OK'),
+                    child: Text(AppLocalizations.of(context)!.generalOk),
                   ),
                 ],
               );
@@ -76,7 +77,7 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
     // final localization = AppLocalizations.of(context);
 
     return AlertDialog(
-      title: const Text('Create senseBox:bike'),
+      title: Text(AppLocalizations.of(context)!.createBoxTitle),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -84,7 +85,7 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
             children: [
               ImageSelectFormField(
                 controller: _modelController,
-                label: 'Model',
+                label: AppLocalizations.of(context)!.createBoxModel,
                 items: [
                   ImageSelectItem(
                     value: SenseBoxBikeModel.classic,
@@ -99,32 +100,35 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
                 ],
                 validator: (value) {
                   if (value == null) {
-                    return 'Please select an option';
+                    return AppLocalizations.of(context)!
+                        .createBoxModelErrorEmpty;
                   }
                   return null;
                 },
               ),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.createBoxName,
                 ),
                 validator: (value) {
                   if (value == null ||
                       value.isEmpty ||
                       value.length < 2 ||
                       value.length > 50) {
-                    return 'Name must be between 2 and 50 characters';
+                    return AppLocalizations.of(context)!.createBoxNameError;
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 20),
-              const Row(
+              Row(
                 children: [
                   Icon(Icons.info_outline),
                   SizedBox(width: 8),
-                  Expanded(child: Text('Your current position will be used')),
+                  Expanded(
+                      child: Text(AppLocalizations.of(context)!
+                          .createBoxGeolocationCurrentPosition)),
                 ],
               ),
             ],
@@ -136,13 +140,13 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context)!.generalCancel),
         ),
         FilledButton(
           onPressed: _loading ? null : _submitForm,
           child: _loading
               ? const CircularProgressIndicator()
-              : const Text('Create'),
+              : Text(AppLocalizations.of(context)!.generalCreate),
         ),
       ],
     );

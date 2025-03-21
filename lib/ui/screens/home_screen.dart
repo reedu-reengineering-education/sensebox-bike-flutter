@@ -9,6 +9,7 @@ import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
@@ -35,13 +36,6 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(
                     width: double.infinity,
                     child: GeolocationMapWidget(), // The map
-                  ),
-                  Positioned(
-                    top: 0,
-                    right: 8,
-                    child: SafeArea(
-                      child: _SenseBoxLoginButton(),
-                    ),
                   ),
                   const Positioned(
                     bottom: 0,
@@ -80,26 +74,26 @@ class _SenseBoxLoginButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final OpenSenseMapBloc osemBloc = Provider.of<OpenSenseMapBloc>(context);
 
-    return OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-      ),
-      onPressed: () => showLoginOrSenseBoxSelection(context, osemBloc),
-      label: StreamBuilder<SenseBox?>(
-        stream: osemBloc.senseBoxStream,
-        initialData: osemBloc.selectedSenseBox,
-        builder: (context, snapshot) {
-          if (!osemBloc.isAuthenticated) {
-            return const Text('Login');
-          } else if (snapshot.hasError) {
-            return const Text('Error');
-          } else {
-            return Text(snapshot.data?.name ?? 'No senseBox');
-          }
-        },
-      ),
-      icon: const Icon(Icons.person),
-    );
+    return IconButton.outlined(
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        ),
+        onPressed: () => showLoginOrSenseBoxSelection(context, osemBloc),
+        icon: StreamBuilder<SenseBox?>(
+          stream: osemBloc.senseBoxStream,
+          initialData: osemBloc.selectedSenseBox,
+          builder: (context, snapshot) {
+            if (!osemBloc.isAuthenticated) {
+              return Icon(Icons.login);
+            } else if (snapshot.hasError) {
+              return Icon(Icons.error);
+            } else {
+              return snapshot.data?.name != null
+                  ? Icon(Icons.check)
+                  : Icon(Icons.link);
+            }
+          },
+        ));
   }
 }
 
@@ -115,7 +109,16 @@ class _FloatingButtons extends StatelessWidget {
       valueListenable: bleBloc.selectedDeviceNotifier,
       builder: (context, selectedDevice, child) {
         if (selectedDevice == null) {
-          return _ConnectButton(bleBloc: bleBloc);
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: _ConnectButton(bleBloc: bleBloc),
+              ),
+              const SizedBox(width: 12),
+              _SenseBoxLoginButton(),
+            ],
+          );
         } else {
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -148,7 +151,8 @@ class _ConnectButton extends StatelessWidget {
                 EdgeInsets.all(12),
               ),
             ),
-            label: const Text('Connecting...'),
+            label:
+                Text(AppLocalizations.of(context)!.connectionButtonConnecting),
             icon: CircularProgressIndicator(
               color: Theme.of(context).colorScheme.onPrimary,
             ),
@@ -161,7 +165,7 @@ class _ConnectButton extends StatelessWidget {
                 EdgeInsets.all(12),
               ),
             ),
-            label: const Text('Connect'),
+            label: Text(AppLocalizations.of(context)!.connectionButtonConnect),
             icon: const Icon(Icons.bluetooth),
             onPressed: () => showDeviceSelectionDialog(context, bleBloc),
           );
@@ -184,7 +188,9 @@ class _StartStopButton extends StatelessWidget {
           EdgeInsets.symmetric(vertical: 12, horizontal: 20),
         ),
       ),
-      label: Text(recordingBloc.isRecording ? 'Stop' : 'Start'),
+      label: Text(recordingBloc.isRecording
+          ? AppLocalizations.of(context)!.connectionButtonStop
+          : AppLocalizations.of(context)!.connectionButtonStart),
       icon: Icon(
           recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
       // : recordingBloc.isRecording
@@ -218,8 +224,8 @@ class _DisconnectButton extends StatelessWidget {
               ? const CircularProgressIndicator()
               : const Icon(Icons.bluetooth_disabled),
           label: isReconnecting
-              ? const Text('Reconnecting...')
-              : const Text('Disconnect'),
+              ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
+              : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
           // backgroundColor: Theme.of(context).colorScheme.primary,
           onPressed: bleBloc.disconnectDevice,
         );

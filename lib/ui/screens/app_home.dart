@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/screens/home_screen.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AppHome extends StatefulWidget {
   const AppHome({super.key});
@@ -52,11 +53,16 @@ class _AppHomeState extends State<AppHome> {
               });
             },
             selectedIndex: _selectedIndex,
-            destinations: const [
-              NavigationDestination(icon: Icon(Icons.map), label: 'Home'),
-              NavigationDestination(icon: Icon(Icons.route), label: 'Tracks'),
+            destinations: [
               NavigationDestination(
-                  icon: Icon(Icons.settings), label: 'Settings')
+                  icon: Icon(Icons.map),
+                  label: AppLocalizations.of(context)!.homeBottomBarHome),
+              NavigationDestination(
+                  icon: Icon(Icons.route),
+                  label: AppLocalizations.of(context)!.homeBottomBarTracks),
+              NavigationDestination(
+                  icon: Icon(Icons.settings),
+                  label: AppLocalizations.of(context)!.generalSettings)
             ],
           ),
         ),

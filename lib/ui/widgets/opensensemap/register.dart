@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RegisterForm extends StatefulWidget {
   final OpenSenseMapBloc bloc;
@@ -40,27 +41,29 @@ class _RegisterFormState extends State<RegisterForm> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
+              TextFormField(
                 autofillHints: const [AutofillHints.name],
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                ),
+                decoration: InputDecoration(
+                    labelText:
+                        AppLocalizations.of(context)!.openSenseMapRegisterName),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 autofillHints: const [AutofillHints.email],
                 controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.openSenseMapEmail,
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
+                    return AppLocalizations.of(context)!
+                        .openSenseMapEmailErrorEmpty;
                   }
                   if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return 'Please enter a valid email address';
+                    return AppLocalizations.of(context)!
+                        .openSenseMapEmailErrorInvalid;
                   }
                   return null;
                 },
@@ -69,16 +72,18 @@ class _RegisterFormState extends State<RegisterForm> {
               TextFormField(
                 autofillHints: const [AutofillHints.password],
                 controller: passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.openSenseMapPassword,
                 ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
+                    return AppLocalizations.of(context)!
+                        .openSenseMapPasswordErrorEmpty;
                   }
                   if (value.length < 8) {
-                    return 'Password must be at least 8 characters long';
+                    return AppLocalizations.of(context)!
+                        .openSenseMapRegisterPasswordErrorCharacters;
                   }
                   return null;
                 },
@@ -87,16 +92,18 @@ class _RegisterFormState extends State<RegisterForm> {
               TextFormField(
                 autofillHints: const [AutofillHints.password],
                 controller: confirmPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm Password',
-                ),
+                decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!
+                        .openSenseMapRegisterPasswordConfirm),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please confirm your password';
+                    return AppLocalizations.of(context)!
+                        .openSenseMapRegisterPasswordConfirmErrorEmpty;
                   }
                   if (value != passwordController.text) {
-                    return 'Passwords do not match';
+                    return AppLocalizations.of(context)!
+                        .openSenseMapRegisterPasswordErrorMismatch;
                   }
                   return null;
                 },
@@ -123,7 +130,9 @@ class _RegisterFormState extends State<RegisterForm> {
                                   children: [
                                     const Icon(Icons.error, color: Colors.red),
                                     const SizedBox(height: 8),
-                                    Text("Registration failed",
+                                    Text(
+                                        AppLocalizations.of(context)!
+                                            .openSenseMapRegisterFailed,
                                         style: Theme.of(context)
                                             .textTheme
                                             .headlineSmall),
@@ -138,7 +147,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     }
                   }
                 },
-                child: const Text('Register'),
+                child: Text(AppLocalizations.of(context)!.openSenseMapRegister),
               ),
             ],
           ),

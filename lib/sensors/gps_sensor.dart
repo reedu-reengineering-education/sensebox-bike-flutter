@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class GPSSensor extends Sensor {
   double _latestLat = 0.0;
@@ -101,14 +102,20 @@ class GPSSensor extends Sensor {
   @override
   Widget buildWidget() {
     if (_latestLat == 0.0 && _latestLng == 0.0) {
-      return SensorCard(
-        icon: getSensorIcon(title),
-        color: getSensorColor(title),
-        title: 'GPS',
-        child: const Center(
-          child: Text("No GPS Fix"),
-        ),
+      return StreamBuilder<List<double>>(
+        stream: valueStream,
+        builder: (context, snapshot) {
+          return SensorCard(
+            icon: getSensorIcon(title),
+            color: getSensorColor(title),
+            title: 'GPS',
+            child: Center(
+              child: Text(AppLocalizations.of(context)!.sensorGPSError),
+            ),
+          );
+        },
       );
+      
     }
     return Card(
       elevation: 1,
