@@ -1,7 +1,9 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RegisterForm extends StatefulWidget {
   final OpenSenseMapBloc bloc;
@@ -17,6 +19,7 @@ class _RegisterFormState extends State<RegisterForm> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+  bool isAccepted = false;
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   @override
@@ -107,6 +110,66 @@ class _RegisterFormState extends State<RegisterForm> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    // Use Expanded to give the Row space to grow
+                    child: GestureDetector(
+                      onTap: () {
+                        // Toggle the checkbox when the text is tapped
+                        setState(() {
+                          // Assuming a boolean variable `isAccepted` exists
+                          isAccepted = !isAccepted;
+                        });
+                      },
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: isAccepted,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                isAccepted = value ?? false;
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                RichText(
+                                  text: TextSpan(
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
+                                    children: [
+                                      TextSpan(
+                                          text: AppLocalizations.of(context)!
+                                              .openSenesMapRegisterAcceptTermsPrefix),
+                                      TextSpan(text: " "),
+                                      TextSpan(
+                                        text: AppLocalizations.of(context)!
+                                            .openSenseMapRegisterAcceptTermsPrivacy,
+                                        style: const TextStyle(
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () {
+                                            launchUrl(Uri.parse(
+                                                'https://opensensemap.org/privacy'));
+                                          },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               FilledButton(

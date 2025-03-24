@@ -63,6 +63,8 @@
     "openSenseMapRegisterPasswordConfirmErrorEmpty": "Password confirmation must not be empty",
     "openSenseMapRegisterPasswordErrorMismatch": "Passwords do not match",
     "openSenseMapRegisterPasswordErrorCharacters": "Password must contain at least 8 characters",
+    "openSenesMapRegisterAcceptTermsPrefix": "I accept the",
+    "openSenseMapRegisterAcceptTermsPrivacy": "privacy policy",
     "openSenseMapRegisterFailed": "Registration failed",
     "connectionButtonConnect": "Connect",
     "connectionButtonDisconnect": "Disconnect",

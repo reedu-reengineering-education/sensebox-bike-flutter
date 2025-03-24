@@ -63,6 +63,8 @@
     "openSenseMapRegisterPasswordConfirmErrorEmpty": "A confirmação da senha não pode estar vazia",
     "openSenseMapRegisterPasswordErrorMismatch": "As senhas não coincidem",
     "openSenseMapRegisterPasswordErrorCharacters": "A senha deve conter pelo menos 8 caracteres",
+    "openSenesMapRegisterAcceptTermsPrefix": "Eu aceito os",
+    "openSenseMapRegisterAcceptTermsPrivacy": "termos de privacidade",
     "openSenseMapRegisterFailed": "Falha no registro",
     "connectionButtonConnect": "Conectar",
     "connectionButtonDisconnect": "Desconectar",
