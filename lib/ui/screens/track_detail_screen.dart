@@ -13,6 +13,7 @@ import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class TrackDetailScreen extends StatefulWidget {
   final int id;
@@ -41,13 +42,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     _sensorDataFuture = IsarService().sensorService.getSensorDataByTrackId(id);
   }
 
-  List<String> getSensorTitles(List<SensorData> sensorData) {
-    return sensorData
-        .map((e) => getTitleFromSensorKey(e.title, e.attribute) ?? '')
-        .toSet()
-        .toList();
-  }
-
   Future<void> _exportTrackToCsv() async {
     setState(() {
       _isDownloading = true; // Show spinner
@@ -71,10 +65,11 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
             if (!status.isGranted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: const Text(
-                    'Permission denied to save file to external storage.'),
+                content: Text(
+                    AppLocalizations.of(context)!.trackDetailsPermissionsError),
                 action: SnackBarAction(
-                    label: "Settings", onPressed: () => openAppSettings()),
+                    label: AppLocalizations.of(context)!.generalSettings,
+                    onPressed: () => openAppSettings()),
               ));
               return;
             }
@@ -98,25 +93,25 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           await file.copy(newPath);
           // show snackbar
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: const Text('CSV file saved to Downloads folder.'),
+            content: Text(AppLocalizations.of(context)!.trackDetailsFileSaved),
             action: SnackBarAction(
-              label: 'Share',
+              label: AppLocalizations.of(context)!.generalShare,
               onPressed: () {
                 Share.shareXFiles([XFile(newPath)],
-                    text: 'Track data CSV export.');
+                    text: AppLocalizations.of(context)!.trackDetailsExport);
               },
             ),
           ));
         } catch (e) {
           Share.shareXFiles([XFile(csvFilePath)],
-              text: 'Track data CSV export.');
+              text: AppLocalizations.of(context)!.trackDetailsExport);
         }
       } else if (Platform.isIOS) {
         await Share.shareXFiles([XFile(csvFilePath)],
-            text: 'Track data CSV export.');
+            text: AppLocalizations.of(context)!.trackDetailsExport);
       }
     } catch (e) {
-      print('Error exporting CSV: $e');
+      debugPrint('Error exporting CSV: $e');
     } finally {
       setState(() {
         _isDownloading = false; // Hide spinner
@@ -136,9 +131,12 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return Text(errorText ?? 'Error: ${snapshot.error}');
+          return Text(errorText ??
+              AppLocalizations.of(context)!
+                  .generalErrorWithDescription(snapshot.error.toString()));
         } else if (!snapshot.hasData) {
-          return Text(noDataText ?? 'No data available.');
+          return Text(
+              noDataText ?? AppLocalizations.of(context)!.trackDetailsNoData);
         } else {
           return builder(snapshot.data as T);
         }
@@ -154,8 +152,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           future: _trackFuture,
           builder: (track) => Text(DateFormat('yyyy-MM-dd HH:mm')
               .format(track!.geolocations.first.timestamp)),
-          errorText: 'Error loading track',
-          noDataText: 'No track available',
+          errorText: AppLocalizations.of(context)!.trackDetailsLoadingError,
+          noDataText: AppLocalizations.of(context)!.trackDetailsNoTrackData,
         ),
         actions: [
           _isDownloading
@@ -224,8 +222,10 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                                     track.geolocations.toList(), _sensorType)
                                 .toStringAsFixed(1)),
                           ]),
-                      errorText: 'Error loading track',
-                      noDataText: 'No track available',
+                      errorText: AppLocalizations.of(context)!
+                          .trackDetailsLoadingError,
+                      noDataText:
+                          AppLocalizations.of(context)!.trackDetailsNoTrackData,
                     )
                   ])),
               SizedBox(
@@ -287,7 +287,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                         String title = sensorTitles[index]['title']!;
                         String? attribute = sensorTitles[index]['attribute'];
                         String displayTitle =
-                            getTitleFromSensorKey(title, attribute) ?? title;
+                            getTranslatedTitleFromSensorKey(
+                                title, attribute, context) ??
+                            title;
 
                         return Card.filled(
                           clipBehavior: Clip.hardEdge,
@@ -342,8 +344,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
               )
             ],
           ),
-          errorText: 'Error loading track',
-          noDataText: 'No track available',
+          errorText: AppLocalizations.of(context)!.trackDetailsLoadingError,
+          noDataText: AppLocalizations.of(context)!.trackDetailsNoTrackData,
         ),
       ),
     );

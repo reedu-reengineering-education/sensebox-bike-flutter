@@ -5,6 +5,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SurfaceAnomalySensor extends Sensor {
   List<double> _latestAnomalyValue = [0.0];
@@ -44,7 +45,7 @@ class SurfaceAnomalySensor extends Sensor {
       builder: (context, snapshot) {
         double displayValue = snapshot.data?[0] ?? _latestAnomalyValue[0];
         return SensorCard(
-            title: "Surface Anomaly",
+            title: AppLocalizations.of(context)!.sensorSurfaceAnomaly,
             icon: getSensorIcon(title),
             color: getSensorColor(title),
             child: Text(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class LoginForm extends StatefulWidget {
   final OpenSenseMapBloc bloc;
@@ -38,17 +39,19 @@ class _LoginFormState extends State<LoginForm> {
               TextFormField(
                 autofillHints: const [AutofillHints.email],
                 controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.openSenseMapEmail,
                   // No border
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
+                    return AppLocalizations.of(context)!
+                        .openSenseMapEmailErrorEmpty;
                   }
                   if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return 'Please enter a valid email address';
+                    return AppLocalizations.of(context)!
+                        .openSenseMapEmailErrorInvalid;
                   }
                   return null;
                 },
@@ -57,13 +60,14 @@ class _LoginFormState extends State<LoginForm> {
               TextFormField(
                 autofillHints: const [AutofillHints.password],
                 controller: passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.openSenseMapPassword,
                 ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
+                    return AppLocalizations.of(context)!
+                        .openSenseMapPasswordErrorEmpty;
                   }
                   return null;
                 },
@@ -90,7 +94,9 @@ class _LoginFormState extends State<LoginForm> {
                                       const Icon(Icons.error,
                                           color: Colors.red),
                                       const SizedBox(height: 8),
-                                      Text("Login failed",
+                                      Text(
+                                          AppLocalizations.of(context)!
+                                              .openSenseMapLoginFailed,
                                           style: Theme.of(context)
                                               .textTheme
                                               .headlineMedium),
@@ -105,7 +111,8 @@ class _LoginFormState extends State<LoginForm> {
                       }
                     }
                   },
-                  child: const Text('Login'),
+                  child: Text(
+                      AppLocalizations.of(context)!.openSenseMapLoginShort),
                 );
               }),
             ],

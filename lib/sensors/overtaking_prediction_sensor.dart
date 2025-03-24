@@ -7,6 +7,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class OvertakingPredictionSensor extends Sensor {
   List<double> _latestPrediction = [0.0];
@@ -46,7 +47,7 @@ class OvertakingPredictionSensor extends Sensor {
         double displayValue = snapshot.data?[0] ?? _latestPrediction[0];
 
         return SensorCard(
-            title: "Overtaking",
+            title: AppLocalizations.of(context)!.sensorOvertakingShort,
             icon: getSensorIcon(title),
             color: getSensorColor(title),
             child: Row(

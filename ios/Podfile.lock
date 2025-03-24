@@ -4,25 +4,27 @@ PODS:
   - device_info_plus (0.0.1):
     - Flutter
   - Flutter (1.0.0)
-  - flutter_blue_plus (0.0.1):
+  - flutter_blue_plus_darwin (0.0.2):
     - Flutter
+    - FlutterMacOS
   - flutter_local_notifications (0.0.1):
     - Flutter
   - geolocator_apple (1.2.0):
     - Flutter
   - isar_flutter_libs (1.0.0):
     - Flutter
-  - mapbox_maps_flutter (2.3.0):
+  - mapbox_maps_flutter (2.6.0):
     - Flutter
-    - MapboxMaps (~> 11.7.0)
-    - Turf (= 3.0.0)
-  - MapboxCommon (24.7.0)
-  - MapboxCoreMaps (11.7.0):
-    - MapboxCommon (~> 24.7)
-  - MapboxMaps (11.7.0):
-    - MapboxCommon (= 24.7.0)
-    - MapboxCoreMaps (= 11.7.0)
-    - Turf (= 3.0.0)
+    - MapboxMaps (~> 11.10.0)
+    - Turf (= 4.0.0)
+  - MapboxCommon (24.10.0):
+    - Turf (= 4.0.0)
+  - MapboxCoreMaps (11.10.2):
+    - MapboxCommon (~> 24.10)
+  - MapboxMaps (11.10.1):
+    - MapboxCommon (= 24.10.0)
+    - MapboxCoreMaps (= 11.10.2)
+    - Turf (= 4.0.0)
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
@@ -30,11 +32,11 @@ PODS:
     - FlutterMacOS
   - permission_handler_apple (9.3.0):
     - Flutter
-  - Sentry/HybridSDK (8.36.0)
-  - sentry_flutter (8.9.0):
+  - Sentry/HybridSDK (8.44.0)
+  - sentry_flutter (8.13.2):
     - Flutter
     - FlutterMacOS
-    - Sentry/HybridSDK (= 8.36.0)
+    - Sentry/HybridSDK (= 8.44.0)
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -43,17 +45,17 @@ PODS:
   - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
-  - Turf (3.0.0)
+  - Turf (4.0.0)
   - url_launcher_ios (0.0.1):
     - Flutter
-  - vibration (1.7.5):
+  - vibration (3.0.0):
     - Flutter
 
 DEPENDENCIES:
   - app_links (from `.symlinks/plugins/app_links/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
-  - flutter_blue_plus (from `.symlinks/plugins/flutter_blue_plus/ios`)
+  - flutter_blue_plus_darwin (from `.symlinks/plugins/flutter_blue_plus_darwin/darwin`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
   - isar_flutter_libs (from `.symlinks/plugins/isar_flutter_libs/ios`)
@@ -83,8 +85,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/device_info_plus/ios"
   Flutter:
     :path: Flutter
-  flutter_blue_plus:
-    :path: ".symlinks/plugins/flutter_blue_plus/ios"
+  flutter_blue_plus_darwin:
+    :path: ".symlinks/plugins/flutter_blue_plus_darwin/darwin"
   flutter_local_notifications:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
   geolocator_apple:
@@ -113,29 +115,29 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/vibration/ios"
 
 SPEC CHECKSUMS:
-  app_links: e7a6750a915a9e161c58d91bc610e8cd1d4d0ad0
-  device_info_plus: 97af1d7e84681a90d0693e63169a5d50e0839a0d
+  app_links: f3e17e4ee5e357b39d8b95290a9b2c299fca71c6
+  device_info_plus: bf2e3232933866d73fe290f2942f2156cdd10342
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_blue_plus: 4837da7d00cf5d441fdd6635b3a57f936778ea96
-  flutter_local_notifications: 4cde75091f6327eb8517fa068a0a5950212d2086
-  geolocator_apple: 6cbaf322953988e009e5ecb481f07efece75c450
+  flutter_blue_plus_darwin: 3ea4ec9133b377febcc8a70b28cd2d2dc9242bd9
+  flutter_local_notifications: df98d66e515e1ca797af436137b4459b160ad8c9
+  geolocator_apple: 9bcea1918ff7f0062d98345d238ae12718acfbc1
   isar_flutter_libs: fdf730ca925d05687f36d7f1d355e482529ed097
-  mapbox_maps_flutter: fb6e57802405af69ecd96a9a2c7cdf9c756c4985
-  MapboxCommon: fbc1138a831f4c1b728167c3f49701fe3a9aeed1
-  MapboxCoreMaps: 8946c9fa51e588d594ee6ebf192d9942368abb6a
-  MapboxMaps: bf9f775d921ed357ae642c379ebad90550cdb9de
-  package_info_plus: 58f0028419748fad15bf008b270aaa8e54380b1c
+  mapbox_maps_flutter: d2d98051f751dfeefe088683f0c2c8f81c54ffbc
+  MapboxCommon: 363dbed6bcdaa9a08674098fc5c661e826049dc2
+  MapboxCoreMaps: ba391b7121c52d8ab656b0efa081d928648c8c6f
+  MapboxMaps: 5ec35b1ad72822b9b66c69955e6bb0a81129d4b0
+  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
-  Sentry: f8374b5415bc38dfb5645941b3ae31230fbeae57
-  sentry_flutter: 0eb93e5279eb41e2392212afe1ccd2fecb4f8cbe
-  share_plus: 8875f4f2500512ea181eef553c3e27dba5135aad
+  Sentry: 0f9bc9adfc0b960e7f3bb5ec67e9a3d8193f3bdb
+  sentry_flutter: 64a43fb39ab4c7f67d8a4cad52b49e22439e58b7
+  share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
   shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
-  sqflite_darwin: a553b1fd6fe66f53bbb0fe5b4f5bab93f08d7a13
-  Turf: a1604e74adce15c58462c9ae2acdbf049d5be35e
+  sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
+  Turf: c9eb11a65d96af58cac523460fd40fec5061b081
   url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
-  vibration: 7d883d141656a1c1a6d8d238616b2042a51a1241
+  vibration: 3797858f8cbf53d841e189ef8bd533d96e4ca93c
 
 PODFILE CHECKSUM: 819463e6a0290f5a72f145ba7cde16e8b6ef0796
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2
