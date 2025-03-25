@@ -3,11 +3,20 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
+import '../mocks.dart';
 
 void main() {
+  // Initialize plugin bindings
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  // Mock path_provider
+  setUpAll(() {
+    PathProviderPlatform.instance = MockPathProviderPlatform();
+  });
   group("SettingsScreen Widget", () {
     late SettingsBloc mockSettingsBloc;
 

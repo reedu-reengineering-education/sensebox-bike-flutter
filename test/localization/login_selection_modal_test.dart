@@ -5,9 +5,19 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+
 import '../mocks.dart';
 
 void main() {
+  // Initialize plugin bindings
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  // Mock path_provider
+  setUpAll(() {
+    PathProviderPlatform.instance = MockPathProviderPlatform();
+  });
+
   Provider.debugCheckInvalidValueType = null;
   group('LoginSelectionModal', () {
     late OpenSenseMapBloc mockBloc;

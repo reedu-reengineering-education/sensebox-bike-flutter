@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
@@ -41,5 +43,15 @@ class MockOpenSenseMapBloc extends OpenSenseMapBloc {
   @override
   Future<void> logout() async {
     isAuthenticated = false;
+  }
+}
+
+class MockPathProviderPlatform extends PathProviderPlatform {
+  Future<String?> getApplicationDocumentsPath() async {
+    return '/data/user/0/com.example.app/files'; // Android-like path
+  }
+
+  Future<String?> getTemporaryPath() async {
+    return '/data/user/0/com.example.app/cache'; // Android-like path
   }
 }
