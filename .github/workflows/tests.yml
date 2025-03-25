@@ -50,6 +50,10 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 26
+          arch: x86_64
+          profile: Nexus 6
           disable-animations: true
-          emulator-options: -no-snapshot 
+          force-avd-creation: true
+          boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-snapshot-save -noaudio -no-boot-anim
           script: flutter test
