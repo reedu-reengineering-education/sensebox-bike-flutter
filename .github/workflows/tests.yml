@@ -10,7 +10,8 @@ concurrency:
 
 jobs:
   test:
-    runs-on: macOS-latest
+    name: Run npm on Ubuntu 
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
