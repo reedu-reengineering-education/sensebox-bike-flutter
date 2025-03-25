@@ -10,6 +10,7 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 
 void main() {
+  // The following setup is needed to allow running tests in GH actions
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {

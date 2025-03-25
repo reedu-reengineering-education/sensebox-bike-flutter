@@ -13,7 +13,7 @@ import '../mocks.dart';
 
 void main() {
   Provider.debugCheckInvalidValueType = null;
-
+  // The following setup is needed to allow running tests in GH actions
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
