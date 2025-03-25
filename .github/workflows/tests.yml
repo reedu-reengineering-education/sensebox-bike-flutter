@@ -8,6 +8,14 @@ concurrency:
     group: flutter-tests-${{ github.ref }}
     cancel-in-progress: true
 
+env:
+  MAPBOX_ACCESS_TOKEN: token
+  SENTRY_DSN: dsn
+  KEYSTORE_FILE: path
+  KEYSTORE_PASSWORD: password
+  KEY_ALIAS: alias
+  KEY_PASSWORD: password
+
 jobs:
   test:
     name: Run npm on Ubuntu 
