@@ -1,40 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
-
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import '../mocks.dart';
 
 void main() {
   Provider.debugCheckInvalidValueType = null;
-  // The following setup is needed to allow running tests in GH actions
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  setUpAll(() async {
-    // Mock SharedPreferences
-    const MethodChannel channel =
-        MethodChannel('plugins.flutter.io/shared_preferences');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      channel,
-      (MethodCall methodCall) async {
-        if (methodCall.method == 'getAll') {
-          return <String, dynamic>{}; // Return an empty map or your mock data
-        }
-        return null;
-      },
-    );
-
-    // Ensure SharedPreferences is initialized
-    SharedPreferences.setMockInitialValues({});
-  });
-  
   group('LoginSelectionModal', () {
     late OpenSenseMapBloc mockBloc;
 
@@ -95,4 +69,3 @@ void main() {
     });
   });
 }
-
