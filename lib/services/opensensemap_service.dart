@@ -130,7 +130,7 @@ class OpenSenseMapService {
 
   Future<List<dynamic>> getSenseBoxes({int page = 0}) async {
     final accessToken = await getAccessToken();
-    if (accessToken == null) throw Exception('Not authenticated');
+    if (accessToken == null) return [];
 
     final response = await http.get(
       Uri.parse('$_baseUrl/users/me/boxes?page=$page'),
