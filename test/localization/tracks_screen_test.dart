@@ -13,11 +13,6 @@ import '../test_helpers.dart';
 void main() {
   late MockIsarService mockIsarService;
 
-  setUpAll(() async {
-    disableProviderDebugChecks();
-    await initializeTestDependencies();
-  });
-
   setUp(() {
     mockIsarService = MockIsarService();
   });
