@@ -7,6 +7,10 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../mocks.dart';
 
+// Alternative Isar mocking solutions: 
+// https://github.com/isar/isar/issues/1459
+// https://github.com/isar/isar/issues/294
+// https://github.com/isar/isar/issues/1147 (with Mockito)
 void main() {
   group('TracksScreen Widget', () {
     late MockIsarService mockIsarService;
