@@ -59,3 +59,11 @@ If you run into issues while running the app, you can take the following trouble
     flutter clean
     flutter pub get
     ```
+
+    ## GitHub Actions & Contribution Guidelines
+
+*   **Automated Testing on Pull Requests:**
+    *   When you create a new pull request (PR), our GitHub Actions workflows automatically run a suite of tests. This ensures that your contributions maintain code quality and don't introduce regressions.
+
+*   **Updating Dart/Flutter and GitHub Actions:**
+    *   Whenever you update Dart or Flutter dependencies within the project, it's **crucial** that you also review and update the relevant GitHub Actions workflow files. This ensures compatibility and prevents build failures. Look for workflows that involve Dart or Flutter setup and adjust versions accordingly.

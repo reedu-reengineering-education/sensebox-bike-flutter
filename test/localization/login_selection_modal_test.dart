@@ -3,53 +3,47 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import '../mocks.dart';
+import '../test_helpers.dart';
 
 void main() {
-  Provider.debugCheckInvalidValueType = null;
-  group('LoginSelectionModal', () {
-    late OpenSenseMapBloc mockBloc;
+  late OpenSenseMapBloc mockBloc;
 
-    setUp(() {
-      mockBloc = MockOpenSenseMapBloc();
-    });
+  setUpAll(() async {
+    disableProviderDebugChecks();
+    await initializeTestDependencies();
+  });
 
-    Widget createTestApp(Locale locale) {
-      return MaterialApp(
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: locale,
-        home: Provider<OpenSenseMapBloc>.value(
-          value: mockBloc,
-          child: Builder(
-            builder: (BuildContext context) => ElevatedButton(
-              onPressed: () => showLoginOrSenseBoxSelection(context, mockBloc),
-              child: const Text('Show Modal'),
-            ),
+  setUp(() {
+    mockBloc = MockOpenSenseMapBloc();
+  });
+
+  Widget buildTestWidget(Locale locale) {
+    return createLocalizedTestApp(
+      locale: locale,
+      child: Provider<OpenSenseMapBloc>.value(
+        value: mockBloc,
+        child: Builder(
+          builder: (BuildContext context) => ElevatedButton(
+            onPressed: () => showLoginOrSenseBoxSelection(context, mockBloc),
+            child: const Text('Show Modal'),
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
+  group('LoginSelectionModal', () {
     testWidgets('is translated in English', (WidgetTester tester) async {
-      await tester.pumpWidget(createTestApp(const Locale('en')));
-      // Tap the button to show the modal
+      await tester.pumpWidget(buildTestWidget(const Locale('en')));
       await tester.tap(find.text('Show Modal'));
       await tester.pumpAndSettle();
-
-      // Verify English text
-      expect(find.text('Login'), findsNWidgets(2)); // There is a tab and button with this text
+      expect(find.text('Login'), findsNWidgets(2));
       expect(find.text('Register with openSenseMap'), findsOneWidget);
     });
 
     testWidgets('is translated in German', (WidgetTester tester) async {
-      await tester.pumpWidget(createTestApp(const Locale('de')));
+      await tester.pumpWidget(buildTestWidget(const Locale('de')));
       await tester.tap(find.text('Show Modal'));
       await tester.pumpAndSettle();
 
@@ -59,7 +53,7 @@ void main() {
     });
 
     testWidgets('is translated in Portugese', (WidgetTester tester) async {
-      await tester.pumpWidget(createTestApp(const Locale('pt')));
+      await tester.pumpWidget(buildTestWidget(const Locale('pt')));
       await tester.tap(find.text('Show Modal'));
       await tester.pumpAndSettle();
 
@@ -69,4 +63,3 @@ void main() {
     });
   });
 }
-
