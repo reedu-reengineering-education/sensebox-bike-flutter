@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:sensebox_bike/constants.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
@@ -7,10 +8,20 @@ import 'dart:async';
 enum SenseBoxBikeModel { classic, atrai }
 
 class OpenSenseMapService {
-  static const String _baseUrl = 'https://api.opensensemap.org';
+  static const String _baseUrl = openSenseMapUrl;
+  // The following class variables and constructor are added to allow testing
+  // No refactoring of other parts of the code should be needed
+  final http.Client client;
+  final Future<SharedPreferences> prefs;
+
+  OpenSenseMapService({
+    http.Client? client,
+    Future<SharedPreferences>? prefs,
+  })  : client = client ?? http.Client(),
+        prefs = prefs ?? SharedPreferences.getInstance();
 
   Future<void> register(String name, String email, String password) async {
-    final response = await http.post(
+    final response = await client.post(
       Uri.parse('$_baseUrl/users/register'),
       body: jsonEncode({
         'name': name,
@@ -39,7 +50,7 @@ class OpenSenseMapService {
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
-    final response = await http.post(
+    final response = await client.post(
       Uri.parse('$_baseUrl/users/sign-in'),
       body: jsonEncode({
         'email': email,
@@ -73,6 +84,7 @@ class OpenSenseMapService {
 
   Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
+
     return prefs.getString('accessToken');
   }
 
@@ -81,10 +93,10 @@ class OpenSenseMapService {
     final refreshToken = prefs.getString('refreshToken');
 
     if (refreshToken == null) {
-      debugPrint('No refresh token found');
+      throw Exception('No refresh token found');
     }
 
-    final response = await http.post(
+    final response = await client.post(
       Uri.parse('$_baseUrl/users/refresh-auth'),
       body: jsonEncode({'token': refreshToken}),
       headers: {
@@ -111,7 +123,7 @@ class OpenSenseMapService {
     final accessToken = await getAccessToken();
     if (accessToken == null) throw Exception('Not authenticated');
 
-    final response = await http.post(
+    final response = await client.post(
       Uri.parse('$_baseUrl/boxes'),
       body: jsonEncode(
           createSenseBoxBikeModel(name, latitude, longitude, model: model)),
@@ -132,9 +144,12 @@ class OpenSenseMapService {
 
   Future<List<dynamic>> getSenseBoxes({int page = 0}) async {
     final accessToken = await getAccessToken();
-    if (accessToken == null) return [];
 
-    final response = await http.get(
+    if (accessToken == null) {
+      throw Exception('Not authenticated');
+    }
+
+    final response = await client.get(
       Uri.parse('$_baseUrl/users/me/boxes?page=$page'),
       headers: {
         'Authorization': 'Bearer $accessToken',
@@ -159,7 +174,7 @@ class OpenSenseMapService {
 
     List<dynamic> data = sensorData.values.toList();
 
-    final response = await http.post(
+    final response = await client.post(
       Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
       body: jsonEncode(data),
       headers: {
@@ -184,195 +199,11 @@ class OpenSenseMapService {
 
   // Define the available sensors for each model
   final Map<SenseBoxBikeModel, List<dynamic>> sensors = {
-    SenseBoxBikeModel.classic: [
-      {
-        "id": "0",
-        "icon": 'osem-thermometer',
-        "title": 'Temperature',
-        "unit": '°C',
-        "sensorType": 'HDC1080'
-      },
-      {
-        "id": "1",
-        "icon": 'osem-humidity',
-        "title": 'Rel. Humidity',
-        "unit": '%',
-        "sensorType": 'HDC1080'
-      },
-      {
-        "id": "2",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM1',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "3",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM2.5',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "4",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM4',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "5",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM10',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "6",
-        "icon": 'osem-signal',
-        "title": 'Overtaking Distance',
-        "unit": 'cm',
-        "sensorType": 'HC-SR04'
-      },
-      {
-        "id": "7",
-        "icon": 'osem-shock',
-        "title": 'Acceleration X',
-        "unit": 'm/s²',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "8",
-        "icon": 'osem-shock',
-        "title": 'Acceleration Y',
-        "unit": 'm/s²',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "9",
-        "icon": 'osem-shock',
-        "title": 'Acceleration Z',
-        "unit": 'm/s²',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "10",
-        "icon": 'osem-dashboard',
-        "title": 'Speed',
-        "unit": 'km/h',
-        "sensorType": 'GPS'
-      }
-    ],
-    SenseBoxBikeModel.atrai: [
-      {
-        "id": "0",
-        "icon": 'osem-thermometer',
-        "title": 'Temperature',
-        "unit": '°C',
-        "sensorType": 'HDC1080'
-      },
-      {
-        "id": "1",
-        "icon": 'osem-humidity',
-        "title": 'Rel. Humidity',
-        "unit": '%',
-        "sensorType": 'HDC1080'
-      },
-      {
-        "id": "2",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM1',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "3",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM2.5',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "4",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM4',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "5",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM10',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "6",
-        "icon": 'osem-shock',
-        "title": 'Overtaking Manoeuvre',
-        "unit": '%',
-        "sensorType": 'VL53L8CX'
-      },
-      {
-        "id": "7",
-        "icon": 'osem-shock',
-        "title": 'Overtaking Distance',
-        "unit": 'cm',
-        "sensorType": 'VL53L8CX'
-      },
-      {
-        "id": "8",
-        "icon": 'osem-shock',
-        "title": 'Surface Asphalt',
-        "unit": '%',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "9",
-        "icon": 'osem-shock',
-        "title": 'Surface Sett',
-        "unit": '%',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "10",
-        "icon": 'osem-shock',
-        "title": 'Surface Compacted',
-        "unit": '%',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "11",
-        "icon": 'osem-shock',
-        "title": 'Surface Paving',
-        "unit": '%',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "12",
-        "icon": 'osem-shock',
-        "title": 'Standing',
-        "unit": '%',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "13",
-        "icon": 'osem-shock',
-        "title": 'Surface Anomaly',
-        "unit": 'Δ',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "14",
-        "icon": 'osem-dashboard',
-        "title": 'Speed',
-        "unit": 'm/s',
-        "sensorType": 'GPS'
-      }
-    ],
+    SenseBoxBikeModel.classic: classicModelSensors,
+    SenseBoxBikeModel.atrai: atraiModelSensors,
   };
 
-// Factory function
+  // Factory function
   Map<String, dynamic> createSenseBoxBikeModel(
     String name,
     double longitude,
