@@ -28,29 +28,32 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   List<dynamic> get senseBoxes => _senseBoxes.values.expand((e) => e).toList();
 
   OpenSenseMapBloc() {
-    _service.refreshToken().then(
-        (_) async => {_isAuthenticated = true, await loadSelectedSenseBox()});
+    _initializeAuth();
+  }
+
+  Future<void> _initializeAuth() async {
+    try {
+      await _service.refreshToken();
+      _isAuthenticated = true;
+    } catch (_) {
+      _isAuthenticated = false;
+    } finally {
+      notifyListeners();
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    switch (state) {
-      case AppLifecycleState.resumed:
+    if (state == AppLifecycleState.resumed) {
+      try {
         await _service.refreshToken();
         _isAuthenticated = true;
         await loadSelectedSenseBox();
-        break;
-      case AppLifecycleState.inactive:
-        print("app in inactive");
-        break;
-      case AppLifecycleState.paused:
-        print("app in paused");
-        break;
-      case AppLifecycleState.detached:
-        print("app in detached");
-        break;
-      case AppLifecycleState.hidden:
-      // TODO: Handle this case.
+      } catch (_) {
+        _isAuthenticated = false;
+      } finally {
+        notifyListeners();
+      }
     }
   }
 
@@ -58,10 +61,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       await _service.register(name, email, password);
       _isAuthenticated = true;
-      notifyListeners();
     } catch (e) {
       _isAuthenticated = false;
       rethrow;
+    } finally {
+      notifyListeners();
     }
   }
 
@@ -69,10 +73,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       await _service.login(email, password);
       _isAuthenticated = true;
-      notifyListeners();
     } catch (e) {
       _isAuthenticated = false;
       rethrow;
+    } finally {
+      notifyListeners();
     }
   }
 
@@ -119,12 +124,16 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  void setSelectedSenseBox(SenseBox senseBox) {
-    final prefs = SharedPreferences.getInstance();
-    prefs.then((prefs) =>
-        prefs.setString('selectedSenseBox', jsonEncode(senseBox.toJson())));
-    _senseBoxController.add(senseBox); // Push selected senseBox to the stream
-    _selectedSenseBox = senseBox;
+  Future<void> setSelectedSenseBox(SenseBox senseBox) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString('selectedSenseBox', jsonEncode(senseBox.toJson()));
+      _senseBoxController.add(senseBox); // Push selected senseBox to the stream
+      _selectedSenseBox = senseBox;
+      notifyListeners();
+    } catch (_) {
+      throw Exception('Failed to set senseBox');
+    }
   }
 
   Future<void> loadSelectedSenseBox() async {
@@ -134,7 +143,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       await prefs.remove('selectedSenseBox');
       _senseBoxController.add(null);
       _selectedSenseBox = null;
-
+      notifyListeners();
       return;
     }
 
