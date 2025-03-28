@@ -100,7 +100,9 @@ class OpenSenseMapService {
       await prefs.setString('accessToken', newAccessToken);
       await prefs.setString('refreshToken', newRefreshToken);
     } else {
-      debugPrint('Failed to refresh token: ${response.body}');
+      await prefs.remove('accessToken');
+      await prefs.remove('refreshToken');
+      throw Exception('Failed to refresh token: ${response.body}');
     }
   }
 
