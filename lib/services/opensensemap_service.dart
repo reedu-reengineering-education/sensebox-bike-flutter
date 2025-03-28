@@ -1,9 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:sensebox_bike/constants.dart';
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:async';
+
+import 'package:sensebox_bike/constants.dart';
 
 enum SenseBoxBikeModel { classic, atrai }
 
@@ -12,13 +14,36 @@ class OpenSenseMapService {
   // The following class variables and constructor are added to allow testing
   // No refactoring of other parts of the code should be needed
   final http.Client client;
-  final Future<SharedPreferences> prefs;
+  final Future<SharedPreferences> _prefs;
 
   OpenSenseMapService({
     http.Client? client,
     Future<SharedPreferences>? prefs,
   })  : client = client ?? http.Client(),
-        prefs = prefs ?? SharedPreferences.getInstance();
+        _prefs = prefs ?? SharedPreferences.getInstance();
+
+  Future<void> setTokens(http.Response response) async {
+    final prefs = await _prefs;
+    final responseData = jsonDecode(response.body);
+    final String accessToken = responseData['token'];
+    final String refreshToken = responseData['refreshToken'];
+
+    await prefs.setString('accessToken', accessToken);
+    await prefs.setString('refreshToken', refreshToken);
+  }
+
+  Future<void> removeTokens() async {
+    final prefs = await _prefs;
+
+    await prefs.remove('accessToken');
+    await prefs.remove('refreshToken');
+  }
+
+  Future<String?> getAccessTokenFromPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    return prefs.getString('refreshToken');
+  }
 
   Future<void> register(String name, String email, String password) async {
     final response = await client.post(
@@ -28,23 +53,18 @@ class OpenSenseMapService {
         'email': email,
         'password': password,
       }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
     );
 
     if (response.statusCode != 201) {
       final errorResponse = jsonDecode(response.body);
+      
       throw Exception(errorResponse['message']);
     }
 
     final responseData = jsonDecode(response.body);
-    final String accessToken = responseData['token'];
-    final String refreshToken = responseData['refreshToken'];
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('accessToken', accessToken);
-    await prefs.setString('refreshToken', refreshToken);
+    
+    await setTokens(response);
 
     return responseData;
   }
@@ -56,19 +76,13 @@ class OpenSenseMapService {
         'email': email,
         'password': password,
       }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
     );
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
-      final String accessToken = responseData['token'];
-      final String refreshToken = responseData['refreshToken'];
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('accessToken', accessToken);
-      await prefs.setString('refreshToken', refreshToken);
+      
+      await setTokens(response);
 
       return responseData;
     } else {
@@ -77,9 +91,7 @@ class OpenSenseMapService {
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('accessToken');
-    await prefs.remove('refreshToken');
+    await removeTokens();
   }
 
   Future<String?> getAccessToken() async {
@@ -89,8 +101,7 @@ class OpenSenseMapService {
   }
 
   Future<void> refreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final refreshToken = prefs.getString('refreshToken');
+    final refreshToken = await getAccessTokenFromPreferences();
 
     if (refreshToken == null) {
       throw Exception('No refresh token found');
@@ -99,21 +110,13 @@ class OpenSenseMapService {
     final response = await client.post(
       Uri.parse('$_baseUrl/users/refresh-auth'),
       body: jsonEncode({'token': refreshToken}),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
     );
 
     if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      final String newAccessToken = responseData['token'];
-      final String newRefreshToken = responseData['refreshToken'];
-
-      await prefs.setString('accessToken', newAccessToken);
-      await prefs.setString('refreshToken', newRefreshToken);
+      await setTokens(response);
     } else {
-      await prefs.remove('accessToken');
-      await prefs.remove('refreshToken');
+      await removeTokens();
       throw Exception('Failed to refresh token: ${response.body}');
     }
   }
@@ -134,9 +137,7 @@ class OpenSenseMapService {
     );
 
     if (response.statusCode == 201) {
-    } else if (response.statusCode == 401) {
-      await refreshToken();
-      return createSenseBoxBike(name, latitude, longitude, model);
+      return;
     } else {
       throw Exception('Failed to create senseBox');
     }
@@ -159,9 +160,6 @@ class OpenSenseMapService {
     if (response.statusCode == 200) {
       dynamic responseData = jsonDecode(response.body);
       return responseData['data']['boxes'];
-    } else if (response.statusCode == 401) {
-      await refreshToken();
-      return getSenseBoxes();
     } else {
       throw Exception('Failed to load senseBoxes');
     }
@@ -185,12 +183,6 @@ class OpenSenseMapService {
 
     if (response.statusCode == 201) {
       debugPrint('Data uploaded');
-    } else if (response.statusCode == 401) {
-      await refreshToken();
-      return uploadData(senseBoxId, sensorData);
-    } else if (response.statusCode == 429) {
-      throw Exception(
-          'Failed to upload data (${response.statusCode}) ${response.body}');
     } else {
       throw Exception(
           'Failed to upload data (${response.statusCode}) ${response.body}');
