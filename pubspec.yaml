@@ -69,6 +69,7 @@ dependencies:
   app_links: ^6.3.2
   flutter_localizations:
     sdk: flutter
+  mocktail: ^1.0.4
 
 dev_dependencies:
   flutter_test:
