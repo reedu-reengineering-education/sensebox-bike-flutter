@@ -1,4 +1,7 @@
 const openSenseMapUrl = 'https://api.opensensemap.org';
+const Map<String, String> headers = {
+  'Content-Type': 'application/json',
+};
 
 const classicModelSensors = [
       {
