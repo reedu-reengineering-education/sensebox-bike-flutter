@@ -61,7 +61,7 @@ void main() {
       expect(find.text('Configurações'), findsOneWidget);
       expect(find.text('Geral'), findsOneWidget);
       expect(find.text('Vibrar ao desconectar'), findsOneWidget);
-      expect(find.text('Zonas de Privacidade'), findsOneWidget);
+      expect(find.text('Áreas de Privacidade'), findsOneWidget);
       expect(find.text('Outros'), findsOneWidget);
       expect(find.text('Sobre'), findsOneWidget);
       expect(find.text('Política de Privacidade'), findsOneWidget);
