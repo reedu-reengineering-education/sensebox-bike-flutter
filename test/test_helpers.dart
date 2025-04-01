@@ -27,7 +27,6 @@ void initializeTestDependencies() {
   // Ensure SharedPreferences is initialized
   SharedPreferences.setMockInitialValues({});
 }
-
 /// Creates a MaterialApp wrapper with localization support 
 Widget createLocalizedTestApp({
   required Widget child,
