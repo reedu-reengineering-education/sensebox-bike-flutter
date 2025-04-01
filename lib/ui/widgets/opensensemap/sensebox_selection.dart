@@ -139,9 +139,11 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
                   : null,
               enabled: isSenseBoxBikeCompatible,
               onTap: isSenseBoxBikeCompatible
-                  ? () {
-                      bloc.setSelectedSenseBox(senseBox);
-                      Navigator.pop(context); // Go back after selecting
+                  ? () async {
+                      await bloc.setSelectedSenseBox(senseBox);
+                      if (context.mounted) {
+                        Navigator.pop(context); // Go back after selecting
+                      }
                     }
                   : null,
             );
