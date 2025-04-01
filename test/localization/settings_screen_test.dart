@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../mocks.dart';
 import '../test_helpers.dart';
 
@@ -29,6 +30,8 @@ void main() {
       }
       return null;
     });
+
+    initializeTestDependencies();
   });
 
   setUp(() {

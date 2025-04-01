@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Initializes common test dependencies
-Future<void> initializeTestDependencies() async {
+void initializeTestDependencies() {
   TestWidgetsFlutterBinding.ensureInitialized();
   
   // Mock SharedPreferences

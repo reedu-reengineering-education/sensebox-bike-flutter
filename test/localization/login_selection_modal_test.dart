@@ -9,9 +9,9 @@ import '../test_helpers.dart';
 void main() {
   late OpenSenseMapBloc mockBloc;
 
-  setUpAll(() async {
+  setUpAll(() {
     disableProviderDebugChecks();
-    await initializeTestDependencies();
+    initializeTestDependencies();
   });
 
   setUp(() {
