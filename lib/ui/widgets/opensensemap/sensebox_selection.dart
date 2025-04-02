@@ -26,7 +26,10 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     bloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    _fetchSenseBoxes();
+
+    if (bloc.senseBoxes.isEmpty) {
+      _fetchSenseBoxes();
+    }
   }
 
   void _fetchSenseBoxes() {

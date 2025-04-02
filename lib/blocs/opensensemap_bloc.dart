@@ -9,23 +9,23 @@ import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamCo
 class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   final OpenSenseMapService _service = OpenSenseMapService();
   bool _isAuthenticated = false;
-
   // make senseboxes a key value store. key is the page number, value is the list of senseboxes
   final Map<int, List<dynamic>> _senseBoxes = {};
-
   final _senseBoxController =
       StreamController<SenseBox?>.broadcast(); // StreamController
-
   Stream<SenseBox?> get senseBoxStream =>
       _senseBoxController.stream; // Expose stream
-
   // get selected sensebox
   SenseBox? _selectedSenseBox;
-
   SenseBox? get selectedSenseBox => _selectedSenseBox;
-
   bool get isAuthenticated => _isAuthenticated;
   List<dynamic> get senseBoxes => _senseBoxes.values.expand((e) => e).toList();
+  // graceful error handling
+  String? _lastError;
+  String? get lastError => _lastError;
+
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
 
   OpenSenseMapBloc() {
     _initializeAuth();
@@ -38,7 +38,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     } catch (_) {
       _isAuthenticated = false;
     } finally {
-      notifyListeners();
+      _isLoading = false;
     }
   }
 
@@ -59,10 +59,13 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _senseBoxController.add(null); // Push null if no senseBox is selected
       _selectedSenseBox = null;
     } else {
-      _senseBoxController.add(SenseBox.fromJson(jsonDecode(
-          selectedSenseBoxJson))); // Push selected senseBox to the stream
+      final newSenseBox = SenseBox.fromJson(jsonDecode(selectedSenseBoxJson));
 
-      _selectedSenseBox = SenseBox.fromJson(jsonDecode(selectedSenseBoxJson));
+      // Avoid creating duplicate instances
+      if (_selectedSenseBox?.id != newSenseBox.id) {
+        _senseBoxController.add(newSenseBox);
+        _selectedSenseBox = newSenseBox;
+      }
     }
     notifyListeners();
   }
@@ -73,9 +76,14 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       try {
         await _service.refreshToken();
         _isAuthenticated = true;
-        await loadSelectedSenseBox();
+        
+        // Avoid creating duplicate SenseBoxes by checking current state
+        if (_selectedSenseBox == null) {
+          await loadSelectedSenseBox();
+        }
       } catch (_) {
         _isAuthenticated = false;
+        _lastError = 'Authentication error';
       } finally {
         notifyListeners();
       }
@@ -83,51 +91,72 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<void> register(String name, String email, String password) async {
+    _isLoading = true;
+    _lastError = null;
+    notifyListeners();
+
     try {
       await _service.register(name, email, password);
       _isAuthenticated = true;
       notifyListeners();
     } catch (e) {
+      _lastError = 'Registration error';
       _isAuthenticated = false;
-      rethrow;
     } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> login(String email, String password) async {
+    _isLoading = true;
+    _lastError = null;
+    notifyListeners();
+
     try {
       await _service.login(email, password);
       _isAuthenticated = true;
       notifyListeners();
     } catch (e) {
+      _lastError = 'Login error';
       _isAuthenticated = false;
-      rethrow;
     } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> logout() async {
+    _isLoading = true;
+    _lastError = null;
+    notifyListeners();
+
     try {
       await _service.logout();
       _isAuthenticated = false;
       _senseBoxController.add(null); // Clear senseBox on logout
       _selectedSenseBox = null;
     } catch (_) {
-      rethrow;
+      _lastError = 'Logout error';
     } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> createSenseBoxBike(String name, double latitude,
       double longitude, SenseBoxBikeModel model) async {
-    
+    _isLoading = true;
+    _lastError = null;
+    notifyListeners();
+
     try {
       await _service.createSenseBoxBike(name, latitude, longitude, model);
     } catch (e) {
-      rethrow;
+      _lastError = 'Error creating sensebox';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -148,18 +177,31 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<List> fetchSenseBoxes({int page = 0}) async {
+    _isLoading = true;
+    _lastError = null;
+    notifyListeners();
+
     try {
-      var myBoxes = await _service.getSenseBoxes(page: page);
+      final myBoxes = await _service.getSenseBoxes(page: page);
       _senseBoxes[page] = myBoxes;
       notifyListeners();
       return myBoxes;
-    } catch (e) {
-      throw Exception('Failed to fetch senseBoxes');
+    } catch (_) {
+      _lastError = 'Failed to fetch senseBoxes';
+      return [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
+
   }
 
   Future<void> setSelectedSenseBox(SenseBox senseBox) async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Clear previous data before adding new senseBox
+    _senseBoxController.add(null);
+
     await prefs.setString('selectedSenseBox', jsonEncode(senseBox.toJson()));
     _senseBoxController.add(senseBox); // Push selected senseBox to the stream
     _selectedSenseBox = senseBox;
