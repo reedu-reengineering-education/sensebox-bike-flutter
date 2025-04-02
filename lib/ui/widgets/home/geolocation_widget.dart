@@ -116,6 +116,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   void dispose() {
     _isarGeolocationSubscription?.cancel();
     _trackSubscription?.cancel();
+    context.read<BleBloc>().isConnectingNotifier.removeListener(() {});
     super.dispose();
   }
 
