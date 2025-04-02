@@ -15,6 +15,8 @@ class _LoginFormState extends State<LoginForm> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  bool _isPasswordVisible = false; // Track password visibility
+  bool isLoading = false; // Track loading state
 
   @override
   void dispose() {
@@ -60,10 +62,23 @@ class _LoginFormState extends State<LoginForm> {
               TextFormField(
                 autofillHints: const [AutofillHints.password],
                 controller: passwordController,
+                obscureText: !_isPasswordVisible, // Toggle visibility
                 decoration: InputDecoration(
                   labelText: AppLocalizations.of(context)!.openSenseMapPassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off, // Change icon based on state
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible =
+                            !_isPasswordVisible; // Toggle state
+                      });
+                    },
+                  ),
                 ),
-                obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return AppLocalizations.of(context)!
@@ -75,19 +90,25 @@ class _LoginFormState extends State<LoginForm> {
               const SizedBox(height: 16),
               Builder(builder: (BuildContext context) {
                 return FilledButton(
-                  onPressed: () async {
-                    if (formKey.currentState?.validate() == true) {
-                      try {
-                        await widget.bloc.login(
-                          emailController.text,
-                          passwordController.text,
-                        );
-                        Navigator.pop(context); // Close after login
-                        showLoginOrSenseBoxSelection(context, widget.bloc);
-                      } catch (e) {
-                        showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
+                  onPressed: isLoading
+                      ? null // Disable button when loading
+                      : () async {
+                          if (formKey.currentState?.validate() == true) {
+                            setState(() {
+                              isLoading = true; // Start loading
+                            });
+                            try {
+                              await widget.bloc.login(
+                                emailController.text,
+                                passwordController.text,
+                              );
+                              Navigator.pop(context); // Close after login
+                              showLoginOrSenseBoxSelection(
+                                  context, widget.bloc);
+                            } catch (e) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
                                   content: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -95,11 +116,12 @@ class _LoginFormState extends State<LoginForm> {
                                           color: Colors.red),
                                       const SizedBox(height: 8),
                                       Text(
-                                          AppLocalizations.of(context)!
-                                              .openSenseMapLoginFailed,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineMedium),
+                                        AppLocalizations.of(context)!
+                                            .openSenseMapLoginFailed,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineMedium,
+                                      ),
                                       const SizedBox(height: 16),
                                       Text(e.toString(),
                                           style: Theme.of(context)
@@ -107,12 +129,26 @@ class _LoginFormState extends State<LoginForm> {
                                               .bodyMedium),
                                     ],
                                   ),
-                                ));
-                      }
-                    }
-                  },
-                  child: Text(
-                      AppLocalizations.of(context)!.openSenseMapLoginShort),
+                                ),
+                              );
+                            } finally {
+                              setState(() {
+                                isLoading = false; // Stop loading
+                              });
+                            }
+                          }
+                        },
+                  child: isLoading
+                      ? SizedBox(
+                          height: 16.0, // Match text size
+                          width: 16.0, // Match text size
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.0, // Adjust thickness
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        )
+                      : Text(AppLocalizations.of(context)!
+                          .openSenseMapLoginShort), // Button text
                 );
               }),
             ],
