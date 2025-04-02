@@ -20,12 +20,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   bool get isAuthenticated => _isAuthenticated;
   List<dynamic> get senseBoxes => _senseBoxes.values.expand((e) => e).toList();
-  // graceful error handling
-  String? _lastError;
-  String? get lastError => _lastError;
-
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
 
   OpenSenseMapBloc() {
     _initializeAuth();
@@ -83,7 +77,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
         }
       } catch (_) {
         _isAuthenticated = false;
-        _lastError = 'Authentication error';
       } finally {
         notifyListeners();
       }
@@ -91,72 +84,49 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<void> register(String name, String email, String password) async {
-    _isLoading = true;
-    _lastError = null;
-    notifyListeners();
-
     try {
       await _service.register(name, email, password);
       _isAuthenticated = true;
       notifyListeners();
     } catch (e) {
-      _lastError = 'Registration error';
       _isAuthenticated = false;
+      rethrow;
     } finally {
-      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> login(String email, String password) async {
-    _isLoading = true;
-    _lastError = null;
-    notifyListeners();
-
     try {
       await _service.login(email, password);
       _isAuthenticated = true;
       notifyListeners();
     } catch (e) {
-      _lastError = 'Login error';
       _isAuthenticated = false;
+      rethrow;
     } finally {
-      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> logout() async {
-    _isLoading = true;
-    _lastError = null;
-    notifyListeners();
-
     try {
       await _service.logout();
       _isAuthenticated = false;
       _senseBoxController.add(null); // Clear senseBox on logout
       _selectedSenseBox = null;
-    } catch (_) {
-      _lastError = 'Logout error';
-    } finally {
-      _isLoading = false;
       notifyListeners();
+    } catch (_) {
+      rethrow;
     }
   }
 
   Future<void> createSenseBoxBike(String name, double latitude,
       double longitude, SenseBoxBikeModel model) async {
-    _isLoading = true;
-    _lastError = null;
-    notifyListeners();
-
     try {
       await _service.createSenseBoxBike(name, latitude, longitude, model);
     } catch (e) {
-      _lastError = 'Error creating sensebox';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      rethrow;
     }
   }
 
@@ -177,23 +147,14 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<List> fetchSenseBoxes({int page = 0}) async {
-    _isLoading = true;
-    _lastError = null;
-    notifyListeners();
-
     try {
       final myBoxes = await _service.getSenseBoxes(page: page);
       _senseBoxes[page] = myBoxes;
       notifyListeners();
       return myBoxes;
     } catch (_) {
-      _lastError = 'Failed to fetch senseBoxes';
       return [];
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
-
   }
 
   Future<void> setSelectedSenseBox(SenseBox senseBox) async {
