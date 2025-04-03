@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
+import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -89,7 +91,10 @@ class _LoginFormState extends State<LoginForm> {
               ),
               const SizedBox(height: 16),
               Builder(builder: (BuildContext context) {
-                return FilledButton(
+                return ButtonWithLoader(
+                  isLoading: isLoading,
+                  text: AppLocalizations.of(context)!.openSenseMapLoginShort,
+                  width: 0.4,
                   onPressed: isLoading
                       ? null // Disable button when loading
                       : () async {
@@ -108,28 +113,8 @@ class _LoginFormState extends State<LoginForm> {
                             } catch (e) {
                               showDialog(
                                 context: context,
-                                builder: (context) => AlertDialog(
-                                  content: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.error,
-                                          color: Colors.red),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        AppLocalizations.of(context)!
-                                            .openSenseMapLoginFailed,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headlineMedium,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(e.toString(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium),
-                                    ],
-                                  ),
-                                ),
+                                builder: (context) =>
+                                    ErrorDialog(errorMessage: e.toString()),
                               );
                             } finally {
                               setState(() {
@@ -138,17 +123,6 @@ class _LoginFormState extends State<LoginForm> {
                             }
                           }
                         },
-                  child: isLoading
-                      ? SizedBox(
-                          height: 16.0, // Match text size
-                          width: 16.0, // Match text size
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.0, // Adjust thickness
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        )
-                      : Text(AppLocalizations.of(context)!
-                          .openSenseMapLoginShort), // Button text
                 );
               }),
             ],
