@@ -1,5 +1,8 @@
-const openSenseMapUrl = 'https://api.opensensemap.org';
+const maxRetries = 10;
+const retryPeriod = 5; // in minutes
+const premanentConnectivityFalurePeriod = 20; // in minutes
 
+const openSenseMapUrl = 'https://api.opensensemap.org';
 const classicModelSensors = [
       {
         "id": "0",
