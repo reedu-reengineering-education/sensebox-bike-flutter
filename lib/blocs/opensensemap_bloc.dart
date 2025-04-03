@@ -31,8 +31,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _isAuthenticated = true;
     } catch (_) {
       _isAuthenticated = false;
-    } finally {
-      _isLoading = false;
     }
   }
 
