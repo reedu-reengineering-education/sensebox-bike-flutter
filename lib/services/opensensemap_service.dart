@@ -185,6 +185,12 @@ class OpenSenseMapService {
       await refreshToken();
       return uploadData(senseBoxId, sensorData);
     } else if (response.statusCode == 429) {
+      // Delay next request by requested amount of seconds
+      final retryAfter = response.headers['Retry-After'];
+      if (retryAfter != null) {
+        final waitTime = int.parse(retryAfter);
+        await Future.delayed(Duration(seconds: waitTime));
+      }
       throw Exception(
           'Failed to upload data (${response.statusCode}) ${response.body}');
     } else {
