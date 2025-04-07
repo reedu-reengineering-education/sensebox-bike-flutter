@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
+import 'package:sensebox_bike/ui/widgets/common/email_field.dart';
 import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
+import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -20,8 +24,6 @@ class _RegisterFormState extends State<RegisterForm> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  bool _isPasswordVisible = false; // Track password visibility
-  bool _isPasswordConfirmationVisible = false;
   bool isLoading = false; // Track loading state
 
   @override
@@ -53,94 +55,22 @@ class _RegisterFormState extends State<RegisterForm> {
                     labelText:
                         AppLocalizations.of(context)!.openSenseMapRegisterName),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                autofillHints: const [AutofillHints.email],
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.openSenseMapEmail,
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapEmailErrorEmpty;
-                  }
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapEmailErrorInvalid;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                autofillHints: const [AutofillHints.password],
+              const CustomSpacer(),
+              EmailField(controller: emailController),
+              const CustomSpacer(),
+              PasswordField(
                 controller: passwordController,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.openSenseMapPassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off, // Change icon based on state
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordVisible =
-                            !_isPasswordVisible; // Toggle state
-                      });
-                    },
-                  ),
-                ),
-                obscureText: !_isPasswordVisible,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapPasswordErrorEmpty;
-                  }
-                  if (value.length < 8) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapRegisterPasswordErrorCharacters;
-                  }
-                  return null;
-                },
+                validator: passwordValidator,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                autofillHints: const [AutofillHints.password],
+              const CustomSpacer(),
+              PasswordField(
                 controller: confirmPasswordController,
-                decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!
-                      .openSenseMapRegisterPasswordConfirm,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordConfirmationVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off, // Change icon based on state
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordConfirmationVisible =
-                            !_isPasswordConfirmationVisible; // Toggle state
-                      });
-                    },
-                  ),
-                ),
-                obscureText: !_isPasswordConfirmationVisible,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapRegisterPasswordConfirmErrorEmpty;
-                  }
-                  if (value != passwordController.text) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapRegisterPasswordErrorMismatch;
-                  }
-                  return null;
-                },
+                isConfirmationField: true,
+                confirmationValidator: passwordConfirmationValidator,
+                passwordController: passwordController,
               ),
-              const SizedBox(height: 16),
+              
+              const CustomSpacer(),
               ButtonWithLoader(
                   isLoading: isLoading,
                   text: AppLocalizations.of(context)!.openSenseMapRegister,
@@ -159,21 +89,24 @@ class _RegisterFormState extends State<RegisterForm> {
                                   emailController.value.text,
                                   passwordController.value.text);
 
-                              Navigator.pop(
-                                  context); // Close after registration
-                              showLoginOrSenseBoxSelection(
-                                  context, widget.bloc);
+                              if (context.mounted) {
+                                Navigator.pop(
+                                    context); // Close after registration
+                                showLoginOrSenseBoxSelection(
+                                    context, widget.bloc);
+                              }
                             } catch (e) {
-                              showDialog(
+                              if (context.mounted) {
+                                showDialog(
                                   context: context,
                                   builder: (context) =>
                                       ErrorDialog(errorMessage: e.toString()));
+                              }
                             } finally {
                               setState(() {
                                 isLoading = false; // Stop loading
                               });
                             }
-                    
                           }
                         }
               ),

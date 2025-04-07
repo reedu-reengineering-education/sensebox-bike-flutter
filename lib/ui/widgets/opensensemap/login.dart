@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
+import 'package:sensebox_bike/ui/widgets/common/email_field.dart';
 import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
+import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -16,8 +20,8 @@ class LoginForm extends StatefulWidget {
 class _LoginFormState extends State<LoginForm> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  bool _isPasswordVisible = false; // Track password visibility
+  final GlobalKey<FormState> formKey =
+      GlobalKey<FormState>(); // Track password visibility
   bool isLoading = false; // Track loading state
 
   @override
@@ -40,58 +44,15 @@ class _LoginFormState extends State<LoginForm> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                autofillHints: const [AutofillHints.email],
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.openSenseMapEmail,
-                  // No border
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapEmailErrorEmpty;
-                  }
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapEmailErrorInvalid;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                autofillHints: const [AutofillHints.password],
+              EmailField(controller: emailController),
+              const CustomSpacer(),
+              PasswordField(
                 controller: passwordController,
-                obscureText: !_isPasswordVisible, // Toggle visibility
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.openSenseMapPassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off, // Change icon based on state
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordVisible =
-                            !_isPasswordVisible; // Toggle state
-                      });
-                    },
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapPasswordErrorEmpty;
-                  }
-                  return null;
-                },
+                validator: (context, value) =>
+                    passwordValidatorSimple(context, value),
               ),
-              const SizedBox(height: 16),
-              Builder(builder: (BuildContext context) {
-                return ButtonWithLoader(
+              const CustomSpacer(),
+              ButtonWithLoader(
                   isLoading: isLoading,
                   text: AppLocalizations.of(context)!.openSenseMapLoginShort,
                   width: 0.4,
@@ -102,20 +63,26 @@ class _LoginFormState extends State<LoginForm> {
                             setState(() {
                               isLoading = true; // Start loading
                             });
+
                             try {
                               await widget.bloc.login(
-                                emailController.text,
-                                passwordController.text,
+                              emailController.value.text,
+                              passwordController.value.text,
                               );
+
+                            if (context.mounted) {
                               Navigator.pop(context); // Close after login
                               showLoginOrSenseBoxSelection(
                                   context, widget.bloc);
+                            }
                             } catch (e) {
+                            if (context.mounted) {
                               showDialog(
                                 context: context,
                                 builder: (context) =>
                                     ErrorDialog(errorMessage: e.toString()),
                               );
+                            }
                             } finally {
                               setState(() {
                                 isLoading = false; // Stop loading
@@ -123,8 +90,7 @@ class _LoginFormState extends State<LoginForm> {
                             }
                           }
                         },
-                );
-              }),
+              ),
             ],
           ),
         ),
