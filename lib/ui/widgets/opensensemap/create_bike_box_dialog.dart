@@ -9,7 +9,9 @@ import 'package:sensebox_bike/services/tag_service.dart';
 import 'package:sensebox_bike/extensions/app_localizations_extensions.dart';
 
 class CreateBikeBoxDialog extends StatefulWidget {
-  const CreateBikeBoxDialog({super.key});
+  final TagService tagService;
+
+  const CreateBikeBoxDialog({super.key, required this.tagService});
 
   @override
   _CreateBikeBoxDialogState createState() => _CreateBikeBoxDialogState();
@@ -31,7 +33,8 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
 
   Future<void> _loadTags() async {
     try {
-      final tags = await TagService.loadTags();
+      final tags = await widget.tagService.loadTags();
+
       setState(() {
         availableTags = tags;
         if (tags.isNotEmpty) {
@@ -115,8 +118,6 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // final localization = AppLocalizations.of(context);
-
     return AlertDialog(
       title: Text(AppLocalizations.of(context)!.createBoxTitle),
       content: SingleChildScrollView(
