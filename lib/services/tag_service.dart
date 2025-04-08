@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class TagService {
   final String tagsUrl =
-      'https://raw.githubusercontent.com/mashazyu/learningdart/main/lib/locations.json';
+      'https://raw.githubusercontent.com/reedu-reengineering-education/sensebox-bike-flutter/main/assets/locations.json';
   final http.Client client;
 
   TagService({http.Client? client}) : client = client ?? http.Client();
