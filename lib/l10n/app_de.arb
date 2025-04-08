@@ -136,5 +136,10 @@
     "sensorAcceleration": "Beschleunigung",
     "sensorFinedust": "Feinstaub",
     "sensorDistanceShort": "Abstand",
-    "tagLoadError": "Liste der Orte konnte nicht geladen werden."
+    "tagLoadError": "Liste der Orte konnte nicht geladen werden.",
+    "locationWiesbaden": "Wiesbaden",
+    "locationMuenster": "Münster",
+    "locationArnsberg": "Arnsberg",
+    "locationOther": "Anderer",
+    "selectLocation": "Standort auswählen"
 }

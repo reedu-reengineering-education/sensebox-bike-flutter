@@ -6,6 +6,7 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/ui/widgets/form/image_select_form_field.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/tag_service.dart';
+import 'package:sensebox_bike/extensions/app_localizations_extensions.dart';
 
 class CreateBikeBoxDialog extends StatefulWidget {
   const CreateBikeBoxDialog({super.key});
@@ -33,6 +34,10 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
       final tags = await TagService.loadTags();
       setState(() {
         availableTags = tags;
+        if (tags.isNotEmpty) {
+          selectedTag =
+              tags.first; // Set the first tag as the default selection
+        }
       });
     } catch (error) {
       showDialog(
@@ -160,12 +165,19 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'Select Tag'),
+                decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.selectLocation),
+                value: selectedTag, // Set the default value
                 items: availableTags.map((tag) {
-                  return DropdownMenuItem(value: tag, child: Text(tag));
+                  return DropdownMenuItem(
+                      value: tag,
+                      child:
+                          Text(AppLocalizations.of(context)!.getLocation(tag)));
                 }).toList(),
                 onChanged: (value) {
-                  selectedTag = value;
+                  setState(() {
+                    selectedTag = value;
+                  });
                 },
               ),
               const SizedBox(height: 16),
@@ -199,3 +211,4 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
     );
   }
 }
+

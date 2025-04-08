@@ -136,5 +136,10 @@
     "sensorAcceleration": "Aceleração",
     "sensorFinedust": "Material Particulado",
     "sensorDistanceShort": "Distância",
-    "tagLoadError": "Não foi possível carregar a lista de locais."
+    "tagLoadError": "Não foi possível carregar a lista de locais.",
+    "locationWiesbaden": "Wiesbaden",
+    "locationMuenster": "Münster",
+    "locationArnsberg": "Arnsberg",
+    "locationOther": "Outro",
+    "selectLocation": "Selecionar local"
 }

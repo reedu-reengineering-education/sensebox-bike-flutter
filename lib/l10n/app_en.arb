@@ -136,5 +136,10 @@
     "sensorAcceleration": "Acceleration",
     "sensorFinedust": "Finedust",
     "sensorDistanceShort": "Distance",
-    "tagLoadError": "Could not load list of locations."
+    "tagLoadError": "Could not load list of locations.",
+    "locationWiesbaden": "Wiesbaden",
+    "locationMuenster": "Münster",
+    "locationArnsberg": "Arnsberg",
+    "locationOther": "Other",
+    "selectLocation": "Select location"
 }
