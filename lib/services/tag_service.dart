@@ -2,11 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class TagService {
-  static const String tagsUrl =
-      'https://raw.githubusercontent.com/reedu-reengineering-education/sensebox-bike-flutter/main/assets/locations.json';
+  final String tagsUrl =
+      'https://raw.githubusercontent.com/mashazyu/learningdart/main/lib/locations.json';
+  final http.Client client;
 
-  static Future<List<String>> loadTags() async {
-    final http.Response response = await http.get(Uri.parse(tagsUrl));
+  TagService({http.Client? client}) : client = client ?? http.Client();
+
+  Future<List<String>> loadTags() async {
+    final http.Response response = await client.get(Uri.parse(tagsUrl));
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
