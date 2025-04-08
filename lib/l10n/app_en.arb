@@ -135,5 +135,6 @@
     "sensorGPSError": "No GPS Fix",
     "sensorAcceleration": "Acceleration",
     "sensorFinedust": "Finedust",
-    "sensorDistanceShort": "Distance"
+    "sensorDistanceShort": "Distance",
+    "tagLoadError": "Could not load list of locations."
 }

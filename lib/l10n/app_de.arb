@@ -135,5 +135,6 @@
     "sensorGPSError": "Kein GPS-Fix",
     "sensorAcceleration": "Beschleunigung",
     "sensorFinedust": "Feinstaub",
-    "sensorDistanceShort": "Abstand"
+    "sensorDistanceShort": "Abstand",
+    "tagLoadError": "Liste der Orte konnte nicht geladen werden."
 }

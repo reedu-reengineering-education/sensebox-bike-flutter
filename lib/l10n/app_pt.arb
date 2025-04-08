@@ -135,5 +135,6 @@
     "sensorGPSError": "Erro no GPS",
     "sensorAcceleration": "Aceleração",
     "sensorFinedust": "Material Particulado",
-    "sensorDistanceShort": "Distância"
+    "sensorDistanceShort": "Distância",
+    "tagLoadError": "Não foi possível carregar a lista de locais."
 }
