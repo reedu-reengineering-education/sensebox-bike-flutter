@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -248,6 +249,12 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                             MapEntry(e[0], e[1] == 'null' ? null : e[1])),
                       );
                     }).toList();
+
+                    // Filter out surface_anomaly if the feature flag is enabled
+                    if (FeatureFlags.hideSurfaceAnomalySensor) {
+                      sensorTitles.removeWhere(
+                          (sensor) => sensor['title'] == 'surface_anomaly');
+                    }
 
                     List<String> order = [
                       'temperature',
