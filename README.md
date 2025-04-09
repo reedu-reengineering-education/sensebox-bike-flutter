@@ -67,3 +67,12 @@ If you run into issues while running the app, you can take the following trouble
 
 *   **Updating Dart/Flutter and GitHub Actions:**
     *   Whenever you update Dart or Flutter dependencies within the project, it's **crucial** that you also review and update the relevant GitHub Actions workflow files. This ensures compatibility and prevents build failures. Look for workflows that involve Dart or Flutter setup and adjust versions accordingly.
+
+ ## Add location tag
+
+ **Without App Rebuild**
+ - Add new location in the `/assets/locations.json` file and ensure it is available on the main branch..
+ - Verify that you can view this location when creating a new box. The new location should appear when you open the CreateBikeBoxDialog next time. If the new location is unavailable, try restarting the app.
+
+  **Requires Releasing a New Version of the App**
+  - Ensure you add the necessary translations and update `lib/extensions/app_localizations_extensions.dart'.

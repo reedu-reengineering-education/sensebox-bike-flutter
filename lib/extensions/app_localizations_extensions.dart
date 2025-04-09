@@ -3,6 +3,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 extension AppLocalizationsExtensions on AppLocalizations {
   String getLocation(String tag) {
     switch (tag) {
+      case 'other':
+        return locationOther; 
       case 'wiesbaden':
         return locationWiesbaden; 
       case 'muenster':
@@ -10,7 +12,7 @@ extension AppLocalizationsExtensions on AppLocalizations {
       case 'arnsberg':
         return locationArnsberg; 
       default:
-        return locationOther; // Fallback to the raw tag
+        return tag; // Fallback to the raw tag
     }
   }
 }
