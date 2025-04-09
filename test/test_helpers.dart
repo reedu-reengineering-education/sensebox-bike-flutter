@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Initializes common test dependencies
-Future<void> initializeTestDependencies() async {
+void initializeTestDependencies() {
   TestWidgetsFlutterBinding.ensureInitialized();
   
   // Mock SharedPreferences
@@ -27,7 +27,6 @@ Future<void> initializeTestDependencies() async {
   // Ensure SharedPreferences is initialized
   SharedPreferences.setMockInitialValues({});
 }
-
 /// Creates a MaterialApp wrapper with localization support 
 Widget createLocalizedTestApp({
   required Widget child,

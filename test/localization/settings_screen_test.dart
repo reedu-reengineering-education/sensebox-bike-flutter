@@ -1,19 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../mocks.dart';
 import '../test_helpers.dart';
 
 void main() {
+  late MockIsarService mockIsarService;
+  late MockTrackService mockTrackService;
   late SettingsBloc mockSettingsBloc;
 
-  setUpAll(() async {
-    await initializeTestDependencies();
+  setUpAll(() {
+    // Register fallback values for complex types
+    registerFallbackValue(TrackData());
+    registerFallbackValue(Duration.zero);
+
+    // Mock path_provider channels
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const channel = MethodChannel('plugins.flutter.io/path_provider');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall call) async {
+      if (call.method == 'getApplicationDocumentsDirectory') {
+        return 'test/directory';
+      }
+      return null;
+    });
+
+    initializeTestDependencies();
   });
 
   setUp(() {
+    mockIsarService = MockIsarService();
+    mockTrackService = MockTrackService();
     mockSettingsBloc = SettingsBloc();
+
+    // Setup service mocks
+    when(() => mockIsarService.trackService).thenReturn(mockTrackService);
+    when(() => mockTrackService.getAllTracks())
+        .thenAnswer((_) async => [TrackData()]);
   });
 
   Widget buildTestWidget(Locale locale) {
