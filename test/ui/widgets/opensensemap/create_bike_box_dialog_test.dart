@@ -9,7 +9,11 @@ import '../../../test_helpers.dart';
 void main() {
   group('CreateBikeBoxDialog - Location Selection', () {
     late MockTagService mockTagService;
-    final mockTags = ['other', 'wiesbaden', 'muenster', 'arnsberg'];
+    final mockTags = [
+      {'label': 'Wiesbaden', 'value': 'wiesbaden'},
+      {'label': 'Münster', 'value': 'muenster'},
+      {'label': 'Arnsberg', 'value': 'arnsberg'},
+    ];
 
     setUp(() {
       mockTagService = MockTagService();
@@ -24,11 +28,13 @@ void main() {
           child: Scaffold(body: CreateBikeBoxDialog(tagService: mockTagService,)),
       ));
       await tester.pumpAndSettle();
-      // Verify that other is selected by default
-      expect(find.text('Other'), findsOneWidget);
-      // Extpand the dropdown to show the list of locations
-      await tester.tap(find.text('Other'));
+      
+      // Expand the dropdown
+      final dropdownFinder = find.byType(DropdownButtonFormField<String>);
+      expect(dropdownFinder, findsOneWidget); // Ensure the dropdown exists
+      await tester.tap(dropdownFinder); // Tap the dropdown to expand it
       await tester.pumpAndSettle();
+
       // Assert
       expect(find.text('Wiesbaden'), findsOneWidget);
       expect(find.text('Münster'), findsOneWidget); 
@@ -44,8 +50,10 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      // Select a new tag
-      await tester.tap(find.text('Other')); // Open the dropdown
+      // Expand the dropdown
+      final dropdownFinder = find.byType(DropdownButtonFormField<String>);
+      expect(dropdownFinder, findsOneWidget); // Ensure the dropdown exists
+      await tester.tap(dropdownFinder); // Tap the dropdown to expand it
       await tester.pumpAndSettle();
       await tester.tap(find.text('Münster').last); // Select 'muenster'
       await tester.pumpAndSettle();
@@ -64,7 +72,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
       // Verify the selected tag by checking the displayed text
-      expect(find.text('Anderer'), findsOneWidget); // Verify the selected tag
+      expect(find.text('Kampagne auswählen'),
+          findsOneWidget); // Verify the selected tag
     });
 
     testWidgets('should display data in portugese, when corresponding locale is selected', (WidgetTester tester) async {
@@ -76,7 +85,9 @@ void main() {
       ));
       await tester.pumpAndSettle();
       // Verify the selected tag by checking the displayed text
-      expect(find.text('Outro'), findsOneWidget); // Verify the selected tag
+      expect(find.text('Selecionar campanha'),
+          findsOneWidget); // Verify the selected tag
     });
+    
   });
 }
