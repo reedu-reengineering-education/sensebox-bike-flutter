@@ -105,7 +105,6 @@ flutter:
     - assets/images/sensebox_bike_logo.svg
     - assets/images/sensebox_bike_classic.webp
     - assets/images/sensebox_bike_atrai.webp
-    - assets/locations.json
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -136,10 +136,7 @@
     "sensorAcceleration": "Acceleration",
     "sensorFinedust": "Finedust",
     "sensorDistanceShort": "Distance",
-    "tagLoadError": "Could not load list of locations.",
-    "locationWiesbaden": "Wiesbaden",
-    "locationMuenster": "Münster",
-    "locationArnsberg": "Arnsberg",
-    "locationOther": "Other",
-    "selectLocation": "Select location"
+    "campaignLoadError": "Failed to load list of campaigns.",
+    "selectCampaign": "Select campaign",
+    "noCampaignsAvailable": "No campaigns available"
 }

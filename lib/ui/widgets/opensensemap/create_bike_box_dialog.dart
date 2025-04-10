@@ -6,7 +6,6 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/ui/widgets/form/image_select_form_field.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/tag_service.dart';
-import 'package:sensebox_bike/extensions/app_localizations_extensions.dart';
 
 class CreateBikeBoxDialog extends StatefulWidget {
   final TagService tagService;
@@ -21,7 +20,7 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _modelController = ImageSelectController<SenseBoxBikeModel>();
-  List<String> availableTags = [];
+  List<Map<String, String>> availableTags = [];
   String? selectedTag;
   bool _loading = false;
 
@@ -37,10 +36,6 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
 
       setState(() {
         availableTags = tags;
-        if (tags.isNotEmpty) {
-          selectedTag =
-              tags.first; // Set the first tag as the default selection
-        }
       });
     } catch (error) {
       showDialog(
@@ -48,7 +43,7 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text(AppLocalizations.of(context)!.generalError),
-            content: Text(AppLocalizations.of(context)!.tagLoadError),
+            content: Text(AppLocalizations.of(context)!.campaignLoadError),
             actions: [
               TextButton(
                 onPressed: () {
@@ -167,19 +162,20 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!.selectLocation),
-                value: selectedTag, // Set the default value
+                    labelText: AppLocalizations.of(context)!.selectCampaign),
                 items: availableTags.map((tag) {
                   return DropdownMenuItem(
-                      value: tag,
-                      child:
-                          Text(AppLocalizations.of(context)!.getLocation(tag)));
+                      value: tag['value'], child: Text(tag['label'] ?? ''));
                 }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedTag = value;
-                  });
-                },
+                onChanged: availableTags.isNotEmpty
+                    ? (value) {
+                        setState(() {
+                          selectedTag = value;
+                        });
+                      }
+                    : null, // Disable interaction if no tags are available
+                disabledHint:
+                    Text(AppLocalizations.of(context)!.noCampaignsAvailable),
               ),
               const SizedBox(height: 16),
               Row(
