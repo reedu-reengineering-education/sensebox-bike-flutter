@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/services/tag_service.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/register.dart';
@@ -96,6 +97,6 @@ Future<void> _showCreateSenseBoxDialog(
   return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return const CreateBikeBoxDialog();
+        return CreateBikeBoxDialog(tagService: TagService());
       });
 }

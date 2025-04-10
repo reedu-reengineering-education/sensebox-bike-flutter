@@ -5,9 +5,12 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/ui/widgets/form/image_select_form_field.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/services/tag_service.dart';
 
 class CreateBikeBoxDialog extends StatefulWidget {
-  const CreateBikeBoxDialog({super.key});
+  final TagService tagService;
+
+  const CreateBikeBoxDialog({super.key, required this.tagService});
 
   @override
   _CreateBikeBoxDialogState createState() => _CreateBikeBoxDialogState();
@@ -17,8 +20,43 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _modelController = ImageSelectController<SenseBoxBikeModel>();
-
+  List<Map<String, String>> availableTags = [];
+  String? selectedTag;
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTags();
+  }
+
+  Future<void> _loadTags() async {
+    try {
+      final tags = await widget.tagService.loadTags();
+
+      setState(() {
+        availableTags = tags;
+      });
+    } catch (error) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(AppLocalizations.of(context)!.generalError),
+            content: Text(AppLocalizations.of(context)!.campaignLoadError),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text(AppLocalizations.of(context)!.generalOk),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
 
   Future<void> _submitForm() async {
     if (_formKey.currentState?.validate() ?? false) {
@@ -41,6 +79,7 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
           position.latitude,
           position.longitude,
           _modelController.value ?? SenseBoxBikeModel.classic,
+            selectedTag
         );
 
         await opensensemapBloc.fetchSenseBoxes();
@@ -74,8 +113,6 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // final localization = AppLocalizations.of(context);
-
     return AlertDialog(
       title: Text(AppLocalizations.of(context)!.createBoxTitle),
       content: SingleChildScrollView(
@@ -106,6 +143,7 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
@@ -121,7 +159,25 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.selectCampaign),
+                items: availableTags.map((tag) {
+                  return DropdownMenuItem(
+                      value: tag['value'], child: Text(tag['label'] ?? ''));
+                }).toList(),
+                onChanged: availableTags.isNotEmpty
+                    ? (value) {
+                        setState(() {
+                          selectedTag = value;
+                        });
+                      }
+                    : null, // Disable interaction if no tags are available
+                disabledHint:
+                    Text(AppLocalizations.of(context)!.noCampaignsAvailable),
+              ),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Icon(Icons.info_outline),
@@ -152,3 +208,4 @@ class _CreateBikeBoxDialogState extends State<CreateBikeBoxDialog> {
     );
   }
 }
+

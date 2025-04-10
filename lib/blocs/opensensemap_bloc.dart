@@ -85,9 +85,10 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<void> createSenseBoxBike(String name, double latitude,
-      double longitude, SenseBoxBikeModel model) async {
+      double longitude, SenseBoxBikeModel model, String? selectedTag) async {
     try {
-      await _service.createSenseBoxBike(name, latitude, longitude, model);
+      await _service.createSenseBoxBike(
+          name, latitude, longitude, model, selectedTag);
     } catch (e) {
       rethrow;
     }
