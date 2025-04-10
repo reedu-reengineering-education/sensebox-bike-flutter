@@ -1,5 +1,6 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
@@ -25,3 +26,5 @@ class MockOpenSenseMapBloc extends OpenSenseMapBloc {
     isAuthenticated = false;
   }
 }
+
+class FakeSensorData extends Fake implements SensorData {}
