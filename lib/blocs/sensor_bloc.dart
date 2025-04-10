@@ -1,5 +1,6 @@
 // File: lib/blocs/sensor_bloc.dart
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
 import 'package:sensebox_bike/sensors/finedust_sensor.dart';
@@ -71,6 +72,11 @@ class SensorBloc with ChangeNotifier {
 
     // get all sensors with this characteristic
     for (var sensor in _sensors) {
+      // Check if the sensor should be excluded based on the feature flag
+      if (FeatureFlags.hideSurfaceAnomalySensor &&
+          sensor is SurfaceAnomalySensor) {
+        continue;
+      }
       if (availableCharacteristics
           .map((e) => e.uuid.toString())
           .contains(sensor.characteristicUuid)) {
