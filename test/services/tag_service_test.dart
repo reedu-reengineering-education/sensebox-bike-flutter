@@ -17,7 +17,13 @@ void main() {
 
     test('should return a list of tags when the response is successful', () async {
       // Arrange
-      const mockResponseBody = '["tag1", "tag2", "tag3"]';
+      const mockResponseBody = '''
+      [
+        {"label": "Tag 1", "value": "value1"},
+        {"label": "Tag 2", "value": "value2"},
+        {"label": "Tag 3", "value": "value3"}
+      ]
+      ''';
       when(() => mockHttpClient.get(Uri.parse(tagService.tagsUrl)))
           .thenAnswer((_) async => http.Response(mockResponseBody, 200));
 
@@ -25,7 +31,13 @@ void main() {
       final tags = await tagService.loadTags();
 
       // Assert
-      expect(tags, equals(['tag1', 'tag2', 'tag3']));
+      expect(
+          tags,
+          equals([
+            {"label": "Tag 1", "value": "value1"},
+            {"label": "Tag 2", "value": "value2"},
+            {"label": "Tag 3", "value": "value3"}
+          ]));
     });
 
     test('should throw an exception when the response status code is not 200', () async {
@@ -42,14 +54,23 @@ void main() {
 
     test('should throw an exception when the response body is invalid JSON', () async {
       // Arrange
-      const invalidJson = 'Invalid JSON';
+      const invalidData = '''
+      [
+        {"label": "Tag 1", "value": "value1"},
+        "Invalid Item"
+      ]
+      ''';
       when(() => mockHttpClient.get(Uri.parse(tagService.tagsUrl)))
-          .thenAnswer((_) async => http.Response(invalidJson, 200));
+          .thenAnswer((_) async => http.Response(invalidData, 200));
 
       // Act & Assert
       expect(
         () async => await tagService.loadTags(),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<Exception>().having(
+          (e) => e.toString(),
+          'message',
+          contains('Invalid data format'),
+        )),
       );
     });
   });
