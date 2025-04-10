@@ -26,7 +26,10 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     bloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    _fetchSenseBoxes();
+
+    if (bloc.senseBoxes.isEmpty) {
+      _fetchSenseBoxes();
+    }
   }
 
   void _fetchSenseBoxes() {
@@ -139,9 +142,11 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
                   : null,
               enabled: isSenseBoxBikeCompatible,
               onTap: isSenseBoxBikeCompatible
-                  ? () {
-                      bloc.setSelectedSenseBox(senseBox);
-                      Navigator.pop(context); // Go back after selecting
+                  ? () async {
+                      await bloc.setSelectedSenseBox(senseBox);
+                      if (context.mounted) {
+                        Navigator.pop(context); // Go back after selecting
+                      }
                     }
                   : null,
             );

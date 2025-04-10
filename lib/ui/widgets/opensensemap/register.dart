@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/ui/utils/common.dart';
+import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
+import 'package:sensebox_bike/ui/widgets/common/email_field.dart';
+import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
+import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -18,6 +24,7 @@ class _RegisterFormState extends State<RegisterForm> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  bool isLoading = false; // Track loading state
 
   @override
   void dispose() {
@@ -48,106 +55,60 @@ class _RegisterFormState extends State<RegisterForm> {
                     labelText:
                         AppLocalizations.of(context)!.openSenseMapRegisterName),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                autofillHints: const [AutofillHints.email],
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.openSenseMapEmail,
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapEmailErrorEmpty;
-                  }
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapEmailErrorInvalid;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                autofillHints: const [AutofillHints.password],
+              const CustomSpacer(),
+              EmailField(controller: emailController),
+              const CustomSpacer(),
+              PasswordField(
                 controller: passwordController,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.openSenseMapPassword,
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapPasswordErrorEmpty;
-                  }
-                  if (value.length < 8) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapRegisterPasswordErrorCharacters;
-                  }
-                  return null;
-                },
+                validator: passwordValidator,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                autofillHints: const [AutofillHints.password],
+              const CustomSpacer(),
+              PasswordField(
                 controller: confirmPasswordController,
-                decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!
-                        .openSenseMapRegisterPasswordConfirm),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapRegisterPasswordConfirmErrorEmpty;
-                  }
-                  if (value != passwordController.text) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapRegisterPasswordErrorMismatch;
-                  }
-                  return null;
-                },
+                isConfirmationField: true,
+                confirmationValidator: passwordConfirmationValidator,
+                passwordController: passwordController,
               ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () async {
-                  if (formKey.currentState?.validate() == true) {
-                    try {
-                      // Registration logic here
-                      await widget.bloc.register(
-                          nameController.value.text,
-                          emailController.value.text,
-                          passwordController.value.text);
+              
+              const CustomSpacer(),
+              ButtonWithLoader(
+                  isLoading: isLoading,
+                  text: AppLocalizations.of(context)!.openSenseMapRegister,
+                  width: 0.7,
+                  onPressed: isLoading
+                      ? null // Disable button when loading
+                      : () async {
+                          if (formKey.currentState?.validate() == true) {
+                            setState(() {
+                              isLoading = true; // Start loading
+                            });
+                            try {
+                              // Registration logic here
+                              await widget.bloc.register(
+                                  nameController.value.text,
+                                  emailController.value.text,
+                                  passwordController.value.text);
 
-                      Navigator.pop(context); // Close after registration
-                      showLoginOrSenseBoxSelection(context, widget.bloc);
-                    } catch (e) {
-                      showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.error, color: Colors.red),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                        AppLocalizations.of(context)!
-                                            .openSenseMapRegisterFailed,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headlineSmall),
-                                    const SizedBox(height: 16),
-                                    Text(e.toString(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium),
-                                  ],
-                                ),
-                              ));
-                    }
-                  }
-                },
-                child: Text(AppLocalizations.of(context)!.openSenseMapRegister),
+                              if (context.mounted) {
+                                Navigator.pop(
+                                    context); // Close after registration
+                                showLoginOrSenseBoxSelection(
+                                    context, widget.bloc);
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) =>
+                                      ErrorDialog(errorMessage: e.toString()));
+                              }
+                            } finally {
+                              setState(() {
+                                isLoading = false; // Stop loading
+                              });
+                            }
+                          }
+                        }
               ),
             ],
           ),

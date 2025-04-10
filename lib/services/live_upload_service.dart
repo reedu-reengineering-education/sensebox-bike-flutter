@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
+import "package:sensebox_bike/constants.dart";
 
 class LiveUploadService {
   final OpenSenseMapService openSenseMapService;
@@ -13,6 +15,10 @@ class LiveUploadService {
   final SenseBox senseBox; // ID of the senseBox to upload data to
 
   final int trackId;
+
+  // vars to handle connectivity issues
+  DateTime? _lastSuccessfulUpload;
+  int _consecutiveFails = 0;
 
   // save uploaded ids to prevent double uploads
   final List<int> _uploadedIds = [];
@@ -55,9 +61,25 @@ class LiveUploadService {
             await uploadDataToOpenSenseMap(data);
 
             _uploadedIds.addAll(geoDataToUpload.map((e) => e.id));
+            // track successful upload
+            _lastSuccessfulUpload = DateTime.now();
+            _consecutiveFails = 0;
           } catch (e) {
             // Handle upload error
-            throw Exception('Failed to upload data: $e');
+            _consecutiveFails++;
+            final isPermanentConnectivityIssue = _lastSuccessfulUpload
+                    ?.isBefore(DateTime.now().subtract(Duration(
+                        minutes: premanentConnectivityFalurePeriod))) ??
+                true;
+            if (_consecutiveFails >= maxRetries &&
+                isPermanentConnectivityIssue) {
+              debugPrint(
+                  'Failed to upload data: $e. Will retry in $retryPeriod minutes.');
+              await Future.delayed(const Duration(minutes: retryPeriod));
+            } else {
+              throw Exception(
+                  'Permanent connectivity falure, no connection for more than $premanentConnectivityFalurePeriod minutes.');
+            }
           }
         }
 

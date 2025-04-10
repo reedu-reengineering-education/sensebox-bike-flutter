@@ -11,6 +11,11 @@ import 'package:sensebox_bike/services/isar_service/sensor_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
 
 class IsarService {
+  // Use Singleton pattern to avoid creation of multiple instances
+  static final IsarService _instance = IsarService._internal();
+  factory IsarService() => _instance;
+  IsarService._internal();
+
   final TrackService trackService = TrackService();
   final GeolocationService geolocationService = GeolocationService();
   final SensorService sensorService = SensorService();
