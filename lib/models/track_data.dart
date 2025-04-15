@@ -30,13 +30,10 @@ class TrackData {
   double calculateTolerance(int numberOfCoordinates) {
     // Base tolerance for small datasets
     const double baseTolerance = 0.00001;
+    // Growth factor for exponential scaling
+    const double growthFactor = 1.01;
 
-    // Use logarithmic scaling for larger datasets
-    if (numberOfCoordinates < 100) {
-      return baseTolerance;
-    } else {
-      return baseTolerance * log(numberOfCoordinates) / log(10);
-    }
+    return baseTolerance * pow(growthFactor, (numberOfCoordinates / 1000));
   }
 
   @ignore
@@ -58,6 +55,13 @@ class TrackData {
     // Convert simplified points back to a list of lists for encoding
     final simplifiedList =
         simplifiedCoordinates.map((point) => [point.x, point.y]).toList();
+
+    final numCoord = coordinates.length;
+    final numSimplifiedCoord = simplifiedCoordinates.length;
+    // Print the number of coordinates before and after simplification
+    print(
+        '//// Number of coordinates before simplification: $numCoord, after: $numSimplifiedCoord');
+    // Encode the simplified coordinates into a polyline
 
     return encodePolyline(simplifiedList);
   }
