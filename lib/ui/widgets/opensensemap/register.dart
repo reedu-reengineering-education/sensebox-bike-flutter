@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
@@ -8,6 +10,7 @@ import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RegisterForm extends StatefulWidget {
   final OpenSenseMapBloc bloc;
@@ -25,6 +28,8 @@ class _RegisterFormState extends State<RegisterForm> {
       TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   bool isLoading = false; // Track loading state
+  bool isAccepted = false;
+  String? privacyPolicyError;
 
   @override
   void dispose() {
@@ -33,6 +38,15 @@ class _RegisterFormState extends State<RegisterForm> {
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  void validatePrivacyPolicy() {
+    setState(() {
+      privacyPolicyError = isAccepted
+          ? null
+          : AppLocalizations.of(context)!
+              .openSenseMapRegisterAcceptTermsError; // Error message
+    });
   }
 
   @override
@@ -69,7 +83,71 @@ class _RegisterFormState extends State<RegisterForm> {
                 confirmationValidator: passwordConfirmationValidator,
                 passwordController: passwordController,
               ),
-              
+              const CustomSpacer(),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    isAccepted = !isAccepted;
+                  });
+                  validatePrivacyPolicy();
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.center, // Center vertically
+                      children: [
+                        Checkbox(
+                          value: isAccepted,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              isAccepted = value ?? false;
+                            });
+                            validatePrivacyPolicy();
+                          },
+                        ),
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: Theme.of(context).textTheme.bodyMedium,
+                              children: [
+                                TextSpan(
+                                    text: AppLocalizations.of(context)!
+                                        .openSenesMapRegisterAcceptTermsPrefix),
+                                TextSpan(text: " "),
+                                TextSpan(
+                                  text: AppLocalizations.of(context)!
+                                      .openSenseMapRegisterAcceptTermsPrivacy,
+                                  style: const TextStyle(
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () {
+                                      launchUrl(Uri.parse(privacyPolicyUrl));
+                                    },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (privacyPolicyError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                            left: 10.0), // Add padding to the error message
+                        child: Text(
+                          privacyPolicyError!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                            fontSize: 12.0,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
               const CustomSpacer(),
               ButtonWithLoader(
                   isLoading: isLoading,
@@ -78,10 +156,18 @@ class _RegisterFormState extends State<RegisterForm> {
                   onPressed: isLoading
                       ? null // Disable button when loading
                       : () async {
-                          if (formKey.currentState?.validate() == true) {
+                          // Validate the form and the privacy policy checkbox
+                          final isFormValid =
+                              formKey.currentState?.validate() == true;
+                          validatePrivacyPolicy(); // Validate the checkbox
+
+                          if (isFormValid && isAccepted) {
                             setState(() {
                               isLoading = true; // Start loading
                             });
+
+                            validatePrivacyPolicy();
+
                             try {
                               // Registration logic here
                               await widget.bloc.register(

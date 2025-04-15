@@ -4,6 +4,9 @@ const premanentConnectivityFalurePeriod = 20; // in minutes
 const defaultTimeout = 30; // in seconds
 
 const openSenseMapUrl = 'https://api.opensensemap.org';
+const privacyPolicyUrl =
+    'https://opensensemap.org/privacy'; // URL for the privacy policy
+
 const classicModelSensors = [
       {
         "id": "0",
