@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
@@ -163,41 +164,45 @@ class OpenSenseMapService {
     }
   }
 
-  Future<void> uploadData(
+Future<void> uploadData(
       String senseBoxId, Map<String, dynamic> sensorData) async {
     final accessToken = await getAccessToken();
     if (accessToken == null) throw Exception('Not authenticated');
 
     List<dynamic> data = sensorData.values.toList();
 
-    final response = await client.post(
-      Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
-      body: jsonEncode(data),
-      headers: {
-        'Authorization': 'Bearer $accessToken',
-        'Content-Type': 'application/json',
-      },
-    );
+    try {
+      final response = await client.post(
+        Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
+        body: jsonEncode(data),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(
+          const Duration(seconds: defaultTimeout)); // Set a 30-second timeout
 
     if (response.statusCode == 201) {
       debugPrint('Data uploaded');
     } else if (response.statusCode == 401) {
       await refreshToken();
       return uploadData(senseBoxId, sensorData);
-    } else if (response.statusCode == 429) {
-      // Delay next request by requested amount of seconds
-      final retryAfter = response.headers['Retry-After'];
-      if (retryAfter != null) {
-        final waitTime = int.parse(retryAfter);
-        await Future.delayed(Duration(seconds: waitTime));
-      }
-      throw Exception(
-          'Failed to upload data (${response.statusCode}) ${response.body}');
+      } else if (response.statusCode == 429) {
+        final retryAfter = response.headers['retry-after'];
+        if (retryAfter != null) {
+          final waitTime = int.tryParse(retryAfter) ?? defaultTimeout;
+          throw TooManyRequestsException(waitTime);
+        } else {
+          throw TooManyRequestsException(defaultTimeout * 2);
+        }
     } else {
-      throw Exception(
-          'Failed to upload data (${response.statusCode}) ${response.body}');
+        throw Exception(
+            'Failed to upload data (${response.statusCode}) ${response.body}');
+      }
+    } on TimeoutException {
+      throw Exception('Request timed out after 30 seconds');
     }
-  }
+}
 
 // Define the available sensors for each model
   final Map<SenseBoxBikeModel, List<dynamic>> sensors = {

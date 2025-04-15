@@ -39,6 +39,8 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     });
 
     bloc.fetchSenseBoxes(page: page).then((values) {
+      if (!mounted) return; // Ensure the widget is still in the tree
+
       setState(() {
         isLoading = false;
         page++;
@@ -48,6 +50,13 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
           hasMore = false;
         }
       });
+    }).catchError((error) {
+      if (!mounted) return; // Ensure the widget is still in the tree
+
+      setState(() {
+        isLoading = false;
+      });
+      debugPrint('Error fetching senseBoxes: $error');
     });
   }
 

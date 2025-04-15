@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
@@ -58,7 +59,8 @@ class LiveUploadService {
           try {
             Map<String, dynamic> data = prepareDataToUpload(geoDataToUpload);
 
-            await uploadDataToOpenSenseMap(data);
+            //await uploadDataToOpenSenseMap(data);
+            await uploadDataWithRetry(data);
 
             _uploadedIds.addAll(geoDataToUpload.map((e) => e.id));
             // track successful upload
@@ -67,18 +69,22 @@ class LiveUploadService {
           } catch (e) {
             // Handle upload error
             _consecutiveFails++;
-            final isPermanentConnectivityIssue = _lastSuccessfulUpload
-                    ?.isBefore(DateTime.now().subtract(Duration(
-                        minutes: premanentConnectivityFalurePeriod))) ??
-                true;
-            if (_consecutiveFails >= maxRetries &&
-                isPermanentConnectivityIssue) {
+            final lastSuccessfulUploadPeriod = DateTime.now()
+                .subtract(Duration(minutes: premanentConnectivityFalurePeriod));
+            final isPermanentConnectivityIssue =
+                _lastSuccessfulUpload != null &&
+                    _lastSuccessfulUpload!.isBefore(lastSuccessfulUploadPeriod);
+            final isMaxRetries = _consecutiveFails >= maxRetries;
+
+            if (isPermanentConnectivityIssue || isMaxRetries) {
               debugPrint(
-                  'Failed to upload data: $e. Will retry in $retryPeriod minutes.');
-              await Future.delayed(const Duration(minutes: retryPeriod));
+                  'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.');
+              return;
             } else {
-              throw Exception(
-                  'Permanent connectivity falure, no connection for more than $premanentConnectivityFalurePeriod minutes.');
+              // Retry posting data after the retry period if the number of consecutive fails is less than maxRetries
+              debugPrint(
+                  'Failed to upload data: $e. Retrying in $retryPeriod minutes (Attempt $_consecutiveFails of $maxRetries).');
+              await Future.delayed(Duration(minutes: retryPeriod));
             }
           }
         }
@@ -86,6 +92,21 @@ class LiveUploadService {
         isUploading = false;
       });
     });
+  }
+
+  Future<void> uploadDataWithRetry(Map<String, dynamic> data) async {
+    try {
+      await uploadDataToOpenSenseMap(data);
+    } catch (e) {
+      if (e is TooManyRequestsException) {
+        debugPrint(
+            'Received 429 Too Many Requests. Retrying after ${e.retryAfter} seconds.');
+        await Future.delayed(Duration(seconds: e.retryAfter));
+        await uploadDataToOpenSenseMap(data); // Retry once after waiting
+      } else {
+        rethrow; // Propagate other exceptions
+      }
+    }
   }
 
   Map<String, dynamic> prepareDataToUpload(

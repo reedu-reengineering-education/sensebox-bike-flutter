@@ -1,6 +1,7 @@
 const maxRetries = 10;
-const retryPeriod = 5; // in minutes
+const retryPeriod = 2; // in minutes
 const premanentConnectivityFalurePeriod = 20; // in minutes
+const defaultTimeout = 30; // in seconds
 
 const openSenseMapUrl = 'https://api.opensensemap.org';
 const classicModelSensors = [
