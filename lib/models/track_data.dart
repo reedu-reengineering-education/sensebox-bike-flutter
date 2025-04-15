@@ -56,13 +56,6 @@ class TrackData {
     final simplifiedList =
         simplifiedCoordinates.map((point) => [point.x, point.y]).toList();
 
-    final numCoord = coordinates.length;
-    final numSimplifiedCoord = simplifiedCoordinates.length;
-    // Print the number of coordinates before and after simplification
-    print(
-        '//// Number of coordinates before simplification: $numCoord, after: $numSimplifiedCoord');
-    // Encode the simplified coordinates into a polyline
-
     return encodePolyline(simplifiedList);
   }
 }
