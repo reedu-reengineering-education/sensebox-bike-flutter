@@ -41,6 +41,9 @@
             }
         }
     },
+    "generalLogin": "Anmelden",
+    "generalLogout": "Abmelden",
+    "generalRegister": "Registrieren",
     "homeBottomBarHome": "Start",
     "homeBottomBarTracks": "Tracks",
     "tracksAppBarTitle": "Tracks",
@@ -48,8 +51,6 @@
     "tracksNoTracks": "Keine Tracks verfügbar",
     "tracksTrackDeleted": "Track gelöscht",
     "openSenseMapLogin": "Mit openSenseMap anmelden",
-    "openSenseMapLoginShort": "Anmelden",
-    "openSenseMapRegister": "Registrieren bei openSenseMap",
     "openSenseMapLogout": "Ausloggen",
     "openSenseMapEmail": "E-Mail",
     "openSenseMapPassword": "Passwort",
@@ -141,5 +142,6 @@
     "sensorDistanceShort": "Abstand",
     "campaignLoadError": "Die Liste der Kampagnen konnte nicht geladen werden.",
     "selectCampaign": "Kampagne auswählen",
-    "noCampaignsAvailable": "Keine Kampagnen verfügbar"
+    "noCampaignsAvailable": "Keine Kampagnen verfügbar",
+    "loginScreenTitle": "openSenseMap Konto"
 }

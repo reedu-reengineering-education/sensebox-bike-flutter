@@ -41,6 +41,9 @@
             }
         }
     },
+    "generalLogin": "Login",
+    "generalLogout": "Logout",
+    "generalRegister": "Register",
     "homeBottomBarHome": "Home",
     "homeBottomBarTracks": "Tracks",
     "tracksAppBarTitle": "Tracks",
@@ -48,8 +51,6 @@
     "tracksNoTracks": "No tracks available",
     "tracksTrackDeleted": "Track deleted",
     "openSenseMapLogin": "Login with openSenseMap",
-    "openSenseMapLoginShort": "Login",
-    "openSenseMapRegister": "Register with openSenseMap",
     "openSenseMapLogout": "Logout",
     "openSenseMapEmail": "Email",
     "openSenseMapPassword": "Password",
@@ -141,5 +142,6 @@
     "sensorDistanceShort": "Distance",
     "campaignLoadError": "Failed to load list of campaigns.",
     "selectCampaign": "Select campaign",
-    "noCampaignsAvailable": "No campaigns available"
+    "noCampaignsAvailable": "No campaigns available",
+    "loginScreenTitle": "openSenseMap Account"
 }

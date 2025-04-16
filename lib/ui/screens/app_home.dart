@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/screens/home_screen.dart';
+import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -18,6 +19,7 @@ class _AppHomeState extends State<AppHome> {
     HomeScreen(),
     TracksScreen(),
     SettingsScreen(),
+    LoginScreen(),
   ];
 
   @override
@@ -56,7 +58,10 @@ class _AppHomeState extends State<AppHome> {
                   label: AppLocalizations.of(context)!.homeBottomBarTracks),
               NavigationDestination(
                   icon: Icon(Icons.settings),
-                  label: AppLocalizations.of(context)!.generalSettings)
+                  label: AppLocalizations.of(context)!.generalSettings),
+              NavigationDestination(
+                  icon: Icon(Icons.login),
+                  label: AppLocalizations.of(context)!.generalLogin),
             ],
           ),
         ),

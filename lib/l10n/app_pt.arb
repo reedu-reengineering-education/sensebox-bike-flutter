@@ -41,6 +41,9 @@
             }
         }
     },
+    "generalLogin": "Entrar",
+    "generalLogout": "Sair",
+    "generalRegister": "Registrar-se",
     "homeBottomBarHome": "Início",
     "homeBottomBarTracks": "Trajetos",
     "tracksAppBarTitle": "Trajetos",
@@ -48,8 +51,6 @@
     "tracksNoTracks": "Nenhum trajeto disponível",
     "tracksTrackDeleted": "Trajeto excluído",
     "openSenseMapLogin": "Entrar com openSenseMap",
-    "openSenseMapLoginShort": "Entrar",
-    "openSenseMapRegister": "Registrar-se no openSenseMap",
     "openSenseMapLogout": "Sair",
     "openSenseMapEmail": "E-mail",
     "openSenseMapPassword": "Senha",
@@ -141,5 +142,6 @@
     "sensorDistanceShort": "Distância",
     "campaignLoadError": "Falha ao carregar a lista de campanhas.",
     "selectCampaign": "Selecionar campanha",
-    "noCampaignsAvailable": "Não há campanhas disponíveis"
+    "noCampaignsAvailable": "Não há campanhas disponíveis",
+    "loginScreenTitle": "openSenseMap Conta"
 }

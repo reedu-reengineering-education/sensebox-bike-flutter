@@ -54,7 +54,7 @@ class _LoginFormState extends State<LoginForm> {
               const CustomSpacer(),
               ButtonWithLoader(
                   isLoading: isLoading,
-                  text: AppLocalizations.of(context)!.openSenseMapLoginShort,
+                text: AppLocalizations.of(context)!.generalLogin,
                   width: 0.4,
                   onPressed: isLoading
                       ? null // Disable button when loading

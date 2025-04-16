@@ -34,11 +34,11 @@ Widget _buildLoginRegisterTabs(BuildContext context, OpenSenseMapBloc bloc) {
             isScrollable: true,
             tabs: [
               Tab(
-                text: AppLocalizations.of(context)!.openSenseMapLoginShort,
+                text: AppLocalizations.of(context)!.generalLogin,
                 height: 64,
               ),
               Tab(
-                text: AppLocalizations.of(context)!.openSenseMapRegister,
+                text: AppLocalizations.of(context)!.generalRegister,
                 height: 64,
               ),
             ],

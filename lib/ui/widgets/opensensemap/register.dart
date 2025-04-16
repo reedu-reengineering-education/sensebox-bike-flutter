@@ -151,7 +151,7 @@ class _RegisterFormState extends State<RegisterForm> {
               const CustomSpacer(),
               ButtonWithLoader(
                   isLoading: isLoading,
-                  text: AppLocalizations.of(context)!.openSenseMapRegister,
+                  text: AppLocalizations.of(context)!.generalRegister,
                   width: 0.7,
                   onPressed: isLoading
                       ? null // Disable button when loading
