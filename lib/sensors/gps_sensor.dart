@@ -57,7 +57,12 @@ class GPSSensor extends Sensor {
       // Wait for mapInstance to be initialized
       await _mapReadyCompleter.future;
 
-      if (circleAnnotationManager != null) {
+      if (circleAnnotationManager == null) {
+        debugPrint('Warning: circleAnnotationManager is not initialized.');
+        return;
+      }
+
+      try {
         CircleAnnotationOptions option = CircleAnnotationOptions(
           geometry: Point(coordinates: Position(_latestLng, _latestLat)),
           circleColor: Colors.blue.value,
@@ -74,6 +79,8 @@ class GPSSensor extends Sensor {
 
         // Create new annotations
         circleAnnotationManager!.createMulti([option]);
+      } catch (e) {
+        debugPrint('Error updating circle annotations: $e');
       }
       
       if (mapInstance == null) {
