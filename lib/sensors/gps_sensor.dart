@@ -88,7 +88,7 @@ class GPSSensor extends Sensor {
         return;
       }
 
-      mapInstance!.flyTo(
+      await mapInstance!.flyTo(
         CameraOptions(
           zoom: 16.0,
           pitch: 45,
