@@ -51,8 +51,12 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget>
     String style = MediaQuery.platformBrightnessOf(context) == Brightness.dark
         ? "day"
         : "night";
-    mapInstance.style
+    try {
+      mapInstance.style
         .setStyleImportConfigProperty("basemap", "lightPreset", style);
+    } catch (e) {
+      debugPrint('Error setting style property: $e');
+    }
   }
 
   @override
@@ -70,8 +74,12 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget>
         // Adjust map theme based on app's brightness (dark/light)
         String style =
             Theme.of(context).brightness == Brightness.dark ? "night" : "day";
-        mapInstance.style
+        try {
+          mapInstance.style
             .setStyleImportConfigProperty("basemap", "lightPreset", style);
+        } catch (e) {
+          debugPrint('Error setting style property: $e');
+        }
 
         if (widget.onStyleLoadedCallback != null) {
           widget.onStyleLoadedCallback!(mapInstance);
