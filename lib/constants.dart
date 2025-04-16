@@ -5,84 +5,84 @@ const defaultTimeout = 30; // in seconds
 
 const openSenseMapUrl = 'https://api.opensensemap.org';
 const classicModelSensors = [
-      {
-        "id": "0",
-        "icon": 'osem-thermometer',
-        "title": 'Temperature',
-        "unit": '°C',
-        "sensorType": 'HDC1080'
-      },
-      {
-        "id": "1",
-        "icon": 'osem-humidity',
-        "title": 'Rel. Humidity',
-        "unit": '%',
-        "sensorType": 'HDC1080'
-      },
-      {
-        "id": "2",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM1',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "3",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM2.5',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "4",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM4',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "5",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM10',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "6",
-        "icon": 'osem-signal',
-        "title": 'Overtaking Distance',
-        "unit": 'cm',
-        "sensorType": 'HC-SR04'
-      },
-      {
-        "id": "7",
-        "icon": 'osem-shock',
-        "title": 'Acceleration X',
-        "unit": 'm/s²',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "8",
-        "icon": 'osem-shock',
-        "title": 'Acceleration Y',
-        "unit": 'm/s²',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "9",
-        "icon": 'osem-shock',
-        "title": 'Acceleration Z',
-        "unit": 'm/s²',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "10",
-        "icon": 'osem-dashboard',
-        "title": 'Speed',
-        "unit": 'km/h',
-        "sensorType": 'GPS'
-      }
-    ];
+{
+    "id": "0",
+    "icon": 'osem-thermometer',
+    "title": 'Temperature',
+    "unit": '°C',
+    "sensorType": 'HDC1080'
+  },
+  {
+    "id": "1",
+    "icon": 'osem-humidity',
+    "title": 'Rel. Humidity',
+    "unit": '%',
+    "sensorType": 'HDC1080'
+  },
+  {
+    "id": "2",
+    "icon": 'osem-cloud',
+    "title": 'Finedust PM1',
+    "unit": 'µg/m³',
+    "sensorType": 'SPS30'
+  },
+  {
+    "id": "3",
+    "icon": 'osem-cloud',
+    "title": 'Finedust PM2.5',
+    "unit": 'µg/m³',
+    "sensorType": 'SPS30'
+  },
+  {
+    "id": "4",
+    "icon": 'osem-cloud',
+    "title": 'Finedust PM4',
+    "unit": 'µg/m³',
+    "sensorType": 'SPS30'
+  },
+  {
+    "id": "5",
+    "icon": 'osem-cloud',
+    "title": 'Finedust PM10',
+    "unit": 'µg/m³',
+    "sensorType": 'SPS30'
+  },
+  {
+    "id": "6",
+    "icon": 'osem-signal',
+    "title": 'Overtaking Distance',
+    "unit": 'cm',
+    "sensorType": 'HC-SR04'
+  },
+  {
+    "id": "7",
+    "icon": 'osem-shock',
+    "title": 'Acceleration X',
+    "unit": 'm/s²',
+    "sensorType": 'MPU-6050'
+  },
+  {
+    "id": "8",
+    "icon": 'osem-shock',
+    "title": 'Acceleration Y',
+    "unit": 'm/s²',
+    "sensorType": 'MPU-6050'
+  },
+  {
+    "id": "9",
+    "icon": 'osem-shock',
+    "title": 'Acceleration Z',
+    "unit": 'm/s²',
+    "sensorType": 'MPU-6050'
+  },
+  {
+    "id": "10",
+    "icon": 'osem-dashboard',
+    "title": 'Speed',
+    "unit": 'm/s',
+    "sensorType": 'GPS'
+  }
+];
 
     const atraiModelSensors = [
       {
