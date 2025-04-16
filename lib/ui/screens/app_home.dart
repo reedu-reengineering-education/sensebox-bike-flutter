@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/ui/screens/home_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
@@ -24,6 +26,8 @@ class _AppHomeState extends State<AppHome> {
 
   @override
   Widget build(BuildContext context) {
+    final openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context);
+    
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
@@ -45,7 +49,18 @@ class _AppHomeState extends State<AppHome> {
           child: NavigationBar(
             onDestinationSelected: (value) {
               setState(() {
-                _selectedIndex = value;
+                if (value == 3) {
+                  // If the user selects the login/logout destination
+                  if (openSenseMapBloc.isAuthenticated) {
+                    // Log out the user if authenticated
+                    openSenseMapBloc.logout();
+                  } else {
+                    // Navigate to the login screen if not authenticated
+                    _selectedIndex = value;
+                  }
+                } else {
+                  _selectedIndex = value;
+                }
               });
             },
             selectedIndex: _selectedIndex,
@@ -60,8 +75,12 @@ class _AppHomeState extends State<AppHome> {
                   icon: Icon(Icons.settings),
                   label: AppLocalizations.of(context)!.generalSettings),
               NavigationDestination(
-                  icon: Icon(Icons.login),
-                  label: AppLocalizations.of(context)!.generalLogin),
+                  icon: Icon(openSenseMapBloc.isAuthenticated
+                      ? Icons.logout
+                      : Icons.login),
+                  label: openSenseMapBloc.isAuthenticated
+                      ? AppLocalizations.of(context)!.generalLogout
+                      : AppLocalizations.of(context)!.generalLogin),
             ],
           ),
         ),

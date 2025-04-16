@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/common/email_field.dart';
 import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
-import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -176,10 +176,12 @@ class _RegisterFormState extends State<RegisterForm> {
                                   passwordController.value.text);
 
                               if (context.mounted) {
-                                Navigator.pop(
-                                    context); // Close after registration
-                                showLoginOrSenseBoxSelection(
-                                    context, widget.bloc);
+                                // Navigate to the home screen after successful login
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const AppHome()),
+                                );
                               }
                             } catch (e) {
                               if (context.mounted) {

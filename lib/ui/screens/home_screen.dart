@@ -68,11 +68,17 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// Widget for login or senseBox selection
-class _SenseBoxLoginButton extends StatelessWidget {
+// Widget for senseBox selection
+class _SenseBoxSelectionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final OpenSenseMapBloc osemBloc = Provider.of<OpenSenseMapBloc>(context);
+    
+    // Show the button only if the user is authenticated
+    if (!osemBloc.isAuthenticated) {
+      return const SizedBox
+          .shrink(); // Return an empty widget if not authenticated
+    }
 
     return IconButton.outlined(
         style: OutlinedButton.styleFrom(
@@ -83,14 +89,30 @@ class _SenseBoxLoginButton extends StatelessWidget {
           stream: osemBloc.senseBoxStream,
           initialData: osemBloc.selectedSenseBox,
           builder: (context, snapshot) {
-            if (!osemBloc.isAuthenticated) {
-              return Icon(Icons.login);
-            } else if (snapshot.hasError) {
-              return Icon(Icons.error);
+            var selectedBox = snapshot.data;
+
+            if (snapshot.hasError) {
+              return Icon(Icons.error,
+                  color: Theme.of(context).colorScheme.error);
+            } else if (selectedBox == null) {
+              // If no box is selected, show a red icon
+              return Icon(Icons.link,
+                  color: Theme.of(context).colorScheme.error);
             } else {
-              return snapshot.data?.name != null
-                  ? Icon(Icons.check)
-                  : Icon(Icons.link);
+              // If a box is selected, show a green checkbox and the name of the box
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check,
+                      color: Theme.of(context).colorScheme.tertiary),
+                  const SizedBox(width: 8),
+                  Text(
+                    selectedBox.name ?? '',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.tertiary),
+                  ),
+                ],
+              );
             }
           },
         ));
@@ -116,7 +138,7 @@ class _FloatingButtons extends StatelessWidget {
                 child: _ConnectButton(bleBloc: bleBloc),
               ),
               const SizedBox(width: 12),
-              _SenseBoxLoginButton(),
+              _SenseBoxSelectionButton(),
             ],
           );
         } else {
