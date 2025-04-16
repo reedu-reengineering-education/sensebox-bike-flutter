@@ -143,5 +143,6 @@
     "campaignLoadError": "Failed to load list of campaigns.",
     "selectCampaign": "Select campaign",
     "noCampaignsAvailable": "No campaigns available",
-    "loginScreenTitle": "openSenseMap Account"
+    "loginScreenTitle": "openSenseMap Account",
+    "connectionButtonEnableBluetooth": "Enable Bluetooth"
 }

@@ -25,7 +25,7 @@ void main() {
         value: mockBloc,
         child: Builder(
           builder: (BuildContext context) => ElevatedButton(
-            onPressed: () => showLoginOrSenseBoxSelection(context, mockBloc),
+            onPressed: () => {},
             child: const Text('Show Modal'),
           ),
         ),

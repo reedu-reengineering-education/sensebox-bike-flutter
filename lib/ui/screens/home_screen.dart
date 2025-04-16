@@ -84,7 +84,7 @@ class _SenseBoxSelectionButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         ),
-        onPressed: () => showLoginOrSenseBoxSelection(context, osemBloc),
+        onPressed: () => showSenseBoxSelection(context, osemBloc),
         icon: StreamBuilder<SenseBox?>(
           stream: osemBloc.senseBoxStream,
           initialData: osemBloc.selectedSenseBox,
@@ -166,37 +166,59 @@ class _ConnectButton extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: bleBloc.isConnectingNotifier,
       builder: (context, isConnecting, child) {
-        if (isConnecting) {
-          return FilledButton.icon(
-            style: const ButtonStyle(
-              padding: WidgetStatePropertyAll(
-                EdgeInsets.all(12),
-              ),
-            ),
-            label:
-                Text(AppLocalizations.of(context)!.connectionButtonConnecting),
-            icon: CircularProgressIndicator(
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-            onPressed: () {},
-          );
-        } else {
-          return FilledButton.icon(
-            style: const ButtonStyle(
-              padding: WidgetStatePropertyAll(
-                EdgeInsets.all(12),
-              ),
-            ),
-            label: Text(AppLocalizations.of(context)!.connectionButtonConnect),
-            icon: const Icon(Icons.bluetooth),
-            onPressed: () => showDeviceSelectionDialog(context, bleBloc),
-          );
-        }
+        return ValueListenableBuilder<bool>(
+          valueListenable:
+              bleBloc.isBluetoothEnabledNotifier, // Track Bluetooth status
+          builder: (context, isBluetoothEnabled, child) {
+            if (isConnecting) {
+              return FilledButton.icon(
+                style: const ButtonStyle(
+                  padding: WidgetStatePropertyAll(
+                    EdgeInsets.all(12),
+                  ),
+                ),
+                label: Text(
+                  AppLocalizations.of(context)!.connectionButtonConnecting,
+                ),
+                icon: CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+                onPressed: null, // Disable button while connecting
+              );
+            } else {
+              return FilledButton.icon(
+                  style: const ButtonStyle(
+                    padding: WidgetStatePropertyAll(
+                      EdgeInsets.all(12),
+                    ),
+                  ),
+                  label: Text(
+                    isBluetoothEnabled
+                        ? AppLocalizations.of(context)!.connectionButtonConnect
+                        : AppLocalizations.of(context)!
+                            .connectionButtonEnableBluetooth,
+                    style: TextStyle(
+                      color: isBluetoothEnabled
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context)
+                              .colorScheme
+                              .error, // Red text if Bluetooth is off
+                    ),
+                  ),
+                  icon: const Icon(Icons.bluetooth),
+                  onPressed: () async {
+                    if (isBluetoothEnabled) {
+                      // Show device selection dialog if Bluetooth is enabled
+                      showDeviceSelectionDialog(context, bleBloc);
+                    }
+                  });
+            }
+          },
+        );
       },
     );
   }
 }
-
 // Start/Stop button
 class _StartStopButton extends StatelessWidget {
   final RecordingBloc recordingBloc;

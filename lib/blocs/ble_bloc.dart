@@ -12,6 +12,9 @@ import 'package:vibration/vibration.dart'; // Import the RecordingBloc
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
 
+  // Add a ValueNotifier to track Bluetooth status
+  final ValueNotifier<bool> isBluetoothEnabledNotifier = ValueNotifier(false);
+
   final List<BluetoothDevice> devicesList = [];
   final StreamController<List<BluetoothDevice>> _devicesListController =
       StreamController.broadcast();
@@ -43,6 +46,27 @@ class BleBloc with ChangeNotifier {
 
   BleBloc(this.settingsBloc) {
     FlutterBluePlus.setLogLevel(LogLevel.error);
+
+    // Listen for Bluetooth adapter state changes
+    FlutterBluePlus.adapterState.listen((state) {
+      updateBluetoothStatus(state == BluetoothAdapterState.on);
+    });
+
+    // Initialize the Bluetooth status
+    _initializeBluetoothStatus();
+  }
+
+  Future<void> _initializeBluetoothStatus() async {
+    // Get the current adapter state
+    BluetoothAdapterState currentState =
+        await FlutterBluePlus.adapterState.first;
+    updateBluetoothStatus(currentState == BluetoothAdapterState.on);
+  }
+
+  // Update Bluetooth status when it changes
+  void updateBluetoothStatus(bool isEnabled) {
+    isBluetoothEnabledNotifier.value = isEnabled;
+    notifyListeners(); 
   }
 
   void startScanning() {
@@ -286,7 +310,8 @@ class BleBloc with ChangeNotifier {
     for (var controller in _characteristicStreams.values) {
       controller.close();
     }
-    selectedDeviceNotifier.dispose(); // Dispose of the notifier
+    selectedDeviceNotifier.dispose();
+    isBluetoothEnabledNotifier.dispose();
     super.dispose();
   }
 }
