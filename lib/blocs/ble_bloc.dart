@@ -102,7 +102,11 @@ class BleBloc with ChangeNotifier {
       notifyListeners();
 
       // Handle reconnection if the connection is lost
-      _handleDeviceReconnection(device, context);
+      if (context.mounted) {
+        _handleDeviceReconnection(device, context);
+      } else {
+        throw Exception('Context is not mounted, cannot handle reconnection');
+      }
     } catch (e) {
       _isConnected = false; // Ensure the flag is set correctly on failure
       // Handle connection error
@@ -209,15 +213,21 @@ class BleBloc with ChangeNotifier {
         isReconnectingNotifier.value = false;
 
         if (!_isConnected && reconnectionAttempts >= maxReconnectionAttempts) {
-          print('Failed to reconnect after $maxReconnectionAttempts attempts');
+          debugPrint(
+              'Failed to reconnect after $maxReconnectionAttempts attempts');
           selectedDeviceNotifier.value = null; // Notify disconnection
           notifyListeners();
 
+          if (!context.mounted) return;
           // Notify RecordingBloc to stop recording if Bluetooth disconnects
-          RecordingBloc recordingBloc =
-              Provider.of<RecordingBloc>(context, listen: false);
-          if (recordingBloc.isRecording) {
-            recordingBloc.stopRecording();
+          try {
+            RecordingBloc? recordingBloc =
+                Provider.of<RecordingBloc>(context, listen: false);
+            if (recordingBloc.isRecording) {
+              recordingBloc.stopRecording();
+            }
+          } catch (e) {
+            debugPrint('RecordingBloc not found in the widget tree: $e');
           }
         }
       }
