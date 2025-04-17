@@ -5,6 +5,7 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
@@ -79,10 +80,21 @@ class _SenseBoxSelectionButton extends StatelessWidget {
       return const SizedBox
           .shrink(); // Return an empty widget if not authenticated
     }
-
+  
     return IconButton.outlined(
         style: OutlinedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          side: BorderSide(
+            color: osemBloc.selectedSenseBox == null
+                ? Theme.of(context)
+                    .colorScheme
+                    .error // Red outline if no box is selected
+                : Theme.of(context)
+                    .colorScheme
+                    .tertiary, // Default outline if a box is selected
+            width: 2,
+          ),
         ),
         onPressed: () => showSenseBoxSelection(context, osemBloc),
         icon: StreamBuilder<SenseBox?>(
@@ -96,8 +108,17 @@ class _SenseBoxSelectionButton extends StatelessWidget {
                   color: Theme.of(context).colorScheme.error);
             } else if (selectedBox == null) {
               // If no box is selected, show a red icon
-              return Icon(Icons.link,
-                  color: Theme.of(context).colorScheme.error);
+              return Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.link, color: Theme.of(context).colorScheme.error),
+                const SizedBox(width: 8),
+                Text(
+                  '...',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: Theme.of(context).colorScheme.error),
+                ),
+              ]);
             } else {
               // If a box is selected, show a green checkbox and the name of the box
               return Row(
@@ -107,7 +128,7 @@ class _SenseBoxSelectionButton extends StatelessWidget {
                       color: Theme.of(context).colorScheme.tertiary),
                   const SizedBox(width: 8),
                   Text(
-                    selectedBox.name ?? '',
+                    truncateBoxName(selectedBox.name ?? ''),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.tertiary),
                   ),

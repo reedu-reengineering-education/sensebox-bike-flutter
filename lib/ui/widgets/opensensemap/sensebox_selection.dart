@@ -152,7 +152,13 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
               enabled: isSenseBoxBikeCompatible,
               onTap: isSenseBoxBikeCompatible
                   ? () async {
+                      if (isSelected) {
+                        // Unselect the box if it's already selected
+                        await bloc.setSelectedSenseBox(null);
+                      } else {
+                        // Select the box
                       await bloc.setSelectedSenseBox(senseBox);
+                      }
                       if (context.mounted) {
                         Navigator.pop(context); // Go back after selecting
                       }

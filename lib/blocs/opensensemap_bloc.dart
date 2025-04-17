@@ -167,11 +167,17 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  Future<void> setSelectedSenseBox(SenseBox senseBox) async {
+  Future<void> setSelectedSenseBox(SenseBox? senseBox) async {
     final prefs = await SharedPreferences.getInstance();
 
     // Clear previous data before adding new senseBox
     _senseBoxController.add(null);
+    if (senseBox == null) {
+      await prefs.remove('selectedSenseBox');
+      _selectedSenseBox = null;
+      notifyListeners();
+      return;
+    } 
 
     await prefs.setString('selectedSenseBox', jsonEncode(senseBox.toJson()));
     _senseBoxController.add(senseBox); // Push selected senseBox to the stream
