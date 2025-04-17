@@ -138,5 +138,8 @@
     "sensorGPSError": "Kein GPS-Fix",
     "sensorAcceleration": "Beschleunigung",
     "sensorFinedust": "Feinstaub",
-    "sensorDistanceShort": "Abstand"
+    "sensorDistanceShort": "Abstand",
+    "campaignLoadError": "Die Liste der Kampagnen konnte nicht geladen werden.",
+    "selectCampaign": "Kampagne auswählen",
+    "noCampaignsAvailable": "Keine Kampagnen verfügbar"
 }

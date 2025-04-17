@@ -138,5 +138,8 @@
     "sensorGPSError": "Erro no GPS",
     "sensorAcceleration": "Aceleração",
     "sensorFinedust": "Material Particulado",
-    "sensorDistanceShort": "Distância"
+    "sensorDistanceShort": "Distância",
+    "campaignLoadError": "Falha ao carregar a lista de campanhas.",
+    "selectCampaign": "Selecionar campanha",
+    "noCampaignsAvailable": "Não há campanhas disponíveis"
 }

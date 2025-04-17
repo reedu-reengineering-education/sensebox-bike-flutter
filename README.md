@@ -67,3 +67,8 @@ If you run into issues while running the app, you can take the following trouble
 
 *   **Updating Dart/Flutter and GitHub Actions:**
     *   Whenever you update Dart or Flutter dependencies within the project, it's **crucial** that you also review and update the relevant GitHub Actions workflow files. This ensures compatibility and prevents build failures. Look for workflows that involve Dart or Flutter setup and adjust versions accordingly.
+
+ ## Add/remove campaign
+
+ - Update the `/data/campaigns.json` file and ensure it is available on the main branch.
+ - Check that you can see the new campaign when you create a new box. The new campaign should appear the next time you open the CreateBikeBoxDialog. If the new entry is not available, try restarting the application.

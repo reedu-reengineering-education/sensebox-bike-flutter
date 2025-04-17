@@ -138,5 +138,8 @@
     "sensorGPSError": "No GPS Fix",
     "sensorAcceleration": "Acceleration",
     "sensorFinedust": "Finedust",
-    "sensorDistanceShort": "Distance"
+    "sensorDistanceShort": "Distance",
+    "campaignLoadError": "Failed to load list of campaigns.",
+    "selectCampaign": "Select campaign",
+    "noCampaignsAvailable": "No campaigns available"
 }

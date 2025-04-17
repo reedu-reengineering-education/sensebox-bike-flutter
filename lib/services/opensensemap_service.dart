@@ -121,14 +121,15 @@ class OpenSenseMapService {
   }
 
   Future<void> createSenseBoxBike(String name, double latitude,
-      double longitude, SenseBoxBikeModel model) async {
+      double longitude, SenseBoxBikeModel model, String? selectedTag) async {
     final accessToken = await getAccessToken();
     if (accessToken == null) throw Exception('Not authenticated');
 
     final response = await client.post(
       Uri.parse('$_baseUrl/boxes'),
       body: jsonEncode(
-          createSenseBoxBikeModel(name, latitude, longitude, model: model)),
+          createSenseBoxBikeModel(name, latitude, longitude,
+          model: model, selectedTag: selectedTag)),
       headers: {
         'Authorization': 'Bearer $accessToken',
         'Content-Type': 'application/json',
@@ -138,7 +139,7 @@ class OpenSenseMapService {
     if (response.statusCode == 201) {
     } else if (response.statusCode == 401) {
       await refreshToken();
-      return createSenseBoxBike(name, latitude, longitude, model);
+      return createSenseBoxBike(name, latitude, longitude, model, selectedTag);
     } else {
       throw Exception('Failed to create senseBox');
     }
@@ -217,13 +218,21 @@ Future<void> uploadData(
     double latitude, {
     List<String>? grouptags,
     SenseBoxBikeModel model = SenseBoxBikeModel.classic,
+    String? selectedTag,    
   }) {
+    // Initialize the base grouptags
+    final List<String> baseGroupTags = grouptags ??
+        ['bike', model == SenseBoxBikeModel.classic ? 'classic' : 'atrai'];
+    // Add the selectedTag if it is not null
+    if (selectedTag != null && selectedTag.isNotEmpty) {
+      baseGroupTags.add(selectedTag);
+    }
+
     final baseProperties = {
       'name': name,
       'exposure': 'mobile',
       'location': [latitude, longitude],
-      'grouptag': grouptags ??
-          ['bike', model == SenseBoxBikeModel.classic ? 'classic' : 'atrai'],
+      'grouptag': baseGroupTags,
     };
 
     return {
