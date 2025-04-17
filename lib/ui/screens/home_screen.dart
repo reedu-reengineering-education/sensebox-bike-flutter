@@ -208,10 +208,13 @@ class _ConnectButton extends StatelessWidget {
               );
             } else {
               return FilledButton.icon(
-                  style: const ButtonStyle(
-                    padding: WidgetStatePropertyAll(
-                      EdgeInsets.all(12),
-                    ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: isBluetoothEnabled
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerLow, // Disabled color
+                    padding: const EdgeInsets.all(12),
                   ),
                   label: Text(
                     isBluetoothEnabled
@@ -226,7 +229,14 @@ class _ConnectButton extends StatelessWidget {
                               .error, // Red text if Bluetooth is off
                     ),
                   ),
-                  icon: const Icon(Icons.bluetooth),
+                  icon: Icon(
+                    Icons.bluetooth,
+                    color: isBluetoothEnabled
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context)
+                            .colorScheme
+                            .error, // Red icon if Bluetooth is off
+                  ),
                   onPressed: () async {
                     if (isBluetoothEnabled) {
                       // Show device selection dialog if Bluetooth is enabled
