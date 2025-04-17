@@ -132,7 +132,7 @@ class BleBloc with ChangeNotifier {
         throw Exception('Context is not mounted, cannot handle reconnection');
       }
     } catch (e) {
-      _isConnected = false; // Ensure the flag is set correctly on failure
+      debugPrint('Error connecting to device: $e');
       // Handle connection error
     } finally {
       isConnectingNotifier.value = false; // Notify that we're done connecting
