@@ -189,59 +189,71 @@ class _ConnectButton extends StatelessWidget {
       valueListenable: bleBloc.isConnectingNotifier,
       builder: (context, isConnecting, child) {
         return ValueListenableBuilder<bool>(
-          valueListenable:
-              bleBloc.isBluetoothEnabledNotifier, // Track Bluetooth status
+          valueListenable: bleBloc.isBluetoothEnabledNotifier,
           builder: (context, isBluetoothEnabled, child) {
             if (isConnecting) {
-              return FilledButton.icon(
-                style: const ButtonStyle(
-                  padding: WidgetStatePropertyAll(
-                    EdgeInsets.all(12),
+              return Align(
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: 200, // Set a fixed width for the button
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16), // Vertical padding only
+                    ),
+                    label: Text(
+                      AppLocalizations.of(context)!.connectionButtonConnecting,
+                    ),
+                    icon: const Loader(),
+                    onPressed: null, // Disable button while connecting
                   ),
                 ),
-                label: Text(
-                  AppLocalizations.of(context)!.connectionButtonConnecting,
-                ),
-                icon: Loader(),
-                onPressed: null, // Disable button while connecting
               );
             } else {
-              return FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: isBluetoothEnabled
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerLow, // Disabled color
-                    padding: const EdgeInsets.all(12),
-                  ),
-                  label: Text(
-                    isBluetoothEnabled
-                        ? AppLocalizations.of(context)!.connectionButtonConnect
-                        : AppLocalizations.of(context)!
-                            .connectionButtonEnableBluetooth,
-                    style: TextStyle(
+              return Align(
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: 200, // Set a fixed width for the button
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: isBluetoothEnabled
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerLow, // Disabled color
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    label: Text(
+                      isBluetoothEnabled
+                          ? AppLocalizations.of(context)!
+                              .connectionButtonConnect
+                          : AppLocalizations.of(context)!
+                              .connectionButtonEnableBluetooth,
+                      style: TextStyle(
+                        color: isBluetoothEnabled
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context)
+                                .colorScheme
+                                .error, // Red text if Bluetooth is off
+                      ),
+                    ),
+                    icon: Icon(
+                      Icons.bluetooth,
                       color: isBluetoothEnabled
                           ? Theme.of(context).colorScheme.onPrimary
                           : Theme.of(context)
                               .colorScheme
-                              .error, // Red text if Bluetooth is off
+                              .error, // Red icon if Bluetooth is off
                     ),
+                    onPressed: () async {
+                      if (isBluetoothEnabled) {
+                        // Show device selection dialog if Bluetooth is enabled
+                        showDeviceSelectionDialog(context, bleBloc);
+                      }
+                    },
                   ),
-                  icon: Icon(
-                    Icons.bluetooth,
-                    color: isBluetoothEnabled
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Theme.of(context)
-                            .colorScheme
-                            .error, // Red icon if Bluetooth is off
-                  ),
-                  onPressed: () async {
-                    if (isBluetoothEnabled) {
-                      // Show device selection dialog if Bluetooth is enabled
-                      showDeviceSelectionDialog(context, bleBloc);
-                    }
-                  });
+                ),
+              );
             }
           },
         );
@@ -259,7 +271,7 @@ class _StartStopButton extends StatelessWidget {
     return FilledButton.icon(
       style: const ButtonStyle(
         padding: WidgetStatePropertyAll(
-          EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         ),
       ),
       label: Text(recordingBloc.isRecording
@@ -292,7 +304,7 @@ class _DisconnectButton extends StatelessWidget {
         return OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           ),
           icon: isReconnecting
               ? const Loader()

@@ -40,7 +40,7 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) {
                           width: MediaQuery.of(context).size.width *
                               0.9, // Set width to 80% of the screen
                           margin: const EdgeInsets.only(
-                              top: 16), // Add margin above each item
+                              top: 12), // Add margin above each item
                           child: ListTile(
                             title: Text(device.platformName),
                             trailing: const Icon(
@@ -53,7 +53,7 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) {
                                 width: 1, // Border width
                               ),
                               borderRadius: BorderRadius.circular(
-                                  8), // Add rounded corners
+                                  32), // Add rounded corners
                             ),
                             onTap: () {
                               bleBloc.connectToDevice(device, context);

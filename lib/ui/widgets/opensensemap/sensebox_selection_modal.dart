@@ -47,6 +47,7 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
             onPressed: () async {
               await _showCreateSenseBoxDialog(context, bloc);
             },
+            shape: const CircleBorder(), 
             child: const Icon(Icons.add),
           ),
         ),
