@@ -12,7 +12,7 @@ class ErrorDialog extends StatelessWidget {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error, color: Colors.red),
+          Icon(Icons.error, color: Theme.of(context).colorScheme.error),
           const SizedBox(height: 8),
           Text(
             AppLocalizations.of(context)!.openSenseMapRegisterFailed,
@@ -25,6 +25,14 @@ class ErrorDialog extends StatelessWidget {
           ),
         ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop(); // Close the dialog
+          },
+          child: Text(AppLocalizations.of(context)!.generalOk),
+        ),
+      ],
     );
   }
 }
