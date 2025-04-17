@@ -74,7 +74,7 @@
     "connectionButtonReconnecting": "Reconnecting...",
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
-    "bleDeviceSelectTitle": "Connect to your senseBox:bike",
+    "bleDeviceSelectTitle": "Tap to connect",
     "createBoxTitle": "Create senseBox:bike",
     "createBoxModel": "Model",
     "createBoxModelErrorEmpty": "Please select a model",
