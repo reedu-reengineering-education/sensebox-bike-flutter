@@ -6,6 +6,7 @@ import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
+import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
@@ -201,9 +202,7 @@ class _ConnectButton extends StatelessWidget {
                 label: Text(
                   AppLocalizations.of(context)!.connectionButtonConnecting,
                 ),
-                icon: CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
+                icon: Loader(),
                 onPressed: null, // Disable button while connecting
               );
             } else {
@@ -296,7 +295,7 @@ class _DisconnectButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
           ),
           icon: isReconnecting
-              ? const CircularProgressIndicator()
+              ? const Loader()
               : const Icon(Icons.bluetooth_disabled),
           label: isReconnecting
               ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
