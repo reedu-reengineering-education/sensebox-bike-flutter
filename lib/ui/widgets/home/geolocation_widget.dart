@@ -91,6 +91,12 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
           coordinates: Position(location.longitude, location.latitude));
     }).toList();
 
+    // Ensure there are at least two points before creating the LineString
+    if (points.length < 2) {
+      debugPrint('Not enough points to create a LineString.');
+      return;
+    }
+
     PolylineAnnotationOptions polyline = PolylineAnnotationOptions(
       geometry: LineString.fromPoints(points: points),
     );

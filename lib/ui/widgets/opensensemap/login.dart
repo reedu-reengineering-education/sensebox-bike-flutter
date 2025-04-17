@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/ui/utils/common.dart';
+import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
+import 'package:sensebox_bike/ui/widgets/common/email_field.dart';
+import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
+import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -14,7 +20,9 @@ class LoginForm extends StatefulWidget {
 class _LoginFormState extends State<LoginForm> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> formKey =
+      GlobalKey<FormState>(); // Track password visibility
+  bool isLoading = false; // Track loading state
 
   @override
   void dispose() {
@@ -36,85 +44,53 @@ class _LoginFormState extends State<LoginForm> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                autofillHints: const [AutofillHints.email],
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.openSenseMapEmail,
-                  // No border
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapEmailErrorEmpty;
-                  }
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapEmailErrorInvalid;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                autofillHints: const [AutofillHints.password],
+              EmailField(controller: emailController),
+              const CustomSpacer(),
+              PasswordField(
                 controller: passwordController,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.openSenseMapPassword,
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!
-                        .openSenseMapPasswordErrorEmpty;
-                  }
-                  return null;
-                },
+                validator: (context, value) =>
+                    passwordValidatorSimple(context, value),
               ),
-              const SizedBox(height: 16),
-              Builder(builder: (BuildContext context) {
-                return FilledButton(
-                  onPressed: () async {
-                    if (formKey.currentState?.validate() == true) {
-                      try {
-                        await widget.bloc.login(
-                          emailController.text,
-                          passwordController.text,
-                        );
-                        Navigator.pop(context); // Close after login
-                        showLoginOrSenseBoxSelection(context, widget.bloc);
-                      } catch (e) {
-                        showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                                  content: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.error,
-                                          color: Colors.red),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                          AppLocalizations.of(context)!
-                                              .openSenseMapLoginFailed,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineMedium),
-                                      const SizedBox(height: 16),
-                                      Text(e.toString(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium),
-                                    ],
-                                  ),
-                                ));
-                      }
-                    }
-                  },
-                  child: Text(
-                      AppLocalizations.of(context)!.openSenseMapLoginShort),
-                );
-              }),
+              const CustomSpacer(),
+              ButtonWithLoader(
+                  isLoading: isLoading,
+                  text: AppLocalizations.of(context)!.openSenseMapLoginShort,
+                  width: 0.4,
+                  onPressed: isLoading
+                      ? null // Disable button when loading
+                      : () async {
+                          if (formKey.currentState?.validate() == true) {
+                            setState(() {
+                              isLoading = true; // Start loading
+                            });
+
+                            try {
+                              await widget.bloc.login(
+                              emailController.value.text,
+                              passwordController.value.text,
+                              );
+
+                            if (context.mounted) {
+                              Navigator.pop(context); // Close after login
+                              showLoginOrSenseBoxSelection(
+                                  context, widget.bloc);
+                            }
+                            } catch (e) {
+                            if (context.mounted) {
+                              showDialog(
+                                context: context,
+                                builder: (context) =>
+                                    ErrorDialog(errorMessage: e.toString()),
+                              );
+                            }
+                            } finally {
+                              setState(() {
+                                isLoading = false; // Stop loading
+                              });
+                            }
+                          }
+                        },
+              ),
             ],
           ),
         ),

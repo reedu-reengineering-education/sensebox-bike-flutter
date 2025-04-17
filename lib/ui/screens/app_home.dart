@@ -12,27 +12,21 @@ class AppHome extends StatefulWidget {
 }
 
 class _AppHomeState extends State<AppHome> {
-  static final List<Widget> _pages = <Widget>[
-    const PopScope(
-      canPop: false,
-      child: HomeScreen(),
-    ),
-    const PopScope(
-      canPop: false,
-      child: TracksScreen(),
-    ),
-    const PopScope(
-      canPop: false,
-      child: SettingsScreen(),
-    ),
-  ];
-
   int _selectedIndex = 0;
+
+  final List<Widget> _pages = const [
+    HomeScreen(),
+    TracksScreen(),
+    SettingsScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages.elementAt(_selectedIndex),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           borderRadius: BorderRadius.only(
