@@ -29,8 +29,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       await _service.refreshToken();
       _isAuthenticated = true;
+      notifyListeners();
+      await loadSelectedSenseBox();
     } catch (_) {
       _isAuthenticated = false;
+      notifyListeners();
     }
   }
 
@@ -99,6 +102,14 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       await _service.login(email, password);
       _isAuthenticated = true;
       notifyListeners();
+
+      // Fetch the first page of sense boxes
+      final senseBoxes = await fetchSenseBoxes(page: 0);
+
+      // If there are sense boxes, set the first one as the selected box
+      if (senseBoxes.isNotEmpty) {
+        await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
+      }
     } catch (e) {
       _isAuthenticated = false;
       rethrow;
