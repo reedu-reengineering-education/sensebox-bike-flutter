@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
-import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
+import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection_modal.dart';
 import '../mocks.dart';
 import '../test_helpers.dart';
 
