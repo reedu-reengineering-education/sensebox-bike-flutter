@@ -85,7 +85,7 @@ class _SenseBoxSelectionButton extends StatelessWidget {
     return IconButton.outlined(
         style: OutlinedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           side: BorderSide(
             color: osemBloc.selectedSenseBox == null
                 ? Theme.of(context)
@@ -165,11 +165,11 @@ class _FloatingButtons extends StatelessWidget {
           );
         } else {
           return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _StartStopButton(recordingBloc: recordingBloc),
-              const SizedBox(width: 12),
               _DisconnectButton(bleBloc: bleBloc),
+              _SenseBoxSelectionButton(),
             ],
           );
         }
@@ -199,7 +199,7 @@ class _ConnectButton extends StatelessWidget {
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 16), // Vertical padding only
+                          vertical: 12), // Vertical padding only
                     ),
                     label: Text(
                       AppLocalizations.of(context)!.connectionButtonConnecting,
@@ -221,7 +221,7 @@ class _ConnectButton extends StatelessWidget {
                           : Theme.of(context)
                               .colorScheme
                               .surfaceContainerLow, // Disabled color
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     label: Text(
                       isBluetoothEnabled
