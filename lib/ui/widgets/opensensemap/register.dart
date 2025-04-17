@@ -65,16 +65,21 @@ class _RegisterFormState extends State<RegisterForm> {
               TextFormField(
                 autofillHints: const [AutofillHints.name],
                 controller: nameController,
+                enabled: !isLoading,
                 decoration: InputDecoration(
                     labelText:
                         AppLocalizations.of(context)!.openSenseMapRegisterName),
               ),
               const CustomSpacer(),
-              EmailField(controller: emailController),
+              EmailField(
+                controller: emailController,
+                enabled: !isLoading,
+              ),
               const CustomSpacer(),
               PasswordField(
                 controller: passwordController,
                 validator: passwordValidator,
+                enabled: !isLoading,
               ),
               const CustomSpacer(),
               PasswordField(
@@ -82,6 +87,7 @@ class _RegisterFormState extends State<RegisterForm> {
                 isConfirmationField: true,
                 confirmationValidator: passwordConfirmationValidator,
                 passwordController: passwordController,
+                enabled: !isLoading,
               ),
               const CustomSpacer(),
               GestureDetector(

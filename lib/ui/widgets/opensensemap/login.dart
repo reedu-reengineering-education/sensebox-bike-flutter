@@ -44,10 +44,14 @@ class _LoginFormState extends State<LoginForm> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              EmailField(controller: emailController),
+              EmailField(
+                controller: emailController,
+                enabled: !isLoading,
+              ),
               const CustomSpacer(),
               PasswordField(
                 controller: passwordController,
+                enabled: !isLoading,
                 validator: (context, value) =>
                     passwordValidatorSimple(context, value),
               ),
