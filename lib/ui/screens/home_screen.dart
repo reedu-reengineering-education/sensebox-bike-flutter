@@ -9,7 +9,7 @@ import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
+import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // HomeScreen now delegates sections to smaller widgets
