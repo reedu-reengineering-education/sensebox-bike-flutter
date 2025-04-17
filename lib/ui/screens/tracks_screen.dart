@@ -65,7 +65,7 @@ class _TracksScreenState extends State<TracksScreen> {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.tracksAppBarTitle),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4.0),
+          preferredSize: const Size.fromHeight(32),
           child: Padding(
             padding:
                 const EdgeInsets.only(bottom: 4.0), // Adds padding to the top
