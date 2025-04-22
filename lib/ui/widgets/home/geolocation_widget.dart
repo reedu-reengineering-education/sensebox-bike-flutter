@@ -35,6 +35,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
     // Listen to track changes from the TrackBloc
     _trackSubscription =
         context.read<TrackBloc>().currentTrackStream.listen((track) async {
+      if (!mounted) return; // Check if the widget is still mounted
       // Handle trackId changes
       if (track != null) {
         _isarGeolocationSubscription =
@@ -50,6 +51,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
     // check connection status
     context.read<BleBloc>().isConnectingNotifier.addListener(() async {
+      if (!mounted) return; // Check if the widget is still mounted
       bool enableLocationPuck = context.read<BleBloc>().isConnected;
       mapInstance.location.updateSettings(LocationComponentSettings(
         enabled: enableLocationPuck,
@@ -57,6 +59,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
       ));
       if (enableLocationPuck) {
         var geoPosition = await Geolocator.Geolocator.getCurrentPosition();
+        if (!mounted) return;
         await mapInstance.flyTo(
             CameraOptions(
               center: Point(
@@ -89,7 +92,8 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   // Create or update the map source with new geolocation data
   void _updateMapWithGeolocationData(List<GeolocationData> geoData) async {
     try {
-      lineAnnotationManager.deleteAll();
+      // Delete existing annotations if any
+      await lineAnnotationManager.deleteAll();
 
       List<Point> points = geoData.map((location) {
         return Point(
@@ -106,7 +110,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
         geometry: LineString.fromPoints(points: points),
       );
 
-      lineAnnotationManager.create(polyline);
+      await lineAnnotationManager.create(polyline);
 
       // get last geolocation data
       GeolocationData lastLocation = geoData.last;
