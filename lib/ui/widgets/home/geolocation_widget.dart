@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 import '../../../blocs/track_bloc.dart'; // Import TrackBloc
 import '../../../services/isar_service.dart'; // Import your Isar service
@@ -58,17 +59,22 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
         showAccuracyRing: enableLocationPuck,
       ));
       if (enableLocationPuck) {
-        var geoPosition = await Geolocator.Geolocator.getCurrentPosition();
         if (!mounted) return;
-        await mapInstance.flyTo(
-            CameraOptions(
+        try {
+          var geoPosition = await Geolocator.Geolocator.getCurrentPosition();
+          var cameraOptions = CameraOptions(
               center: Point(
                   coordinates:
                       Position(geoPosition.longitude, geoPosition.latitude)),
               zoom: 16.0,
               pitch: 45,
-            ),
-            MapAnimationOptions(duration: 1000));
+          );
+          var animationOptions = MapAnimationOptions(duration: 1000);
+
+          await mapInstance.flyTo(cameraOptions, animationOptions);
+        } catch (e, stack) {
+          ErrorService.handleError(e, stack);
+        }
       }
     });
   }

@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/utils/geo_utils.dart';
 import 'package:turf/turf.dart' as Turf;
@@ -51,57 +52,62 @@ class GeolocationBloc with ChangeNotifier {
   }
 
   void startListening() async {
-    await _checkPermissions();
+    try {
+      await _checkPermissions();
 
-    late LocationSettings locationSettings;
+      late LocationSettings locationSettings;
 
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      PermissionStatus status = await Permission.notification.request();
-      if (status.isGranted) {
-        locationSettings = AndroidSettings(
-            accuracy: LocationAccuracy.high,
-            foregroundNotificationConfig: const ForegroundNotificationConfig(
-                notificationText:
-                    "senseBox:bike will record your location in the background",
-                notificationTitle: "Running in the background",
-                enableWakeLock: true,
-                notificationIcon:
-                    AndroidResource(name: "@mipmap/ic_stat_sensebox_bike_logo"),
-                color: Colors.blue));
-      } else {
-        return Future.error('Notification permissions are denied');
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        PermissionStatus status = await Permission.notification.request();
+        if (status.isGranted) {
+          locationSettings = AndroidSettings(
+              accuracy: LocationAccuracy.high,
+              foregroundNotificationConfig: const ForegroundNotificationConfig(
+                  notificationText:
+                      "senseBox:bike will record your location in the background",
+                  notificationTitle: "Running in the background",
+                  enableWakeLock: true,
+                  notificationIcon: AndroidResource(
+                      name: "@mipmap/ic_stat_sensebox_bike_logo"),
+                  color: Colors.blue));
+        } else {
+          return Future.error('Notification permissions are denied');
+        }
+      } else if (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS) {
+        locationSettings = AppleSettings(
+          accuracy: LocationAccuracy.high,
+          activityType: ActivityType.fitness,
+          // Only set to true if our app will be started up in the background.
+          showBackgroundLocationIndicator: false,
+        );
       }
-    } else if (defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.macOS) {
-      locationSettings = AppleSettings(
-        accuracy: LocationAccuracy.high,
-        activityType: ActivityType.fitness,
-        // Only set to true if our app will be started up in the background.
-        showBackgroundLocationIndicator: false,
-      );
+
+      // Listen to position stream
+      _positionStreamSubscription =
+          Geolocator.getPositionStream(locationSettings: locationSettings)
+              .listen((Position position) async {
+        // TODO: this is not a good practice to create a new object and not save it
+
+        if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
+          GeolocationData geolocationData = GeolocationData()
+            ..latitude = position.latitude
+            ..longitude = position.longitude
+            ..speed = position.speed
+            ..timestamp = position.timestamp
+            ..track.value = recordingBloc.currentTrack;
+
+          await _saveGeolocationData(geolocationData); // Save to database
+        }
+
+        // _geolocationController.add(geolocationData);
+
+        notifyListeners();
+      });
+
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
     }
-
-    // Listen to position stream
-    _positionStreamSubscription =
-        Geolocator.getPositionStream(locationSettings: locationSettings)
-            .listen((Position position) async {
-      // TODO: this is not a good practice to create a new object and not save it
-
-      if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
-        GeolocationData geolocationData = GeolocationData()
-          ..latitude = position.latitude
-          ..longitude = position.longitude
-          ..speed = position.speed
-          ..timestamp = position.timestamp
-          ..track.value = recordingBloc.currentTrack;
-
-        await _saveGeolocationData(geolocationData); // Save to database
-      }
-
-      // _geolocationController.add(geolocationData);
-
-      notifyListeners();
-    });
   }
 
   // function to get the current location

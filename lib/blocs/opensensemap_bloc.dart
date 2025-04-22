@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamController
 
@@ -89,9 +90,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       await _service.register(name, email, password);
       _isAuthenticated = true;
       notifyListeners();
-    } catch (e) {
+    } catch (e, stack) {
       _isAuthenticated = false;
-      rethrow;
+      ErrorService.handleError(e, stack);
     } finally {
       notifyListeners();
     }
@@ -110,9 +111,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       if (senseBoxes.isNotEmpty) {
         await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
       }
-    } catch (e) {
+    } catch (e, stack) {
       _isAuthenticated = false;
-      rethrow;
+      ErrorService.handleError(e, stack);
     } finally {
       notifyListeners();
     }
@@ -125,8 +126,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _senseBoxController.add(null); // Clear senseBox on logout
       _selectedSenseBox = null;
       notifyListeners();
-    } catch (_) {
-      rethrow;
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
     }
   }
 
@@ -135,8 +136,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       await _service.createSenseBoxBike(
           name, latitude, longitude, model, selectedTag);
-    } catch (e) {
-      rethrow;
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
     }
   }
 

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart'; // Assuming you're using Provider for state management
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:vibration/vibration.dart'; // Import the RecordingBloc
 
 class BleBloc with ChangeNotifier {
@@ -69,9 +70,14 @@ class BleBloc with ChangeNotifier {
     notifyListeners(); 
   }
 
-  void startScanning() {
+  Future<void> startScanning() async {
     disconnectDevice(); // Disconnect if there's a current connection
-    FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
+
+    try {
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
+    } catch (e) {
+      throw ScanPermissionDenied();
+    }
 
     FlutterBluePlus.scanResults.listen((results) {
       devicesList.clear();
