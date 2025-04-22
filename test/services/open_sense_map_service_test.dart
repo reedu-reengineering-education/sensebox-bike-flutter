@@ -156,20 +156,29 @@ void main() {
       await setTokens();
       mockHTTPPOSTResponse('valid box data', 201);
 
-      await expectLater(service.createSenseBoxBike("name", 0, 0,SenseBoxBikeModel.atrai), completes); 
+      await expectLater(
+          service.createSenseBoxBike(
+              "name", 0, 0, SenseBoxBikeModel.atrai, null),
+          completes); 
     });
 
     test('when no refresh token, throws exception', () async {
       mockHTTPPOSTResponse('valid box data', 201);
 
-      await expectLater(service.createSenseBoxBike("name", 0, 0,SenseBoxBikeModel.atrai), throwsException);
+      await expectLater(
+          service.createSenseBoxBike(
+              "name", 0, 0, SenseBoxBikeModel.atrai, null),
+          throwsException);
     });
 
     test('when receives error response, throws exception', () async {
       await setTokens();
       mockHTTPPOSTResponse('valid box data', 400);
 
-      await expectLater(service.createSenseBoxBike("name", 0, 0,SenseBoxBikeModel.atrai), throwsException);
+      await expectLater(
+          service.createSenseBoxBike(
+              "name", 0, 0, SenseBoxBikeModel.atrai, null),
+          throwsException);
     });
   });
 
