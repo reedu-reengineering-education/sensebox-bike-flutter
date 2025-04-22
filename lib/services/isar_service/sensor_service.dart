@@ -9,19 +9,14 @@ class SensorService {
   final IsarProvider _isarProvider = IsarProvider();
 
   Future<Id> saveSensorData(SensorData sensorData) async {
-    try {
-      final isar = await _isarProvider.getDatabase();
-      return await isar.writeTxn(() async {
-        await sensorData.geolocationData.save();
+    final isar = await _isarProvider.getDatabase();
+    
+    return await isar.writeTxn(() async {
+      Id sensorDataId = await isar.sensorDatas.put(sensorData);
+      await sensorData.geolocationData.save();
 
-        Id sensorDataId = await isar.sensorDatas.put(sensorData);
-        return sensorDataId;
-      });
-    } catch (e) {
-      // Log the error or handle it as needed
-      print('Error saving sensor data: $e');
-      return -1; // Return an invalid ID or handle the error as needed
-    }
+      return sensorDataId;
+    });
   }
 
   Future<List<SensorData>> getSensorData() async {
