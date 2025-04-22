@@ -85,7 +85,7 @@ class _SenseBoxSelectionButton extends StatelessWidget {
     return IconButton.outlined(
         style: OutlinedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           side: BorderSide(
             color: osemBloc.selectedSenseBox == null
                 ? Theme.of(context)
@@ -94,7 +94,7 @@ class _SenseBoxSelectionButton extends StatelessWidget {
                 : Theme.of(context)
                     .colorScheme
                     .tertiary, // Default outline if a box is selected
-            width: 2,
+            width: 1.5,
           ),
         ),
         onPressed: () => showSenseBoxSelection(context, osemBloc),
