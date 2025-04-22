@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mapbox_maps_flutter_draw/mapbox_maps_flutter_draw.dart';
@@ -13,6 +16,7 @@ import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/app_home.dart';
@@ -28,7 +32,32 @@ void main() async {
       options.tracesSampleRate = 1.0;
       options.profilesSampleRate = 1.0;
     },
-    appRunner: () => runApp(const SenseBoxBikeApp()),
+    //appRunner: () => runApp(const SenseBoxBikeApp()),
+    appRunner: () => runZonedGuarded(() {
+      WidgetsFlutterBinding.ensureInitialized();
+      // Error handlers
+      FlutterError.onError = (details) {
+        if (!kDebugMode) {
+          Sentry.captureException(details.exception, stackTrace: details.stack);
+        }
+        ErrorService.handleError(details.exception, details.stack!);
+      };
+
+      PlatformDispatcher.instance.onError = (error, stack) {
+        if (!kDebugMode) {
+          Sentry.captureException(error, stackTrace: stack);
+        }
+        ErrorService.handleError(error, stack);
+        return true;
+      };
+
+      runApp(const SenseBoxBikeApp());
+    }, (error, stack) {
+      if (!kDebugMode) {
+        Sentry.captureException(error, stackTrace: stack);
+      }
+      ErrorService.handleError(error, stack);
+    }),
   );
 }
 
@@ -84,6 +113,7 @@ class SenseBoxBikeApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => mapboxDrawController),
       ],
       child: MaterialApp(
+        scaffoldMessengerKey: ErrorService.scaffoldKey,
         title: 'senseBox:bike',
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
