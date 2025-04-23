@@ -10,11 +10,9 @@ class SensorService {
 
   Future<Id> saveSensorData(SensorData sensorData) async {
     final isar = await _isarProvider.getDatabase();
-    
     return await isar.writeTxn(() async {
       Id sensorDataId = await isar.sensorDatas.put(sensorData);
       await sensorData.geolocationData.save();
-
       return sensorDataId;
     });
   }
