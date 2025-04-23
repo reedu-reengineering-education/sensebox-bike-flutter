@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
@@ -76,7 +77,7 @@ class _LoginFormState extends State<LoginForm> {
                               );
                             isLoginSuccessful = true;
                           } catch (e, stack) {
-                            ErrorService.handleError(e, stack);
+                            ErrorService.handleError(LoginError(e), stack);
                           } finally {
                             setState(() {
                               isLoading = false; // Stop loading

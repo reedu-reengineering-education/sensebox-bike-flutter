@@ -13,9 +13,19 @@ class ErrorService {
   }
 
   static void handleError(dynamic error, StackTrace stack) {
-    _showUserFeedback(error);
-    if (!kDebugMode) {
+    if (kDebugMode) {
       _logToConsole(error, stack);
+      _showUserFeedback(error);
+    } else {
+      if (error is LocationPermissionDenied ||
+          error is LoginError ||
+          error is RegistrationError ||
+          error is ScanPermissionDenied ||
+          error is NoSenseBoxSelected) {
+        _showUserFeedback(error);
+      } else {
+        _logToConsole(error, stack);
+      }
     }
   }
 

@@ -19,6 +19,21 @@ class ScanPermissionDenied implements Exception {
       'Please allow the current app to scan nearby devices in the phone settings.';
 }
 
+class LoginError implements Exception {
+  Object? error;
+  LoginError(this.error);
+  @override
+  String toString() => 'Error happened during login. Details: $error';
+}
+
+class RegistrationError implements Exception {
+  Object? error;
+  RegistrationError(this.error);
+  @override
+  String toString() =>
+      'Error happened during account registration. Details: $error';
+}
+
 class NoSenseBoxSelected implements Exception {
   @override
   String toString() =>
