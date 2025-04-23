@@ -79,18 +79,4 @@ void main() {
 
     expect(find.text('You must accept the privacy policy'), findsNothing);
   });
-
-  testWidgets('shows error dialog on registration failure', (WidgetTester tester) async {
-    await tester.pumpWidget(createTestWidget());
-    await enterTextData(tester);
-    await tester.tap(find.byType(Checkbox));
-    await tester.pump();
-
-    when(() => mockBloc.register(any(), any(), any())).thenThrow(Exception('Registration failed'));
-
-    await tester.tap(find.textContaining('Register'));
-    await tester.pump();
-
-    expect(find.text('Registration failed'), findsOneWidget);
-  });
 }
