@@ -4,8 +4,13 @@ import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart'; 
 
 class ErrorService {
-  static final GlobalKey<ScaffoldMessengerState> scaffoldKey = 
-    GlobalKey<ScaffoldMessengerState>();
+  static GlobalKey<ScaffoldMessengerState>? _scaffoldKey;
+
+  static GlobalKey<ScaffoldMessengerState>? get scaffoldKey => _scaffoldKey;
+
+  static set scaffoldKey(GlobalKey<ScaffoldMessengerState>? key) {
+    _scaffoldKey = key;
+  }
 
   static void handleError(dynamic error, StackTrace stack) {
     _showUserFeedback(error);
@@ -14,15 +19,15 @@ class ErrorService {
     }
   }
 
-  static Color get errorColor => scaffoldKey.currentContext != null
-        ? Theme.of(scaffoldKey.currentContext!).colorScheme.error
+  static Color get errorColor => scaffoldKey?.currentContext != null
+      ? Theme.of(scaffoldKey!.currentContext!).colorScheme.error
         : Colors.red;
 
   static void _showUserFeedback(dynamic error) {
-    final context = scaffoldKey.currentContext;
+    final context = scaffoldKey?.currentContext;
     if (context == null) return;
 
-    scaffoldKey.currentState?.showSnackBar(
+    scaffoldKey?.currentState?.showSnackBar(
       SnackBar(
         content: Text(_parseError(error, context)),
         backgroundColor: errorColor,
