@@ -90,9 +90,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       await _service.register(name, email, password);
       _isAuthenticated = true;
       notifyListeners();
-    } catch (e, stack) {
+    } catch (e) {
       _isAuthenticated = false;
-      ErrorService.handleError(e, stack);
+      rethrow;
     } finally {
       notifyListeners();
     }
@@ -111,9 +111,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       if (senseBoxes.isNotEmpty) {
         await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
       }
-    } catch (e, stack) {
+    } catch (e) {
       _isAuthenticated = false;
-      ErrorService.handleError(e, stack);
+      rethrow;
     } finally {
       notifyListeners();
     }

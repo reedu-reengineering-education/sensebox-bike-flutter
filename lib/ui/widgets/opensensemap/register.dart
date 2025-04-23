@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/common/email_field.dart';
-import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -165,6 +165,8 @@ class _RegisterFormState extends State<RegisterForm> {
                           // Validate the form and the privacy policy checkbox
                           final isFormValid =
                               formKey.currentState?.validate() == true;
+                          bool isRegistrationSuccessful = false; 
+
                           validatePrivacyPolicy(); // Validate the checkbox
 
                           if (isFormValid && isAccepted) {
@@ -181,25 +183,22 @@ class _RegisterFormState extends State<RegisterForm> {
                                   emailController.value.text,
                                   passwordController.value.text);
 
-                              if (context.mounted) {
-                                // Navigate to the home screen after successful login
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => const AppHome()),
-                                );
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) =>
-                                      ErrorDialog(errorMessage: e.toString()));
-                              }
+                              isRegistrationSuccessful = true;
+                            } catch (e, stack) {
+                              ErrorService.handleError(e, stack);
                             } finally {
                               setState(() {
                                 isLoading = false; // Stop loading
                               });
+                            }
+
+                            if (context.mounted && isRegistrationSuccessful) {
+                              // Navigate to the home screen after successful login
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const AppHome()),
+                              );
                             }
                           }
                         }
