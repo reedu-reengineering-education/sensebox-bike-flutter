@@ -14,8 +14,8 @@ Closes #
 ### Checklist before requesting a review
 
 [ ] I have performed a self-review of my code
-[ ] I have added or updated relevant documentation
 [ ] I have added necessary tests
+[ ] I have added or updated relevant documentation
 
 ### Additional Information
 <!-- Add any other relevant information that the reviewer should know. This might include:
