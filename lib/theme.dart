@@ -17,8 +17,7 @@ final lightTheme = ThemeData(
       const ColorScheme.light(
       primary: Colors.black,
       secondary: Colors.black12,
-      tertiary: Colors.lightGreen,
-      surfaceContainerLow: Colors.grey),
+      tertiary: Colors.lightGreen),
   canvasColor: Colors.grey[50],
   cardTheme: CardTheme(
     shape: RoundedRectangleBorder(
@@ -45,8 +44,7 @@ final darkTheme = ThemeData(
       primary: Colors.white,
       secondary: Colors.white,
       tertiary: Colors.green,
-      surface: Color(0xFF121212),
-      surfaceContainerLow: Color(0xFF424242)),
+      surface: Color(0xFF121212)),
   cardTheme: CardTheme(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(24),

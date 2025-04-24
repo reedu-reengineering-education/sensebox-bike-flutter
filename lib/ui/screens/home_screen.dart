@@ -220,7 +220,7 @@ class _ConnectButton extends StatelessWidget {
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context)
                               .colorScheme
-                              .surfaceContainerLow, // Disabled color
+                              .onSurface, // Disabled color
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     label: Text(
