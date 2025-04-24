@@ -15,6 +15,7 @@ Closes #
 
 [ ] I have performed a self-review of my code
 [ ] I have added or updated relevant documentation
+[ ] I have added necessary tests
 
 ### Additional Information
 <!-- Add any other relevant information that the reviewer should know. This might include:
