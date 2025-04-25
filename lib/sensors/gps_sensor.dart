@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
@@ -16,6 +18,7 @@ class GPSSensor extends Sensor {
   double _latestSpd = 0.0;
 
   late final MapboxMap? mapInstance;
+  final Completer<void> _mapReadyCompleter = Completer<void>();
 
   @override
   get uiPriority => 25;
@@ -41,6 +44,7 @@ class GPSSensor extends Sensor {
   @override
   void onDataReceived(List<double> data) async {
     super.onDataReceived(data); // Call the parent class to handle buffering
+
     if (data.length >= 3) {
       _latestLat = data[0];
       _latestLng = data[1];
@@ -50,7 +54,15 @@ class GPSSensor extends Sensor {
         return;
       }
 
-      if (circleAnnotationManager != null) {
+      // Wait for mapInstance to be initialized
+      await _mapReadyCompleter.future;
+
+      if (circleAnnotationManager == null) {
+        debugPrint('Warning: circleAnnotationManager is not initialized.');
+        return;
+      }
+
+      try {
         CircleAnnotationOptions option = CircleAnnotationOptions(
           geometry: Point(coordinates: Position(_latestLng, _latestLat)),
           circleColor: Colors.blue.value,
@@ -67,20 +79,25 @@ class GPSSensor extends Sensor {
 
         // Create new annotations
         circleAnnotationManager!.createMulti([option]);
+      } catch (e) {
+        debugPrint('Error updating circle annotations: $e');
+      }
+      
+      if (mapInstance == null) {
+        debugPrint('Warning: mapInstance is not initialized yet.');
+        return;
       }
 
-      if (mapInstance != null) {
-        mapInstance!.flyTo(
-          CameraOptions(
-            zoom: 16.0,
-            pitch: 45,
-            center: Point(coordinates: Position(_latestLng, _latestLat)),
-          ),
-          MapAnimationOptions(
-            duration: 1000,
-          ),
-        );
-      }
+      await mapInstance!.flyTo(
+        CameraOptions(
+          zoom: 16.0,
+          pitch: 45,
+          center: Point(coordinates: Position(_latestLng, _latestLat)),
+        ),
+        MapAnimationOptions(
+          duration: 1000,
+        ),
+      );
     }
   }
 
@@ -131,6 +148,7 @@ class GPSSensor extends Sensor {
             this.mapInstance = mapInstance;
             mapInstance.scaleBar
                 .updateSettings(ScaleBarSettings(enabled: false));
+            _mapReadyCompleter.complete(); // Mark mapInstance as ready
           }),
     );
   }

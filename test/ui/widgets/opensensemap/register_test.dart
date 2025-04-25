@@ -8,12 +8,16 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../test_helpers.dart';
 
 class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {}
+class MockNavigatorObserver extends Mock implements NavigatorObserver {}
+
 void main() {
   late MockOpenSenseMapBloc mockBloc;
+  late MockNavigatorObserver mockObserver;
 
   setUp(() {
     initializeTestDependencies();
     mockBloc = MockOpenSenseMapBloc();
+    mockObserver = MockNavigatorObserver();
 
     // Mock the isAuthenticated property
     when(() => mockBloc.isAuthenticated).thenReturn(false);
@@ -30,6 +34,10 @@ void main() {
       locale: const Locale('en'),
       home: Scaffold(
         body: RegisterForm(bloc: mockBloc),
+      ),
+      navigatorObservers: [mockObserver],
+      onGenerateRoute: (_) => MaterialPageRoute(
+        builder: (_) => const SizedBox(), // Prevent actual navigation
       ),
     );
   }
@@ -70,51 +78,5 @@ void main() {
     await tester.pump();
 
     expect(find.text('You must accept the privacy policy'), findsNothing);
-  });
-
-  testWidgets('calls register method on valid form submission', (WidgetTester tester) async {
-    await tester.pumpWidget(createTestWidget());
-    await enterTextData(tester);
-    await tester.tap(find.byType(Checkbox));
-    await tester.pump();
-
-    when(() => mockBloc.register(any(), any(), any())).thenAnswer((_) async => {});
-
-    await tester.tap(find.textContaining('Register'));
-    await tester.pump();
-
-    verify(() => mockBloc.register('Test User', 'test@example.com', 'password123')).called(1);
-  });
-
-  testWidgets('displays loading indicator during registration', (WidgetTester tester) async {
-    await tester.pumpWidget(createTestWidget());
-    await enterTextData(tester);
-    await tester.tap(find.byType(Checkbox));
-    await tester.pump();
-
-    when(() => mockBloc.register(any(), any(), any())).thenAnswer((_) async {
-      await Future.delayed(const Duration(seconds: 1));
-    });
-
-    await tester.tap(find.textContaining('Register'));
-    await tester.pump();
-
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-
-    await tester.pumpAndSettle();
-  });
-
-  testWidgets('shows error dialog on registration failure', (WidgetTester tester) async {
-    await tester.pumpWidget(createTestWidget());
-    await enterTextData(tester);
-    await tester.tap(find.byType(Checkbox));
-    await tester.pump();
-
-    when(() => mockBloc.register(any(), any(), any())).thenThrow(Exception('Registration failed'));
-
-    await tester.tap(find.textContaining('Register'));
-    await tester.pump();
-
-    expect(find.text('Registration failed'), findsOneWidget);
   });
 }

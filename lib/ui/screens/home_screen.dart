@@ -5,10 +5,12 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/ui/utils/common.dart';
+import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
+import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // HomeScreen now delegates sections to smaller widgets
@@ -68,29 +70,71 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// Widget for login or senseBox selection
-class _SenseBoxLoginButton extends StatelessWidget {
+// Widget for senseBox selection
+class _SenseBoxSelectionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final OpenSenseMapBloc osemBloc = Provider.of<OpenSenseMapBloc>(context);
-
+    
+    // Show the button only if the user is authenticated
+    if (!osemBloc.isAuthenticated) {
+      return const SizedBox
+          .shrink(); // Return an empty widget if not authenticated
+    }
+  
     return IconButton.outlined(
         style: OutlinedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          side: BorderSide(
+            color: osemBloc.selectedSenseBox == null
+                ? Theme.of(context)
+                    .colorScheme
+                    .error // Red outline if no box is selected
+                : Theme.of(context)
+                    .colorScheme
+                    .tertiary, // Default outline if a box is selected
+            width: 1.5,
+          ),
         ),
-        onPressed: () => showLoginOrSenseBoxSelection(context, osemBloc),
+        onPressed: () => showSenseBoxSelection(context, osemBloc),
         icon: StreamBuilder<SenseBox?>(
           stream: osemBloc.senseBoxStream,
           initialData: osemBloc.selectedSenseBox,
           builder: (context, snapshot) {
-            if (!osemBloc.isAuthenticated) {
-              return Icon(Icons.login);
-            } else if (snapshot.hasError) {
-              return Icon(Icons.error);
+            var selectedBox = snapshot.data;
+
+            if (snapshot.hasError) {
+              return Icon(Icons.error,
+                  color: Theme.of(context).colorScheme.error);
+            } else if (selectedBox == null) {
+              // If no box is selected, show a red icon
+              return Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.link, color: Theme.of(context).colorScheme.error),
+                const SizedBox(width: 8),
+                Text(
+                  '...',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: Theme.of(context).colorScheme.error),
+                ),
+              ]);
             } else {
-              return snapshot.data?.name != null
-                  ? Icon(Icons.check)
-                  : Icon(Icons.link);
+              // If a box is selected, show a green checkbox and the name of the box
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check,
+                      color: Theme.of(context).colorScheme.tertiary),
+                  const SizedBox(width: 8),
+                  Text(
+                    truncateBoxName(selectedBox.name ?? ''),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.tertiary),
+                  ),
+                ],
+              );
             }
           },
         ));
@@ -116,16 +160,16 @@ class _FloatingButtons extends StatelessWidget {
                 child: _ConnectButton(bleBloc: bleBloc),
               ),
               const SizedBox(width: 12),
-              _SenseBoxLoginButton(),
+              _SenseBoxSelectionButton(),
             ],
           );
         } else {
           return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _StartStopButton(recordingBloc: recordingBloc),
-              const SizedBox(width: 12),
               _DisconnectButton(bleBloc: bleBloc),
+              _SenseBoxSelectionButton(),
             ],
           );
         }
@@ -144,37 +188,79 @@ class _ConnectButton extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: bleBloc.isConnectingNotifier,
       builder: (context, isConnecting, child) {
-        if (isConnecting) {
-          return FilledButton.icon(
-            style: const ButtonStyle(
-              padding: WidgetStatePropertyAll(
-                EdgeInsets.all(12),
-              ),
-            ),
-            label:
-                Text(AppLocalizations.of(context)!.connectionButtonConnecting),
-            icon: CircularProgressIndicator(
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-            onPressed: () {},
-          );
-        } else {
-          return FilledButton.icon(
-            style: const ButtonStyle(
-              padding: WidgetStatePropertyAll(
-                EdgeInsets.all(12),
-              ),
-            ),
-            label: Text(AppLocalizations.of(context)!.connectionButtonConnect),
-            icon: const Icon(Icons.bluetooth),
-            onPressed: () => showDeviceSelectionDialog(context, bleBloc),
-          );
-        }
+        return ValueListenableBuilder<bool>(
+          valueListenable: bleBloc.isBluetoothEnabledNotifier,
+          builder: (context, isBluetoothEnabled, child) {
+            if (isConnecting) {
+              return Align(
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: 200, // Set a fixed width for the button
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12), // Vertical padding only
+                    ),
+                    label: Text(
+                      AppLocalizations.of(context)!.connectionButtonConnecting,
+                    ),
+                    icon: const Loader(),
+                    onPressed: null, // Disable button while connecting
+                  ),
+                ),
+              );
+            } else {
+              return Align(
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: 200, // Set a fixed width for the button
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: isBluetoothEnabled
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context)
+                              .colorScheme
+                              .onSurface, // Disabled color
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    label: Text(
+                      isBluetoothEnabled
+                          ? AppLocalizations.of(context)!
+                              .connectionButtonConnect
+                          : AppLocalizations.of(context)!
+                              .connectionButtonEnableBluetooth,
+                      style: TextStyle(
+                        color: isBluetoothEnabled
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context)
+                                .colorScheme
+                                .error, // Red text if Bluetooth is off
+                      ),
+                    ),
+                    icon: Icon(
+                      Icons.bluetooth,
+                      color: isBluetoothEnabled
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context)
+                              .colorScheme
+                              .error, // Red icon if Bluetooth is off
+                    ),
+                    onPressed: () async {
+                      if (isBluetoothEnabled) {
+                        // Show device selection dialog if Bluetooth is enabled
+                        showDeviceSelectionDialog(context, bleBloc);
+                      }
+                    },
+                  ),
+                ),
+              );
+            }
+          },
+        );
       },
     );
   }
 }
-
 // Start/Stop button
 class _StartStopButton extends StatelessWidget {
   final RecordingBloc recordingBloc;
@@ -185,7 +271,7 @@ class _StartStopButton extends StatelessWidget {
     return FilledButton.icon(
       style: const ButtonStyle(
         padding: WidgetStatePropertyAll(
-          EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         ),
       ),
       label: Text(recordingBloc.isRecording
@@ -218,10 +304,10 @@ class _DisconnectButton extends StatelessWidget {
         return OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           ),
           icon: isReconnecting
-              ? const CircularProgressIndicator()
+              ? const Loader()
               : const Icon(Icons.bluetooth_disabled),
           label: isReconnecting
               ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)

@@ -8,6 +8,7 @@ class PasswordField extends StatefulWidget {
   final String? Function(BuildContext, String?, String?)?
     confirmationValidator; 
   final TextEditingController? passwordController; 
+  final bool enabled; // Flag to enable/disable the field
 
   const PasswordField({
     super.key,
@@ -16,6 +17,7 @@ class PasswordField extends StatefulWidget {
     this.isConfirmationField = false, // Default: not a confirmation field
     this.confirmationValidator, // Optional: validator for confirmation field
     this.passwordController, // Optional: original password for comparison
+      this.enabled = true
   });
 
   @override
@@ -28,6 +30,7 @@ class _PasswordFieldState extends State<PasswordField> {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      enabled: widget.enabled,
       autofillHints: const [AutofillHints.password],
       controller: widget.controller,
       obscureText: !_isPasswordVisible, // Toggle visibility

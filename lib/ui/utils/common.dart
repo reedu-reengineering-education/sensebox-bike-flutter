@@ -42,3 +42,8 @@ String? passwordConfirmationValidator(
   }
   return null;
 }
+
+// Helper method to truncate the box name to 15 characters
+String truncateBoxName(String name) {
+  return name.length > 10 ? '${name.substring(0, 8)}...' : name;
+}

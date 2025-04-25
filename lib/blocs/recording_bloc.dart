@@ -5,6 +5,8 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/live_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
@@ -55,7 +57,7 @@ class RecordingBloc with ChangeNotifier {
 
     try {
       if (_selectedSenseBox == null) {
-        throw Exception("No senseBox selected");
+        ErrorService.handleError(NoSenseBoxSelected(), StackTrace.current);
       }
 
       LiveUploadService liveUploadService = LiveUploadService(
@@ -66,8 +68,8 @@ class RecordingBloc with ChangeNotifier {
           trackId: trackBloc.currentTrack!.id);
 
       liveUploadService.startUploading();
-    } catch (e) {
-      print("Error while uploading: $e");
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
     }
 
     notifyListeners();

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamController
 
@@ -125,8 +126,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _senseBoxController.add(null); // Clear senseBox on logout
       _selectedSenseBox = null;
       notifyListeners();
-    } catch (_) {
-      rethrow;
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
     }
   }
 
@@ -135,8 +136,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       await _service.createSenseBoxBike(
           name, latitude, longitude, model, selectedTag);
-    } catch (e) {
-      rethrow;
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
     }
   }
 
@@ -167,11 +168,17 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  Future<void> setSelectedSenseBox(SenseBox senseBox) async {
+  Future<void> setSelectedSenseBox(SenseBox? senseBox) async {
     final prefs = await SharedPreferences.getInstance();
 
     // Clear previous data before adding new senseBox
     _senseBoxController.add(null);
+    if (senseBox == null) {
+      await prefs.remove('selectedSenseBox');
+      _selectedSenseBox = null;
+      notifyListeners();
+      return;
+    } 
 
     await prefs.setString('selectedSenseBox', jsonEncode(senseBox.toJson()));
     _senseBoxController.add(senseBox); // Push selected senseBox to the stream

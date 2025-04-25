@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/common/email_field.dart';
-import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
-import 'package:sensebox_bike/ui/widgets/opensensemap/login_selection_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -65,16 +66,21 @@ class _RegisterFormState extends State<RegisterForm> {
               TextFormField(
                 autofillHints: const [AutofillHints.name],
                 controller: nameController,
+                enabled: !isLoading,
                 decoration: InputDecoration(
                     labelText:
                         AppLocalizations.of(context)!.openSenseMapRegisterName),
               ),
               const CustomSpacer(),
-              EmailField(controller: emailController),
+              EmailField(
+                controller: emailController,
+                enabled: !isLoading,
+              ),
               const CustomSpacer(),
               PasswordField(
                 controller: passwordController,
                 validator: passwordValidator,
+                enabled: !isLoading,
               ),
               const CustomSpacer(),
               PasswordField(
@@ -82,6 +88,7 @@ class _RegisterFormState extends State<RegisterForm> {
                 isConfirmationField: true,
                 confirmationValidator: passwordConfirmationValidator,
                 passwordController: passwordController,
+                enabled: !isLoading,
               ),
               const CustomSpacer(),
               GestureDetector(
@@ -151,7 +158,7 @@ class _RegisterFormState extends State<RegisterForm> {
               const CustomSpacer(),
               ButtonWithLoader(
                   isLoading: isLoading,
-                  text: AppLocalizations.of(context)!.openSenseMapRegister,
+                  text: AppLocalizations.of(context)!.generalRegister,
                   width: 0.7,
                   onPressed: isLoading
                       ? null // Disable button when loading
@@ -159,6 +166,8 @@ class _RegisterFormState extends State<RegisterForm> {
                           // Validate the form and the privacy policy checkbox
                           final isFormValid =
                               formKey.currentState?.validate() == true;
+                          bool isRegistrationSuccessful = false; 
+
                           validatePrivacyPolicy(); // Validate the checkbox
 
                           if (isFormValid && isAccepted) {
@@ -175,23 +184,23 @@ class _RegisterFormState extends State<RegisterForm> {
                                   emailController.value.text,
                                   passwordController.value.text);
 
-                              if (context.mounted) {
-                                Navigator.pop(
-                                    context); // Close after registration
-                                showLoginOrSenseBoxSelection(
-                                    context, widget.bloc);
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) =>
-                                      ErrorDialog(errorMessage: e.toString()));
-                              }
+                              isRegistrationSuccessful = true;
+                            } catch (e, stack) {
+                              ErrorService.handleError(
+                                  RegistrationError(e), stack);
                             } finally {
                               setState(() {
                                 isLoading = false; // Stop loading
                               });
+                            }
+
+                            if (context.mounted && isRegistrationSuccessful) {
+                              // Navigate to the home screen after successful login
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const AppHome()),
+                              );
                             }
                           }
                         }

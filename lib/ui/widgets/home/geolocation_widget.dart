@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 import '../../../blocs/track_bloc.dart'; // Import TrackBloc
 import '../../../services/isar_service.dart'; // Import your Isar service
@@ -35,33 +36,45 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
     // Listen to track changes from the TrackBloc
     _trackSubscription =
         context.read<TrackBloc>().currentTrackStream.listen((track) async {
+      if (!mounted) return; // Check if the widget is still mounted
       // Handle trackId changes
       if (track != null) {
         _isarGeolocationSubscription =
             await _listenToGeolocationStream(track.id);
       } else {
-        await lineAnnotationManager.deleteAll();
+        try {
+          await lineAnnotationManager.deleteAll();
+        } catch (e) {
+          debugPrint('Error deleting all annotations: $e');
+        }
       }
     });
 
     // check connection status
     context.read<BleBloc>().isConnectingNotifier.addListener(() async {
+      if (!mounted) return; // Check if the widget is still mounted
       bool enableLocationPuck = context.read<BleBloc>().isConnected;
       mapInstance.location.updateSettings(LocationComponentSettings(
         enabled: enableLocationPuck,
         showAccuracyRing: enableLocationPuck,
       ));
       if (enableLocationPuck) {
-        var geoPosition = await Geolocator.Geolocator.getCurrentPosition();
-        await mapInstance.flyTo(
-            CameraOptions(
+        if (!mounted) return;
+        try {
+          var geoPosition = await Geolocator.Geolocator.getCurrentPosition();
+          var cameraOptions = CameraOptions(
               center: Point(
                   coordinates:
                       Position(geoPosition.longitude, geoPosition.latitude)),
               zoom: 16.0,
               pitch: 45,
-            ),
-            MapAnimationOptions(duration: 1000));
+          );
+          var animationOptions = MapAnimationOptions(duration: 1000);
+
+          await mapInstance.flyTo(cameraOptions, animationOptions);
+        } catch (e, stack) {
+          ErrorService.handleError(e, stack);
+        }
       }
     });
   }
@@ -84,30 +97,32 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
   // Create or update the map source with new geolocation data
   void _updateMapWithGeolocationData(List<GeolocationData> geoData) async {
-    lineAnnotationManager.deleteAll();
+    try {
+      // Delete existing annotations if any
+      await lineAnnotationManager.deleteAll();
 
-    List<Point> points = geoData.map((location) {
-      return Point(
-          coordinates: Position(location.longitude, location.latitude));
-    }).toList();
+      List<Point> points = geoData.map((location) {
+        return Point(
+            coordinates: Position(location.longitude, location.latitude));
+      }).toList();
 
-    // Ensure there are at least two points before creating the LineString
-    if (points.length < 2) {
-      debugPrint('Not enough points to create a LineString.');
-      return;
-    }
+      // Ensure there are at least two points before creating the LineString
+      if (points.length < 2) {
+        debugPrint('Not enough points to create a LineString.');
+        return;
+      }
 
-    PolylineAnnotationOptions polyline = PolylineAnnotationOptions(
-      geometry: LineString.fromPoints(points: points),
-    );
+      PolylineAnnotationOptions polyline = PolylineAnnotationOptions(
+        geometry: LineString.fromPoints(points: points),
+      );
 
-    lineAnnotationManager.create(polyline);
+      await lineAnnotationManager.create(polyline);
 
-    // get last geolocation data
-    GeolocationData lastLocation = geoData.last;
+      // get last geolocation data
+      GeolocationData lastLocation = geoData.last;
 
-    // Fit the camera to the bounds of the geolocation data
-    await mapInstance.flyTo(
+      // Fit the camera to the bounds of the geolocation data
+      await mapInstance.flyTo(
         CameraOptions(
           center: Point(
               coordinates:
@@ -116,6 +131,9 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
           pitch: 45,
         ),
         MapAnimationOptions(duration: 1000));
+    } catch (e) {
+      debugPrint('Error updating map with geolocation data: $e');
+    }
   }
 
   @override
@@ -144,16 +162,19 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
         zoom: 3.25,
         pitch: 25,
       ));
-
-      lineAnnotationManager = await mapInstance.annotations
+      try {
+        lineAnnotationManager = await mapInstance.annotations
           .createPolylineAnnotationManager(id: 'lineAnnotationManager');
-      lineAnnotationManager.setLineColor(
-          Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.value
-              : Colors.black.value);
-      lineAnnotationManager.setLineWidth(4.0);
-      lineAnnotationManager.setLineEmissiveStrength(1);
-      lineAnnotationManager.setLineCap(LineCap.ROUND);
+        lineAnnotationManager.setLineColor(
+            Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.value
+                : Colors.black.value);
+        lineAnnotationManager.setLineWidth(4.0);
+        lineAnnotationManager.setLineEmissiveStrength(1);
+        lineAnnotationManager.setLineCap(LineCap.ROUND);
+      } catch (e) {
+        debugPrint('Error creating lineAnnotationManager: $e');
+      }
 
       // Add privacy zones to the map
       try {
