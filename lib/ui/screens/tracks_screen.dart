@@ -1,4 +1,5 @@
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
@@ -20,7 +21,12 @@ class _TracksScreenState extends State<TracksScreen> {
   }
 
   void _fetchTracks() {
-    _tracksFuture = IsarService().trackService.getAllTracks();
+    try {
+      _tracksFuture = IsarService().trackService.getAllTracks();
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
+    }
+    
   }
 
   Future<void> _handleRefresh() async {
