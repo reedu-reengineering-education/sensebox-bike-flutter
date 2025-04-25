@@ -3,7 +3,6 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
 class TracksScreen extends StatefulWidget {
   const TracksScreen({super.key});
 
@@ -36,7 +35,7 @@ class _TracksScreenState extends State<TracksScreen> {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.tracksAppBarTitle),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4.0),
+          preferredSize: const Size.fromHeight(32),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 4.0),
             child: FutureBuilder<List<TrackData>>(
@@ -170,107 +169,12 @@ class TrackList extends StatelessWidget {
       {required this.tracks, required this.onTrackDeleted, super.key});
 
   @override
-Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.tracksAppBarTitle),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(32),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 4.0),
-            child: FutureBuilder<List<TrackData>>(
-              future: _tracksFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return buildTrackSummaryRow(
-                    context,
-                    AppLocalizations.of(context)!.generalLoading,
-                    AppLocalizations.of(context)!.generalLoading,
-                    AppLocalizations.of(context)!.generalLoading,
-                  );
-                } else if (snapshot.hasError) {
-                  return Text(AppLocalizations.of(context)!
-                      .generalErrorWithDescription(snapshot.error.toString()));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return buildTrackSummaryRow(
-                    context,
-                    AppLocalizations.of(context)!.tracksAppBarSumTracks(0),
-                    AppLocalizations.of(context)!.generalTrackDuration(0, 0),
-                    AppLocalizations.of(context)!.generalTrackDistance('0.00'),
-                  );
-                } else {
-                  List<TrackData> tracks = snapshot.data!;
-                  const zeroDuration = Duration(milliseconds: 0);
-                  Duration totalDuration = tracks.fold(
-                      zeroDuration, (prev, track) => prev + track.duration);
-                  double totalDistance =
-                      tracks.fold(0.0, (prev, track) => prev + track.distance);
-
-                  String formattedDuration = AppLocalizations.of(context)!
-                      .generalTrackDuration(totalDuration.inHours,
-                          totalDuration.inMinutes.remainder(60));
-
-                  return buildTrackSummaryRow(
-                    context,
-                    AppLocalizations.of(context)!
-                        .tracksAppBarSumTracks(tracks.length),
-                    formattedDuration,
-                    AppLocalizations.of(context)!
-                        .generalTrackDistance(totalDistance.toStringAsFixed(2)),
-                  );
-                }
-              },
-            ),
-          ),
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        child: FutureBuilder<List<TrackData>>(
-          future: _tracksFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              // Show a scrollable loading indicator
-              return ListView(
-                children: const [
-                  Center(child: CircularProgressIndicator()),
-                ],
-              );
-            } else if (snapshot.hasError) {
-              // Show a scrollable error message
-              return ListView(
-                children: [
-                  Center(
-                    child: Text(
-                      AppLocalizations.of(context)!.generalErrorWithDescription(
-                          snapshot.error.toString()),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                ],
-              );
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              // Show a scrollable empty state
-              return ListView(
-                children: [
-                  Center(
-                    child: Text(
-                      AppLocalizations.of(context)!.tracksNoTracks,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                ],
-              );
-            } else {
-              // Show the list of tracks
-              List<TrackData> tracks = snapshot.data!;
-
-              // Filter tracks without geolocation data
-              tracks = tracks
-                  .where((track) => track.geolocations.isNotEmpty)
-                  .toList()
-                  .reversed
-                  .toList();
+  Widget build(BuildContext context) {
+    final filteredTracks = tracks
+        .where((track) => track.geolocations.isNotEmpty)
+        .toList()
+        .reversed
+        .toList();
 
     if (filteredTracks.isEmpty) {
       return CenteredMessage(
