@@ -17,19 +17,121 @@ class _TracksScreenState extends State<TracksScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize the future in initState to avoid re-fetching data unnecessarily
+    _fetchTracks();
+  }
+
+  void _fetchTracks() {
     _tracksFuture = IsarService().trackService.getAllTracks();
   }
 
   Future<void> _handleRefresh() async {
     setState(() {
-      _tracksFuture = IsarService().trackService.getAllTracks();
+      _fetchTracks();
     });
   }
 
-  Widget buildTrackSummaryRow(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.tracksAppBarTitle),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(4.0),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 4.0),
+            child: FutureBuilder<List<TrackData>>(
+              future: _tracksFuture,
+              builder: (context, snapshot) {
+                return TrackSummaryRow(snapshot: snapshot);
+              },
+            ),
+          ),
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: FutureBuilder<List<TrackData>>(
+          future: _tracksFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CenteredMessage(
+                child: CircularProgressIndicator(),
+              );
+            } else if (snapshot.hasError) {
+              return CenteredMessage(
+                child: Text(
+                  AppLocalizations.of(context)!
+                      .generalErrorWithDescription(snapshot.error.toString()),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              );
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return CenteredMessage(
+                child: Text(
+                  AppLocalizations.of(context)!.tracksNoTracks,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              );
+            } else {
+              return TrackList(
+                tracks: snapshot.data!,
+                onTrackDeleted: _handleRefresh,
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class TrackSummaryRow extends StatelessWidget {
+  final AsyncSnapshot<List<TrackData>> snapshot;
+
+  const TrackSummaryRow({required this.snapshot, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return _buildRow(
+        context,
+        AppLocalizations.of(context)!.generalLoading,
+        AppLocalizations.of(context)!.generalLoading,
+        AppLocalizations.of(context)!.generalLoading,
+      );
+    } else if (snapshot.hasError ||
+        !snapshot.hasData ||
+        snapshot.data!.isEmpty) {
+      return _buildRow(
+        context,
+        AppLocalizations.of(context)!.tracksAppBarSumTracks(0),
+        AppLocalizations.of(context)!.generalTrackDuration(0, 0),
+        AppLocalizations.of(context)!.generalTrackDistance('0.00'),
+      );
+    } else {
+      List<TrackData> tracks = snapshot.data!;
+      const zeroDuration = Duration(milliseconds: 0);
+      Duration totalDuration =
+          tracks.fold(zeroDuration, (prev, track) => prev + track.duration);
+      double totalDistance =
+          tracks.fold(0.0, (prev, track) => prev + track.distance);
+
+      String formattedDuration = AppLocalizations.of(context)!
+          .generalTrackDuration(
+              totalDuration.inHours, totalDuration.inMinutes.remainder(60));
+
+      return _buildRow(
+        context,
+        AppLocalizations.of(context)!.tracksAppBarSumTracks(tracks.length),
+        formattedDuration,
+        AppLocalizations.of(context)!
+            .generalTrackDistance(totalDistance.toStringAsFixed(2)),
+      );
+    }
+  }
+
+  Widget _buildRow(
       BuildContext context, String tracks, String duration, String distance) {
-    // Helper widget for an icon-text combo
     Widget iconText(IconData icon, String text) {
       return Expanded(
         child: Row(
@@ -58,6 +160,14 @@ class _TracksScreenState extends State<TracksScreen> {
       ],
     );
   }
+}
+
+class TrackList extends StatelessWidget {
+  final List<TrackData> tracks;
+  final VoidCallback onTrackDeleted;
+
+  const TrackList(
+      {required this.tracks, required this.onTrackDeleted, super.key});
 
   @override
 Widget build(BuildContext context) {
@@ -162,47 +272,49 @@ Widget build(BuildContext context) {
                   .reversed
                   .toList();
 
-              if (tracks.isEmpty) {
-                return ListView(
-                  children: [
-                    Center(
-                      child: Text(
-                        AppLocalizations.of(context)!.tracksNoTracks,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-                  ],
-                );
-              }
-
-              return ListView.separated(
-                separatorBuilder: (context, index) => const SizedBox(
-                  height: 24,
-                ),
-                padding: const EdgeInsets.only(top: 24),
-                itemCount: tracks.length,
-                itemBuilder: (context, index) {
-                  TrackData track = tracks[index];
-                  return TrackListItem(
-                    track: track,
-                    onDismissed: () async {
-                      await IsarService().trackService.deleteTrack(track.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              AppLocalizations.of(context)!.tracksTrackDeleted),
-                        ),
-                      );
-                      // Refresh the list after deleting a track
-                      await _handleRefresh();
-                    },
-                  );
-                },
-              );
-            }
-          },
+    if (filteredTracks.isEmpty) {
+      return CenteredMessage(
+        child: Text(
+          AppLocalizations.of(context)!.tracksNoTracks,
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
-      ),
+      );
+    }
+
+    return ListView.separated(
+      separatorBuilder: (context, index) => const SizedBox(height: 24),
+      padding: const EdgeInsets.only(top: 24),
+      itemCount: filteredTracks.length,
+      itemBuilder: (context, index) {
+        TrackData track = filteredTracks[index];
+        return TrackListItem(
+          track: track,
+          onDismissed: () async {
+            await IsarService().trackService.deleteTrack(track.id);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(AppLocalizations.of(context)!.tracksTrackDeleted),
+              ),
+            );
+            onTrackDeleted();
+          },
+        );
+      },
+    );
+  }
+}
+
+class CenteredMessage extends StatelessWidget {
+  final Widget child;
+
+  const CenteredMessage({required this.child, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        Center(child: child),
+      ],
     );
   }
 }
