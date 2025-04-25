@@ -24,6 +24,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env", mergeWith: Platform.environment);
 
   await SentryFlutter.init(
@@ -34,7 +35,6 @@ void main() async {
     },
     //appRunner: () => runApp(const SenseBoxBikeApp()),
     appRunner: () => runZonedGuarded(() {
-      WidgetsFlutterBinding.ensureInitialized();
       // Error handlers
       FlutterError.onError = (details) {
         if (!kDebugMode) {
