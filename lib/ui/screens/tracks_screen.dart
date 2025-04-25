@@ -60,24 +60,24 @@ class _TracksScreenState extends State<TracksScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.tracksAppBarTitle),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(32),
           child: Padding(
-            padding:
-                const EdgeInsets.only(bottom: 4.0), // Adds padding to the top
+            padding: const EdgeInsets.only(bottom: 4.0),
             child: FutureBuilder<List<TrackData>>(
               future: _tracksFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return buildTrackSummaryRow(
-                      context,
-                      AppLocalizations.of(context)!.generalLoading,
-                      AppLocalizations.of(context)!.generalLoading,
-                      AppLocalizations.of(context)!.generalLoading);
+                    context,
+                    AppLocalizations.of(context)!.generalLoading,
+                    AppLocalizations.of(context)!.generalLoading,
+                    AppLocalizations.of(context)!.generalLoading,
+                  );
                 } else if (snapshot.hasError) {
                   return Text(AppLocalizations.of(context)!
                       .generalErrorWithDescription(snapshot.error.toString()));
@@ -120,22 +120,42 @@ class _TracksScreenState extends State<TracksScreen> {
           future: _tracksFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              // While the future is loading, show a loading indicator
-              return const CircularProgressIndicator();
+              // Show a scrollable loading indicator
+              return ListView(
+                children: const [
+                  Center(child: CircularProgressIndicator()),
+                ],
+              );
             } else if (snapshot.hasError) {
-              // If the future completed with an error, show an error message
-              return Text(AppLocalizations.of(context)!
-                  .generalErrorWithDescription(snapshot.error.toString()));
+              // Show a scrollable error message
+              return ListView(
+                children: [
+                  Center(
+                    child: Text(
+                      AppLocalizations.of(context)!.generalErrorWithDescription(
+                          snapshot.error.toString()),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              );
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              // If the future completed but returned no data, show a message
-              return Center(
-                  child: Text(AppLocalizations.of(context)!.tracksNoTracks,
-                      style: Theme.of(context).textTheme.bodyMedium));
+              // Show a scrollable empty state
+              return ListView(
+                children: [
+                  Center(
+                    child: Text(
+                      AppLocalizations.of(context)!.tracksNoTracks,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              );
             } else {
-              // If the future completed with data, display the list
+              // Show the list of tracks
               List<TrackData> tracks = snapshot.data!;
 
-              // filter tracks without geolocation data
+              // Filter tracks without geolocation data
               tracks = tracks
                   .where((track) => track.geolocations.isNotEmpty)
                   .toList()
@@ -143,9 +163,16 @@ class _TracksScreenState extends State<TracksScreen> {
                   .toList();
 
               if (tracks.isEmpty) {
-                return Center(
-                    child: Text(AppLocalizations.of(context)!.tracksNoTracks,
-                        style: Theme.of(context).textTheme.bodyMedium));
+                return ListView(
+                  children: [
+                    Center(
+                      child: Text(
+                        AppLocalizations.of(context)!.tracksNoTracks,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                );
               }
 
               return ListView.separated(
@@ -157,15 +184,19 @@ class _TracksScreenState extends State<TracksScreen> {
                 itemBuilder: (context, index) {
                   TrackData track = tracks[index];
                   return TrackListItem(
-                      track: track,
-                      onDismissed: () async {
-                        await IsarService().trackService.deleteTrack(track.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(AppLocalizations.of(context)!
-                                  .tracksTrackDeleted)),
-                        );
-                      });
+                    track: track,
+                    onDismissed: () async {
+                      await IsarService().trackService.deleteTrack(track.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              AppLocalizations.of(context)!.tracksTrackDeleted),
+                        ),
+                      );
+                      // Refresh the list after deleting a track
+                      await _handleRefresh();
+                    },
+                  );
                 },
               );
             }
