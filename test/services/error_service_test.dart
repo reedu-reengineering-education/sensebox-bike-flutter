@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import '../test_helpers.dart';
+void main() {}
 // TBD: fix tests
 // void main() {
 //   setUpAll(() {
