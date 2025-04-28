@@ -31,9 +31,10 @@ String? passwordValidator(BuildContext context, String? value) {
 
 String? passwordConfirmationValidator(
     BuildContext context, String? value, String? password) {
-  if (value == null || value.isEmpty) {
-    return AppLocalizations.of(context)!
-        .openSenseMapRegisterPasswordConfirmErrorEmpty;
+  final passwordValidation = passwordValidator(context, value);
+
+  if (passwordValidation != null) {
+    return passwordValidation;
   }
 
   if (value != password) {
