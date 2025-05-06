@@ -7,3 +7,6 @@ issue_templates:
   - name: Feature Request
     description: "Suggest a new feature or enhancement."
     file: feature-request.md
+  - name: Chore
+    description: "Create a maintenance task"
+    file: chore.md
