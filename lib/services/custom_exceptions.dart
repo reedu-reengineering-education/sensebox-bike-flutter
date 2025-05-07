@@ -39,3 +39,9 @@ class NoSenseBoxSelected implements Exception {
   String toString() =>
       'Please login to your openSenseMap account and select box in order to allow upload sensor data to the cloud.';
 }
+
+class ExportDirectoryAccessError implements Exception {
+  @override
+  String toString() =>
+      'Error accessing export directory. Please make sure the app has permission to access the storage.';
+}
