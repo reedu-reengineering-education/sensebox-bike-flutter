@@ -15,7 +15,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class GPSSensor extends Sensor {
   double _latestLat = 0.0;
   double _latestLng = 0.0;
-  double _latestSpd = 0.0;
 
   late final MapboxMap? mapInstance;
   final Completer<void> _mapReadyCompleter = Completer<void>();
@@ -48,7 +47,6 @@ class GPSSensor extends Sensor {
     if (data.length >= 3) {
       _latestLat = data[0];
       _latestLng = data[1];
-      _latestSpd = data[2];
 
       if (_latestLat == 0.0 && _latestLng == 0.0) {
         return;
@@ -145,10 +143,14 @@ class GPSSensor extends Sensor {
                 await mapInstance.annotations.createCircleAnnotationManager();
           },
           onMapCreated: (mapInstance) async {
-            this.mapInstance = mapInstance;
-            mapInstance.scaleBar
-                .updateSettings(ScaleBarSettings(enabled: false));
-            _mapReadyCompleter.complete(); // Mark mapInstance as ready
+            if (this.mapInstance == null) {
+              this.mapInstance = mapInstance;
+              mapInstance.scaleBar
+                  .updateSettings(ScaleBarSettings(enabled: false));
+              _mapReadyCompleter.complete(); // Mark mapInstance as ready
+            } else {
+              debugPrint('Warning: mapInstance is already initialized.');
+            }
           }),
     );
   }
