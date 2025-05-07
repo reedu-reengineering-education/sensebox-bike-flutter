@@ -153,5 +153,8 @@
     "errorNoSenseBoxSelected": "Bitte loggen Sie sich in Ihr openSenseMap-Konto ein und wählen Sie eine Box aus, um Sensordaten in die Cloud hochzuladen.",
     "selectCsvFormat": "CSV-Format auswählen",
     "regularCsv": "Standard CSV",
-    "openSenseMapCsv": "openSenseMap CSV"
+    "openSenseMapCsv": "openSenseMap CSV",
+    "errorExportDirectoryAccess": "Bitte erlauben Sie der aktuellen App, in den Telefoneinstellungen auf den externen Speicher zuzugreifen.",
+    "errorLoginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
+    "errorRegistrationFailed": "Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten."
 }

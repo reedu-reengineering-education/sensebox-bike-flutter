@@ -153,5 +153,8 @@
     "errorNoSenseBoxSelected": "Please login to your openSenseMap account and select box in order to allow upload sensor data to the cloud.",
     "selectCsvFormat": "Select CSV format",
     "regularCsv": "Standard CSV",
-    "openSenseMapCsv": "openSenseMap CSV"
+    "openSenseMapCsv": "openSenseMap CSV",
+    "errorExportDirectoryAccess": "Error accessing export directory. Please make sure the app has permission to access the storage.",
+    "errorLoginFailed": "Login failed. Please check your credentials.",
+    "errorRegistrationFailed": "Registration failed. Please check your credentials."
 }

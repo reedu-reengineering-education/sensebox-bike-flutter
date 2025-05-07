@@ -153,5 +153,8 @@
     "errorNoSenseBoxSelected": "Por favor, faça login na sua conta openSenseMap e selecione uma caixa para permitir o envio dos dados dos sensores para a nuvem.",
     "selectCsvFormat": "Selecionar formato CSV",
     "regularCsv": "CSV padrão",
-    "openSenseMapCsv": "CSV openSenseMap"
+    "openSenseMapCsv": "CSV openSenseMap",
+    "errorExportDirectoryAccess": "Erro ao acessar o diretório de exportação. Por favor, verifique se o aplicativo tem permissão para acessar o armazenamento.",
+    "errorLoginFailed": "Falha no login. Por favor, verifique suas credenciais.",
+    "errorRegistrationFailed": "Falha no registro. Por favor, verifique suas credenciais."
 }

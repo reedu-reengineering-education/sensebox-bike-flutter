@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +76,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           if (androidInfo.version.sdkInt < 33) {
             PermissionStatus status = await Permission.storage.request();
 
-            if (!status.isGranted) {
+            if (!status.isGranted && context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text(
                     AppLocalizations.of(context)!.trackDetailsPermissionsError),
@@ -96,27 +97,40 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           } else {
             directory = await getExternalStorageDirectory();
           }
+
+          if (directory == null || !directory.existsSync()) {
+            ErrorService.handleError(
+                ExportDirectoryAccessError(), StackTrace.current);
+            return;
+          }
+
           // copy file to external storage
           final file = File(csvFilePath);
 
           final newName = file.path.split('/').last;
-          final newPath = '${directory!.path}/$newName';
+          final newPath = '${directory.path}/$newName';
 
           await file.copy(newPath);
-          // show snackbar
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(AppLocalizations.of(context)!.trackDetailsFileSaved),
-            action: SnackBarAction(
-              label: AppLocalizations.of(context)!.generalShare,
-              onPressed: () {
-                Share.shareXFiles([XFile(newPath)],
-                    text: AppLocalizations.of(context)!.trackDetailsExport);
-              },
-            ),
-          ));
+
+          if (context.mounted) {
+            // show snackbar
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content:
+                  Text(AppLocalizations.of(context)!.trackDetailsFileSaved),
+              action: SnackBarAction(
+                label: AppLocalizations.of(context)!.generalShare,
+                onPressed: () {
+                  Share.shareXFiles([XFile(newPath)],
+                      text: AppLocalizations.of(context)!.trackDetailsExport);
+                },
+              ),
+            ));
+          }
         } catch (e) {
-          Share.shareXFiles([XFile(csvFilePath)],
-              text: AppLocalizations.of(context)!.trackDetailsExport);
+          var text = context.mounted
+              ? AppLocalizations.of(context)!.trackDetailsExport
+              : 'Track data CSV export.';
+          Share.shareXFiles([XFile(csvFilePath)], text: text);
         }
       } else if (Platform.isIOS) {
         await Share.shareXFiles([XFile(csvFilePath)],
