@@ -58,6 +58,8 @@ class RecordingBloc with ChangeNotifier {
     try {
       if (_selectedSenseBox == null) {
         ErrorService.handleError(NoSenseBoxSelected(), StackTrace.current);
+        notifyListeners();
+        return;
       }
 
       LiveUploadService liveUploadService = LiveUploadService(
