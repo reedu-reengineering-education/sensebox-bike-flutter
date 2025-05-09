@@ -48,6 +48,16 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   }
 
   Future<void> addLayer() async {
+    minSensorValue =
+        getMinSensorValue(widget.geolocationData, widget.sensorType);
+    maxSensorValue =
+        getMaxSensorValue(widget.geolocationData, widget.sensorType);
+    // If sensor values are not available, return early
+    if (minSensorValue == double.infinity ||
+        maxSensorValue == double.negativeInfinity) {
+      return;
+    }
+
     try {
       // Remove existing layers and sources
       if (await mapInstance.style.styleLayerExists("line_layer_bg")) {
@@ -58,6 +68,13 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
       }
       if (await mapInstance.style.styleSourceExists("lineSource")) {
         await mapInstance.style.removeStyleSource("lineSource");
+      }
+      // Remove point data & layer, if it exists
+      if (await mapInstance.style.styleSourceExists("pointSource")) {
+        await mapInstance.style.removeStyleSource("pointSource");
+      }
+      if (await mapInstance.style.styleLayerExists("pointLayer")) {
+        await mapInstance.style.removeStyleLayer("pointLayer");
       }
     } catch (e) {
       debugPrint("Error removing sources and layers: $e");
@@ -84,72 +101,85 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
         },
       };
     });
+    
+    if (minSensorValue != maxSensorValue) {
+      // Add new GeoJson source
+      GeoJsonSource lineSource = GeoJsonSource(
+        id: "lineSource",
+        data: jsonEncode({"type": "FeatureCollection", "features": features}),
+      );
 
-    // Add new GeoJson source
-    GeoJsonSource lineSource = GeoJsonSource(
-      id: "lineSource",
-      data: jsonEncode({"type": "FeatureCollection", "features": features}),
-    );
+      try {
+        await mapInstance.style.addSource(lineSource);
+      } catch (e) {
+        debugPrint("Error adding source: $e");
+      }
 
-    try {
-      await mapInstance.style.addSource(lineSource);
-    } catch (e) {
-      debugPrint("Error adding source: $e");
+      // Add a LineLayer with color interpolation based on sensor values
+      await mapInstance.style.addLayer(LineLayer(
+          id: "line_layer_bg",
+          sourceId: "lineSource",
+          lineColor: Theme.of(context).brightness == Brightness.dark
+              ? Colors.blueGrey[50]?.value
+              : Colors.blueGrey[900]?.value,
+          lineWidth: 2.0, // Adjust the width as needed
+          lineCap: LineCap.ROUND,
+          lineEmissiveStrength: 1));
+    } else {
+      // Use the first geolocation as the point to display
+      final GeolocationData pointData = widget.geolocationData.first;
+
+      // Calculate the color based on the sensor value
+      int circleColor;
+      final sensorValue =
+          minSensorValue!; // Since minSensorValue == maxSensorValue
+
+      if (sensorValue <= minSensorValue!) {
+        circleColor = Colors.green.value;
+      } else if (sensorValue <=
+          minSensorValue! + (maxSensorValue! - minSensorValue!) * 0.5) {
+        circleColor = Colors.orange.value;
+      } else {
+        circleColor = Colors.red.value;
+      }
+
+      // Create a GeoJSON source for the single point
+      GeoJsonSource pointSource = GeoJsonSource(
+        id: "pointSource",
+        data: jsonEncode({
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "geometry": {
+                "type": "Point",
+                "coordinates": [pointData.longitude, pointData.latitude],
+              },
+              "properties": {
+                "sensorValue":
+                    sensorValue, // Add the sensor value as a property
+              },
+            },
+          ],
+        }),
+      );
+
+      try {
+        // Add the GeoJSON source to the map
+        await mapInstance.style.addSource(pointSource);
+      } catch (e) {
+        debugPrint("Error adding point source: $e");
+      }
+
+      // Add a CircleLayer to display the point
+      await mapInstance.style.addLayer(CircleLayer(
+          id: "pointLayer",
+          sourceId: "pointSource",
+          circleColor: circleColor, // Use the calculated color
+          circleRadius: 8.0, // Adjust the size of the point
+          circleStrokeWidth: 2.0,
+          circleStrokeColor: circleColor));
     }
-
-    minSensorValue =
-        getMinSensorValue(widget.geolocationData, widget.sensorType);
-    maxSensorValue =
-        getMaxSensorValue(widget.geolocationData, widget.sensorType);
-
-    // Add a LineLayer with color interpolation based on sensor values
-    await mapInstance.style.addLayer(LineLayer(
-        id: "line_layer_bg",
-        sourceId: "lineSource",
-        lineColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.blueGrey[50]?.value
-            : Colors.blueGrey[900]?.value,
-        lineWidth: 2.0, // Adjust the width as needed
-        lineCap: LineCap.ROUND,
-        lineEmissiveStrength: 1));
-
-    // Add a LineLayer with color interpolation based on sensor values
-    await mapInstance.style.addLayer(LineLayer(
-        id: "line_layer",
-        sourceId: "lineSource",
-        // Use the sensor type as the property for the color expression
-        // This will be used to interpolate the color of the line based on the sensor values
-        // If the sensor value is not a number, the line will be transparent
-        lineColorExpression: [
-          "case",
-          [
-            "==",
-            [
-              "typeof",
-              ["get", widget.sensorType]
-            ],
-            "number"
-          ],
-          [
-            "interpolate",
-            ["linear"],
-            ["get", widget.sensorType],
-            minSensorValue!,
-            'green',
-            minSensorValue! +
-                (maxSensorValue! -
-                        getMinSensorValue(
-                            widget.geolocationData, widget.sensorType)) *
-                    0.5,
-            'orange',
-            maxSensorValue!,
-            'red'
-          ],
-          "transparent"
-        ],
-        lineWidth: 12.0, // Adjust the width as needed
-        lineCap: LineCap.ROUND,
-        lineEmissiveStrength: 1));
 
     // Adjust the camera to fit the bounds of the trajectory
     GeolocationData south = widget.geolocationData.first;
