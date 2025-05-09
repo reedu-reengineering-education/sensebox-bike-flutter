@@ -44,7 +44,10 @@ class TrackData {
             (geolocation) => Point(geolocation.longitude, geolocation.latitude))
         .toList();
 
-    // Handle the case where there is only one point
+    if (coordinates.isEmpty) {
+      return "";
+    }
+
     if (coordinates.length == 1) {
       final singlePoint = coordinates.first;
       final repeatedPoints = [
