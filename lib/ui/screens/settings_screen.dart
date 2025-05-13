@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -144,8 +145,13 @@ class SettingsScreen extends StatelessWidget {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
-      onTap: () {
-        launchUrlFunction(Uri.parse(url), mode: LaunchMode.externalApplication);
+      onTap: () async {
+        try {
+          await launchUrlFunction(Uri.parse(url),
+              mode: LaunchMode.externalApplication);
+        } catch (error, stack) {
+          ErrorService.handleError(error, stack);
+        }
       },
     );
   }
