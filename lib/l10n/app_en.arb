@@ -145,7 +145,7 @@
     "noCampaignsAvailable": "No campaigns available",
     "loginScreenTitle": "openSenseMap Account",
     "connectionButtonEnableBluetooth": "Enable Bluetooth",
-    "errorNoLocationAccess": "Please allow the current app to access location of the current device in the phone settings.",
-    "errorNoScanAccess": "Please allow the current app to scan nearby devices in the phone settings.",
+    "errorNoLocationAccess": "Please allow the app to access current location of the current device in the phone settings.",
+    "errorNoScanAccess": "Please allow the app to scan nearby devices in the phone settings.",
     "errorNoSenseBoxSelected": "Please login to your openSenseMap account and select box in order to allow upload sensor data to the cloud."
 }

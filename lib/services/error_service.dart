@@ -9,17 +9,17 @@ class ErrorService {
 
   static void handleError(dynamic error, StackTrace stack) {
     if (kDebugMode) {
-      _logToConsole(error, stack);
-      _showUserFeedback(error);
+      logToConsole(error, stack);
+      showUserFeedback(error);
     } else {
       if (error is LocationPermissionDenied ||
           error is LoginError ||
           error is RegistrationError ||
           error is ScanPermissionDenied ||
           error is NoSenseBoxSelected) {
-        _showUserFeedback(error);
+        showUserFeedback(error);
       } else {
-        _logToConsole(error, stack);
+        logToConsole(error, stack);
       }
     }
   }
@@ -28,14 +28,14 @@ class ErrorService {
       ? Theme.of(scaffoldKey.currentContext!).colorScheme.error
         : Colors.red;
 
-  static void _showUserFeedback(dynamic error) {
+  static void showUserFeedback(dynamic error) {
     final context = scaffoldKey.currentContext;
 
     if (context == null) return;
 
     scaffoldKey.currentState?.showSnackBar(
       SnackBar(
-        content: Text(_parseError(error, context)),
+        content: Text(parseError(error, context)),
         backgroundColor: errorColor,
         showCloseIcon: true,
         duration: Duration(seconds: 10)
@@ -43,7 +43,7 @@ class ErrorService {
     );
   }
 
-  static String _parseError(dynamic error, BuildContext context) {
+  static String parseError(dynamic error, BuildContext context) {
     final localizations = AppLocalizations.of(context);
 
     if (error is LocationPermissionDenied) {
@@ -60,7 +60,7 @@ class ErrorService {
     return 'Unknown error: ${error.toString()}';
   }
 
-  static void _logToConsole(dynamic error, StackTrace stack) {
+  static void logToConsole(dynamic error, StackTrace stack) {
     debugPrintStack(stackTrace: stack, label: error.toString());
   }
 }
