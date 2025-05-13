@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "[dependabot]"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "flutter"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+      development-dependencies:
+        dependency-type: "development"
+    commit-message:
+      prefix: "[dependabot]"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+      development-dependencies:
+        dependency-type: "development"
+    commit-message:
+      prefix: "[dependabot]"
+    open-pull-requests-limit: 5
