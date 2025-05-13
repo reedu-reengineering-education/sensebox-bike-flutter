@@ -8,7 +8,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  final Future<bool> Function(Uri url, {LaunchMode mode}) launchUrlFunction;
+
+  const SettingsScreen({super.key, this.launchUrlFunction = launchUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +89,7 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.privacy_tip),
             title: Text(AppLocalizations.of(context)!.settingsPrivacyPolicy),
             onTap: () {
-              launchUrl(Uri.parse(senseBoxBikePrivacyPolicyUrl));
+              launchUrlFunction(Uri.parse(senseBoxBikePrivacyPolicyUrl));
             },
           ),
           // Help Section
@@ -102,7 +104,7 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.contact_mail),
             title: Text(AppLocalizations.of(context)!.settingsEmail),
             onTap: () {
-              launchUrl(Uri.parse(
+              launchUrlFunction(Uri.parse(
                   'mailto:$contactEmail?subject=senseBox:bike%20App'));
             },
           ),
@@ -110,7 +112,7 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.bug_report),
             title: Text(AppLocalizations.of(context)!.settingsGithub),
             onTap: () {
-              launchUrl(Uri.parse(gitHubNewIssueUrl));
+              launchUrlFunction(Uri.parse(gitHubNewIssueUrl));
             },
           ),
         ],
