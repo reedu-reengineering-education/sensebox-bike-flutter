@@ -7,7 +7,7 @@ updates:
     commit-message:
       prefix: "[dependabot]"
     open-pull-requests-limit: 5
-  - package-ecosystem: "flutter"
+  - package-ecosystem: "pub"
     directory: "/"
     schedule:
       interval: "weekly"
