@@ -6,6 +6,8 @@ const defaultTimeout = 30; // in seconds
 const openSenseMapUrl = 'https://api.opensensemap.org';
 const privacyPolicyUrl =
     'https://opensensemap.org/privacy'; // URL for the privacy policy
+const tagsUrl =
+    'https://raw.githubusercontent.com/reedu-reengineering-education/sensebox-bike-flutter/main/data/locations.json'; // URL for the campaigns
 
 const classicModelSensors = [
 {

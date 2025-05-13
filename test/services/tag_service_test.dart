@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/tag_service.dart';
 
 class MockHttpClient extends Mock implements http.Client {}
@@ -24,7 +25,7 @@ void main() {
         {"label": "Tag 3", "value": "value3"}
       ]
       ''';
-      when(() => mockHttpClient.get(Uri.parse(tagService.tagsUrl)))
+      when(() => mockHttpClient.get(Uri.parse(tagsUrl)))
           .thenAnswer((_) async => http.Response(mockResponseBody, 200));
 
       // Act
@@ -42,7 +43,7 @@ void main() {
 
     test('should throw an exception when the response status code is not 200', () async {
       // Arrange
-      when(() => mockHttpClient.get(Uri.parse(tagService.tagsUrl)))
+      when(() => mockHttpClient.get(Uri.parse(tagsUrl)))
           .thenAnswer((_) async => http.Response('Not Found', 404));
 
       // Act & Assert
@@ -60,7 +61,7 @@ void main() {
         "Invalid Item"
       ]
       ''';
-      when(() => mockHttpClient.get(Uri.parse(tagService.tagsUrl)))
+      when(() => mockHttpClient.get(Uri.parse(tagsUrl)))
           .thenAnswer((_) async => http.Response(invalidData, 200));
 
       // Act & Assert
