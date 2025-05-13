@@ -64,7 +64,9 @@ void main() {
       expect(find.text('Other'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
       expect(find.text('Privacy Policy'), findsOneWidget);
-      expect(find.text('Contact'), findsOneWidget);
+      expect(find.text('Help or feedback?'), findsOneWidget);
+      expect(find.text('E-mail'), findsOneWidget);
+      expect(find.text('GitHub issue'), findsOneWidget);
     });
 
     testWidgets("is translated in German", (WidgetTester tester) async {
@@ -77,7 +79,9 @@ void main() {
       expect(find.text('Andere'), findsOneWidget);
       expect(find.text('Über die App'), findsOneWidget);
       expect(find.text('Datenschutz'), findsOneWidget);
-      expect(find.text('Kontakt'), findsOneWidget);
+      expect(find.text('Hilfe oder Feedback?'), findsOneWidget);
+      expect(find.text('E-Mail'), findsOneWidget);
+      expect(find.text('GitHub issue'), findsOneWidget);
     });
     testWidgets("is translated in Portugese", (WidgetTester tester) async {
       await tester.pumpWidget(buildTestWidget(const Locale('pt')));
@@ -89,7 +93,9 @@ void main() {
       expect(find.text('Outros'), findsOneWidget);
       expect(find.text('Sobre'), findsOneWidget);
       expect(find.text('Política de Privacidade'), findsOneWidget);
-      expect(find.text('Contato'), findsOneWidget);
+      expect(find.text('Ajuda ou feedback?'), findsOneWidget);
+      expect(find.text('E-mail'), findsOneWidget);
+      expect(find.text('GitHub issue'), findsOneWidget);
     });
   });
 }
