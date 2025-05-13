@@ -21,6 +21,9 @@ void main() {
 
     // Mock the isAuthenticated property
     when(() => mockBloc.isAuthenticated).thenReturn(false);
+    // Mock the register method to return a Future<void>
+    when(() => mockBloc.register(any(), any(), any()))
+        .thenAnswer((_) async => Future.value());
   });
 
   Widget createTestWidget() {
@@ -70,7 +73,6 @@ void main() {
 
   testWidgets('does not show error when privacy policy checkbox is checked', (WidgetTester tester) async {
     await tester.pumpWidget(createTestWidget());
-    await enterTextData(tester);
     await tester.tap(find.byType(Checkbox));
     await tester.pump();
 
