@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -86,16 +87,30 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.privacy_tip),
             title: Text(AppLocalizations.of(context)!.settingsPrivacyPolicy),
             onTap: () {
-              launchUrl(Uri.parse(
-                  'https://sensebox.de/sensebox-bike-privacy-policy'));
+              launchUrl(Uri.parse(senseBoxBikePrivacyPolicyUrl));
             },
+          ),
+          // Help Section
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              AppLocalizations.of(context)!.settingsContact,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.contact_mail),
-            title: Text(AppLocalizations.of(context)!.settingsContact),
+            title: Text(AppLocalizations.of(context)!.settingsEmail),
             onTap: () {
               launchUrl(Uri.parse(
-                  'mailto:kontakt@reedu.de?subject=senseBox:bike%20App'));
+                  'mailto:$contactEmail?subject=senseBox:bike%20App'));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.bug_report),
+            title: Text(AppLocalizations.of(context)!.settingsGithub),
+            onTap: () {
+              launchUrl(Uri.parse(gitHubNewIssueUrl));
             },
           ),
         ],

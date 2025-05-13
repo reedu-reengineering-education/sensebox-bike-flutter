@@ -4,6 +4,11 @@ const premanentConnectivityFalurePeriod = 20; // in minutes
 const defaultTimeout = 30; // in seconds
 
 const openSenseMapUrl = 'https://api.opensensemap.org';
+const senseBoxBikePrivacyPolicyUrl =
+    'https://sensebox.de/sensebox-bike-privacy-policy';
+const contactEmail = 'kontakt@reedu.de';
+const gitHubNewIssueUrl =
+    'https://github.com/reedu-reengineering-education/sensebox-bike-flutter/issues/new/choose';
 const privacyPolicyUrl =
     'https://opensensemap.org/privacy'; // URL for the privacy policy
 

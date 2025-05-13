@@ -98,7 +98,9 @@
             }
         }
     },
-    "settingsContact": "Contato",
+    "settingsContact": "Ajuda ou feedback?",
+    "settingsEmail": "E-mail",
+    "settingsGithub": "Github Issue",
     "privacyZonesStart": "Toque no mapa para começar a desenhar uma área. Toque na marca de seleção para finalizar.",
     "privacyZonesDelete": "Toque em uma área para excluí-la. Toque na marca de seleção para finalizar.",
     "trackDetailsPermissionsError": "Permissão negada para salvar o arquivo no armazenamento externo.",
