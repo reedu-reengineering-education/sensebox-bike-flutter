@@ -98,7 +98,9 @@
             }
         }
     },
-    "settingsContact": "Contact",
+    "settingsContact": "Help or feedback?",
+    "settingsEmail": "E-mail",
+    "settingsGithub": "GitHub issue",
     "privacyZonesStart": "Tap on the map to start drawing a zone. Tap the checkmark to finish.",
     "privacyZonesDelete": "Tap on a zone to delete it. Tap the checkmark to finish.",
     "trackDetailsPermissionsError": "Permission denied to save file to external storage.",

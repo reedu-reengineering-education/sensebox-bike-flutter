@@ -98,7 +98,9 @@
             }
         }
     },
-    "settingsContact": "Kontakt",
+    "settingsContact": "Hilfe oder Feedback?",
+    "settingsEmail": "E-Mail",
+    "settingsGithub": "GitHub issue",
     "privacyZonesStart": "Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.",
     "privacyZonesDelete": "Tippen Sie auf eine Zone, um sie zu löschen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.",
     "trackDetailsPermissionsError": "Keine Berechtigung zum Speichern der Datei auf externem Speicher.",
