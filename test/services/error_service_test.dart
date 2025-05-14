@@ -1,140 +1,139 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import '../test_helpers.dart';
-void main() {}
-// TBD: fix tests
-// void main() {
-//   setUpAll(() {
-//     initializeTestDependencies();
-//   });
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-//   group('ErrorService', () {
-//     testWidgets('shows SnackBar for LocationPermissionDenied error',
-//         (WidgetTester tester) async {
-//       final scaffoldKey = GlobalKey<ScaffoldMessengerState>();
-//       ErrorService.scaffoldKey = scaffoldKey;
+void main() {
+  group('ErrorService', () {
+    group('parseError', () {
+      late BuildContext mockContext;
 
-//       await tester.pumpWidget(MaterialApp(
-//         scaffoldMessengerKey: scaffoldKey,
-//         home: Scaffold( // Add a Scaffold here
-//           body: Builder(
-//             builder: (context) {
-//               return ElevatedButton(
-//                 onPressed: () {
-//                   ErrorService.handleError(
-//                       LocationPermissionDenied(), StackTrace.current);
-//                 },
-//                 child: const Text('Trigger Error'),
-//               );
-//             },
-//           ),
-//         ),
-//       ));
+      Future<void> initializeContext(WidgetTester tester) async {
+        await tester.pumpWidget(MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (context) {
+              mockContext = context;
+              return const SizedBox();
+            },
+          ),
+        ));
+      }
 
-//       await tester.tap(find.text('Trigger Error'));
-//       await tester.pump();
+      testWidgets('returns correct message for LocationPermissionDenied',
+          (WidgetTester tester) async {
+        await initializeContext(tester);
 
-//       expect(
-//         find.text(
-//             'Please allow the app to access your location in the phone settings.'),
-//         findsOneWidget,
-//       );
-//     });
+        final message = ErrorService.parseError(
+          LocationPermissionDenied(),
+          mockContext,
+        );
 
-//     testWidgets('shows SnackBar for ScanPermissionDenied error',
-//         (WidgetTester tester) async {
-//       final scaffoldKey = GlobalKey<ScaffoldMessengerState>();
-//       ErrorService.scaffoldKey = scaffoldKey;
+        expect(
+          message,
+          'Please allow the app to access current location of the current device in the phone settings.',
+        );
+      });
 
-//       await tester.pumpWidget(MaterialApp(
-//         scaffoldMessengerKey: scaffoldKey,
-//         home: Scaffold( // Add a Scaffold here
-//           body: Builder(
-//             builder: (context) {
-//               return ElevatedButton(
-//                 onPressed: () {
-//                   ErrorService.handleError(
-//                       ScanPermissionDenied(), StackTrace.current);
-//                 },
-//                 child: const Text('Trigger Error'),
-//               );
-//             },
-//           ),
-//         ),
-//       ));
+      testWidgets('returns correct message for ScanPermissionDenied',
+          (WidgetTester tester) async {
+        await initializeContext(tester);
 
-//       await tester.tap(find.text('Trigger Error'));
-//       await tester.pump();
+        final message = ErrorService.parseError(
+          ScanPermissionDenied(),
+          mockContext,
+        );
 
-//       expect(
-//         find.text(
-//             'Please allow the app to scan nearby devices in the phone settings.'),
-//         findsOneWidget,
-//       );
-//     });
+        expect(
+          message,
+          'Please allow the app to scan nearby devices in the phone settings.',
+        );
+      });
 
-//     testWidgets('shows SnackBar for NoSenseBoxSelected error',
-//         (WidgetTester tester) async {
-//       final scaffoldKey = GlobalKey<ScaffoldMessengerState>();
-//       ErrorService.scaffoldKey = scaffoldKey;
+      testWidgets('returns correct message for NoSenseBoxSelected',
+          (WidgetTester tester) async {
+        await initializeContext(tester);
 
-//       await tester.pumpWidget(MaterialApp(
-//         scaffoldMessengerKey: scaffoldKey,
-//         home: Scaffold( // Add a Scaffold here
-//           body: Builder(
-//             builder: (context) {
-//               return ElevatedButton(
-//                 onPressed: () {
-//                   ErrorService.handleError(
-//                       NoSenseBoxSelected(), StackTrace.current);
-//                 },
-//                 child: const Text('Trigger Error'),
-//               );
-//             },
-//           ),
-//         ),
-//       ));
+        final message = ErrorService.parseError(
+          NoSenseBoxSelected(),
+          mockContext,
+        );
 
-//       await tester.tap(find.text('Trigger Error'));
-//       await tester.pump();
+        expect(
+          message,
+          'Please login to your openSenseMap account and select box in order to allow upload sensor data to the cloud.',
+        );
+      });
 
-//       expect(
-//         find.text(
-//             'Please log in to your openSenseMap account and select a box to upload sensor data to the cloud.'),
-//         findsOneWidget,
-//       );
-//     });
+      testWidgets('returns unknown error message for other exceptions',
+          (WidgetTester tester) async {
+        await initializeContext(tester);
 
-//     testWidgets('shows SnackBar for unknown error', (WidgetTester tester) async {
-//       final scaffoldKey = GlobalKey<ScaffoldMessengerState>();
-//       ErrorService.scaffoldKey = scaffoldKey;
+        final message = ErrorService.parseError(
+          Exception('Test error'),
+          mockContext,
+        );
 
-//       await tester.pumpWidget(MaterialApp(
-//         scaffoldMessengerKey: scaffoldKey,
-//         home: Scaffold( // Add a Scaffold here
-//           body: Builder(
-//             builder: (context) {
-//               return ElevatedButton(
-//                 onPressed: () {
-//                   ErrorService.handleError(Exception('Test error'),
-//                       StackTrace.current);
-//                 },
-//                 child: const Text('Trigger Error'),
-//               );
-//             },
-//           ),
-//         ),
-//       ));
+        expect(message, 'Unknown error: Exception: Test error');
+      });
+    });
+  
+    group('logToConsole', () {
+      test('logs error and stack trace to console', () {
+        final error = Exception('Test error');
+        final stackTrace = StackTrace.current;
 
-//       await tester.tap(find.text('Trigger Error'));
-//       await tester.pump();
+        // Capture debugPrint output
+        final log = <String>[];
+        debugPrint = (String? message, {int? wrapWidth}) {
+          log.add(message ?? '');
+        };
 
-//       expect(
-//         find.text('Unknown error: Exception: Test error'),
-//         findsOneWidget,
-//       );
-//     });
-//   });
-// }
+        // Call the method
+        ErrorService.logToConsole(error, stackTrace);
+
+        // Restore debugPrint
+        debugPrint = debugPrintSynchronously;
+
+        // Verify the output
+        expect(log, contains(error.toString()));
+      });
+    });
+  
+    group('showUserFeedback', () {
+      testWidgets('displays SnackBar with correct message',
+          (WidgetTester tester) async {
+        // Create a test widget with a ScaffoldMessenger
+        await tester.pumpWidget(MaterialApp(
+          scaffoldMessengerKey: ErrorService.scaffoldKey,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return ElevatedButton(
+                  onPressed: () {
+                    ErrorService.showUserFeedback(LocationPermissionDenied());
+                  },
+                  child: const Text('Trigger Error'),
+                );
+              },
+            ),
+          ),
+        ));
+
+        // Tap the button to trigger the error
+        await tester.tap(find.text('Trigger Error'));
+        await tester.pump();
+
+        // Verify that the SnackBar is displayed with the correct message
+        expect(
+          find.text(
+              'Please allow the app to access your location in the phone settings.'),
+          findsOneWidget,
+        );
+      });
+    });
+  });
+}

@@ -147,7 +147,7 @@
     "noCampaignsAvailable": "Keine Kampagnen verfügbar",
     "loginScreenTitle": "openSenseMap Konto",
     "connectionButtonEnableBluetooth": "Bluetooth aktivieren",
-    "errorNoLocationAccess": "Bitte erlauben Sie der aktuellen App, in den Telefoneinstellungen auf den Standort des Gerätes zuzugreifen.", 
-    "errorNoScanAccess": "Bitte erlauben Sie der aktuellen App, in den Telefoneinstellungen nach Geräten in der Nähe zu suchen.", 
+    "errorNoLocationAccess": "Bitte erlauben Sie der App, auf Ihren aktuellen Standort zuzugreifen.", 
+    "errorNoScanAccess": "Bitte erlauben Sie der App, in den Telefoneinstellungen nach Geräten in der Nähe zu suchen.", 
     "errorNoSenseBoxSelected": "Bitte loggen Sie sich in Ihr openSenseMap-Konto ein und wählen Sie eine Box aus, um Sensordaten in die Cloud hochzuladen."
 }
