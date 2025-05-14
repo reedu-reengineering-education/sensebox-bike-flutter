@@ -149,5 +149,8 @@
     "connectionButtonEnableBluetooth": "Bluetooth aktivieren",
     "errorNoLocationAccess": "Bitte erlauben Sie der App, auf Ihren aktuellen Standort zuzugreifen.", 
     "errorNoScanAccess": "Bitte erlauben Sie der App, in den Telefoneinstellungen nach Geräten in der Nähe zu suchen.", 
-    "errorNoSenseBoxSelected": "Bitte loggen Sie sich in Ihr openSenseMap-Konto ein und wählen Sie eine Box aus, um Sensordaten in die Cloud hochzuladen."
+    "errorNoSenseBoxSelected": "Bitte loggen Sie sich in Ihr openSenseMap-Konto ein und wählen Sie eine Box aus, um Sensordaten in die Cloud hochzuladen.",
+    "selectCsvFormat": "CSV-Format auswählen",
+    "regularCsv": "Reguläres CSV",
+    "openSenseMapCsv": "openSenseMap CSV"
 }

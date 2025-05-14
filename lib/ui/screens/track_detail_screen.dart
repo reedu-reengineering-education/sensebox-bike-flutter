@@ -10,6 +10,8 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/common/circular_list_tile.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
@@ -43,10 +45,15 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     _sensorDataFuture = IsarService().sensorService.getSensorDataByTrackId(id);
   }
 
-  Future<void> _exportTrackToCsv() async {
+  Future<void> _exportTrackToCsv(
+      {bool isOpenSourceMapCompatible = false}) async {
     setState(() {
       _isDownloading = true; // Show spinner
     });
+    
+    if (isOpenSourceMapCompatible) {
+      debugPrint('//// Exporting track to OpenSenseMap compatible CSV');
+    }
 
     try {
       final isarService = IsarService();
@@ -167,7 +174,39 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                   ),
                 )
               : IconButton(
-                  onPressed: _exportTrackToCsv,
+                  onPressed: () async {
+                    final selectedFormat = await showDialog<String>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text(
+                              AppLocalizations.of(context)!.selectCsvFormat),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularListTile(
+                                title: AppLocalizations.of(context)!.regularCsv,
+                                onTap: () => Navigator.pop(context, 'regular'),
+                              ),
+                              CustomSpacer(),
+                              CircularListTile(
+                                title: AppLocalizations.of(context)!
+                                    .openSenseMapCsv,
+                                onTap: () =>
+                                    Navigator.pop(context, 'openSenseMap'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+
+                    if (selectedFormat == 'regular') {
+                      await _exportTrackToCsv();
+                    } else if (selectedFormat == 'openSenseMap') {
+                      await _exportTrackToCsv(isOpenSourceMapCompatible: true);
+                    }
+                  },
                   icon: const Icon(Icons.file_download),
                 ),
         ],
