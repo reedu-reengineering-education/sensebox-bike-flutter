@@ -166,9 +166,15 @@ Color getSensorColor(String sensorType) {
   }
 }
 
-String? findSensorIdByData(SensorData seonsorData, List<Sensor> boxSensors) {
+String? findSensorIdByData(SensorData sensorData, List<Sensor> boxSensors) {
   final sensorDataTitle =
-      getTitleFromSensorKey(seonsorData.title, seonsorData.attribute);
+      getTitleFromSensorKey(sensorData.title, sensorData.attribute);
+
+  if (sensorDataTitle == null) {
+    debugPrint(
+        "No matching title found for sensor key: ${sensorData.title} with attribute: ${sensorData.attribute}");
+    return null;
+  }
 
   for (var sensor in boxSensors) {
     if (sensorDataTitle == sensor.title) {
