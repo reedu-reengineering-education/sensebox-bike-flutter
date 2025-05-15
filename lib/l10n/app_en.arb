@@ -41,6 +41,7 @@
             }
         }
     },
+    "generalExport": "Export",
     "generalLogin": "Login",
     "generalLogout": "Logout",
     "generalRegister": "Register",

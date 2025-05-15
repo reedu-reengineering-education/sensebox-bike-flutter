@@ -12,6 +12,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/common/circular_list_tile.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
+import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
@@ -157,59 +158,108 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         title: _buildFutureBuilder<TrackData?>(
           future: _trackFuture,
           builder: (track) => Text(DateFormat('yyyy-MM-dd HH:mm')
               .format(track!.geolocations.first.timestamp)),
-          errorText: AppLocalizations.of(context)!.trackDetailsLoadingError,
-          noDataText: AppLocalizations.of(context)!.trackDetailsNoTrackData,
+          errorText: localizations.trackDetailsLoadingError,
+          noDataText: localizations.trackDetailsNoTrackData,
         ),
         actions: [
           _isDownloading
-              ? const Padding(
-                  padding: EdgeInsets.all(12.0),
-                  child: SizedBox(
-                    height: 32.0,
-                    width: 32.0,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                )
+              ? Loader()
               : IconButton(
                   onPressed: () async {
-                    final selectedFormat = await showDialog<String>(
+                    String? selectedFormat;
+                    bool isExporting = false;
+
+                    Future<void> _showErrorDialog(
+                        BuildContext context, String errorMessage) async {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(localizations.generalError),
+                          content: Text(errorMessage),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: Text(localizations.generalOk),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    await showDialog(
                       context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text(
-                              AppLocalizations.of(context)!.selectCsvFormat),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularListTile(
-                                title: AppLocalizations.of(context)!.regularCsv,
-                                onTap: () => Navigator.pop(context, 'regular'),
+                      builder: (context) {
+                        return StatefulBuilder(
+                          builder: (context, setState) {
+                            return AlertDialog(
+                              title: Text(localizations.selectCsvFormat),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  CircularListTile(
+                                    title: localizations.regularCsv,
+                                    isSelected: selectedFormat == 'regular',
+                                    onTap: () => setState(
+                                        () => selectedFormat = 'regular'),
+                                  ),
+                                  CustomSpacer(height: 8),
+                                  CircularListTile(
+                                    title: localizations.openSenseMapCsv,
+                                    isSelected:
+                                        selectedFormat == 'openSenseMap',
+                                    onTap: () => setState(
+                                        () => selectedFormat = 'openSenseMap'),
+                                  ),
+                                ],
                               ),
-                              CustomSpacer(),
-                              CircularListTile(
-                                title: AppLocalizations.of(context)!
-                                    .openSenseMapCsv,
-                                onTap: () =>
-                                    Navigator.pop(context, 'openSenseMap'),
-                              ),
-                            ],
-                          ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: Text(localizations.generalCancel),
+                                ),
+                                FilledButton(
+                                  onPressed: (selectedFormat == null ||
+                                          isExporting)
+                                      ? null
+                                      : () async {
+                                          setState(() => isExporting = true);
+                                          try {
+                                            if (selectedFormat == 'regular') {
+                                              await _exportTrackToCsv();
+                                            } else if (selectedFormat ==
+                                                'openSenseMap') {
+                                              await _exportTrackToCsv(
+                                                  isOpenSourceMapCompatible:
+                                                      true);
+                                            }
+                                            Navigator.of(context).pop();
+                                          } catch (e) {
+                                            await _showErrorDialog(
+                                                context, e.toString());
+                                          } finally {
+                                            setState(() => isExporting = false);
+                                          }
+                                        },
+                                  child: isExporting
+                                      ? Loader()
+                                      : Text(localizations.generalExport),
+                                ),
+                              ],
+                            );
+                          },
                         );
                       },
                     );
-
-                    if (selectedFormat == 'regular') {
-                      await _exportTrackToCsv();
-                    } else if (selectedFormat == 'openSenseMap') {
-                      await _exportTrackToCsv(isOpenSourceMapCompatible: true);
-                    }
-                  },
+},
                   icon: const Icon(Icons.file_download),
                 ),
         ],
