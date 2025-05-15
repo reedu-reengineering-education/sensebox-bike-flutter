@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/constants.dart';
 
 class CircularListTile extends StatelessWidget {
   final String title;
@@ -14,33 +15,32 @@ class CircularListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return GestureDetector(
       onTap: onTap,
       child: Row(
         children: [
           Container(
-            width: 16,
-            height: 16,
+            width: circleSize,
+            height: circleSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isSelected
-                  ? Theme.of(context).colorScheme.secondary
-                  : Colors.transparent,
+              color:
+                  isSelected ? theme.colorScheme.secondary : Colors.transparent,
               border: Border.all(
-                color: Theme.of(context).colorScheme.secondary,
-                width: 2,
-              ),
+                  color: theme.colorScheme.secondary, width: borderWidth),
             ),
             child: isSelected
                 ? Icon(
                     Icons.check,
-                    size: 10,
-                    color: Theme.of(context).colorScheme.onSecondary,
+                    size: iconSize,
+                    color: theme.colorScheme.onSecondary,
                   )
                 : null,
           ),
-          const SizedBox(width: 12), // Space between the circle and the text
-          Text(title),
+          const SizedBox(width: spacing),
+          Text(title, style: theme.textTheme.bodyMedium),
         ],
       ),
     );

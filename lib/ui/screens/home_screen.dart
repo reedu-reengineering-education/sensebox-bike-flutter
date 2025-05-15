@@ -4,6 +4,7 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
@@ -75,6 +76,8 @@ class _SenseBoxSelectionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final OpenSenseMapBloc osemBloc = Provider.of<OpenSenseMapBloc>(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     
     // Show the button only if the user is authenticated
     if (!osemBloc.isAuthenticated) {
@@ -88,13 +91,9 @@ class _SenseBoxSelectionButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           side: BorderSide(
             color: osemBloc.selectedSenseBox == null
-                ? Theme.of(context)
-                    .colorScheme
-                    .error // Red outline if no box is selected
-                : Theme.of(context)
-                    .colorScheme
-                    .tertiary, // Default outline if a box is selected
-            width: 1.5,
+                ? colorScheme.error
+                : colorScheme.tertiary,
+            width: borderWidth,
           ),
         ),
         onPressed: () => showSenseBoxSelection(context, osemBloc),
@@ -105,19 +104,16 @@ class _SenseBoxSelectionButton extends StatelessWidget {
             var selectedBox = snapshot.data;
 
             if (snapshot.hasError) {
-              return Icon(Icons.error,
-                  color: Theme.of(context).colorScheme.error);
+              return Icon(Icons.error, color: colorScheme.error);
             } else if (selectedBox == null) {
               // If no box is selected, show a red icon
               return Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.link, color: Theme.of(context).colorScheme.error),
+                Icon(Icons.link, color: colorScheme.error),
                 const SizedBox(width: 8),
                 Text(
                   '...',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Theme.of(context).colorScheme.error),
+                  style:
+                      textTheme.bodyMedium?.copyWith(color: colorScheme.error),
                 ),
               ]);
             } else {
@@ -125,14 +121,12 @@ class _SenseBoxSelectionButton extends StatelessWidget {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check,
-                      color: Theme.of(context).colorScheme.tertiary),
+                  Icon(Icons.check, color: colorScheme.tertiary),
                   const SizedBox(width: 8),
                   Text(
                     truncateBoxName(selectedBox.name ?? ''),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.tertiary),
-                  ),
+                      style: textTheme.bodyMedium
+                          ?.copyWith(color: colorScheme.tertiary)),
                 ],
               );
             }

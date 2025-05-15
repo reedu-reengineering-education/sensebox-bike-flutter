@@ -3,6 +3,12 @@ const retryPeriod = 2; // in minutes
 const premanentConnectivityFalurePeriod = 20; // in minutes
 const defaultTimeout = 30; // in seconds
 
+// Constants for styling
+const double circleSize = 16.0;
+const double iconSize = 10.0;
+const double spacing = 12.0;
+const double borderWidth = 1.5;
+
 const openSenseMapUrl = 'https://api.opensensemap.org';
 const senseBoxBikePrivacyPolicyUrl =
     'https://sensebox.de/sensebox-bike-privacy-policy';
