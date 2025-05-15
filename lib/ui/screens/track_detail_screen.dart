@@ -50,14 +50,17 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     setState(() {
       _isDownloading = true; // Show spinner
     });
-    
-    if (isOpenSourceMapCompatible) {
-      debugPrint('//// Exporting track to OpenSenseMap compatible CSV');
-    }
 
     try {
       final isarService = IsarService();
-      final csvFilePath = await isarService.exportTrackToCsv(id);
+      final String csvFilePath;
+      
+      if (isOpenSourceMapCompatible) {
+        csvFilePath =
+            await isarService.exportTrackToCsvInOpenSenseMapFormat(id);
+      } else {
+        csvFilePath = await isarService.exportTrackToCsv(id);
+      }
 
       // if android, save to external storage
       // if ios, open share dialog
