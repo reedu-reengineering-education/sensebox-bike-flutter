@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 
 String? getSearchKey(String key, String? attribute) {
   if (attribute != null) {
@@ -162,4 +164,23 @@ Color getSensorColor(String sensorType) {
     default:
       return Colors.grey;
   }
+}
+
+String? findSensorIdByData(SensorData sensorData, List<Sensor> boxSensors) {
+  final sensorDataTitle =
+      getTitleFromSensorKey(sensorData.title, sensorData.attribute);
+
+  if (sensorDataTitle == null) {
+    debugPrint(
+        "No matching title found for sensor key: ${sensorData.title} with attribute: ${sensorData.attribute}");
+    return null;
+  }
+
+  for (var sensor in boxSensors) {
+    if (sensorDataTitle == sensor.title) {
+      return sensor.id;
+    }
+  }
+  // Return null if no match is found
+  return null;
 }

@@ -1,14 +1,19 @@
 // File: lib/services/isar_service.dart
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:csv/csv.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
 import 'package:sensebox_bike/services/isar_service/sensor_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class IsarService {
   // Use Singleton pattern to avoid creation of multiple instances
@@ -21,6 +26,49 @@ class IsarService {
   final SensorService sensorService = SensorService();
 
   // Additional high-level methods that require coordination between services
+  Future<String> exportTrackToCsvInOpenSenseMapFormat(int trackId) async {
+    final track = await trackService.getTrackById(trackId);
+    if (track == null) {
+      throw Exception("Track not found");
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final String? selectedSenseBoxJson = prefs.getString('selectedSenseBox');
+
+    if (selectedSenseBoxJson == null) {
+      throw Exception("No selected senseBox found");
+    }
+    final senseBox = SenseBox.fromJson(jsonDecode(selectedSenseBoxJson));
+    if (senseBox.sensors == null || senseBox.sensors!.isEmpty) {
+      throw Exception("SenseBox has no sensors");
+    }
+
+    final geolocationDataList =
+        await geolocationService.getGeolocationDataByTrackId(trackId);
+    final List<String> sensorData = [];
+
+    for (var geoData in geolocationDataList) {
+      final data = await sensorService.getSensorDataByGeolocationId(geoData.id);
+      final extendedData = data.map((sensor) {
+        final sensorId = findSensorIdByData(sensor, senseBox.sensors ?? []);
+
+        return [
+          sensorId,
+          sensor.value.toString(),
+          '${geoData.timestamp.toIso8601String()}Z', // Timestamp in RFC 3339
+          geoData.longitude.toString(),
+          geoData.latitude.toString(),
+          'null' // Height (null as per the requirement)
+        ].join(',');
+      }).toList();
+      sensorData.addAll(extendedData);
+    }
+
+    // Convert the enriched sensor data to JSON lines
+    final csvContent = sensorData.join('\n');
+    final filePath = await _saveCsvFile(track, csvContent);
+
+    return filePath;
+  }
 
   Future<String> exportTrackToCsv(int trackId) async {
     final track = await trackService.getTrackById(trackId);

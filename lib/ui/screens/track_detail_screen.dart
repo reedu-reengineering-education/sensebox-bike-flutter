@@ -10,6 +10,10 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/common/circular_list_tile.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
+import 'package:sensebox_bike/ui/widgets/common/loader.dart';
+import 'package:sensebox_bike/ui/widgets/track/export_options_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
@@ -43,14 +47,22 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     _sensorDataFuture = IsarService().sensorService.getSensorDataByTrackId(id);
   }
 
-  Future<void> _exportTrackToCsv() async {
+  Future<void> _exportTrackToCsv(
+      {bool isOpenSourceMapCompatible = false}) async {
     setState(() {
       _isDownloading = true; // Show spinner
     });
 
     try {
       final isarService = IsarService();
-      final csvFilePath = await isarService.exportTrackToCsv(id);
+      final String csvFilePath;
+      
+      if (isOpenSourceMapCompatible) {
+        csvFilePath =
+            await isarService.exportTrackToCsvInOpenSenseMapFormat(id);
+      } else {
+        csvFilePath = await isarService.exportTrackToCsv(id);
+      }
 
       // if android, save to external storage
       // if ios, open share dialog
@@ -147,28 +159,37 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         title: _buildFutureBuilder<TrackData?>(
           future: _trackFuture,
           builder: (track) => Text(DateFormat('yyyy-MM-dd HH:mm')
               .format(track!.geolocations.first.timestamp)),
-          errorText: AppLocalizations.of(context)!.trackDetailsLoadingError,
-          noDataText: AppLocalizations.of(context)!.trackDetailsNoTrackData,
+          errorText: localizations.trackDetailsLoadingError,
+          noDataText: localizations.trackDetailsNoTrackData,
         ),
         actions: [
           _isDownloading
-              ? const Padding(
-                  padding: EdgeInsets.all(12.0),
-                  child: SizedBox(
-                    height: 32.0,
-                    width: 32.0,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                )
+              ? Loader()
               : IconButton(
-                  onPressed: _exportTrackToCsv,
                   icon: const Icon(Icons.file_download),
+                  onPressed: () async {
+                    await showDialog(
+                      context: context,
+                      builder: (context) => ExportOptionsDialog(
+                        onExport: (selectedFormat) async {
+                          if (selectedFormat == 'regular') {
+                            await _exportTrackToCsv();
+                          } else if (selectedFormat == 'openSenseMap') {
+                            await _exportTrackToCsv(
+                                isOpenSourceMapCompatible: true);
+                          }
+                        },
+                      ),
+                    );
+                  },
                 ),
         ],
       ),
