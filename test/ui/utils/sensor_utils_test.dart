@@ -4,25 +4,14 @@ import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 void main() {
+  final boxSensors = [
+    Sensor(id: "67d937c2b6275400071c38c0", title: "Temperature", unit: "°C"),
+    Sensor(id: "67d937c2b6275400071c38c1", title: "Rel. Humidity", unit: "%"),
+    Sensor(
+        id: "67d937c2b6275400071c38c2", title: "Finedust PM1", unit: "µg/m³"),
+  ];
+  
   group('findSensorIdByData', () {
-    final boxSensors = [
-      Sensor(
-        id: "67d937c2b6275400071c38c0",
-        title: "Temperature",
-        unit: "°C",
-      ),
-      Sensor(
-        id: "67d937c2b6275400071c38c1",
-        title: "Rel. Humidity",
-        unit: "%",
-      ),
-      Sensor(
-        id: "67d937c2b6275400071c38c2",
-        title: "Finedust PM1",
-        unit: "µg/m³",
-      ),
-    ];
-
     test('should return sensor ID when title and attribute match', () {
       final sensorData = SensorData()
         ..title = "finedust"
