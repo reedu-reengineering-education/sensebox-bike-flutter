@@ -15,13 +15,15 @@ class CircularListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(borderRadius),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+        padding:
+            const EdgeInsets.symmetric(vertical: padding, horizontal: padding),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -30,29 +32,22 @@ class CircularListTile extends StatelessWidget {
               height: circleSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected
-                    ? theme.colorScheme.secondary
-                    : Colors.transparent,
+                color: isSelected ? colorScheme.secondary : Colors.transparent,
                 border: Border.all(
-                  color: theme.colorScheme.secondary,
-                  width: borderWidth,
-                ),
+                    color: colorScheme.secondary, width: borderWidth),
               ),
               child: isSelected
-                  ? Icon(
-                      Icons.check,
-                      size: iconSize,
-                      color: theme.colorScheme.onSecondary,
-                    )
+                  ? Icon(Icons.check,
+                      size: iconSize, color: colorScheme.onSecondary)
                   : null,
             ),
             const SizedBox(width: spacing),
             Text(
               title,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: textTheme.bodyMedium?.copyWith(
                 color: isSelected
-                    ? theme.colorScheme.secondary
-                    : theme.textTheme.bodyMedium?.color,
+                    ? colorScheme.secondary
+                    : textTheme.bodyMedium?.color,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

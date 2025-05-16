@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/circular_list_tile.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -41,34 +42,37 @@ class _ExportOptionsDialogState extends State<ExportOptionsDialog> {
         ],
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(localizations.generalCancel),
-        ),
-        FilledButton(
-          onPressed: (selectedFormat == null || isExporting)
-              ? null
-              : () async {
-                  setState(() => isExporting = true);
-                  try {
-                    await widget.onExport(selectedFormat!);
-                    if (context.mounted) Navigator.of(context).pop();
-                  } catch (e) {
-                    if (context.mounted) {
-                      // Use the reusable error dialog
-                      await showErrorDialog(context, e.toString());
-                    }
-                  } finally {
-                    if (mounted) setState(() => isExporting = false);
-                  }
-                },
-          child: isExporting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(localizations.generalExport),
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(localizations.generalCancel),
+              ),
+            ),
+            CustomSpacer(),
+            Expanded(
+              child: ButtonWithLoader(
+                isLoading: isExporting,
+                onPressed: (selectedFormat == null || isExporting)
+                    ? null
+                    : () async {
+                        setState(() => isExporting = true);
+                        try {
+                          await widget.onExport(selectedFormat!);
+                          if (context.mounted) Navigator.of(context).pop();
+                        } catch (e) {
+                          if (context.mounted) {
+                            await showErrorDialog(context, e.toString());
+                          }
+                        } finally {
+                          if (mounted) setState(() => isExporting = false);
+                        }
+                      },
+                text: localizations.generalExport,
+              ),
+            ),
+          ],
         ),
       ],
     );
