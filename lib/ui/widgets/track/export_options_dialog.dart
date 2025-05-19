@@ -40,6 +40,7 @@ class _ExportOptionsDialogState extends State<ExportOptionsDialog> {
                       if (context.mounted) Navigator.of(context).pop();
                     } catch (e) {
                       if (context.mounted) {
+                        if (mounted) setState(() => isExporting = false);
                         await showErrorDialog(context, e.toString());
                       }
                     } finally {

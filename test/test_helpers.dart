@@ -50,3 +50,9 @@ Widget createLocalizedTestApp({
 void disableProviderDebugChecks() {
   Provider.debugCheckInvalidValueType = null;
 }
+
+Future<void> tapElement(
+    FinderBase<Element> element, WidgetTester tester) async {
+  await tester.tap(element);
+  await tester.pumpAndSettle();
+}
