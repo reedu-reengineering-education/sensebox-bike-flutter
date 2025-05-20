@@ -10,6 +10,7 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/utils/geo_utils.dart';
 import 'package:turf/turf.dart' as Turf;
 
@@ -27,33 +28,9 @@ class GeolocationBloc with ChangeNotifier {
 
   GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc);
 
-  _checkPermissions() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Check if location services are enabled
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    // Check and request location permissions
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error('Location permissions are permanently denied.');
-    }
-  }
-
   void startListening() async {
     try {
-      await _checkPermissions();
+      await PermissionService.checkLocationPermissions();
 
       late LocationSettings locationSettings;
 
@@ -112,7 +89,7 @@ class GeolocationBloc with ChangeNotifier {
 
   // function to get the current location
   Future<Position> getCurrentLocation() async {
-    await _checkPermissions();
+    await PermissionService.checkLocationPermissions();
 
     return Geolocator.getCurrentPosition();
   }
