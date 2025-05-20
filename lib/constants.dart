@@ -207,7 +207,7 @@ const classicModelSensors = [
 var muensterLocation = Geolocator.Position(
   latitude: 51.9607,
   longitude: 7.6261,
-  timestamp: DateTime.now(),
+  timestamp: DateTime.utc(1973, 4, 2), // Birthdate of Jan Vahrenhold
   accuracy: 0,
   altitude: 0,
   altitudeAccuracy: 0,
