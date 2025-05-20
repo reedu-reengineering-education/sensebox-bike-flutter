@@ -5,6 +5,8 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
@@ -279,13 +281,15 @@ class _StartStopButton extends StatelessWidget {
           : AppLocalizations.of(context)!.connectionButtonStart),
       icon: Icon(
           recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
-      // : recordingBloc.isRecording
-      //     ? Colors.redAccent
-      //     : Theme.of(context).colorScheme.primaryContainer,
-      onPressed: () {
-        recordingBloc.isRecording
-            ? recordingBloc.stopRecording()
-            : recordingBloc.startRecording();
+      onPressed: () async {
+        try {
+          await PermissionService.ensureLocationPermissionsGranted();
+          recordingBloc.isRecording
+              ? recordingBloc.stopRecording()
+              : recordingBloc.startRecording();
+        } catch (e) {
+          ErrorService.handleError(e, StackTrace.current);
+        }
       },
     );
   }

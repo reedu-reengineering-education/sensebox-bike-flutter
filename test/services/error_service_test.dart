@@ -34,7 +34,7 @@ void main() {
 
         expect(
           message,
-          'Please allow the app to access current location of the current device in the phone settings.',
+          'To record tracks, please allow the app to access the device\'s current location in the phone settings.',
         );
       });
 
@@ -49,7 +49,7 @@ void main() {
 
         expect(
           message,
-          'Please allow the app to scan nearby devices in the phone settings.',
+          'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.',
         );
       });
 
@@ -64,7 +64,7 @@ void main() {
 
         expect(
           message,
-          'Please login to your openSenseMap account and select box in order to allow upload sensor data to the cloud.',
+          'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.',
         );
       });
 
