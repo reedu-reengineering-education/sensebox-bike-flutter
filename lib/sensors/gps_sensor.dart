@@ -40,6 +40,23 @@ class GPSSensor extends Sensor {
     MapboxOptions.setAccessToken(mapboxAccessToken);
   }
 
+  void _handleMapCreated(MapboxMap newMapInstance) {
+    // If a previous instance exists and is different, clean up if needed
+    if (mapInstance != null && mapInstance != newMapInstance) {
+      // Optionally: dispose or clean up old mapInstance here
+      debugPrint('Map instance recreated. Resetting state.');
+      // Reset the completer for the new map
+      if (!_mapReadyCompleter.isCompleted) {
+        _mapReadyCompleter.complete();
+      }
+    }
+    mapInstance = newMapInstance;
+    mapInstance!.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    if (!_mapReadyCompleter.isCompleted) {
+      _mapReadyCompleter.complete();
+    }
+  }
+
   @override
   void onDataReceived(List<double> data) async {
     super.onDataReceived(data); // Call the parent class to handle buffering
@@ -143,14 +160,7 @@ class GPSSensor extends Sensor {
                 await mapInstance.annotations.createCircleAnnotationManager();
           },
           onMapCreated: (mapInstance) async {
-            if (this.mapInstance == null) {
-              this.mapInstance = mapInstance;
-              mapInstance.scaleBar
-                  .updateSettings(ScaleBarSettings(enabled: false));
-              _mapReadyCompleter.complete(); // Mark mapInstance as ready
-            } else {
-              debugPrint('Warning: mapInstance is already initialized.');
-            }
+            _handleMapCreated(mapInstance);
           }),
     );
   }
