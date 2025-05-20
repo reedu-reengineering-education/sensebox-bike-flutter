@@ -67,7 +67,7 @@ class ErrorService {
           'Registration failed. Please try again.';
     }
 
-    return 'An unknown error occured. Details: ${error.toString()}';
+    return 'An unknown error occurred. ${error.toString()}';
   }
 
   static void logToConsole(dynamic error, StackTrace stack) {

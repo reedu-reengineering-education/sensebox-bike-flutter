@@ -55,6 +55,9 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     // If sensor values are not available, return early
     if (minSensorValue == double.infinity ||
         maxSensorValue == double.negativeInfinity) {
+      debugPrint(
+        'TrajectoryWidget: No valid sensor values found for sensorType "${widget.sensorType}". Skipping layer addition.',
+      );
       return;
     }
 
