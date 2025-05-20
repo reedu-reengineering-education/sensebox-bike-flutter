@@ -277,7 +277,7 @@ class _StartStopButton extends StatelessWidget {
           recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
       onPressed: () async {
         try {
-          await PermissionService.checkLocationPermissions();
+          await PermissionService.ensureLocationPermissionsGranted();
           recordingBloc.isRecording
               ? recordingBloc.stopRecording()
               : recordingBloc.startRecording();
