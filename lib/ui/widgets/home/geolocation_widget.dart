@@ -4,13 +4,16 @@ import 'dart:convert';
 import 'package:geolocator/geolocator.dart' as Geolocator;
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
+
 import '../../../blocs/track_bloc.dart'; // Import TrackBloc
 import '../../../services/isar_service.dart'; // Import your Isar service
 
@@ -61,13 +64,18 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
       if (enableLocationPuck) {
         if (!mounted) return;
         try {
-          var geoPosition = await Geolocator.Geolocator.getCurrentPosition();
+          final hasPermission =
+              await PermissionService.isLocationPermissionGranted();
+          final geoPosition = hasPermission
+              ? await Geolocator.Geolocator.getCurrentPosition()
+              : muensterLocation; // Münster coordinates
+
           var cameraOptions = CameraOptions(
               center: Point(
                   coordinates:
-                      Position(geoPosition.longitude, geoPosition.latitude)),
-              zoom: 16.0,
-              pitch: 45,
+                    Position(geoPosition.longitude, geoPosition.latitude)),
+            zoom: defaultCameraOptions['zoom'] as double,
+            pitch: defaultCameraOptions['pitch'] as double,
           );
           var animationOptions = MapAnimationOptions(duration: 1000);
 

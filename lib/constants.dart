@@ -1,3 +1,5 @@
+import 'package:geolocator/geolocator.dart' as Geolocator;
+
 const maxRetries = 10;
 const retryPeriod = 2; // in minutes
 const premanentConnectivityFalurePeriod = 20; // in minutes
@@ -201,3 +203,21 @@ const classicModelSensors = [
         "sensorType": 'GPS'
       }
     ];
+
+var muensterLocation = Geolocator.Position(
+  latitude: 51.9607,
+  longitude: 7.6261,
+  timestamp: DateTime.now(),
+  accuracy: 0,
+  altitude: 0,
+  altitudeAccuracy: 0,
+  heading: 0,
+  headingAccuracy: 0,
+  speed: 0,
+  speedAccuracy: 0,
+);
+
+const defaultCameraOptions = {
+  "zoom": 16.0,
+  "pitch": 45.0,
+};

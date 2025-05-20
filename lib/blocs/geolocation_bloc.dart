@@ -30,7 +30,7 @@ class GeolocationBloc with ChangeNotifier {
 
   void startListening() async {
     try {
-      await PermissionService.checkLocationPermissions();
+      await PermissionService.ensureLocationPermissionsGranted();
 
       late LocationSettings locationSettings;
 
@@ -89,7 +89,7 @@ class GeolocationBloc with ChangeNotifier {
 
   // function to get the current location
   Future<Position> getCurrentLocation() async {
-    await PermissionService.checkLocationPermissions();
+    await PermissionService.ensureLocationPermissionsGranted();
 
     return Geolocator.getCurrentPosition();
   }
