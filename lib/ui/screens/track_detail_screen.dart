@@ -47,11 +47,80 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     _sensorDataFuture = IsarService().sensorService.getSensorDataByTrackId(id);
   }
 
-  Future<void> _exportTrackToCsv(
-      {bool isOpenSourceMapCompatible = false}) async {
-    setState(() {
-      _isDownloading = true; // Show spinner
-    });
+  Future<void> _shareFile(String filePath) async {
+    final localization = AppLocalizations.of(context)!;
+
+    try {
+      await Share.shareXFiles([XFile(filePath)],
+          text: localization.trackDetailsExport);
+    } catch (e) {
+      ErrorService.handleError('Error sharing file: $e', StackTrace.current);
+    }
+  }
+
+  Future<void> _handleAndroidExport(String csvFilePath) async {
+    final localization = AppLocalizations.of(context)!;
+
+    try {
+      DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+      final androidInfo = await deviceInfoPlugin.androidInfo;
+
+      // check if api level is smaller than 33
+      if (androidInfo.version.sdkInt < 33) {
+        PermissionStatus status = await Permission.storage.request();
+
+        if (!status.isGranted && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(localization.trackDetailsPermissionsError),
+            action: SnackBarAction(
+                label: localization.generalSettings,
+                onPressed: () => openAppSettings()),
+          ));
+          return;
+        }
+      }
+
+      Directory? directory;
+
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        //downloads folder - android only - API>30
+        directory = Directory('/storage/emulated/0/Download');
+      } else {
+        directory = await getExternalStorageDirectory();
+      }
+
+      if (directory == null || !directory.existsSync()) {
+        ErrorService.handleError(
+            ExportDirectoryAccessError(), StackTrace.current);
+        return;
+      }
+
+      // copy file to external storage
+      final file = File(csvFilePath);
+      final newName = file.path.split('/').last;
+      final newPath = '${directory.path}/$newName';
+
+      await file.copy(newPath);
+
+      if (context.mounted) {
+        // show snackbar
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(localization.trackDetailsFileSaved),
+          action: SnackBarAction(
+            label: localization.generalShare,
+            onPressed: () async {
+              await _shareFile(newPath);
+            },
+          ),
+        ));
+      }
+    } catch (e) {
+      await _shareFile(csvFilePath);
+    }
+  }
+
+  Future<void> _exportTrackToCsv({bool isOpenSourceMapCompatible = false}) async {
+    setState(() => _isDownloading = true);
 
     try {
       final isarService = IsarService();
@@ -68,82 +137,81 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       // if ios, open share dialog
 
       if (Platform.isAndroid) {
-        try {
-          DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-          final androidInfo = await deviceInfoPlugin.androidInfo;
+        await _handleAndroidExport(csvFilePath);
+        // try {
+        //   DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+        //   final androidInfo = await deviceInfoPlugin.androidInfo;
 
-          // check if api level is smaller than 33
-          if (androidInfo.version.sdkInt < 33) {
-            PermissionStatus status = await Permission.storage.request();
+        //   // check if api level is smaller than 33
+        //   if (androidInfo.version.sdkInt < 33) {
+        //     PermissionStatus status = await Permission.storage.request();
 
-            if (!status.isGranted && context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(
-                    AppLocalizations.of(context)!.trackDetailsPermissionsError),
-                action: SnackBarAction(
-                    label: AppLocalizations.of(context)!.generalSettings,
-                    onPressed: () => openAppSettings()),
-              ));
-              return;
-            }
-          }
+        //     if (!status.isGranted && context.mounted) {
+        //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        //         content: Text(localization.trackDetailsPermissionsError),
+        //         action: SnackBarAction(
+        //             label: localization.generalSettings,
+        //             onPressed: () => openAppSettings()),
+        //       ));
+        //       return;
+        //     }
+        //   }
 
-          Directory? directory;
+        //   Directory? directory;
 
-          if (defaultTargetPlatform == TargetPlatform.android) {
-            //downloads folder - android only - API>30
-            directory = Directory('/storage/emulated/0/Download');
-            // directory = await getDownloadsDirectory();
-          } else {
-            directory = await getExternalStorageDirectory();
-          }
+        //   if (defaultTargetPlatform == TargetPlatform.android) {
+        //     //downloads folder - android only - API>30
+        //     directory = Directory('/storage/emulated/0/Download');
+        //   } else {
+        //     directory = await getExternalStorageDirectory();
+        //   }
 
-          if (directory == null || !directory.existsSync()) {
-            ErrorService.handleError(
-                ExportDirectoryAccessError(), StackTrace.current);
-            return;
-          }
+        //   if (directory == null || !directory.existsSync()) {
+        //     ErrorService.handleError(
+        //         ExportDirectoryAccessError(), StackTrace.current);
+        //     return;
+        //   }
 
-          // copy file to external storage
-          final file = File(csvFilePath);
+        //   // copy file to external storage
+        //   final file = File(csvFilePath);
 
-          final newName = file.path.split('/').last;
-          final newPath = '${directory.path}/$newName';
+        //   final newName = file.path.split('/').last;
+        //   final newPath = '${directory.path}/$newName';
 
-          await file.copy(newPath);
+        //   await file.copy(newPath);
 
-          if (context.mounted) {
-            // show snackbar
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content:
-                  Text(AppLocalizations.of(context)!.trackDetailsFileSaved),
-              action: SnackBarAction(
-                label: AppLocalizations.of(context)!.generalShare,
-                onPressed: () {
-                  Share.shareXFiles([XFile(newPath)],
-                      text: AppLocalizations.of(context)!.trackDetailsExport);
-                },
-              ),
-            ));
-          }
-        } catch (e) {
-          var text = context.mounted
-              ? AppLocalizations.of(context)!.trackDetailsExport
-              : 'Track data CSV export.';
-          Share.shareXFiles([XFile(csvFilePath)], text: text);
-        }
+        //   if (context.mounted) {
+        //     // show snackbar
+        //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        //       content: Text(localization.trackDetailsFileSaved),
+        //       action: SnackBarAction(
+        //         label: localization.generalShare,
+        //         onPressed: () {
+        //           Share.shareXFiles([XFile(newPath)],
+        //               text: localization.trackDetailsExport);
+        //         },
+        //       ),
+        //     ));
+        //   }
+        // } catch (e) {
+        //   var text = context.mounted
+        //       ? localization.trackDetailsExport
+        //       : 'Track data CSV export.';
+        //   Share.shareXFiles([XFile(csvFilePath)], text: text);
+        // }
       } else if (Platform.isIOS) {
-        await Share.shareXFiles([XFile(csvFilePath)],
-            text: AppLocalizations.of(context)!.trackDetailsExport);
+        // await Share.shareXFiles([XFile(csvFilePath)],
+        //     text: localization.trackDetailsExport);
+        await _shareFile(csvFilePath);
       }
     } catch (e) {
       ErrorService.handleError('Error exporting CSV: $e', StackTrace.current);
     } finally {
-      setState(() {
-        _isDownloading = false; // Hide spinner
-      });
+      if (mounted) setState(() => _isDownloading = false);
     }
   }
+
+
 
   Widget _buildFutureBuilder<T>({
     required Future<T> future,
