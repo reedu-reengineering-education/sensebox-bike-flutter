@@ -16,7 +16,8 @@ class ErrorService {
           error is LoginError ||
           error is RegistrationError ||
           error is ScanPermissionDenied ||
-          error is NoSenseBoxSelected) {
+          error is NoSenseBoxSelected ||
+          error is ExportDirectoryAccessError) {
         showUserFeedback(error);
       } else {
         logToConsole(error, stack);
@@ -55,9 +56,18 @@ class ErrorService {
     } else if (error is NoSenseBoxSelected) {
       return localizations?.errorNoSenseBoxSelected ??
           'Please log in to your openSenseMap account and select a box to upload sensor data to the cloud.';
+    } else if (error is ExportDirectoryAccessError) {
+      return localizations?.errorExportDirectoryAccess ??
+          'Error accessing export directory. Please make sure the app has permission to access the storage.';
+    } else if (error is LoginError) {
+      return localizations?.errorLoginFailed ??
+          'Login failed. Please check your credentials.';
+    } else if (error is RegistrationError) {
+      return localizations?.errorRegistrationFailed ??
+          'Registration failed. Please try again.';
     }
 
-    return 'Unknown error: ${error.toString()}';
+    return 'An unknown error occurred. ${error.toString()}';
   }
 
   static void logToConsole(dynamic error, StackTrace stack) {

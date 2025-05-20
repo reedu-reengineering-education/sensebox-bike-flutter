@@ -77,7 +77,7 @@ void main() {
           mockContext,
         );
 
-        expect(message, 'Unknown error: Exception: Test error');
+        expect(message, 'An unknown error occurred. Exception: Test error');
       });
     });
   

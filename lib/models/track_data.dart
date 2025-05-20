@@ -41,8 +41,21 @@ class TrackData {
     // Convert geolocations to a list of Point<double>
     final List<Point<double>> coordinates = geolocations
         .map(
-            (geolocation) => Point(geolocation.latitude, geolocation.longitude))
+            (geolocation) => Point(geolocation.longitude, geolocation.latitude))
         .toList();
+
+    if (coordinates.isEmpty) {
+      return "";
+    }
+
+    if (coordinates.length == 1) {
+      final singlePoint = coordinates.first;
+      final repeatedPoints = [
+        [singlePoint.x, singlePoint.y],
+        [singlePoint.x, singlePoint.y]
+      ];
+      return encodePolyline(repeatedPoints);
+    }
     // tolerance based on number of geolocations
     final tolerance = calculateTolerance(coordinates.length);
     // Simplify the polyline with a tolerance (e.g., 0.0001)
@@ -51,7 +64,6 @@ class TrackData {
       tolerance: tolerance, // Adjust tolerance to control simplification
       highestQuality: false, // Use high-quality simplification
     );
-
     // Convert simplified points back to a list of lists for encoding
     final simplifiedList =
         simplifiedCoordinates.map((point) => [point.x, point.y]).toList();
