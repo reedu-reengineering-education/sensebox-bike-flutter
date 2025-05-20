@@ -47,6 +47,30 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     }
   }
 
+  Future<void> _removeLayersAndSources(MapboxMap map) async {
+    final layers = ['line_layer_bg', 'line_layer', 'pointLayer'];
+    final sources = ['lineSource', 'pointSource'];
+
+    for (final layer in layers) {
+      try {
+        if (await map.style.styleLayerExists(layer)) {
+          await map.style.removeStyleLayer(layer);
+        }
+      } catch (e) {
+        debugPrint("Error removing layer $layer: $e");
+      }
+    }
+    for (final source in sources) {
+      try {
+        if (await map.style.styleSourceExists(source)) {
+          await map.style.removeStyleSource(source);
+        }
+      } catch (e) {
+        debugPrint("Error removing source $source: $e");
+      }
+    }
+  }
+
   Future<void> addLayer() async {
     minSensorValue =
         getMinSensorValue(widget.geolocationData, widget.sensorType);
@@ -62,23 +86,7 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     }
 
     try {
-      // Remove existing layers and sources
-      if (await mapInstance.style.styleLayerExists("line_layer_bg")) {
-        await mapInstance.style.removeStyleLayer("line_layer_bg");
-      }
-      if (await mapInstance.style.styleLayerExists("line_layer")) {
-        await mapInstance.style.removeStyleLayer("line_layer");
-      }
-      if (await mapInstance.style.styleSourceExists("lineSource")) {
-        await mapInstance.style.removeStyleSource("lineSource");
-      }
-      // Remove point data & layer, if it exists
-      if (await mapInstance.style.styleSourceExists("pointSource")) {
-        await mapInstance.style.removeStyleSource("pointSource");
-      }
-      if (await mapInstance.style.styleLayerExists("pointLayer")) {
-        await mapInstance.style.removeStyleLayer("pointLayer");
-      }
+      await _removeLayersAndSources(mapInstance);
     } catch (e) {
       debugPrint("Error removing sources and layers: $e");
     }
