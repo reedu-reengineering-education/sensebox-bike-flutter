@@ -149,35 +149,40 @@ class _FloatingButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-      valueListenable: bleBloc.selectedDeviceNotifier,
-      builder: (context, selectedDevice, child) {
-        if (selectedDevice == null) {
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(
-                child: _ConnectButton(bleBloc: bleBloc),
-              ),
-              const SizedBox(width: 12),
-              _SenseBoxSelectionButton(),
-            ],
-          );
-        } else {
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _StartStopButton(recordingBloc: recordingBloc),
-              _DisconnectButton(bleBloc: bleBloc),
-              _SenseBoxSelectionButton(),
-            ],
-          );
-        }
+    return ValueListenableBuilder<bool>(
+      valueListenable: bleBloc.isReconnectingNotifier,
+      builder: (context, isReconnecting, child) {
+        return ValueListenableBuilder(
+          valueListenable: bleBloc.selectedDeviceNotifier,
+          builder: (context, selectedDevice, child) {
+            // Show buttons if device is connected or if reconnecting
+            if (selectedDevice == null && !isReconnecting) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: _ConnectButton(bleBloc: bleBloc),
+                  ),
+                  const SizedBox(width: 12),
+                  _SenseBoxSelectionButton(),
+                ],
+              );
+            } else {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _StartStopButton(recordingBloc: recordingBloc),
+                  _DisconnectButton(bleBloc: bleBloc),
+                  _SenseBoxSelectionButton(),
+                ],
+              );
+            }
+          },
+        );
       },
     );
   }
 }
-
 // Connect button
 class _ConnectButton extends StatelessWidget {
   final BleBloc bleBloc;
@@ -307,13 +312,13 @@ class _DisconnectButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           ),
           icon: isReconnecting
-              ? const Loader()
+              ? const Icon(Icons.bluetooth_searching)
               : const Icon(Icons.bluetooth_disabled),
           label: isReconnecting
               ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
               : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
           // backgroundColor: Theme.of(context).colorScheme.primary,
-          onPressed: bleBloc.disconnectDevice,
+          onPressed: () => bleBloc.disconnectDevice(userInitiated: true),
         );
       },
     );
