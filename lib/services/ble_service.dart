@@ -10,6 +10,25 @@ class BleService {
   Stream<BleStatus> get statusStream => _controller.stream;
   BluetoothDevice? _connectedDevice;
   StreamSubscription? _connectionSubscription;
+  Stream<BluetoothAdapterState> get adapterState =>
+      FlutterBluePlus.adapterState;
+  Stream<List<ScanResult>> get scanResults => FlutterBluePlus.scanResults;
+
+  BleService() {
+    FlutterBluePlus.setLogLevel(LogLevel.error);
+  }
+
+  Future<void> startScan({
+    Duration timeout = const Duration(seconds: 10),
+    List<String>? withNames,
+  }) async {
+    await FlutterBluePlus.startScan(
+        timeout: timeout, withNames: withNames ?? []);
+  }
+
+  Future<void> stopScan() async {
+    await FlutterBluePlus.stopScan();
+  }
   
   Future<void> connectToDevice(BluetoothDevice device) async {
     try {

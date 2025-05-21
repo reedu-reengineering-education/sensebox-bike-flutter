@@ -50,10 +50,8 @@ class BleBloc with ChangeNotifier {
   final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
 
   BleBloc(this.settingsBloc) {
-    FlutterBluePlus.setLogLevel(LogLevel.error);
-
     // Listen for Bluetooth adapter state changes
-    FlutterBluePlus.adapterState.listen((state) {
+    bleService.adapterState.listen((state) {
       updateBluetoothStatus(state == BluetoothAdapterState.on);
     });
 
@@ -73,8 +71,7 @@ class BleBloc with ChangeNotifier {
 
   Future<void> _initializeBluetoothStatus() async {
     // Get the current adapter state
-    BluetoothAdapterState currentState =
-        await FlutterBluePlus.adapterState.first;
+    BluetoothAdapterState currentState = await bleService.adapterState.first;
     updateBluetoothStatus(currentState == BluetoothAdapterState.on);
   }
 
@@ -88,12 +85,12 @@ class BleBloc with ChangeNotifier {
     disconnectDevice(); // Disconnect if there's a current connection
     
     try {
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
+      await bleService.startScan();
     } catch (e) {
       throw ScanPermissionDenied();
     }
 
-    FlutterBluePlus.scanResults.listen((results) {
+    bleService.scanResults.listen((results) {
       devicesList.clear();
 
       for (ScanResult result in results) {
@@ -115,8 +112,8 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> connectToId(String id, BuildContext context) async {
-    await FlutterBluePlus.startScan(withNames: [id]);
-    FlutterBluePlus.scanResults.listen((results) async {
+    await bleService.startScan(withNames: [id]);
+    bleService.scanResults.listen((results) async {
       for (ScanResult result in results) {
         if (result.device.advName.toString() == id) {
           await connectToDevice(result.device, context);
@@ -132,7 +129,7 @@ class BleBloc with ChangeNotifier {
       isConnectingNotifier.value = true; // Notify that we're connecting
       notifyListeners();
 
-      await FlutterBluePlus.stopScan();
+      await bleService.stopScan();
       await bleService.connectToDevice(device);
       _userInitiatedDisconnect = false;
       await _discoverAndListenToCharacteristics(device);
