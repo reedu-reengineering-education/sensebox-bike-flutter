@@ -32,6 +32,7 @@ class BleBloc with ChangeNotifier {
   bool _isConnected = false; // Track the connection status
   bool _userInitiatedDisconnect =
       false; // Track if disconnect was user-initiated
+  bool _hasEverConnected = false;
   final Map<String, StreamController<List<double>>> _characteristicStreams = {};
 
   final Map<String, StreamController<List<String>>>
@@ -133,12 +134,15 @@ class BleBloc with ChangeNotifier {
       await bleService.connectToDevice(device);
       _userInitiatedDisconnect = false;
       await _discoverAndListenToCharacteristics(device);
-
+      _hasEverConnected = true; 
       selectedDeviceNotifier.value = selectedDevice; // Notify connection
       notifyListeners();
       
       // Start monitoring for disconnects and handle reconnection
-      _handleDeviceReconnection(device, context);
+      // only if the device has been connected before
+      if (_hasEverConnected) {
+        _handleDeviceReconnection(device, context);
+      }
     } catch (error, stack) {
       ErrorService.handleError(error, stack);
     } finally {
@@ -183,10 +187,10 @@ class BleBloc with ChangeNotifier {
         attempts++;
         if (attempts >= maxReconnectionAttempts) {
           // Handle the error after max attempts
-          print('Failed to discover services after $attempts attempts: $e');
-          break;
+          throw Exception(
+              'Failed to discover services after $attempts attempts: $e');
         }
-        print('Error discovering services, attempt $attempts: $e');
+        debugPrint('Error discovering services, attempt $attempts: $e');
         await Future.delayed(const Duration(seconds: reconnectionDelay));
       }
     }
@@ -195,7 +199,8 @@ class BleBloc with ChangeNotifier {
   void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
     bool hasVibrated = false; // Flag to track vibration
     int reconnectionAttempts = 0; // Track the number of reconnection attempts
-    
+    debugPrint(
+        'Listening for disconnection events from device: ${device.name}');
     device.connectionState.listen((state) async {
       if (state == BluetoothConnectionState.disconnected &&
           !_userInitiatedDisconnect) {
