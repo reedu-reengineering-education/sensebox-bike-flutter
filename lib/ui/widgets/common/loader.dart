@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class Loader extends StatelessWidget {
-  const Loader({super.key});
+  final bool light;
+
+  const Loader({super.key, this.light = false});
 
   @override
   Widget build(BuildContext context) {
@@ -10,7 +12,9 @@ class Loader extends StatelessWidget {
       width: 16.0, // Match text size
       child: CircularProgressIndicator(
         strokeWidth: 2.0, // Adjust thickness
-        color: Theme.of(context).colorScheme.onPrimary,
+        color: light
+            ? Theme.of(context).colorScheme.secondary
+            : Theme.of(context).colorScheme.onPrimary,
       ),
     );
   }

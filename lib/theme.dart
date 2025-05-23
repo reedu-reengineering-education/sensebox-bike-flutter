@@ -51,3 +51,10 @@ final darkTheme = ThemeData(
     ),
   ),
 );
+
+const double circleSize = 16.0;
+const double iconSize = 12.0;
+const double spacing = 12.0;
+const double borderWidth = 1.5;
+const double padding = 8.0;
+const double borderRadius = 24.0;
