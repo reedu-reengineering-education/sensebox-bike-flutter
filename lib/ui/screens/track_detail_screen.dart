@@ -137,81 +137,69 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       // if ios, open share dialog
 
       if (Platform.isAndroid) {
-        await _handleAndroidExport(csvFilePath);
-        // try {
-        //   DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-        //   final androidInfo = await deviceInfoPlugin.androidInfo;
+        try {
+          DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+          final androidInfo = await deviceInfoPlugin.androidInfo;
 
-        //   // check if api level is smaller than 33
-        //   if (androidInfo.version.sdkInt < 33) {
-        //     PermissionStatus status = await Permission.storage.request();
+          // check if api level is smaller than 33
+          if (androidInfo.version.sdkInt < 33) {
+            PermissionStatus status = await Permission.storage.request();
 
-        //     if (!status.isGranted && context.mounted) {
-        //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        //         content: Text(localization.trackDetailsPermissionsError),
-        //         action: SnackBarAction(
-        //             label: localization.generalSettings,
-        //             onPressed: () => openAppSettings()),
-        //       ));
-        //       return;
-        //     }
-        //   }
+            if (!status.isGranted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(
+                    AppLocalizations.of(context)!.trackDetailsPermissionsError),
+                action: SnackBarAction(
+                    label: AppLocalizations.of(context)!.generalSettings,
+                    onPressed: () => openAppSettings()),
+              ));
+              return;
+            }
+          }
 
-        //   Directory? directory;
+          Directory? directory;
 
-        //   if (defaultTargetPlatform == TargetPlatform.android) {
-        //     //downloads folder - android only - API>30
-        //     directory = Directory('/storage/emulated/0/Download');
-        //   } else {
-        //     directory = await getExternalStorageDirectory();
-        //   }
+          if (defaultTargetPlatform == TargetPlatform.android) {
+            //downloads folder - android only - API>30
+            directory = Directory('/storage/emulated/0/Download');
+            // directory = await getDownloadsDirectory();
+          } else {
+            directory = await getExternalStorageDirectory();
+          }
+          // copy file to external storage
+          final file = File(csvFilePath);
 
-        //   if (directory == null || !directory.existsSync()) {
-        //     ErrorService.handleError(
-        //         ExportDirectoryAccessError(), StackTrace.current);
-        //     return;
-        //   }
+          final newName = file.path.split('/').last;
+          final newPath = '${directory!.path}/$newName';
 
-        //   // copy file to external storage
-        //   final file = File(csvFilePath);
-
-        //   final newName = file.path.split('/').last;
-        //   final newPath = '${directory.path}/$newName';
-
-        //   await file.copy(newPath);
-
-        //   if (context.mounted) {
-        //     // show snackbar
-        //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        //       content: Text(localization.trackDetailsFileSaved),
-        //       action: SnackBarAction(
-        //         label: localization.generalShare,
-        //         onPressed: () {
-        //           Share.shareXFiles([XFile(newPath)],
-        //               text: localization.trackDetailsExport);
-        //         },
-        //       ),
-        //     ));
-        //   }
-        // } catch (e) {
-        //   var text = context.mounted
-        //       ? localization.trackDetailsExport
-        //       : 'Track data CSV export.';
-        //   Share.shareXFiles([XFile(csvFilePath)], text: text);
-        // }
+          await file.copy(newPath);
+          // show snackbar
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context)!.trackDetailsFileSaved),
+            action: SnackBarAction(
+              label: AppLocalizations.of(context)!.generalShare,
+              onPressed: () {
+                Share.shareXFiles([XFile(newPath)],
+                    text: AppLocalizations.of(context)!.trackDetailsExport);
+              },
+            ),
+          ));
+        } catch (e) {
+          Share.shareXFiles([XFile(csvFilePath)],
+              text: AppLocalizations.of(context)!.trackDetailsExport);
+        }
       } else if (Platform.isIOS) {
-        // await Share.shareXFiles([XFile(csvFilePath)],
-        //     text: localization.trackDetailsExport);
-        await _shareFile(csvFilePath);
+        await Share.shareXFiles([XFile(csvFilePath)],
+            text: AppLocalizations.of(context)!.trackDetailsExport);
       }
     } catch (e) {
       ErrorService.handleError('Error exporting CSV: $e', StackTrace.current);
     } finally {
-      if (mounted) setState(() => _isDownloading = false);
+      setState(() {
+        _isDownloading = false; // Hide spinner
+      });
     }
   }
-
-
 
   Widget _buildFutureBuilder<T>({
     required Future<T> future,
