@@ -23,7 +23,7 @@ void main() {
   testWidgets('shows options and disables export button if nothing selected', (tester) async {
     await tester.pumpWidget(buildDialog(onExport: (_) async {}));
 
-    expect(find.text('Regular CSV'), findsOneWidget);
+    expect(find.text('Standard CSV'), findsOneWidget);
     expect(find.text('openSenseMap CSV'), findsOneWidget);
 
     // Export button should be disabled initially
@@ -45,7 +45,7 @@ void main() {
     ));
 
     await tapElement(
-        find.widgetWithText(SelectableListTile, 'Regular CSV'), tester);
+        find.widgetWithText(SelectableListTile, 'Standard CSV'), tester);
 
     final exportButton = find.widgetWithText(ButtonWithLoader, 'Export');
     final buttonWidget = tester.widget<ButtonWithLoader>(exportButton);
@@ -66,7 +66,7 @@ void main() {
     ));
 
     await tapElement(
-        find.widgetWithText(SelectableListTile, 'Regular CSV'), tester);
+        find.widgetWithText(SelectableListTile, 'Standard CSV'), tester);
     await tapElement(find.widgetWithText(ButtonWithLoader, 'Export'), tester);
 
     expect(find.textContaining('Export failed!'), findsOneWidget);
