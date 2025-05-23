@@ -152,6 +152,6 @@
     "errorNoScanAccess": "Please allow the app to scan nearby devices in the phone settings.",
     "errorNoSenseBoxSelected": "Please login to your openSenseMap account and select box in order to allow upload sensor data to the cloud.",
     "selectCsvFormat": "Select CSV format",
-    "regularCsv": "Standart CSV",
+    "regularCsv": "Standard CSV",
     "openSenseMapCsv": "openSenseMap CSV"
 }
