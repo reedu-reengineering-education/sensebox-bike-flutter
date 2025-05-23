@@ -152,6 +152,6 @@
     "errorNoScanAccess": "Por favor, permita que o aplicativo procure dispositivos próximos nas configurações do telefone.", 
     "errorNoSenseBoxSelected": "Por favor, faça login na sua conta openSenseMap e selecione uma caixa para permitir o envio dos dados dos sensores para a nuvem.",
     "selectCsvFormat": "Selecionar formato CSV",
-    "regularCsv": "CSV Regular",
+    "regularCsv": "CSV padrão",
     "openSenseMapCsv": "CSV openSenseMap"
 }

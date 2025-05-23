@@ -152,6 +152,6 @@
     "errorNoScanAccess": "Bitte erlauben Sie der App, in den Telefoneinstellungen nach Geräten in der Nähe zu suchen.", 
     "errorNoSenseBoxSelected": "Bitte loggen Sie sich in Ihr openSenseMap-Konto ein und wählen Sie eine Box aus, um Sensordaten in die Cloud hochzuladen.",
     "selectCsvFormat": "CSV-Format auswählen",
-    "regularCsv": "Reguläres CSV",
+    "regularCsv": "Standard CSV",
     "openSenseMapCsv": "openSenseMap CSV"
 }
