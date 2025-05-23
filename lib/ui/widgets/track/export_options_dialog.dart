@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
-import 'package:sensebox_bike/ui/widgets/common/circular_list_tile.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
+import 'package:sensebox_bike/ui/widgets/common/selectable_list_tile.dart';
 
 class ExportOptionsDialog extends StatefulWidget {
   final Future<void> Function(String selectedFormat) onExport;
@@ -52,13 +52,13 @@ class _ExportOptionsDialogState extends State<ExportOptionsDialog> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CircularListTile(
+        SelectableListTile(
           title: localizations.regularCsv,
           isSelected: selectedFormat == 'regular',
           onTap: () => setState(() => selectedFormat = 'regular'),
         ),
         const CustomSpacer(height: 8),
-        CircularListTile(
+        SelectableListTile(
           title: localizations.openSenseMapCsv,
           isSelected: selectedFormat == 'openSenseMap',
           onTap: () => setState(() => selectedFormat = 'openSenseMap'),

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/theme.dart';
 
-class CircularListTile extends StatelessWidget {
+class SelectableListTile extends StatelessWidget {
   final String title;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const CircularListTile({
+  const SelectableListTile({
     super.key,
     required this.title,
     this.isSelected = false,
