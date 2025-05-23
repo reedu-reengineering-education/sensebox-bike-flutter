@@ -87,17 +87,120 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
 
     try {
       await _removeLayersAndSources(mapInstance);
-    } catch (e) {
-      debugPrint("Error removing sources and layers: $e");
+    } catch (_) {}
+
+    // Add trajectory line
+    await mapInstance.style.addLayer(LineLayer(
+      id: "line_layer_bg",
+      sourceId: "lineSource",
+      lineColor: Theme.of(context).brightness == Brightness.dark
+          ? Colors.blueGrey[50]?.value
+          : Colors.blueGrey[900]?.value,
+      lineWidth: 4.0,
+      lineCap: LineCap.ROUND,
+      lineEmissiveStrength: 1,
+    ));
+
+    if (minSensorValue != maxSensorValue) {
+      await _addLineLayer();
+    } else {
+      await _addPointLayer();
     }
 
-    List features = List.generate(widget.geolocationData.length - 1, (index) {
-      GeolocationData current = widget.geolocationData[index];
-      GeolocationData next = widget.geolocationData[index + 1];
+    await _fitCameraToTrajectory();
+  }
 
+  List<dynamic> _sensorColorExpression() {
+    return [
+      "case",
+      [
+        "==",
+        [
+          "typeof",
+          ["get", widget.sensorType]
+        ],
+        "number"
+      ],
+      [
+        "interpolate",
+        ["linear"],
+        ["get", widget.sensorType],
+        minSensorValue!,
+        'green',
+        minSensorValue! + (maxSensorValue! - minSensorValue!) * 0.5,
+        'orange',
+        maxSensorValue!,
+        'red'
+      ],
+      "transparent"
+    ];
+  }
+
+  Future<void> _addLineLayer() async {
+    final features = _buildFeatures();
+    final lineSource = GeoJsonSource(
+      id: "lineSource",
+      data: jsonEncode({"type": "FeatureCollection", "features": features}),
+    );
+    try {
+      await mapInstance.style.addSource(lineSource);
+      // Add a LineLayer with color interpolation based on sensor values
+      await mapInstance.style.addLayer(LineLayer(
+          id: "line_layer",
+          sourceId: "lineSource",
+          lineColorExpression: _sensorColorExpression().cast<Object>(),
+          lineWidth: 12.0,
+          lineCap: LineCap.ROUND,
+          lineEmissiveStrength: 1));
+    } catch (e) {
+      debugPrint("Error adding line layer: $e");
+    }
+  }
+
+  Future<void> _addPointLayer() async {
+    final pointData = widget.geolocationData.first;
+    final sensorValue = minSensorValue!;
+    final circleColor = _getColorForSensorValue(sensorValue);
+
+    final pointSource = GeoJsonSource(
+      id: "pointSource",
+      data: jsonEncode({
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [pointData.longitude, pointData.latitude],
+            },
+            "properties": {"sensorValue": sensorValue},
+          },
+        ],
+      }),
+    );
+
+    try {
+      await mapInstance.style.addSource(pointSource);
+      await mapInstance.style.addLayer(CircleLayer(
+        id: "pointLayer",
+        sourceId: "pointSource",
+        circleColorExpression: _sensorColorExpression().cast<Object>(),
+        circleRadius: 12.0,
+        circleStrokeWidth: 2.0,
+        circleStrokeColor: circleColor,
+      ));
+    } catch (e) {
+      debugPrint("Error adding point layer: $e");
+    }
+  }
+
+  List<Map<String, dynamic>> _buildFeatures() {
+    return List.generate(widget.geolocationData.length - 1, (index) {
+      final current = widget.geolocationData[index];
+      final next = widget.geolocationData[index + 1];
       return {
         "type": "Feature",
-        'properties': {
+        "properties": {
           for (var sensor in current.sensorData)
             if (!sensor.value.isNaN)
               '${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}':
@@ -112,116 +215,38 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
         },
       };
     });
-    
-    if (minSensorValue != maxSensorValue) {
-      // Add new GeoJson source
-      GeoJsonSource lineSource = GeoJsonSource(
-        id: "lineSource",
-        data: jsonEncode({"type": "FeatureCollection", "features": features}),
-      );
+  }
 
-      try {
-        await mapInstance.style.addSource(lineSource);
-      } catch (e) {
-        debugPrint("Error adding source: $e");
-      }
-
-      // Add a LineLayer with color interpolation based on sensor values
-      await mapInstance.style.addLayer(LineLayer(
-          id: "line_layer_bg",
-          sourceId: "lineSource",
-          lineColor: Theme.of(context).brightness == Brightness.dark
-              ? Colors.blueGrey[50]?.value
-              : Colors.blueGrey[900]?.value,
-          lineWidth: 2.0, // Adjust the width as needed
-          lineCap: LineCap.ROUND,
-          lineEmissiveStrength: 1));
+  int _getColorForSensorValue(double value) {
+    if (value <= minSensorValue!) {
+      return Colors.green.value;
+    } else if (value <=
+        minSensorValue! + (maxSensorValue! - minSensorValue!) * 0.5) {
+      return Colors.orange.value;
     } else {
-      // Use the first geolocation as the point to display
-      final GeolocationData pointData = widget.geolocationData.first;
-
-      // Calculate the color based on the sensor value
-      int circleColor;
-      final sensorValue =
-          minSensorValue!; // Since minSensorValue == maxSensorValue
-
-      if (sensorValue <= minSensorValue!) {
-        circleColor = Colors.green.value;
-      } else if (sensorValue <=
-          minSensorValue! + (maxSensorValue! - minSensorValue!) * 0.5) {
-        circleColor = Colors.orange.value;
-      } else {
-        circleColor = Colors.red.value;
-      }
-
-      // Create a GeoJSON source for the single point
-      GeoJsonSource pointSource = GeoJsonSource(
-        id: "pointSource",
-        data: jsonEncode({
-          "type": "FeatureCollection",
-          "features": [
-            {
-              "type": "Feature",
-              "geometry": {
-                "type": "Point",
-                "coordinates": [pointData.longitude, pointData.latitude],
-              },
-              "properties": {
-                "sensorValue":
-                    sensorValue, // Add the sensor value as a property
-              },
-            },
-          ],
-        }),
-      );
-
-      try {
-        // Add the GeoJSON source to the map
-        await mapInstance.style.addSource(pointSource);
-      } catch (e) {
-        debugPrint("Error adding point source: $e");
-      }
-
-      // Add a CircleLayer to display the point
-      await mapInstance.style.addLayer(CircleLayer(
-          id: "pointLayer",
-          sourceId: "pointSource",
-          circleColor: circleColor, // Use the calculated color
-          circleRadius: 8.0, // Adjust the size of the point
-          circleStrokeWidth: 2.0,
-          circleStrokeColor: circleColor));
+      return Colors.red.value;
     }
+  }
 
-    // Adjust the camera to fit the bounds of the trajectory
+Future<void> _fitCameraToTrajectory() async {
     GeolocationData south = widget.geolocationData.first;
     GeolocationData west = widget.geolocationData.first;
     GeolocationData north = widget.geolocationData.first;
     GeolocationData east = widget.geolocationData.first;
 
     for (GeolocationData data in widget.geolocationData) {
-      if (data.latitude < south.latitude) {
-        south = data;
-      }
-      if (data.latitude > north.latitude) {
-        north = data;
-      }
-      if (data.longitude < west.longitude) {
-        west = data;
-      }
-      if (data.longitude > east.longitude) {
-        east = data;
-      }
+      if (data.latitude < south.latitude) south = data;
+      if (data.latitude > north.latitude) north = data;
+      if (data.longitude < west.longitude) west = data;
+      if (data.longitude > east.longitude) east = data;
     }
 
-    Point southwest = Point(
-      coordinates: Position(west.longitude, south.latitude),
-    );
+    final southwest =
+        Point(coordinates: Position(west.longitude, south.latitude));
+    final northeast =
+        Point(coordinates: Position(east.longitude, north.latitude));
 
-    Point northeast = Point(
-      coordinates: Position(east.longitude, north.latitude),
-    );
-
-    CameraOptions fitBoundsCamera = await mapInstance.cameraForCoordinateBounds(
+    final fitBoundsCamera = await mapInstance.cameraForCoordinateBounds(
       CoordinateBounds(
         southwest: southwest,
         northeast: northeast,
@@ -233,9 +258,12 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
       null,
       null,
     );
-
-    await mapInstance.flyTo(
+    try {
+      await mapInstance.flyTo(
         fitBoundsCamera, MapAnimationOptions(duration: 1000));
+    } catch (e) {
+      debugPrint("Error fitting camera to bounds: $e");
+    }
   }
 
   @override
