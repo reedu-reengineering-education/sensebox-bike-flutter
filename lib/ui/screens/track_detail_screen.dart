@@ -8,10 +8,11 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
-import 'package:sensebox_bike/ui/widgets/track/export_options_dialog.dart';
+import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
@@ -122,7 +123,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             text: AppLocalizations.of(context)!.trackDetailsExport);
       }
     } catch (e) {
-      debugPrint('Error exporting CSV: $e');
+      ErrorService.handleError('Error exporting CSV: $e', StackTrace.current);
     } finally {
       setState(() {
         _isDownloading = false; // Hide spinner
@@ -155,41 +156,55 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Future<List<dynamic>> get _combinedFutures =>
+      Future.wait([_trackFuture, _sensorDataFuture]);
+
+  Widget _buildAppBarTitle(
+      BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
     final localizations = AppLocalizations.of(context)!;
 
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: Loader(light: true));
+    } else if (snapshot.hasError) {
+      return Text(localizations.trackDetailsLoadingError);
+    } else if (!snapshot.hasData ||
+        snapshot.data![0] == null ||
+        (snapshot.data![1] as List).isEmpty) {
+      return Row(children: [Text(localizations.trackDetailsNoTrackData)]);
+    } else {
+      final track = snapshot.data![0] as TrackData;
+      final sensorData = snapshot.data![1] as List<SensorData>;
+      final isDisabled = sensorData.isEmpty;
+
+      return Row(
+        children: [
+          Text(DateFormat('yyyy-MM-dd HH:mm')
+              .format(track.geolocations.first.timestamp)),
+          const Spacer(),
+          ExportButton(
+            isDownloading: _isDownloading,
+            isDisabled: isDisabled,
+            onExport: (selectedFormat) async {
+              if (selectedFormat == 'regular') {
+                await _exportTrackToCsv();
+              } else if (selectedFormat == 'openSenseMap') {
+                await _exportTrackToCsv(isOpenSourceMapCompatible: true);
+              }
+            },
+          ),
+        ],
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: _buildFutureBuilder<TrackData?>(
-          future: _trackFuture,
-          builder: (track) => Text(DateFormat('yyyy-MM-dd HH:mm')
-              .format(track!.geolocations.first.timestamp)),
-          errorText: localizations.trackDetailsLoadingError,
-          noDataText: localizations.trackDetailsNoTrackData,
+        title: FutureBuilder<List<dynamic>>(
+          future: _combinedFutures,
+          builder: (context, snapshot) => _buildAppBarTitle(context, snapshot),
         ),
-        actions: [
-          IconButton(
-            icon: _isDownloading
-                ? Loader(light: true)
-                : const Icon(Icons.file_download),
-                  onPressed: () async {
-                    await showDialog(
-                      context: context,
-                      builder: (context) => ExportOptionsDialog(
-                        onExport: (selectedFormat) async {
-                          if (selectedFormat == 'regular') {
-                            await _exportTrackToCsv();
-                          } else if (selectedFormat == 'openSenseMap') {
-                            await _exportTrackToCsv(
-                                isOpenSourceMapCompatible: true);
-                          }
-                        },
-                      ),
-                    );
-                  },
-                ),
-        ],
       ),
       body: SafeArea(
         minimum: const EdgeInsets.only(bottom: 8),
