@@ -22,13 +22,6 @@ class _ExportOptionsDialogState extends State<ExportOptionsDialog> {
     return Row(
       children: [
         Expanded(
-          child: TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(localizations.generalCancel),
-          ),
-        ),
-        const CustomSpacer(),
-        Expanded(
           child: ButtonWithLoader(
             isLoading: isExporting,
             onPressed: (selectedFormat == null || isExporting)

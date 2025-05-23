@@ -10,8 +10,6 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
-import 'package:sensebox_bike/ui/widgets/common/circular_list_tile.dart';
-import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_options_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
@@ -171,10 +169,10 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           noDataText: localizations.trackDetailsNoTrackData,
         ),
         actions: [
-          _isDownloading
-              ? Loader()
-              : IconButton(
-                  icon: const Icon(Icons.file_download),
+          IconButton(
+            icon: _isDownloading
+                ? Loader(light: true)
+                : const Icon(Icons.file_download),
                   onPressed: () async {
                     await showDialog(
                       context: context,
