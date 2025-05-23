@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_options_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
-import 'package:sensebox_bike/ui/widgets/common/circular_list_tile.dart';
+import 'package:sensebox_bike/ui/widgets/common/selectable_list_tile.dart';
 
 import '../../../test_helpers.dart';
 
@@ -44,7 +44,8 @@ void main() {
       },
     ));
 
-    await tapElement(find.widgetWithText(CircularListTile, 'Regular CSV'), tester);
+    await tapElement(
+        find.widgetWithText(SelectableListTile, 'Regular CSV'), tester);
 
     final exportButton = find.widgetWithText(ButtonWithLoader, 'Export');
     final buttonWidget = tester.widget<ButtonWithLoader>(exportButton);
@@ -64,7 +65,8 @@ void main() {
       },
     ));
 
-    await tapElement(find.widgetWithText(CircularListTile, 'Regular CSV'), tester);
+    await tapElement(
+        find.widgetWithText(SelectableListTile, 'Regular CSV'), tester);
     await tapElement(find.widgetWithText(ButtonWithLoader, 'Export'), tester);
 
     expect(find.textContaining('Export failed!'), findsOneWidget);
