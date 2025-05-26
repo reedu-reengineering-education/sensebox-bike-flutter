@@ -26,16 +26,19 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   double? minSensorValue;
   double? maxSensorValue;
 
+  static const String lineLayerId = "line_layer";
+  static const String lineSourceId = "lineSource";
+  static const String pointLayerId = "pointLayer";
+  static const String pointSourceId = "pointSource";
+  static const String lineLayerBGId = "line_layer_bg";
+
   @override
   void initState() {
     super.initState();
     // Set the access token for Mapbox
     MapboxOptions.setAccessToken(mapboxAccessToken);
 
-    minSensorValue =
-        getMinSensorValue(widget.geolocationData, widget.sensorType);
-    maxSensorValue =
-        getMaxSensorValue(widget.geolocationData, widget.sensorType);
+    _updateSensorRange();
   }
 
   @override
@@ -43,13 +46,21 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.sensorType != widget.sensorType ||
         oldWidget.geolocationData != widget.geolocationData) {
+      _updateSensorRange();
       addLayer();
     }
   }
 
+  void _updateSensorRange() {
+    minSensorValue =
+        getMinSensorValue(widget.geolocationData, widget.sensorType);
+    maxSensorValue =
+        getMaxSensorValue(widget.geolocationData, widget.sensorType);
+  }
+
   Future<void> _removeLayersAndSources(MapboxMap map) async {
-    final layers = ['line_layer_bg', 'line_layer', 'pointLayer'];
-    final sources = ['lineSource', 'pointSource'];
+    final layers = [lineLayerBGId, lineLayerId, pointLayerId];
+    final sources = [lineSourceId, pointSourceId];
 
     for (final layer in layers) {
       try {
@@ -71,11 +82,31 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     }
   }
 
+  Future<void> _addBackgroundLineLayer() async {
+    final features = _buildFeatures();
+    final lineSource = GeoJsonSource(
+      id: lineSourceId,
+      data: jsonEncode({"type": "FeatureCollection", "features": features}),
+    );
+
+    try {
+      await mapInstance.style.addSource(lineSource);
+      await mapInstance.style.addLayer(LineLayer(
+        id: lineLayerBGId,
+        sourceId: lineSourceId,
+        lineColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.blueGrey[50]?.value
+            : Colors.blueGrey[900]?.value,
+        lineWidth: 4.0,
+        lineCap: LineCap.ROUND,
+        lineEmissiveStrength: 1,
+      ));
+    } catch (e) {
+      debugPrint("Error adding background line layer: $e");
+    }
+  }
+
   Future<void> addLayer() async {
-    minSensorValue =
-        getMinSensorValue(widget.geolocationData, widget.sensorType);
-    maxSensorValue =
-        getMaxSensorValue(widget.geolocationData, widget.sensorType);
     // If sensor values are not available, return early
     if (minSensorValue == double.infinity ||
         maxSensorValue == double.negativeInfinity) {
@@ -84,27 +115,18 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
       );
       return;
     }
+    await _removeLayersAndSources(mapInstance);
+    await _addBackgroundLineLayer();
 
-    try {
-      await _removeLayersAndSources(mapInstance);
-    } catch (_) {}
-
-    // Add trajectory line
-    await mapInstance.style.addLayer(LineLayer(
-      id: "line_layer_bg",
-      sourceId: "lineSource",
-      lineColor: Theme.of(context).brightness == Brightness.dark
-          ? Colors.blueGrey[50]?.value
-          : Colors.blueGrey[900]?.value,
-      lineWidth: 4.0,
-      lineCap: LineCap.ROUND,
-      lineEmissiveStrength: 1,
-    ));
-
-    if (minSensorValue != maxSensorValue) {
+    if (widget.geolocationData.length > 1) {
       await _addLineLayer();
-    } else {
+    } else if (widget.geolocationData.length > 1) {
       await _addPointLayer();
+    } else {
+      debugPrint(
+        'TrajectoryWidget: No valid sensor values found for sensorType "${widget.sensorType}". Skipping layer addition.',
+      );
+      return;
     }
 
     await _fitCameraToTrajectory();
@@ -137,17 +159,10 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   }
 
   Future<void> _addLineLayer() async {
-    final features = _buildFeatures();
-    final lineSource = GeoJsonSource(
-      id: "lineSource",
-      data: jsonEncode({"type": "FeatureCollection", "features": features}),
-    );
     try {
-      await mapInstance.style.addSource(lineSource);
-      // Add a LineLayer with color interpolation based on sensor values
       await mapInstance.style.addLayer(LineLayer(
-          id: "line_layer",
-          sourceId: "lineSource",
+          id: lineLayerId,
+          sourceId: lineSourceId,
           lineColorExpression: _sensorColorExpression().cast<Object>(),
           lineWidth: 12.0,
           lineCap: LineCap.ROUND,
@@ -159,11 +174,22 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
 
   Future<void> _addPointLayer() async {
     final pointData = widget.geolocationData.first;
-    final sensorValue = minSensorValue!;
-    final circleColor = _getColorForSensorValue(sensorValue);
+
+    if (pointData.sensorData.isEmpty) {
+      debugPrint(
+        'TrajectoryWidget: No sensor data available for the first point.',
+      );
+      return;
+    }
+
+    final sensorValue = pointData.sensorData
+        .firstWhere(
+          (s) => s.title == widget.sensorType && !s.value.isNaN,
+        )
+        .value;
 
     final pointSource = GeoJsonSource(
-      id: "pointSource",
+      id: pointSourceId,
       data: jsonEncode({
         "type": "FeatureCollection",
         "features": [
@@ -173,7 +199,7 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
               "type": "Point",
               "coordinates": [pointData.longitude, pointData.latitude],
             },
-            "properties": {"sensorValue": sensorValue},
+            "properties": {widget.sensorType: sensorValue},
           },
         ],
       }),
@@ -181,13 +207,14 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
 
     try {
       await mapInstance.style.addSource(pointSource);
+
       await mapInstance.style.addLayer(CircleLayer(
-        id: "pointLayer",
-        sourceId: "pointSource",
+        id: pointLayerId,
+        sourceId: pointSourceId,
         circleColorExpression: _sensorColorExpression().cast<Object>(),
         circleRadius: 12.0,
         circleStrokeWidth: 2.0,
-        circleStrokeColor: circleColor,
+        circleStrokeColor: Colors.black.value,
       ));
     } catch (e) {
       debugPrint("Error adding point layer: $e");
@@ -215,17 +242,6 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
         },
       };
     });
-  }
-
-  int _getColorForSensorValue(double value) {
-    if (value <= minSensorValue!) {
-      return Colors.green.value;
-    } else if (value <=
-        minSensorValue! + (maxSensorValue! - minSensorValue!) * 0.5) {
-      return Colors.orange.value;
-    } else {
-      return Colors.red.value;
-    }
   }
 
 Future<void> _fitCameraToTrajectory() async {
