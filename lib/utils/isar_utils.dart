@@ -24,7 +24,7 @@ Future<SenseBox> getSelectedSenseBoxOrThrow() async {
 String formatOpenSenseMapCsvLine(String? sensorId, double? value, GeolocationData geoData) {
   return [
     sensorId,
-    value?.toString() ?? '',
+    value?.toStringAsFixed(2) ?? '', // format value to 2 decimal places
     '${geoData.timestamp.toIso8601String()}Z',
     geoData.longitude.toString(),
     geoData.latitude.toString(),
@@ -88,7 +88,9 @@ List<List<String>> buildCsvRows(
       geoData.timestamp.toString(),
       geoData.latitude.toString(),
       geoData.longitude.toString(),
-      ...values.map((value) => value?.toString() ?? ''),
+          ...values.map((value) =>
+              value?.toStringAsFixed(2) ??
+              ''), // format value to 2 decimal places
     ];
   }).whereType<List<String>>().toList();
 }
