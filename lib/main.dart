@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
@@ -33,41 +32,35 @@ void main() async {
       options.tracesSampleRate = 1.0;
       options.profilesSampleRate = 1.0;
     },
-    //appRunner: () => runApp(const SenseBoxBikeApp()),
-    appRunner: () => runZonedGuarded(() {
-      // Error handlers
-      FlutterError.onError = (details) {
-        if (!kDebugMode) {
-          Sentry.captureException(details.exception, stackTrace: details.stack);
-        }
-        ErrorService.handleError(details.exception, details.stack!);
-      };
-
-      PlatformDispatcher.instance.onError = (error, stack) {
-        if (!kDebugMode) {
-          Sentry.captureException(error, stackTrace: stack);
-        }
-        ErrorService.handleError(error, stack);
-        return true;
-      };
-
-      runApp(const SenseBoxBikeApp());
-    }, (error, stack) {
-      if (!kDebugMode) {
-        Sentry.captureException(error, stackTrace: stack);
-      }
-      ErrorService.handleError(error, stack);
-    }),
+    appRunner: () => runApp(const SenseBoxBikeApp()),
   );
 }
 
 class SenseBoxBikeApp extends StatelessWidget {
   const SenseBoxBikeApp({super.key});
 
+  void _initErrorHandlers() {
+    FlutterError.onError = (details) {
+      if (!kDebugMode) {
+        Sentry.captureException(details.exception, stackTrace: details.stack);
+      }
+      ErrorService.handleError(details.exception, details.stack!);
+    };
+
+    PlatformDispatcher.instance.onError = (error, stack) {
+      if (!kDebugMode) {
+        Sentry.captureException(error, stackTrace: stack);
+      }
+      ErrorService.handleError(error, stack);
+      return true;
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    final appLinks = AppLinks();
+    _initErrorHandlers();
 
+    final appLinks = AppLinks();
     // Initialize providers at the top level
     final settingsBloc = SettingsBloc();
     final isarService = IsarService();
