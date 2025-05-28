@@ -76,6 +76,7 @@
     "connectionButtonStart": "Iniciar",
     "connectionButtonStop": "Parar",
     "bleDeviceSelectTitle": "Toque para conectar",
+    "noBleDevicesFound": "Nenhuma senseBox encontrada. Certifique-se de que sua senseBox está ligada, toque fora desta janela e tente novamente.",
     "createBoxTitle": "Criar senseBox:bike",
     "createBoxModel": "Modelo",
     "createBoxModelErrorEmpty": "Por favor, selecione um modelo",
