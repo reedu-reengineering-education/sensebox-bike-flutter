@@ -316,7 +316,7 @@ class _DisconnectButton extends StatelessWidget {
           label: isReconnecting
               ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
               : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
-          onPressed: bleBloc.disconnectDevice,
+          onPressed: isReconnecting ? null : bleBloc.disconnectDevice,
         );
       },
     );
