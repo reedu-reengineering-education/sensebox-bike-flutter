@@ -44,6 +44,7 @@ class BleBloc with ChangeNotifier {
   final ValueNotifier<bool> isConnectingNotifier = ValueNotifier(false);
 
   final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
+  final ValueNotifier<bool> isScanningNotifier = ValueNotifier(false);
 
   BleBloc(this.settingsBloc) {
     FlutterBluePlus.setLogLevel(LogLevel.error);
@@ -72,10 +73,12 @@ class BleBloc with ChangeNotifier {
 
   Future<void> startScanning() async {
     disconnectDevice(); // Disconnect if there's a current connection
+    isScanningNotifier.value = true;
 
     try {
       await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
     } catch (e) {
+      isScanningNotifier.value = false;
       throw ScanPermissionDenied();
     }
 
@@ -88,6 +91,11 @@ class BleBloc with ChangeNotifier {
       }
       _devicesListController.add(devicesList);
       notifyListeners();
+    });
+
+    // Listen for scan completion
+    FlutterBluePlus.isScanning.listen((scanning) {
+      isScanningNotifier.value = scanning;
     });
   }
 
@@ -132,11 +140,8 @@ class BleBloc with ChangeNotifier {
       notifyListeners();
 
       // Handle reconnection if the connection is lost
-      if (context.mounted) {
-        _handleDeviceReconnection(device, context);
-      } else {
-        throw Exception('Context is not mounted, cannot handle reconnection');
-      }
+      _handleDeviceReconnection(device, context);
+
     } catch (e) {
       debugPrint('Error connecting to device: $e');
       // Handle connection error
