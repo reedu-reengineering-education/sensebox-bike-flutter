@@ -8,8 +8,11 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/common/loader.dart';
+import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
@@ -43,14 +46,22 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     _sensorDataFuture = IsarService().sensorService.getSensorDataByTrackId(id);
   }
 
-  Future<void> _exportTrackToCsv() async {
+  Future<void> _exportTrackToCsv(
+      {bool isOpenSourceMapCompatible = false}) async {
     setState(() {
       _isDownloading = true; // Show spinner
     });
 
     try {
       final isarService = IsarService();
-      final csvFilePath = await isarService.exportTrackToCsv(id);
+      final String csvFilePath;
+      
+      if (isOpenSourceMapCompatible) {
+        csvFilePath =
+            await isarService.exportTrackToCsvInOpenSenseMapFormat(id);
+      } else {
+        csvFilePath = await isarService.exportTrackToCsv(id);
+      }
 
       // if android, save to external storage
       // if ios, open share dialog
@@ -112,7 +123,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             text: AppLocalizations.of(context)!.trackDetailsExport);
       }
     } catch (e) {
-      debugPrint('Error exporting CSV: $e');
+      ErrorService.handleError('Error exporting CSV: $e', StackTrace.current);
     } finally {
       setState(() {
         _isDownloading = false; // Hide spinner
@@ -145,32 +156,55 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     );
   }
 
+  Future<List<dynamic>> get _combinedFutures =>
+      Future.wait([_trackFuture, _sensorDataFuture]);
+
+  Widget _buildAppBarTitle(
+      BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
+    final localizations = AppLocalizations.of(context)!;
+
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: Loader(light: true));
+    } else if (snapshot.hasError) {
+      return Text(localizations.trackDetailsLoadingError);
+    } else if (!snapshot.hasData ||
+        snapshot.data![0] == null ||
+        (snapshot.data![1] as List).isEmpty) {
+      return Row(children: [Text(localizations.trackDetailsNoTrackData)]);
+    } else {
+      final track = snapshot.data![0] as TrackData;
+      final sensorData = snapshot.data![1] as List<SensorData>;
+      final isDisabled = sensorData.isEmpty;
+
+      return Row(
+        children: [
+          Text(DateFormat('yyyy-MM-dd HH:mm')
+              .format(track.geolocations.first.timestamp)),
+          const Spacer(),
+          ExportButton(
+            isDownloading: _isDownloading,
+            isDisabled: isDisabled,
+            onExport: (selectedFormat) async {
+              if (selectedFormat == 'regular') {
+                await _exportTrackToCsv();
+              } else if (selectedFormat == 'openSenseMap') {
+                await _exportTrackToCsv(isOpenSourceMapCompatible: true);
+              }
+            },
+          ),
+        ],
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: _buildFutureBuilder<TrackData?>(
-          future: _trackFuture,
-          builder: (track) => Text(DateFormat('yyyy-MM-dd HH:mm')
-              .format(track!.geolocations.first.timestamp)),
-          errorText: AppLocalizations.of(context)!.trackDetailsLoadingError,
-          noDataText: AppLocalizations.of(context)!.trackDetailsNoTrackData,
+        title: FutureBuilder<List<dynamic>>(
+          future: _combinedFutures,
+          builder: (context, snapshot) => _buildAppBarTitle(context, snapshot),
         ),
-        actions: [
-          _isDownloading
-              ? const Padding(
-                  padding: EdgeInsets.all(12.0),
-                  child: SizedBox(
-                    height: 32.0,
-                    width: 32.0,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                )
-              : IconButton(
-                  onPressed: _exportTrackToCsv,
-                  icon: const Icon(Icons.file_download),
-                ),
-        ],
       ),
       body: SafeArea(
         minimum: const EdgeInsets.only(bottom: 8),
