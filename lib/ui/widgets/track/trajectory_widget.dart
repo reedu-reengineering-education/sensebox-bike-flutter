@@ -148,9 +148,13 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
       await mapInstance.style.addSource(source);
 
       if (minSensorValue == maxSensorValue) {
-        // Only one unique value: use a constant color
+        // For overtaking distnance sensor values, don't set grey for 0 value
+        final allowGray = !(widget.sensorType == 'distance');
         final color = sensorColorForValue(
-            value: minSensorValue!, min: minSensorValue!, max: maxSensorValue!);
+            value: minSensorValue!,
+            min: minSensorValue!,
+            max: maxSensorValue!,
+            allowGray: allowGray);
         await mapInstance.style.addLayer(LineLayer(
           id: sensorLayerId,
           sourceId: sensorSourceId,

@@ -82,10 +82,12 @@ Color sensorColorForValue({
   required double value,
   required double min,
   required double max,
+  bool allowGray = true,
 }) {
-  if (min == 0.0 && max == 0.0) {
+  if (allowGray && min == 0.0 && max == 0.0) {
     return Colors.grey;
   }
+  
   if (value <= min) {
     return Colors.green;
   } else if (value >= max) {
