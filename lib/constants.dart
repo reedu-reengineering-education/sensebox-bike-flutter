@@ -204,18 +204,17 @@ const classicModelSensors = [
       }
     ];
 
-var muensterLocation = Geolocator.Position(
-  latitude: 51.9607,
-  longitude: 7.6261,
-  timestamp: DateTime.utc(1973, 4, 2), // Birthdate of Jan Vahrenhold
-  accuracy: 0,
-  altitude: 0,
-  altitudeAccuracy: 0,
-  heading: 0,
-  headingAccuracy: 0,
-  speed: 0,
-  speedAccuracy: 0,
-);
+final globePosition = Geolocator.Position(
+    latitude: 0.0,
+    longitude: 0.0,
+    timestamp: DateTime(2000),
+    accuracy: 0.0,
+    altitude: 0.0,
+    altitudeAccuracy: 0.0,
+    heading: 0.0,
+    headingAccuracy: 0.0,
+    speed: 0.0,
+    speedAccuracy: 0.0); 
 
 const defaultCameraOptions = {
   "zoom": 16.0,

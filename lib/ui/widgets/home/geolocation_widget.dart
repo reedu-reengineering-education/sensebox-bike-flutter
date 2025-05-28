@@ -68,16 +68,18 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
               await PermissionService.isLocationPermissionGranted();
           final geoPosition = hasPermission
               ? await Geolocator.Geolocator.getCurrentPosition()
-              : muensterLocation; // Münster coordinates
-
-          var cameraOptions = CameraOptions(
-              center: Point(
-                  coordinates:
-                    Position(geoPosition.longitude, geoPosition.latitude)),
-            zoom: defaultCameraOptions['zoom'] as double,
-            pitch: defaultCameraOptions['pitch'] as double,
+              : globePosition;
+          final isGlobe =
+              geoPosition.latitude == 0.0 && geoPosition.longitude == 0.0;
+          final cameraOptions = CameraOptions(
+            center: Point(
+              coordinates:
+                  Position(geoPosition.longitude, geoPosition.latitude),
+            ),
+            zoom: isGlobe ? 1.5 : defaultCameraOptions['zoom'],
+            pitch: defaultCameraOptions['pitch'],
           );
-          var animationOptions = MapAnimationOptions(duration: 1000);
+          final animationOptions = MapAnimationOptions(duration: 1000);
 
           await mapInstance.flyTo(cameraOptions, animationOptions);
         } catch (e, stack) {
