@@ -15,7 +15,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class GPSSensor extends Sensor {
   double _latestLat = 0.0;
   double _latestLng = 0.0;
-  double _latestSpd = 0.0;
 
   late final MapboxMap? mapInstance;
   final Completer<void> _mapReadyCompleter = Completer<void>();
@@ -41,6 +40,23 @@ class GPSSensor extends Sensor {
     MapboxOptions.setAccessToken(mapboxAccessToken);
   }
 
+  void _handleMapCreated(MapboxMap newMapInstance) {
+    // If a previous instance exists and is different, clean up if needed
+    if (mapInstance != null && mapInstance != newMapInstance) {
+      // Optionally: dispose or clean up old mapInstance here
+      debugPrint('Map instance recreated. Resetting state.');
+      // Reset the completer for the new map
+      if (!_mapReadyCompleter.isCompleted) {
+        _mapReadyCompleter.complete();
+      }
+    }
+    mapInstance = newMapInstance;
+    mapInstance!.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    if (!_mapReadyCompleter.isCompleted) {
+      _mapReadyCompleter.complete();
+    }
+  }
+
   @override
   void onDataReceived(List<double> data) async {
     super.onDataReceived(data); // Call the parent class to handle buffering
@@ -48,7 +64,6 @@ class GPSSensor extends Sensor {
     if (data.length >= 3) {
       _latestLat = data[0];
       _latestLng = data[1];
-      _latestSpd = data[2];
 
       if (_latestLat == 0.0 && _latestLng == 0.0) {
         return;
@@ -145,10 +160,7 @@ class GPSSensor extends Sensor {
                 await mapInstance.annotations.createCircleAnnotationManager();
           },
           onMapCreated: (mapInstance) async {
-            this.mapInstance = mapInstance;
-            mapInstance.scaleBar
-                .updateSettings(ScaleBarSettings(enabled: false));
-            _mapReadyCompleter.complete(); // Mark mapInstance as ready
+            _handleMapCreated(mapInstance);
           }),
     );
   }

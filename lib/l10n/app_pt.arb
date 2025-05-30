@@ -151,6 +151,9 @@
     "errorNoLocationAccess": "Por favor, permita que o aplicativo acesse a localização do dispositivo nas configurações do telefone.", 
     "errorNoScanAccess": "Por favor, permita que o aplicativo procure dispositivos próximos nas configurações do telefone.", 
     "errorNoSenseBoxSelected": "Por favor, faça login na sua conta openSenseMap e selecione uma caixa para permitir o envio dos dados dos sensores para a nuvem.",
+    "errorExportDirectoryAccess": "Erro ao acessar o diretório de exportação. Por favor, verifique se o aplicativo tem permissão para acessar o armazenamento.",
+    "errorLoginFailed": "Falha no login. Por favor, verifique suas credenciais.",
+    "errorRegistrationFailed": "Falha no registro. Por favor, verifique suas credenciais.",
     "selectCsvFormat": "Selecionar formato CSV",
     "regularCsv": "CSV padrão",
     "openSenseMapCsv": "CSV openSenseMap"

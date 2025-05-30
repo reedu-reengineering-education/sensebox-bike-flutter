@@ -77,7 +77,52 @@ void main() {
           mockContext,
         );
 
-        expect(message, 'Unknown error: Exception: Test error');
+        expect(message, 'An unknown error occurred. Exception: Test error');
+      });
+    
+      testWidgets('returns correct message for ExportDirectoryAccessError',
+          (WidgetTester tester) async {
+        await initializeContext(tester);
+
+        final message = ErrorService.parseError(
+          ExportDirectoryAccessError(),
+          mockContext,
+        );
+
+        expect(
+          message,
+          'Error accessing export directory. Please make sure the app has permission to access the storage.',
+        );
+      });
+
+      testWidgets('returns correct message for LoginError',
+          (WidgetTester tester) async {
+        await initializeContext(tester);
+
+        final message = ErrorService.parseError(
+          LoginError('Invalid credentials'),
+          mockContext,
+        );
+
+        expect(
+          message,
+          'Login failed. Please check your credentials.',
+        );
+      });
+
+      testWidgets('returns correct message for RegistrationError',
+          (WidgetTester tester) async {
+        await initializeContext(tester);
+
+        final message = ErrorService.parseError(
+          RegistrationError('Registration failed'),
+          mockContext,
+        );
+
+        expect(
+          message,
+          'Registration failed. Please check your credentials.',
+        );
       });
     });
   

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
-import '../../../secrets.dart'; // File containing the Mapbox token
+import '../../../secrets.dart'; 
 
 class TrajectoryWidget extends StatefulWidget {
   final List<GeolocationData> geolocationData;
@@ -26,16 +26,18 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   double? minSensorValue;
   double? maxSensorValue;
 
+  static const String lineSourceId = "lineSource";
+  static const String lineLayerBGId = "line_layer_bg";
+  static const String sensorLayerId = "sensorLayer";
+  static const String sensorSourceId = "sensorSource";
+
   @override
   void initState() {
     super.initState();
     // Set the access token for Mapbox
     MapboxOptions.setAccessToken(mapboxAccessToken);
 
-    minSensorValue =
-        getMinSensorValue(widget.geolocationData, widget.sensorType);
-    maxSensorValue =
-        getMaxSensorValue(widget.geolocationData, widget.sensorType);
+    _updateSensorRange();
   }
 
   @override
@@ -43,33 +45,177 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.sensorType != widget.sensorType ||
         oldWidget.geolocationData != widget.geolocationData) {
+      _updateSensorRange();
       addLayer();
     }
   }
 
-  Future<void> addLayer() async {
+  void _updateSensorRange() {
+    minSensorValue =
+        getMinSensorValue(widget.geolocationData, widget.sensorType);
+    maxSensorValue =
+        getMaxSensorValue(widget.geolocationData, widget.sensorType);
+  }
+
+  Future<void> _removeLayersAndSources(MapboxMap map) async {
+    final layers = [lineLayerBGId, sensorLayerId];
+    final sources = [lineSourceId, sensorSourceId];
+
+    for (final layer in layers) {
+      try {
+        if (await map.style.styleLayerExists(layer)) {
+          await map.style.removeStyleLayer(layer);
+        }
+      } catch (e) {
+        debugPrint("Error removing layer $layer: $e");
+      }
+    }
+    for (final source in sources) {
+      try {
+        if (await map.style.styleSourceExists(source)) {
+          await map.style.removeStyleSource(source);
+        }
+      } catch (e) {
+        debugPrint("Error removing source $source: $e");
+      }
+    }
+  }
+
+  Future<void> _addBackgroundLineLayer() async {
+    final features = _buildFeatures();
+    final lineSource = GeoJsonSource(
+      id: lineSourceId,
+      data: jsonEncode({"type": "FeatureCollection", "features": features}),
+    );
+
     try {
-      // Remove existing layers and sources
-      if (await mapInstance.style.styleLayerExists("line_layer_bg")) {
-        await mapInstance.style.removeStyleLayer("line_layer_bg");
-      }
-      if (await mapInstance.style.styleLayerExists("line_layer")) {
-        await mapInstance.style.removeStyleLayer("line_layer");
-      }
-      if (await mapInstance.style.styleSourceExists("lineSource")) {
-        await mapInstance.style.removeStyleSource("lineSource");
+      await mapInstance.style.addSource(lineSource);
+      await mapInstance.style.addLayer(LineLayer(
+        id: lineLayerBGId,
+        sourceId: lineSourceId,
+        lineColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.blueGrey[50]?.value
+            : Colors.blueGrey[900]?.value,
+        lineWidth: 4.0,
+        lineCap: LineCap.ROUND,
+        lineEmissiveStrength: 1,
+      ));
+    } catch (e) {
+      debugPrint("Error adding background line layer: $e");
+    }
+  }
+
+  List<Object> get _sensorColorStops {
+    return [
+      minSensorValue!,
+      'green',
+      minSensorValue! + (maxSensorValue! - minSensorValue!) * 0.5,
+      'orange',
+      maxSensorValue!,
+      'red'
+    ];
+  }
+
+  List<Object> _sensorColorExpression() {
+    return [
+      "case",
+      [
+        "==",
+        [
+          "typeof",
+          ["get", widget.sensorType]
+        ],
+        "number"
+      ],
+      [
+        "interpolate",
+        ["linear"],
+        ["get", widget.sensorType],
+        ..._sensorColorStops,
+      ],
+      "transparent"
+    ];
+  }
+
+
+  Future<void> _addLineLayer() async {
+    try {
+      final features = _buildFeatures();
+      final source = GeoJsonSource(
+        id: sensorSourceId,
+        data: jsonEncode({"type": "FeatureCollection", "features": features}),
+      );
+      await mapInstance.style.addSource(source);
+
+      if (minSensorValue == maxSensorValue) {
+        // For overtaking distnance sensor values, don't set grey for 0 value
+        final allowGray = !(widget.sensorType == 'distance');
+        final color = sensorColorForValue(
+            value: minSensorValue!,
+            min: minSensorValue!,
+            max: maxSensorValue!,
+            allowGray: allowGray);
+        await mapInstance.style.addLayer(LineLayer(
+          id: sensorLayerId,
+          sourceId: sensorSourceId,
+          lineColor: color.value,
+          lineWidth: 12.0,
+          lineCap: LineCap.ROUND,
+          lineEmissiveStrength: 1,
+        ));
+      } else {
+        // Multiple values: use color expression
+        await mapInstance.style.addLayer(LineLayer(
+          id: sensorLayerId,
+          sourceId: sensorSourceId,
+          lineColorExpression: _sensorColorExpression().cast<Object>(),
+          lineWidth: 12.0,
+          lineCap: LineCap.ROUND,
+          lineEmissiveStrength: 1,
+        ));
       }
     } catch (e) {
-      debugPrint("Error removing sources and layers: $e");
+      debugPrint("Error adding line layer: $e");
+    }
+  }
+
+  List<Map<String, dynamic>> _buildFeatures() {
+    if (widget.geolocationData.isEmpty) return [];
+    // Check if all points are the same
+    final first = widget.geolocationData.first;
+    final allSame = widget.geolocationData.every(
+        (g) => g.latitude == first.latitude && g.longitude == first.longitude);
+
+    if (allSame) {
+      const offset = 0.000005; // Add a tiny offset to the second point
+
+      return [
+        {
+          "type": "Feature",
+          "properties": {
+            for (var sensor in first.sensorData)
+              if (!sensor.value.isNaN)
+                '${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}':
+                    sensor.value,
+          },
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [first.longitude, first.latitude],
+              [first.longitude + offset, first.latitude]
+            ],
+          },
+        }
+      ];
     }
 
-    List features = List.generate(widget.geolocationData.length - 1, (index) {
-      GeolocationData current = widget.geolocationData[index];
-      GeolocationData next = widget.geolocationData[index + 1];
-
+    // Default: build features as usual
+    return List.generate(widget.geolocationData.length - 1, (index) {
+      final current = widget.geolocationData[index];
+      final next = widget.geolocationData[index + 1];
       return {
         "type": "Feature",
-        'properties': {
+        "properties": {
           for (var sensor in current.sensorData)
             if (!sensor.value.isNaN)
               '${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}':
@@ -84,117 +230,37 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
         },
       };
     });
+  }
 
-    // Add new GeoJson source
-    GeoJsonSource lineSource = GeoJsonSource(
-      id: "lineSource",
-      data: jsonEncode({"type": "FeatureCollection", "features": features}),
-    );
-
+  Future<void> _fitCameraToTrajectory() async {
     try {
-      await mapInstance.style.addSource(lineSource);
+      final bounds = await mapInstance.cameraForCoordinateBounds(
+        calculateBounds(widget.geolocationData),
+        MbxEdgeInsets(top: 16, left: 32, right: 32, bottom: 16),
+        0,
+        0,
+        null,
+        null,
+      );
+      await mapInstance.flyTo(bounds, MapAnimationOptions(duration: 1000));
     } catch (e) {
-      debugPrint("Error adding source: $e");
+      debugPrint("Error fitting camera to bounds: $e");
     }
+  }
 
-    minSensorValue =
-        getMinSensorValue(widget.geolocationData, widget.sensorType);
-    maxSensorValue =
-        getMaxSensorValue(widget.geolocationData, widget.sensorType);
-
-    // Add a LineLayer with color interpolation based on sensor values
-    await mapInstance.style.addLayer(LineLayer(
-        id: "line_layer_bg",
-        sourceId: "lineSource",
-        lineColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.blueGrey[50]?.value
-            : Colors.blueGrey[900]?.value,
-        lineWidth: 2.0, // Adjust the width as needed
-        lineCap: LineCap.ROUND,
-        lineEmissiveStrength: 1));
-
-    // Add a LineLayer with color interpolation based on sensor values
-    await mapInstance.style.addLayer(LineLayer(
-        id: "line_layer",
-        sourceId: "lineSource",
-        // Use the sensor type as the property for the color expression
-        // This will be used to interpolate the color of the line based on the sensor values
-        // If the sensor value is not a number, the line will be transparent
-        lineColorExpression: [
-          "case",
-          [
-            "==",
-            [
-              "typeof",
-              ["get", widget.sensorType]
-            ],
-            "number"
-          ],
-          [
-            "interpolate",
-            ["linear"],
-            ["get", widget.sensorType],
-            minSensorValue!,
-            'green',
-            minSensorValue! +
-                (maxSensorValue! -
-                        getMinSensorValue(
-                            widget.geolocationData, widget.sensorType)) *
-                    0.5,
-            'orange',
-            maxSensorValue!,
-            'red'
-          ],
-          "transparent"
-        ],
-        lineWidth: 12.0, // Adjust the width as needed
-        lineCap: LineCap.ROUND,
-        lineEmissiveStrength: 1));
-
-    // Adjust the camera to fit the bounds of the trajectory
-    GeolocationData south = widget.geolocationData.first;
-    GeolocationData west = widget.geolocationData.first;
-    GeolocationData north = widget.geolocationData.first;
-    GeolocationData east = widget.geolocationData.first;
-
-    for (GeolocationData data in widget.geolocationData) {
-      if (data.latitude < south.latitude) {
-        south = data;
-      }
-      if (data.latitude > north.latitude) {
-        north = data;
-      }
-      if (data.longitude < west.longitude) {
-        west = data;
-      }
-      if (data.longitude > east.longitude) {
-        east = data;
-      }
+  Future<void> addLayer() async {
+    // If sensor values are not available, return early
+    if (minSensorValue == double.infinity ||
+        maxSensorValue == double.negativeInfinity) {
+      debugPrint(
+        'TrajectoryWidget: No valid sensor values found for sensorType "${widget.sensorType}". Skipping layer addition.',
+      );
+      return;
     }
-
-    Point southwest = Point(
-      coordinates: Position(west.longitude, south.latitude),
-    );
-
-    Point northeast = Point(
-      coordinates: Position(east.longitude, north.latitude),
-    );
-
-    CameraOptions fitBoundsCamera = await mapInstance.cameraForCoordinateBounds(
-      CoordinateBounds(
-        southwest: southwest,
-        northeast: northeast,
-        infiniteBounds: true,
-      ),
-      MbxEdgeInsets(top: 16, left: 32, right: 32, bottom: 16),
-      0,
-      0,
-      null,
-      null,
-    );
-
-    await mapInstance.flyTo(
-        fitBoundsCamera, MapAnimationOptions(duration: 1000));
+    await _removeLayersAndSources(mapInstance);
+    await _addBackgroundLineLayer();
+    await _addLineLayer();
+    await _fitCameraToTrajectory();
   }
 
   @override

@@ -20,6 +20,10 @@ class TrackListItem extends StatelessWidget {
     String lineColor = isDarkMode ? 'fff' : '111';
     String polyline = Uri.encodeComponent(track.encodedPolyline);
 
+    if (polyline == '') {
+      return '';
+    }
+
     return 'https://api.mapbox.com/styles/v1/mapbox/$style/static/path-12+$lineColor-0.8($polyline)/auto/800x500?access_token=$mapboxAccessToken';
   }
 

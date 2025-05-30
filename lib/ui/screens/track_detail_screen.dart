@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -46,11 +47,80 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     _sensorDataFuture = IsarService().sensorService.getSensorDataByTrackId(id);
   }
 
-  Future<void> _exportTrackToCsv(
-      {bool isOpenSourceMapCompatible = false}) async {
-    setState(() {
-      _isDownloading = true; // Show spinner
-    });
+  Future<void> _shareFile(String filePath) async {
+    final localization = AppLocalizations.of(context)!;
+
+    try {
+      await Share.shareXFiles([XFile(filePath)],
+          text: localization.trackDetailsExport);
+    } catch (e) {
+      ErrorService.handleError('Error sharing file: $e', StackTrace.current);
+    }
+  }
+
+  Future<void> _handleAndroidExport(String csvFilePath) async {
+    final localization = AppLocalizations.of(context)!;
+
+    try {
+      DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+      final androidInfo = await deviceInfoPlugin.androidInfo;
+
+      // check if api level is smaller than 33
+      if (androidInfo.version.sdkInt < 33) {
+        PermissionStatus status = await Permission.storage.request();
+
+        if (!status.isGranted && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(localization.trackDetailsPermissionsError),
+            action: SnackBarAction(
+                label: localization.generalSettings,
+                onPressed: () => openAppSettings()),
+          ));
+          return;
+        }
+      }
+
+      Directory? directory;
+
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        //downloads folder - android only - API>30
+        directory = Directory('/storage/emulated/0/Download');
+      } else {
+        directory = await getExternalStorageDirectory();
+      }
+
+      if (directory == null || !directory.existsSync()) {
+        ErrorService.handleError(
+            ExportDirectoryAccessError(), StackTrace.current);
+        return;
+      }
+
+      // copy file to external storage
+      final file = File(csvFilePath);
+      final newName = file.path.split('/').last;
+      final newPath = '${directory.path}/$newName';
+
+      await file.copy(newPath);
+
+      if (context.mounted) {
+        // show snackbar
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(localization.trackDetailsFileSaved),
+          action: SnackBarAction(
+            label: localization.generalShare,
+            onPressed: () async {
+              await _shareFile(newPath);
+            },
+          ),
+        ));
+      }
+    } catch (e) {
+      await _shareFile(csvFilePath);
+    }
+  }
+
+  Future<void> _exportTrackToCsv({bool isOpenSourceMapCompatible = false}) async {
+    setState(() => _isDownloading = true);
 
     try {
       final isarService = IsarService();

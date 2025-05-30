@@ -41,17 +41,40 @@ class TrackData {
     // Convert geolocations to a list of Point<double>
     final List<Point<double>> coordinates = geolocations
         .map(
-            (geolocation) => Point(geolocation.latitude, geolocation.longitude))
+            (geolocation) => Point(geolocation.longitude, geolocation.latitude))
         .toList();
-    // tolerance based on number of geolocations
+
+    if (coordinates.isEmpty) {
+      return "";
+    }
+    // If there is only one location, or all locations are the same
+    if ((coordinates.length == 1) || (coordinates.toSet().length == 1)) {
+      final singlePoint = coordinates.first;
+      // Add a tiny offset to the second point
+      // to ensure Mapbox can render it
+      final offset = 0.00005;
+      final repeatedPoints = [
+        [singlePoint.x, singlePoint.y],
+        [singlePoint.x, singlePoint.y + offset]
+      ];
+      return encodePolyline(repeatedPoints);
+    }
+    // If there are fewer than 10 coordinates, no simplification is needed
+    if (coordinates.length < 10) {
+      final List<List<num>> castedCoordinates = geolocations
+          .map((geolocation) => [geolocation.latitude, geolocation.longitude])
+          .toList();
+
+      return encodePolyline(castedCoordinates);
+    }
+
     final tolerance = calculateTolerance(coordinates.length);
-    // Simplify the polyline with a tolerance (e.g., 0.0001)
+
     final simplifiedCoordinates = simplify<Point<double>>(
       coordinates,
-      tolerance: tolerance, // Adjust tolerance to control simplification
-      highestQuality: false, // Use high-quality simplification
+      tolerance: tolerance,
+      highestQuality: false, 
     );
-
     // Convert simplified points back to a list of lists for encoding
     final simplifiedList =
         simplifiedCoordinates.map((point) => [point.x, point.y]).toList();
