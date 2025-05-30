@@ -148,13 +148,14 @@
     "noCampaignsAvailable": "No campaigns available",
     "loginScreenTitle": "openSenseMap Account",
     "connectionButtonEnableBluetooth": "Enable Bluetooth",
-    "errorNoLocationAccess": "Please allow the app to access current location of the current device in the phone settings.",
-    "errorNoScanAccess": "Please allow the app to scan nearby devices in the phone settings.",
-    "errorNoSenseBoxSelected": "Please login to your openSenseMap account and select box in order to allow upload sensor data to the cloud.",
+    "errorNoLocationAccess": "To record tracks, please allow the app to access the device's current location in the phone settings.",
+    "errorNoScanAccess": "To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.",
+    "errorNoSenseBoxSelected": "To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.",
     "errorExportDirectoryAccess": "Error accessing export directory. Please make sure the app has permission to access the storage.",
     "errorLoginFailed": "Login failed. Please check your credentials.",
     "errorRegistrationFailed": "Registration failed. Please check your credentials.",
     "selectCsvFormat": "Select CSV format",
     "regularCsv": "Standard CSV",
     "openSenseMapCsv": "openSenseMap CSV"
+
 }

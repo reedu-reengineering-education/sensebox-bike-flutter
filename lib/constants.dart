@@ -1,3 +1,5 @@
+import 'package:geolocator/geolocator.dart' as Geolocator;
+
 const maxRetries = 10;
 const retryPeriod = 2; // in minutes
 const premanentConnectivityFalurePeriod = 20; // in minutes
@@ -201,3 +203,20 @@ const classicModelSensors = [
         "sensorType": 'GPS'
       }
     ];
+
+final globePosition = Geolocator.Position(
+    latitude: 0.0,
+    longitude: 0.0,
+    timestamp: DateTime(2000),
+    accuracy: 0.0,
+    altitude: 0.0,
+    altitudeAccuracy: 0.0,
+    heading: 0.0,
+    headingAccuracy: 0.0,
+    speed: 0.0,
+    speedAccuracy: 0.0); 
+
+const defaultCameraOptions = {
+  "zoom": 16.0,
+  "pitch": 45.0,
+};
