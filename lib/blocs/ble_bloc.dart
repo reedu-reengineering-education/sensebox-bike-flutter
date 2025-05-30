@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
+
 import 'dart:typed_data';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
@@ -8,6 +8,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart'; // Assuming you're using Provider for state management
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+
 import 'package:vibration/vibration.dart'; // Import the RecordingBloc
 
 class BleBloc with ChangeNotifier {
@@ -123,7 +124,7 @@ class BleBloc with ChangeNotifier {
       _isConnected = true;
       _userInitiatedDisconnect = false; 
 
-      await _discoverAndListenToCharacteristics(device);
+      await _discoverAndListenToCharacteristics(device, context: context);
 
       selectedDevice = device;
       selectedDeviceNotifier.value = selectedDevice;
@@ -132,7 +133,7 @@ class BleBloc with ChangeNotifier {
       _handleDeviceReconnection(device, context);
 
     } catch (e) {
-      debugPrint('Error connecting to device: $e');
+      throw Exception('Error connecting to device: $e');
     } finally {
       isConnectingNotifier.value = false; 
     }
@@ -140,7 +141,11 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> _discoverAndListenToCharacteristics(
-      BluetoothDevice device) async {
+    BluetoothDevice device, {
+    BuildContext? context,
+    int globalRetry = 0,
+    int maxGlobalRetries = 5,
+  }) async {
     // Clear previous characteristic streams before listening again
     for (var controller in _characteristicStreams.values) {
       await controller.close();
@@ -151,39 +156,37 @@ class BleBloc with ChangeNotifier {
     }
     _characteristicStringStreams.clear();
 
-    int maxAttempts = 5;
+    int maxAttempts = 3;
     int attempts = 0;
+    bool enoughServices = false;
+
     while (attempts < maxAttempts) {
       try {
-        // Add a delay to avoid stale GATT cache after reconnect
         await Future.delayed(const Duration(milliseconds: 500));
         List<BluetoothService> services = await device.discoverServices();
 
+        if (services.length < 7) {
+          attempts++;
+          await Future.delayed(const Duration(seconds: 2));
+          continue;
+        }
+
+        enoughServices = true;
         var senseBoxService = services.firstWhere(
-            (service) => service.uuid == senseBoxServiceUUID,
-            orElse: () => throw Exception('Service not found'));
+          (service) => service.uuid == senseBoxServiceUUID,
+          orElse: () => throw Exception('Service not found'),
+        );
 
         availableCharacteristics.value = senseBoxService.characteristics;
-
         notifyListeners();
 
         for (var characteristic in senseBoxService.characteristics) {
           await _listenToCharacteristic(characteristic);
         }
-
-        // var deviceInfoService = services.firstWhere(
-        //     (service) => service.uuid == deviceInfoServiceUUID,
-        //     orElse: () => throw Exception('Device Info Service not found'));
-
-        // for (var characteristic in deviceInfoService.characteristics) {
-        //   await _listenToDeviceInfoCharacteristic(characteristic);
-        // }
-
         break; // Exit the loop if successful
       } catch (e) {
         attempts++;
         if (attempts >= maxAttempts) {
-          // Handle the error after max attempts
           print('Failed to discover services after $attempts attempts: $e');
           break;
         }
@@ -191,7 +194,25 @@ class BleBloc with ChangeNotifier {
         await Future.delayed(const Duration(seconds: 5));
       }
     }
-  }
+
+    // If still not enough services, force disconnect/reconnect (up to maxGlobalRetries)
+    if (!enoughServices && globalRetry < maxGlobalRetries && context != null) {
+      print(
+          'Still not enough services after $maxAttempts attempts. Forcing disconnect and reconnect (retry $globalRetry)...');
+      try {
+        await device.disconnect();
+        await device.connect(timeout: const Duration(seconds: 10));
+        await _discoverAndListenToCharacteristics(
+          device,
+          context: context,
+          globalRetry: globalRetry + 1,
+          maxGlobalRetries: maxGlobalRetries,
+        );
+      } catch (e) {
+        throw Exception('Reconnect failed: $e');
+      }
+    }
+}
 
   void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
     bool hasVibrated = false;
@@ -223,7 +244,8 @@ class BleBloc with ChangeNotifier {
               _isConnected = true;
               hasVibrated = false;
               reconnectionAttempts = 0;
-              await _discoverAndListenToCharacteristics(device);
+              await _discoverAndListenToCharacteristics(device,
+                  context: context);
               break;
             }
           } catch (e) {
@@ -233,8 +255,6 @@ class BleBloc with ChangeNotifier {
         }
         isReconnectingNotifier.value = false;
         if (!_isConnected && reconnectionAttempts >= maxReconnectionAttempts) {
-          debugPrint(
-              'Failed to reconnect after $maxReconnectionAttempts attempts');
           selectedDeviceNotifier.value = null;
           notifyListeners();
           if (!context.mounted) return;
@@ -254,36 +274,45 @@ class BleBloc with ChangeNotifier {
   
   Future<void> _listenToCharacteristic(
       BluetoothCharacteristic characteristic) async {
+    final uuid = characteristic.uuid.toString();
+
+    // If a controller exists for this characteristic, close and remove it first
+    if (_characteristicStreams.containsKey(uuid)) {
+      await _characteristicStreams[uuid]?.close();
+      _characteristicStreams.remove(uuid);
+    }
+
     final controller = StreamController<List<double>>();
-    _characteristicStreams[characteristic.uuid.toString()] = controller;
+    _characteristicStreams[uuid] = controller;
 
     await characteristic.setNotifyValue(true);
     characteristic.onValueReceived.listen((value) {
+      if (!controller.isClosed) {
       List<double> parsedData = _parseData(Uint8List.fromList(value));
       controller.add(parsedData);
+      }
     });
   }
 
-  Future<void> _listenToDeviceInfoCharacteristic(
-      BluetoothCharacteristic characteristic) async {
-    final controller = StreamController<List<String>>();
-    _characteristicStringStreams[characteristic.uuid.toString()] = controller;
+  // Future<void> _listenToDeviceInfoCharacteristic(
+  //     BluetoothCharacteristic characteristic) async {
+  //   final controller = StreamController<List<String>>();
+  //   _characteristicStringStreams[characteristic.uuid.toString()] = controller;
 
-    await characteristic.setNotifyValue(true);
-    characteristic.onValueReceived.listen((value) {
-      print('Received value: $value');
-      print('Decoded value: ${utf8.decode(value)}');
-      List<String> parsedData = [utf8.decode(value)];
-      controller.add(parsedData);
-    });
-  }
+  //   await characteristic.setNotifyValue(true);
+  //   characteristic.onValueReceived.listen((value) {
+  //     print('Received value: $value');
+  //     print('Decoded value: ${utf8.decode(value)}');
+  //     List<String> parsedData = [utf8.decode(value)];
+  //     controller.add(parsedData);
+  //   });
+  // }
 
-  StreamController<List<double>> getCharacteristicStream(
-      String characteristicUuid) {
+  Stream<List<double>> getCharacteristicStream(String characteristicUuid) {
     if (!_characteristicStreams.containsKey(characteristicUuid)) {
       throw Exception('Characteristic stream not found');
     }
-    return _characteristicStreams[characteristicUuid]!;
+    return _characteristicStreams[characteristicUuid]!.stream;
   }
 
   List<double> _parseData(Uint8List value) {
