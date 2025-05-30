@@ -76,6 +76,7 @@
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
     "bleDeviceSelectTitle": "Tap to connect",
+    "noBleDevicesFound": "No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.",
     "createBoxTitle": "Create senseBox:bike",
     "createBoxModel": "Model",
     "createBoxModelErrorEmpty": "Please select a model",
