@@ -49,8 +49,6 @@ class SensorBloc with ChangeNotifier {
 
         // Only restart if the set of UUIDs has changed
         if (!_listEqualsUnordered(_lastCharacteristicUuids, currentUuids)) {
-          debugPrint(
-              '//// SensorBloc: Characteristics changed, restarting listening');
           _lastCharacteristicUuids = List.from(currentUuids);
           _stopListening();
           _startListening();
