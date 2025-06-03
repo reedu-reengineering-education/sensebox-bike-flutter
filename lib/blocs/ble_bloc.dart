@@ -5,15 +5,16 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:provider/provider.dart'; // Assuming you're using Provider for state management
+import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
-
-import 'package:vibration/vibration.dart'; // Import the RecordingBloc
+import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 5);
-const minimumServices =
-    7; // Minimum number of services to consider a valid connection
+// Minimum number of services to consider a valid connection
+const minimumServices = 7;
+const maximumRetriesToDiscoverServices =
+    5; // Maximum retries to discover services
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
@@ -152,64 +153,25 @@ class BleBloc with ChangeNotifier {
     int globalRetry = 0,
     int maxGlobalRetries = 5,
   }) async {
-    // Clear previous characteristic streams before listening again
-    for (var controller in _characteristicStreams.values) {
-      await controller.close();
-    }
-    _characteristicStreams.clear();
-    for (var controller in _characteristicStringStreams.values) {
-      await controller.close();
-    }
-    _characteristicStringStreams.clear();
+    _clearCharacteristicStreams();
 
-    int maxAttempts = 3;
-    int attempts = 0;
-    bool enoughServices = false;
-
-    while (attempts < maxAttempts) {
-      try {
-        await Future.delayed(const Duration(milliseconds: 500));
-        List<BluetoothService> services = await device.discoverServices();
-
-        if (services.length < minimumServices) {
-          attempts++;
-          await Future.delayed(reconnectionDelay);
-          continue;
-        }
-
-        enoughServices = true;
-        var senseBoxService = services.firstWhere(
-          (service) => service.uuid == senseBoxServiceUUID,
-          orElse: () => throw Exception('Service not found'),
-        );
-
-        for (var characteristic in senseBoxService.characteristics) {
-          await _listenToCharacteristic(characteristic);
-        }
-
-        availableCharacteristics.value = senseBoxService.characteristics;
-        characteristicStreamsVersion.value++;
-        notifyListeners();
-
-        break; // Exit the loop if successful
-      } catch (e) {
-        attempts++;
-        if (attempts >= maxAttempts) {
-          print('Failed to discover services after $attempts attempts: $e');
-          break;
-        }
-        print('Error discovering services, attempt $attempts: $e');
-        await Future.delayed(reconnectionDelay);
+    final services = await _retryServiceDiscovery(device);
+    if (services.isNotEmpty) {
+      var senseBoxService = services.firstWhere(
+        (service) => service.uuid == senseBoxServiceUUID,
+        orElse: () => throw Exception('Service not found'),
+      );
+      for (var characteristic in senseBoxService.characteristics) {
+        await _listenToCharacteristic(characteristic);
       }
-    }
-
-    // If still not enough services, force disconnect/reconnect (up to maxGlobalRetries)
-    if (!enoughServices && globalRetry < maxGlobalRetries && context != null) {
+      availableCharacteristics.value = senseBoxService.characteristics;
+      characteristicStreamsVersion.value++;
+      notifyListeners();
+    } else if (globalRetry < maxGlobalRetries && context != null) {
       print(
-          'Still not enough services after $maxAttempts attempts. Forcing disconnect and reconnect (retry $globalRetry)...');
+          'Still not enough services after retries. Forcing disconnect and reconnect (retry $globalRetry)...');
       try {
-        await device.disconnect();
-        await device.connect(timeout: const Duration(seconds: 10));
+        await _forceReconnect(device);
         await _discoverAndListenToCharacteristics(
           device,
           context: context,
@@ -220,7 +182,51 @@ class BleBloc with ChangeNotifier {
         throw Exception('Reconnect failed: $e');
       }
     }
-}
+  }
+
+Future<void> _forceReconnect(BluetoothDevice device) async {
+    try {
+      await device.disconnect();
+      await Future.delayed(reconnectionDelay);
+      await device.connect(timeout: const Duration(seconds: 10));
+      await Future.delayed(reconnectionDelay);
+    } catch (_) {}
+  }
+
+  void _clearCharacteristicStreams() {
+    for (var controller in _characteristicStreams.values) {
+      controller.close();
+    }
+    _characteristicStreams.clear();
+    for (var controller in _characteristicStringStreams.values) {
+      controller.close();
+    }
+    _characteristicStringStreams.clear();
+  }
+
+  Future<List<BluetoothService>> _retryServiceDiscovery(
+    BluetoothDevice device, {
+    int maxAttempts = 3,
+    Duration delay = reconnectionDelay,
+    int minimumServices = minimumServices,
+  }) async {
+    int attempts = 0;
+    while (attempts < maxAttempts) {
+      try {
+        await Future.delayed(const Duration(milliseconds: 500));
+        final services = await device.discoverServices();
+        if (services.length >= minimumServices) {
+          return services;
+        }
+        attempts++;
+        await Future.delayed(delay);
+      } catch (e) {
+        attempts++;
+        await Future.delayed(delay);
+      }
+    }
+    return [];
+  }
 
   void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
     bool hasVibrated = false;
@@ -242,10 +248,9 @@ class BleBloc with ChangeNotifier {
           try {
             reconnectionAttempts++;
             debugPrint('Reconnection attempt $reconnectionAttempts');
-            try {
-              await device.disconnect();
-              await Future.delayed(reconnectionDelay);
-            } catch (_) {}
+
+            await device.disconnect();
+            await Future.delayed(reconnectionDelay);
             await device.connect(timeout: const Duration(seconds: 10));
             await Future.delayed(reconnectionDelay);
             if (await device.connectionState.first ==
@@ -349,12 +354,7 @@ class BleBloc with ChangeNotifier {
   @override
   void dispose() {
     _devicesListController.close();
-    for (var controller in _characteristicStreams.values) {
-      controller.close();
-    }
-    for (var controller in _characteristicStringStreams.values) {
-      controller.close();
-    }
+    _clearCharacteristicStreams();
     selectedDeviceNotifier.dispose();
     isBluetoothEnabledNotifier.dispose();
     isScanningNotifier.dispose();
