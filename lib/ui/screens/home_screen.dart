@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -89,9 +90,19 @@ class HomeScreen extends StatelessWidget {
                 ),
                 pinned: true,
               ),
-              SliverSafeArea(
+SliverSafeArea(
                 minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                sliver: _SensorGrid(sensorBloc: sensorBloc),
+                sliver: ValueListenableBuilder<BluetoothDevice?>(
+                  valueListenable: bleBloc.selectedDeviceNotifier,
+                  builder: (context, device, child) {
+                    if (device == null) {
+                      // Not connected: show nothing
+                      return SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    // Connected: show sensor grid
+                    return _SensorGrid(sensorBloc: sensorBloc);
+                  },
+                ),
               ),
             ],
           ),
