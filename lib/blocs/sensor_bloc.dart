@@ -22,13 +22,14 @@ class SensorBloc with ChangeNotifier {
   final IsarService isarService = IsarService(); // To store aggregated data
   late final VoidCallback _characteristicsListener;
   late final VoidCallback _characteristicStreamsVersionListener;
+  late final VoidCallback _selectedDeviceListener;
   List<String> _lastCharacteristicUuids = [];
 
   SensorBloc(this.bleBloc, this.geolocationBloc) {
     _initializeSensors();
 
     // Listen to changes in the BLE device connection state
-    bleBloc.selectedDeviceNotifier.addListener(() {
+    _selectedDeviceListener = () {
       if (bleBloc.selectedDevice != null &&
           bleBloc.selectedDevice!.isConnected) {
         _startListening();
@@ -37,7 +38,9 @@ class SensorBloc with ChangeNotifier {
         _stopListening();
         geolocationBloc.stopListening();
       }
-    });
+    };
+
+    bleBloc.selectedDeviceNotifier.addListener(_selectedDeviceListener);
 
     // Listen to changes in available characteristics (after reconnect)
     _characteristicsListener = () {
@@ -50,8 +53,7 @@ class SensorBloc with ChangeNotifier {
         // Only restart if the set of UUIDs has changed
         if (!_listEqualsUnordered(_lastCharacteristicUuids, currentUuids)) {
           _lastCharacteristicUuids = List.from(currentUuids);
-          _stopListening();
-          _startListening();
+          _restartAllSensors();
         }
       }
     };
@@ -59,8 +61,7 @@ class SensorBloc with ChangeNotifier {
 
     // Listen for characteristic stream version changes (after reconnect)
     _characteristicStreamsVersionListener = () {
-      _stopListening();
-      _startListening();
+      _restartAllSensors();
     };
     bleBloc.characteristicStreamsVersion
         .addListener(_characteristicStreamsVersionListener);
@@ -100,22 +101,23 @@ class SensorBloc with ChangeNotifier {
     }
   }
 
-  List<Widget> getSensorWidgets() {
-    final availableCharacteristics = bleBloc.availableCharacteristics.value;
-    final List<Sensor> availableSensors = [];
+  void _restartAllSensors() {
+    _stopListening();
+    _startListening();
+  }
 
-    for (var sensor in _sensors) {
-      // Check if the sensor should be excluded based on the feature flag
+  List<Widget> getSensorWidgets() {
+    final availableUuids = bleBloc.availableCharacteristics.value
+        .map((e) => e.uuid.toString())
+        .toSet();
+
+    final availableSensors = _sensors.where((sensor) {
       if (FeatureFlags.hideSurfaceAnomalySensor &&
           sensor is SurfaceAnomalySensor) {
-        continue;
+        return false;
       }
-      if (availableCharacteristics
-          .map((e) => e.uuid.toString())
-          .contains(sensor.characteristicUuid)) {
-        availableSensors.add(sensor);
-      }
-    }
+      return availableUuids.contains(sensor.characteristicUuid);
+    }).toList();
 
     availableSensors.sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
     return availableSensors.map((sensor) => sensor.buildWidget()).toList();
@@ -126,17 +128,12 @@ class SensorBloc with ChangeNotifier {
     for (var sensor in _sensors) {
       sensor.dispose();
     }
-    bleBloc.selectedDeviceNotifier.removeListener(() {
-      if (bleBloc.selectedDevice != null &&
-          bleBloc.selectedDevice!.isConnected) {
-        _startListening();
-      } else {
-        _stopListening();
-      }
-    });
+
+    bleBloc.selectedDeviceNotifier.removeListener(_selectedDeviceListener);
     bleBloc.availableCharacteristics.removeListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .removeListener(_characteristicStreamsVersionListener);
+        
     super.dispose();
   }
 }
