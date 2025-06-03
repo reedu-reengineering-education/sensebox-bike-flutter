@@ -26,49 +26,77 @@ class HomeScreen extends StatelessWidget {
     final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
 
-    return Scaffold(
-      body: CustomScrollView(
-        clipBehavior: Clip.none,
-        slivers: [
-          // SliverPersistentHeader with the map and floating buttons
-          SliverPersistentHeader(
-            delegate: _SliverAppBarDelegate(
-              minHeight: MediaQuery.of(context).size.height * 0.33,
-              maxHeight: MediaQuery.of(context).size.height *
-                  (bleBloc.isConnected ? 0.65 : 0.85),
-              child: Stack(
-                children: [
-                  const SizedBox(
-                    width: double.infinity,
-                    child: GeolocationMapWidget(), // The map
-                  ),
-                  const Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: _BottomGradient(),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: _FloatingButtons(
-                          bleBloc: bleBloc, recordingBloc: recordingBloc),
-                    ),
+    return ValueListenableBuilder<bool>(
+      valueListenable: bleBloc.connectionErrorNotifier,
+      builder: (context, error, child) {
+        if (error == true) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).clearMaterialBanners();
+            ScaffoldMessenger.of(context).showMaterialBanner(
+              MaterialBanner(
+                content: Text(
+                    AppLocalizations.of(context)!.errorBleConnectionFailed),
+                backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      bleBloc.connectionErrorNotifier.value = false;
+                      ScaffoldMessenger.of(context).clearMaterialBanners();
+                    },
+                    child: Text(
+                        MaterialLocalizations.of(context).closeButtonLabel),
                   ),
                 ],
               ),
-            ),
-            pinned: true,
+            );
+          });
+        }
+
+        return Scaffold(
+          body: CustomScrollView(
+            clipBehavior: Clip.none,
+            slivers: [
+              // SliverPersistentHeader with the map and floating buttons
+              SliverPersistentHeader(
+                delegate: _SliverAppBarDelegate(
+                  minHeight: MediaQuery.of(context).size.height * 0.33,
+                  maxHeight: MediaQuery.of(context).size.height *
+                      (bleBloc.isConnected ? 0.65 : 0.85),
+                  child: Stack(
+                    children: [
+                      const SizedBox(
+                        width: double.infinity,
+                        child: GeolocationMapWidget(), // The map
+                      ),
+                      const Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: _BottomGradient(),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: _FloatingButtons(
+                              bleBloc: bleBloc, recordingBloc: recordingBloc),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                pinned: true,
+              ),
+              SliverSafeArea(
+                minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                sliver: _SensorGrid(sensorBloc: sensorBloc),
+              ),
+            ],
           ),
-          SliverSafeArea(
-            minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            sliver: _SensorGrid(sensorBloc: sensorBloc),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

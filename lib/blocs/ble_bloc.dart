@@ -27,6 +27,7 @@ class BleBloc with ChangeNotifier {
   final ValueNotifier<List<BluetoothCharacteristic>> availableCharacteristics =
       ValueNotifier([]);
   final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
+  final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
 
   final List<BluetoothDevice> devicesList = [];
   final StreamController<List<BluetoothDevice>> _devicesListController =
@@ -268,9 +269,12 @@ class BleBloc with ChangeNotifier {
           }
           await Future.delayed(reconnectionDelay);
         }
+
         isReconnectingNotifier.value = false;
+      
         if (!_isConnected && reconnectionAttempts >= maxReconnectionAttempts) {
           selectedDeviceNotifier.value = null;
+          connectionErrorNotifier.value = true;
           notifyListeners();
           if (!context.mounted) return;
           try {
