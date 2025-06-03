@@ -11,6 +11,10 @@ import 'package:sensebox_bike/services/custom_exceptions.dart';
 
 import 'package:vibration/vibration.dart'; // Import the RecordingBloc
 
+const reconnectionDelay = Duration(seconds: 5);
+const minimumServices =
+    7; // Minimum number of services to consider a valid connection
+
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
 
@@ -22,6 +26,7 @@ class BleBloc with ChangeNotifier {
       ValueNotifier(null);
   final ValueNotifier<List<BluetoothCharacteristic>> availableCharacteristics =
       ValueNotifier([]);
+  final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
 
   final List<BluetoothDevice> devicesList = [];
   final StreamController<List<BluetoothDevice>> _devicesListController =
@@ -165,9 +170,9 @@ class BleBloc with ChangeNotifier {
         await Future.delayed(const Duration(milliseconds: 500));
         List<BluetoothService> services = await device.discoverServices();
 
-        if (services.length < 7) {
+        if (services.length < minimumServices) {
           attempts++;
-          await Future.delayed(const Duration(seconds: 2));
+          await Future.delayed(reconnectionDelay);
           continue;
         }
 
@@ -177,12 +182,14 @@ class BleBloc with ChangeNotifier {
           orElse: () => throw Exception('Service not found'),
         );
 
-        availableCharacteristics.value = senseBoxService.characteristics;
-        notifyListeners();
-
         for (var characteristic in senseBoxService.characteristics) {
           await _listenToCharacteristic(characteristic);
         }
+
+        availableCharacteristics.value = senseBoxService.characteristics;
+        characteristicStreamsVersion.value++;
+        notifyListeners();
+
         break; // Exit the loop if successful
       } catch (e) {
         attempts++;
@@ -191,7 +198,7 @@ class BleBloc with ChangeNotifier {
           break;
         }
         print('Error discovering services, attempt $attempts: $e');
-        await Future.delayed(const Duration(seconds: 5));
+        await Future.delayed(reconnectionDelay);
       }
     }
 
@@ -218,6 +225,7 @@ class BleBloc with ChangeNotifier {
     bool hasVibrated = false;
     int reconnectionAttempts = 0;
     const int maxReconnectionAttempts = 5;
+    bool isFirstReconnection = true;
 
     device.connectionState.listen((state) async {
       if (state == BluetoothConnectionState.disconnected &&
@@ -232,15 +240,22 @@ class BleBloc with ChangeNotifier {
             reconnectionAttempts < maxReconnectionAttempts && !_isConnected) {
           try {
             reconnectionAttempts++;
-            print('Reconnection attempt $reconnectionAttempts');
+            debugPrint('Reconnection attempt $reconnectionAttempts');
             try {
               await device.disconnect();
-              await Future.delayed(const Duration(seconds: 2));
+              await Future.delayed(reconnectionDelay);
             } catch (_) {}
             await device.connect(timeout: const Duration(seconds: 10));
-            await Future.delayed(const Duration(seconds: 2));
+            await Future.delayed(reconnectionDelay);
             if (await device.connectionState.first ==
                 BluetoothConnectionState.connected) {
+              // After the first reconnection, wait 10 seconds before trying again
+              // to allow the device to stabilize
+              if (isFirstReconnection) {
+                isFirstReconnection = false;
+                await Future.delayed(const Duration(seconds: 10));
+                continue;
+              }
               _isConnected = true;
               hasVibrated = false;
               reconnectionAttempts = 0;
@@ -249,9 +264,9 @@ class BleBloc with ChangeNotifier {
               break;
             }
           } catch (e) {
-            print('Reconnection attempt $reconnectionAttempts failed: $e');
+            debugPrint('Reconnection attempt $reconnectionAttempts failed: $e');
           }
-          await Future.delayed(const Duration(seconds: 5));
+          await Future.delayed(reconnectionDelay);
         }
         isReconnectingNotifier.value = false;
         if (!_isConnected && reconnectionAttempts >= maxReconnectionAttempts) {
@@ -282,14 +297,14 @@ class BleBloc with ChangeNotifier {
       _characteristicStreams.remove(uuid);
     }
 
-    final controller = StreamController<List<double>>();
+    final controller = StreamController<List<double>>.broadcast();
     _characteristicStreams[uuid] = controller;
 
     await characteristic.setNotifyValue(true);
     characteristic.onValueReceived.listen((value) {
       if (!controller.isClosed) {
-      List<double> parsedData = _parseData(Uint8List.fromList(value));
-      controller.add(parsedData);
+        List<double> parsedData = _parseData(Uint8List.fromList(value));
+        controller.add(parsedData);
       }
     });
   }

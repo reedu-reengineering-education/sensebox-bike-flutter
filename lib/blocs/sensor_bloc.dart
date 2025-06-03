@@ -20,6 +20,9 @@ class SensorBloc with ChangeNotifier {
   final GeolocationBloc geolocationBloc;
   final List<Sensor> _sensors = [];
   final IsarService isarService = IsarService(); // To store aggregated data
+  late final VoidCallback _characteristicsListener;
+  late final VoidCallback _characteristicStreamsVersionListener;
+  List<String> _lastCharacteristicUuids = [];
 
   SensorBloc(this.bleBloc, this.geolocationBloc) {
     _initializeSensors();
@@ -35,6 +38,41 @@ class SensorBloc with ChangeNotifier {
         geolocationBloc.stopListening();
       }
     });
+
+    // Listen to changes in available characteristics (after reconnect)
+    _characteristicsListener = () {
+      if (bleBloc.selectedDevice != null &&
+          bleBloc.selectedDevice!.isConnected) {
+        final currentUuids = bleBloc.availableCharacteristics.value
+            .map((e) => e.uuid.toString())
+            .toList();
+
+        // Only restart if the set of UUIDs has changed
+        if (!_listEqualsUnordered(_lastCharacteristicUuids, currentUuids)) {
+          debugPrint(
+              '//// SensorBloc: Characteristics changed, restarting listening');
+          _lastCharacteristicUuids = List.from(currentUuids);
+          _stopListening();
+          _startListening();
+        }
+      }
+    };
+    bleBloc.availableCharacteristics.addListener(_characteristicsListener);
+
+    // Listen for characteristic stream version changes (after reconnect)
+    _characteristicStreamsVersionListener = () {
+      _stopListening();
+      _startListening();
+    };
+    bleBloc.characteristicStreamsVersion
+        .addListener(_characteristicStreamsVersionListener);
+  }
+
+  bool _listEqualsUnordered(List<String> a, List<String> b) {
+    final aSorted = List<String>.from(a)..sort();
+    final bSorted = List<String>.from(b)..sort();
+    return aSorted.length == bSorted.length &&
+        aSorted.every((element) => bSorted.contains(element));
   }
 
   void _initializeSensors() {
@@ -65,12 +103,9 @@ class SensorBloc with ChangeNotifier {
   }
 
   List<Widget> getSensorWidgets() {
-    // get available characteristics from bleBloc
     final availableCharacteristics = bleBloc.availableCharacteristics.value;
-
     final List<Sensor> availableSensors = [];
 
-    // get all sensors with this characteristic
     for (var sensor in _sensors) {
       // Check if the sensor should be excluded based on the feature flag
       if (FeatureFlags.hideSurfaceAnomalySensor &&
@@ -101,6 +136,9 @@ class SensorBloc with ChangeNotifier {
         _stopListening();
       }
     });
+    bleBloc.availableCharacteristics.removeListener(_characteristicsListener);
+    bleBloc.characteristicStreamsVersion
+        .removeListener(_characteristicStreamsVersionListener);
     super.dispose();
   }
 }
