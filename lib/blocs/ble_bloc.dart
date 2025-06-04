@@ -11,10 +11,11 @@ import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 5);
+const deviceConnectTimeout = Duration(seconds: 10);
 // Minimum number of services to consider a valid connection
 const minimumServices = 7;
-const maximumRetriesToDiscoverServices =
-    5; // Maximum retries to discover services
+// Maximum retries to discover services
+const maximumRetriesToDiscoverServices = 5; 
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
@@ -71,7 +72,7 @@ class BleBloc with ChangeNotifier {
     isScanningNotifier.value = true;
 
     try {
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
+      await FlutterBluePlus.startScan(timeout: deviceConnectTimeout);
     } catch (e) {
       isScanningNotifier.value = false;
       throw ScanPermissionDenied();
@@ -188,7 +189,7 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
     try {
       await device.disconnect();
       await Future.delayed(reconnectionDelay);
-      await device.connect(timeout: const Duration(seconds: 10));
+      await device.connect(timeout: deviceConnectTimeout);
       await Future.delayed(reconnectionDelay);
     } catch (_) {}
   }
@@ -249,17 +250,14 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
             reconnectionAttempts++;
             debugPrint('Reconnection attempt $reconnectionAttempts');
 
-            await device.disconnect();
-            await Future.delayed(reconnectionDelay);
-            await device.connect(timeout: const Duration(seconds: 10));
-            await Future.delayed(reconnectionDelay);
+            await _forceReconnect(device);
             if (await device.connectionState.first ==
                 BluetoothConnectionState.connected) {
-              // After the first reconnection, wait 10 seconds before trying again
+              // After the first reconnection, wait 5 seconds before trying again
               // to allow the device to stabilize
               if (isFirstReconnection) {
                 isFirstReconnection = false;
-                await Future.delayed(const Duration(seconds: 10));
+                await Future.delayed(const Duration(seconds: 5));
                 continue;
               }
               _isConnected = true;
