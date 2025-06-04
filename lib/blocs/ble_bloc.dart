@@ -12,10 +12,9 @@ import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 3);
 const deviceConnectTimeout = Duration(seconds: 10);
-// Minimum number of services to consider a valid connection
-const minimumServices = 7;
-// Maximum retries to discover services
-const maximumRetriesToDiscoverServices = 5; 
+// Minimum number of characteristics to consider connection valid
+const minimumCharacteristics = 7;
+const maxAttemptsToDiscoverSenseBoxServices = 5; 
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
@@ -127,7 +126,10 @@ class BleBloc with ChangeNotifier {
       isConnectingNotifier.value = true;
       notifyListeners();
 
-      await stopScanning();
+      if (isScanningNotifier.value == true) {
+        await stopScanning();
+      }
+
       await device.connect();
       _isConnected = true;
       _userInitiatedDisconnect = false; 
@@ -156,9 +158,10 @@ class BleBloc with ChangeNotifier {
   }) async {
     _clearCharacteristicStreams();
 
-    final services = await _retryServiceDiscovery(device);
+    final services = await _discoverSenseBoxServices(device);
     if (services.isNotEmpty) {
-      var senseBoxService = _findSenseBoxService(services);
+      var senseBoxService = services.first;
+
       for (var characteristic in senseBoxService.characteristics) {
         await _listenToCharacteristic(characteristic);
       }
@@ -166,7 +169,7 @@ class BleBloc with ChangeNotifier {
       characteristicStreamsVersion.value++;
       notifyListeners();
     } else if (globalRetry < maxGlobalRetries && context != null) {
-      print(
+      debugPrint(
           'Still not enough services after retries. Forcing disconnect and reconnect (retry $globalRetry)...');
       try {
         await _forceReconnect(device);
@@ -209,14 +212,10 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
     );
   }
 
-  Future<List<BluetoothService>> _retryServiceDiscovery(
-    BluetoothDevice device, {
-    int maxAttempts = 3,
-    Duration delay = reconnectionDelay,
-    int minimumServices = minimumServices,
-  }) async {
+  Future<List<BluetoothService>> _discoverSenseBoxServices(
+      BluetoothDevice device) async {
     int attempts = 0;
-    while (attempts < maxAttempts) {
+    while (attempts < maxAttemptsToDiscoverSenseBoxServices) {
       try {
         await Future.delayed(const Duration(milliseconds: 500));
         final services = await device.discoverServices();
@@ -224,15 +223,15 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
         final senseBoxService = _findSenseBoxService(services);
         int totalCharacteristics = senseBoxService.characteristics.length;
 
-        if (totalCharacteristics >= minimumServices) {
+        if (totalCharacteristics >= minimumCharacteristics) {
           return [senseBoxService]; // Return only the senseBox service
         }
       
         attempts++;
-        await Future.delayed(delay);
+        await Future.delayed(reconnectionDelay);
       } catch (e) {
         attempts++;
-        await Future.delayed(delay);
+        await Future.delayed(reconnectionDelay);
       }
     }
     return [];
