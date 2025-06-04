@@ -71,7 +71,6 @@ class RecordingBloc with ChangeNotifier {
   }
 
   void stopRecording() {
-    debugPrint("//// RecordingBloc: stopRecording called");
     if (!_isRecording) return;
 
     _isRecording = false;
