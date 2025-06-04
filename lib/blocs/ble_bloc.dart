@@ -242,11 +242,15 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
     int reconnectionAttempts = 0;
     const int maxReconnectionAttempts = 5;
     bool isFirstReconnection = true;
+    // Flag to prevent multiple reconnection cycles
+    bool isReconnecting = false;
 
     device.connectionState.listen((state) async {
       if (state == BluetoothConnectionState.disconnected &&
-          !_userInitiatedDisconnect) {
+          !_userInitiatedDisconnect &&
+          !isReconnecting) {
         _isConnected = false;
+        isReconnecting = true;
         isReconnectingNotifier.value = true;
         if (!hasVibrated && settingsBloc.vibrateOnDisconnect) {
           Vibration.vibrate();
@@ -281,25 +285,34 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
           await Future.delayed(reconnectionDelay);
         }
 
-        isReconnectingNotifier.value = false;
-
         if (!_isConnected && reconnectionAttempts >= maxReconnectionAttempts) {
-          selectedDeviceNotifier.value = null;
-          connectionErrorNotifier.value = true;
-          notifyListeners();
-          if (!context.mounted) return;
-          try {
-            RecordingBloc? recordingBloc =
-                Provider.of<RecordingBloc>(context, listen: false);
-            if (recordingBloc.isRecording) {
-              recordingBloc.stopRecording();
-            }
-          } catch (e) {
-            debugPrint('RecordingBloc not found in the widget tree: $e');
-          }
+          _handleConnectionError(context: context);
         }
+
+        isReconnectingNotifier.value = false;
+        isReconnecting = false;
       }
+    }).onError((error) {
+      _handleConnectionError(context: context);
     });
+  }
+
+  void _handleConnectionError({required BuildContext context}) {
+    selectedDeviceNotifier.value = null;
+    connectionErrorNotifier.value = true;
+    notifyListeners();
+
+    if (!context.mounted) return;
+
+    try {
+      RecordingBloc? recordingBloc =
+          Provider.of<RecordingBloc>(context, listen: false);
+      if (recordingBloc.isRecording) {
+        recordingBloc.stopRecording();
+      }
+    } catch (e) {
+      debugPrint('RecordingBloc not found in the widget tree: $e');
+    }
   }
   
   Future<void> _listenToCharacteristic(
