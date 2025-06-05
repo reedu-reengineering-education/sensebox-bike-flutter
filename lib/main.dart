@@ -46,7 +46,8 @@ class SenseBoxBikeApp extends StatelessWidget {
         Sentry.captureException(details.exception, stackTrace: details.stack);
       }
       SchedulerBinding.instance.addPostFrameCallback((_) {
-        ErrorService.handleError(details.exception, details.stack!);
+        ErrorService.handleError(
+            details.exception, details.stack ?? StackTrace.empty);
       });
     };
 

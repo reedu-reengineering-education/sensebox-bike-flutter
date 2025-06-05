@@ -30,7 +30,7 @@ class HomeScreen extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: bleBloc.connectionErrorNotifier,
       builder: (context, error, child) {
-        if (error == true) {
+        if (error == true && context.mounted) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             ScaffoldMessenger.of(context).clearMaterialBanners();
             ScaffoldMessenger.of(context).showMaterialBanner(
