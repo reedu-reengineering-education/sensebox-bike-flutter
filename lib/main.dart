@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mapbox_maps_flutter_draw/mapbox_maps_flutter_draw.dart';
 import 'package:provider/provider.dart';
@@ -44,14 +45,19 @@ class SenseBoxBikeApp extends StatelessWidget {
       if (!kDebugMode) {
         Sentry.captureException(details.exception, stackTrace: details.stack);
       }
-      ErrorService.handleError(details.exception, details.stack!);
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        ErrorService.handleError(
+            details.exception, details.stack ?? StackTrace.empty);
+      });
     };
 
     PlatformDispatcher.instance.onError = (error, stack) {
       if (!kDebugMode) {
         Sentry.captureException(error, stackTrace: stack);
       }
-      ErrorService.handleError(error, stack);
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        ErrorService.handleError(error, stack);
+      });
       return true;
     };
   }

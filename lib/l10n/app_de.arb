@@ -73,6 +73,7 @@
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
     "bleDeviceSelectTitle": "Tippen, um zu verbinden",
+    "noBleDevicesFound": "Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.",
     "createBoxTitle": "senseBox:bike erstellen",
     "createBoxModel": "Modell",
     "createBoxModelErrorEmpty": "Bitte wähle ein Modell",
@@ -154,6 +155,7 @@
     "errorExportDirectoryAccess": "Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.",
     "errorLoginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
     "errorRegistrationFailed": "Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
+    "errorBleConnectionFailed": "Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.",
     "selectCsvFormat": "CSV-Format auswählen",
     "regularCsv": "Standard CSV",
     "openSenseMapCsv": "openSenseMap CSV"

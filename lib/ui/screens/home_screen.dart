@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -26,49 +27,87 @@ class HomeScreen extends StatelessWidget {
     final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
 
-    return Scaffold(
-      body: CustomScrollView(
-        clipBehavior: Clip.none,
-        slivers: [
-          // SliverPersistentHeader with the map and floating buttons
-          SliverPersistentHeader(
-            delegate: _SliverAppBarDelegate(
-              minHeight: MediaQuery.of(context).size.height * 0.33,
-              maxHeight: MediaQuery.of(context).size.height *
-                  (bleBloc.isConnected ? 0.65 : 0.85),
-              child: Stack(
-                children: [
-                  const SizedBox(
-                    width: double.infinity,
-                    child: GeolocationMapWidget(), // The map
-                  ),
-                  const Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: _BottomGradient(),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: _FloatingButtons(
-                          bleBloc: bleBloc, recordingBloc: recordingBloc),
-                    ),
+    return ValueListenableBuilder<bool>(
+      valueListenable: bleBloc.connectionErrorNotifier,
+      builder: (context, error, child) {
+        if (error == true && context.mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).clearMaterialBanners();
+            ScaffoldMessenger.of(context).showMaterialBanner(
+              MaterialBanner(
+                content: Text(
+                    AppLocalizations.of(context)!.errorBleConnectionFailed),
+                backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      bleBloc.connectionErrorNotifier.value = false;
+                      ScaffoldMessenger.of(context).clearMaterialBanners();
+                    },
+                    child: Text(
+                        MaterialLocalizations.of(context).closeButtonLabel),
                   ),
                 ],
               ),
-            ),
-            pinned: true,
+            );
+          });
+        }
+
+        return Scaffold(
+          body: CustomScrollView(
+            clipBehavior: Clip.none,
+            slivers: [
+              // SliverPersistentHeader with the map and floating buttons
+              SliverPersistentHeader(
+                delegate: _SliverAppBarDelegate(
+                  minHeight: MediaQuery.of(context).size.height * 0.33,
+                  maxHeight: MediaQuery.of(context).size.height *
+                      (bleBloc.isConnected ? 0.65 : 0.85),
+                  child: Stack(
+                    children: [
+                      const SizedBox(
+                        width: double.infinity,
+                        child: GeolocationMapWidget(), // The map
+                      ),
+                      const Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: _BottomGradient(),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: _FloatingButtons(
+                              bleBloc: bleBloc, recordingBloc: recordingBloc),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                pinned: true,
+              ),
+SliverSafeArea(
+                minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                sliver: ValueListenableBuilder<BluetoothDevice?>(
+                  valueListenable: bleBloc.selectedDeviceNotifier,
+                  builder: (context, device, child) {
+                    if (device == null) {
+                      // Not connected: show nothing
+                      return SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    // Connected: show sensor grid
+                    return _SensorGrid(sensorBloc: sensorBloc);
+                  },
+                ),
+              ),
+            ],
           ),
-          SliverSafeArea(
-            minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            sliver: _SensorGrid(sensorBloc: sensorBloc),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -145,30 +184,36 @@ class _FloatingButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-      valueListenable: bleBloc.selectedDeviceNotifier,
-      builder: (context, selectedDevice, child) {
-        if (selectedDevice == null) {
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(
-                child: _ConnectButton(bleBloc: bleBloc),
-              ),
-              const SizedBox(width: 12),
-              _SenseBoxSelectionButton(),
-            ],
-          );
-        } else {
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _StartStopButton(recordingBloc: recordingBloc),
-              _DisconnectButton(bleBloc: bleBloc),
-              _SenseBoxSelectionButton(),
-            ],
-          );
-        }
+    return ValueListenableBuilder<bool>(
+      valueListenable: bleBloc.isReconnectingNotifier,
+      builder: (context, isReconnecting, child) {
+        return ValueListenableBuilder(
+          valueListenable: bleBloc.selectedDeviceNotifier,
+          builder: (context, selectedDevice, child) {
+            // Show buttons if device is connected or if reconnecting
+            if (selectedDevice == null && !isReconnecting) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: _ConnectButton(bleBloc: bleBloc),
+                  ),
+                  const SizedBox(width: 12),
+                  _SenseBoxSelectionButton(),
+                ],
+              );
+            } else {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _StartStopButton(recordingBloc: recordingBloc),
+                  _DisconnectButton(bleBloc: bleBloc),
+                  _SenseBoxSelectionButton(),
+                ],
+              );
+            }
+          },
+        );
       },
     );
   }
@@ -305,13 +350,12 @@ class _DisconnectButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           ),
           icon: isReconnecting
-              ? const Loader()
+              ? const Icon(Icons.bluetooth_searching)
               : const Icon(Icons.bluetooth_disabled),
           label: isReconnecting
               ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
               : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
-          // backgroundColor: Theme.of(context).colorScheme.primary,
-          onPressed: bleBloc.disconnectDevice,
+          onPressed: isReconnecting ? null : bleBloc.disconnectDevice,
         );
       },
     );

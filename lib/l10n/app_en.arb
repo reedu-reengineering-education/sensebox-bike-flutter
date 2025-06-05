@@ -76,6 +76,7 @@
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
     "bleDeviceSelectTitle": "Tap to connect",
+    "noBleDevicesFound": "No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.",
     "createBoxTitle": "Create senseBox:bike",
     "createBoxModel": "Model",
     "createBoxModelErrorEmpty": "Please select a model",
@@ -154,6 +155,7 @@
     "errorExportDirectoryAccess": "Error accessing export directory. Please make sure the app has permission to access the storage.",
     "errorLoginFailed": "Login failed. Please check your credentials.",
     "errorRegistrationFailed": "Registration failed. Please check your credentials.",
+    "errorBleConnectionFailed": "Connect to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.",
     "selectCsvFormat": "Select CSV format",
     "regularCsv": "Standard CSV",
     "openSenseMapCsv": "openSenseMap CSV"

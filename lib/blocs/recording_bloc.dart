@@ -31,15 +31,8 @@ class RecordingBloc with ChangeNotifier {
 
   RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
       this.openSenseMapBloc, this.settingsBloc) {
-    bleBloc.addListener(_onBluetoothConnectionChanged);
     openSenseMapBloc.senseBoxStream
         .listen(_onSenseBoxChanged); // Listen to senseBoxStream
-  }
-
-  void _onBluetoothConnectionChanged() {
-    if (!bleBloc.isConnected && _isRecording) {
-      stopRecording();
-    }
   }
 
   void _onSenseBoxChanged(SenseBox? senseBox) {
@@ -88,7 +81,6 @@ class RecordingBloc with ChangeNotifier {
 
   @override
   void dispose() {
-    bleBloc.removeListener(_onBluetoothConnectionChanged);
     super.dispose();
   }
 }

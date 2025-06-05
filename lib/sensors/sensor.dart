@@ -41,7 +41,6 @@ abstract class Sensor {
       // Listen to the sensor data stream
       _subscription = bleBloc
           .getCharacteristicStream(characteristicUuid)
-          .stream
           .listen((data) {
         onDataReceived(data);
       });
@@ -68,8 +67,9 @@ abstract class Sensor {
     }
   }
 
-  void stopListening() {
-    _subscription?.cancel();
+  Future<void> stopListening() async {
+    await _subscription?.cancel();
+    _subscription = null;
   }
 
   // Method to handle incoming sensor data
@@ -129,7 +129,6 @@ abstract class Sensor {
 
   void dispose() {
     stopListening();
-    _valueController
-        .close(); // Close the stream controller to prevent memory leaks
+    _valueController.close();
   }
 }
