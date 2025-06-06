@@ -45,6 +45,7 @@
     "generalLogin": "Entrar",
     "generalLogout": "Sair",
     "generalRegister": "Registrar-se",
+    "generalProceed": "Prosseguir",
     "homeBottomBarHome": "Início",
     "homeBottomBarTracks": "Trajetos",
     "tracksAppBarTitle": "Trajetos",
@@ -165,6 +166,7 @@
     "settingsDeleteAllDataError": "Falha ao excluir todos os dados. Por favor, tente novamente.",
     "accountManagement": "Gerenciamento de Conta",
     "deleteAllHint": "Isso excluirá todas as suas faixas do aplicativo.",
-    "generalConfirmation": "Confirmação"
+    "generalConfirmation": "Confirmação",
+    "privacyPolicyAccept": "Eu aceito a política de privacidade"
 
 }
