@@ -45,6 +45,7 @@
     "generalLogin": "Anmelden",
     "generalLogout": "Abmelden",
     "generalRegister": "Registrieren",
+    "generalProceed": "Fortfahren",
     "homeBottomBarHome": "Start",
     "homeBottomBarTracks": "Tracks",
     "tracksAppBarTitle": "Tracks",
@@ -158,5 +159,6 @@
     "errorBleConnectionFailed": "Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.",
     "selectCsvFormat": "CSV-Format auswählen",
     "regularCsv": "Standard CSV",
-    "openSenseMapCsv": "openSenseMap CSV"
+    "openSenseMapCsv": "openSenseMap CSV",
+    "privacyPolicyAccept": "Ich akzeptiere die Datenschutzerklärung"
 }
