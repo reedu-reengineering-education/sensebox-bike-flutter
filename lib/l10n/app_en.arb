@@ -167,6 +167,7 @@
     "accountManagement": "Account Management",
     "deleteAllHint": "This will delete all your tracks from the app.",
     "generalConfirmation": "Confirmation",
-    "privacyPolicyAccept": "I accept the Privacy Policy"
+    "privacyPolicyAccept": "I accept the Privacy Policy",
+    "scrollToAcceptHint": "Please review and accept the Privacy Policy to continue using the app."
 
 }
