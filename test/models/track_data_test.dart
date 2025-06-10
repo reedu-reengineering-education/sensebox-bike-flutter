@@ -17,7 +17,6 @@ void main() {
       directory: ''
     );
 
-    // Create a new TrackData instance
     trackData = TrackData();
     await isar.writeTxn(() async {
       await isar.trackDatas.put(trackData);
@@ -25,7 +24,6 @@ void main() {
   });
 
   tearDown(() async {
-    // Close the Isar database
     await isar.close();
   });
 
@@ -34,7 +32,6 @@ void main() {
   });
 
   test('encodedPolyline handles single point correctly', () async {
-    // Add a single geolocation to the track
     final geolocation = GeolocationData()
       ..latitude = 52.5200
       ..longitude = 13.4050
@@ -55,7 +52,6 @@ void main() {
   });
 
   test('encodedPolyline handles short tracks without simplification', () async {
-    // Add fewer than 10 geolocations
     await isar.writeTxn(() async {
       for (int i = 0; i < 5; i++) {
         final geolocation = GeolocationData()
@@ -77,7 +73,6 @@ void main() {
   });
 
   test('encodedPolyline simplifies long tracks dynamically', () async {
-    // Add more than 10 geolocations
     await isar.writeTxn(() async {
       for (int i = 0; i < 20; i++) {
         final geolocation = GeolocationData()
