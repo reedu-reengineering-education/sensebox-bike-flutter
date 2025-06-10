@@ -83,7 +83,8 @@ class TrackData {
       polyline = encodePolyline(simplifiedList);
       // Mapbox API URL lenght limit is 8192 bytes,
       // other parts of URL are 197 bytes long
-    } while (polyline.length > 7955 && tolerance > 0.005);
+      // which leaves us with 7995 bytes for the polyline
+    } while (polyline.length > 7950 && tolerance > 0.005);
 
     return polyline;
   }
