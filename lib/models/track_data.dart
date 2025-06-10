@@ -59,7 +59,7 @@ class TrackData {
       ];
       return encodePolyline(repeatedPoints);
     }
-    // If there are fewer than 10 coordinates, no simplification is needed
+
     if (coordinates.length < 10) {
       final List<List<num>> castedCoordinates = geolocations
           .map((geolocation) => [geolocation.latitude, geolocation.longitude])
@@ -68,17 +68,24 @@ class TrackData {
       return encodePolyline(castedCoordinates);
     }
 
-    final tolerance = calculateTolerance(coordinates.length);
+    // Dynamic simplification loop
+    double tolerance = calculateTolerance(coordinates.length);
+    String polyline;
+    List<Point<double>> simplifiedCoordinates;
+    do {
+      simplifiedCoordinates = simplify<Point<double>>(
+        coordinates,
+        tolerance: tolerance,
+        highestQuality: false,
+      );
+      final simplifiedList =
+          simplifiedCoordinates.map((point) => [point.x, point.y]).toList();
+      polyline = encodePolyline(simplifiedList);
+      // Mapbox API URL lenght limit is 8192 bytes,
+      // other parts of URL are 197 bytes long
+      // which leaves us with 7995 bytes for the polyline
+    } while (polyline.length > 7950 && tolerance > 0.005);
 
-    final simplifiedCoordinates = simplify<Point<double>>(
-      coordinates,
-      tolerance: tolerance,
-      highestQuality: false, 
-    );
-    // Convert simplified points back to a list of lists for encoding
-    final simplifiedList =
-        simplifiedCoordinates.map((point) => [point.x, point.y]).toList();
-
-    return encodePolyline(simplifiedList);
+    return polyline;
   }
 }
