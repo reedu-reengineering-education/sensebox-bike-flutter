@@ -160,6 +160,7 @@
     "selectCsvFormat": "Selecionar formato CSV",
     "regularCsv": "CSV padrão",
     "openSenseMapCsv": "CSV openSenseMap",
-    "privacyPolicyAccept": "Eu aceito a política de privacidade"
+    "privacyPolicyAccept": "Eu aceito a política de privacidade",
+    "scrollToAcceptHint": "Por favor, leia e aceite a política de privacidade para continuar usando o aplicativo."
 
 }

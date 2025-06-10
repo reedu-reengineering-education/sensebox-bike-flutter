@@ -87,54 +87,65 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
         appBar: AppBar(title: Text(localizations.settingsPrivacyPolicy)),
       body: Padding(
-          padding: const EdgeInsets.symmetric(
-              vertical: spacing * 2, horizontal: spacing),
+          padding: const EdgeInsets.all(spacing * 1.5),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (_isLoading)
                 Center(child: CircularProgressIndicator())
               else
                 Expanded(child: WebViewWidget(controller: _controller)),
-              Padding(
-                padding: const EdgeInsets.all(spacing),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _isCheckboxChecked,
-                          onChanged: (value) {
-                            setState(() {
-                              _isCheckboxChecked = value ?? false;
-                            });
-                          },
-                        ),
-                        Expanded(
-                          child: Text(localizations.privacyPolicyAccept),
-                        ),
-                      ],
+              const SizedBox(height: spacing),
+              Row(
+                children: [
+                  Icon(Icons.info_outline, color: colorScheme.primaryFixedDim),
+                  const SizedBox(width: spacing / 2),
+                  Expanded(
+                    child: Text(
+                      localizations.scrollToAcceptHint,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: colorScheme.primaryFixedDim),
                     ),
-                    const SizedBox(height: spacing),
-                    FilledButton(
-                      onPressed: (_isCheckboxChecked && _hasScrolledToBottom)
-                          ? () async {
-                              await _saveAcceptanceDate();
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const AppHome()),
-                              );
-                            }
-                          : null,
-                      child: Text(localizations.generalProceed),
-                    ),
-                  ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: spacing),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _isCheckboxChecked,
+                    onChanged: (value) {
+                      setState(() {
+                        _isCheckboxChecked = value ?? false;
+                      });
+                    },
+                  ),
+                  Text(localizations.privacyPolicyAccept),
+                ],
+              ),
+              const SizedBox(height: spacing),
+              Center(
+                child: FilledButton(
+                  onPressed: (_isCheckboxChecked && _hasScrolledToBottom)
+                      ? () async {
+                          await _saveAcceptanceDate();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const AppHome()),
+                          );
+                        }
+                      : null,
+                  child: Text(localizations.generalProceed),
                 ),
-          ),
+),
         ],
       ),
     ));

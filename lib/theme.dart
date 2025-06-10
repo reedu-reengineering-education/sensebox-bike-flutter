@@ -16,6 +16,7 @@ final lightTheme = ThemeData(
   colorScheme:
       const ColorScheme.light(
       primary: Colors.black,
+      primaryFixedDim: Colors.grey,
       secondary: Colors.black12,
       tertiary: Colors.lightGreen),
   canvasColor: Colors.grey[50],
@@ -42,6 +43,7 @@ final darkTheme = ThemeData(
   canvasColor: const Color.fromARGB(255, 24, 24, 24),
   colorScheme: const ColorScheme.dark(
       primary: Colors.white,
+      primaryFixedDim: Colors.grey,
       secondary: Colors.white,
       tertiary: Colors.green,
       surface: Color(0xFF121212)),
