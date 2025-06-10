@@ -46,3 +46,6 @@ app.*.map.json
 /android/app/.cxx
 
 .env
+
+# In-memory Isar instance used for testing
+default.isar*
