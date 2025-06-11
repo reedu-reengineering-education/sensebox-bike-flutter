@@ -11,7 +11,7 @@ class CheckboxWithText extends StatelessWidget {
     required this.value,
     required this.onChanged,
     required this.text,
-    this.offset = const Offset(0, 0),
+    this.offset = const Offset(-12, 0),
   });
 
   @override
