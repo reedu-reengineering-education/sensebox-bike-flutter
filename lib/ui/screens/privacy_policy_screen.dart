@@ -4,6 +4,7 @@ import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sensebox_bike/ui/widgets/common/checkbox_with_text.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -101,7 +102,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                 Center(child: CircularProgressIndicator())
               else
                 Expanded(child: WebViewWidget(controller: _controller)),
-              const SizedBox(height: spacing),
+              const CustomSpacer(),
               Row(
                 children: [
                   Icon(Icons.info_outline, color: colorScheme.primaryFixedDim),
@@ -117,7 +118,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: spacing),
+              const CustomSpacer(),
               CheckboxWithText(
                 value: _isCheckboxChecked,
                 onChanged: (value) {
@@ -126,9 +127,8 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                   });
                 },
                 text: localizations.privacyPolicyAccept,
-                offset: const Offset(-12, 0), // Apply the desired offset
               ),
-              const SizedBox(height: spacing),
+              const CustomSpacer(),
               Center(
                 child: FilledButton(
                   onPressed: (_isCheckboxChecked && _hasScrolledToBottom)
@@ -143,7 +143,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                       : null,
                   child: Text(localizations.generalProceed),
                 ),
-),
+              ),
         ],
       ),
     ));
