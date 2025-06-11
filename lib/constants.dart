@@ -5,6 +5,13 @@ const retryPeriod = 2; // in minutes
 const premanentConnectivityFalurePeriod = 20; // in minutes
 const defaultTimeout = 30; // in seconds
 
+class SharedPreferencesKeys {
+  static const String privacyPolicyAcceptedAt = 'privacyPolicyAcceptedAt';
+  static const String privacyZones = 'privacyZones';
+  static const String selectedSenseBox = 'selectedSenseBox';
+  static const bool vibrateOnDisconnect = false;
+}
+
 const openSenseMapUrl = 'https://api.opensensemap.org';
 const senseBoxBikePrivacyPolicyUrl =
     'https://sensebox.de/sensebox-bike-privacy-policy';

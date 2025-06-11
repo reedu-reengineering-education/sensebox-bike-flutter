@@ -45,6 +45,7 @@
     "generalLogin": "Entrar",
     "generalLogout": "Sair",
     "generalRegister": "Registrar-se",
+    "generalProceed": "Prosseguir",
     "homeBottomBarHome": "Início",
     "homeBottomBarTracks": "Trajetos",
     "tracksAppBarTitle": "Trajetos",
@@ -158,6 +159,8 @@
     "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.",
     "selectCsvFormat": "Selecionar formato CSV",
     "regularCsv": "CSV padrão",
-    "openSenseMapCsv": "CSV openSenseMap"
+    "openSenseMapCsv": "CSV openSenseMap",
+    "privacyPolicyAccept": "Eu aceito a política de privacidade",
+    "scrollToAcceptHint": "Por favor, leia e aceite a política de privacidade para continuar usando o aplicativo."
 
 }
