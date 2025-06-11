@@ -3,6 +3,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // For translation
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/app_home.dart';
+import 'package:sensebox_bike/ui/widgets/common/checkbox_with_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -104,7 +105,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
               Row(
                 children: [
                   Icon(Icons.info_outline, color: colorScheme.primaryFixedDim),
-                  const SizedBox(width: spacing / 2),
+                  const SizedBox(width: spacing),
                   Expanded(
                     child: Text(
                       localizations.scrollToAcceptHint,
@@ -117,18 +118,15 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                 ],
               ),
               const SizedBox(height: spacing),
-              Row(
-                children: [
-                  Checkbox(
-                    value: _isCheckboxChecked,
-                    onChanged: (value) {
-                      setState(() {
-                        _isCheckboxChecked = value ?? false;
-                      });
-                    },
-                  ),
-                  Text(localizations.privacyPolicyAccept),
-                ],
+              CheckboxWithText(
+                value: _isCheckboxChecked,
+                onChanged: (value) {
+                  setState(() {
+                    _isCheckboxChecked = value ?? false;
+                  });
+                },
+                text: localizations.privacyPolicyAccept,
+                offset: const Offset(-12, 0), // Apply the desired offset
               ),
               const SizedBox(height: spacing),
               Center(
