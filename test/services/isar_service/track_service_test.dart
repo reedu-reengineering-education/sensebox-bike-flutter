@@ -33,11 +33,8 @@ void main() {
       directory: ''
     );
 
-    // Mock IsarProvider to return the in-memory Isar instance
     final mockIsarProvider = MockIsarProvider();
     when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
-
-    // Initialize TrackService with the mocked IsarProvider
     trackService = TrackService(isarProvider: mockIsarProvider);
 
     // Clear the database to ensure test isolation
@@ -45,7 +42,6 @@ void main() {
       await isar.trackDatas.clear();
     });
 
-    // Add sample track data to the database
     trackData = TrackData();
     await isar.writeTxn(() async {
       await isar.trackDatas.put(trackData);
@@ -57,7 +53,7 @@ void main() {
     channel.setMockMethodCallHandler(null);
   });
 
-  group('TrackService', () {
+group('TrackService', () {
     group('deleteAllTracks', () {
       test('successfully deletes all tracks from the database', () async {
         final tracksBefore = await isar.trackDatas.where().findAll();
@@ -93,5 +89,58 @@ void main() {
         expect(tracksAfter.isEmpty, isTrue);
       });
     });
-  });
+
+    group('saveTrack', () {
+      test('successfully saves a track to the database', () async {
+        final newTrack = TrackData();
+        final trackId = await trackService.saveTrack(newTrack);
+
+        final savedTrack = await isar.trackDatas.get(trackId);
+        expect(savedTrack, isNotNull);
+      });
+    });
+
+    group('getTrackById', () {
+      test('retrieves a track by its ID', () async {
+        final retrievedTrack = await trackService.getTrackById(trackData.id);
+        expect(retrievedTrack, isNotNull);
+        expect(retrievedTrack?.id, equals(trackData.id));
+      });
+
+      test('returns null for a non-existent track ID', () async {
+        final retrievedTrack = await trackService.getTrackById(-1);
+        expect(retrievedTrack, isNull);
+      });
+    });
+
+    group('getAllTracks', () {
+      test('retrieves all tracks from the database', () async {
+        final tracks = await trackService.getAllTracks();
+        expect(tracks.length, equals(1));
+      });
+
+      test('returns an empty list when no tracks exist', () async {
+        await trackService.deleteAllTracks();
+
+        final tracks = await trackService.getAllTracks();
+        expect(tracks.isEmpty, isTrue);
+      });
+    });
+
+    group('deleteTrack', () {
+      test('successfully deletes a track by its ID', () async {
+        await trackService.deleteTrack(trackData.id);
+
+        final deletedTrack = await isar.trackDatas.get(trackData.id);
+        expect(deletedTrack, isNull);
+      });
+
+      test('handles deletion of a non-existent track gracefully', () async {
+        await trackService.deleteTrack(-1);
+
+        final tracks = await isar.trackDatas.where().findAll();
+        expect(tracks.length, equals(1)); // Original track remains
+      });
+    });
+});
 }
