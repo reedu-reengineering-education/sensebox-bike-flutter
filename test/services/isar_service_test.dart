@@ -40,33 +40,18 @@ void main() {
 
     await clearIsarDatabase(isar);
 
-    // Create and save TrackData
-    trackData = TrackData();
+    trackData = createMockTrackData();
     await isar.writeTxn(() async {
       await isar.trackDatas.put(trackData);
     });
 
-    // Create and save GeolocationData linked to TrackData
-    geolocationData = GeolocationData()
-      ..latitude = 52.5200
-      ..longitude = 13.4050
-      ..timestamp = DateTime.now().toUtc()
-      ..speed = 15.0
-      ..track.value = trackData;
-
+    geolocationData = createMockGeolocationData(trackData);
     await isar.writeTxn(() async {
       await isar.geolocationDatas.put(geolocationData);
       await geolocationData.track.save();
     });
 
-    // Create and save SensorData linked to GeolocationData
-    sensorData = SensorData()
-      ..title = 'finedust'
-      ..value = 25.0
-      ..attribute = "pm1"
-      ..characteristicUuid = '1234-5678-9012-3456'
-      ..geolocationData.value = geolocationData;
-
+    sensorData = createMockSensorData(geolocationData);
     await isar.writeTxn(() async {
       await isar.sensorDatas.put(sensorData);
       await sensorData.geolocationData.save();
@@ -170,7 +155,7 @@ void main() {
 
       final csvContent = await file.readAsString();
       expect(csvContent.isNotEmpty, isTrue);
-      expect(csvContent.contains('finedust'), isTrue);
+      expect(csvContent.contains('temperature'), isTrue);
     });
 
     test('throws an exception if the track has no geolocations', () async {

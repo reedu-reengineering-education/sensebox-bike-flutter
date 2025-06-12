@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -15,7 +16,12 @@ import 'package:sensebox_bike/sensors/sensor.dart';
 class MockIsarProvider extends Mock implements IsarProvider {}
 
 class MockTagService extends Mock implements TagService {}
-class MockIsarService extends Mock implements IsarService {}
+class MockIsarService extends Mock implements IsarService {
+  final MockTrackService mockTrackService = MockTrackService();
+
+  @override
+  TrackService get trackService => mockTrackService;
+}
 class MockTrackService extends Mock implements TrackService {}
 class MockGeolocationService extends Mock implements GeolocationService {}
 class MockSensorService extends Mock implements SensorService {}

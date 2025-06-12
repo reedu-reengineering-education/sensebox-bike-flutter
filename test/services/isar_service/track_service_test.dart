@@ -29,7 +29,7 @@ void main() {
 
     await clearIsarDatabase(isar);
 
-    trackData = TrackData();
+    trackData = createMockTrackData();
     await isar.writeTxn(() async {
       await isar.trackDatas.put(trackData);
     });

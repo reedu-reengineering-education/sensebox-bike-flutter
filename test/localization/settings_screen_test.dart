@@ -5,9 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import '../mocks.dart';
 import '../test_helpers.dart';
+
+class MockIsarService extends Mock implements IsarService {}
 
 void main() {
   late MockIsarService mockIsarService;

@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
-import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
 import '../../mocks.dart';
@@ -29,15 +28,16 @@ void main() {
     geolocationService = GeolocationService(isarProvider: mockIsarProvider);
 
     await clearIsarDatabase(isar);
-    
-    geolocationData = GeolocationData()
-      ..latitude = 52.5200
-      ..longitude = 13.4050
-      ..timestamp = DateTime.now().toUtc()
-      ..speed = 0.0;
 
+    final trackData = createMockTrackData();
+    await isar.writeTxn(() async {
+      await isar.trackDatas.put(trackData);
+    });
+
+    geolocationData = createMockGeolocationData(trackData);
     await isar.writeTxn(() async {
       await isar.geolocationDatas.put(geolocationData);
+      await geolocationData.track.save();
     });
   });
 

@@ -53,31 +53,18 @@ void main() {
 
     await clearIsarDatabase(isar);
 
-    final trackData = TrackData();
+    final trackData = createMockTrackData();
     await isar.writeTxn(() async {
       await isar.trackDatas.put(trackData);
     });
 
-    final geolocationData = GeolocationData()
-      ..latitude = 52.5200
-      ..longitude = 13.4050
-      ..timestamp = DateTime.now().toUtc()
-      ..speed = 0.0
-      ..track.value = trackData;
-
+    final geolocationData = createMockGeolocationData(trackData);
     await isar.writeTxn(() async {
       await isar.geolocationDatas.put(geolocationData);
       await geolocationData.track.save();
     });
 
-    // Add sample sensor data to the database
-    sensorData = SensorData()
-      ..title = 'temperature'
-      ..value = 25.0
-      ..attribute = 'Celsius'
-      ..characteristicUuid = '1234-5678-9012-3456'
-      ..geolocationData.value = geolocationData;
-
+    sensorData = createMockSensorData(geolocationData);
     await isar.writeTxn(() async {
       await isar.sensorDatas.put(sensorData);
       await sensorData.geolocationData.save();

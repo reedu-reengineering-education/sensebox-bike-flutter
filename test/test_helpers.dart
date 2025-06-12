@@ -110,3 +110,25 @@ void mockSenseBoxInSharedPreferences() {
     {'selectedSenseBox': jsonEncode(senseBox.toJson())},
   );
 }
+
+TrackData createMockTrackData() {
+  return TrackData();
+}
+
+GeolocationData createMockGeolocationData(TrackData trackData) {
+  return GeolocationData()
+    ..latitude = 52.5200
+    ..longitude = 13.4050
+    ..timestamp = DateTime.now().toUtc()
+    ..speed = 0.0
+    ..track.value = trackData;
+}
+
+SensorData createMockSensorData(GeolocationData geolocationData) {
+  return SensorData()
+    ..title = 'temperature'
+    ..value = 25.0
+    ..attribute = 'Celsius'
+    ..characteristicUuid = '1234-5678-9012-3456'
+    ..geolocationData.value = geolocationData;
+}
