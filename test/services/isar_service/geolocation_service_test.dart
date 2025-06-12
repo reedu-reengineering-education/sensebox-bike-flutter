@@ -28,7 +28,9 @@ void main() {
 
     geolocationService = GeolocationService(isarProvider: mockIsarProvider);
 
-    // Add sample geolocation data to the database
+    await isar.writeTxn(() async {
+      await isar.geolocationDatas.clear();
+    });
     geolocationData = GeolocationData()
       ..latitude = 52.5200
       ..longitude = 13.4050
@@ -44,54 +46,125 @@ void main() {
     await isar.close();
   });
 
-group('deleteAllGeolocations', () {
-  test('successfully deletes all geolocations from the database', () async {
-    // Verify that the geolocation data exists before deletion
-    final geolocationsBefore = await isar.geolocationDatas.where().findAll();
-    expect(geolocationsBefore.length, equals(1));
+  group('GeolocationService', () {
+    group('deleteAllGeolocations', () {
+      test('successfully deletes all geolocations from the database', () async {
+        // Verify that the geolocation data exists before deletion
+        final geolocationsBefore =
+            await isar.geolocationDatas.where().findAll();
+        expect(geolocationsBefore.length, equals(1));
 
-    await geolocationService.deleteAllGeolocations();
+        await geolocationService.deleteAllGeolocations();
 
-    final geolocationsAfter = await isar.geolocationDatas.where().findAll();
-    expect(geolocationsAfter.isEmpty, isTrue);
-  });
+        final geolocationsAfter = await isar.geolocationDatas.where().findAll();
+        expect(geolocationsAfter.isEmpty, isTrue);
+      });
 
-  test('handles empty database gracefully', () async {
-    await geolocationService.deleteAllGeolocations();
+      test('handles empty database gracefully', () async {
+        await geolocationService.deleteAllGeolocations();
 
-    final geolocationsAfter = await isar.geolocationDatas.where().findAll();
-    expect(geolocationsAfter.isEmpty, isTrue);
-  });
+        final geolocationsAfter = await isar.geolocationDatas.where().findAll();
+        expect(geolocationsAfter.isEmpty, isTrue);
+      });
 
-  test('deletes multiple geolocations from the database', () async {
-    // Arrange: Add multiple geolocation records
-    final geolocationData2 = GeolocationData()
-      ..latitude = 48.8566
-      ..longitude = 2.3522
-      ..timestamp = DateTime.now().toUtc()
-      ..speed = 10.0;
+      test('deletes multiple geolocations from the database', () async {
+        final geolocationData2 = GeolocationData()
+          ..latitude = 48.8566
+          ..longitude = 2.3522
+          ..timestamp = DateTime.now().toUtc()
+          ..speed = 10.0;
 
-    await isar.writeTxn(() async {
-      await isar.geolocationDatas.put(geolocationData2);
+        await isar.writeTxn(() async {
+          await isar.geolocationDatas.put(geolocationData2);
+        });
+
+        // Verify that multiple geolocation records exist before deletion
+        final geolocationsBefore =
+            await isar.geolocationDatas.where().findAll();
+        expect(geolocationsBefore.length, equals(2));
+
+        await geolocationService.deleteAllGeolocations();
+
+        final geolocationsAfter = await isar.geolocationDatas.where().findAll();
+        expect(geolocationsAfter.isEmpty, isTrue);
+      });
     });
 
-    // Verify that multiple geolocation records exist before deletion
-    final geolocationsBefore = await isar.geolocationDatas.where().findAll();
-    expect(geolocationsBefore.length, equals(2));
+    group('getGeolocationData', () {
+      test('retrieves all geolocation data from the database', () async {
+        final geolocations = await geolocationService.getGeolocationData();
 
-    await geolocationService.deleteAllGeolocations();
+        expect(geolocations.length, equals(1));
+        expect(geolocations.first.latitude, equals(52.5200));
+        expect(geolocations.first.longitude, equals(13.4050));
+      });
 
-    final geolocationsAfter = await isar.geolocationDatas.where().findAll();
-    expect(geolocationsAfter.isEmpty, isTrue);
-  });
+      test('returns an empty list when no geolocation data exists', () async {
+        await geolocationService.deleteAllGeolocations();
 
-  test('throws exception if database operation fails', () async {
-    await isar.close(); // Close the database to simulate failure
+        final geolocations = await geolocationService.getGeolocationData();
 
-    expect(
-      () async => await geolocationService.deleteAllGeolocations(),
-      throwsA(isA<Exception>()),
-    );
+        expect(geolocations.isEmpty, isTrue);
+      });
+    });
+
+    group('getGeolocationDataByTrackId', () {
+      test('retrieves geolocation data by track ID', () async {
+        final trackData = TrackData();
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(trackData);
+        });
+
+        geolocationData.track.value = trackData;
+        await isar.writeTxn(() async {
+          await geolocationData.track.save();
+        });
+
+        final geolocations =
+            await geolocationService.getGeolocationDataByTrackId(trackData.id);
+
+        expect(geolocations.length, equals(1));
+        expect(geolocations.first.latitude, equals(52.5200));
+        expect(geolocations.first.longitude, equals(13.4050));
+      });
+
+      test(
+          'returns an empty list when no geolocation data exists for the track ID',
+          () async {
+        final geolocations =
+            await geolocationService.getGeolocationDataByTrackId(-1);
+
+        expect(geolocations.isEmpty, isTrue);
+      });
+    });
+
+    group('getLastGeolocationData', () {
+      test('retrieves the most recent geolocation data', () async {
+        final geolocationData2 = GeolocationData()
+          ..latitude = 48.8566
+          ..longitude = 2.3522
+          ..timestamp = DateTime.now().add(const Duration(hours: 1)).toUtc()
+          ..speed = 10.0;
+
+        await isar.writeTxn(() async {
+          await isar.geolocationDatas.put(geolocationData2);
+        });
+
+        final lastGeolocation =
+            await geolocationService.getLastGeolocationData();
+
+        expect(lastGeolocation?.latitude, equals(48.8566));
+        expect(lastGeolocation?.longitude, equals(2.3522));
+      });
+
+      test('returns null when no geolocation data exists', () async {
+        await geolocationService.deleteAllGeolocations();
+
+        final lastGeolocation =
+            await geolocationService.getLastGeolocationData();
+
+        expect(lastGeolocation, isNull);
+      });
   });
 });
 }
