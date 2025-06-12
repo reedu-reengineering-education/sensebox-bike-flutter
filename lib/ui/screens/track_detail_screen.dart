@@ -5,13 +5,15 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
+import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
@@ -30,6 +32,7 @@ class TrackDetailScreen extends StatefulWidget {
 }
 
 class _TrackDetailScreenState extends State<TrackDetailScreen> {
+  late final IsarService isarService;
   late Future<TrackData?> _trackFuture;
   late Future<List<SensorData>> _sensorDataFuture;
 
@@ -42,9 +45,16 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _sensorType = 'temperature'; // Default sensor type
-    _trackFuture = IsarService().trackService.getTrackById(id);
-    _sensorDataFuture = IsarService().sensorService.getSensorDataByTrackId(id);
+
+    isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
+
+    _fetchTrackData();
+  }
+
+  void _fetchTrackData() {
+    _trackFuture = isarService.trackService.getTrackById(widget.id);
+    _sensorDataFuture =
+        isarService.sensorService.getSensorDataByTrackId(widget.id);
   }
 
   Future<void> _shareFile(String filePath) async {
@@ -123,7 +133,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     setState(() => _isDownloading = true);
 
     try {
-      final isarService = IsarService();
       final String csvFilePath;
       
       if (isOpenSourceMapCompatible) {
