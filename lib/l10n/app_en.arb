@@ -158,6 +158,10 @@
     "errorBleConnectionFailed": "Connect to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.",
     "selectCsvFormat": "Select CSV format",
     "regularCsv": "Standard CSV",
-    "openSenseMapCsv": "openSenseMap CSV"
+    "openSenseMapCsv": "openSenseMap CSV",
+    "settingsDeleteAllData": "Delete All Data",
+    "settingsDeleteAllDataConfirmation": "Are you sure you want to delete all data? This action is irreversible.",
+    "settingsDeleteAllDataSuccess": "All data has been successfully deleted.",
+    "settingsDeleteAllDataError": "Failed to delete all data. Please try again."
 
 }

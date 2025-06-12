@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
+import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
+import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -75,33 +78,84 @@ class SettingsScreen extends StatelessWidget {
 
   // Other Section
   Widget _buildOtherSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader(
-            context, AppLocalizations.of(context)!.settingsOther),
-        ListTile(
-          leading: const Icon(Icons.info),
-          title: Text(AppLocalizations.of(context)!.settingsAbout),
-          subtitle: FutureBuilder(
-            future: PackageInfo.fromPlatform(),
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return Text(AppLocalizations.of(context)!.settingsVersion(
-                    '${snapshot.data!.version}+${snapshot.data!.buildNumber}'));
-              } else {
-                return Text(AppLocalizations.of(context)!.generalLoading);
-              }
-            },
-          ),
-        ),
-        _buildUrlTile(
-          context,
-          icon: Icons.privacy_tip,
-          title: AppLocalizations.of(context)!.settingsPrivacyPolicy,
-          url: senseBoxBikePrivacyPolicyUrl,
-        ),
-      ],
+    final isarService = Provider.of<TrackBloc>(context).isarService;
+    bool isDeleting = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(
+                context, AppLocalizations.of(context)!.settingsOther),
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: Text(AppLocalizations.of(context)!.settingsAbout),
+              subtitle: FutureBuilder(
+                future: PackageInfo.fromPlatform(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Text(AppLocalizations.of(context)!.settingsVersion(
+                        '${snapshot.data!.version}+${snapshot.data!.buildNumber}'));
+                  } else {
+                    return Text(AppLocalizations.of(context)!.generalLoading);
+                  }
+                },
+              ),
+            ),
+            _buildUrlTile(
+              context,
+              icon: Icons.privacy_tip,
+              title: AppLocalizations.of(context)!.settingsPrivacyPolicy,
+              url: senseBoxBikePrivacyPolicyUrl,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ButtonWithLoader(
+                isLoading: isDeleting,
+                onPressed: isDeleting
+                    ? null
+                    : () async {
+                        final confirmation = await showErrorDialog(
+                          context,
+                          AppLocalizations.of(context)!
+                              .settingsDeleteAllDataConfirmation,
+                        );
+
+                        if (confirmation == true) {
+                          setState(() {
+                            isDeleting = true;
+                          });
+
+                          try {
+                            await isarService.deleteAllData();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(AppLocalizations.of(context)!
+                                    .settingsDeleteAllDataSuccess),
+                              ),
+                            );
+                          } catch (error) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(AppLocalizations.of(context)!
+                                    .settingsDeleteAllDataError),
+                              ),
+                            );
+                          } finally {
+                            setState(() {
+                              isDeleting = false;
+                            });
+                          }
+                        }
+                      },
+                text: AppLocalizations.of(context)!.settingsDeleteAllData,
+                width: 0.5,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
