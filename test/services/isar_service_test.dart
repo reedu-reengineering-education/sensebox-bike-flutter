@@ -1,11 +1,16 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../mocks.dart';
 import '../test_helpers.dart';
@@ -20,14 +25,17 @@ void main() {
   late TrackData trackData;
   late GeolocationData geolocationData;
   late SensorData sensorData;
+  late Directory tempDirectory;
 
   setUp(() async {
     initializeTestDependencies();
 
+    // Create a temporary directory for testing
+    tempDirectory = Directory.systemTemp.createTempSync();
     // Mock the path_provider plugin
     channel.setMockMethodCallHandler((MethodCall methodCall) async {
       if (methodCall.method == 'getApplicationDocumentsDirectory') {
-        return '/mocked_directory';
+        return tempDirectory.path;
       }
       return null;
     });
@@ -74,9 +82,9 @@ void main() {
 
     // Create and save SensorData linked to GeolocationData
     sensorData = SensorData()
-      ..title = 'temperature'
+      ..title = 'finedust'
       ..value = 25.0
-      ..attribute = 'Celsius'
+      ..attribute = "pm1"
       ..characteristicUuid = '1234-5678-9012-3456'
       ..geolocationData.value = geolocationData;
 
@@ -84,6 +92,23 @@ void main() {
       await isar.sensorDatas.put(sensorData);
       await sensorData.geolocationData.save();
     });
+
+    // Create and save SenseBox in SharedPreferences
+    final senseBox = SenseBox(
+      name: 'Test SenseBox',
+      grouptag: ['test'],
+      sensors: [
+        Sensor(
+          title: 'Temperature',
+          unit: '°C',
+          sensorType: 'DHT22',
+          icon: 'thermometer',
+        ),
+      ],
+    );
+
+    SharedPreferences.setMockInitialValues(
+        {'selectedSenseBox': jsonEncode(senseBox.toJson())});
   });
 
   tearDown(() async {
@@ -94,7 +119,6 @@ void main() {
   group('IsarService', () {
     group('deleteAllData', () {
       test('successfully deletes all data from the database', () async {
-        // Verify that data exists before deletion
         final tracksBefore = await isar.trackDatas.where().findAll();
         final geolocationsBefore = await isar.geolocationDatas.where().findAll();
         final sensorsBefore = await isar.sensorDatas.where().findAll();
@@ -102,11 +126,9 @@ void main() {
         expect(tracksBefore.length, equals(1));
         expect(geolocationsBefore.length, equals(1));
         expect(sensorsBefore.length, equals(1));
-
-        // Act: Delete all data
         await isarService.deleteAllData();
 
-        // Verify that all data is deleted
+
         final tracksAfter = await isar.trackDatas.where().findAll();
         final geolocationsAfter = await isar.geolocationDatas.where().findAll();
         final sensorsAfter = await isar.sensorDatas.where().findAll();
@@ -117,13 +139,11 @@ void main() {
       });
 
       test('handles empty database gracefully', () async {
-        // Arrange: Clear the database
         await isarService.deleteAllData();
 
         // Act: Delete all data when the database is already empty
         await isarService.deleteAllData();
 
-        // Assert: Ensure the database is still empty
         final tracksAfter = await isar.trackDatas.where().findAll();
         final geolocationsAfter = await isar.geolocationDatas.where().findAll();
         final sensorsAfter = await isar.sensorDatas.where().findAll();
@@ -134,7 +154,6 @@ void main() {
       });
 
       test('deletes multiple records from the database', () async {
-        // Arrange: Add multiple records
         final trackData2 = TrackData();
         final geolocationData2 = GeolocationData()
           ..latitude = 48.8566
@@ -158,27 +177,78 @@ void main() {
           await sensorData2.geolocationData.save();
         });
 
-        // Verify that multiple records exist before deletion
+
         final tracksBefore = await isar.trackDatas.where().findAll();
         final geolocationsBefore = await isar.geolocationDatas.where().findAll();
         final sensorsBefore = await isar.sensorDatas.where().findAll();
-
         expect(tracksBefore.length, equals(2));
         expect(geolocationsBefore.length, equals(2));
         expect(sensorsBefore.length, equals(2));
 
-        // Act: Delete all data
         await isarService.deleteAllData();
 
-        // Verify that all records are deleted
         final tracksAfter = await isar.trackDatas.where().findAll();
         final geolocationsAfter = await isar.geolocationDatas.where().findAll();
         final sensorsAfter = await isar.sensorDatas.where().findAll();
-
         expect(tracksAfter.isEmpty, isTrue);
         expect(geolocationsAfter.isEmpty, isTrue);
         expect(sensorsAfter.isEmpty, isTrue);
       });
     });
   });
+
+  group('exportTrackToCsv', () {
+    test('exports track data to CSV format', () async {
+      final csvFilePath = await isarService.exportTrackToCsv(trackData.id);
+
+      final file = File(csvFilePath);
+      expect(file.existsSync(), isTrue);
+
+      final csvContent = await file.readAsString();
+      expect(csvContent.isNotEmpty, isTrue);
+      expect(csvContent.contains('finedust'), isTrue);
+    });
+
+    test('throws an exception if the track has no geolocations', () async {
+      // Arrange: Create a track with no geolocations
+      final emptyTrack = TrackData();
+      await isar.writeTxn(() async {
+        await isar.trackDatas.put(emptyTrack);
+      });
+
+      // Act & Assert: Verify that an exception is thrown
+      expect(
+        () async => await isarService.exportTrackToCsv(emptyTrack.id),
+        throwsException,
+      );
+    });
+  });
+
+  group('exportTrackToCsvInOpenSenseMapFormat', () {
+    test('exports track data to OpenSenseMap CSV format', () async {
+      final csvFilePath =
+          await isarService.exportTrackToCsvInOpenSenseMapFormat(trackData.id);
+
+      final file = File(csvFilePath);
+      expect(file.existsSync(), isTrue);
+
+      final csvContent = await file.readAsString();
+      expect(csvContent.isNotEmpty, isTrue);
+      //expect(csvContent.contains('temperature'), isTrue);
+    });
+
+    test('throws an exception if the track has no geolocations', () async {
+      final emptyTrack = TrackData();
+      await isar.writeTxn(() async {
+        await isar.trackDatas.put(emptyTrack);
+      });
+
+      expect(
+        () async => await isarService
+            .exportTrackToCsvInOpenSenseMapFormat(emptyTrack.id),
+        throwsException,
+      );
+    });
+  });
+
 }
