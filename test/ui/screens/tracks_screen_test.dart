@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/track_data.dart';
-import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class MockIsarService extends Mock implements IsarService {}
+import '../../mocks.dart';
 
 void main() {
   late MockIsarService mockIsarService;
+  late MockTrackBloc mockTrackBloc;
 
   setUp(() {
     mockIsarService = MockIsarService();
+    mockTrackBloc = MockTrackBloc();
+    when(() => mockTrackBloc.isarService).thenReturn(mockIsarService);
   });
 
   Future<void> pumpTracksScreen(

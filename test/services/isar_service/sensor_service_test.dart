@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
@@ -18,22 +20,17 @@ void main() {
   late Isar isar;
   late SensorService sensorService;
   late SensorData sensorData;
+  late Directory tempDirectory;
 
   setUpAll(() {
-    // Register a fallback value for SensorData
     registerFallbackValue(FakeSensorData());
   });
 
   setUp(() async {
     initializeTestDependencies();
 
-    // Mock the path_provider plugin
-    channel.setMockMethodCallHandler((MethodCall methodCall) async {
-      if (methodCall.method == 'getApplicationDocumentsDirectory') {
-        return '/mocked_directory';
-      }
-      return null;
-    });
+    tempDirectory = Directory.systemTemp.createTempSync();
+    mockPathProvider(tempDirectory.path);
     
     mockIsarService = MockIsarService();
     mockSensorService = MockSensorService();
@@ -44,12 +41,8 @@ void main() {
     // Mock the saveSensorData method to return a Future<int>
     when(() => mockSensorService.saveSensorData(any()))
         .thenAnswer((_) async => 1);
-    // Initialize in-memory Isar database
-    await Isar.initializeIsarCore(download: true);
-    isar = await Isar.open(
-      [TrackDataSchema, GeolocationDataSchema, SensorDataSchema],
-      directory: '',
-    );
+
+    isar = await initializeInMemoryIsar();
 
     // Mock IsarProvider to return the in-memory Isar instance
     final mockIsarProvider = MockIsarProvider();
@@ -58,12 +51,7 @@ void main() {
     // Initialize SensorService with the mocked IsarProvider
     sensorService = SensorService(isarProvider: mockIsarProvider);
 
-    // Clear the database to ensure test isolation
-    await isar.writeTxn(() async {
-      await isar.sensorDatas.clear();
-      await isar.geolocationDatas.clear();
-      await isar.trackDatas.clear();
-    });
+    await clearIsarDatabase(isar);
 
     final trackData = TrackData();
     await isar.writeTxn(() async {

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -6,11 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
-import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../mocks.dart';
 import '../test_helpers.dart';
@@ -32,34 +29,16 @@ void main() {
 
     // Create a temporary directory for testing
     tempDirectory = Directory.systemTemp.createTempSync();
-    // Mock the path_provider plugin
-    channel.setMockMethodCallHandler((MethodCall methodCall) async {
-      if (methodCall.method == 'getApplicationDocumentsDirectory') {
-        return tempDirectory.path;
-      }
-      return null;
-    });
+    mockPathProvider(tempDirectory.path);
 
-    // Initialize in-memory Isar database
-    await Isar.initializeIsarCore(download: true);
-    isar = await Isar.open(
-      [TrackDataSchema, GeolocationDataSchema, SensorDataSchema],
-      directory: '',
-    );
-
+    isar = await initializeInMemoryIsar();
     // Mock IsarProvider to return the in-memory Isar instance
     final mockIsarProvider = MockIsarProvider();
     when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
 
-    // Initialize IsarService
     isarService = IsarService(isarProvider: mockIsarProvider);
 
-    // Clear the database to ensure test isolation
-    await isar.writeTxn(() async {
-      await isar.trackDatas.clear();
-      await isar.geolocationDatas.clear();
-      await isar.sensorDatas.clear();
-    });
+    await clearIsarDatabase(isar);
 
     // Create and save TrackData
     trackData = TrackData();
@@ -93,22 +72,7 @@ void main() {
       await sensorData.geolocationData.save();
     });
 
-    // Create and save SenseBox in SharedPreferences
-    final senseBox = SenseBox(
-      name: 'Test SenseBox',
-      grouptag: ['test'],
-      sensors: [
-        Sensor(
-          title: 'Temperature',
-          unit: '°C',
-          sensorType: 'DHT22',
-          icon: 'thermometer',
-        ),
-      ],
-    );
-
-    SharedPreferences.setMockInitialValues(
-        {'selectedSenseBox': jsonEncode(senseBox.toJson())});
+    mockSenseBoxInSharedPreferences();
   });
 
   tearDown(() async {
@@ -210,13 +174,11 @@ void main() {
     });
 
     test('throws an exception if the track has no geolocations', () async {
-      // Arrange: Create a track with no geolocations
       final emptyTrack = TrackData();
       await isar.writeTxn(() async {
         await isar.trackDatas.put(emptyTrack);
       });
 
-      // Act & Assert: Verify that an exception is thrown
       expect(
         () async => await isarService.exportTrackToCsv(emptyTrack.id),
         throwsException,

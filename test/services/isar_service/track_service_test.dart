@@ -1,8 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sensebox_bike/models/geolocation_data.dart';
-import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:flutter/services.dart';
@@ -14,33 +14,20 @@ void main() {
   late Isar isar;
   late TrackService trackService;
   late TrackData trackData;
+  late Directory tempDirectory;
 
   setUp(() async {
     initializeTestDependencies();
 
-    // Mock the path_provider plugin
-    channel.setMockMethodCallHandler((MethodCall methodCall) async {
-      if (methodCall.method == 'getApplicationDocumentsDirectory') {
-        return '/mocked_directory';
-      }
-      return null;
-    });
+    tempDirectory = Directory.systemTemp.createTempSync();
+    mockPathProvider(tempDirectory.path);
 
-    // Initialize in-memory Isar database
-    await Isar.initializeIsarCore(download: true);
-    isar = await Isar.open(
-      [TrackDataSchema, GeolocationDataSchema, SensorDataSchema],
-      directory: ''
-    );
-
+    isar = await initializeInMemoryIsar();
     final mockIsarProvider = MockIsarProvider();
     when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
     trackService = TrackService(isarProvider: mockIsarProvider);
 
-    // Clear the database to ensure test isolation
-    await isar.writeTxn(() async {
-      await isar.trackDatas.clear();
-    });
+    await clearIsarDatabase(isar);
 
     trackData = TrackData();
     await isar.writeTxn(() async {

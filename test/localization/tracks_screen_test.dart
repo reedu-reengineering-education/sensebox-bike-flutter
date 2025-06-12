@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../mocks.dart';
 
-// Alternative Isar mocking solutions: 
-// https://github.com/isar/isar/issues/1459
-// https://github.com/isar/isar/issues/294
-// https://github.com/isar/isar/issues/1147 (with Mockito)
 void main() {
   group('TracksScreen Widget', () {
     late MockIsarService mockIsarService;
+    late MockTrackBloc mockTrackBloc;
 
     setUp(() {
       mockIsarService = MockIsarService();
+      mockTrackBloc = MockTrackBloc();
+      when(() => mockTrackBloc.isarService).thenReturn(mockIsarService);
     });
+    
     Widget createTestApp(Locale locale) {
       return MaterialApp(
         localizationsDelegates: const [
@@ -27,8 +28,8 @@ void main() {
         ],
         supportedLocales: AppLocalizations.supportedLocales,
         locale: locale,
-        home: Provider<IsarService>(
-          create: (_) => mockIsarService, // Provide the mock
+        home: ChangeNotifierProvider<TrackBloc>(
+          create: (_) => mockTrackBloc, // Provide the mock
           child: const TracksScreen(),
         ),
       );

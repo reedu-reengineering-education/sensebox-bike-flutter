@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 import 'package:mocktail/mocktail.dart';
@@ -12,25 +14,22 @@ void main() {
   late Isar isar;
   late GeolocationService geolocationService;
   late GeolocationData geolocationData;
+  late Directory tempDirectory;
 
   setUp(() async {
     initializeTestDependencies();
 
-    // Initialize in-memory Isar database
-    await Isar.initializeIsarCore(download: true);
-    isar = await Isar.open(
-      [TrackDataSchema, GeolocationDataSchema, SensorDataSchema],
-      directory: ''
-    );
+    tempDirectory = Directory.systemTemp.createTempSync();
+    mockPathProvider(tempDirectory.path);
 
+    isar = await initializeInMemoryIsar();
     final mockIsarProvider = MockIsarProvider();
     when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
 
     geolocationService = GeolocationService(isarProvider: mockIsarProvider);
 
-    await isar.writeTxn(() async {
-      await isar.geolocationDatas.clear();
-    });
+    await clearIsarDatabase(isar);
+    
     geolocationData = GeolocationData()
       ..latitude = 52.5200
       ..longitude = 13.4050
