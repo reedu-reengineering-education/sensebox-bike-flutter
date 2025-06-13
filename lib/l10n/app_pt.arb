@@ -164,6 +164,7 @@
     "settingsDeleteAllDataSuccess": "Todos os dados foram excluídos com sucesso.",
     "settingsDeleteAllDataError": "Falha ao excluir todos os dados. Por favor, tente novamente.",
     "accountManagement": "Gerenciamento de Conta",
-    "deleteAllHint": "Isso excluirá todas as suas faixas do aplicativo."
+    "deleteAllHint": "Isso excluirá todas as suas faixas do aplicativo.",
+    "generalConfirmation": "Confirmação"
 
 }

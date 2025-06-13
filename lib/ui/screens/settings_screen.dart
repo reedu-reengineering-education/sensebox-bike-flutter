@@ -8,7 +8,7 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
-import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -40,7 +40,6 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildAccountManagementSection(BuildContext context) {
     final isarService = Provider.of<TrackBloc>(context).isarService;
     final localizations = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
     bool isDeleting = false;
 
     return StatefulBuilder(
@@ -55,8 +54,12 @@ class SettingsScreen extends StatelessWidget {
                 onPressed: isDeleting
                     ? null
                     : () async {
-                        final confirmation = await showErrorDialog(context,
-                            localizations.settingsDeleteAllDataConfirmation);
+                        final confirmation = await showCustomDialog(
+                          context: context,
+                          message:
+                              localizations.settingsDeleteAllDataConfirmation,
+                          type: DialogType.confirmation,
+                        );
 
                         if (confirmation == true) {
                           setState(() {

@@ -164,6 +164,7 @@
     "settingsDeleteAllDataSuccess": "Alle Daten wurden erfolgreich gelöscht.",
     "settingsDeleteAllDataError": "Fehler beim Löschen aller Daten. Bitte versuchen Sie es erneut.",
     "accountManagement": "Kontoverwaltung",
-    "deleteAllHint": "Dies löscht alle Ihre Tracks aus der App."
+    "deleteAllHint": "Dies löscht alle Ihre Tracks aus der App.",
+    "generalConfirmation": "Bestätigung"
 
 }
