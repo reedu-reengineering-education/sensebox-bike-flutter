@@ -4,8 +4,10 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/constants.dart';
 
 class TracksScreen extends StatefulWidget {
   const TracksScreen({super.key});
@@ -16,39 +18,79 @@ class TracksScreen extends StatefulWidget {
 
 class _TracksScreenState extends State<TracksScreen> {
   late final IsarService isarService;
-  late Future<List<TrackData>> _tracksFuture;
+  late Future<List<TrackData>> _allTracksFuture;
+  late IsarService _isarService;
+  List<TrackData> _displayedTracks = [];
+  int _currentPage = 0;
+  bool _hasMoreTracks = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _fetchTracks();
+    _fetchAllTracks();
   }
 
-  void _fetchTracks() {
+  void _fetchAllTracks() {
     try {
-      _tracksFuture = isarService.trackService.getAllTracks();
+      _allTracksFuture = _isarService.trackService.getAllTracks();
+      _loadTracks();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
   }
 
+  void _loadTracks() {
+    _allTracksFuture.then((allTracks) {
+      setState(() {
+        final startIndex = _currentPage * tracksPerPage;
+        final endIndex = startIndex + tracksPerPage;
+
+        if (startIndex >= allTracks.length) {
+          _hasMoreTracks = false; // No more tracks to load
+        } else {
+          _displayedTracks.addAll(
+            allTracks.sublist(
+              startIndex,
+              endIndex > allTracks.length ? allTracks.length : endIndex,
+            ),
+          );
+          _currentPage++;
+          _hasMoreTracks =
+              endIndex < allTracks.length; // Check if more tracks exist
+        }
+      });
+    });
+  }
+
   Future<void> _handleRefresh() async {
     setState(() {
-      _fetchTracks();
+      _currentPage = 0;
+      _displayedTracks.clear();
+      _hasMoreTracks = true;
+      _fetchAllTracks();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.tracksAppBarTitle),
+        title: Text(localizations.tracksAppBarTitle),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(32),
+          preferredSize: const Size.fromHeight(spacing * 4),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 4.0),
             child: FutureBuilder<List<TrackData>>(
-              future: _tracksFuture,
+              future: _allTracksFuture,
               builder: (context, snapshot) {
                 return TrackSummaryRow(snapshot: snapshot);
               },
@@ -59,7 +101,7 @@ class _TracksScreenState extends State<TracksScreen> {
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         child: FutureBuilder<List<TrackData>>(
-          future: _tracksFuture,
+          future: _allTracksFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const CenteredMessage(
@@ -68,7 +110,7 @@ class _TracksScreenState extends State<TracksScreen> {
             } else if (snapshot.hasError) {
               return CenteredMessage(
                 child: Text(
-                  AppLocalizations.of(context)!
+                  localizations
                       .generalErrorWithDescription(snapshot.error.toString()),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
@@ -76,31 +118,45 @@ class _TracksScreenState extends State<TracksScreen> {
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return CenteredMessage(
                 child: Text(
-                  AppLocalizations.of(context)!.tracksNoTracks,
+                  localizations.tracksNoTracks,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               );
             } else {
-              return ListView.separated(
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 24),
+              return ListView.builder(
                 padding: const EdgeInsets.only(top: 24),
-                itemCount: snapshot.data!.length,
+                itemCount: _hasMoreTracks
+                    ? _displayedTracks.length + 1 // Add 1 for "Load More"
+                    : _displayedTracks.length, // No "Load More" button
                 itemBuilder: (context, index) {
-                  TrackData track = snapshot.data![index];
-                  return TrackListItem(
-                    track: track,
-                    onDismissed: () async {
-                      await isarService.trackService.deleteTrack(track.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              AppLocalizations.of(context)!.tracksTrackDeleted),
+                  if (index < _displayedTracks.length) {
+                    TrackData track = _displayedTracks[index];
+                    return TrackListItem(
+                      track: track,
+                      onDismissed: () async {
+                        await _isarService.trackService.deleteTrack(track.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(localizations.tracksTrackDeleted),
+                          ),
+                        );
+                        _handleRefresh();
+                      },
+                    );
+                  } else {
+                    return Padding(
+                      padding:
+                          const EdgeInsets.symmetric(vertical: spacing * 2),
+                      child: Center(
+                        child: FilledButton(
+                          onPressed: () {
+                            _loadTracks();
+                          },
+                          child: Text(localizations.loadMore),
                         ),
-                      );
-                      _handleRefresh();
-                    },
-                  );
+                      ),
+                    );
+                  }
                 },
               );
             }
@@ -110,7 +166,6 @@ class _TracksScreenState extends State<TracksScreen> {
     );
   }
 }
-
 class TrackSummaryRow extends StatelessWidget {
   final AsyncSnapshot<List<TrackData>> snapshot;
 
