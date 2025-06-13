@@ -8,21 +8,8 @@ class ErrorService {
       GlobalKey<ScaffoldMessengerState>();
 
   static void handleError(dynamic error, StackTrace stack) {
-    if (kDebugMode) {
-      logToConsole(error, stack);
-      showUserFeedback(error);
-    } else {
-      if (error is LocationPermissionDenied ||
-          error is LoginError ||
-          error is RegistrationError ||
-          error is ScanPermissionDenied ||
-          error is NoSenseBoxSelected ||
-          error is ExportDirectoryAccessError) {
-        showUserFeedback(error);
-      } else {
-        logToConsole(error, stack);
-      }
-    }
+    logToConsole(error, stack);
+    showUserFeedback(error);
   }
 
   static Color get errorColor => scaffoldKey.currentContext != null

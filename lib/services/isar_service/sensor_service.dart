@@ -4,6 +4,7 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:isar/isar.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 class SensorService {
   final IsarProvider _isarProvider = IsarProvider();
@@ -31,7 +32,8 @@ class SensorService {
   }
 
   Future<List<SensorData>> getSensorDataByTrackId(int trackId) async {
-    final isar = await _isarProvider.getDatabase();
+try {
+      final isar = await _isarProvider.getDatabase();
 
     var geolocationData =
         await isar.geolocationDatas.where().filter().track((q) {
@@ -48,6 +50,10 @@ class SensorService {
       sensorData.addAll(sensorDataList);
     }
 
-    return sensorData;
+      return sensorData;
+    } catch (e, stackTrace) {
+      Sentry.captureException(e, stackTrace: stackTrace);
+      return [];
+    }
   }
 }

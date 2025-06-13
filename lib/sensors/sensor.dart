@@ -5,6 +5,7 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 abstract class Sensor {
   final String characteristicUuid;
@@ -42,7 +43,11 @@ abstract class Sensor {
       _subscription = bleBloc
           .getCharacteristicStream(characteristicUuid)
           .listen((data) {
-        onDataReceived(data);
+        try {
+          onDataReceived(data);
+        } catch (e, stackTrace) {
+          Sentry.captureException(e, stackTrace: stackTrace);
+        }
       });
 
       // Listen to geolocation updates
@@ -82,8 +87,9 @@ abstract class Sensor {
 
   // Aggregate sensor data and store it with the latest geolocation
   void _aggregateAndStoreData(GeolocationData geolocationData) {
-    if (_valueBuffer.isEmpty) {
-      return;
+    try {
+      if (_valueBuffer.isEmpty) {
+        throw Exception('Sensor data buffer is empty.');
     }
 
     List<double> aggregatedValues = aggregateData(_valueBuffer);
@@ -99,6 +105,9 @@ abstract class Sensor {
       for (int i = 0; i < attributes.length; i++) {
         _saveSensorData(aggregatedValues[i], attributes[i], geolocationData);
       }
+      }
+    } catch (e, stackTrace) {
+      Sentry.captureException(e, stackTrace: stackTrace);
     }
   }
 
