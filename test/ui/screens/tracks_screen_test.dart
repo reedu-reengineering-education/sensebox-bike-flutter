@@ -1,36 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:provider/provider.dart';
+import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 
 class MockIsarService extends Mock implements IsarService {}
 
+class MockTrackService extends Mock implements TrackService {}
+
+class MockTrackBloc extends Mock implements TrackBloc {}
+
 void main() {
   late MockIsarService mockIsarService;
+  late MockTrackService mockTrackService;
+  late MockTrackBloc mockTrackBloc;
 
   setUp(() {
     mockIsarService = MockIsarService();
+    mockTrackService = MockTrackService();
+    mockTrackBloc = MockTrackBloc();
+
+    when(() => mockIsarService.trackService).thenReturn(mockTrackService);
+    when(() => mockTrackBloc.isarService).thenReturn(mockIsarService);
   });
 
   Future<void> pumpTracksScreen(
     WidgetTester tester, {
     required Future<List<TrackData>> tracksFuture,
   }) async {
-    when(() => mockIsarService.trackService.getAllTracks())
-        .thenAnswer((_) => tracksFuture);
+    when(() => mockTrackService.getAllTracks()).thenAnswer((_) => tracksFuture);
 
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: TracksScreen(),
+        home: ChangeNotifierProvider<TrackBloc>.value(
+          value: mockTrackBloc,
+          child: const TracksScreen(),
+        ),
       ),
     );
 
-    // Allow the widget tree to settle
     await tester.pump();
   }
 
@@ -41,16 +57,17 @@ void main() {
         tester,
         tracksFuture: Future.delayed(
           const Duration(seconds: 1),
-          () => <TrackData>[], // Return an empty list after the delay
+          () => <TrackData>[],
         ),
       );
 
-      // Wait for the Future.delayed to complete
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
       await tester.pump(const Duration(seconds: 1));
 
-      // Verify that the loading indicator is displayed
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(TrackListItem), findsNothing);
     });
-    // TBD: Add more tests for the TracksScreen widget
+
+    // Add more tests for pagination and other behaviors
   });
 }

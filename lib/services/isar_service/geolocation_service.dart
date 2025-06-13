@@ -7,15 +7,17 @@ import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:isar/isar.dart';
 
 class GeolocationService {
-  final IsarProvider _isarProvider = IsarProvider();
+  final IsarProvider isarProvider;
+
+  GeolocationService({required this.isarProvider});
 
   Future<Stream<void>> getGeolocationStream() async {
-    final isar = await _isarProvider.getDatabase();
+    final isar = await isarProvider.getDatabase();
     return isar.geolocationDatas.watchLazy(fireImmediately: true);
   }
 
   Future<GeolocationData?> getLastGeolocationData() async {
-    final isar = await _isarProvider.getDatabase();
+    final isar = await isarProvider.getDatabase();
     return await isar.geolocationDatas
         .where()
         .sortByTimestampDesc()
@@ -23,7 +25,7 @@ class GeolocationService {
   }
 
   Future<Id> saveGeolocationData(GeolocationData geolocationData) async {
-    final isar = await _isarProvider.getDatabase();
+    final isar = await isarProvider.getDatabase();
     return await isar.writeTxn(() async {
       Id geoDataId = await isar.geolocationDatas.put(geolocationData);
       await geolocationData.track.save();
@@ -32,14 +34,21 @@ class GeolocationService {
   }
 
   Future<List<GeolocationData>> getGeolocationData() async {
-    final isar = await _isarProvider.getDatabase();
+    final isar = await isarProvider.getDatabase();
     return await isar.geolocationDatas.where().findAll();
   }
 
   Future<List<GeolocationData>> getGeolocationDataByTrackId(int trackId) async {
-    final isar = await _isarProvider.getDatabase();
+    final isar = await isarProvider.getDatabase();
     return await isar.geolocationDatas.where().filter().track((q) {
       return q.idEqualTo(trackId);
     }).findAll();
+  }
+
+  Future<void> deleteAllGeolocations() async {
+    final isar = await isarProvider.getDatabase();
+    await isar.writeTxn(() async {
+      await isar.geolocationDatas.clear();
+    });
   }
 }

@@ -158,5 +158,13 @@
     "errorBleConnectionFailed": "Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.",
     "selectCsvFormat": "CSV-Format auswählen",
     "regularCsv": "Standard CSV",
-    "openSenseMapCsv": "openSenseMap CSV"
+    "openSenseMapCsv": "openSenseMap CSV",
+    "settingsDeleteAllData": "Alle Daten löschen",
+    "settingsDeleteAllDataConfirmation": "Sind Sie sicher, dass Sie alle Daten löschen möchten? Diese Aktion ist nicht umkehrbar.",
+    "settingsDeleteAllDataSuccess": "Alle Daten wurden erfolgreich gelöscht.",
+    "settingsDeleteAllDataError": "Fehler beim Löschen aller Daten. Bitte versuchen Sie es erneut.",
+    "accountManagement": "Kontoverwaltung",
+    "deleteAllHint": "Dies löscht alle Ihre Tracks aus der App.",
+    "generalConfirmation": "Bestätigung"
+
 }

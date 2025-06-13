@@ -4,14 +4,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
-import '../mocks.dart';
+
 import '../test_helpers.dart';
+
+class MockIsarService extends Mock implements IsarService {}
+
+class MockTrackBloc extends Mock implements TrackBloc {}
 
 void main() {
   late MockIsarService mockIsarService;
-  late MockTrackService mockTrackService;
+  late MockTrackBloc mockTrackBloc;
   late SettingsBloc mockSettingsBloc;
 
   setUpAll(() {
@@ -19,13 +25,14 @@ void main() {
     registerFallbackValue(TrackData());
     registerFallbackValue(Duration.zero);
 
-    // Mock path_provider channels
-    TestWidgetsFlutterBinding.ensureInitialized();
-    const channel = MethodChannel('plugins.flutter.io/path_provider');
+    const sharedPreferencesChannel =
+        MethodChannel('plugins.flutter.io/shared_preferences');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, (MethodCall call) async {
-      if (call.method == 'getApplicationDocumentsDirectory') {
-        return 'test/directory';
+        .setMockMethodCallHandler(sharedPreferencesChannel,
+            (MethodCall call) async {
+      if (call.method == 'getAll') {
+        return <String,
+            dynamic>{}; // Return an empty map for shared preferences
       }
       return null;
     });
@@ -35,20 +42,23 @@ void main() {
 
   setUp(() {
     mockIsarService = MockIsarService();
-    mockTrackService = MockTrackService();
+    mockTrackBloc = MockTrackBloc();
     mockSettingsBloc = SettingsBloc();
 
     // Setup service mocks
-    when(() => mockIsarService.trackService).thenReturn(mockTrackService);
-    when(() => mockTrackService.getAllTracks())
+    when(() => mockTrackBloc.isarService).thenReturn(mockIsarService);
+    when(() => mockIsarService.trackService.getAllTracks())
         .thenAnswer((_) async => [TrackData()]);
   });
 
   Widget buildTestWidget(Locale locale) {
     return createLocalizedTestApp(
       locale: locale,
-      child: ChangeNotifierProvider<SettingsBloc>.value(
-        value: mockSettingsBloc,
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
+          ChangeNotifierProvider<TrackBloc>.value(value: mockTrackBloc),
+        ],
         child: const SettingsScreen(),
       ),
     );
@@ -57,6 +67,8 @@ void main() {
   group("SettingsScreen Widget", () {
     testWidgets("is translated in English", (WidgetTester tester) async {
       await tester.pumpWidget(buildTestWidget(const Locale('en')));
+      await tester.pumpAndSettle();
+
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('General'), findsOneWidget);
       expect(find.text('Vibrate on disconnect'), findsOneWidget);
@@ -71,6 +83,7 @@ void main() {
 
     testWidgets("is translated in German", (WidgetTester tester) async {
       await tester.pumpWidget(buildTestWidget(const Locale('de')));
+      await tester.pumpAndSettle();
 
       expect(find.text('Einstellungen'), findsOneWidget);
       expect(find.text('Allgemeine'), findsOneWidget);
@@ -83,8 +96,10 @@ void main() {
       expect(find.text('E-Mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
     });
-    testWidgets("is translated in Portugese", (WidgetTester tester) async {
+
+    testWidgets("is translated in Portuguese", (WidgetTester tester) async {
       await tester.pumpWidget(buildTestWidget(const Locale('pt')));
+      await tester.pumpAndSettle();
 
       expect(find.text('Configurações'), findsOneWidget);
       expect(find.text('Geral'), findsOneWidget);

@@ -10,7 +10,6 @@ import 'package:sensebox_bike/sensors/overtaking_prediction_sensor.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
-import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/sensors/temperature_sensor.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
@@ -19,7 +18,6 @@ class SensorBloc with ChangeNotifier {
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
   final List<Sensor> _sensors = [];
-  final IsarService isarService = IsarService(); // To store aggregated data
   late final VoidCallback _characteristicsListener;
   late final VoidCallback _characteristicStreamsVersionListener;
   late final VoidCallback _selectedDeviceListener;
@@ -75,6 +73,7 @@ class SensorBloc with ChangeNotifier {
   }
 
   void _initializeSensors() {
+    final isarService = geolocationBloc.isarService;
     // Initialize sensors with specific UUIDs
     _sensors.add(TemperatureSensor(bleBloc, geolocationBloc, isarService));
     _sensors.add(HumiditySensor(bleBloc, geolocationBloc, isarService));

@@ -12,7 +12,7 @@ import "package:sensebox_bike/constants.dart";
 class LiveUploadService {
   final OpenSenseMapService openSenseMapService;
   final SettingsBloc settingsBloc;
-  final IsarService isarService = IsarService();
+  final IsarService isarService;
   final SenseBox senseBox; // ID of the senseBox to upload data to
 
   final int trackId;
@@ -27,6 +27,7 @@ class LiveUploadService {
   LiveUploadService({
     required this.openSenseMapService,
     required this.settingsBloc,
+    required this.isarService,
     required this.senseBox,
     required this.trackId,
   });

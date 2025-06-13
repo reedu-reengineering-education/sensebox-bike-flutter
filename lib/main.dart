@@ -18,6 +18,7 @@ import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -69,7 +70,7 @@ class SenseBoxBikeApp extends StatelessWidget {
     final appLinks = AppLinks();
     // Initialize providers at the top level
     final settingsBloc = SettingsBloc();
-    final isarService = IsarService();
+    final isarService = IsarService(isarProvider: IsarProvider());
     final bleBloc = BleBloc(settingsBloc);
     final openSenseMapBloc = OpenSenseMapBloc();
     final trackBloc = TrackBloc(isarService);

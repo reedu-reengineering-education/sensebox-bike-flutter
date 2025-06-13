@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:geolocator/geolocator.dart' as Geolocator;
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/material.dart';
@@ -13,9 +14,6 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
-
-import '../../../blocs/track_bloc.dart'; // Import TrackBloc
-import '../../../services/isar_service.dart'; // Import your Isar service
 
 class GeolocationMapWidget extends StatefulWidget {
   const GeolocationMapWidget({super.key});
@@ -30,8 +28,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   StreamSubscription<TrackData?>? _trackSubscription; // Track ID subscription
 
   late PolylineAnnotationManager lineAnnotationManager;
-
-  final isarService = IsarService();
 
   @override
   void initState() {
@@ -89,12 +85,10 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
     });
   }
 
-  // Listen to the Isar geolocation stream and update the map
   Future _listenToGeolocationStream(int trackId) async {
-    // Access the geolocation stream from the service
+    final isarService = context.read<TrackBloc>().isarService;
     return (await isarService.geolocationService.getGeolocationStream())
         .listen((_) async {
-      // Fetch geolocation data for the given track ID
       List<GeolocationData> geoData = await isarService.geolocationService
           .getGeolocationDataByTrackId(trackId);
 
