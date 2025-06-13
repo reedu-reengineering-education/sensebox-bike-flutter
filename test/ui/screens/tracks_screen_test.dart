@@ -11,10 +11,10 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 
 class MockIsarService extends Mock implements IsarService {}
-
 class MockTrackService extends Mock implements TrackService {}
 
 class MockTrackBloc extends Mock implements TrackBloc {}
+
 
 void main() {
   late MockIsarService mockIsarService;
