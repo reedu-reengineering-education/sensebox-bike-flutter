@@ -4,6 +4,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class TracksScreen extends StatefulWidget {
   const TracksScreen({super.key});
 
@@ -15,8 +16,8 @@ class _TracksScreenState extends State<TracksScreen> {
   late Future<List<TrackData>> _tracksFuture;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _fetchTracks();
   }
 
@@ -26,7 +27,6 @@ class _TracksScreenState extends State<TracksScreen> {
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
-    
   }
 
   Future<void> _handleRefresh() async {
@@ -78,9 +78,27 @@ class _TracksScreenState extends State<TracksScreen> {
                 ),
               );
             } else {
-              return TrackList(
-                tracks: snapshot.data!,
-                onTrackDeleted: _handleRefresh,
+              return ListView.separated(
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 24),
+                padding: const EdgeInsets.only(top: 24),
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  TrackData track = snapshot.data![index];
+                  return TrackListItem(
+                    track: track,
+                    onDismissed: () async {
+                      await IsarService().trackService.deleteTrack(track.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              AppLocalizations.of(context)!.tracksTrackDeleted),
+                        ),
+                      );
+                      _handleRefresh();
+                    },
+                  );
+                },
               );
             }
           },
