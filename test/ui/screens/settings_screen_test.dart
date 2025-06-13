@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:provider/provider.dart';
@@ -31,6 +32,18 @@ void main() {
     // Register fallback values for Uri and LaunchMode
     registerFallbackValue(Uri.parse('https://example.com'));
     registerFallbackValue(LaunchMode.externalApplication);
+
+    const sharedPreferencesChannel =
+        MethodChannel('plugins.flutter.io/shared_preferences');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(sharedPreferencesChannel,
+            (MethodCall call) async {
+      if (call.method == 'getAll') {
+        return <String,
+            dynamic>{}; // Return an empty map for shared preferences
+      }
+      return null;
+    });
   });
 
   setUp(() {

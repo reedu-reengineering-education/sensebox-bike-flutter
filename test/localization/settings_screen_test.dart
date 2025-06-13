@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:mocktail/mocktail.dart';
@@ -24,9 +25,17 @@ void main() {
     registerFallbackValue(TrackData());
     registerFallbackValue(Duration.zero);
 
-    // Mock path_provider channels
-    TestWidgetsFlutterBinding.ensureInitialized();
-    mockPathProvider('test/directory');
+    const sharedPreferencesChannel =
+        MethodChannel('plugins.flutter.io/shared_preferences');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(sharedPreferencesChannel,
+            (MethodCall call) async {
+      if (call.method == 'getAll') {
+        return <String,
+            dynamic>{}; // Return an empty map for shared preferences
+      }
+      return null;
+    });
 
     initializeTestDependencies();
   });
