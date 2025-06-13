@@ -168,6 +168,6 @@
     "deleteAllHint": "Isso excluirá todas as suas faixas do aplicativo.",
     "generalConfirmation": "Confirmação",
     "privacyPolicyAccept": "Eu li e aceito a política de privacidade.",
-    "trackNoGeolocations": "Nenhuma geolocalização disponível para este trajeto."
-
+    "trackNoGeolocations": "Nenhuma geolocalização disponível para este trajeto.",
+    "loadMore": "Carregar mais"
 }
