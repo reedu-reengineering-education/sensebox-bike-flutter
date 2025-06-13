@@ -19,11 +19,8 @@ class _TracksScreenState extends State<TracksScreen> {
   late Future<List<TrackData>> _tracksFuture;
 
   @override
-  void initState() {
-    super.initState();
-
-    isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
-
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _fetchTracks();
   }
 
@@ -33,7 +30,6 @@ class _TracksScreenState extends State<TracksScreen> {
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
-    
   }
 
   Future<void> _handleRefresh() async {
@@ -85,9 +81,27 @@ class _TracksScreenState extends State<TracksScreen> {
                 ),
               );
             } else {
-              return TrackList(
-                tracks: snapshot.data!,
-                onTrackDeleted: _handleRefresh,
+              return ListView.separated(
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 24),
+                padding: const EdgeInsets.only(top: 24),
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  TrackData track = snapshot.data![index];
+                  return TrackListItem(
+                    track: track,
+                    onDismissed: () async {
+                      await isarService.trackService.deleteTrack(track.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              AppLocalizations.of(context)!.tracksTrackDeleted),
+                        ),
+                      );
+                      _handleRefresh();
+                    },
+                  );
+                },
               );
             }
           },
