@@ -29,88 +29,109 @@ class TrackListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasGeolocations = track.geolocations.isNotEmpty;
+
     return Dismissible(
-        key: Key(track.id.toString()),
-        background: Container(
-          color: Colors.red,
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20.0),
-          child: const Icon(Icons.delete, color: Colors.white),
-        ),
-        confirmDismiss: (DismissDirection direction) async {
-          return await showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text(AppLocalizations.of(context)!.trackDelete),
-                content:
-                    Text(AppLocalizations.of(context)!.trackDeleteConfirmation),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: Text(AppLocalizations.of(context)!.generalCancel),
-                  ),
-                  FilledButton(
-                      style: const ButtonStyle(
-                          backgroundColor:
-                              WidgetStatePropertyAll(Colors.redAccent)),
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: Text(AppLocalizations.of(context)!.generalDelete)),
-                ],
-              );
-            },
-          );
-        },
-        onDismissed: (direction) => onDismissed(),
-        child: InkWell(
-            onTap: () => Navigator.push(
+      key: Key(track.id.toString()),
+      background: Container(
+        color: Colors.red,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20.0),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (DismissDirection direction) async {
+        return await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(AppLocalizations.of(context)!.trackDelete),
+              content:
+                  Text(AppLocalizations.of(context)!.trackDeleteConfirmation),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(AppLocalizations.of(context)!.generalCancel),
+                ),
+                FilledButton(
+                  style: const ButtonStyle(
+                      backgroundColor:
+                          WidgetStatePropertyAll(Colors.redAccent)),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text(AppLocalizations.of(context)!.generalDelete),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      onDismissed: (direction) => onDismissed(),
+      child: InkWell(
+        onTap: hasGeolocations
+            ? () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => TrackDetailScreen(id: track.id)),
+                    builder: (context) => TrackDetailScreen(id: track.id),
                 ),
-            child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      DateFormat('yyyy-MM-dd HH:mm')
-                          .format(track.geolocations.first.timestamp),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.timer_outlined),
-                        const SizedBox(width: 8),
-                        Text(
-                            AppLocalizations.of(context)!.generalTrackDuration(
-                                track.duration.inHours,
-                                track.duration.inMinutes.remainder(60)),
-                            style: Theme.of(context).textTheme.bodyMedium),
-                        const SizedBox(width: 24),
-                        const Icon(Icons.straighten),
-                        const SizedBox(width: 8),
-                        Text(
-                            AppLocalizations.of(context)!.generalTrackDistance(
-                                track.distance.toStringAsFixed(2)),
-                            style: Theme.of(context).textTheme.bodyMedium),
-                      ],
-                    ),
-                    Card.filled(
-                      clipBehavior: Clip.antiAlias,
-                      child: CachedNetworkImage(
-                        imageUrl: buildStaticMapboxUrl(context),
-                        progressIndicatorBuilder:
-                            (context, url, downloadProgress) =>
-                                CircularProgressIndicator(
-                                    value: downloadProgress.progress),
-                        errorWidget: (context, url, error) =>
-                            const Icon(Icons.error),
+                )
+            : null, // Disable tap if no geolocations
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (hasGeolocations)
+                Text(
+                  DateFormat('yyyy-MM-dd HH:mm')
+                      .format(track.geolocations.first.timestamp),
+                  style: Theme.of(context).textTheme.titleLarge,
+                )
+              else
+                Text(
+                  AppLocalizations.of(context)!.trackNoGeolocations,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
                       ),
-                      // expanded
-                    )
-                  ],
-                ))));
+                ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.timer_outlined),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppLocalizations.of(context)!.generalTrackDuration(
+                      track.duration.inHours,
+                      track.duration.inMinutes.remainder(60),
+                    ),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(width: 24),
+                  const Icon(Icons.straighten),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppLocalizations.of(context)!.generalTrackDistance(
+                      track.distance.toStringAsFixed(2),
+                    ),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+              if (hasGeolocations)
+                Card.filled(
+                  clipBehavior: Clip.antiAlias,
+                  child: CachedNetworkImage(
+                    imageUrl: buildStaticMapboxUrl(context),
+                    progressIndicatorBuilder:
+                        (context, url, downloadProgress) =>
+                            CircularProgressIndicator(
+                                value: downloadProgress.progress),
+                    errorWidget: (context, url, error) =>
+                        const Icon(Icons.error),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -158,6 +158,7 @@
     "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.",
     "selectCsvFormat": "Selecionar formato CSV",
     "regularCsv": "CSV padrão",
-    "openSenseMapCsv": "CSV openSenseMap"
+    "openSenseMapCsv": "CSV openSenseMap",
+    "trackNoGeolocations": "Nenhuma geolocalização disponível para este trajeto."
 
 }

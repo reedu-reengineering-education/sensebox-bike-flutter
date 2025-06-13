@@ -158,5 +158,6 @@
     "errorBleConnectionFailed": "Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.",
     "selectCsvFormat": "CSV-Format auswählen",
     "regularCsv": "Standard CSV",
-    "openSenseMapCsv": "openSenseMap CSV"
+    "openSenseMapCsv": "openSenseMap CSV",
+    "trackNoGeolocations": "Keine Geolokalisierungen für diesen Track verfügbar."
 }
