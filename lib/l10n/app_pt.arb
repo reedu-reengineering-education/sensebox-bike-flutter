@@ -162,6 +162,8 @@
     "settingsDeleteAllData": "Excluir Todos os Dados",
     "settingsDeleteAllDataConfirmation": "Tem certeza de que deseja excluir todos os dados? Esta ação é irreversível.",
     "settingsDeleteAllDataSuccess": "Todos os dados foram excluídos com sucesso.",
-    "settingsDeleteAllDataError": "Falha ao excluir todos os dados. Por favor, tente novamente."
+    "settingsDeleteAllDataError": "Falha ao excluir todos os dados. Por favor, tente novamente.",
+    "accountManagement": "Gerenciamento de Conta",
+    "deleteAllHint": "Isso excluirá todas as suas faixas do aplicativo."
 
 }

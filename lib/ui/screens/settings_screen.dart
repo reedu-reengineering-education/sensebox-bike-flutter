@@ -5,10 +5,11 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
-import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
+import 'package:sensebox_bike/ui/widgets/common/hint.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -28,10 +29,70 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         children: <Widget>[
           _buildGeneralSettingsSection(context, settingsBloc),
+          _buildAccountManagementSection(context),
           _buildOtherSection(context),
           _buildHelpSection(context),
         ],
       ),
+    );
+  }
+
+  Widget _buildAccountManagementSection(BuildContext context) {
+    final isarService = Provider.of<TrackBloc>(context).isarService;
+    final localizations = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    bool isDeleting = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(context, localizations.accountManagement),
+            Center(
+              child: ButtonWithLoader(
+                isLoading: isDeleting,
+                onPressed: isDeleting
+                    ? null
+                    : () async {
+                        final confirmation = await showErrorDialog(context,
+                            localizations.settingsDeleteAllDataConfirmation);
+
+                        if (confirmation == true) {
+                          setState(() {
+                            isDeleting = true;
+                          });
+
+                          try {
+                            await isarService.deleteAllData();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    localizations.settingsDeleteAllDataSuccess),
+                              ),
+                            );
+                          } catch (error) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    localizations.settingsDeleteAllDataError),
+                              ),
+                            );
+                          } finally {
+                            setState(() {
+                              isDeleting = false;
+                            });
+                          }
+                        }
+                      },
+                text: localizations.settingsDeleteAllData,
+                width: 0.7,
+              ),
+            ),
+            Hint(text: localizations.deleteAllHint),
+          ],
+        );
+      },
     );
   }
 
@@ -77,11 +138,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // Other Section
   Widget _buildOtherSection(BuildContext context) {
-    final isarService = Provider.of<TrackBloc>(context).isarService;
     final localizations = AppLocalizations.of(context)!;
-    bool isDeleting = false;
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -109,50 +167,7 @@ class SettingsScreen extends StatelessWidget {
               icon: Icons.privacy_tip,
               title: localizations.settingsPrivacyPolicy,
               url: senseBoxBikePrivacyPolicyUrl,
-            ),
-            const CustomSpacer(),
-            Center(
-              child: ButtonWithLoader(
-                isLoading: isDeleting,
-                onPressed: isDeleting
-                    ? null
-                    : () async {
-                        final confirmation = await showErrorDialog(
-                          context,
-                            localizations.settingsDeleteAllDataConfirmation);
-
-                        if (confirmation == true) {
-                          setState(() {
-                            isDeleting = true;
-                          });
-
-                          try {
-                            await isarService.deleteAllData();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    localizations.settingsDeleteAllDataSuccess),
-                              ),
-                            );
-                          } catch (error) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(localizations
-                                      .settingsDeleteAllDataError)
-                              ),
-                            );
-                          } finally {
-                            setState(() {
-                              isDeleting = false;
-                            });
-                          }
-                        }
-                      },
-                text: localizations.settingsDeleteAllData,
-                width: 0.7,
-              ),
-            ),
-            const CustomSpacer()
+            )
           ],
         );
       },
@@ -182,10 +197,10 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // Reusable Section Header
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.only(
+          top: spacing * 3, bottom: spacing, left: spacing, right: spacing),
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium,
@@ -193,7 +208,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // Reusable URL Tile
   Widget _buildUrlTile(BuildContext context,
       {required IconData icon, required String title, required String url}) {
     return ListTile(

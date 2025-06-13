@@ -162,6 +162,8 @@
     "settingsDeleteAllData": "Delete All Data",
     "settingsDeleteAllDataConfirmation": "Are you sure you want to delete all data? This action is irreversible.",
     "settingsDeleteAllDataSuccess": "All data has been successfully deleted.",
-    "settingsDeleteAllDataError": "Failed to delete all data. Please try again."
+    "settingsDeleteAllDataError": "Failed to delete all data. Please try again.",
+    "accountManagement": "Account Management",
+    "deleteAllHint": "This will delete all your tracks from the app."
 
 }
