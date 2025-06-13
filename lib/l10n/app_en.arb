@@ -159,6 +159,7 @@
     "selectCsvFormat": "Select CSV format",
     "regularCsv": "Standard CSV",
     "openSenseMapCsv": "openSenseMap CSV",
-    "trackNoGeolocations": "No geolocations available for this track."
+    "trackNoGeolocations": "No geolocations available for this track.",
+    "loadMore": "Load more"
 
 }

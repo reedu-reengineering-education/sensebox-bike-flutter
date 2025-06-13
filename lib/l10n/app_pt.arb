@@ -159,6 +159,6 @@
     "selectCsvFormat": "Selecionar formato CSV",
     "regularCsv": "CSV padrão",
     "openSenseMapCsv": "CSV openSenseMap",
-    "trackNoGeolocations": "Nenhuma geolocalização disponível para este trajeto."
-
+    "trackNoGeolocations": "Nenhuma geolocalização disponível para este trajeto.",
+    "loadMore": "Carregar mais"
 }
