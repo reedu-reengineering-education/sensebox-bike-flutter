@@ -7,6 +7,7 @@ import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/common/error_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -79,6 +80,7 @@ class SettingsScreen extends StatelessWidget {
   // Other Section
   Widget _buildOtherSection(BuildContext context) {
     final isarService = Provider.of<TrackBloc>(context).isarService;
+    final localizations = AppLocalizations.of(context)!;
     bool isDeleting = false;
 
     return StatefulBuilder(
@@ -86,19 +88,18 @@ class SettingsScreen extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionHeader(
-                context, AppLocalizations.of(context)!.settingsOther),
+            _buildSectionHeader(context, localizations.settingsOther),
             ListTile(
               leading: const Icon(Icons.info),
-              title: Text(AppLocalizations.of(context)!.settingsAbout),
+              title: Text(localizations.settingsAbout),
               subtitle: FutureBuilder(
                 future: PackageInfo.fromPlatform(),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
-                    return Text(AppLocalizations.of(context)!.settingsVersion(
+                    return Text(localizations.settingsVersion(
                         '${snapshot.data!.version}+${snapshot.data!.buildNumber}'));
                   } else {
-                    return Text(AppLocalizations.of(context)!.generalLoading);
+                    return Text(localizations.generalLoading);
                   }
                 },
               ),
@@ -106,11 +107,11 @@ class SettingsScreen extends StatelessWidget {
             _buildUrlTile(
               context,
               icon: Icons.privacy_tip,
-              title: AppLocalizations.of(context)!.settingsPrivacyPolicy,
+              title: localizations.settingsPrivacyPolicy,
               url: senseBoxBikePrivacyPolicyUrl,
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+            const CustomSpacer(),
+            Center(
               child: ButtonWithLoader(
                 isLoading: isDeleting,
                 onPressed: isDeleting
@@ -118,9 +119,7 @@ class SettingsScreen extends StatelessWidget {
                     : () async {
                         final confirmation = await showErrorDialog(
                           context,
-                          AppLocalizations.of(context)!
-                              .settingsDeleteAllDataConfirmation,
-                        );
+                            localizations.settingsDeleteAllDataConfirmation);
 
                         if (confirmation == true) {
                           setState(() {
@@ -131,15 +130,15 @@ class SettingsScreen extends StatelessWidget {
                             await isarService.deleteAllData();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(AppLocalizations.of(context)!
-                                    .settingsDeleteAllDataSuccess),
+                                content: Text(
+                                    localizations.settingsDeleteAllDataSuccess),
                               ),
                             );
                           } catch (error) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(AppLocalizations.of(context)!
-                                    .settingsDeleteAllDataError),
+                                  content: Text(localizations
+                                      .settingsDeleteAllDataError)
                               ),
                             );
                           } finally {
@@ -149,10 +148,11 @@ class SettingsScreen extends StatelessWidget {
                           }
                         }
                       },
-                text: AppLocalizations.of(context)!.settingsDeleteAllData,
-                width: 0.5,
+                text: localizations.settingsDeleteAllData,
+                width: 0.7,
               ),
             ),
+            const CustomSpacer()
           ],
         );
       },
