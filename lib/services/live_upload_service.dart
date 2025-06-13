@@ -8,6 +8,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import "package:sensebox_bike/constants.dart";
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 class LiveUploadService {
   final OpenSenseMapService openSenseMapService;
@@ -38,6 +39,11 @@ class LiveUploadService {
     isarService.geolocationService.getGeolocationStream().then((stream) {
       stream.listen((e) async {
         if (isUploading) {
+          try {
+            throw Exception('Upload already in progress.');
+          } catch (e, stackTrace) {
+            Sentry.captureException(e, stackTrace: stackTrace);
+          }
           return;
         }
 
@@ -115,6 +121,10 @@ class LiveUploadService {
 
     for (var geoData in geoDataToUpload) {
       for (var sensorData in geoData.sensorData) {
+        try {
+          if (sensorData.value.isNaN) {
+            throw Exception('Invalid sensor data: $sensorData');
+          }
         String? sensorTitle =
             getTitleFromSensorKey(sensorData.title, sensorData.attribute);
 
@@ -137,7 +147,10 @@ class LiveUploadService {
             'lat': geoData.latitude,
             'lng': geoData.longitude,
           }
-        };
+          };
+        } catch (e, stackTrace) {
+          Sentry.captureException(e, stackTrace: stackTrace);
+        }
       }
 
       String speedSensorId = getSpeedSensorId();
