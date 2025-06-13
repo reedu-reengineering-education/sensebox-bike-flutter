@@ -167,5 +167,6 @@
     "accountManagement": "Kontoverwaltung",
     "deleteAllHint": "Dies löscht alle Ihre Tracks aus der App.",
     "generalConfirmation": "Bestätigung",
-    "privacyPolicyAccept": "Ich habe die Datenschutzerklärung gelesen und stimme ihr zu."
+    "privacyPolicyAccept": "Ich habe die Datenschutzerklärung gelesen und stimme ihr zu.",
+    "trackNoGeolocations": "Keine Geolokalisierungen für diesen Track verfügbar."
 }

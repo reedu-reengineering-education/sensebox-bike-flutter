@@ -188,55 +188,6 @@ class TrackSummaryRow extends StatelessWidget {
   }
 }
 
-class TrackList extends StatelessWidget {
-  final List<TrackData> tracks;
-  final VoidCallback onTrackDeleted;
-
-  const TrackList(
-      {required this.tracks, required this.onTrackDeleted, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final isarService =
-        Provider.of<TrackBloc>(context, listen: false).isarService;
-    final filteredTracks = tracks
-        .where((track) => track.geolocations.isNotEmpty)
-        .toList()
-        .reversed
-        .toList();
-
-    if (filteredTracks.isEmpty) {
-      return CenteredMessage(
-        child: Text(
-          AppLocalizations.of(context)!.tracksNoTracks,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      );
-    }
-
-    return ListView.separated(
-      separatorBuilder: (context, index) => const SizedBox(height: 24),
-      padding: const EdgeInsets.only(top: 24),
-      itemCount: filteredTracks.length,
-      itemBuilder: (context, index) {
-        TrackData track = filteredTracks[index];
-        return TrackListItem(
-          track: track,
-          onDismissed: () async {
-            await isarService.trackService.deleteTrack(track.id);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(AppLocalizations.of(context)!.tracksTrackDeleted),
-              ),
-            );
-            onTrackDeleted();
-          },
-        );
-      },
-    );
-  }
-}
-
 class CenteredMessage extends StatelessWidget {
   final Widget child;
 
