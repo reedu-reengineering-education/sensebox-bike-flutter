@@ -40,15 +40,21 @@ abstract class Sensor {
   void startListening() async {
     try {
       // Listen to the sensor data stream
-      _subscription = bleBloc
-          .getCharacteristicStream(characteristicUuid)
-          .listen((data) {
-        try {
-          onDataReceived(data);
-        } catch (e, stackTrace) {
-          Sentry.captureException(e, stackTrace: stackTrace);
-        }
-      });
+      _subscription =
+          bleBloc.getCharacteristicStream(characteristicUuid)
+        .listen(
+        (data) {
+          try {
+            onDataReceived(data);
+          } catch (e, stackTrace) {
+            Sentry.captureException(e, stackTrace: stackTrace);
+          }
+        },
+        onError: (error) {
+          debugPrint('Error listening to geolocation stream: $error');
+          Sentry.captureException(error, stackTrace: StackTrace.current);
+        },
+      );
 
       // Listen to geolocation updates
       (await isarService.geolocationService.getGeolocationStream())
@@ -66,9 +72,13 @@ abstract class Sensor {
               geolocationData); // Aggregate and store sensor data
           _valueBuffer.clear(); // Clear the list after aggregation
         }
+      }).onError((error) {
+        debugPrint('Error listening to geolocation stream: $error');
+        Sentry.captureException(error, stackTrace: StackTrace.current);
       });
     } catch (e) {
       print('Error starting sensor: $e');
+      Sentry.captureException(e, stackTrace: StackTrace.current);
     }
   }
 

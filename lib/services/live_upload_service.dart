@@ -96,6 +96,9 @@ class LiveUploadService {
         }
 
         isUploading = false;
+      }).onError((error) {
+        debugPrint('Error listening to geolocation stream: $error');
+        Sentry.captureException(error, stackTrace: StackTrace.current);
       });
     });
   }

@@ -10,6 +10,7 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/live_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 class RecordingBloc with ChangeNotifier {
   final BleBloc bleBloc;
@@ -32,7 +33,10 @@ class RecordingBloc with ChangeNotifier {
   RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
       this.openSenseMapBloc, this.settingsBloc) {
     openSenseMapBloc.senseBoxStream
-        .listen(_onSenseBoxChanged); // Listen to senseBoxStream
+        .listen(_onSenseBoxChanged).onError((error) {
+      debugPrint('Error listening to geolocation stream: $error');
+      Sentry.captureException(error, stackTrace: StackTrace.current);
+    });
   }
 
   void _onSenseBoxChanged(SenseBox? senseBox) {

@@ -8,6 +8,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 3);
@@ -50,6 +51,9 @@ class BleBloc with ChangeNotifier {
     FlutterBluePlus.setLogLevel(LogLevel.error);
     FlutterBluePlus.adapterState.listen((state) {
       updateBluetoothStatus(state == BluetoothAdapterState.on);
+    }).onError((error) {
+      debugPrint('Error listening to geolocation stream: $error');
+      Sentry.captureException(error, stackTrace: StackTrace.current);
     });
 
     _initializeBluetoothStatus();
@@ -86,10 +90,16 @@ class BleBloc with ChangeNotifier {
       }
       _devicesListController.add(devicesList);
       notifyListeners();
+    }).onError((error) {
+      debugPrint('Error listening to geolocation stream: $error');
+      Sentry.captureException(error, stackTrace: StackTrace.current);
     });
 
     FlutterBluePlus.isScanning.listen((scanning) {
       isScanningNotifier.value = scanning;
+    }).onError((error) {
+      debugPrint('Error listening to geolocation stream: $error');
+      Sentry.captureException(error, stackTrace: StackTrace.current);
     });
   }
 
@@ -117,6 +127,9 @@ class BleBloc with ChangeNotifier {
           break;
         }
       }
+    }).onError((error) {
+      debugPrint('Error listening to geolocation stream: $error');
+      Sentry.captureException(error, stackTrace: StackTrace.current);
     });
   }
 
@@ -294,6 +307,7 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
       }
     }).onError((error) {
       _handleConnectionError(context: context);
+      Sentry.captureException(error, stackTrace: StackTrace.current);
     });
   }
 
@@ -334,6 +348,9 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
         List<double> parsedData = _parseData(Uint8List.fromList(value));
         controller.add(parsedData);
       }
+    }).onError((error) {
+      debugPrint('Error listening to geolocation stream: $error');
+      Sentry.captureException(error, stackTrace: StackTrace.current);
     });
   }
 

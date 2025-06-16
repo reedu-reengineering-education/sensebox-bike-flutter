@@ -13,6 +13,7 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../../blocs/track_bloc.dart'; // Import TrackBloc
 import '../../../services/isar_service.dart'; // Import your Isar service
@@ -102,6 +103,9 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
       if (geoData.isNotEmpty) {
         _updateMapWithGeolocationData(geoData);
       }
+    }).onError((error) {
+      debugPrint('Error listening to geolocation stream: $error');
+      Sentry.captureException(error, stackTrace: StackTrace.current);
     });
   }
 
