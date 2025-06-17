@@ -1,9 +1,12 @@
+import 'package:provider/provider.dart';
+import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class TracksScreen extends StatefulWidget {
   const TracksScreen({super.key});
 
@@ -12,17 +15,21 @@ class TracksScreen extends StatefulWidget {
 }
 
 class _TracksScreenState extends State<TracksScreen> {
+  late final IsarService isarService;
   late Future<List<TrackData>> _tracksFuture;
 
   @override
   void initState() {
     super.initState();
+
+    isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
+
     _fetchTracks();
   }
 
   void _fetchTracks() {
     try {
-      _tracksFuture = IsarService().trackService.getAllTracks();
+      _tracksFuture = isarService.trackService.getAllTracks();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
@@ -176,6 +183,8 @@ class TrackList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isarService =
+        Provider.of<TrackBloc>(context, listen: false).isarService;
     final filteredTracks = tracks
         .where((track) => track.geolocations.isNotEmpty)
         .toList()
@@ -200,7 +209,7 @@ class TrackList extends StatelessWidget {
         return TrackListItem(
           track: track,
           onDismissed: () async {
-            await IsarService().trackService.deleteTrack(track.id);
+            await isarService.trackService.deleteTrack(track.id);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(AppLocalizations.of(context)!.tracksTrackDeleted),

@@ -11,16 +11,18 @@ import 'package:sensebox_bike/services/isar_service/sensor_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/utils/isar_utils.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
+import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 
 class IsarService {
-  // Use Singleton pattern to avoid creation of multiple instances
-  static final IsarService _instance = IsarService._internal();
-  factory IsarService() => _instance;
-  IsarService._internal();
+  final IsarProvider isarProvider;
+  final TrackService trackService;
+  final GeolocationService geolocationService;
+  final SensorService sensorService;
 
-  final TrackService trackService = TrackService();
-  final GeolocationService geolocationService = GeolocationService();
-  final SensorService sensorService = SensorService();
+  IsarService({required this.isarProvider})
+      : trackService = TrackService(isarProvider: isarProvider),
+        geolocationService = GeolocationService(isarProvider: isarProvider),
+        sensorService = SensorService(isarProvider: isarProvider);
 
   Future<TrackData> _getTrackOrThrow(int trackId) async {
     final track = await trackService.getTrackById(trackId);
@@ -96,5 +98,18 @@ class IsarService {
 
     await file.writeAsString(csvString);
     return filePath;
+  }
+
+  Future<void> deleteAllData() async {
+    try {
+      await trackService.deleteAllTracks();
+      await geolocationService.deleteAllGeolocations();
+      await sensorService.deleteAllSensorData();
+
+      print("All data has been successfully deleted.");
+    } catch (e) {
+      print("Error while deleting all data: $e");
+      throw Exception("Failed to delete all data.");
+    }
   }
 }
