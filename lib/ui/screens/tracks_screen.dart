@@ -5,6 +5,7 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/ui/screens/tracks_screen/tracks_screen_header.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sensebox_bike/constants.dart';
@@ -78,52 +79,52 @@ class _TracksScreenState extends State<TracksScreen> {
     });
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(localizations.tracksAppBarTitle),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(spacing * 4),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 4.0),
-            child: FutureBuilder<List<TrackData>>(
-              future: _allTracksFuture,
-              builder: (context, snapshot) {
-                return TrackSummaryRow(snapshot: snapshot);
-              },
-            ),
-          ),
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        child: FutureBuilder<List<TrackData>>(
+      appBar: AppBar(),
+      body: Column(
+        children: [
+          FutureBuilder<List<TrackData>>(
           future: _allTracksFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CenteredMessage(
-                child: CircularProgressIndicator(),
+                return const TracksScreenHeader(
+                  trackCount: 0,
+                  totalDuration: Duration.zero,
+                  totalDistance: 0.0,
+                );
+              } else if (snapshot.hasError || !snapshot.hasData) {
+                return const TracksScreenHeader(
+                  trackCount: 0,
+                  totalDuration: Duration.zero,
+                  totalDistance: 0.0,
+                );
+              } else {
+                final tracks = snapshot.data!;
+                final totalDuration = tracks.fold(
+                  Duration.zero,
+                  (prev, track) => prev + track.duration,
+                );
+                final totalDistance = tracks.fold(
+                  0.0,
+                  (prev, track) => prev + track.distance,
               );
-            } else if (snapshot.hasError) {
-              return CenteredMessage(
-                child: Text(
-                  localizations
-                      .generalErrorWithDescription(snapshot.error.toString()),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+
+                return TracksScreenHeader(
+                  trackCount: tracks.length,
+                  totalDuration: totalDuration,
+                  totalDistance: totalDistance,
               );
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return CenteredMessage(
-                child: Text(
-                  localizations.tracksNoTracks,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              );
-            } else {
-              return ListView.builder(
+              }
+            },
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _handleRefresh,
+              child: ListView.builder(
                 padding: const EdgeInsets.only(top: 24),
                 itemCount: _hasMoreTracks
                     ? _displayedTracks.length + 1 // Add 1 for "Load More"
@@ -158,14 +159,15 @@ class _TracksScreenState extends State<TracksScreen> {
                     );
                   }
                 },
-              );
-            }
-          },
-        ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
 class TrackSummaryRow extends StatelessWidget {
   final AsyncSnapshot<List<TrackData>> snapshot;
 
