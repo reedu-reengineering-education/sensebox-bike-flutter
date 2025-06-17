@@ -25,6 +25,14 @@ final lightTheme = ThemeData(
       borderRadius: BorderRadius.circular(24),
     ),
   ),
+  textTheme: const TextTheme(
+    bodyLarge: TextStyle(
+      fontSize: 32,
+    ),
+    bodySmall: TextStyle(
+      fontSize: 12,
+    ),
+  ),
 );
 
 final darkTheme = ThemeData(
@@ -52,11 +60,21 @@ final darkTheme = ThemeData(
       borderRadius: BorderRadius.circular(24),
     ),
   ),
+  textTheme: const TextTheme(
+    bodyLarge: TextStyle(
+      fontSize: 32,
+    ),
+    bodySmall: TextStyle(
+      fontSize: 12,
+    ),
+  ),
 );
 
 const double circleSize = 16.0;
 const double iconSize = 12.0;
+const double iconSizeLarge = 20.0;
 const double spacing = 12.0;
 const double borderWidth = 1.5;
 const double padding = 8.0;
 const double borderRadius = 24.0;
+
