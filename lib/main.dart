@@ -20,7 +20,7 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/theme.dart';
-import 'package:sensebox_bike/ui/screens/app_home.dart';
+import 'package:sensebox_bike/ui/screens/initial_screen.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -119,7 +119,7 @@ class SenseBoxBikeApp extends StatelessWidget {
         supportedLocales: AppLocalizations.supportedLocales,
         theme: lightTheme,
         darkTheme: darkTheme,
-        home: const AppHome(),
+        home: const InitialScreen(),
       ),
     );
   }

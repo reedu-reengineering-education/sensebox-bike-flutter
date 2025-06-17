@@ -45,6 +45,7 @@
     "generalLogin": "Login",
     "generalLogout": "Logout",
     "generalRegister": "Register",
+    "generalProceed": "Proceed",
     "homeBottomBarHome": "Home",
     "homeBottomBarTracks": "Tracks",
     "tracksAppBarTitle": "Tracks",
@@ -165,6 +166,7 @@
     "settingsDeleteAllDataError": "Failed to delete all data. Please try again.",
     "accountManagement": "Account Management",
     "deleteAllHint": "This will delete all your tracks from the app.",
-    "generalConfirmation": "Confirmation"
+    "generalConfirmation": "Confirmation",
+    "privacyPolicyAccept": "I have read and accept the Privacy Policy."
 
 }
