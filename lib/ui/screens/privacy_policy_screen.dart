@@ -17,7 +17,6 @@ class PrivacyPolicyScreen extends StatefulWidget {
 
 class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
   bool _isCheckboxChecked = false;
-  bool _hasScrolledToBottom = false;
   bool _isLoading = true;
   late final WebViewController _controller;
 
@@ -37,16 +36,6 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
   void _initializeWebView() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..addJavaScriptChannel(
-        'ScrollHandler',
-        onMessageReceived: (message) {
-          if (message.message == 'scrolledToBottom') {
-            setState(() {
-              _hasScrolledToBottom = true;
-            });
-          }
-        },
-      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (String url) async {
@@ -70,18 +59,6 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
           const extractedContent = document.body.innerHTML.substring(containerStart, containerEnd);
           document.body.innerHTML = extractedContent; 
         }
-
-        const sendMessageToFlutter = function(message) {
-          ScrollHandler.postMessage(message);
-        };
-
-        window.onscroll = function() {
-          const scrollPosition = window.scrollY || document.documentElement.scrollTop;
-          const maxScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-          if (scrollPosition >= maxScroll - 10) {
-            sendMessageToFlutter('scrolledToBottom');
-          }
-        };
       })();
     ''');
   }
@@ -89,7 +66,6 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
         appBar: AppBar(title: Text(localizations.settingsPrivacyPolicy)),
@@ -103,22 +79,6 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
               else
                 Expanded(child: WebViewWidget(controller: _controller)),
               const CustomSpacer(),
-              Row(
-                children: [
-                  Icon(Icons.info_outline, color: colorScheme.primaryFixedDim),
-                  const SizedBox(width: spacing),
-                  Expanded(
-                    child: Text(
-                      localizations.scrollToAcceptHint,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: colorScheme.primaryFixedDim),
-                    ),
-                  ),
-                ],
-              ),
-              const CustomSpacer(),
               CheckboxWithText(
                 value: _isCheckboxChecked,
                 onChanged: (value) {
@@ -131,7 +91,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
               const CustomSpacer(),
               Center(
                 child: FilledButton(
-                  onPressed: (_isCheckboxChecked && _hasScrolledToBottom)
+                  onPressed: (_isCheckboxChecked)
                       ? () async {
                           await _saveAcceptanceDate();
                           Navigator.pushReplacement(

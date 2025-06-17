@@ -167,6 +167,5 @@
     "accountManagement": "Kontoverwaltung",
     "deleteAllHint": "Dies löscht alle Ihre Tracks aus der App.",
     "generalConfirmation": "Bestätigung",
-    "privacyPolicyAccept": "Ich akzeptiere die Datenschutzerklärung",
-    "scrollToAcceptHint": "Bitte lesen Sie die Datenschutzerklärung und akzeptieren Sie sie, um die App weiterhin nutzen zu können."
+    "privacyPolicyAccept": "Ich habe die Datenschutzerklärung gelesen und stimme ihr zu."
 }

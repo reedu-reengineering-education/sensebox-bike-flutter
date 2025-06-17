@@ -167,7 +167,6 @@
     "accountManagement": "Gerenciamento de Conta",
     "deleteAllHint": "Isso excluirá todas as suas faixas do aplicativo.",
     "generalConfirmation": "Confirmação",
-    "privacyPolicyAccept": "Eu aceito a política de privacidade",
-    "scrollToAcceptHint": "Por favor, leia e aceite a política de privacidade para continuar usando o aplicativo."
+    "privacyPolicyAccept": "Eu li e aceito a política de privacidade."
 
 }

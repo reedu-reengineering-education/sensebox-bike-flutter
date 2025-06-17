@@ -44,9 +44,6 @@ void main() {
       // Verify the title of the page
       expect(find.text('Privacy Policy'), findsOneWidget);
 
-      // Verify the hint text is displayed
-      expect(find.text('Please review and accept the Privacy Policy to continue using the app.'), findsOneWidget);
-
       // Verify the checkbox is displayed and unchecked by default
       final checkboxFinder = find.byType(Checkbox);
       expect(checkboxFinder, findsOneWidget);
