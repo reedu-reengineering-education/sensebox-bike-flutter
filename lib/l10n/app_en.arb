@@ -22,12 +22,28 @@
     "generalPrivacyZones": "Privacy Zones",
     "generalSettings": "Settings",
     "generalShare": "Share",
-    "generalTrackDuration": "{hours}h {minutes}min",
+    "generalTrackDuration": "{hours} h {minutes} min",
     "@generalTrackDuration": {
         "placeholders": {
             "hours": {
                 "type": "int"
             },
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "generalTrackDurationHours": "{hours} h",
+    "@generalTrackDurationHours": {
+        "placeholders": {
+            "hours": {
+                "type": "int"
+            }
+        }
+    },
+    "generalTrackDurationMins": "{minutes} min",
+    "@generalTrackDurationMins": {
+        "placeholders": {
             "minutes": {
                 "type": "int"
             }
@@ -169,6 +185,7 @@
     "generalConfirmation": "Confirmation",
     "privacyPolicyAccept": "I have read and accept the Privacy Policy.",
     "trackNoGeolocations": "No geolocations available for this track.",
-    "loadMore": "Load more"
-
+    "loadMore": "Load more",
+    "trackUnnamed": "Unnamed track",
+    "trackDetailsButton": "Details"
 }

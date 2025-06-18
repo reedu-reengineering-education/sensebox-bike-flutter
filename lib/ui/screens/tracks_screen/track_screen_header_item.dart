@@ -29,7 +29,7 @@ class TracksScreenHeaderItem extends StatelessWidget {
             children: [
               Text(
                 label!.split(' ')[0], 
-                style: theme.bodyLarge?.copyWith(
+                style: theme.headlineLarge?.copyWith(
                   height: 1.0, // Remove extra line height
                 ),
               ),
@@ -46,7 +46,7 @@ class TracksScreenHeaderItem extends StatelessWidget {
           children: [
             Text(
               hours!.split(' ')[0],
-              style: theme.bodyLarge?.copyWith(
+                style: theme.headlineLarge?.copyWith(
                 height: 1.0, // Remove extra line height
               ),
             ),
@@ -55,7 +55,7 @@ class TracksScreenHeaderItem extends StatelessWidget {
             const SizedBox(width: spacing / 4),
             Text(
               minutes!.split(' ')[0],
-              style: theme.bodyLarge?.copyWith(
+                style: theme.headlineLarge?.copyWith(
                 height: 1.0, // Remove extra line height
               ),
             ),
