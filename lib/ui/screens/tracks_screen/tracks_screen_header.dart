@@ -19,57 +19,64 @@ class TracksScreenHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
 
-    return SizedBox(
-      width: double.infinity,
-      height: 90,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Container(color: theme.colorScheme.surface),
-          ),
-          Positioned(
-            left: spacing,
-            top: spacing,
-            child: Container(
-              width: MediaQuery.of(context).size.width - 2 * spacing, // Responsive width
-              height: 71,
-              decoration: BoxDecoration(
-                color: const Color.fromRGBO(255, 255, 255, 0.18),
-                border: Border.all(color: theme.colorScheme.tertiary, width: borderWidth),
-                borderRadius: BorderRadius.circular(borderRadius),
+    return Padding(
+        padding: const EdgeInsets.only(top: spacing * 3, bottom: spacing),
+        child: SizedBox(
+          width: double.infinity,
+          height: 90,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Container(color: theme.colorScheme.surface),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(spacing),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildIconWithText(
-                      context,
-                      Icons.route,
-                      localizations.tracksAppBarSumTracks(trackCount),
+              Positioned(
+                left: spacing,
+                top: spacing,
+                child: Container(
+                  width: MediaQuery.of(context).size.width - 2 * spacing, 
+                  height: 71,
+                  decoration: _buildHeaderDecoration(theme),
+                  child: Padding(
+                    padding: const EdgeInsets.all(spacing),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildIconWithText(
+                          context,
+                          Icons.route,
+                          localizations.tracksAppBarSumTracks(trackCount),
+                        ),
+                        _buildIconWithText(
+                          context,
+                          Icons.timer_outlined,
+                          localizations.generalTrackDuration(
+                            totalDuration.inHours,
+                            totalDuration.inMinutes.remainder(60),
+                          ),
+                        ),
+                        _buildIconWithText(
+                          context,
+                          Icons.straighten,
+                          localizations.generalTrackDistance(
+                            totalDistance.toStringAsFixed(0),
+                          ),
+                        ),
+                      ],
                     ),
-                    _buildIconWithText(
-                      context,
-                      Icons.timer_outlined,
-                      localizations.generalTrackDuration(
-                        totalDuration.inHours,
-                        totalDuration.inMinutes.remainder(60),
-                      ),
-                    ),
-                    _buildIconWithText(
-                      context,
-                      Icons.straighten,
-                      localizations.generalTrackDistance(
-                        totalDistance.toStringAsFixed(2),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        )
+    );
+  }
+
+  BoxDecoration _buildHeaderDecoration(ThemeData theme) {
+    return BoxDecoration(
+      color: theme.colorScheme.surfaceVariant,
+      border: Border.all(color: theme.colorScheme.tertiary, width: borderWidth),
+      borderRadius: BorderRadius.circular(borderRadius),
     );
   }
 
@@ -80,7 +87,6 @@ class TracksScreenHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(icon, size: iconSizeLarge), 
-        const SizedBox(width: spacing / 2),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -90,7 +96,7 @@ class TracksScreenHeader extends StatelessWidget {
                 height: 1.0, // Remove extra line height
               ),
             ),
-            const SizedBox(width: spacing / 2), 
+            const SizedBox(width: spacing / 4), 
             Text(
               text.split(' ').sublist(1).join(' '), 
               style: theme.bodySmall
