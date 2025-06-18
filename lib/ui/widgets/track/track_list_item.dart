@@ -6,6 +6,7 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_filled_button.dart';
 
 class TrackListItem extends StatelessWidget {
   final TrackData track;
@@ -126,23 +127,15 @@ class TrackListItem extends StatelessWidget {
                   .format(track.geolocations.first.timestamp),
               style: theme.textTheme.titleSmall),
           const SizedBox(height: spacing * 1.5),
-          FilledButton.icon(
+          CustomFilledButton(
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => TrackDetailScreen(id: track.id),
               ),
             ),
-            icon: const Icon(Icons.leaderboard_outlined),
-            label: Text(localizations.trackDetailsButton),
-            style: FilledButton.styleFrom(
-              backgroundColor: theme.colorScheme.tertiary.withOpacity(0.6),
-              side: BorderSide(
-                  color: theme.colorScheme.tertiary, width: borderWidthRegular),
-              shape: RoundedRectangleBorder(
-                borderRadius: theme.buttonBorderRadius,
-              ),
-            ),
+            icon: Icons.leaderboard_outlined,
+            label: localizations.trackDetailsButton,
           ),
         ]),
         // Map Section
