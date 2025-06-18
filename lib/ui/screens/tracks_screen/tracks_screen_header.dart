@@ -43,7 +43,7 @@ class TracksScreenHeader extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         TracksScreenHeaderItem(
-                          icon: Icons.route,
+                          icon: Icons.route_outlined,
                           label:
                               localizations.tracksAppBarSumTracks(trackCount),
                         ),
@@ -56,7 +56,7 @@ class TracksScreenHeader extends StatelessWidget {
                           ),
                         ),
                         TracksScreenHeaderItem(
-                          icon: Icons.straighten,
+                          icon: Icons.straighten_outlined,
                           label: localizations.generalTrackDistance(
                             totalDistance.toStringAsFixed(0),
                           ),
@@ -76,7 +76,7 @@ class TracksScreenHeader extends StatelessWidget {
     return BoxDecoration(
       color: theme.colorScheme.surfaceVariant,
       border: Border.all(color: theme.colorScheme.tertiary, width: borderWidth),
-      borderRadius: BorderRadius.circular(borderRadius),
+      borderRadius: theme.tileBorderRadius,
     );
   }
 }
