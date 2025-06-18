@@ -18,7 +18,9 @@ final lightTheme = ThemeData(
       primary: Colors.black,
       primaryFixedDim: Colors.grey,
       secondary: Colors.black12,
-      tertiary: Colors.lightGreen),
+      tertiary: Colors.lightGreen,
+      surface: Color(0xFF121212),
+      surfaceVariant: Color.fromRGBO(255, 255, 255, 0.18)),
   canvasColor: Colors.grey[50],
   cardTheme: CardTheme(
     shape: RoundedRectangleBorder(
@@ -28,6 +30,9 @@ final lightTheme = ThemeData(
   textTheme: const TextTheme(
     bodyLarge: TextStyle(
       fontSize: 32,
+    ),
+    bodyMedium: TextStyle(
+      fontSize: 20,
     ),
     bodySmall: TextStyle(
       fontSize: 12,
@@ -54,7 +59,8 @@ final darkTheme = ThemeData(
       primaryFixedDim: Colors.grey,
       secondary: Colors.white,
       tertiary: Colors.green,
-      surface: Color(0xFF121212)),
+      surface: Color(0xFF121212),
+      surfaceVariant: Color.fromRGBO(255, 255, 255, 0.18)),
   cardTheme: CardTheme(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(24),
@@ -63,6 +69,9 @@ final darkTheme = ThemeData(
   textTheme: const TextTheme(
     bodyLarge: TextStyle(
       fontSize: 32,
+    ),
+    bodyMedium: TextStyle(
+      fontSize: 20,
     ),
     bodySmall: TextStyle(
       fontSize: 12,
@@ -75,6 +84,7 @@ const double iconSize = 12.0;
 const double iconSizeLarge = 20.0;
 const double spacing = 12.0;
 const double borderWidth = 1.5;
+const double borderWidthRegular = 2.0;
 const double padding = 8.0;
 const double borderRadius = 24.0;
 
