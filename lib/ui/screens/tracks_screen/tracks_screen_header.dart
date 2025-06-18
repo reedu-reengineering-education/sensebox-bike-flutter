@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/ui/screens/tracks_screen/track_screen_header_item.dart';
 
 class TracksScreenHeader extends StatelessWidget {
   final int trackCount;
@@ -34,30 +35,29 @@ class TracksScreenHeader extends StatelessWidget {
                 top: spacing,
                 child: Container(
                   width: MediaQuery.of(context).size.width - 2 * spacing, 
-                  height: 71,
+                  height: 70,
                   decoration: _buildHeaderDecoration(theme),
                   child: Padding(
                     padding: const EdgeInsets.all(spacing),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildIconWithText(
-                          context,
-                          Icons.route,
-                          localizations.tracksAppBarSumTracks(trackCount),
+                        TracksScreenHeaderItem(
+                          icon: Icons.route,
+                          label:
+                              localizations.tracksAppBarSumTracks(trackCount),
                         ),
-                        _buildIconWithText(
-                          context,
-                          Icons.timer_outlined,
-                          localizations.generalTrackDuration(
-                            totalDuration.inHours,
+                        TracksScreenHeaderItem(
+                          icon: Icons.timer_outlined,
+                          hours: localizations
+                              .generalTrackDurationHours(totalDuration.inHours),
+                          minutes: localizations.generalTrackDurationMins(
                             totalDuration.inMinutes.remainder(60),
                           ),
                         ),
-                        _buildIconWithText(
-                          context,
-                          Icons.straighten,
-                          localizations.generalTrackDistance(
+                        TracksScreenHeaderItem(
+                          icon: Icons.straighten,
+                          label: localizations.generalTrackDistance(
                             totalDistance.toStringAsFixed(0),
                           ),
                         ),
@@ -77,33 +77,6 @@ class TracksScreenHeader extends StatelessWidget {
       color: theme.colorScheme.surfaceVariant,
       border: Border.all(color: theme.colorScheme.tertiary, width: borderWidth),
       borderRadius: BorderRadius.circular(borderRadius),
-    );
-  }
-
-  Widget _buildIconWithText(BuildContext context, IconData icon, String text) {
-    final theme = Theme.of(context).textTheme;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Icon(icon, size: iconSizeLarge), 
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              text.split(' ')[0], 
-              style: theme.bodyLarge?.copyWith(
-                height: 1.0, // Remove extra line height
-              ),
-            ),
-            const SizedBox(width: spacing / 4), 
-            Text(
-              text.split(' ').sublist(1).join(' '), 
-              style: theme.bodySmall
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
