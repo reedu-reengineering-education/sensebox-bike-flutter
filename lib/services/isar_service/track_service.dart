@@ -22,7 +22,8 @@ class TrackService {
 
   Future<List<TrackData>> getAllTracks() async {
     final isar = await isarProvider.getDatabase();
-    return await isar.trackDatas.where().findAll();
+    final tracks = await isar.trackDatas.where().findAll();
+    return tracks.reversed.toList();
   }
 
   Future<void> deleteTrack(int id) async {
