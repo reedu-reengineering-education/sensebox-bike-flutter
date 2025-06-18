@@ -28,15 +28,11 @@ final lightTheme = ThemeData(
     ),
   ),
   textTheme: const TextTheme(
-    bodyLarge: TextStyle(
-      fontSize: 32,
-    ),
-    bodyMedium: TextStyle(
-      fontSize: 20,
-    ),
     bodySmall: TextStyle(
       fontSize: 12,
     ),
+    headlineLarge: TextStyle(fontSize: 32),
+    headlineMedium: TextStyle(fontSize: 20),
   ),
 );
 
@@ -67,15 +63,11 @@ final darkTheme = ThemeData(
     ),
   ),
   textTheme: const TextTheme(
-    bodyLarge: TextStyle(
-      fontSize: 32,
-    ),
-    bodyMedium: TextStyle(
-      fontSize: 20,
-    ),
     bodySmall: TextStyle(
       fontSize: 12,
     ),
+    headlineLarge: TextStyle(fontSize: 32),
+    headlineMedium: TextStyle(fontSize: 20),
   ),
 );
 
