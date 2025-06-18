@@ -33,6 +33,22 @@
             }
         }
     },
+    "generalTrackDurationHours": "{hours} Std.",
+    "@generalTrackDurationHours": {
+        "placeholders": {
+            "hours": {
+                "type": "int"
+            }
+        }
+    },
+    "generalTrackDurationMins": "{minutes} Min.",
+    "@generalTrackDurationMins": {
+        "placeholders": {
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
     "generalTrackDistance": "{distance} km",
     "@generalTrackDistance": {
         "placeholders": {
@@ -48,7 +64,6 @@
     "generalProceed": "Fortfahren",
     "homeBottomBarHome": "Start",
     "homeBottomBarTracks": "Tracks",
-    "tracksAppBarTitle": "Tracks",
     "tracksAppBarSumTracks": "{count, plural, =0{Keine Tracks} =1{1 Track} other{{count} Tracks}}",
     "tracksNoTracks": "Keine Tracks verfügbar",
     "tracksTrackDeleted": "Track gelöscht",

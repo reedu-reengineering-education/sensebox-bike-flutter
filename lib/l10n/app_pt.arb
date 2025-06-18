@@ -22,12 +22,28 @@
     "generalPrivacyZones": "Áreas de Privacidade",
     "generalSettings": "Configurações",
     "generalShare": "Compartilhar",
-    "generalTrackDuration": "{hours}h{minutes}min",
+    "generalTrackDuration": "{hours} h {minutes} min",
     "@generalTrackDuration": {
         "placeholders": {
             "hours": {
                 "type": "int"
             },
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "generalTrackDurationHours": "{hours} h",
+    "@generalTrackDurationHours": {
+        "placeholders": {
+            "hours": {
+                "type": "int"
+            }
+        }
+    },
+    "generalTrackDurationMins": "{minutes} min",
+    "@generalTrackDurationMins": {
+        "placeholders": {
             "minutes": {
                 "type": "int"
             }
@@ -48,7 +64,6 @@
     "generalProceed": "Prosseguir",
     "homeBottomBarHome": "Início",
     "homeBottomBarTracks": "Trajetos",
-    "tracksAppBarTitle": "Trajetos",
     "tracksAppBarSumTracks": "{count, plural, =0{Nenhum trajeto} =1{1 trajeto} other{{count} trajetos}}",
     "tracksNoTracks": "Nenhum trajeto disponível",
     "tracksTrackDeleted": "Trajeto excluído",

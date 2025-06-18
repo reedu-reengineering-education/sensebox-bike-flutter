@@ -84,7 +84,6 @@ class _TracksScreenState extends State<TracksScreen> {
     final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(),
       body: Column(
         children: [
           FutureBuilder<List<TrackData>>(
@@ -125,7 +124,7 @@ class _TracksScreenState extends State<TracksScreen> {
             child: RefreshIndicator(
               onRefresh: _handleRefresh,
               child: ListView.builder(
-                padding: const EdgeInsets.only(top: 24),
+                padding: const EdgeInsets.all(spacing),
                 itemCount: _hasMoreTracks
                     ? _displayedTracks.length + 1 // Add 1 for "Load More"
                     : _displayedTracks.length, // No "Load More" button
