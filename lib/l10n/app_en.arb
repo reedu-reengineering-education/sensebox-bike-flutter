@@ -64,7 +64,6 @@
     "generalProceed": "Proceed",
     "homeBottomBarHome": "Home",
     "homeBottomBarTracks": "Tracks",
-    "tracksAppBarTitle": "Tracks",
     "tracksAppBarSumTracks": "{count, plural, =0{No tracks} =1{1 track} other{{count} tracks}}",
     "tracksNoTracks": "No tracks available",
     "tracksTrackDeleted": "Track deleted",
