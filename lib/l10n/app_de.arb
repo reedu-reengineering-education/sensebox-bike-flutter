@@ -33,6 +33,17 @@
             }
         }
     },
+    "generalTrackDurationShort": "{hours}:{minutes} Min.",
+    "@generalTrackDurationShort": {
+        "placeholders": {
+            "hours": {
+                "type": "String"
+            },
+            "minutes": {
+                "type": "String"
+            }
+        }
+    },
     "generalTrackDurationHours": "{hours} Std.",
     "@generalTrackDurationHours": {
         "placeholders": {
