@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen/tracks_screen_header.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_filled_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sensebox_bike/constants.dart';
@@ -148,11 +149,11 @@ class _TracksScreenState extends State<TracksScreen> {
                       padding:
                           const EdgeInsets.symmetric(vertical: spacing * 2),
                       child: Center(
-                        child: FilledButton(
+                        child: CustomFilledButton(
+                          label: localizations.loadMore,
                           onPressed: () {
                             _loadTracks();
                           },
-                          child: Text(localizations.loadMore),
                         ),
                       ),
                     );
@@ -163,83 +164,6 @@ class _TracksScreenState extends State<TracksScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class TrackSummaryRow extends StatelessWidget {
-  final AsyncSnapshot<List<TrackData>> snapshot;
-
-  const TrackSummaryRow({required this.snapshot, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return _buildRow(
-        context,
-        AppLocalizations.of(context)!.generalLoading,
-        AppLocalizations.of(context)!.generalLoading,
-        AppLocalizations.of(context)!.generalLoading,
-      );
-    } else if (snapshot.hasError ||
-        !snapshot.hasData ||
-        snapshot.data!.isEmpty) {
-      return _buildRow(
-        context,
-        AppLocalizations.of(context)!.tracksAppBarSumTracks(0),
-        AppLocalizations.of(context)!.generalTrackDuration(0, 0),
-        AppLocalizations.of(context)!.generalTrackDistance('0.00'),
-      );
-    } else {
-      List<TrackData> tracks = snapshot.data!;
-      const zeroDuration = Duration(milliseconds: 0);
-      Duration totalDuration =
-          tracks.fold(zeroDuration, (prev, track) => prev + track.duration);
-      double totalDistance =
-          tracks.fold(0.0, (prev, track) => prev + track.distance);
-
-      String formattedDuration = AppLocalizations.of(context)!
-          .generalTrackDuration(
-              totalDuration.inHours, totalDuration.inMinutes.remainder(60));
-
-      return _buildRow(
-        context,
-        AppLocalizations.of(context)!.tracksAppBarSumTracks(tracks.length),
-        formattedDuration,
-        AppLocalizations.of(context)!
-            .generalTrackDistance(totalDistance.toStringAsFixed(2)),
-      );
-    }
-  }
-
-  Widget _buildRow(
-      BuildContext context, String tracks, String duration, String distance) {
-    Widget iconText(IconData icon, String text) {
-      return Expanded(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                text,
-                style: Theme.of(context).textTheme.bodyMedium,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            )
-          ],
-        ),
-      );
-    }
-
-    return Row(
-      children: [
-        iconText(Icons.route, tracks),
-        iconText(Icons.timer_outlined, duration),
-        iconText(Icons.straighten, distance),
-      ],
     );
   }
 }
