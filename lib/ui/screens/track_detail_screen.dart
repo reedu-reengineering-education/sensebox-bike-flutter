@@ -7,7 +7,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
-import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
@@ -298,58 +297,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 child: _buildFutureBuilder<List<SensorData>>(
                   future: _sensorDataFuture,
                   builder: (sensorData) {
-                    // Your sensorData processing and UI logic here
-                    List<Map<String, String?>> sensorTitles = sensorData
-                        .map(
-                            (e) => {'title': e.title, 'attribute': e.attribute})
-                        .map((map) => map.entries
-                            .map((e) => '${e.key}:${e.value}')
-                            .join(','))
-                        .toSet()
-                        .map((str) {
-                      var entries = str.split(',').map((e) => e.split(':'));
-                      return Map<String, String?>.fromEntries(
-                        entries.map((e) =>
-                            MapEntry(e[0], e[1] == 'null' ? null : e[1])),
-                      );
-                    }).toList();
-
-                    // Filter out surface_anomaly if the feature flag is enabled
-                    if (FeatureFlags.hideSurfaceAnomalySensor) {
-                      sensorTitles.removeWhere(
-                          (sensor) => sensor['title'] == 'surface_anomaly');
-                    }
-
-                    List<String> order = [
-                      'temperature',
-                      'humidity',
-                      'distance',
-                      'overtaking',
-                      'surface_classification_asphalt',
-                      'surface_classification_compacted',
-                      'surface_classification_paving',
-                      'surface_classification_sett',
-                      'surface_classification_standing',
-                      'surface_anomaly',
-                      'acceleration_x',
-                      'acceleration_y',
-                      'acceleration_z',
-                      'finedust_pm1',
-                      'finedust_pm2.5',
-                      'finedust_pm4',
-                      'finedust_pm10',
-                      'gps_latitude',
-                      'gps_longitude',
-                      'gps_speed',
-                    ];
-
-                    sensorTitles.sort((a, b) {
-                      int indexA = order.indexOf(
-                          '${a['title']}${a['attribute'] == null ? '' : '_${a['attribute']}'}');
-                      int indexB = order.indexOf(
-                          '${b['title']}${b['attribute'] == null ? '' : '_${b['attribute']}'}');
-                      return indexA.compareTo(indexB);
-                    });
+                    List<Map<String, String?>> sensorTitles =
+                        buildSensorTiles(sensorData);
 
                     return ListView.builder(
                       scrollDirection: Axis.horizontal,
