@@ -46,7 +46,7 @@ class TrackListItem extends StatelessWidget {
       onDismissed: (direction) => onDismissed(),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: spacing / 2),
-        decoration: _buildContainerDecoration(theme),
+        decoration: _buildContainerDecoration(theme, hasGeolocations),
         child: Padding(
           padding: const EdgeInsets.all(spacing),
           child: hasGeolocations
@@ -66,12 +66,17 @@ class TrackListItem extends StatelessWidget {
     );
   }
 
-  BoxDecoration _buildContainerDecoration(ThemeData theme) {
+  BoxDecoration _buildContainerDecoration(
+      ThemeData theme, bool hasGeolocations) {
     return BoxDecoration(
       color: theme.colorScheme.surfaceVariant,
       border: Border.all(
-          color: theme.colorScheme.tertiary, width: borderWidthRegular),
-      borderRadius: theme.tileBorderRadius,
+        color: hasGeolocations
+            ? theme.colorScheme.tertiary
+            : theme.colorScheme.primary.withOpacity(0.3),
+        width: borderWidthRegular,
+      ),
+      borderRadius: theme.tileBorderRadius, 
     );
   }
 
