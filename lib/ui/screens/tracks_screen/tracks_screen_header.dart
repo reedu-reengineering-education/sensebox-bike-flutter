@@ -28,7 +28,7 @@ class TracksScreenHeader extends StatelessWidget {
           child: Stack(
             children: [
               Positioned.fill(
-                child: Container(color: theme.colorScheme.surface),
+                child: Container(color: theme.colorScheme.primaryContainer),
               ),
               Positioned(
                 left: spacing,
@@ -74,7 +74,7 @@ class TracksScreenHeader extends StatelessWidget {
 
   BoxDecoration _buildHeaderDecoration(ThemeData theme) {
     return BoxDecoration(
-      color: theme.colorScheme.surfaceVariant,
+      color: theme.colorScheme.secondaryContainer,
       border: Border.all(color: theme.colorScheme.tertiary, width: borderWidth),
       borderRadius: theme.tileBorderRadius,
     );

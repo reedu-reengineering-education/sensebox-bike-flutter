@@ -69,7 +69,7 @@ class TrackListItem extends StatelessWidget {
   BoxDecoration _buildContainerDecoration(
       ThemeData theme, bool hasGeolocations) {
     return BoxDecoration(
-      color: theme.colorScheme.surfaceVariant,
+      color: theme.colorScheme.secondaryContainer,
       border: Border.all(
         color: hasGeolocations
             ? theme.colorScheme.tertiary
