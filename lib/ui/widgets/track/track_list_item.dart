@@ -50,7 +50,7 @@ class TrackListItem extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(spacing),
           child: hasGeolocations
-              ? _buildTrackContent(context, localizations, theme)
+              ? _buildTrackContent(context, localizations, theme, track)
               : _buildNoGeolocationsContent(context, localizations, theme),
         ),
       ),
@@ -120,7 +120,8 @@ class TrackListItem extends StatelessWidget {
   }
 
   Widget _buildTrackContent(
-      BuildContext context, AppLocalizations localizations, ThemeData theme) {
+      BuildContext context,
+      AppLocalizations localizations, ThemeData theme, TrackData track) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -136,7 +137,7 @@ class TrackListItem extends StatelessWidget {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => TrackDetailScreen(id: track.id),
+                builder: (context) => TrackDetailScreen(track: track),
               ),
             ),
             icon: Icons.leaderboard_outlined,
