@@ -22,12 +22,39 @@
     "generalPrivacyZones": "Privacy Zones",
     "generalSettings": "Settings",
     "generalShare": "Share",
-    "generalTrackDuration": "{hours}h {minutes}min",
+    "generalTrackDuration": "{hours} h {minutes} min",
     "@generalTrackDuration": {
         "placeholders": {
             "hours": {
                 "type": "int"
             },
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "generalTrackDurationShort": "{hours}:{minutes} min",
+    "@generalTrackDurationShort": {
+        "placeholders": {
+            "hours": {
+                "type": "String"
+            },
+            "minutes": {
+                "type": "String"
+            }
+        }
+    },
+    "generalTrackDurationHours": "{hours} h",
+    "@generalTrackDurationHours": {
+        "placeholders": {
+            "hours": {
+                "type": "int"
+            }
+        }
+    },
+    "generalTrackDurationMins": "{minutes} min",
+    "@generalTrackDurationMins": {
+        "placeholders": {
             "minutes": {
                 "type": "int"
             }
@@ -48,7 +75,6 @@
     "generalProceed": "Proceed",
     "homeBottomBarHome": "Home",
     "homeBottomBarTracks": "Tracks",
-    "tracksAppBarTitle": "Tracks",
     "tracksAppBarSumTracks": "{count, plural, =0{No tracks} =1{1 track} other{{count} tracks}}",
     "tracksNoTracks": "No tracks available",
     "tracksTrackDeleted": "Track deleted",
@@ -167,6 +193,8 @@
     "accountManagement": "Account Management",
     "deleteAllHint": "This will delete all your tracks from the app.",
     "generalConfirmation": "Confirmation",
-    "privacyPolicyAccept": "I have read and accept the Privacy Policy."
-
+    "privacyPolicyAccept": "I have read and accept the Privacy Policy.",
+    "trackNoGeolocations": "No geolocations available for this track.",
+    "trackUnnamed": "Unnamed track",
+    "trackDetailsButton": "Details"
 }

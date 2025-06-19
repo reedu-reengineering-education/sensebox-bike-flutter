@@ -18,12 +18,22 @@ final lightTheme = ThemeData(
       primary: Colors.black,
       primaryFixedDim: Colors.grey,
       secondary: Colors.black12,
-      tertiary: Colors.lightGreen),
+      tertiary: Colors.lightGreen,
+      primaryContainer: Colors.white,
+      secondaryContainer: Colors.white70),
   canvasColor: Colors.grey[50],
   cardTheme: CardTheme(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(24),
     ),
+  ),
+  textTheme: const TextTheme(
+    bodySmall: TextStyle(
+      fontSize: 12,
+    ),
+    headlineLarge: TextStyle(fontSize: 32),
+    headlineMedium: TextStyle(fontSize: 24),
+    headlineSmall: TextStyle(fontSize: 20),
   ),
 );
 
@@ -46,17 +56,37 @@ final darkTheme = ThemeData(
       primaryFixedDim: Colors.grey,
       secondary: Colors.white,
       tertiary: Colors.green,
-      surface: Color(0xFF121212)),
+      primaryContainer: Color(0xFF121212),
+      secondaryContainer: Color.fromRGBO(255, 255, 255, 0.18)),
   cardTheme: CardTheme(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(24),
     ),
   ),
+  textTheme: const TextTheme(
+    bodySmall: TextStyle(
+      fontSize: 12,
+    ),
+    headlineLarge: TextStyle(fontSize: 32),
+    headlineMedium: TextStyle(fontSize: 24),
+    headlineSmall: TextStyle(fontSize: 20),
+  ),
 );
 
 const double circleSize = 16.0;
 const double iconSize = 12.0;
+const double iconSizeLarge = 20.0;
 const double spacing = 12.0;
 const double borderWidth = 1.5;
+const double borderWidthRegular = 2.0;
 const double padding = 8.0;
 const double borderRadius = 24.0;
+
+extension CustomThemeData on ThemeData {
+  BorderRadius get buttonBorderRadius =>
+      const BorderRadius.all(Radius.circular(16));
+  BorderRadius get tileBorderRadius =>
+      const BorderRadius.all(Radius.circular(16));
+  BorderRadius get imageBorderRadius =>
+      const BorderRadius.all(Radius.circular(9));
+}
