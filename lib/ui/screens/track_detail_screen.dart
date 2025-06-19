@@ -23,12 +23,12 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class TrackDetailScreen extends StatefulWidget {
-  final int id;
+  final TrackData track;
 
-  const TrackDetailScreen({super.key, required this.id});
+  const TrackDetailScreen({super.key, required this.track});
 
   @override
-  State<TrackDetailScreen> createState() => _TrackDetailScreenState(id);
+  State<TrackDetailScreen> createState() => _TrackDetailScreenState(track.id);
 }
 
 class _TrackDetailScreenState extends State<TrackDetailScreen> {
@@ -52,9 +52,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   void _fetchTrackData() {
-    _trackFuture = isarService.trackService.getTrackById(widget.id);
+    _trackFuture = isarService.trackService.getTrackById(widget.track.id);
     _sensorDataFuture =
-        isarService.sensorService.getSensorDataByTrackId(widget.id);
+        isarService.sensorService.getSensorDataByTrackId(widget.track.id);
   }
 
   Future<void> _shareFile(String filePath) async {
@@ -147,57 +147,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       // if ios, open share dialog
 
       if (Platform.isAndroid) {
-        try {
-          DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-          final androidInfo = await deviceInfoPlugin.androidInfo;
-
-          // check if api level is smaller than 33
-          if (androidInfo.version.sdkInt < 33) {
-            PermissionStatus status = await Permission.storage.request();
-
-            if (!status.isGranted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(
-                    AppLocalizations.of(context)!.trackDetailsPermissionsError),
-                action: SnackBarAction(
-                    label: AppLocalizations.of(context)!.generalSettings,
-                    onPressed: () => openAppSettings()),
-              ));
-              return;
-            }
-          }
-
-          Directory? directory;
-
-          if (defaultTargetPlatform == TargetPlatform.android) {
-            //downloads folder - android only - API>30
-            directory = Directory('/storage/emulated/0/Download');
-            // directory = await getDownloadsDirectory();
-          } else {
-            directory = await getExternalStorageDirectory();
-          }
-          // copy file to external storage
-          final file = File(csvFilePath);
-
-          final newName = file.path.split('/').last;
-          final newPath = '${directory!.path}/$newName';
-
-          await file.copy(newPath);
-          // show snackbar
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(AppLocalizations.of(context)!.trackDetailsFileSaved),
-            action: SnackBarAction(
-              label: AppLocalizations.of(context)!.generalShare,
-              onPressed: () {
-                Share.shareXFiles([XFile(newPath)],
-                    text: AppLocalizations.of(context)!.trackDetailsExport);
-              },
-            ),
-          ));
-        } catch (e) {
-          Share.shareXFiles([XFile(csvFilePath)],
-              text: AppLocalizations.of(context)!.trackDetailsExport);
-        }
+        _handleAndroidExport(csvFilePath);
       } else if (Platform.isIOS) {
         await Share.shareXFiles([XFile(csvFilePath)],
             text: AppLocalizations.of(context)!.trackDetailsExport);
@@ -206,7 +156,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       ErrorService.handleError('Error exporting CSV: $e', StackTrace.current);
     } finally {
       setState(() {
-        _isDownloading = false; // Hide spinner
+        _isDownloading = false; 
       });
     }
   }
