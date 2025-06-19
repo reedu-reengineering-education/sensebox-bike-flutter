@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen/tracks_screen_header.dart';
-import 'package:sensebox_bike/ui/widgets/common/custom_filled_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sensebox_bike/constants.dart';
@@ -19,18 +18,30 @@ class TracksScreen extends StatefulWidget {
 }
 
 class _TracksScreenState extends State<TracksScreen> {
-  late final IsarService isarService;
   late Future<List<TrackData>> _allTracksFuture;
   late IsarService _isarService;
+  final ScrollController _scrollController = ScrollController(); 
   List<TrackData> _displayedTracks = [];
+  // Pagination variables
   int _currentPage = 0;
   bool _hasMoreTracks = true;
+  bool _isLoading = false; 
 
   @override
   void initState() {
     super.initState();
 
     _isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
+
+    // Listen to scroll events
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent &&
+          !_isLoading &&
+          _hasMoreTracks) {
+        _loadTracks(); // Load more tracks when reaching the end
+      }
+    });
   }
 
   @override
@@ -49,6 +60,10 @@ class _TracksScreenState extends State<TracksScreen> {
   }
 
   void _loadTracks() {
+    setState(() {
+      _isLoading = true;
+    });
+
     _allTracksFuture.then((allTracks) {
       setState(() {
         final startIndex = _currentPage * tracksPerPage;
@@ -67,6 +82,7 @@ class _TracksScreenState extends State<TracksScreen> {
           _hasMoreTracks =
               endIndex < allTracks.length; // Check if more tracks exist
         }
+        _isLoading = false; 
       });
     });
   }
@@ -80,7 +96,7 @@ class _TracksScreenState extends State<TracksScreen> {
     });
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
@@ -88,8 +104,8 @@ class _TracksScreenState extends State<TracksScreen> {
       body: Column(
         children: [
           FutureBuilder<List<TrackData>>(
-          future: _allTracksFuture,
-          builder: (context, snapshot) {
+            future: _allTracksFuture,
+            builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting ||
                   snapshot.hasError ||
                   !snapshot.hasData) {
@@ -109,49 +125,64 @@ class _TracksScreenState extends State<TracksScreen> {
                   trackCount: tracks.length,
                   totalDuration: totalDuration,
                   totalDistance: totalDistance,
-              );
+                );
               }
             },
           ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _handleRefresh,
-              
-              child: ListView.builder(
-                padding: const EdgeInsets.all(spacing),
-                itemCount: _hasMoreTracks
-                    ? _displayedTracks.length + 1 // Add 1 for "Load More"
-                    : _displayedTracks.length, // No "Load More" button
-                itemBuilder: (context, index) {
-                  if (index < _displayedTracks.length) {
-                    TrackData track = _displayedTracks[index];
-                    return TrackListItem(
-                      track: track,
-                      onDismissed: () async {
-                        await _isarService.trackService.deleteTrack(track.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(localizations.tracksTrackDeleted),
-                          ),
-                        );
-                        _handleRefresh();
+              child: Stack(
+                children: [
+                  // Thin line for the scrollbar
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      width: 1,
+                      margin: const EdgeInsets.only(right: 1.5),
+                      color: Theme.of(context).colorScheme.primaryFixedDim,
+                    ),
+                  ),
+                  Scrollbar(
+                    controller: _scrollController,
+                    thumbVisibility: true,
+                    thickness: 4,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(spacing),
+                      itemCount: _hasMoreTracks
+                          ? _displayedTracks.length + 1 // Add 1 for "Load More"
+                          : _displayedTracks.length, // No "Load More" button
+                      itemBuilder: (context, index) {
+                        if (index < _displayedTracks.length) {
+                          TrackData track = _displayedTracks[index];
+                          return TrackListItem(
+                            track: track,
+                            onDismissed: () async {
+                              await _isarService.trackService
+                                  .deleteTrack(track.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text(localizations.tracksTrackDeleted),
+                                ),
+                              );
+                              _handleRefresh();
+                            },
+                          );
+                        } else {
+                          return const Padding(
+                            padding:
+                                EdgeInsets.symmetric(vertical: spacing * 2),
+                            child: Center(
+                              child: CircularProgressIndicator(), 
+                            ),
+                          );
+                        }
                       },
-                    );
-                  } else {
-                    return Padding(
-                      padding:
-                          const EdgeInsets.symmetric(vertical: spacing * 2),
-                      child: Center(
-                        child: CustomFilledButton(
-                          label: localizations.loadMore,
-                          onPressed: () {
-                            _loadTracks();
-                          },
-                        ),
-                      ),
-                    );
-                  }
-                },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -195,5 +195,6 @@
     "generalConfirmation": "Bestätigung",
     "privacyPolicyAccept": "Ich habe die Datenschutzerklärung gelesen und stimme ihr zu.",
     "trackNoGeolocations": "Keine Geolokalisierungen für diesen Track verfügbar.",
-    "loadMore": "Mehr laden"
+    "trackUnnamed": "Unbenannter Track",
+    "trackDetailsButton": "Details"
 }
