@@ -91,6 +91,8 @@ class LiveUploadService {
         }
 
         isUploading = false;
+      }).onError((error) {
+        throw Exception('Error getting geolocation stream: $error');
       });
     });
   }

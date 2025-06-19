@@ -32,7 +32,9 @@ class RecordingBloc with ChangeNotifier {
   RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
       this.openSenseMapBloc, this.settingsBloc) {
     openSenseMapBloc.senseBoxStream
-        .listen(_onSenseBoxChanged); // Listen to senseBoxStream
+        .listen(_onSenseBoxChanged).onError((error) {
+      throw Exception("Error listening to senseBoxStream: $error");
+    }); // Listen to senseBoxStream
   }
 
   void _onSenseBoxChanged(SenseBox? senseBox) {

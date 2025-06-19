@@ -63,7 +63,7 @@ abstract class Sensor {
         }
       });
     } catch (e) {
-      print('Error starting sensor: $e');
+      throw Exception('Error starting sensor: $e');
     }
   }
 
