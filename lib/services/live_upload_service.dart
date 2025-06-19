@@ -79,8 +79,10 @@ class LiveUploadService {
             final isMaxRetries = _consecutiveFails >= maxRetries;
 
             if (isPermanentConnectivityIssue || isMaxRetries) {
-              debugPrint(
-                  'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.');
+              isUploading = false;
+              ErrorService.handleError(
+                  'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.',
+                  StackTrace.current);
               return;
             } else {
               // Retry posting data after the retry period if the number of consecutive fails is less than maxRetries
@@ -174,6 +176,11 @@ class LiveUploadService {
   }
 
   Future<void> uploadDataToOpenSenseMap(Map<String, dynamic> data) async {
-    await openSenseMapService.uploadData(senseBox.id, data);
+    try {
+      await openSenseMapService.uploadData(senseBox.id, data);
+    } catch (error, stack) {
+      ErrorService.handleError(error, stack);
+    }
+    
   }
 }
