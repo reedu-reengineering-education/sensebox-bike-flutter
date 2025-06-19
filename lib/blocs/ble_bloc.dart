@@ -313,8 +313,12 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
         recordingBloc.stopRecording();
       }
     } catch (e) {
-      debugPrint('RecordingBloc not found in the widget tree: $e');
+      ErrorService.handleError(
+          'RecordingBloc not found in the widget tree: $e', StackTrace.current);
     }
+
+    ErrorService.handleError(
+        'Connection was permanently interrupted', StackTrace.current);
   }
   
   Future<void> _listenToCharacteristic(
