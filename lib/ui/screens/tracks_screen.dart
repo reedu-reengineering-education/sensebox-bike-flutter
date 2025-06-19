@@ -90,13 +90,9 @@ class _TracksScreenState extends State<TracksScreen> {
           FutureBuilder<List<TrackData>>(
           future: _allTracksFuture,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-                return const TracksScreenHeader(
-                  trackCount: 0,
-                  totalDuration: Duration.zero,
-                  totalDistance: 0.0,
-                );
-              } else if (snapshot.hasError || !snapshot.hasData) {
+              if (snapshot.connectionState == ConnectionState.waiting ||
+                  snapshot.hasError ||
+                  !snapshot.hasData) {
                 return const TracksScreenHeader(
                   trackCount: 0,
                   totalDuration: Duration.zero,
@@ -105,13 +101,9 @@ class _TracksScreenState extends State<TracksScreen> {
               } else {
                 final tracks = snapshot.data!;
                 final totalDuration = tracks.fold(
-                  Duration.zero,
-                  (prev, track) => prev + track.duration,
-                );
-                final totalDistance = tracks.fold(
-                  0.0,
-                  (prev, track) => prev + track.distance,
-              );
+                    Duration.zero, (prev, track) => prev + track.duration);
+                final totalDistance =
+                    tracks.fold(0.0, (prev, track) => prev + track.distance);
 
                 return TracksScreenHeader(
                   trackCount: tracks.length,
@@ -124,6 +116,7 @@ class _TracksScreenState extends State<TracksScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: _handleRefresh,
+              
               child: ListView.builder(
                 padding: const EdgeInsets.all(spacing),
                 itemCount: _hasMoreTracks
