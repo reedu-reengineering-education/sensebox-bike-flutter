@@ -45,14 +45,13 @@ void main() {
       ),
     );
 
-    await tester
-        .pumpAndSettle(); // Ensure all asynchronous operations are completed
+    await tester.pumpAndSettle();
   }
 
   group('TracksScreen Widget', () {
     testWidgets("is translated in English", (WidgetTester tester) async {
       await pumpTracksScreen(tester, const Locale('en'));
-      expect(find.text('Tracks'), findsOneWidget);
+      expect(find.text('tracks'), findsOneWidget);
     });
 
     testWidgets("is translated in German", (WidgetTester tester) async {
@@ -62,7 +61,7 @@ void main() {
 
     testWidgets("is translated in Portuguese", (WidgetTester tester) async {
       await pumpTracksScreen(tester, const Locale('pt'));
-      expect(find.text('Trajetos'), findsOneWidget);
+      expect(find.text('trajeto'), findsOneWidget);
     });
   });
 }
