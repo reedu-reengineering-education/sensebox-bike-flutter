@@ -4,6 +4,7 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
@@ -92,7 +93,7 @@ class LiveUploadService {
 
         isUploading = false;
       }).onError((error) {
-        throw Exception('Error getting geolocation stream: $error');
+        ErrorService.handleError(error, StackTrace.current);
       });
     });
   }

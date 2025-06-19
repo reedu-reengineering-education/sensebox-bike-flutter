@@ -1,17 +1,23 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; 
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sentry_flutter/sentry_flutter.dart'; 
 
 class ErrorService {
   static final GlobalKey<ScaffoldMessengerState> scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
 
-  static void handleError(dynamic error, StackTrace stack) {
-    if (kDebugMode) {
-      logToConsole(error, stack);
-      showUserFeedback(error);
-    } else {
+  static void handleError(dynamic error, StackTrace stack,
+      {bool sendToSentry = true}) {
+    logToConsole(error, stack);
+    // This exception was already reported to Sentry
+    // end exceptions generated during debugging are not reported
+    if (sendToSentry && !kDebugMode) {
+      Sentry.captureException(error, stackTrace: stack);
+    }
+
+    if (!kDebugMode) {
       if (error is LocationPermissionDenied ||
           error is LoginError ||
           error is RegistrationError ||
@@ -22,7 +28,11 @@ class ErrorService {
       } else {
         logToConsole(error, stack);
       }
+    } else {
+      showUserFeedback(error);
     }
+    // Show user feedback
+    showUserFeedback(error);
   }
 
   static Color get errorColor => scaffoldKey.currentContext != null

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'dart:typed_data';
+import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 3);
@@ -143,7 +145,7 @@ class BleBloc with ChangeNotifier {
       _handleDeviceReconnection(device, context);
 
     } catch (e) {
-      throw Exception('Error connecting to device: $e');
+      ErrorService.handleError(e, StackTrace.current);
     } finally {
       isConnectingNotifier.value = false; 
     }
@@ -180,7 +182,7 @@ class BleBloc with ChangeNotifier {
           maxGlobalRetries: maxGlobalRetries,
         );
       } catch (e) {
-        throw Exception('Reconnect failed: $e');
+        ErrorService.handleError(e, StackTrace.current);
       }
     }
   }
@@ -381,5 +383,9 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
     isReconnectingNotifier.dispose();
     availableCharacteristics.dispose();
     super.dispose();
+  }
+
+  Future<void> requestEnableBluetooth() async {
+    return FlutterBluePlus.turnOn();
   }
 }

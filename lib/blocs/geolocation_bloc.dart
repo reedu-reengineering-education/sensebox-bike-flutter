@@ -83,8 +83,7 @@ class GeolocationBloc with ChangeNotifier {
       });
 
     } catch (e, stack) {
-      throw Exception(
-          'Error starting geolocation stream: $e\nStack trace: $stack');  
+      ErrorService.handleError(e, stack);
     }
   }
 

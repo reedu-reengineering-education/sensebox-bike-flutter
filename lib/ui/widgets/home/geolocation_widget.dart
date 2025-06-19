@@ -97,7 +97,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
         _updateMapWithGeolocationData(geoData);
       }
     }).onError((error) {
-      throw Exception('Error getting geolocation stream: $error');
+      ErrorService.handleError(error, StackTrace.current);
     });
   }
 

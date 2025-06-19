@@ -34,7 +34,7 @@ void main() async {
       options.tracesSampleRate = 1.0;
       options.profilesSampleRate = 1.0;
     },
-    appRunner: () => runApp(const SenseBoxBikeApp()),
+    appRunner: () => runApp(SentryWidget(child: SenseBoxBikeApp())),
   );
 }
 
@@ -48,7 +48,8 @@ class SenseBoxBikeApp extends StatelessWidget {
       }
       SchedulerBinding.instance.addPostFrameCallback((_) {
         ErrorService.handleError(
-            details.exception, details.stack ?? StackTrace.empty);
+            details.exception, details.stack ?? StackTrace.empty,
+            sendToSentry: false);
       });
     };
 
@@ -57,7 +58,7 @@ class SenseBoxBikeApp extends StatelessWidget {
         Sentry.captureException(error, stackTrace: stack);
       }
       SchedulerBinding.instance.addPostFrameCallback((_) {
-        ErrorService.handleError(error, stack);
+        ErrorService.handleError(error, stack, sendToSentry: false);
       });
       return true;
     };
