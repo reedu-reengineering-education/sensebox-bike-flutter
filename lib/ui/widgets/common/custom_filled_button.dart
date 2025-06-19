@@ -19,8 +19,15 @@ class CustomFilledButton extends StatelessWidget {
 
     return FilledButton.icon(
       onPressed: onPressed,
-      icon: icon != null ? Icon(icon) : const SizedBox.shrink(), 
-      label: Text(label),
+      icon: icon != null
+          ? Icon(icon, color: theme.colorScheme.primary)
+          : const SizedBox.shrink(),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: theme.colorScheme.primary,
+        ),
+      ),
       style: FilledButton.styleFrom(
         backgroundColor: theme.colorScheme.tertiary.withOpacity(0.6),
         side: BorderSide(

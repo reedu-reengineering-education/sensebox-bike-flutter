@@ -19,8 +19,8 @@ final lightTheme = ThemeData(
       primaryFixedDim: Colors.grey,
       secondary: Colors.black12,
       tertiary: Colors.lightGreen,
-      surface: Color(0xFF121212),
-      surfaceVariant: Color.fromRGBO(255, 255, 255, 0.18)),
+      primaryContainer: Colors.white,
+      secondaryContainer: Colors.white70),
   canvasColor: Colors.grey[50],
   cardTheme: CardTheme(
     shape: RoundedRectangleBorder(
@@ -56,8 +56,8 @@ final darkTheme = ThemeData(
       primaryFixedDim: Colors.grey,
       secondary: Colors.white,
       tertiary: Colors.green,
-      surface: Color(0xFF121212),
-      surfaceVariant: Color.fromRGBO(255, 255, 255, 0.18)),
+      primaryContainer: Color(0xFF121212),
+      secondaryContainer: Color.fromRGBO(255, 255, 255, 0.18)),
   cardTheme: CardTheme(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(24),
