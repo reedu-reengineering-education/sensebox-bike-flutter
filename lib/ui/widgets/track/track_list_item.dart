@@ -45,7 +45,7 @@ class TrackListItem extends StatelessWidget {
           _confirmDismiss(context, localizations, theme),
       onDismissed: (direction) => onDismissed(),
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: spacing / 2),
+        margin: const EdgeInsets.only(bottom: spacing),
         decoration: _buildContainerDecoration(theme, hasGeolocations),
         child: Padding(
           padding: const EdgeInsets.all(spacing),
