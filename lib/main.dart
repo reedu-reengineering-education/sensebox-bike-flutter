@@ -43,9 +43,8 @@ class SenseBoxBikeApp extends StatelessWidget {
 
   void _initErrorHandlers() {
     FlutterError.onError = (details) {
-      if (!kDebugMode) {
-        Sentry.captureException(details.exception, stackTrace: details.stack);
-      }
+      Sentry.captureException(details.exception, stackTrace: details.stack);
+
       SchedulerBinding.instance.addPostFrameCallback((_) {
         ErrorService.handleError(
             details.exception, details.stack ?? StackTrace.empty,
@@ -54,9 +53,8 @@ class SenseBoxBikeApp extends StatelessWidget {
     };
 
     PlatformDispatcher.instance.onError = (error, stack) {
-      if (!kDebugMode) {
-        Sentry.captureException(error, stackTrace: stack);
-      }
+      Sentry.captureException(error, stackTrace: stack);
+
       SchedulerBinding.instance.addPostFrameCallback((_) {
         ErrorService.handleError(error, stack, sendToSentry: false);
       });
