@@ -76,7 +76,7 @@ class ErrorService {
       return '${localizations?.errorRegistrationFailed} ${error.toString()}';
     }
 
-    return 'An unknown error occurred.\n Details ${error.toString()}';
+    return 'An unknown error occurred.\n Details: ${error.toString()}';
   }
 
   static void logToConsole(dynamic error, StackTrace stack) {
