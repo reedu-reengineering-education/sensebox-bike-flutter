@@ -3,7 +3,6 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
-import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 
@@ -64,7 +63,7 @@ abstract class Sensor {
         }
       });
     } catch (e) {
-      ErrorService.handleError(e, StackTrace.current);
+      print('Error starting sensor: $e');
     }
   }
 
