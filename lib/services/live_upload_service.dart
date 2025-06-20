@@ -179,7 +179,7 @@ class LiveUploadService {
     try {
       await openSenseMapService.uploadData(senseBox.id, data);
     } catch (error, stack) {
-      ErrorService.handleError(error, stack);
+      ErrorService.handleError(error, stack, sendToSentry: false);
     }
     
   }

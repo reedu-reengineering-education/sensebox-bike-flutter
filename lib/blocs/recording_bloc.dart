@@ -52,7 +52,9 @@ class RecordingBloc with ChangeNotifier {
 
     try {
       if (_selectedSenseBox == null) {
-        ErrorService.handleError(NoSenseBoxSelected(), StackTrace.current);
+        // Supress sending this error to Sentry
+        ErrorService.handleError(NoSenseBoxSelected(), StackTrace.current,
+            sendToSentry: false);
         notifyListeners();
         return;
       }

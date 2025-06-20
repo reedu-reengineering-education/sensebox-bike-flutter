@@ -29,11 +29,11 @@ void main() async {
   await dotenv.load(fileName: ".env", mergeWith: Platform.environment);
 
   await SentryFlutter.init(
-    (options) {
-      options.dsn = sentryDsn;
-      options.tracesSampleRate = 1.0;
-      options.profilesSampleRate = 1.0;
-    },
+    (options) => options
+      ..dsn = sentryDsn
+      ..sampleRate = 1.0
+      // Disable sending request headers and IP for users
+      ..sendDefaultPii = false,
     appRunner: () => runApp(SentryWidget(child: SenseBoxBikeApp())),
   );
 }

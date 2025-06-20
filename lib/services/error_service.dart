@@ -7,7 +7,10 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 class ErrorService {
   static final GlobalKey<ScaffoldMessengerState> scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
-
+  static void reportToSentry(dynamic error, StackTrace stack) {
+    logToConsole(error, stack);
+    Sentry.captureException(error, stackTrace: stack);
+  }  
   static void handleError(dynamic error, StackTrace stack,
       {bool sendToSentry = true}) {
     logToConsole(error, stack);
@@ -71,10 +74,10 @@ class ErrorService {
           'Error accessing export directory. Please make sure the app has permission to access the storage.';
     } else if (error is LoginError) {
       return localizations?.errorLoginFailed ??
-          'Login failed. Please check your credentials.';
+          'Login failed. Please check your credentials. Details: $error';
     } else if (error is RegistrationError) {
       return localizations?.errorRegistrationFailed ??
-          'Registration failed. Please try again.';
+          'Registration failed. Please try again. Details: $error';
     }
 
     return 'An unknown error occurred. ${error.toString()}';

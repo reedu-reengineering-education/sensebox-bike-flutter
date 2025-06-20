@@ -304,6 +304,9 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
     connectionErrorNotifier.value = true;
     notifyListeners();
 
+    ErrorService.reportToSentry(
+        "Permanent connection error with senseBox", StackTrace.current);
+
     if (!context.mounted) return;
 
     try {
@@ -316,9 +319,6 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
       ErrorService.handleError(
           'RecordingBloc not found in the widget tree: $e', StackTrace.current);
     }
-
-    ErrorService.handleError(
-        'Connection was permanently interrupted', StackTrace.current);
   }
   
   Future<void> _listenToCharacteristic(
@@ -359,7 +359,8 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
 
   Stream<List<double>> getCharacteristicStream(String characteristicUuid) {
     if (!_characteristicStreams.containsKey(characteristicUuid)) {
-      throw Exception('Characteristic stream not found');
+      // Supress sending report to Sentry and show error in UI
+      debugPrint('Characteristic stream not found');
     }
     return _characteristicStreams[characteristicUuid]!.stream;
   }
