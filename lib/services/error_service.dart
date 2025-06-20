@@ -34,8 +34,6 @@ class ErrorService {
     } else {
       showUserFeedback(error);
     }
-    // Show user feedback
-    showUserFeedback(error);
   }
 
   static Color get errorColor => scaffoldKey.currentContext != null
@@ -73,14 +71,12 @@ class ErrorService {
       return localizations?.errorExportDirectoryAccess ??
           'Error accessing export directory. Please make sure the app has permission to access the storage.';
     } else if (error is LoginError) {
-      return localizations?.errorLoginFailed ??
-          'Login failed. Please check your credentials. Details: $error';
+      return '${localizations?.errorLoginFailed} ${error.toString()}';
     } else if (error is RegistrationError) {
-      return localizations?.errorRegistrationFailed ??
-          'Registration failed. Please try again. Details: $error';
+      return '${localizations?.errorRegistrationFailed} ${error.toString()}';
     }
 
-    return 'An unknown error occurred. ${error.toString()}';
+    return 'An unknown error occurred.\n Details ${error.toString()}';
   }
 
   static void logToConsole(dynamic error, StackTrace stack) {
