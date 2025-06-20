@@ -290,6 +290,12 @@ class _ConnectButton extends StatelessWidget {
                       if (isBluetoothEnabled) {
                         // Show device selection dialog if Bluetooth is enabled
                         showDeviceSelectionDialog(context, bleBloc);
+                      } else {
+                        try {
+                          await bleBloc.requestEnableBluetooth();
+                        } catch (e) {
+                          ErrorService.handleError(e, StackTrace.current);
+                        }
                       }
                     },
                   ),

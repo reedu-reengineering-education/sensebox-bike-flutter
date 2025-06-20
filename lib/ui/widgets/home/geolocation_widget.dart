@@ -96,6 +96,8 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
       if (geoData.isNotEmpty) {
         _updateMapWithGeolocationData(geoData);
       }
+    }).onError((error) {
+      ErrorService.handleError(error, StackTrace.current);
     });
   }
 

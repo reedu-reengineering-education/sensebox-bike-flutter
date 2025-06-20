@@ -4,6 +4,7 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
@@ -78,8 +79,10 @@ class LiveUploadService {
             final isMaxRetries = _consecutiveFails >= maxRetries;
 
             if (isPermanentConnectivityIssue || isMaxRetries) {
-              debugPrint(
-                  'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.');
+              isUploading = false;
+              ErrorService.handleError(
+                  'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.',
+                  StackTrace.current);
               return;
             } else {
               // Retry posting data after the retry period if the number of consecutive fails is less than maxRetries
@@ -91,6 +94,8 @@ class LiveUploadService {
         }
 
         isUploading = false;
+      }).onError((error) {
+        ErrorService.handleError(error, StackTrace.current);
       });
     });
   }
@@ -171,6 +176,11 @@ class LiveUploadService {
   }
 
   Future<void> uploadDataToOpenSenseMap(Map<String, dynamic> data) async {
-    await openSenseMapService.uploadData(senseBox.id, data);
+    try {
+      await openSenseMapService.uploadData(senseBox.id, data);
+    } catch (error, stack) {
+      ErrorService.handleError(error, stack, sendToSentry: false);
+    }
+    
   }
 }

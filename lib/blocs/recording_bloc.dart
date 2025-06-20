@@ -32,7 +32,9 @@ class RecordingBloc with ChangeNotifier {
   RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
       this.openSenseMapBloc, this.settingsBloc) {
     openSenseMapBloc.senseBoxStream
-        .listen(_onSenseBoxChanged); // Listen to senseBoxStream
+        .listen(_onSenseBoxChanged).onError((error) {
+      ErrorService.handleError(error, StackTrace.current);
+    }); // Listen to senseBoxStream
   }
 
   void _onSenseBoxChanged(SenseBox? senseBox) {
@@ -50,7 +52,9 @@ class RecordingBloc with ChangeNotifier {
 
     try {
       if (_selectedSenseBox == null) {
-        ErrorService.handleError(NoSenseBoxSelected(), StackTrace.current);
+        // Supress sending this error to Sentry
+        ErrorService.handleError(NoSenseBoxSelected(), StackTrace.current,
+            sendToSentry: false);
         notifyListeners();
         return;
       }

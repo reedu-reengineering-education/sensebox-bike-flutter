@@ -1,17 +1,26 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; 
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sentry_flutter/sentry_flutter.dart'; 
 
 class ErrorService {
   static final GlobalKey<ScaffoldMessengerState> scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
+  static void reportToSentry(dynamic error, StackTrace stack) {
+    logToConsole(error, stack);
+    Sentry.captureException(error, stackTrace: stack);
+  }  
+  static void handleError(dynamic error, StackTrace stack,
+      {bool sendToSentry = true}) {
+    logToConsole(error, stack);
+    // This exception was already reported to Sentry
+    // end exceptions generated during debugging are not reported
+    if (sendToSentry && !kDebugMode) {
+      Sentry.captureException(error, stackTrace: stack);
+    }
 
-  static void handleError(dynamic error, StackTrace stack) {
-    if (kDebugMode) {
-      logToConsole(error, stack);
-      showUserFeedback(error);
-    } else {
+    if (!kDebugMode) {
       if (error is LocationPermissionDenied ||
           error is LoginError ||
           error is RegistrationError ||
@@ -22,6 +31,8 @@ class ErrorService {
       } else {
         logToConsole(error, stack);
       }
+    } else {
+      showUserFeedback(error);
     }
   }
 
@@ -60,14 +71,12 @@ class ErrorService {
       return localizations?.errorExportDirectoryAccess ??
           'Error accessing export directory. Please make sure the app has permission to access the storage.';
     } else if (error is LoginError) {
-      return localizations?.errorLoginFailed ??
-          'Login failed. Please check your credentials.';
+      return '${localizations?.errorLoginFailed} ${error.toString()}';
     } else if (error is RegistrationError) {
-      return localizations?.errorRegistrationFailed ??
-          'Registration failed. Please try again.';
+      return '${localizations?.errorRegistrationFailed} ${error.toString()}';
     }
 
-    return 'An unknown error occurred. ${error.toString()}';
+    return 'An unknown error occurred.\n Details: ${error.toString()}';
   }
 
   static void logToConsole(dynamic error, StackTrace stack) {

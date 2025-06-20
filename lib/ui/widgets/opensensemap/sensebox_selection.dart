@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 
 class SenseBoxSelectionWidget extends StatefulWidget {
   const SenseBoxSelectionWidget({super.key});
@@ -56,7 +57,8 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
       setState(() {
         isLoading = false;
       });
-      debugPrint('Error fetching senseBoxes: $error');
+      ErrorService.handleError(
+          'Error fetching senseBoxes: $error', StackTrace.current);
     });
   }
 
