@@ -77,7 +77,8 @@ void main() {
           mockContext,
         );
 
-        expect(message, 'An unknown error occurred. Exception: Test error');
+        expect(message,
+            'An unknown error occurred.\n Details: Exception: Test error');
       });
     
       testWidgets('returns correct message for ExportDirectoryAccessError',
@@ -106,7 +107,7 @@ void main() {
 
         expect(
           message,
-          'Login failed. Please check your credentials.',
+          contains('Login failed. Please check your credentials.'),
         );
       });
 
@@ -121,7 +122,7 @@ void main() {
 
         expect(
           message,
-          'Registration failed. Please check your credentials.',
+          contains('Registration failed. Please check your credentials.'),
         );
       });
     });

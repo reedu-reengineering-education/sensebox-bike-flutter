@@ -29,12 +29,12 @@ void main() async {
   await dotenv.load(fileName: ".env", mergeWith: Platform.environment);
 
   await SentryFlutter.init(
-    (options) {
-      options.dsn = sentryDsn;
-      options.tracesSampleRate = 1.0;
-      options.profilesSampleRate = 1.0;
-    },
-    appRunner: () => runApp(const SenseBoxBikeApp()),
+    (options) => options
+      ..dsn = sentryDsn
+      ..sampleRate = 1.0
+      // Disable sending request headers and IP for users
+      ..sendDefaultPii = false,
+    appRunner: () => runApp(SentryWidget(child: SenseBoxBikeApp())),
   );
 }
 
@@ -43,21 +43,20 @@ class SenseBoxBikeApp extends StatelessWidget {
 
   void _initErrorHandlers() {
     FlutterError.onError = (details) {
-      if (!kDebugMode) {
-        Sentry.captureException(details.exception, stackTrace: details.stack);
-      }
+      Sentry.captureException(details.exception, stackTrace: details.stack);
+
       SchedulerBinding.instance.addPostFrameCallback((_) {
         ErrorService.handleError(
-            details.exception, details.stack ?? StackTrace.empty);
+            details.exception, details.stack ?? StackTrace.empty,
+            sendToSentry: false);
       });
     };
 
     PlatformDispatcher.instance.onError = (error, stack) {
-      if (!kDebugMode) {
-        Sentry.captureException(error, stackTrace: stack);
-      }
+      Sentry.captureException(error, stackTrace: stack);
+
       SchedulerBinding.instance.addPostFrameCallback((_) {
-        ErrorService.handleError(error, stack);
+        ErrorService.handleError(error, stack, sendToSentry: false);
       });
       return true;
     };

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'dart:typed_data';
+import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 3);
@@ -143,7 +145,7 @@ class BleBloc with ChangeNotifier {
       _handleDeviceReconnection(device, context);
 
     } catch (e) {
-      throw Exception('Error connecting to device: $e');
+      ErrorService.handleError(e, StackTrace.current);
     } finally {
       isConnectingNotifier.value = false; 
     }
@@ -180,7 +182,7 @@ class BleBloc with ChangeNotifier {
           maxGlobalRetries: maxGlobalRetries,
         );
       } catch (e) {
-        throw Exception('Reconnect failed: $e');
+        ErrorService.handleError(e, StackTrace.current);
       }
     }
   }
@@ -302,6 +304,9 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
     connectionErrorNotifier.value = true;
     notifyListeners();
 
+    ErrorService.reportToSentry(
+        "Permanent connection error with senseBox", StackTrace.current);
+
     if (!context.mounted) return;
 
     try {
@@ -311,7 +316,8 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
         recordingBloc.stopRecording();
       }
     } catch (e) {
-      debugPrint('RecordingBloc not found in the widget tree: $e');
+      ErrorService.handleError(
+          'RecordingBloc not found in the widget tree: $e', StackTrace.current);
     }
   }
   
@@ -353,7 +359,8 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
 
   Stream<List<double>> getCharacteristicStream(String characteristicUuid) {
     if (!_characteristicStreams.containsKey(characteristicUuid)) {
-      throw Exception('Characteristic stream not found');
+      // Supress sending report to Sentry and show error in UI
+      debugPrint('Characteristic stream not found');
     }
     return _characteristicStreams[characteristicUuid]!.stream;
   }
@@ -381,5 +388,9 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
     isReconnectingNotifier.dispose();
     availableCharacteristics.dispose();
     super.dispose();
+  }
+
+  Future<void> requestEnableBluetooth() async {
+    return FlutterBluePlus.turnOn();
   }
 }

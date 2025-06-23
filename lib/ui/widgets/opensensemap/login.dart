@@ -77,7 +77,8 @@ class _LoginFormState extends State<LoginForm> {
                               );
                             isLoginSuccessful = true;
                           } catch (e, stack) {
-                            ErrorService.handleError(LoginError(e), stack);
+                            ErrorService.handleError(LoginError(e), stack,
+                                sendToSentry: false);
                           } finally {
                             setState(() {
                               isLoading = false; // Stop loading
