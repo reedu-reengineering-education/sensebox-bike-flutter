@@ -26,9 +26,6 @@ final lightTheme = ThemeData(
     ),
   ),
   textTheme: const TextTheme(
-    bodySmall: TextStyle(
-      fontSize: 12,
-    ),
     headlineLarge: TextStyle(fontSize: 28),
     headlineMedium: TextStyle(fontSize: 24),
     headlineSmall: TextStyle(fontSize: 20),
@@ -60,9 +57,6 @@ final darkTheme = ThemeData(
     ),
   ),
   textTheme: const TextTheme(
-    bodySmall: TextStyle(
-      fontSize: 12,
-    ),
     headlineLarge: TextStyle(fontSize: 28),
     headlineMedium: TextStyle(fontSize: 24),
     headlineSmall: TextStyle(fontSize: 20),
@@ -74,15 +68,5 @@ const double iconSize = 12.0;
 const double iconSizeLarge = 16.0;
 const double spacing = 12.0;
 const double borderWidth = 1.5;
-const double borderWidthRegular = 2.0;
 const double padding = 8.0;
 const double borderRadius = 24.0;
-
-extension CustomThemeData on ThemeData {
-  BorderRadius get buttonBorderRadius =>
-      const BorderRadius.all(Radius.circular(16));
-  BorderRadius get tileBorderRadius =>
-      const BorderRadius.all(Radius.circular(16));
-  BorderRadius get imageBorderRadius =>
-      const BorderRadius.all(Radius.circular(9));
-}
