@@ -2,6 +2,7 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 
 void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
@@ -109,8 +110,11 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                     itemCount: devices.length,
                     itemBuilder: (context, index) {
                       final device = devices[index];
-                      return _DeviceListItem(
-                        device: device,
+                      final deviceName = device.platformName.isNotEmpty
+                          ? device.platformName
+                          : "(Unknown)";
+                      return ClickableTile(
+                        child: Text(deviceName),
                         onTap: () {
                           widget.bleBloc.connectToDevice(device, context);
                           Navigator.pop(context);
