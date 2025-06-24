@@ -56,6 +56,15 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+
+    if (widget.initialScanError != null) {
+      return Center(
+        child: Text(
+          widget.initialScanError.toString(),
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
+      );
+    }
     
     return Padding(
         padding: const EdgeInsets.only(
