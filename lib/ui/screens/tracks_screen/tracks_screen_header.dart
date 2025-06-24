@@ -34,7 +34,7 @@ class TracksScreenHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Track statistics",
+                  localizations.tracksAppBarTitle,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: spacing),
