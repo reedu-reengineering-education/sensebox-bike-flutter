@@ -194,5 +194,6 @@
     "deleteAllHint": "This will delete all your tracks from the app.",
     "generalConfirmation": "Confirmation",
     "privacyPolicyAccept": "I have read and accept the Privacy Policy.",
-    "trackNoGeolocations": "No geolocations available for this track."
+    "trackNoGeolocations": "No geolocations available for this track.",
+    "tracksAppBarTitle": "Track statistics"
 }
