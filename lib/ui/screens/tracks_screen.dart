@@ -102,7 +102,7 @@ class _TracksScreenState extends State<TracksScreen> {
     final localizations = AppLocalizations.of(context)!;
 
     return ScreenWrapper(
-      content: Column(
+      child: Column(
         children: [
           FutureBuilder<List<TrackData>>(
             future: _allTracksFuture,
