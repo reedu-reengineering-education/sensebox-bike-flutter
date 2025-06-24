@@ -1,20 +1,25 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
-import 'package:sensebox_bike/ui/widgets/common/custom_filled_button.dart';
+import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
+
+const double kMapPreviewWidth = 140;
+const double kMapPreviewHeight = 140;
 
 class TrackListItem extends StatelessWidget {
   final TrackData track;
   final Function onDismissed;
+  final bool isFirst;
 
   const TrackListItem({
     required this.track,
     required this.onDismissed,
+    this.isFirst = false,
     super.key,
   });
 
@@ -29,7 +34,7 @@ class TrackListItem extends StatelessWidget {
       return '';
     }
 
-    return 'https://api.mapbox.com/styles/v1/mapbox/$style/static/path-12+$lineColor-0.8($polyline)/auto/120x80?access_token=$mapboxAccessToken';
+    return 'https://api.mapbox.com/styles/v1/mapbox/$style/static/path-1+$lineColor-0.8($polyline)/auto/${kMapPreviewWidth.toInt()}x${kMapPreviewHeight.toInt()}?access_token=$mapboxAccessToken';
   }
 
   @override
@@ -38,23 +43,25 @@ class TrackListItem extends StatelessWidget {
     final localizations = AppLocalizations.of(context)!;
     final hasGeolocations = track.geolocations.isNotEmpty;
 
-    return Dismissible(
+    return Padding(
+        padding: EdgeInsets.only(bottom: spacing, top: isFirst ? 0 : spacing),
+        child: Dismissible(
       key: Key(track.id.toString()),
       background: _buildDismissBackground(theme),
       confirmDismiss: (direction) =>
           _confirmDismiss(context, localizations, theme),
       onDismissed: (direction) => onDismissed(),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: spacing),
-        decoration: _buildContainerDecoration(theme, hasGeolocations),
-        child: Padding(
-          padding: const EdgeInsets.all(spacing),
+            child: ClickableTile(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TrackDetailScreen(track: track),
+                ),
+              ),
           child: hasGeolocations
               ? _buildTrackContent(context, localizations, theme, track)
               : _buildNoGeolocationsContent(context, localizations, theme),
-        ),
-      ),
-    );
+            )));
   }
 
   Widget _buildDismissBackground(ThemeData theme) {
@@ -63,20 +70,6 @@ class TrackListItem extends StatelessWidget {
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.only(right: spacing),
       child: const Icon(Icons.delete_outline),
-    );
-  }
-
-  BoxDecoration _buildContainerDecoration(
-      ThemeData theme, bool hasGeolocations) {
-    return BoxDecoration(
-      color: theme.colorScheme.secondaryContainer,
-      border: Border.all(
-        color: hasGeolocations
-            ? theme.colorScheme.tertiary
-            : theme.colorScheme.primary.withOpacity(0.3),
-        width: borderWidthRegular,
-      ),
-      borderRadius: theme.tileBorderRadius, 
     );
   }
 
@@ -95,7 +88,7 @@ class TrackListItem extends StatelessWidget {
             ),
             FilledButton(
               style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(
+                backgroundColor: WidgetStateProperty.all(
                   theme.colorScheme.error,
                 ),
               ),
@@ -122,62 +115,80 @@ class TrackListItem extends StatelessWidget {
   Widget _buildTrackContent(
       BuildContext context,
       AppLocalizations localizations, ThemeData theme, TrackData track) {
+    final date =
+        DateFormat('dd.MM.yyyy').format(track.geolocations.first.timestamp);
+    final trackStart =
+        DateFormat('HH:mm').format(track.geolocations.first.timestamp);
+    final trackEnd =
+        DateFormat('HH:mm').format(track.geolocations.last.timestamp);
+    final times = '$trackStart - $trackEnd';
+    final duration = localizations.generalTrackDurationShort(
+        track.duration.inHours.toString(),
+        track.duration.inMinutes
+            .remainder(60)
+            .toString()
+            .padLeft(2, '0')); // Ensure 2-digit format
+    final distance = localizations
+        .generalTrackDistance((track.distance / 1000).toStringAsFixed(2));
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Date and Start Time
-          Text(
-              DateFormat('HH:mm - dd.MM.yyyy')
-                  .format(track.geolocations.first.timestamp),
-              style: theme.textTheme.titleSmall),
-          const SizedBox(height: spacing * 1.5),
-          CustomFilledButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TrackDetailScreen(track: track),
-              ),
-            ),
-            icon: Icons.leaderboard_outlined,
-            label: localizations.trackDetailsButton,
-          ),
-        ]),
         // Map Section
-        Card.filled(
-            clipBehavior: Clip.antiAlias,
+        SizedBox(
+            width: kMapPreviewWidth,
+            height: kMapPreviewHeight,
             child: CachedNetworkImage(
-              imageUrl: buildStaticMapboxUrl(context),
-              progressIndicatorBuilder: (context, url, downloadProgress) =>
-                  Center(
-                      child: CircularProgressIndicator(
-                          value: downloadProgress.progress)),
-              errorWidget: (context, url, error) => const Icon(Icons.error),
-            )),
+                imageUrl: buildStaticMapboxUrl(context),
+                fit: BoxFit.cover,
+                progressIndicatorBuilder: (context, url, downloadProgress) =>
+                    Center(
+                        child: CircularProgressIndicator(
+                            value: downloadProgress.progress)),
+                errorWidget: (context, url, error) => Container(
+                      width: kMapPreviewWidth,
+                      height: kMapPreviewHeight,
+                      color: colorScheme.errorContainer,
+                      child: Icon(Icons.error_outline, size: iconSizeLarge),
+                    ))),
         // Track Info Section
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Time Length
-            Text(
-              localizations.generalTrackDurationShort(
-                track.duration.inHours.toString(),
-                track.duration.inMinutes
-                    .remainder(60)
-                    .toString()
-                    .padLeft(2, '0'), // Ensure 2-digit format
+        const SizedBox(width: spacing),
+        SizedBox(
+          height: kMapPreviewHeight,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(date, style: theme.textTheme.titleSmall),
+                  Text(times, style: theme.textTheme.titleSmall),
+                ],
               ),
-              style: theme.textTheme.headlineMedium,
-            ),
-            // Distance
-            Text(
-              localizations.generalTrackDistance(
-                  (track.distance / 1000).toStringAsFixed(2)),
-              style: theme.textTheme.headlineMedium,
-            ),
+              Column(
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.timer_outlined, size: iconSizeLarge),
+                      const SizedBox(width: spacing / 4),
+                      Text(duration, style: theme.textTheme.headlineLarge),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Icon(Icons.straighten_outlined,
+                          size: iconSizeLarge),
+                      const SizedBox(width: spacing / 4),
+                      Text(distance, style: theme.textTheme.headlineLarge),
+                    ],
+                  ),
+                ],
+              )
           ],
         ),
+        )
       ],
     );
   }

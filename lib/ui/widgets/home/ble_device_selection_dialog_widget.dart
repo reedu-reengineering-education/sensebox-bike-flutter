@@ -2,6 +2,7 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 
@@ -43,6 +44,8 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -51,7 +54,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
         children: [
           Text(
             localizations.bleDeviceSelectTitle,
-            style: Theme.of(context).textTheme.headlineSmall,
+            style: Theme.of(context).textTheme.headlineMedium,
             textAlign: TextAlign.center,
           ),
           const CustomSpacer(),
@@ -72,9 +75,13 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
               child: StreamBuilder<List<BluetoothDevice>>(
                 stream: widget.bleBloc.devicesListStream,
                 builder: (context, snapshot) {
+                  final colorScheme = Theme.of(context).colorScheme;
+                  
                   if (snapshot.connectionState == ConnectionState.waiting &&
                       !snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
+                    return Center(
+                        child: CircularProgressIndicator(
+                            color: colorScheme.primaryFixedDim));
                   }
 
                   if (snapshot.hasError) {
@@ -89,9 +96,11 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                     return ValueListenableBuilder<bool>(
                       valueListenable: widget.bleBloc.isScanningNotifier,
                       builder: (context, isScanning, child) {
+                        final colorScheme = Theme.of(context).colorScheme;
                         if (isScanning) {
-                          return const Center(
-                              child: CircularProgressIndicator());
+                          return Center(
+                              child: CircularProgressIndicator(
+                                  color: colorScheme.primaryFixedDim));
                         } else {
                           // Not scanning, and no devices found.
                           return Center(
@@ -106,6 +115,14 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                   }
 
                   return ListView.separated(
+                    separatorBuilder: (context, index) => Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: spacing * 2),
+                      child: Divider(
+                        height: 1,
+                        color: colorScheme.primaryFixedDim,
+                      ),
+                    ),
                     shrinkWrap: true,
                     itemCount: devices.length,
                     itemBuilder: (context, index) {
@@ -121,37 +138,12 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                         },
                       );
                     },
-                    separatorBuilder: (context, index) => const CustomSpacer(), 
                   );
                 },
               ),
             ),
         ],
       ),
-    );
-  }
-}
-
-class _DeviceListItem extends StatelessWidget {
-  final BluetoothDevice device;
-  final VoidCallback onTap;
-
-  const _DeviceListItem({required this.device, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(
-          device.platformName.isNotEmpty ? device.platformName : "(Unknown)"),
-      trailing: const Icon(Icons.arrow_forward),
-      shape: RoundedRectangleBorder(
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      onTap: onTap,
     );
   }
 }

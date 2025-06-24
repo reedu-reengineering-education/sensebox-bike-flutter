@@ -100,6 +100,7 @@ class _TracksScreenState extends State<TracksScreen> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return ScreenWrapper(
       child: Column(
@@ -132,25 +133,28 @@ class _TracksScreenState extends State<TracksScreen> {
           ),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _handleRefresh,
-              child: Stack(
-                children: [
-                  // Thin line for the scrollbar
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Container(
-                      width: 1,
-                      margin: const EdgeInsets.only(right: 1.5),
-                      color: Theme.of(context).colorScheme.primaryFixedDim,
-                    ),
+                color: Theme.of(context).colorScheme.primaryFixedDim,
+                onRefresh: _handleRefresh,
+                child: ScrollbarTheme(
+                  data: ScrollbarThemeData(
+                    thumbColor:
+                        WidgetStateProperty.all(colorScheme.primaryFixedDim),
                   ),
-                  Scrollbar(
+                  child: Scrollbar(
                     controller: _scrollController,
                     thumbVisibility: true,
-                    thickness: 4,
-                    child: ListView.builder(
+                    thickness: 2,
+                    child: ListView.separated(
+                      separatorBuilder: (context, index) => Padding(
+                        padding:
+                            const EdgeInsets.only(
+                            left: spacing * 2, right: spacing * 2),
+                        child: Divider(
+                          height: 1,
+                          color: colorScheme.primaryFixedDim,
+                        ),
+                      ),
                       controller: _scrollController,
-                      padding: const EdgeInsets.all(spacing),
                       itemCount: _hasMoreTracks
                           ? _displayedTracks.length + 1 // Add 1 for "Load More"
                           : _displayedTracks.length, // No "Load More" button
@@ -159,6 +163,7 @@ class _TracksScreenState extends State<TracksScreen> {
                           TrackData track = _displayedTracks[index];
                           return TrackListItem(
                             track: track,
+                            isFirst: index == 0,
                             onDismissed: () async {
                               await _isarService.trackService
                                   .deleteTrack(track.id);
@@ -172,19 +177,20 @@ class _TracksScreenState extends State<TracksScreen> {
                             },
                           );
                         } else {
-                          return const Padding(
+                          return Padding(
                             padding:
                                 EdgeInsets.symmetric(vertical: spacing * 2),
                             child: Center(
-                              child: CircularProgressIndicator(), 
+                              child: CircularProgressIndicator(
+                                color: colorScheme.primaryFixedDim,
+                              ),
                             ),
                           );
                         }
                       },
                     ),
                   ),
-                ],
-              ),
+                )
             ),
           ),
         ],

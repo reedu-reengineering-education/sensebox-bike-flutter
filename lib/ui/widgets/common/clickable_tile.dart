@@ -12,7 +12,7 @@ class ClickableTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(spacing), 
+            padding: const EdgeInsets.all(spacing * 2), 
         child: Row(
         children: [
           Expanded( child: child),
