@@ -25,6 +25,11 @@ final lightTheme = ThemeData(
       borderRadius: BorderRadius.circular(24),
     ),
   ),
+  textTheme: const TextTheme(
+    headlineLarge: TextStyle(fontSize: 28),
+    headlineMedium: TextStyle(fontSize: 24),
+    headlineSmall: TextStyle(fontSize: 20),
+  ),
 );
 
 final darkTheme = ThemeData(
@@ -45,17 +50,22 @@ final darkTheme = ThemeData(
       primary: Colors.white,
       primaryFixedDim: Colors.grey,
       secondary: Colors.white,
-      tertiary: Colors.green,
-      surface: Color(0xFF121212)),
+      tertiary: Colors.green),
   cardTheme: CardTheme(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(24),
     ),
   ),
+  textTheme: const TextTheme(
+    headlineLarge: TextStyle(fontSize: 28),
+    headlineMedium: TextStyle(fontSize: 24),
+    headlineSmall: TextStyle(fontSize: 20),
+  ),
 );
 
 const double circleSize = 16.0;
 const double iconSize = 12.0;
+const double iconSizeLarge = 16.0;
 const double spacing = 12.0;
 const double borderWidth = 1.5;
 const double padding = 8.0;

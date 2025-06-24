@@ -4,8 +4,12 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/ui/screens/tracks_screen/tracks_screen_header.dart';
+import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/constants.dart';
 
 class TracksScreen extends StatefulWidget {
   const TracksScreen({super.key});
@@ -15,210 +19,182 @@ class TracksScreen extends StatefulWidget {
 }
 
 class _TracksScreenState extends State<TracksScreen> {
-  late final IsarService isarService;
-  late Future<List<TrackData>> _tracksFuture;
+  late Future<List<TrackData>> _allTracksFuture;
+  late IsarService _isarService;
+  final ScrollController _scrollController = ScrollController(); 
+  List<TrackData> _displayedTracks = [];
+  // Pagination variables
+  int _currentPage = 0;
+  bool _hasMoreTracks = true;
+  bool _isLoading = false; 
 
   @override
   void initState() {
     super.initState();
 
-    isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
+    _isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
 
-    _fetchTracks();
+    // Listen to scroll events
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent &&
+          !_isLoading &&
+          _hasMoreTracks) {
+        _loadTracks(); // Load more tracks when reaching the end
+      }
+    });
   }
 
-  void _fetchTracks() {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchAllTracks();
+  }
+
+  void _fetchAllTracks() {
     try {
-      _tracksFuture = isarService.trackService.getAllTracks();
+      _allTracksFuture = _isarService.trackService.getAllTracks();
+      _loadTracks();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
-    
+  }
+
+  void _loadTracks() {
+    setState(() {
+      _isLoading = true;
+    });
+
+    _allTracksFuture.then((allTracks) {
+      setState(() {
+        final startIndex = _currentPage * tracksPerPage;
+        final endIndex = startIndex + tracksPerPage;
+
+        if (startIndex >= allTracks.length) {
+          _hasMoreTracks = false; // No more tracks to load
+        } else {
+          _displayedTracks.addAll(
+            allTracks.sublist(
+              startIndex,
+              endIndex > allTracks.length ? allTracks.length : endIndex,
+            ),
+          );
+          _currentPage++;
+          _hasMoreTracks =
+              endIndex < allTracks.length; // Check if more tracks exist
+        }
+        _isLoading = false; 
+      });
+    });
   }
 
   Future<void> _handleRefresh() async {
     setState(() {
-      _fetchTracks();
+      _currentPage = 0;
+      _displayedTracks.clear();
+      _hasMoreTracks = true;
+      _fetchAllTracks();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.tracksAppBarTitle),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(32),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 4.0),
-            child: FutureBuilder<List<TrackData>>(
-              future: _tracksFuture,
-              builder: (context, snapshot) {
-                return TrackSummaryRow(snapshot: snapshot);
-              },
+    final localizations = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ScreenWrapper(
+      child: Column(
+        children: [
+          FutureBuilder<List<TrackData>>(
+            future: _allTracksFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting ||
+                  snapshot.hasError ||
+                  !snapshot.hasData) {
+                return const TracksScreenHeader(
+                  trackCount: 0,
+                  totalDuration: Duration.zero,
+                  totalDistance: 0.0,
+                );
+              } else {
+                final tracks = snapshot.data!;
+                final totalDuration = tracks.fold(
+                    Duration.zero, (prev, track) => prev + track.duration);
+                final totalDistance =
+                    tracks.fold(0.0, (prev, track) => prev + track.distance);
+
+                return TracksScreenHeader(
+                  trackCount: tracks.length,
+                  totalDuration: totalDuration,
+                  totalDistance: totalDistance,
+                );
+              }
+            },
+          ),
+          Expanded(
+            child: RefreshIndicator(
+                color: Theme.of(context).colorScheme.primaryFixedDim,
+                onRefresh: _handleRefresh,
+                child: ScrollbarTheme(
+                  data: ScrollbarThemeData(
+                    thumbColor:
+                        WidgetStateProperty.all(colorScheme.primaryFixedDim),
+                  ),
+                  child: Scrollbar(
+                    controller: _scrollController,
+                    thumbVisibility: true,
+                    thickness: 2,
+                    child: ListView.separated(
+                      separatorBuilder: (context, index) => Padding(
+                        padding:
+                            const EdgeInsets.only(
+                            left: spacing * 2, right: spacing * 2),
+                        child: Divider(
+                          height: 1,
+                          color: colorScheme.primaryFixedDim,
+                        ),
+                      ),
+                      controller: _scrollController,
+                      itemCount: _hasMoreTracks
+                          ? _displayedTracks.length + 1 // Add 1 for "Load More"
+                          : _displayedTracks.length, // No "Load More" button
+                      itemBuilder: (context, index) {
+                        if (index < _displayedTracks.length) {
+                          TrackData track = _displayedTracks[index];
+                          return TrackListItem(
+                            track: track,
+                            isFirst: index == 0,
+                            onDismissed: () async {
+                              await _isarService.trackService
+                                  .deleteTrack(track.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text(localizations.tracksTrackDeleted),
+                                ),
+                              );
+                              _handleRefresh();
+                            },
+                          );
+                        } else {
+                          return Padding(
+                            padding:
+                                EdgeInsets.symmetric(vertical: spacing * 2),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: colorScheme.primaryFixedDim,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                )
             ),
           ),
-        ),
+        ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        child: FutureBuilder<List<TrackData>>(
-          future: _tracksFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CenteredMessage(
-                child: CircularProgressIndicator(),
-              );
-            } else if (snapshot.hasError) {
-              return CenteredMessage(
-                child: Text(
-                  AppLocalizations.of(context)!
-                      .generalErrorWithDescription(snapshot.error.toString()),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              );
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return CenteredMessage(
-                child: Text(
-                  AppLocalizations.of(context)!.tracksNoTracks,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              );
-            } else {
-              return TrackList(
-                tracks: snapshot.data!,
-                onTrackDeleted: _handleRefresh,
-              );
-            }
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class TrackSummaryRow extends StatelessWidget {
-  final AsyncSnapshot<List<TrackData>> snapshot;
-
-  const TrackSummaryRow({required this.snapshot, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return _buildRow(
-        context,
-        AppLocalizations.of(context)!.generalLoading,
-        AppLocalizations.of(context)!.generalLoading,
-        AppLocalizations.of(context)!.generalLoading,
-      );
-    } else if (snapshot.hasError ||
-        !snapshot.hasData ||
-        snapshot.data!.isEmpty) {
-      return _buildRow(
-        context,
-        AppLocalizations.of(context)!.tracksAppBarSumTracks(0),
-        AppLocalizations.of(context)!.generalTrackDuration(0, 0),
-        AppLocalizations.of(context)!.generalTrackDistance('0.00'),
-      );
-    } else {
-      List<TrackData> tracks = snapshot.data!;
-      const zeroDuration = Duration(milliseconds: 0);
-      Duration totalDuration =
-          tracks.fold(zeroDuration, (prev, track) => prev + track.duration);
-      double totalDistance =
-          tracks.fold(0.0, (prev, track) => prev + track.distance);
-
-      String formattedDuration = AppLocalizations.of(context)!
-          .generalTrackDuration(
-              totalDuration.inHours, totalDuration.inMinutes.remainder(60));
-
-      return _buildRow(
-        context,
-        AppLocalizations.of(context)!.tracksAppBarSumTracks(tracks.length),
-        formattedDuration,
-        AppLocalizations.of(context)!
-            .generalTrackDistance(totalDistance.toStringAsFixed(2)),
-      );
-    }
-  }
-
-  Widget _buildRow(
-      BuildContext context, String tracks, String duration, String distance) {
-    Widget iconText(IconData icon, String text) {
-      return Expanded(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                text,
-                style: Theme.of(context).textTheme.bodyMedium,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            )
-          ],
-        ),
-      );
-    }
-
-    return Row(
-      children: [
-        iconText(Icons.route, tracks),
-        iconText(Icons.timer_outlined, duration),
-        iconText(Icons.straighten, distance),
-      ],
-    );
-  }
-}
-
-class TrackList extends StatelessWidget {
-  final List<TrackData> tracks;
-  final VoidCallback onTrackDeleted;
-
-  const TrackList(
-      {required this.tracks, required this.onTrackDeleted, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final isarService =
-        Provider.of<TrackBloc>(context, listen: false).isarService;
-    final filteredTracks = tracks
-        .where((track) => track.geolocations.isNotEmpty)
-        .toList()
-        .reversed
-        .toList();
-
-    if (filteredTracks.isEmpty) {
-      return CenteredMessage(
-        child: Text(
-          AppLocalizations.of(context)!.tracksNoTracks,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      );
-    }
-
-    return ListView.separated(
-      separatorBuilder: (context, index) => const SizedBox(height: 24),
-      padding: const EdgeInsets.only(top: 24),
-      itemCount: filteredTracks.length,
-      itemBuilder: (context, index) {
-        TrackData track = filteredTracks[index];
-        return TrackListItem(
-          track: track,
-          onDismissed: () async {
-            await isarService.trackService.deleteTrack(track.id);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(AppLocalizations.of(context)!.tracksTrackDeleted),
-              ),
-            );
-            onTrackDeleted();
-          },
-        );
-      },
     );
   }
 }

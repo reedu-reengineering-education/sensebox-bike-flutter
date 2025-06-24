@@ -90,7 +90,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 pinned: true,
               ),
-SliverSafeArea(
+              SliverSafeArea(
                 minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                 sliver: ValueListenableBuilder<BluetoothDevice?>(
                   valueListenable: bleBloc.selectedDeviceNotifier,
