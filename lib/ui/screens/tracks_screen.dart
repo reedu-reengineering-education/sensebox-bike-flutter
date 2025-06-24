@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen/tracks_screen_header.dart';
+import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sensebox_bike/constants.dart';
@@ -100,8 +101,8 @@ class _TracksScreenState extends State<TracksScreen> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      body: Column(
+    return ScreenWrapper(
+      content: Column(
         children: [
           FutureBuilder<List<TrackData>>(
             future: _allTracksFuture,
