@@ -41,7 +41,7 @@ class TrackData {
     // Convert geolocations to a list of Point<double>
     final List<Point<double>> coordinates = geolocations
         .map(
-            (geolocation) => Point(geolocation.longitude, geolocation.latitude))
+            (geolocation) => Point(geolocation.latitude, geolocation.longitude))
         .toList();
 
     if (coordinates.isEmpty) {
