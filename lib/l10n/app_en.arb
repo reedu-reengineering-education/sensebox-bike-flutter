@@ -195,5 +195,6 @@
     "generalConfirmation": "Confirmation",
     "privacyPolicyAccept": "I have read and accept the Privacy Policy.",
     "trackNoGeolocations": "No geolocations available for this track.",
-    "tracksAppBarTitle": "Track statistics"
+    "tracksAppBarTitle": "Track statistics",
+    "loadMore": "Load more"
 }
