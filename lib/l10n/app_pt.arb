@@ -195,5 +195,6 @@
     "generalConfirmation": "Confirmação",
     "privacyPolicyAccept": "Eu li e aceito a política de privacidade.",
     "trackNoGeolocations": "Nenhuma geolocalização disponível para este trajeto.",
-     "tracksAppBarTitle": "Estatísticas de Trajetos"
+     "tracksAppBarTitle": "Estatísticas de Trajetos",
+    "loadMore": "Carregar mais"
 }

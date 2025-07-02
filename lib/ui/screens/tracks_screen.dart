@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen/tracks_screen_header.dart';
+import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -20,6 +21,7 @@ class TracksScreen extends StatefulWidget {
 
 class _TracksScreenState extends State<TracksScreen> {
   late Future<List<TrackData>> _allTracksFuture;
+  late List<TrackData> _allTracks;
   late IsarService _isarService;
   final ScrollController _scrollController = ScrollController(); 
   List<TrackData> _displayedTracks = [];
@@ -48,6 +50,7 @@ class _TracksScreenState extends State<TracksScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
     _fetchAllTracks();
   }
 
@@ -69,6 +72,7 @@ class _TracksScreenState extends State<TracksScreen> {
       setState(() {
         final startIndex = _currentPage * tracksPerPage;
         final endIndex = startIndex + tracksPerPage;
+        _allTracks = allTracks;
 
         if (startIndex >= allTracks.length) {
           _hasMoreTracks = false; // No more tracks to load
@@ -94,6 +98,28 @@ class _TracksScreenState extends State<TracksScreen> {
       _displayedTracks.clear();
       _hasMoreTracks = true;
       _fetchAllTracks();
+    });
+  }
+
+  void _loadMore() {
+    setState(() {
+      final startIndex = _currentPage * tracksPerPage;
+      final endIndex = startIndex + tracksPerPage;
+
+      if (startIndex >= _allTracks.length) {
+        _hasMoreTracks = false; // No more tracks to load
+      } else {
+        _displayedTracks.addAll(
+          _allTracks.sublist(
+            startIndex,
+            endIndex > _allTracks.length ? _allTracks.length : endIndex,
+          ),
+        );
+        _currentPage++;
+        _hasMoreTracks =
+            endIndex < _allTracks.length; // Check if more tracks exist
+      }
+      _isLoading = false;
     });
   }
 
@@ -145,15 +171,21 @@ class _TracksScreenState extends State<TracksScreen> {
                     thumbVisibility: true,
                     thickness: 2,
                     child: ListView.separated(
-                      separatorBuilder: (context, index) => Padding(
-                        padding:
-                            const EdgeInsets.only(
-                            left: spacing * 2, right: spacing * 2),
-                        child: Divider(
-                          height: 1,
-                          color: colorScheme.primaryFixedDim,
-                        ),
-                      ),
+                      separatorBuilder: (context, index) {
+                        // Do not show divider after the last track before the "Load More" button
+                        if (index == _displayedTracks.length - 1 &&
+                            _hasMoreTracks) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                              left: spacing * 2, right: spacing * 2),
+                          child: Divider(
+                            height: 1,
+                            color: colorScheme.primaryFixedDim,
+                          ),
+                        );
+                      },
                       controller: _scrollController,
                       itemCount: _hasMoreTracks
                           ? _displayedTracks.length + 1 // Add 1 for "Load More"
@@ -177,13 +209,12 @@ class _TracksScreenState extends State<TracksScreen> {
                             },
                           );
                         } else {
-                          return Padding(
-                            padding:
-                                EdgeInsets.symmetric(vertical: spacing * 2),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: colorScheme.primaryFixedDim,
-                              ),
+                          return Center(
+                            child: ButtonWithLoader(
+                              isLoading: _isLoading,
+                              onPressed: _isLoading ? null : _loadMore,
+                              text: AppLocalizations.of(context)!.loadMore,
+                              width: 0.6, 
                             ),
                           );
                         }

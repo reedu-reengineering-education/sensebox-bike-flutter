@@ -18,6 +18,10 @@ class ButtonWithLoader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final button = FilledButton(
+      style: FilledButton.styleFrom(
+        padding:
+            const EdgeInsets.symmetric(vertical: 12), // Vertical padding only
+      ),
       onPressed: onPressed,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
