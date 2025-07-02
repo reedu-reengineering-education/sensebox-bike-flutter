@@ -27,16 +27,11 @@ class _AppHomeState extends State<AppHome> {
   @override
   Widget build(BuildContext context) {
     final openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context);
-    final isAuthenticated = openSenseMapBloc.isAuthenticated;
-    final localizations = AppLocalizations.of(context)!;
-
+    
     return Scaffold(
-      body: Navigator(
-        onGenerateRoute: (settings) {
-          return MaterialPageRoute(
-            builder: (context) => _pages[_selectedIndex],
-          );
-        },
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -47,13 +42,20 @@ class _AppHomeState extends State<AppHome> {
           ],
         ),
         child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
           child: NavigationBar(
             onDestinationSelected: (value) {
               setState(() {
                 if (value == 3) {
-                  if (isAuthenticated) {
+                  // If the user selects the login/logout destination
+                  if (openSenseMapBloc.isAuthenticated) {
+                    // Log out the user if authenticated
                     openSenseMapBloc.logout();
                   } else {
+                    // Navigate to the login screen if not authenticated
                     _selectedIndex = value;
                   }
                 } else {
@@ -65,18 +67,20 @@ class _AppHomeState extends State<AppHome> {
             destinations: [
               NavigationDestination(
                   icon: Icon(Icons.map),
-                  label: localizations.homeBottomBarHome),
+                  label: AppLocalizations.of(context)!.homeBottomBarHome),
               NavigationDestination(
                   icon: Icon(Icons.route),
-                  label: localizations.homeBottomBarTracks),
+                  label: AppLocalizations.of(context)!.homeBottomBarTracks),
               NavigationDestination(
                   icon: Icon(Icons.settings),
-                  label: localizations.generalSettings),
+                  label: AppLocalizations.of(context)!.generalSettings),
               NavigationDestination(
-                  icon: Icon(isAuthenticated ? Icons.logout : Icons.login),
-                  label: isAuthenticated
-                      ? localizations.generalLogout
-                      : localizations.generalLogin),
+                  icon: Icon(openSenseMapBloc.isAuthenticated
+                      ? Icons.logout
+                      : Icons.login),
+                  label: openSenseMapBloc.isAuthenticated
+                      ? AppLocalizations.of(context)!.generalLogout
+                      : AppLocalizations.of(context)!.generalLogin),
             ],
           ),
         ),
