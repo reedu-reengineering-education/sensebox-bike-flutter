@@ -17,12 +17,21 @@ class AppHome extends StatefulWidget {
 class _AppHomeState extends State<AppHome> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomeScreen(),
-    TracksScreen(),
-    SettingsScreen(),
-    LoginScreen(),
-  ];
+  final GlobalKey<TracksScreenState> _tracksScreenKey =
+      GlobalKey<TracksScreenState>();
+
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      const HomeScreen(),
+      TracksScreen(key: _tracksScreenKey),
+      const SettingsScreen(),
+      const LoginScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +69,11 @@ class _AppHomeState extends State<AppHome> {
                   }
                 } else {
                   _selectedIndex = value;
+
+                  // Refresh tracks when navigating to tracks tab
+                  if (value == 1) {
+                    _tracksScreenKey.currentState?.refreshTracks();
+                  }
                 }
               });
             },

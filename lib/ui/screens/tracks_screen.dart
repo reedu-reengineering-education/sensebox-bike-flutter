@@ -16,10 +16,10 @@ class TracksScreen extends StatefulWidget {
   const TracksScreen({super.key});
 
   @override
-  State<TracksScreen> createState() => _TracksScreenState();
+  State<TracksScreen> createState() => TracksScreenState();
 }
 
-class _TracksScreenState extends State<TracksScreen> {
+class TracksScreenState extends State<TracksScreen> {
   late Future<List<TrackData>> _allTracksFuture;
   late List<TrackData> _allTracks;
   late IsarService _isarService;
@@ -35,16 +35,6 @@ class _TracksScreenState extends State<TracksScreen> {
     super.initState();
 
     _isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
-
-    // Listen to scroll events
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent &&
-          !_isLoading &&
-          _hasMoreTracks) {
-        _loadTracks(); // Load more tracks when reaching the end
-      }
-    });
   }
 
   @override
@@ -61,6 +51,10 @@ class _TracksScreenState extends State<TracksScreen> {
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
+  }
+
+  void refreshTracks() {
+    _handleRefresh();
   }
 
   void _loadTracks() {
