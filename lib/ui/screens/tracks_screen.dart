@@ -5,7 +5,6 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/theme.dart';
-import 'package:sensebox_bike/ui/screens/tracks_screen/tracks_screen_header.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
@@ -123,34 +122,9 @@ class TracksScreenState extends State<TracksScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return ScreenWrapper(
+      title: localizations.tracksAppBarTitle,
       child: Column(
         children: [
-          FutureBuilder<List<TrackData>>(
-            future: _allTracksFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting ||
-                  snapshot.hasError ||
-                  !snapshot.hasData) {
-                return const TracksScreenHeader(
-                  trackCount: 0,
-                  totalDuration: Duration.zero,
-                  totalDistance: 0.0,
-                );
-              } else {
-                final tracks = snapshot.data!;
-                final totalDuration = tracks.fold(
-                    Duration.zero, (prev, track) => prev + track.duration);
-                final totalDistance =
-                    tracks.fold(0.0, (prev, track) => prev + track.distance);
-
-                return TracksScreenHeader(
-                  trackCount: tracks.length,
-                  totalDuration: totalDuration,
-                  totalDistance: totalDistance,
-                );
-              }
-            },
-          ),
           Expanded(
             child: RefreshIndicator(
                 color: Theme.of(context).colorScheme.primaryFixedDim,
