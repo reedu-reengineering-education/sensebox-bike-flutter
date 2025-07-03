@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -14,9 +15,7 @@ import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 3);
 const deviceConnectTimeout = Duration(seconds: 10);
-// Minimum number of characteristics to consider connection valid
-const minimumCharacteristics = 7;
-const maxAttemptsToDiscoverSenseBoxServices = 5; 
+const maxAttemptsToDiscoverSenseBoxServices = 10; 
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
@@ -221,12 +220,14 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
       try {
         await Future.delayed(const Duration(milliseconds: 500));
         final services = await device.discoverServices();
-
         final senseBoxService = _findSenseBoxService(services);
-        int totalCharacteristics = senseBoxService.characteristics.length;
-
-        if (totalCharacteristics >= minimumCharacteristics) {
-          return [senseBoxService]; // Return only the senseBox service
+        final hasOvertakingPrediction = senseBoxService.characteristics.any(
+            (c) => c.uuid.toString() == overtakingPredictionCharacteristicUuid);
+        
+        // As of 03.07.2025 the overtaking prediction characteristic takes the longest to load
+        // therefore we can use it to determine if the service is fully loaded
+        if (hasOvertakingPrediction) {
+          return [senseBoxService]; 
         }
       
         attempts++;

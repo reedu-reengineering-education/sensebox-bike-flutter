@@ -2,7 +2,7 @@ import 'package:geolocator/geolocator.dart' as Geolocator;
 
 const maxRetries = 10;
 const retryPeriod = 2; // in minutes
-const premanentConnectivityFalurePeriod = 20; // in minutes
+const premanentConnectivityFalurePeriod = 10; // in minutes
 const defaultTimeout = 30; // in seconds
 
 class SharedPreferencesKeys {
@@ -227,3 +227,6 @@ const defaultCameraOptions = {
   "zoom": 16.0,
   "pitch": 45.0,
 };
+
+const String overtakingPredictionCharacteristicUuid =
+    'fc01c688-2c44-4965-ae18-373af9fed18d';
