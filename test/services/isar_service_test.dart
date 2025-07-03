@@ -29,7 +29,13 @@ void main() {
 
     // Create a temporary directory for testing
     tempDirectory = Directory.systemTemp.createTempSync();
-    mockPathProvider(tempDirectory.path);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'getApplicationDocumentsDirectory') {
+        return tempDirectory.path;
+      }
+      return null;
+    });
 
     isar = await initializeInMemoryIsar();
     // Mock IsarProvider to return the in-memory Isar instance
@@ -62,7 +68,8 @@ void main() {
 
   tearDown(() async {
     await isar.close();
-    channel.setMockMethodCallHandler(null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
   });
 
   group('IsarService', () {
