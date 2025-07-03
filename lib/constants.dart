@@ -24,7 +24,7 @@ const tagsUrl =
     'https://raw.githubusercontent.com/reedu-reengineering-education/sensebox-bike-flutter/main/data/locations.json'; // URL for the campaigns
 
 const classicModelSensors = [
-{
+  {
     "id": "0",
     "icon": 'osem-thermometer',
     "title": 'Temperature',
@@ -103,113 +103,113 @@ const classicModelSensors = [
   }
 ];
 
-    const atraiModelSensors = [
-      {
-        "id": "0",
-        "icon": 'osem-thermometer',
-        "title": 'Temperature',
-        "unit": '°C',
-        "sensorType": 'HDC1080'
-      },
-      {
-        "id": "1",
-        "icon": 'osem-humidity',
-        "title": 'Rel. Humidity',
-        "unit": '%',
-        "sensorType": 'HDC1080'
-      },
-      {
-        "id": "2",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM1',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "3",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM2.5',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "4",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM4',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "5",
-        "icon": 'osem-cloud',
-        "title": 'Finedust PM10',
-        "unit": 'µg/m³',
-        "sensorType": 'SPS30'
-      },
-      {
-        "id": "6",
-        "icon": 'osem-shock',
-        "title": 'Overtaking Manoeuvre',
-        "unit": '%',
-        "sensorType": 'VL53L8CX'
-      },
-      {
-        "id": "7",
-        "icon": 'osem-shock',
-        "title": 'Overtaking Distance',
-        "unit": 'cm',
-        "sensorType": 'VL53L8CX'
-      },
-      {
-        "id": "8",
-        "icon": 'osem-shock',
-        "title": 'Surface Asphalt',
-        "unit": '%',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "9",
-        "icon": 'osem-shock',
-        "title": 'Surface Sett',
-        "unit": '%',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "10",
-        "icon": 'osem-shock',
-        "title": 'Surface Compacted',
-        "unit": '%',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "11",
-        "icon": 'osem-shock',
-        "title": 'Surface Paving',
-        "unit": '%',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "12",
-        "icon": 'osem-shock',
-        "title": 'Standing',
-        "unit": '%',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "13",
-        "icon": 'osem-shock',
-        "title": 'Surface Anomaly',
-        "unit": 'Δ',
-        "sensorType": 'MPU-6050'
-      },
-      {
-        "id": "14",
-        "icon": 'osem-dashboard',
-        "title": 'Speed',
-        "unit": 'm/s',
-        "sensorType": 'GPS'
-      }
-    ];
+const atraiModelSensors = [
+  {
+    "id": "0",
+    "icon": 'osem-thermometer',
+    "title": 'Temperature',
+    "unit": '°C',
+    "sensorType": 'HDC1080'
+  },
+  {
+    "id": "1",
+    "icon": 'osem-humidity',
+    "title": 'Rel. Humidity',
+    "unit": '%',
+    "sensorType": 'HDC1080'
+  },
+  {
+    "id": "2",
+    "icon": 'osem-cloud',
+    "title": 'Finedust PM1',
+    "unit": 'µg/m³',
+    "sensorType": 'SPS30'
+  },
+  {
+    "id": "3",
+    "icon": 'osem-cloud',
+    "title": 'Finedust PM2.5',
+    "unit": 'µg/m³',
+    "sensorType": 'SPS30'
+  },
+  {
+    "id": "4",
+    "icon": 'osem-cloud',
+    "title": 'Finedust PM4',
+    "unit": 'µg/m³',
+    "sensorType": 'SPS30'
+  },
+  {
+    "id": "5",
+    "icon": 'osem-cloud',
+    "title": 'Finedust PM10',
+    "unit": 'µg/m³',
+    "sensorType": 'SPS30'
+  },
+  {
+    "id": "6",
+    "icon": 'osem-shock',
+    "title": 'Overtaking Manoeuvre',
+    "unit": '%',
+    "sensorType": 'VL53L8CX'
+  },
+  {
+    "id": "7",
+    "icon": 'osem-shock',
+    "title": 'Overtaking Distance',
+    "unit": 'cm',
+    "sensorType": 'VL53L8CX'
+  },
+  {
+    "id": "8",
+    "icon": 'osem-shock',
+    "title": 'Surface Asphalt',
+    "unit": '%',
+    "sensorType": 'MPU-6050'
+  },
+  {
+    "id": "9",
+    "icon": 'osem-shock',
+    "title": 'Surface Sett',
+    "unit": '%',
+    "sensorType": 'MPU-6050'
+  },
+  {
+    "id": "10",
+    "icon": 'osem-shock',
+    "title": 'Surface Compacted',
+    "unit": '%',
+    "sensorType": 'MPU-6050'
+  },
+  {
+    "id": "11",
+    "icon": 'osem-shock',
+    "title": 'Surface Paving',
+    "unit": '%',
+    "sensorType": 'MPU-6050'
+  },
+  {
+    "id": "12",
+    "icon": 'osem-shock',
+    "title": 'Standing',
+    "unit": '%',
+    "sensorType": 'MPU-6050'
+  },
+  {
+    "id": "13",
+    "icon": 'osem-shock',
+    "title": 'Surface Anomaly',
+    "unit": 'Δ',
+    "sensorType": 'MPU-6050'
+  },
+  {
+    "id": "14",
+    "icon": 'osem-dashboard',
+    "title": 'Speed',
+    "unit": 'm/s',
+    "sensorType": 'GPS'
+  }
+];
 
 final globePosition = Geolocator.Position(
     latitude: 0.0,
@@ -221,12 +221,9 @@ final globePosition = Geolocator.Position(
     heading: 0.0,
     headingAccuracy: 0.0,
     speed: 0.0,
-    speedAccuracy: 0.0); 
+    speedAccuracy: 0.0);
 
 const defaultCameraOptions = {
   "zoom": 16.0,
   "pitch": 45.0,
 };
-
-const String overtakingPredictionCharacteristicUuid =
-    'fc01c688-2c44-4965-ae18-373af9fed18d';

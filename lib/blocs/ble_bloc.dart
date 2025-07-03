@@ -9,13 +9,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/sensors/distance_sensor.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 3);
 const deviceConnectTimeout = Duration(seconds: 10);
-const maxAttemptsToDiscoverSenseBoxServices = 10; 
+const maxAttemptsToDiscoverSenseBoxServices = 10;
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
@@ -64,11 +65,11 @@ class BleBloc with ChangeNotifier {
 
   void updateBluetoothStatus(bool isEnabled) {
     isBluetoothEnabledNotifier.value = isEnabled;
-    notifyListeners(); 
+    notifyListeners();
   }
 
   Future<void> startScanning() async {
-    disconnectDevice(); 
+    disconnectDevice();
     isScanningNotifier.value = true;
 
     try {
@@ -100,11 +101,11 @@ class BleBloc with ChangeNotifier {
   }
 
   void disconnectDevice() {
-    _userInitiatedDisconnect = true; 
+    _userInitiatedDisconnect = true;
     selectedDevice?.disconnect();
-    _isConnected = false; 
+    _isConnected = false;
     selectedDevice = null;
-    selectedDeviceNotifier.value = null; 
+    selectedDeviceNotifier.value = null;
     availableCharacteristics.value = [];
     notifyListeners();
   }
@@ -133,7 +134,7 @@ class BleBloc with ChangeNotifier {
 
       await device.connect();
       _isConnected = true;
-      _userInitiatedDisconnect = false; 
+      _userInitiatedDisconnect = false;
 
       await _discoverAndListenToCharacteristics(device, context: context);
 
@@ -142,11 +143,10 @@ class BleBloc with ChangeNotifier {
       notifyListeners();
 
       _handleDeviceReconnection(device, context);
-
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);
     } finally {
-      isConnectingNotifier.value = false; 
+      isConnectingNotifier.value = false;
     }
     notifyListeners();
   }
@@ -186,7 +186,7 @@ class BleBloc with ChangeNotifier {
     }
   }
 
-Future<void> _forceReconnect(BluetoothDevice device) async {
+  Future<void> _forceReconnect(BluetoothDevice device) async {
     try {
       await device.disconnect();
       await Future.delayed(reconnectionDelay);
@@ -221,15 +221,16 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
         await Future.delayed(const Duration(milliseconds: 500));
         final services = await device.discoverServices();
         final senseBoxService = _findSenseBoxService(services);
-        final hasOvertakingPrediction = senseBoxService.characteristics.any(
-            (c) => c.uuid.toString() == overtakingPredictionCharacteristicUuid);
-        
-        // As of 03.07.2025 the overtaking prediction characteristic takes the longest to load
+        final hasDistanceSensor = senseBoxService.characteristics.any((c) =>
+            c.uuid.toString() == DistanceSensor.sensorCharacteristicUuid);
+
+        // As of 03.07.2025 the distance characteristic takes the
+        // longest to load and is available on all devices
         // therefore we can use it to determine if the service is fully loaded
-        if (hasOvertakingPrediction) {
-          return [senseBoxService]; 
+        if (hasDistanceSensor) {
+          return [senseBoxService];
         }
-      
+
         attempts++;
         await Future.delayed(reconnectionDelay);
       } catch (e) {
@@ -321,7 +322,7 @@ Future<void> _forceReconnect(BluetoothDevice device) async {
           'RecordingBloc not found in the widget tree: $e', StackTrace.current);
     }
   }
-  
+
   Future<void> _listenToCharacteristic(
       BluetoothCharacteristic characteristic) async {
     final uuid = characteristic.uuid.toString();
