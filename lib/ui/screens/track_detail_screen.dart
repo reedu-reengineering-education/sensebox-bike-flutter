@@ -38,7 +38,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   final int id;
   bool _isDownloading = false; // Flag to show loading spinner
-  late String _sensorType;
+  late String _sensorType = 'temperature'; // Default sensor type
 
   _TrackDetailScreenState(this.id);
 
@@ -129,12 +129,13 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
-  Future<void> _exportTrackToCsv({bool isOpenSourceMapCompatible = false}) async {
+  Future<void> _exportTrackToCsv(
+      {bool isOpenSourceMapCompatible = false}) async {
     setState(() => _isDownloading = true);
 
     try {
       final String csvFilePath;
-      
+
       if (isOpenSourceMapCompatible) {
         csvFilePath =
             await isarService.exportTrackToCsvInOpenSenseMapFormat(id);
@@ -406,8 +407,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                       itemBuilder: (context, index) {
                         String title = sensorTitles[index]['title']!;
                         String? attribute = sensorTitles[index]['attribute'];
-                        String displayTitle =
-                            getTranslatedTitleFromSensorKey(
+                        String displayTitle = getTranslatedTitleFromSensorKey(
                                 title, attribute, context) ??
                             title;
 
