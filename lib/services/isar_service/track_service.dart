@@ -39,4 +39,15 @@ class TrackService {
       await isar.trackDatas.clear();
     });
   }
+
+  Future<List<TrackData>> getTracksPaginated(
+      {required int offset, required int limit}) async {
+    final isar = await isarProvider.getDatabase();
+    return await isar.trackDatas
+        .where(sort: Sort.desc)
+        .anyId()
+        .offset(offset)
+        .limit(limit)
+        .findAll();
+  }
 }
