@@ -196,5 +196,13 @@
     "privacyPolicyAccept": "Ich habe die Datenschutzerklärung gelesen und stimme ihr zu.",
     "trackNoGeolocations": "Keine Geolokalisierungen für diesen Track verfügbar.",
     "tracksAppBarTitle": "Deine Tracks",
-    "loadMore": "Mehr laden"
+    "loadMore": "Mehr laden",
+    "tracksStatisticsTitle": "Track-Statistiken",
+    "tracksStatisticsTotalData": "Gesamtdaten",
+    "tracksStatisticsTotalDataInfo": "Daten, die während aller Fahrten gesammelt wurden",
+    "tracksStatisticsThisWeek": "Diese Woche",
+    "tracksStatisticsThisWeekInfo": "Statistiken für die aktuelle Woche",
+    "tracksStatisticsRidesInfo": "Fahrten abgeschlossen",
+    "tracksStatisticsDistanceInfo": "zurückgelegte Strecke",
+    "tracksStatisticsTimeInfo": "verbrachte Zeit auf der Strecke"
 }
