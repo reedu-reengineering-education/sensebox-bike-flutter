@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -51,85 +52,85 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
     });
   }
 
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-    if (hours > 0) {
-      return '$hours h ${minutes} m';
-    } else if (minutes > 0) {
-      return '$minutes m ${seconds}s';
-    } else {
-      return '${seconds}s';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final textTheme = Theme.of(context).textTheme;
+    final stats = [
+      // TOTAL DATA CARD
+      _StatsCard(
+        icon: Icons.bar_chart_outlined,
+        title: l10n.tracksStatisticsTotalData,
+        subtitle: l10n.tracksStatisticsTotalDataInfo,
+        stats: [
+          _StatRow(
+            icon: Icons.directions_bike_outlined,
+            value: '$_trackCount',
+            label: l10n.tracksStatisticsRidesInfo,
+            textTheme: textTheme,
+          ),
+          _StatRow(
+            icon: Icons.route_outlined,
+            value: l10n.generalTrackDistance(_totalDistance.toStringAsFixed(2)),
+            label: l10n.tracksStatisticsDistanceInfo,
+            textTheme: textTheme,
+          ),
+          _StatRow(
+            icon: Icons.timer_off_outlined,
+            value: l10n.generalTrackDurationShort(
+                _totalDuration.inHours.toString(),
+                _totalDuration.inMinutes
+                    .remainder(60)
+                    .toString()
+                    .padLeft(2, '0')),
+            label: l10n.tracksStatisticsTimeInfo,
+            textTheme: textTheme,
+          ),
+        ],
+      ),
+      // THIS WEEK CARD
+      _StatsCard(
+        icon: Icons.calendar_today_outlined,
+        title: l10n.tracksStatisticsThisWeek,
+        subtitle: l10n.tracksStatisticsThisWeekInfo,
+        stats: [
+          _StatRow(
+            icon: Icons.event_outlined,
+            value: '$_ridesThisWeek',
+            label: l10n.tracksStatisticsRidesInfo,
+            textTheme: textTheme,
+          ),
+          _StatRow(
+            icon: Icons.route_outlined,
+            value:
+                l10n.generalTrackDistance(_distanceThisWeek.toStringAsFixed(2)),
+            label: l10n.tracksStatisticsDistanceInfo,
+            textTheme: textTheme,
+          ),
+          _StatRow(
+            icon: Icons.timer_outlined,
+            value: l10n.generalTrackDurationShort(
+                _timeThisWeek.inHours.toString(),
+                _timeThisWeek.inMinutes
+                    .remainder(60)
+                    .toString()
+                    .padLeft(2, '0')),
+            label: l10n.tracksStatisticsTimeInfo,
+            textTheme: textTheme,
+          ),
+        ],
+      ),
+    ];
 
     return ScreenWrapper(
       title: l10n.tracksStatisticsTitle,
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                // TOTAL DATA CARD
-                _StatsCard(
-                  icon: Icons.bar_chart_outlined,
-                  title: l10n.tracksStatisticsTotalData,
-                  subtitle: l10n.tracksStatisticsTotalDataInfo,
-                  stats: [
-                    _StatRow(
-                      icon: Icons.directions_bike_outlined,
-                      value: '$_trackCount',
-                      label: l10n.tracksStatisticsRidesInfo,
-                      textTheme: textTheme,
-                    ),
-                    _StatRow(
-                      icon: Icons.route_outlined,
-                      value: '${_totalDistance.toStringAsFixed(1)} km',
-                      label: l10n.tracksStatisticsDistanceInfo,
-                      textTheme: textTheme,
-                    ),
-                    _StatRow(
-                      icon: Icons.timer_off_outlined,
-                      value: _formatDuration(_totalDuration),
-                      label: l10n.tracksStatisticsTimeInfo,
-                      textTheme: textTheme,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // THIS WEEK CARD
-                _StatsCard(
-                  icon: Icons.calendar_today_outlined,
-                  title: l10n.tracksStatisticsThisWeek,
-                  subtitle: l10n.tracksStatisticsThisWeekInfo,
-                  stats: [
-                    _StatRow(
-                      icon: Icons.event_outlined,
-                      value: '$_ridesThisWeek',
-                      label: l10n.tracksStatisticsRidesInfo,
-                      textTheme: textTheme,
-                    ),
-                    _StatRow(
-                      icon: Icons.route_outlined,
-                      value: '${_distanceThisWeek.toStringAsFixed(1)} km',
-                      label: l10n.tracksStatisticsDistanceInfo,
-                      textTheme: textTheme,
-                    ),
-                    _StatRow(
-                      icon: Icons.timer_outlined,
-                      value: _formatDuration(_timeThisWeek),
-                      label: l10n.tracksStatisticsTimeInfo,
-                      textTheme: textTheme,
-                    ),
-                  ],
-                ),
-              ],
+          : ListView.separated(
+              itemCount: stats.length,
+              separatorBuilder: (context, index) =>
+                  TrackDivider(showDivider: true),
+              itemBuilder: (context, index) => stats[index],
             ),
     );
   }
@@ -152,12 +153,9 @@ class _StatsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius/2)),
-      color: Theme.of(context).cardColor,
-      child: Padding(
-        padding: const EdgeInsets.all(spacing),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: spacing, vertical: spacing * 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -179,7 +177,6 @@ class _StatsCard extends StatelessWidget {
                   child: w,
                 )),
           ],
-        ),
       ),
     );
   }
