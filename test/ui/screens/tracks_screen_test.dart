@@ -7,7 +7,7 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 
 class MockIsarService extends Mock implements IsarService {}

@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 class ExclusionZonesScreen extends StatefulWidget {
   const ExclusionZonesScreen({super.key});
@@ -102,8 +102,7 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
                     onPressed: () {
                       if (mapboxDrawController.editingMode ==
                           EditingMode.NONE) {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(SnackBar(
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text(
                               AppLocalizations.of(context)!.privacyZonesDelete),
                         ));

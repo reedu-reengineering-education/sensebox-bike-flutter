@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // For translations
+import 'package:sensebox_bike/l10n/app_localizations.dart'; // For translations
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/app_home.dart';
@@ -69,7 +69,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
 
     return Scaffold(
         appBar: AppBar(title: Text(localizations.settingsPrivacyPolicy)),
-      body: Padding(
+        body: Padding(
           padding: const EdgeInsets.all(spacing * 1.5),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,8 +104,8 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                   child: Text(localizations.generalProceed),
                 ),
               ),
-        ],
-      ),
-    ));
+            ],
+          ),
+        ));
   }
 }

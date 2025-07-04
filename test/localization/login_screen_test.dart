@@ -8,7 +8,7 @@ import 'package:sensebox_bike/ui/widgets/common/email_field.dart';
 import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/register.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import '../mocks.dart';
 import '../test_helpers.dart';
 
@@ -53,7 +53,8 @@ void main() {
   group('LoginForm', () {
     testWidgets('renders login form with all fields',
         (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(LoginForm(bloc: mockBloc), const Locale('en')));
+      await tester.pumpWidget(
+          buildTestWidget(LoginForm(bloc: mockBloc), const Locale('en')));
 
       expect(find.byType(EmailField), findsOneWidget);
       expect(find.byType(PasswordField), findsOneWidget);
@@ -61,13 +62,15 @@ void main() {
     });
 
     testWidgets('is translated in German', (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(LoginForm(bloc: mockBloc), const Locale('de')));
+      await tester.pumpWidget(
+          buildTestWidget(LoginForm(bloc: mockBloc), const Locale('de')));
 
       expect(find.text('Anmelden'), findsOneWidget);
     });
 
     testWidgets('is translated in Portuguese', (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(LoginForm(bloc: mockBloc), const Locale('pt')));
+      await tester.pumpWidget(
+          buildTestWidget(LoginForm(bloc: mockBloc), const Locale('pt')));
 
       expect(find.text('Entrar'), findsOneWidget);
     });
@@ -76,20 +79,24 @@ void main() {
   group('RegisterForm', () {
     testWidgets('renders register form with all fields',
         (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(RegisterForm(bloc: mockBloc), const Locale('en')));
+      await tester.pumpWidget(
+          buildTestWidget(RegisterForm(bloc: mockBloc), const Locale('en')));
 
-      expect(find.byType(TextFormField), findsNWidgets(4)); // Name, Email, Password, Confirm Password
+      expect(find.byType(TextFormField),
+          findsNWidgets(4)); // Name, Email, Password, Confirm Password
       expect(find.text('Register'), findsOneWidget);
     });
 
     testWidgets('is translated in German', (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(RegisterForm(bloc: mockBloc), const Locale('de')));
+      await tester.pumpWidget(
+          buildTestWidget(RegisterForm(bloc: mockBloc), const Locale('de')));
 
       expect(find.text('Registrieren'), findsOneWidget);
     });
 
     testWidgets('is translated in Portuguese', (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(RegisterForm(bloc: mockBloc), const Locale('pt')));
+      await tester.pumpWidget(
+          buildTestWidget(RegisterForm(bloc: mockBloc), const Locale('pt')));
 
       expect(find.text('Registrar-se'), findsOneWidget);
     });

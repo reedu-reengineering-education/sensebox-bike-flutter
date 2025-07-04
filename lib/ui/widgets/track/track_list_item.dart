@@ -4,7 +4,7 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 class TrackListItem extends StatelessWidget {
   final TrackData track;
