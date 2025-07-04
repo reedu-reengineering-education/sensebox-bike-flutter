@@ -18,8 +18,6 @@ class TracksScreen extends StatefulWidget {
 }
 
 class TracksScreenState extends State<TracksScreen> {
-  // late Future<List<TrackData>> _allTracksFuture;
-  // late List<TrackData> _allTracks;
   late IsarService _isarService;
   final ScrollController _scrollController = ScrollController(); 
   List<TrackData> _displayedTracks = [];
