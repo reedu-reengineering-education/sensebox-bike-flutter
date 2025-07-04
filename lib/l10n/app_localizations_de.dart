@@ -141,16 +141,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get openSenseMapRegisterPasswordConfirm => 'Passwort bestätigen';
 
   @override
-  String get openSenseMapRegisterPasswordConfirmErrorEmpty =>
-      'Passwort darf nicht leer sein';
+  String get openSenseMapRegisterPasswordConfirmErrorEmpty => 'Passwort darf nicht leer sein';
 
   @override
-  String get openSenseMapRegisterPasswordErrorMismatch =>
-      'Passwörter stimmen nicht überein';
+  String get openSenseMapRegisterPasswordErrorMismatch => 'Passwörter stimmen nicht überein';
 
   @override
-  String get openSenseMapRegisterPasswordErrorCharacters =>
-      'Passwort muss mindestens 8 Zeichen enthalten';
+  String get openSenseMapRegisterPasswordErrorCharacters => 'Passwort muss mindestens 8 Zeichen enthalten';
 
   @override
   String get openSenseMapRegisterFailed => 'Registrierung fehlgeschlagen';
@@ -159,12 +156,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get openSenesMapRegisterAcceptTermsPrefix => 'Ich akzeptiere die';
 
   @override
-  String get openSenseMapRegisterAcceptTermsPrivacy =>
-      'Datenschutzbestimmungen';
+  String get openSenseMapRegisterAcceptTermsPrivacy => 'Datenschutzbestimmungen';
 
   @override
-  String get openSenseMapRegisterAcceptTermsError =>
-      'Sie müssen die Datenschutzbestimmungen akzeptieren';
+  String get openSenseMapRegisterAcceptTermsError => 'Sie müssen die Datenschutzbestimmungen akzeptieren';
 
   @override
   String get connectionButtonConnect => 'Verbinden';
@@ -188,8 +183,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get bleDeviceSelectTitle => 'Tippen, um zu verbinden';
 
   @override
-  String get noBleDevicesFound =>
-      'Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.';
+  String get noBleDevicesFound => 'Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.';
 
   @override
   String get createBoxTitle => 'senseBox:bike erstellen';
@@ -204,26 +198,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get createBoxName => 'Name';
 
   @override
-  String get createBoxNameError =>
-      'Name muss zwischen 2 und 50 Zeichen lang sein';
+  String get createBoxNameError => 'Name muss zwischen 2 und 50 Zeichen lang sein';
 
   @override
-  String get createBoxGeolocationCurrentPosition =>
-      'Deine aktuelle Position wird verwendet';
+  String get createBoxGeolocationCurrentPosition => 'Deine aktuelle Position wird verwendet';
 
   @override
   String get openSenseMapBoxSelectionNoBoxes => 'Keine senseBox verfügbar';
 
   @override
-  String get openSenseMapBoxSelectionCreateHint =>
-      'Erstelle eine mit dem \'+\' Button';
+  String get openSenseMapBoxSelectionCreateHint => 'Erstelle eine mit dem \'+\' Button';
 
   @override
   String get openSenseMapBoxSelectionUnnamedBox => 'Unbenannte senseBox';
 
   @override
-  String get openSenseMapBoxSelectionIncompatible =>
-      'Nicht kompatibel mit senseBox:bike';
+  String get openSenseMapBoxSelectionIncompatible => 'Nicht kompatibel mit senseBox:bike';
 
   @override
   String get settingsGeneral => 'Allgemeine';
@@ -255,20 +245,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsGithub => 'GitHub issue';
 
   @override
-  String get privacyZonesStart =>
-      'Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.';
+  String get privacyZonesStart => 'Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.';
 
   @override
-  String get privacyZonesDelete =>
-      'Tippen Sie auf eine Zone, um sie zu löschen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.';
+  String get privacyZonesDelete => 'Tippen Sie auf eine Zone, um sie zu löschen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.';
 
   @override
-  String get trackDetailsPermissionsError =>
-      'Keine Berechtigung zum Speichern der Datei auf externem Speicher.';
+  String get trackDetailsPermissionsError => 'Keine Berechtigung zum Speichern der Datei auf externem Speicher.';
 
   @override
-  String get trackDetailsFileSaved =>
-      'Die CSV-Datei wird im Ordner Downloads gespeichert.';
+  String get trackDetailsFileSaved => 'Die CSV-Datei wird im Ordner Downloads gespeichert.';
 
   @override
   String get trackDetailsExport => 'CSV-Export von Trackdaten.';
@@ -286,8 +272,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackDelete => 'Track löschen';
 
   @override
-  String get trackDeleteConfirmation =>
-      'Wollen Sie diesen Track wirklich löschen?';
+  String get trackDeleteConfirmation => 'Wollen Sie diesen Track wirklich löschen?';
 
   @override
   String get sensorTemperature => 'Temperatur';
@@ -383,8 +368,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sensorDistanceShort => 'Abstand';
 
   @override
-  String get campaignLoadError =>
-      'Die Liste der Kampagnen konnte nicht geladen werden.';
+  String get campaignLoadError => 'Die Liste der Kampagnen konnte nicht geladen werden.';
 
   @override
   String get selectCampaign => 'Kampagne auswählen';
@@ -399,32 +383,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Bluetooth aktivieren';
 
   @override
-  String get errorNoLocationAccess =>
-      'Um Tracks aufzuzeichnen, erlauben Sie bitte der App in den Telefoneinstellungen den Zugriff auf den aktuellen Standort des Geräts.';
+  String get errorNoLocationAccess => 'Um Tracks aufzuzeichnen, erlauben Sie bitte der App in den Telefoneinstellungen den Zugriff auf den aktuellen Standort des Geräts.';
 
   @override
-  String get errorNoScanAccess =>
-      'Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.';
+  String get errorNoScanAccess => 'Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.';
 
   @override
-  String get errorNoSenseBoxSelected =>
-      'Um den Upload von Sensordaten in die Cloud zu erlauben, melden Sie sich bitte bei Ihrem openSenseMap-Konto an und aktivieren Sie das Kästchen.';
+  String get errorNoSenseBoxSelected => 'Um den Upload von Sensordaten in die Cloud zu erlauben, melden Sie sich bitte bei Ihrem openSenseMap-Konto an und aktivieren Sie das Kästchen.';
 
   @override
-  String get errorExportDirectoryAccess =>
-      'Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.';
+  String get errorExportDirectoryAccess => 'Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.';
 
   @override
-  String get errorLoginFailed =>
-      'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
+  String get errorLoginFailed => 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
 
   @override
-  String get errorRegistrationFailed =>
-      'Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
+  String get errorRegistrationFailed => 'Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
 
   @override
-  String get errorBleConnectionFailed =>
-      'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
+  String get errorBleConnectionFailed => 'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
 
   @override
   String get selectCsvFormat => 'CSV-Format auswählen';
@@ -439,16 +416,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsDeleteAllData => 'Alle Daten löschen';
 
   @override
-  String get settingsDeleteAllDataConfirmation =>
-      'Sind Sie sicher, dass Sie alle Daten löschen möchten? Diese Aktion ist nicht umkehrbar.';
+  String get settingsDeleteAllDataConfirmation => 'Sind Sie sicher, dass Sie alle Daten löschen möchten? Diese Aktion ist nicht umkehrbar.';
 
   @override
-  String get settingsDeleteAllDataSuccess =>
-      'Alle Daten wurden erfolgreich gelöscht.';
+  String get settingsDeleteAllDataSuccess => 'Alle Daten wurden erfolgreich gelöscht.';
 
   @override
-  String get settingsDeleteAllDataError =>
-      'Fehler beim Löschen aller Daten. Bitte versuchen Sie es erneut.';
+  String get settingsDeleteAllDataError => 'Fehler beim Löschen aller Daten. Bitte versuchen Sie es erneut.';
 
   @override
   String get accountManagement => 'Kontoverwaltung';
@@ -460,6 +434,5 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalConfirmation => 'Bestätigung';
 
   @override
-  String get privacyPolicyAccept =>
-      'Ich habe die Datenschutzerklärung gelesen und stimme ihr zu.';
+  String get privacyPolicyAccept => 'Ich habe die Datenschutzerklärung gelesen und stimme ihr zu.';
 }

@@ -141,16 +141,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openSenseMapRegisterPasswordConfirm => 'Confirm password';
 
   @override
-  String get openSenseMapRegisterPasswordConfirmErrorEmpty =>
-      'Password confirmation must not be empty';
+  String get openSenseMapRegisterPasswordConfirmErrorEmpty => 'Password confirmation must not be empty';
 
   @override
-  String get openSenseMapRegisterPasswordErrorMismatch =>
-      'Passwords do not match';
+  String get openSenseMapRegisterPasswordErrorMismatch => 'Passwords do not match';
 
   @override
-  String get openSenseMapRegisterPasswordErrorCharacters =>
-      'Password must contain at least 8 characters';
+  String get openSenseMapRegisterPasswordErrorCharacters => 'Password must contain at least 8 characters';
 
   @override
   String get openSenseMapRegisterFailed => 'Registration failed';
@@ -162,8 +159,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openSenseMapRegisterAcceptTermsPrivacy => 'privacy policy';
 
   @override
-  String get openSenseMapRegisterAcceptTermsError =>
-      'You must accept the privacy policy';
+  String get openSenseMapRegisterAcceptTermsError => 'You must accept the privacy policy';
 
   @override
   String get connectionButtonConnect => 'Connect';
@@ -187,8 +183,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bleDeviceSelectTitle => 'Tap to connect';
 
   @override
-  String get noBleDevicesFound =>
-      'No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.';
+  String get noBleDevicesFound => 'No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.';
 
   @override
   String get createBoxTitle => 'Create senseBox:bike';
@@ -206,22 +201,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createBoxNameError => 'Name must be between 2 and 50 characters';
 
   @override
-  String get createBoxGeolocationCurrentPosition =>
-      'Your current position will be used';
+  String get createBoxGeolocationCurrentPosition => 'Your current position will be used';
 
   @override
   String get openSenseMapBoxSelectionNoBoxes => 'No senseBoxes available';
 
   @override
-  String get openSenseMapBoxSelectionCreateHint =>
-      'Create one using the \'+\' button';
+  String get openSenseMapBoxSelectionCreateHint => 'Create one using the \'+\' button';
 
   @override
   String get openSenseMapBoxSelectionUnnamedBox => 'Unnamed senseBox';
 
   @override
-  String get openSenseMapBoxSelectionIncompatible =>
-      'Not compatible with senseBox:bike';
+  String get openSenseMapBoxSelectionIncompatible => 'Not compatible with senseBox:bike';
 
   @override
   String get settingsGeneral => 'General';
@@ -253,16 +245,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGithub => 'GitHub issue';
 
   @override
-  String get privacyZonesStart =>
-      'Tap on the map to start drawing a zone. Tap the checkmark to finish.';
+  String get privacyZonesStart => 'Tap on the map to start drawing a zone. Tap the checkmark to finish.';
 
   @override
-  String get privacyZonesDelete =>
-      'Tap on a zone to delete it. Tap the checkmark to finish.';
+  String get privacyZonesDelete => 'Tap on a zone to delete it. Tap the checkmark to finish.';
 
   @override
-  String get trackDetailsPermissionsError =>
-      'Permission denied to save file to external storage.';
+  String get trackDetailsPermissionsError => 'Permission denied to save file to external storage.';
 
   @override
   String get trackDetailsFileSaved => 'CSV file saved to Downloads folder.';
@@ -283,8 +272,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackDelete => 'Delete Track';
 
   @override
-  String get trackDeleteConfirmation =>
-      'Are you sure you wish to delete this track?';
+  String get trackDeleteConfirmation => 'Are you sure you wish to delete this track?';
 
   @override
   String get sensorTemperature => 'Temperature';
@@ -395,31 +383,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Enable Bluetooth';
 
   @override
-  String get errorNoLocationAccess =>
-      'To record tracks, please allow the app to access the device\'s current location in the phone settings.';
+  String get errorNoLocationAccess => 'To record tracks, please allow the app to access the device\'s current location in the phone settings.';
 
   @override
-  String get errorNoScanAccess =>
-      'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.';
+  String get errorNoScanAccess => 'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.';
 
   @override
-  String get errorNoSenseBoxSelected =>
-      'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.';
+  String get errorNoSenseBoxSelected => 'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.';
 
   @override
-  String get errorExportDirectoryAccess =>
-      'Error accessing export directory. Please make sure the app has permission to access the storage.';
+  String get errorExportDirectoryAccess => 'Error accessing export directory. Please make sure the app has permission to access the storage.';
 
   @override
   String get errorLoginFailed => 'Login failed. Please check your credentials.';
 
   @override
-  String get errorRegistrationFailed =>
-      'Registration failed. Please check your credentials.';
+  String get errorRegistrationFailed => 'Registration failed. Please check your credentials.';
 
   @override
-  String get errorBleConnectionFailed =>
-      'Connect to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
+  String get errorBleConnectionFailed => 'Connect to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
 
   @override
   String get selectCsvFormat => 'Select CSV format';
@@ -434,16 +416,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDeleteAllData => 'Delete All Data';
 
   @override
-  String get settingsDeleteAllDataConfirmation =>
-      'Are you sure you want to delete all data? This action is irreversible.';
+  String get settingsDeleteAllDataConfirmation => 'Are you sure you want to delete all data? This action is irreversible.';
 
   @override
-  String get settingsDeleteAllDataSuccess =>
-      'All data has been successfully deleted.';
+  String get settingsDeleteAllDataSuccess => 'All data has been successfully deleted.';
 
   @override
-  String get settingsDeleteAllDataError =>
-      'Failed to delete all data. Please try again.';
+  String get settingsDeleteAllDataError => 'Failed to delete all data. Please try again.';
 
   @override
   String get accountManagement => 'Account Management';
@@ -455,6 +434,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalConfirmation => 'Confirmation';
 
   @override
-  String get privacyPolicyAccept =>
-      'I have read and accept the Privacy Policy.';
+  String get privacyPolicyAccept => 'I have read and accept the Privacy Policy.';
 }
