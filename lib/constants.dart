@@ -6,7 +6,7 @@ const tracksPerPage = 5;
 // LiveUploadService
 const maxRetries = 10;
 const retryPeriod = 2; // in minutes
-const premanentConnectivityFalurePeriod = 20; // in minutes
+const premanentConnectivityFalurePeriod = 10; // in minutes
 const defaultTimeout = 30; // in seconds
 
 class SharedPreferencesKeys {
@@ -28,7 +28,7 @@ const tagsUrl =
     'https://raw.githubusercontent.com/reedu-reengineering-education/sensebox-bike-flutter/main/data/locations.json'; // URL for the campaigns
 
 const classicModelSensors = [
-{
+  {
     "id": "0",
     "icon": 'osem-thermometer',
     "title": 'Temperature',
@@ -225,7 +225,7 @@ final globePosition = Geolocator.Position(
     heading: 0.0,
     headingAccuracy: 0.0,
     speed: 0.0,
-    speedAccuracy: 0.0); 
+    speedAccuracy: 0.0);
 
 const defaultCameraOptions = {
   "zoom": 16.0,
