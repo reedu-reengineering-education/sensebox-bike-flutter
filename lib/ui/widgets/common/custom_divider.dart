@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/theme.dart';
 
-class TrackDivider extends StatelessWidget {
+class CustomDivider extends StatelessWidget {
   final bool showDivider;
 
-  const TrackDivider({super.key, required this.showDivider});
+  const CustomDivider({super.key, required this.showDivider});
 
   @override
   Widget build(BuildContext context) {
