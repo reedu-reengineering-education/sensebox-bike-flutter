@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:retry/retry.dart';
 import 'dart:async';
 
 import 'package:sensebox_bike/constants.dart';
@@ -63,7 +64,7 @@ class OpenSenseMapService {
     }
 
     final responseData = jsonDecode(response.body);
-   
+
     await setTokens(response);
 
     return responseData;
@@ -81,7 +82,7 @@ class OpenSenseMapService {
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
-      
+
       await setTokens(response);
 
       return responseData;
@@ -127,8 +128,7 @@ class OpenSenseMapService {
 
     final response = await client.post(
       Uri.parse('$_baseUrl/boxes'),
-      body: jsonEncode(
-          createSenseBoxBikeModel(name, latitude, longitude,
+      body: jsonEncode(createSenseBoxBikeModel(name, latitude, longitude,
           model: model, selectedTag: selectedTag)),
       headers: {
         'Authorization': 'Bearer $accessToken',
@@ -165,45 +165,59 @@ class OpenSenseMapService {
     }
   }
 
-Future<void> uploadData(
+  Future<void> uploadData(
       String senseBoxId, Map<String, dynamic> sensorData) async {
-    final accessToken = await getAccessToken();
-    if (accessToken == null) throw Exception('Not authenticated');
-
     List<dynamic> data = sensorData.values.toList();
 
-    try {
-      final response = await client.post(
-        Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
-        body: jsonEncode(data),
-        headers: {
-          'Authorization': 'Bearer $accessToken',
-          'Content-Type': 'application/json',
-        },
-      ).timeout(
-          const Duration(seconds: defaultTimeout)); // Set a 30-second timeout
+    // API allows up to 6 requests per minute, so set maxAttempts and delays accordingly
+    final r = RetryOptions(
+      maxAttempts: 6, // 6 attempts per minute
+      delayFactor: const Duration(seconds: 10), // 10s between attempts
+      maxDelay: const Duration(seconds: 15),
+    );
 
-    if (response.statusCode == 201) {
-      debugPrint('Data uploaded');
-    } else if (response.statusCode == 401) {
-      await refreshToken();
-      return uploadData(senseBoxId, sensorData);
-      } else if (response.statusCode == 429) {
-        final retryAfter = response.headers['retry-after'];
-        if (retryAfter != null) {
-          final waitTime = int.tryParse(retryAfter) ?? defaultTimeout;
+    await r.retry(
+      () async {
+        final accessToken = await getAccessToken();
+        if (accessToken == null) throw Exception('Not authenticated');
+
+        final response = await client.post(
+          Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
+          body: jsonEncode(data),
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+            'Content-Type': 'application/json',
+          },
+        ).timeout(const Duration(seconds: defaultTimeout));
+
+        if (response.statusCode == 201) {
+          debugPrint('Data uploaded');
+          return;
+        } else if (response.statusCode == 401) {
+          await refreshToken();
+          throw Exception('Token refreshed, retrying');
+        } else if (response.statusCode == 429) {
+          final retryAfter = response.headers['retry-after'];
+          final waitTime = retryAfter != null
+              ? int.tryParse(retryAfter) ?? defaultTimeout
+              : defaultTimeout * 2;
           throw TooManyRequestsException(waitTime);
         } else {
-          throw TooManyRequestsException(defaultTimeout * 2);
+          throw Exception(
+              'Failed to upload data (${response.statusCode}) ${response.body}');
         }
-    } else {
-        throw Exception(
-            'Failed to upload data (${response.statusCode}) ${response.body}');
-      }
-    } on TimeoutException {
-      throw Exception('Request timed out after 30 seconds');
-    }
-}
+      },
+      retryIf: (e) =>
+          e is TooManyRequestsException ||
+          e.toString().contains('Token refreshed') ||
+          e is TimeoutException,
+      onRetry: (e) async {
+        if (e is TooManyRequestsException) {
+          await Future.delayed(Duration(seconds: e.retryAfter));
+        }
+      },
+    );
+  }
 
 // Define the available sensors for each model
   final Map<SenseBoxBikeModel, List<dynamic>> sensors = {
@@ -218,7 +232,7 @@ Future<void> uploadData(
     double latitude, {
     List<String>? grouptags,
     SenseBoxBikeModel model = SenseBoxBikeModel.classic,
-    String? selectedTag,    
+    String? selectedTag,
   }) {
     // Initialize the base grouptags
     final List<String> baseGroupTags = grouptags ??

@@ -38,7 +38,7 @@ class GeolocationBloc with ChangeNotifier {
         PermissionStatus status = await Permission.notification.request();
         if (status.isGranted) {
           locationSettings = AndroidSettings(
-              accuracy: LocationAccuracy.high,
+              accuracy: LocationAccuracy.best,
               foregroundNotificationConfig: const ForegroundNotificationConfig(
                   notificationText:
                       "senseBox:bike will record your location in the background",
@@ -53,10 +53,10 @@ class GeolocationBloc with ChangeNotifier {
       } else if (defaultTargetPlatform == TargetPlatform.iOS ||
           defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
-          accuracy: LocationAccuracy.high,
-          activityType: ActivityType.fitness,
+          accuracy: LocationAccuracy.best,
+          // activityType: ActivityType.fitness,
           // Only set to true if our app will be started up in the background.
-          showBackgroundLocationIndicator: false,
+          // showBackgroundLocationIndicator: false,
         );
       }
 
@@ -81,7 +81,6 @@ class GeolocationBloc with ChangeNotifier {
 
         notifyListeners();
       });
-
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }

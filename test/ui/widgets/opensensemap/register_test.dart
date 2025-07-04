@@ -4,10 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/register.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import '../../../test_helpers.dart';
 
 class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {}
+
 class MockNavigatorObserver extends Mock implements NavigatorObserver {}
 
 void main() {
@@ -45,13 +46,16 @@ void main() {
     );
   }
 
-  Future<void> enterTextData (WidgetTester tester) async {
+  Future<void> enterTextData(WidgetTester tester) async {
     await tester.enterText(find.byType(TextFormField).at(0), 'Test User');
-    await tester.enterText(find.byType(TextFormField).at(1), 'test@example.com');
+    await tester.enterText(
+        find.byType(TextFormField).at(1), 'test@example.com');
     await tester.enterText(find.byType(TextFormField).at(2), 'password123');
     await tester.enterText(find.byType(TextFormField).at(3), 'password123');
   }
-  testWidgets('renders RegisterForm with all fields', (WidgetTester tester) async {
+
+  testWidgets('renders RegisterForm with all fields',
+      (WidgetTester tester) async {
     await tester.pumpWidget(createTestWidget());
 
     expect(find.text('Name'), findsOneWidget);
@@ -62,7 +66,8 @@ void main() {
     expect(find.textContaining('Register'), findsOneWidget);
   });
 
-  testWidgets('shows error when privacy policy checkbox is not checked', (WidgetTester tester) async {
+  testWidgets('shows error when privacy policy checkbox is not checked',
+      (WidgetTester tester) async {
     await tester.pumpWidget(createTestWidget());
     await enterTextData(tester);
     await tester.tap(find.textContaining('Register'));
@@ -71,7 +76,8 @@ void main() {
     expect(find.text('You must accept the privacy policy'), findsOneWidget);
   });
 
-  testWidgets('does not show error when privacy policy checkbox is checked', (WidgetTester tester) async {
+  testWidgets('does not show error when privacy policy checkbox is checked',
+      (WidgetTester tester) async {
     await tester.pumpWidget(createTestWidget());
     await tester.tap(find.byType(Checkbox));
     await tester.pump();

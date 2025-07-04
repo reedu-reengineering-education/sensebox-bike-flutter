@@ -8,7 +8,7 @@ import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/common/email_field.dart';
 import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 class LoginForm extends StatefulWidget {
   final OpenSenseMapBloc bloc;
@@ -58,23 +58,23 @@ class _LoginFormState extends State<LoginForm> {
               ),
               const CustomSpacer(),
               ButtonWithLoader(
-                  isLoading: isLoading,
+                isLoading: isLoading,
                 text: AppLocalizations.of(context)!.generalLogin,
-                  width: 0.4,
-                  onPressed: isLoading
-                      ? null // Disable button when loading
-                      : () async {
-                        bool isLoginSuccessful = false; 
+                width: 0.4,
+                onPressed: isLoading
+                    ? null // Disable button when loading
+                    : () async {
+                        bool isLoginSuccessful = false;
                         if (formKey.currentState?.validate() == true) {
                           setState(() {
                             isLoading = true; // Start loading
                           });
 
                           try {
-                              await widget.bloc.login(
+                            await widget.bloc.login(
                               emailController.value.text,
                               passwordController.value.text,
-                              );
+                            );
                             isLoginSuccessful = true;
                           } catch (e, stack) {
                             ErrorService.handleError(LoginError(e), stack,
@@ -94,8 +94,8 @@ class _LoginFormState extends State<LoginForm> {
                               ),
                             );
                           }
-                          }
-                        },
+                        }
+                      },
               ),
             ],
           ),

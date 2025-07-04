@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 void main() {
   Widget buildTestWidget(void Function(BuildContext) testBody) {
@@ -102,7 +102,8 @@ void main() {
       expect(result, 'VeryLong...');
     });
 
-    test('does not truncate box name shorter than or equal to 10 characters', () {
+    test('does not truncate box name shorter than or equal to 10 characters',
+        () {
       final result = truncateBoxName('ShortName');
       expect(result, 'ShortName');
     });

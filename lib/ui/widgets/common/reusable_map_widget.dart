@@ -28,9 +28,9 @@ class ReusableMapWidget extends StatefulWidget {
   _ReusableMapWidgetState createState() => _ReusableMapWidgetState();
 }
 
-class _ReusableMapWidgetState extends State<ReusableMapWidget>
-    with WidgetsBindingObserver {
+class _ReusableMapWidgetState extends State<ReusableMapWidget> with WidgetsBindingObserver {
   late MapboxMap mapInstance;
+  AppLifecycleState? _lastLifecycleState;
 
   @override
   void initState() {
@@ -48,12 +48,25 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget>
     super.didChangePlatformBrightness();
 
     // Adjust map theme based on app's brightness (dark/light)
-    String style = MediaQuery.platformBrightnessOf(context) == Brightness.dark
-        ? "day"
-        : "night";
+    _updateMapStyle();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    _lastLifecycleState = state;
+    if (state == AppLifecycleState.resumed) {
+      // When app comes to foreground, update map style
+      _updateMapStyle();
+    }
+  }
+
+  void _updateMapStyle() {
+    // Use Theme.of(context).brightness for current theme
+    if (!mounted) return;
+    String style = Theme.of(context).brightness == Brightness.dark ? "night" : "day";
     try {
-      mapInstance.style
-        .setStyleImportConfigProperty("basemap", "lightPreset", style);
+      mapInstance.style.setStyleImportConfigProperty("basemap", "lightPreset", style);
     } catch (e) {
       debugPrint('Error setting style property: $e');
     }
@@ -71,16 +84,7 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget>
     return MapWidget(
       styleUri: 'mapbox://styles/felixaetem/cm20uojq2004201o132dw50nl',
       onStyleLoadedListener: (styleLoadedEventData) {
-        // Adjust map theme based on app's brightness (dark/light)
-        String style =
-            Theme.of(context).brightness == Brightness.dark ? "night" : "day";
-        try {
-          mapInstance.style
-            .setStyleImportConfigProperty("basemap", "lightPreset", style);
-        } catch (e) {
-          debugPrint('Error setting style property: $e');
-        }
-
+        _updateMapStyle();
         if (widget.onStyleLoadedCallback != null) {
           widget.onStyleLoadedCallback!(mapInstance);
         }

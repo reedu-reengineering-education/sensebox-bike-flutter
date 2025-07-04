@@ -15,7 +15,7 @@ import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection_modal.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
@@ -90,7 +90,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 pinned: true,
               ),
-SliverSafeArea(
+              SliverSafeArea(
                 minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                 sliver: ValueListenableBuilder<BluetoothDevice?>(
                   valueListenable: bleBloc.selectedDeviceNotifier,
@@ -119,13 +119,13 @@ class _SenseBoxSelectionButton extends StatelessWidget {
     final OpenSenseMapBloc osemBloc = Provider.of<OpenSenseMapBloc>(context);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    
+
     // Show the button only if the user is authenticated
     if (!osemBloc.isAuthenticated) {
       return const SizedBox
           .shrink(); // Return an empty widget if not authenticated
     }
-  
+
     return IconButton.outlined(
         style: OutlinedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
@@ -164,8 +164,7 @@ class _SenseBoxSelectionButton extends StatelessWidget {
                 children: [
                   Icon(Icons.check, color: colorScheme.tertiary),
                   const SizedBox(width: 8),
-                  Text(
-                    truncateBoxName(selectedBox.name ?? ''),
+                  Text(truncateBoxName(selectedBox.name ?? ''),
                       style: textTheme.bodyMedium
                           ?.copyWith(color: colorScheme.tertiary)),
                 ],
@@ -308,6 +307,7 @@ class _ConnectButton extends StatelessWidget {
     );
   }
 }
+
 // Start/Stop button
 class _StartStopButton extends StatelessWidget {
   final RecordingBloc recordingBloc;

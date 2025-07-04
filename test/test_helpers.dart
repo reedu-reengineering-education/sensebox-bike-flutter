@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:isar/isar.dart';
 import 'package:provider/provider.dart';
@@ -16,16 +16,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Initializes common test dependencies
 void initializeTestDependencies() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   // Mock SharedPreferences
-  const MethodChannel channel = 
+  const MethodChannel channel =
       MethodChannel('plugins.flutter.io/shared_preferences');
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(
     channel,
     (MethodCall methodCall) async {
       if (methodCall.method == 'getAll') {
-        return <String, dynamic>{}; 
+        return <String, dynamic>{};
       }
       return null;
     },
@@ -34,7 +34,8 @@ void initializeTestDependencies() {
   // Ensure SharedPreferences is initialized
   SharedPreferences.setMockInitialValues({});
 }
-/// Creates a MaterialApp wrapper with localization support 
+
+/// Creates a MaterialApp wrapper with localization support
 Widget createLocalizedTestApp({
   required Widget child,
   required Locale locale,
@@ -63,7 +64,6 @@ Future<void> tapElement(
   await tester.tap(element);
   await tester.pumpAndSettle();
 }
-
 
 Future<Isar> initializeInMemoryIsar() async {
   await Isar.initializeIsarCore(download: true);

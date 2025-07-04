@@ -1,7 +1,7 @@
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 
 void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
@@ -117,7 +117,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                         },
                       );
                     },
-                    separatorBuilder: (context, index) => const CustomSpacer(), 
+                    separatorBuilder: (context, index) => const CustomSpacer(),
                   );
                 },
               ),

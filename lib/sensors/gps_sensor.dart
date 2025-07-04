@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 class GPSSensor extends Sensor {
   double _latestLat = 0.0;
@@ -97,7 +97,7 @@ class GPSSensor extends Sensor {
       } catch (e) {
         debugPrint('Error updating circle annotations: $e');
       }
-      
+
       if (mapInstance == null) {
         debugPrint('Warning: mapInstance is not initialized yet.');
         return;
@@ -147,7 +147,6 @@ class GPSSensor extends Sensor {
           );
         },
       );
-      
     }
     return Card(
       elevation: 1,
