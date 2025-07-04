@@ -3,8 +3,8 @@ import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -101,21 +101,10 @@ class TracksScreenState extends State<TracksScreen> {
                     thumbVisibility: true,
                     thickness: 2,
                     child: ListView.separated(
-                      separatorBuilder: (context, index) {
-                        // Do not show divider after the last track before the "Load More" button
-                        if (index == _displayedTracks.length - 1 &&
-                            _hasMoreTracks) {
-                          return const SizedBox.shrink();
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                              left: spacing * 2, right: spacing * 2),
-                          child: Divider(
-                            height: 1,
-                            color: colorScheme.primaryFixedDim,
-                          ),
-                        );
-                      },
+                      separatorBuilder: (context, index) => TrackDivider(
+                        showDivider: !(index == _displayedTracks.length - 1 &&
+                            _hasMoreTracks),
+                      ),
                       controller: _scrollController,
                       itemCount: _hasMoreTracks
                           ? _displayedTracks.length + 1 // Add 1 for "Load More"
