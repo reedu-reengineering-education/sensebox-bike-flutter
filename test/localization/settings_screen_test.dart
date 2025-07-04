@@ -75,7 +75,13 @@ void main() {
       expect(find.text('Privacy Zones'), findsOneWidget);
       expect(find.text('Other'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
-      expect(find.text('Privacy Policy'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text('Privacy Policy'),
+        200.0,
+      );
+      await tester.pumpAndSettle();
+
       expect(find.text('Help or feedback?'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
@@ -91,7 +97,13 @@ void main() {
       expect(find.text('Privatzonen'), findsOneWidget);
       expect(find.text('Andere'), findsOneWidget);
       expect(find.text('Über die App'), findsOneWidget);
-      expect(find.text('Datenschutz'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text('Datenschutz'),
+        200.0,
+      );
+      await tester.pumpAndSettle();
+
       expect(find.text('Hilfe oder Feedback?'), findsOneWidget);
       expect(find.text('E-Mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
@@ -107,7 +119,13 @@ void main() {
       expect(find.text('Áreas de Privacidade'), findsOneWidget);
       expect(find.text('Outros'), findsOneWidget);
       expect(find.text('Sobre'), findsOneWidget);
-      expect(find.text('Política de Privacidade'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text('Política de Privacidade'),
+        200.0,
+      );
+      await tester.pumpAndSettle();
+
       expect(find.text('Ajuda ou feedback?'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);

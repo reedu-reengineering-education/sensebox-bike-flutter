@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 
@@ -102,4 +103,55 @@ Color sensorColorForValue({
       return Color.lerp(Colors.orange, Colors.red, t)!;
     }
   }
+}
+
+List<String> order = [
+  'temperature',
+  'humidity',
+  'distance',
+  'overtaking',
+  'surface_classification_asphalt',
+  'surface_classification_compacted',
+  'surface_classification_paving',
+  'surface_classification_sett',
+  'surface_classification_standing',
+  'surface_anomaly',
+  'acceleration_x',
+  'acceleration_y',
+  'acceleration_z',
+  'finedust_pm1',
+  'finedust_pm2.5',
+  'finedust_pm4',
+  'finedust_pm10',
+  'gps_latitude',
+  'gps_longitude',
+  'gps_speed',
+];
+
+List<Map<String, String?>> buildSensorTiles(List<SensorData> sensorData) {
+  List<Map<String, String?>> sensorTitles = sensorData
+      .map((e) => {'title': e.title, 'attribute': e.attribute})
+      .map((map) => map.entries.map((e) => '${e.key}:${e.value}').join(','))
+      .toSet()
+      .map((str) {
+    var entries = str.split(',').map((e) => e.split(':'));
+    return Map<String, String?>.fromEntries(
+      entries.map((e) => MapEntry(e[0], e[1] == 'null' ? null : e[1])),
+    );
+  }).toList();
+
+  // Filter out surface_anomaly if the feature flag is enabled
+  if (FeatureFlags.hideSurfaceAnomalySensor) {
+    sensorTitles.removeWhere((sensor) => sensor['title'] == 'surface_anomaly');
+  }
+
+  sensorTitles.sort((a, b) {
+    int indexA = order.indexOf(
+        '${a['title']}${a['attribute'] == null ? '' : '_${a['attribute']}'}');
+    int indexB = order.indexOf(
+        '${b['title']}${b['attribute'] == null ? '' : '_${b['attribute']}'}');
+    return indexA.compareTo(indexB);
+  });
+
+  return sensorTitles;
 }

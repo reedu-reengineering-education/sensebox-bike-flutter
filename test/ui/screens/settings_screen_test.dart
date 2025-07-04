@@ -73,7 +73,8 @@ void main() {
       ),
     );
 
-    await tester.scrollUntilVisible(find.text('Privacy Policy'), 100.0);
+    await tester.scrollUntilVisible(find.text('Privacy Policy'), 200.0);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Privacy Policy'));
     await tester.pumpAndSettle();
 

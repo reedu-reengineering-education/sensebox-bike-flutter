@@ -112,4 +112,9 @@ class IsarService {
       throw Exception("Failed to delete all data.");
     }
   }
+
+  Future<List<TrackData>> getTracksPaginated(
+      {required int offset, required int limit}) {
+    return trackService.getTracksPaginated(offset: offset, limit: limit);
+  }
 }
