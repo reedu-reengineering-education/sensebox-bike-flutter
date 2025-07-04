@@ -204,5 +204,6 @@
     "tracksStatisticsThisWeekInfo": "Statistics for the current week",
     "tracksStatisticsRidesInfo": "rides completed",
     "tracksStatisticsDistanceInfo": "distance traveled",
-    "tracksStatisticsTimeInfo": "time spent on the road"
+    "tracksStatisticsTimeInfo": "time spent on the road",
+    "trackStatistics": "Track Statistics"
 }
