@@ -129,7 +129,7 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
           : ListView.separated(
               itemCount: stats.length,
               separatorBuilder: (context, index) =>
-                  TrackDivider(showDivider: true),
+                  CustomDivider(showDivider: true),
               itemBuilder: (context, index) => stats[index],
             ),
     );

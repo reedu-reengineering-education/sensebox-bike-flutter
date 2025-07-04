@@ -99,7 +99,7 @@ class TracksScreenState extends State<TracksScreen> {
                     thumbVisibility: true,
                     thickness: 2,
                     child: ListView.separated(
-                      separatorBuilder: (context, index) => TrackDivider(
+                      separatorBuilder: (context, index) => CustomDivider(
                         showDivider: !(index == _displayedTracks.length - 1 &&
                             _hasMoreTracks),
                       ),

@@ -4,6 +4,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 
 void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
   Object? scanError;
@@ -109,13 +110,8 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
             }
 
             return ListView.separated(
-              separatorBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: spacing * 2),
-                child: Divider(
-                  height: 1,
-                  color: colorScheme.primaryFixedDim,
-                ),
-              ),
+              separatorBuilder: (context, index) =>
+                  CustomDivider(showDivider: true),
               itemCount: devices.length,
               itemBuilder: (context, index) {
                 final device = devices[index];
