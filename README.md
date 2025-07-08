@@ -39,6 +39,19 @@ This Flutter app connects to a [senseBox device](https://sensebox.de/en/products
 
     This command will build and install the app on your connected device or emulator.
 
+### Seeding Test Data
+
+To populate the app with sample data for development or testing, use the provided seeding function:
+
+    ```
+    await seedIsarWithSampleData(isarService);
+    ```
+*   This will generate several tracks, geolocations, and sensor data in your local database.
+*   You can call this function in your app’s initialization code, or a dedicated admin/debug screen.
+
+**Note:**
+Seeding will only affect your local Isar database and is safe for development and testing purposes.
+
 ## Troubleshooting
 
 If you run into issues while running the app, you can take the following troubleshooting steps:
