@@ -11,135 +11,137 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 
+// Sensor types and their value ranges
+final sensorSpecs = [
+  {
+    'title': 'temperature',
+    'characteristicUuid': TemperatureSensor.sensorCharacteristicUuid,
+    'attribute': null,
+    'min': 15.0,
+    'max': 30.0,
+    'unit': '°C',
+  },
+  {
+    'title': 'humidity',
+    'characteristicUuid': HumiditySensor.sensorCharacteristicUuid,
+    'attribute': null,
+    'min': 0.0,
+    'max': 100.0,
+    'unit': '%',
+  },
+  {
+    'title': 'finedust',
+    'characteristicUuid': FinedustSensor.sensorCharacteristicUuid,
+    'attribute': 'pm1',
+    'min': 5.0,
+    'max': 50.0,
+    'unit': 'µg/m³',
+  },
+  {
+    'title': 'finedust',
+    'characteristicUuid': FinedustSensor.sensorCharacteristicUuid,
+    'attribute': 'pm2.5',
+    'min': 5.0,
+    'max': 50.0,
+    'unit': 'µg/m³',
+  },
+  {
+    'title': 'finedust',
+    'characteristicUuid': FinedustSensor.sensorCharacteristicUuid,
+    'attribute': 'pm4',
+    'min': 5.0,
+    'max': 50.0,
+    'unit': 'µg/m³',
+  },
+  {
+    'title': 'finedust',
+    'characteristicUuid': FinedustSensor.sensorCharacteristicUuid,
+    'attribute': 'pm10',
+    'min': 5.0,
+    'max': 50.0,
+    'unit': 'µg/m³',
+  },
+  {
+    'title': 'overtaking',
+    'characteristicUuid': OvertakingPredictionSensor.sensorCharacteristicUuid,
+    'attribute': null,
+    'min': 0.0,
+    'max': 100.0,
+    'unit': '%',
+  },
+  {
+    'title': 'distance',
+    'characteristicUuid': DistanceSensor.sensorCharacteristicUuid,
+    'attribute': null,
+    'min': 0.0,
+    'max': 200.0,
+    'unit': 'cm',
+  },
+  {
+    'title': 'surface_classification',
+    'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
+    'attribute': 'asphalt',
+    'min': 0.0,
+    'max': 100.0,
+    'unit': '%',
+  },
+  {
+    'title': 'surface_classification',
+    'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
+    'attribute': 'sett',
+    'min': 0.0,
+    'max': 100.0,
+    'unit': '%',
+  },
+  {
+    'title': 'surface_classification',
+    'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
+    'attribute': 'compacted',
+    'min': 0.0,
+    'max': 100.0,
+    'unit': '%',
+  },
+  {
+    'title': 'surface_classification',
+    'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
+    'attribute': 'paving',
+    'min': 0.0,
+    'max': 100.0,
+    'unit': '%',
+  },
+  {
+    'title': 'surface_classification',
+    'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
+    'attribute': 'standing',
+    'min': 0.0,
+    'max': 100.0,
+    'unit': '%',
+  },
+  {
+    'title': 'gps',
+    'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
+    'attribute': 'speed',
+    'min': 0.0,
+    'max': 5.0,
+    'unit': 'm/s',
+  },
+];
+
 Future<void> seedIsarWithSampleData(IsarService isarService) async {
   final random = Random();
   const int numTracks = 5;
   const int minDurationSec = 2 * 60; // 2 minutes
   const int maxDurationSec = 60 * 60; // 1 hour
   const int geolocationsPerMinute = 10; // 10 geolocations per minute
-  const double geolocationsPerSecond = geolocationsPerMinute / 60.0; // ≈ 0.1667 per second
+  const double geolocationsPerSecond =
+      geolocationsPerMinute / 60.0; // ≈ 0.1667 per second
   final now = DateTime.now();
 
-  // Sensor types and their value ranges
-  final sensorSpecs = [
-    {
-      'title': 'temperature',
-      'characteristicUuid': TemperatureSensor.sensorCharacteristicUuid,
-      'attribute': null,
-      'min': 15.0,
-      'max': 30.0,
-      'unit': '°C',
-    },
-    {
-      'title': 'humidity',
-      'characteristicUuid': HumiditySensor.sensorCharacteristicUuid,
-      'attribute': null,
-      'min': 0.0,
-      'max': 100.0,
-      'unit': '%',
-    },
-    {
-      'title': 'finedust',
-      'characteristicUuid': FinedustSensor.sensorCharacteristicUuid,
-      'attribute': 'pm1',
-      'min': 5.0,
-      'max': 50.0,
-      'unit': 'µg/m³',
-    },
-    {
-      'title': 'finedust',
-      'characteristicUuid': FinedustSensor.sensorCharacteristicUuid,
-      'attribute': 'pm2.5',
-      'min': 5.0,
-      'max': 50.0,
-      'unit': 'µg/m³',
-    },
-    {
-      'title': 'finedust',
-      'characteristicUuid': FinedustSensor.sensorCharacteristicUuid,
-      'attribute': 'pm4',
-      'min': 5.0,
-      'max': 50.0,
-      'unit': 'µg/m³',
-    },
-    {
-      'title': 'finedust',
-      'characteristicUuid': FinedustSensor.sensorCharacteristicUuid,
-      'attribute': 'pm10',
-      'min': 5.0,
-      'max': 50.0,
-      'unit': 'µg/m³',
-    },
-    {
-      'title': 'overtaking',
-      'characteristicUuid': OvertakingPredictionSensor.sensorCharacteristicUuid,
-      'attribute': null,
-      'min': 0.0,
-      'max': 100.0,
-      'unit': '%',
-    },
-    {
-      'title': 'distance',
-      'characteristicUuid': DistanceSensor.sensorCharacteristicUuid,
-      'attribute': null,
-      'min': 0.0,
-      'max': 200.0,
-      'unit': 'cm',
-    },
-    {
-      'title': 'surface_classification',
-      'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
-      'attribute': 'asphalt',
-      'min': 0.0,
-      'max': 100.0,
-      'unit': '%',
-    },
-    {
-      'title': 'surface_classification',
-      'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
-      'attribute': 'sett',
-      'min': 0.0,
-      'max': 100.0,
-      'unit': '%',
-    },
-    {
-      'title': 'surface_classification',
-      'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
-      'attribute': 'compacted',
-      'min': 0.0,
-      'max': 100.0,
-      'unit': '%',
-    },
-    {
-      'title': 'surface_classification',
-      'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
-      'attribute': 'paving',
-      'min': 0.0,
-      'max': 100.0,
-      'unit': '%',
-    },
-    {
-      'title': 'surface_classification',
-      'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
-      'attribute': 'standing',
-      'min': 0.0,
-      'max': 100.0,
-      'unit': '%',
-    },
-    {
-      'title': 'gps',
-      'characteristicUuid': SurfaceClassificationSensor.sensorCharacteristicUuid,
-      'attribute': 'speed',
-      'min': 0.0,
-      'max': 5.0,
-      'unit': 'm/s',
-    },
-  ];
+
 
   final isar = await isarService.isarProvider.getDatabase();
   for (int t = 0; t < numTracks; t++) {
     await isar.writeTxn(() async {
-      debugPrint('//// Seeding track $t of $numTracks');
       // Random start time within last 30 days
       final startOffset = random.nextInt(30 * 24 * 60 * 60); // seconds
       final startTime = now.subtract(Duration(seconds: startOffset));
@@ -155,7 +157,6 @@ Future<void> seedIsarWithSampleData(IsarService isarService) async {
 
       final track = TrackData();
       await isar.trackDatas.put(track);
-      debugPrint('//// Track ID: ${track.id}');
       List<GeolocationData> geos = [];
       for (int i = 0; i < numGeolocations; i++) {
         lat += (random.nextDouble() - 0.5) * 0.01;
@@ -176,7 +177,6 @@ Future<void> seedIsarWithSampleData(IsarService isarService) async {
       }
       await isar.geolocationDatas.putAll(geos);
       track.geolocations.addAll(geos);
-      debugPrint('//// Geolocations: ${geos.length}');
       // For each geolocation, generate sensor data
       List<SensorData> allSensors = [];
       for (final geo in geos) {
@@ -191,6 +191,8 @@ Future<void> seedIsarWithSampleData(IsarService isarService) async {
           double value;
           if (spec['title'].toString().startsWith('surface_classification')) {
             value = surfacePercentages[surfaceIdx++];
+          } else if (spec['title'] == 'gps' && spec['attribute'] == 'speed') {
+            value = geo.speed;
           } else {
             value = (spec['min']! as double) +
                 random.nextDouble() *
@@ -206,14 +208,12 @@ Future<void> seedIsarWithSampleData(IsarService isarService) async {
         }
       }
       await isar.sensorDatas.putAll(allSensors);
-      debugPrint('//// Sensors: ${allSensors.length}');
       // Link sensors to geolocations
       for (int i = 0, geoIdx = 0; geoIdx < geos.length; geoIdx++) {
         final geo = geos[geoIdx];
         geo.sensorData.addAll(allSensors.skip(i).take(sensorSpecs.length));
         i += sensorSpecs.length;
       }
-      debugPrint('//// Sensors linked to geolocations');
       // Save all links
       await track.geolocations.save();
       for (final geo in geos) {
@@ -223,7 +223,6 @@ Future<void> seedIsarWithSampleData(IsarService isarService) async {
       for (final sensor in allSensors) {
         await sensor.geolocationData.save();
       }
-      debugPrint('//// Track $t seeded successfully');
     });
   }
 }
