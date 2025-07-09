@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +13,6 @@ import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
@@ -23,24 +21,22 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class TrackDetailScreen extends StatefulWidget {
-  final int id;
+  final TrackData track;
 
-  const TrackDetailScreen({super.key, required this.id});
+  const TrackDetailScreen({super.key, required this.track});
 
   @override
-  State<TrackDetailScreen> createState() => _TrackDetailScreenState(id);
+  State<TrackDetailScreen> createState() => _TrackDetailScreenState();
 }
 
 class _TrackDetailScreenState extends State<TrackDetailScreen> {
   late final IsarService isarService;
-  late Future<TrackData?> _trackFuture;
   late Future<List<SensorData>> _sensorDataFuture;
 
-  final int id;
   bool _isDownloading = false; // Flag to show loading spinner
   late String _sensorType = 'temperature'; // Default sensor type
 
-  _TrackDetailScreenState(this.id);
+  _TrackDetailScreenState();
 
   @override
   void initState() {
@@ -52,9 +48,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   void _fetchTrackData() {
-    _trackFuture = isarService.trackService.getTrackById(widget.id);
+    // _trackFuture = isarService.trackService.getTrackById(widget.track.id);
     _sensorDataFuture =
-        isarService.sensorService.getSensorDataByTrackId(widget.id);
+        isarService.sensorService.getSensorDataByTrackId(widget.track.id);
   }
 
   Future<void> _shareFile(String filePath) async {
@@ -138,9 +134,10 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
       if (isOpenSourceMapCompatible) {
         csvFilePath =
-            await isarService.exportTrackToCsvInOpenSenseMapFormat(id);
+            await isarService
+            .exportTrackToCsvInOpenSenseMapFormat(widget.track.id);
       } else {
-        csvFilePath = await isarService.exportTrackToCsv(id);
+        csvFilePath = await isarService.exportTrackToCsv(widget.track.id);
       }
 
       // if android, save to external storage
@@ -236,61 +233,33 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     );
   }
 
-  Future<List<dynamic>> get _combinedFutures =>
-      Future.wait([_trackFuture, _sensorDataFuture]);
-
-  Widget _buildAppBarTitle(
-      BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
-    final localizations = AppLocalizations.of(context)!;
-
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(child: Loader(light: true));
-    } else if (snapshot.hasError) {
-      return Text(localizations.trackDetailsLoadingError);
-    } else if (!snapshot.hasData ||
-        snapshot.data![0] == null ||
-        (snapshot.data![1] as List).isEmpty) {
-      return Row(children: [Text(localizations.trackDetailsNoTrackData)]);
-    } else {
-      final track = snapshot.data![0] as TrackData;
-      final sensorData = snapshot.data![1] as List<SensorData>;
-      final isDisabled = sensorData.isEmpty;
-
-      return Row(
-        children: [
-          Text(DateFormat('yyyy-MM-dd HH:mm')
-              .format(track.geolocations.first.timestamp)),
-          const Spacer(),
-          ExportButton(
-            isDownloading: _isDownloading,
-            isDisabled: isDisabled,
-            onExport: (selectedFormat) async {
-              if (selectedFormat == 'regular') {
-                await _exportTrackToCsv();
-              } else if (selectedFormat == 'openSenseMap') {
-                await _exportTrackToCsv(isOpenSourceMapCompatible: true);
-              }
-            },
-          ),
-        ],
-      );
-    }
+  Widget _buildAppBarTitle(TrackData track) {
+    return Row(
+      children: [
+        Text(trackName(track)),
+        const Spacer(),
+        ExportButton(
+          isDisabled: false,
+          isDownloading: _isDownloading,
+          onExport: (selectedFormat) async {
+            if (selectedFormat == 'regular') {
+              await _exportTrackToCsv();
+            } else if (selectedFormat == 'openSenseMap') {
+              await _exportTrackToCsv(isOpenSourceMapCompatible: true);
+            }
+          },
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: FutureBuilder<List<dynamic>>(
-          future: _combinedFutures,
-          builder: (context, snapshot) => _buildAppBarTitle(context, snapshot),
-        ),
-      ),
+      appBar: AppBar(title: _buildAppBarTitle(widget.track)),
       body: SafeArea(
         minimum: const EdgeInsets.only(bottom: 8),
-        child: _buildFutureBuilder<TrackData?>(
-          future: _trackFuture,
-          builder: (track) => Column(
+        child: Column(
             children: [
               Expanded(
                 child: Padding(
@@ -299,7 +268,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                     clipBehavior: Clip.hardEdge,
                     elevation: 4,
                     child: TrajectoryWidget(
-                      geolocationData: track!.geolocations.toList(),
+                    geolocationData: widget.track.geolocations.toList(),
                       sensorType: _sensorType,
                     ),
                   ),
@@ -324,24 +293,24 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                               ], // Gradient from https://learnui.design/tools/gradient-generator.html
                               tileMode: TileMode.mirror,
                             ))),
-                    _buildFutureBuilder<TrackData?>(
-                      future: _trackFuture,
-                      builder: (track) => Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(getMinSensorValue(
-                                    track!.geolocations.toList(), _sensorType)
-                                .toStringAsFixed(1)),
-                            const Spacer(),
-                            Text(getMaxSensorValue(
-                                    track.geolocations.toList(), _sensorType)
-                                .toStringAsFixed(1)),
-                          ]),
-                      errorText: AppLocalizations.of(context)!
-                          .trackDetailsLoadingError,
-                      noDataText:
-                          AppLocalizations.of(context)!.trackDetailsNoTrackData,
-                    )
+                  // _buildFutureBuilder<TrackData?>(
+                  //   future: _trackFuture,
+                  //   builder: (track) => Row(
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         Text(getMinSensorValue(
+                  //                 track!.geolocations.toList(), _sensorType)
+                  //             .toStringAsFixed(1)),
+                  //         const Spacer(),
+                  //         Text(getMaxSensorValue(
+                  //                 track.geolocations.toList(), _sensorType)
+                  //             .toStringAsFixed(1)),
+                  //       ]),
+                  //   errorText: AppLocalizations.of(context)!
+                  //       .trackDetailsLoadingError,
+                  //   noDataText:
+                  //       AppLocalizations.of(context)!.trackDetailsNoTrackData,
+                  // )
                   ])),
               SizedBox(
                 height: 100,
@@ -462,10 +431,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                   },
                 ),
               )
-            ],
-          ),
-          errorText: AppLocalizations.of(context)!.trackDetailsLoadingError,
-          noDataText: AppLocalizations.of(context)!.trackDetailsNoTrackData,
+          ],
         ),
       ),
     );

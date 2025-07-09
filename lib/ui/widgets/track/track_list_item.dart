@@ -66,7 +66,7 @@ class TrackListItem extends StatelessWidget {
             onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => TrackDetailScreen(id: track.id)),
+                      builder: (context) => TrackDetailScreen(track: track)),
                 ),
             child: Padding(
                 padding: const EdgeInsets.all(8),
