@@ -108,7 +108,7 @@ Color sensorColorForValue({
 
 String trackName(TrackData track) {
   String trackStart =
-      DateFormat('yyyy-MM-dd HH:mm').format(track.geolocations.first.timestamp);
+      DateFormat('dd-MM-yyyy HH:mm').format(track.geolocations.first.timestamp);
   String trackEnd =
       DateFormat('HH:mm').format(track.geolocations.last.timestamp);
 
