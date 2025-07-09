@@ -234,9 +234,11 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   Widget _buildAppBarTitle(TrackData track) {
+    String errorMessage = AppLocalizations.of(context)!.trackDetailsNoData;
+
     return Row(
       children: [
-        Text(trackName(track)),
+        Text(trackName(track, errorMessage: errorMessage)),
         const Spacer(),
         ExportButton(
           isDisabled: false,

@@ -106,7 +106,11 @@ Color sensorColorForValue({
   }
 }
 
-String trackName(TrackData track) {
+String trackName(TrackData track, {String errorMessage = "No data available"}) {
+  if (track.geolocations.isEmpty) {
+    return errorMessage;
+  }
+
   String trackStart =
       DateFormat('dd-MM-yyyy HH:mm').format(track.geolocations.first.timestamp);
   String trackEnd =
