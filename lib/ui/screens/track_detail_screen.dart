@@ -171,6 +171,10 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   Widget build(BuildContext context) {
     final geolocations = widget.track.geolocations.toList();
     final sensorData = geolocations.first.sensorData.toList();
+    final minSensorValue =
+        getMinSensorValue(geolocations, _sensorType).toStringAsFixed(1);
+    final maxSensorValue =
+        getMaxSensorValue(geolocations, _sensorType).toStringAsFixed(1);
 
     return Scaffold(
       appBar: AppBar(title: _buildAppBarTitle(widget.track)),
@@ -189,45 +193,31 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 ),
               ),
             ),
-            // Padding(
-            //     padding: const EdgeInsets.symmetric(horizontal: 12),
-            //     child: Column(children: [
-            //       Container(
-            //           height: 12,
-            //           decoration: const BoxDecoration(
-            //               borderRadius: BorderRadius.all(
-            //                 Radius.circular(20),
-            //               ),
-            //               gradient: LinearGradient(
-            //                 begin: Alignment.centerLeft,
-            //                 end: Alignment.centerRight,
-            //                 colors: <Color>[
-            //                   Colors.green,
-            //                   Colors.orange,
-            //                   Colors.red,
-            //                 ], // Gradient from https://learnui.design/tools/gradient-generator.html
-            //                 tileMode: TileMode.mirror,
-            //               ))),
-            //     // _buildFutureBuilder<TrackData?>(
-            //     //   future: _trackFuture,
-            //     //   builder: (track) => Row(
-            //     //       mainAxisAlignment: MainAxisAlignment.center,
-            //     //       children: [
-            //     //         Text(getMinSensorValue(
-            //     //                 track!.geolocations.toList(), _sensorType)
-            //     //             .toStringAsFixed(1)),
-            //     //         const Spacer(),
-            //     //         Text(getMaxSensorValue(
-            //     //                 track.geolocations.toList(), _sensorType)
-            //     //             .toStringAsFixed(1)),
-            //     //       ]),
-            //     //   errorText: AppLocalizations.of(context)!
-            //     //       .trackDetailsLoadingError,
-            //     //   noDataText:
-            //     //       AppLocalizations.of(context)!.trackDetailsNoTrackData,
-            //     // )
-            //     ])),
-              
+            Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(children: [
+                  Container(
+                      height: 12,
+                      decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(20),
+                          ),
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: <Color>[
+                              Colors.green,
+                              Colors.orange,
+                              Colors.red,
+                            ], // Gradient from https://learnui.design/tools/gradient-generator.html
+                            tileMode: TileMode.mirror,
+                          ))),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Text(minSensorValue),
+                    const Spacer(),
+                    Text(maxSensorValue)
+                  ])
+                ])),
             SizedBox(
                 height: 100,
                 child: SensorTileList(
