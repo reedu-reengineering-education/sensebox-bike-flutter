@@ -218,18 +218,15 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                     Text(maxSensorValue)
                   ])
                 ])),
-            SizedBox(
-                height: 100,
-                child: SensorTileList(
-                  sensorData: sensorData,
-                  selectedSensorType: _sensorType,
-                  onSensorTypeSelected: (type) {
-                    setState(() {
-                      _sensorType = type;
-                    });
-                  },
-                )
-          ),
+            SensorTileList(
+              sensorData: sensorData,
+              selectedSensorType: _sensorType,
+              onSensorTypeSelected: (type) {
+                setState(() {
+                  _sensorType = type;
+                });
+              },
+            )
           ],
         ),
       ),

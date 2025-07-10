@@ -120,7 +120,7 @@
     "sensorFinedustPM4": "Finedust PM4",
     "sensorFinedustPM25": "Finedust PM25",
     "sensorFinedustPM1": "Finedust PM1",
-    "sensorDistance": "Overtaking Distance'",
+    "sensorDistance": "Overtaking Distance",
     "sensorOvertaking": "Overtaking Manoeuvre",
     "sensorOvertakingShort": "Overtaking",
     "sensorSurface": "Surface",

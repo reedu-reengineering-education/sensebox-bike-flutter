@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
+import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/ui/widgets/track/sensor_tile.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class SensorTileList extends StatelessWidget {
@@ -41,60 +43,63 @@ class SensorTileList extends StatelessWidget {
           '${b['title']}${b['attribute'] == null ? '' : '_${b['attribute']}'}');
       return indexA.compareTo(indexB);
     });
+    final tileList = <Widget>[];
+    for (var sensor in sensorTitles) {
+      String title = sensor['title']!;
+      String? attribute = sensor['attribute'];
+      String displayTitle =
+          getTranslatedTitleFromSensorKey(title, attribute, context) ?? title;
+      Color cardColor = selectedSensorType ==
+              '$title${attribute == null ? '' : '_$attribute'}'
+          ? getSensorColor(title).withOpacity(0.25)
+          : Theme.of(context).canvasColor;
 
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: sensorTitles.length,
-      itemBuilder: (context, index) {
-        String title = sensorTitles[index]['title']!;
-        String? attribute = sensorTitles[index]['attribute'];
-        String displayTitle = getTranslatedTitleFromSensorKey(
-                title, attribute, context) ??
-            title;
+      tileList.add(SensorTile(
+        title: displayTitle,
+        cardColor: cardColor,
+        sensorColor: getSensorColor(title),
+        sensorIcon: getSensorIcon(title),
+        onTap: () => onSensorTypeSelected(
+            '$title${attribute == null ? '' : '_$attribute'}'),
+      ));
+    }
 
-        return Card.filled(
-          clipBehavior: Clip.hardEdge,
-          color: selectedSensorType ==
-                  '$title${attribute == null ? '' : '_$attribute'}'
-              ? getSensorColor(title).withOpacity(0.25)
-              : Theme.of(context).canvasColor,
-          child: InkWell(
-            onTap: () => onSensorTypeSelected(
-                '$title${attribute == null ? '' : '_$attribute'}'),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-              child: Column(
-                children: [
-                  Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: getSensorColor(title).withOpacity(0.1),
-                    ),
-                    padding: const EdgeInsets.all(6),
-                    child: Icon(
-                      getSensorIcon(title),
-                      size: 24,
-                      color: getSensorColor(title),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      displayTitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: getSensorColor(title),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    return SizedBox(
+      height: 200,
+      child: _SensorTileGrid(tileList: tileList),
+    );
+  }
+}
+
+class _SensorTileGrid extends StatefulWidget {
+  final List<Widget> tileList;
+  const _SensorTileGrid({required this.tileList});
+
+  @override
+  State<_SensorTileGrid> createState() => _SensorTileGridState();
+}
+
+class _SensorTileGridState extends State<_SensorTileGrid> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scrollbar(
+      controller: _controller,
+      thumbVisibility: true,
+      child: GridView.count(
+        controller: _controller,
+        scrollDirection: Axis.vertical,
+        padding: const EdgeInsets.all(spacing / 2),
+        crossAxisCount: 4,
+        children: widget.tileList,
+      ),
     );
   }
 }
