@@ -90,6 +90,10 @@ class _SensorTileGridState extends State<_SensorTileGrid> {
 
   @override
   Widget build(BuildContext context) {
+    // On the smaller screens, we want to show 3 tiles per row
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth < 400 ? 3 : 4;
+
     return Scrollbar(
       controller: _controller,
       thumbVisibility: true,
@@ -97,7 +101,7 @@ class _SensorTileGridState extends State<_SensorTileGrid> {
         controller: _controller,
         scrollDirection: Axis.vertical,
         padding: const EdgeInsets.all(spacing / 2),
-        crossAxisCount: 4,
+        crossAxisCount: crossAxisCount,
         children: widget.tileList,
       ),
     );
