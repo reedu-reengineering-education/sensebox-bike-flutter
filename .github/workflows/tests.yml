@@ -11,8 +11,7 @@ concurrency:
 jobs:
   test:
     runs-on: macOS-latest
-    env:
-      ISAR_INSTANCE: static
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
