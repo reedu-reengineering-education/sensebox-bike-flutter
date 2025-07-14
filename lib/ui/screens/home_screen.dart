@@ -155,7 +155,7 @@ class _SenseBoxSelectionButton extends StatelessWidget {
               color: hasError
                   ? colorScheme.errorContainer
                   : Theme.of(context).colorScheme.tertiary,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(borderRadiusSmall),
               border: Border.all(
                 color: hasError
                     ? colorScheme.outlineVariant
