@@ -14,12 +14,10 @@ const double kMapPreviewHeight = 140;
 class TrackListItem extends StatelessWidget {
   final TrackData track;
   final Function onDismissed;
-  final bool isFirst;
 
   const TrackListItem({
     required this.track,
     required this.onDismissed,
-    this.isFirst = false,
     super.key,
   });
 
@@ -44,7 +42,7 @@ class TrackListItem extends StatelessWidget {
     final hasGeolocations = track.geolocations.isNotEmpty;
 
     return Padding(
-        padding: EdgeInsets.only(bottom: spacing, top: isFirst ? 0 : spacing),
+        padding: EdgeInsets.only(bottom: spacing, top: spacing),
         child: Dismissible(
       key: Key(track.id.toString()),
       background: _buildDismissBackground(theme),

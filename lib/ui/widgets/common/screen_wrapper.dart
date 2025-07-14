@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:sensebox_bike/theme.dart';
 
 class ScreenWrapper extends StatelessWidget {
   final Widget child;
   final String? title; 
+  final double padding;
 
-  const ScreenWrapper({super.key, required this.child, this.title});
+  const ScreenWrapper(
+      {super.key, required this.child, this.title, this.padding = 0});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(title ?? '')), 
       body: Padding(
-        padding: const EdgeInsets.all(spacing),
+        padding: EdgeInsets.all(padding),
         child: child,
       ),
     );

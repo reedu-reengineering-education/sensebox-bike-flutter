@@ -124,6 +124,7 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
 
     return ScreenWrapper(
       title: l10n.tracksStatisticsTitle,
+      padding: spacing,
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.separated(

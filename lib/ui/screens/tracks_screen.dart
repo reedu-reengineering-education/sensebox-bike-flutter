@@ -112,7 +112,6 @@ class TracksScreenState extends State<TracksScreen> {
                           TrackData track = _displayedTracks[index];
                           return TrackListItem(
                             track: track,
-                            isFirst: index == 0,
                             onDismissed: () async {
                               await _isarService.trackService
                                   .deleteTrack(track.id);
