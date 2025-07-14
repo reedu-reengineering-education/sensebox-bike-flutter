@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
@@ -21,10 +22,13 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
   double _distanceThisWeek = 0.0;
   Duration _timeThisWeek = Duration.zero;
   bool _isLoading = true;
+  late DateTime weekStart;
 
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    weekStart = now.subtract(Duration(days: now.weekday - 1));
     _loadStats();
   }
 
@@ -33,11 +37,11 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
       _isLoading = true;
     });
     final tracks = await widget.isarService.trackService.getAllTracks();
-
-    final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final tracksThisWeek = tracks.where((track) =>
-      track.geolocations.isNotEmpty && track.geolocations.first.timestamp.isAfter(weekStart)
+            track.geolocations.isNotEmpty &&
+            (track.geolocations.first.timestamp.isAfter(weekStart) ||
+                DateUtils.isSameDay(
+                    track.geolocations.first.timestamp, weekStart))
     ).toList();
 
     setState(() {
@@ -76,7 +80,7 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
             textTheme: textTheme,
           ),
           _StatRow(
-            icon: Icons.timer_off_outlined,
+            icon: Icons.timer_outlined,
             value: l10n.generalTrackDurationShort(
                 _totalDuration.inHours.toString(),
                 _totalDuration.inMinutes
@@ -91,7 +95,8 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
       // THIS WEEK CARD
       _StatsCard(
         icon: Icons.calendar_today_outlined,
-        title: l10n.tracksStatisticsThisWeek,
+        title: l10n
+            .tracksStatisticsThisWeek(DateFormat('dd.MM').format(weekStart)),
         subtitle: l10n.tracksStatisticsThisWeekInfo,
         stats: [
           _StatRow(

@@ -200,7 +200,14 @@
     "tracksStatisticsTitle": "Track-Statistiken",
     "tracksStatisticsTotalData": "Gesamtdaten",
     "tracksStatisticsTotalDataInfo": "Daten, die während aller Fahrten gesammelt wurden",
-    "tracksStatisticsThisWeek": "Diese Woche",
+    "tracksStatisticsThisWeek": "Diese Woche: ({start} - heute)",
+    "@tracksStatisticsThisWeek": {
+        "placeholders": {
+            "start": {
+                "type": "String"
+            }
+        }
+    },
     "tracksStatisticsThisWeekInfo": "Statistiken für die aktuelle Woche",
     "tracksStatisticsRidesInfo": "Fahrten abgeschlossen",
     "tracksStatisticsDistanceInfo": "zurückgelegte Strecke",

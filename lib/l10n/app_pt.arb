@@ -195,12 +195,19 @@
     "generalConfirmation": "Confirmação",
     "privacyPolicyAccept": "Eu li e aceito a política de privacidade.",
     "trackNoGeolocations": "Nenhuma geolocalização disponível para este trajeto.",
-     "tracksAppBarTitle": "Seus trajetos",
+    "tracksAppBarTitle": "Seus trajetos",
     "loadMore": "Carregar mais",
     "tracksStatisticsTitle": "Estatísticas do Trajeto",
     "tracksStatisticsTotalData": "Dados Totais",
     "tracksStatisticsTotalDataInfo": "Dados coletados durante todos os trajetos",
-    "tracksStatisticsThisWeek": "Esta Semana",
+    "tracksStatisticsThisWeek": "Esta Semana: ({start} - hoje)",
+    "@tracksStatisticsThisWeek": {
+        "placeholders": {
+            "start": {
+                "type": "String"
+            }
+        }
+    },
     "tracksStatisticsThisWeekInfo": "Estatísticas para a semana atual",
     "tracksStatisticsRidesInfo": "viagens concluídas",
     "tracksStatisticsDistanceInfo": "distância percorrida",
