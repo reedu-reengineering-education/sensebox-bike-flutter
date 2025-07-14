@@ -127,9 +127,9 @@ class TrackListItem extends StatelessWidget {
         track.duration.inMinutes
             .remainder(60)
             .toString()
-            .padLeft(2, '0')); // Ensure 2-digit format
-    final distance = localizations
-        .generalTrackDistance((track.distance / 1000).toStringAsFixed(2));
+            .padLeft(2, '0'));
+    final distance =
+        localizations.generalTrackDistance(track.distance.toStringAsFixed(2));
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
