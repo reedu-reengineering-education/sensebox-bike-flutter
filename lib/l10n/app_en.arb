@@ -78,6 +78,7 @@
     "connectionButtonStop": "Stop",
     "bleDeviceSelectTitle": "Tap to connect",
     "noBleDevicesFound": "No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.",
+    "selectOrCreateBox": "Select or create senseBox:bike",
     "createBoxTitle": "Create senseBox:bike",
     "createBoxModel": "Model",
     "createBoxModelErrorEmpty": "Please select a model",
@@ -168,5 +169,4 @@
     "deleteAllHint": "This will delete all your tracks from the app.",
     "generalConfirmation": "Confirmation",
     "privacyPolicyAccept": "I have read and accept the Privacy Policy."
-
 }

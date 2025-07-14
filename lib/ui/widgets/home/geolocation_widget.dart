@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:geolocator/geolocator.dart' as Geolocator;
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
@@ -29,6 +30,11 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
   late PolylineAnnotationManager lineAnnotationManager;
 
+  late OpenSenseMapBloc osemBloc;
+
+  static const double authenticatedMargin = 125;
+  static const double unauthenticatedMargin = 75;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +53,34 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
           debugPrint('Error deleting all annotations: $e');
         }
       }
+    });
+
+    // Listen to authentication state changes
+    // This will update the map's logo and attribution margins based on authentication state
+    // Not authenticated: no select box dialog shown ==> margin bottom 75
+    // Authenticated: select box dialog shown ==> margin bottom 125
+    osemBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    osemBloc.addListener(() {
+      final isAuthenticated = osemBloc.isAuthenticated;
+
+      var logoAttributionMargins = EdgeInsets.only(
+        bottom: isAuthenticated ? authenticatedMargin : unauthenticatedMargin,
+        left: 8,
+        right: 8,
+      );
+
+      mapInstance.logo.updateSettings(
+        LogoSettings(
+          marginBottom: logoAttributionMargins.bottom,
+          marginLeft: logoAttributionMargins.left,
+        ),
+      );
+      mapInstance.attribution.updateSettings(
+        AttributionSettings(
+          marginBottom: logoAttributionMargins.bottom,
+          marginRight: logoAttributionMargins.right,
+        ),
+      );
     });
 
     // check connection status
@@ -129,14 +163,14 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
       // Fit the camera to the bounds of the geolocation data
       await mapInstance.flyTo(
-        CameraOptions(
-          center: Point(
-              coordinates:
-                  Position(lastLocation.longitude, lastLocation.latitude)),
-          zoom: 16.0,
-          pitch: 45,
-        ),
-        MapAnimationOptions(duration: 1000));
+          CameraOptions(
+            center: Point(
+                coordinates:
+                    Position(lastLocation.longitude, lastLocation.latitude)),
+            zoom: 16.0,
+            pitch: 45,
+          ),
+          MapAnimationOptions(duration: 1000));
     } catch (e) {
       debugPrint('Error updating map with geolocation data: $e');
     }
@@ -153,55 +187,62 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   Widget build(BuildContext context) {
     final settingsBloc = Provider.of<SettingsBloc>(context);
 
-    return ReusableMapWidget(onMapCreated: (mapInstance) async {
-      this.mapInstance = mapInstance;
-      mapInstance.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-      mapInstance.compass.updateSettings(CompassSettings(enabled: false));
-      mapInstance.attribution
-          .updateSettings(AttributionSettings(marginBottom: 75));
-      mapInstance.logo
-          .updateSettings(LogoSettings(marginBottom: 75, marginLeft: 8));
+    final isAuthenticated = osemBloc.isAuthenticated;
 
-      // Set initial camera position
-      mapInstance.setCamera(CameraOptions(
-        center: Point(coordinates: Position(9, 45)),
-        zoom: 3.25,
-        pitch: 25,
-      ));
-      try {
-        lineAnnotationManager = await mapInstance.annotations
-          .createPolylineAnnotationManager(id: 'lineAnnotationManager');
-        lineAnnotationManager.setLineColor(
-            Theme.of(context).brightness == Brightness.dark
-                ? Colors.white.value
-                : Colors.black.value);
-        lineAnnotationManager.setLineWidth(4.0);
-        lineAnnotationManager.setLineEmissiveStrength(1);
-        lineAnnotationManager.setLineCap(LineCap.ROUND);
-      } catch (e) {
-        debugPrint('Error creating lineAnnotationManager: $e');
-      }
+    var logoAttributionMargins = EdgeInsets.only(
+      bottom: isAuthenticated ? authenticatedMargin : unauthenticatedMargin,
+      left: 8,
+      right: 8,
+    );
 
-      // Add privacy zones to the map
-      try {
-        if (settingsBloc.privacyZones.isEmpty) {
-          return;
-        }
+    return ReusableMapWidget(
+        logoMargins: logoAttributionMargins,
+        attributionMargins: logoAttributionMargins,
+        onMapCreated: (mapInstance) async {
+          this.mapInstance = mapInstance;
+          mapInstance.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+          mapInstance.compass.updateSettings(CompassSettings(enabled: false));
 
-        final polygonAnnotationManager =
-            await mapInstance.annotations.createPolygonAnnotationManager();
-        polygonAnnotationManager.setFillColor(Colors.red.value);
-        polygonAnnotationManager.setFillOpacity(0.5);
-        polygonAnnotationManager.setFillEmissiveStrength(1);
+          // Set initial camera position
+          mapInstance.setCamera(CameraOptions(
+            center: Point(coordinates: Position(9, 45)),
+            zoom: 3.25,
+            pitch: 25,
+          ));
+          try {
+            lineAnnotationManager = await mapInstance.annotations
+                .createPolylineAnnotationManager(id: 'lineAnnotationManager');
+            lineAnnotationManager.setLineColor(
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.value
+                    : Colors.black.value);
+            lineAnnotationManager.setLineWidth(4.0);
+            lineAnnotationManager.setLineEmissiveStrength(1);
+            lineAnnotationManager.setLineCap(LineCap.ROUND);
+          } catch (e) {
+            debugPrint('Error creating lineAnnotationManager: $e');
+          }
 
-        final polygonOptions = settingsBloc.privacyZones.map((e) {
-          final polygon = Polygon.fromJson(jsonDecode(e));
-          return PolygonAnnotationOptions(geometry: polygon);
-        }).toList();
-        polygonAnnotationManager.createMulti(polygonOptions);
-      } catch (e) {
-        print(e);
-      }
-    });
+          // Add privacy zones to the map
+          try {
+            if (settingsBloc.privacyZones.isEmpty) {
+              return;
+            }
+
+            final polygonAnnotationManager =
+                await mapInstance.annotations.createPolygonAnnotationManager();
+            polygonAnnotationManager.setFillColor(Colors.red.value);
+            polygonAnnotationManager.setFillOpacity(0.5);
+            polygonAnnotationManager.setFillEmissiveStrength(1);
+
+            final polygonOptions = settingsBloc.privacyZones.map((e) {
+              final polygon = Polygon.fromJson(jsonDecode(e));
+              return PolygonAnnotationOptions(geometry: polygon);
+            }).toList();
+            polygonAnnotationManager.createMulti(polygonOptions);
+          } catch (e) {
+            print(e);
+          }
+        });
   }
 }
