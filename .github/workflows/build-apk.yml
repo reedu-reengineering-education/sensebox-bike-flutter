@@ -67,7 +67,7 @@ jobs:
         with:
           header: APK Download
           message: |
-            :android: [Download the latest APK built for this PR from the Actions artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            📱 [Download the latest APK built for this PR from the Actions artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
       - name: Upload APK to GitHub Release
         if: github.event_name == 'release'
