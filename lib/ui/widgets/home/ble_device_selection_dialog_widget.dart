@@ -15,28 +15,23 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
     scanError = e;
   }
 
-  showDialog<void>(
-    context: context,
-      builder: (context) => AlertDialog(
-              title: Text(AppLocalizations.of(context)!.bleDeviceSelectTitle),
-              contentPadding: EdgeInsets.zero,
-              content: SizedBox(
-                height: 400,
-                width: 350, // Optionally set a width
-                child: DeviceSelectionSheet(
-                  bleBloc: bleBloc,
-                  initialScanError: scanError,
-                ),
-              ),
-              actions: [
-                TextButton(
-                    child: Text(AppLocalizations.of(context)!.generalCancel),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      bleBloc.stopScanning();
-                    })
-              ])
-  );
+  final result = await showModalBottomSheet<bool>(
+      showDragHandle: true,
+      isScrollControlled: true,
+      context: context,
+      builder: (context) => (Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(
+              AppLocalizations.of(context)!.bleDeviceSelectTitle,
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            DeviceSelectionSheet(bleBloc: bleBloc, initialScanError: scanError),
+          ])));
+
+  if (result != true) {
+    // User dismissed the sheet (cancel)
+    bleBloc.stopScanning();
+  }
 }
 
 class DeviceSelectionSheet extends StatefulWidget {
@@ -70,7 +65,9 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
     return Padding(
         padding: const EdgeInsets.only(
             top: spacing * 4, bottom: spacing, left: spacing, right: spacing),
-        child: StreamBuilder<List<BluetoothDevice>>(
+        child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: StreamBuilder<List<BluetoothDevice>>(
           stream: widget.bleBloc.devicesListStream,
           builder: (context, snapshot) {
             final colorScheme = Theme.of(context).colorScheme;
@@ -122,12 +119,13 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                   child: Text(deviceName),
                   onTap: () {
                     widget.bleBloc.connectToDevice(device, context);
-                    Navigator.pop(context);
+                        Navigator.pop(context, true);
                   },
                 );
               },
             );
           },
+        )
         )
     );
   }
