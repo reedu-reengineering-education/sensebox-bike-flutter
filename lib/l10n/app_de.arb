@@ -44,22 +44,6 @@
             }
         }
     },
-    "generalTrackDurationHours": "{hours} Std.",
-    "@generalTrackDurationHours": {
-        "placeholders": {
-            "hours": {
-                "type": "int"
-            }
-        }
-    },
-    "generalTrackDurationMins": "{minutes} Min.",
-    "@generalTrackDurationMins": {
-        "placeholders": {
-            "minutes": {
-                "type": "int"
-            }
-        }
-    },
     "generalTrackDistance": "{distance} km",
     "@generalTrackDistance": {
         "placeholders": {
@@ -194,12 +178,12 @@
     "deleteAllHint": "Dies löscht alle Ihre Tracks aus der App.",
     "generalConfirmation": "Bestätigung",
     "privacyPolicyAccept": "Ich habe die Datenschutzerklärung gelesen und stimme ihr zu.",
-    "trackNoGeolocations": "Keine Geolokalisierungen für diesen Track verfügbar.",
+    "trackNoGeolocations": "Keine Positionsdaten für diesen Track verfügbar.",
     "tracksAppBarTitle": "Deine Tracks",
     "loadMore": "Mehr laden",
     "tracksStatisticsTitle": "Track-Statistiken",
     "tracksStatisticsTotalData": "Gesamtdaten",
-    "tracksStatisticsTotalDataInfo": "Daten, die während aller Fahrten gesammelt wurden",
+    "tracksStatisticsTotalDataInfo": "Daten aus allen Fahrten",
     "tracksStatisticsThisWeek": "Diese Woche: ({start} - heute)",
     "@tracksStatisticsThisWeek": {
         "placeholders": {
@@ -209,8 +193,8 @@
         }
     },
     "tracksStatisticsThisWeekInfo": "Statistiken für die aktuelle Woche",
-    "tracksStatisticsRidesInfo": "Fahrten abgeschlossen",
+    "tracksStatisticsRidesInfo": "Abgeschlossene Fahrten",
     "tracksStatisticsDistanceInfo": "zurückgelegte Strecke",
-    "tracksStatisticsTimeInfo": "verbrachte Zeit auf der Strecke",
+    "tracksStatisticsTimeInfo": "Fahrzeit",
     "trackStatistics": "Track-Statistiken"
 }

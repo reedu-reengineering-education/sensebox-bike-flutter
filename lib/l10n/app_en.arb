@@ -44,22 +44,6 @@
             }
         }
     },
-    "generalTrackDurationHours": "{hours} h",
-    "@generalTrackDurationHours": {
-        "placeholders": {
-            "hours": {
-                "type": "int"
-            }
-        }
-    },
-    "generalTrackDurationMins": "{minutes} min",
-    "@generalTrackDurationMins": {
-        "placeholders": {
-            "minutes": {
-                "type": "int"
-            }
-        }
-    },
     "generalTrackDistance": "{distance} km",
     "@generalTrackDistance": {
         "placeholders": {
