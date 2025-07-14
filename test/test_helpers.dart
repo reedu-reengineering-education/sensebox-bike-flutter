@@ -119,7 +119,7 @@ GeolocationData createMockGeolocationData(TrackData trackData) {
   return GeolocationData()
     ..latitude = 52.5200
     ..longitude = 13.4050
-    ..timestamp = DateTime.now().toUtc()
+    ..timestamp = DateTime.now()
     ..speed = 0.0
     ..track.value = trackData;
 }

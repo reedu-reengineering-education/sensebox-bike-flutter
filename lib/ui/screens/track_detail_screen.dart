@@ -2,59 +2,43 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
-import 'package:sensebox_bike/feature_flags.dart';
-import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
-import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/track/sensor_tile_list.dart';
 
 class TrackDetailScreen extends StatefulWidget {
-  final int id;
+  final TrackData track;
 
-  const TrackDetailScreen({super.key, required this.id});
+  const TrackDetailScreen({super.key, required this.track});
 
   @override
-  State<TrackDetailScreen> createState() => _TrackDetailScreenState(id);
+  State<TrackDetailScreen> createState() => _TrackDetailScreenState();
 }
 
 class _TrackDetailScreenState extends State<TrackDetailScreen> {
   late final IsarService isarService;
-  late Future<TrackData?> _trackFuture;
-  late Future<List<SensorData>> _sensorDataFuture;
+  bool _isDownloading = false;
+  late String _sensorType = 'temperature';
 
-  final int id;
-  bool _isDownloading = false; // Flag to show loading spinner
-  late String _sensorType = 'temperature'; // Default sensor type
-
-  _TrackDetailScreenState(this.id);
+  _TrackDetailScreenState();
 
   @override
   void initState() {
     super.initState();
 
     isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
-
-    _fetchTrackData();
-  }
-
-  void _fetchTrackData() {
-    _trackFuture = isarService.trackService.getTrackById(widget.id);
-    _sensorDataFuture =
-        isarService.sensorService.getSensorDataByTrackId(widget.id);
   }
 
   Future<void> _shareFile(String filePath) async {
@@ -138,66 +122,16 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
       if (isOpenSourceMapCompatible) {
         csvFilePath =
-            await isarService.exportTrackToCsvInOpenSenseMapFormat(id);
+            await isarService
+            .exportTrackToCsvInOpenSenseMapFormat(widget.track.id);
       } else {
-        csvFilePath = await isarService.exportTrackToCsv(id);
+        csvFilePath = await isarService.exportTrackToCsv(widget.track.id);
       }
 
       // if android, save to external storage
       // if ios, open share dialog
-
       if (Platform.isAndroid) {
-        try {
-          DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-          final androidInfo = await deviceInfoPlugin.androidInfo;
-
-          // check if api level is smaller than 33
-          if (androidInfo.version.sdkInt < 33) {
-            PermissionStatus status = await Permission.storage.request();
-
-            if (!status.isGranted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(
-                    AppLocalizations.of(context)!.trackDetailsPermissionsError),
-                action: SnackBarAction(
-                    label: AppLocalizations.of(context)!.generalSettings,
-                    onPressed: () => openAppSettings()),
-              ));
-              return;
-            }
-          }
-
-          Directory? directory;
-
-          if (defaultTargetPlatform == TargetPlatform.android) {
-            //downloads folder - android only - API>30
-            directory = Directory('/storage/emulated/0/Download');
-            // directory = await getDownloadsDirectory();
-          } else {
-            directory = await getExternalStorageDirectory();
-          }
-          // copy file to external storage
-          final file = File(csvFilePath);
-
-          final newName = file.path.split('/').last;
-          final newPath = '${directory!.path}/$newName';
-
-          await file.copy(newPath);
-          // show snackbar
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(AppLocalizations.of(context)!.trackDetailsFileSaved),
-            action: SnackBarAction(
-              label: AppLocalizations.of(context)!.generalShare,
-              onPressed: () {
-                Share.shareXFiles([XFile(newPath)],
-                    text: AppLocalizations.of(context)!.trackDetailsExport);
-              },
-            ),
-          ));
-        } catch (e) {
-          Share.shareXFiles([XFile(csvFilePath)],
-              text: AppLocalizations.of(context)!.trackDetailsExport);
-        }
+        _handleAndroidExport(csvFilePath);
       } else if (Platform.isIOS) {
         await Share.shareXFiles([XFile(csvFilePath)],
             text: AppLocalizations.of(context)!.trackDetailsExport);
@@ -211,261 +145,89 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
-  Widget _buildFutureBuilder<T>({
-    required Future<T> future,
-    required Widget Function(T data) builder,
-    String? errorText,
-    String? noDataText,
-  }) {
-    return FutureBuilder<T>(
-      future: future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Text(errorText ??
-              AppLocalizations.of(context)!
-                  .generalErrorWithDescription(snapshot.error.toString()));
-        } else if (!snapshot.hasData) {
-          return Text(
-              noDataText ?? AppLocalizations.of(context)!.trackDetailsNoData);
-        } else {
-          return builder(snapshot.data as T);
-        }
-      },
+  Widget _buildAppBarTitle(TrackData track) {
+    String errorMessage = AppLocalizations.of(context)!.trackDetailsNoData;
+
+    return Row(
+      children: [
+        Text(trackName(track, errorMessage: errorMessage)),
+        const Spacer(),
+        ExportButton(
+          isDisabled: false,
+          isDownloading: _isDownloading,
+          onExport: (selectedFormat) async {
+            if (selectedFormat == 'regular') {
+              await _exportTrackToCsv();
+            } else if (selectedFormat == 'openSenseMap') {
+              await _exportTrackToCsv(isOpenSourceMapCompatible: true);
+            }
+          },
+        ),
+      ],
     );
-  }
-
-  Future<List<dynamic>> get _combinedFutures =>
-      Future.wait([_trackFuture, _sensorDataFuture]);
-
-  Widget _buildAppBarTitle(
-      BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
-    final localizations = AppLocalizations.of(context)!;
-
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(child: Loader(light: true));
-    } else if (snapshot.hasError) {
-      return Text(localizations.trackDetailsLoadingError);
-    } else if (!snapshot.hasData ||
-        snapshot.data![0] == null ||
-        (snapshot.data![1] as List).isEmpty) {
-      return Row(children: [Text(localizations.trackDetailsNoTrackData)]);
-    } else {
-      final track = snapshot.data![0] as TrackData;
-      final sensorData = snapshot.data![1] as List<SensorData>;
-      final isDisabled = sensorData.isEmpty;
-
-      return Row(
-        children: [
-          Text(DateFormat('yyyy-MM-dd HH:mm')
-              .format(track.geolocations.first.timestamp)),
-          const Spacer(),
-          ExportButton(
-            isDownloading: _isDownloading,
-            isDisabled: isDisabled,
-            onExport: (selectedFormat) async {
-              if (selectedFormat == 'regular') {
-                await _exportTrackToCsv();
-              } else if (selectedFormat == 'openSenseMap') {
-                await _exportTrackToCsv(isOpenSourceMapCompatible: true);
-              }
-            },
-          ),
-        ],
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final geolocations = widget.track.geolocations.toList();
+    final sensorData = geolocations.first.sensorData.toList();
+    final minSensorValue =
+        getMinSensorValue(geolocations, _sensorType).toStringAsFixed(1);
+    final maxSensorValue =
+        getMaxSensorValue(geolocations, _sensorType).toStringAsFixed(1);
+
     return Scaffold(
-      appBar: AppBar(
-        title: FutureBuilder<List<dynamic>>(
-          future: _combinedFutures,
-          builder: (context, snapshot) => _buildAppBarTitle(context, snapshot),
-        ),
-      ),
+      appBar: AppBar(title: _buildAppBarTitle(widget.track)),
       body: SafeArea(
         minimum: const EdgeInsets.only(bottom: 8),
-        child: _buildFutureBuilder<TrackData?>(
-          future: _trackFuture,
-          builder: (track) => Column(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Card.filled(
-                    clipBehavior: Clip.hardEdge,
-                    elevation: 4,
-                    child: TrajectoryWidget(
-                      geolocationData: track!.geolocations.toList(),
-                      sensorType: _sensorType,
-                    ),
-                  ),
+        child: Column(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Card.filled(
+                  clipBehavior: Clip.hardEdge,
+                  elevation: 4,
+                  child: TrajectoryWidget(
+                      geolocationData: geolocations, sensorType: _sensorType),
                 ),
               ),
-              Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Column(children: [
-                    Container(
-                        height: 12,
-                        decoration: const BoxDecoration(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(20),
-                            ),
-                            gradient: LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: <Color>[
-                                Colors.green,
-                                Colors.orange,
-                                Colors.red,
-                              ], // Gradient from https://learnui.design/tools/gradient-generator.html
-                              tileMode: TileMode.mirror,
-                            ))),
-                    _buildFutureBuilder<TrackData?>(
-                      future: _trackFuture,
-                      builder: (track) => Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(getMinSensorValue(
-                                    track!.geolocations.toList(), _sensorType)
-                                .toStringAsFixed(1)),
-                            const Spacer(),
-                            Text(getMaxSensorValue(
-                                    track.geolocations.toList(), _sensorType)
-                                .toStringAsFixed(1)),
-                          ]),
-                      errorText: AppLocalizations.of(context)!
-                          .trackDetailsLoadingError,
-                      noDataText:
-                          AppLocalizations.of(context)!.trackDetailsNoTrackData,
-                    )
-                  ])),
-              SizedBox(
-                height: 100,
-                child: _buildFutureBuilder<List<SensorData>>(
-                  future: _sensorDataFuture,
-                  builder: (sensorData) {
-                    // Your sensorData processing and UI logic here
-                    List<Map<String, String?>> sensorTitles = sensorData
-                        .map(
-                            (e) => {'title': e.title, 'attribute': e.attribute})
-                        .map((map) => map.entries
-                            .map((e) => '${e.key}:${e.value}')
-                            .join(','))
-                        .toSet()
-                        .map((str) {
-                      var entries = str.split(',').map((e) => e.split(':'));
-                      return Map<String, String?>.fromEntries(
-                        entries.map((e) =>
-                            MapEntry(e[0], e[1] == 'null' ? null : e[1])),
-                      );
-                    }).toList();
-
-                    // Filter out surface_anomaly if the feature flag is enabled
-                    if (FeatureFlags.hideSurfaceAnomalySensor) {
-                      sensorTitles.removeWhere(
-                          (sensor) => sensor['title'] == 'surface_anomaly');
-                    }
-
-                    List<String> order = [
-                      'temperature',
-                      'humidity',
-                      'distance',
-                      'overtaking',
-                      'surface_classification_asphalt',
-                      'surface_classification_compacted',
-                      'surface_classification_paving',
-                      'surface_classification_sett',
-                      'surface_classification_standing',
-                      'surface_anomaly',
-                      'acceleration_x',
-                      'acceleration_y',
-                      'acceleration_z',
-                      'finedust_pm1',
-                      'finedust_pm2.5',
-                      'finedust_pm4',
-                      'finedust_pm10',
-                      'gps_latitude',
-                      'gps_longitude',
-                      'gps_speed',
-                    ];
-
-                    sensorTitles.sort((a, b) {
-                      int indexA = order.indexOf(
-                          '${a['title']}${a['attribute'] == null ? '' : '_${a['attribute']}'}');
-                      int indexB = order.indexOf(
-                          '${b['title']}${b['attribute'] == null ? '' : '_${b['attribute']}'}');
-                      return indexA.compareTo(indexB);
-                    });
-
-                    return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: sensorTitles.length,
-                      itemBuilder: (context, index) {
-                        String title = sensorTitles[index]['title']!;
-                        String? attribute = sensorTitles[index]['attribute'];
-                        String displayTitle = getTranslatedTitleFromSensorKey(
-                                title, attribute, context) ??
-                            title;
-
-                        return Card.filled(
-                          clipBehavior: Clip.hardEdge,
-                          color: _sensorType ==
-                                  '$title${attribute == null ? '' : '_$attribute'}'
-                              ? getSensorColor(title).withOpacity(0.25)
-                              : Theme.of(context).canvasColor,
-                          child: InkWell(
-                            onTap: () => setState(() {
-                              _sensorType =
-                                  '$title${attribute == null ? '' : '_$attribute'}';
-                            }),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 32, vertical: 8),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: getSensorColor(title)
-                                          .withOpacity(0.1),
-                                    ),
-                                    padding: const EdgeInsets.all(6),
-                                    child: Icon(
-                                      getSensorIcon(title),
-                                      size: 24,
-                                      color: getSensorColor(title),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      displayTitle,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: getSensorColor(title),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+            ),
+            Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(children: [
+                  Container(
+                      height: 12,
+                      decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(20),
                           ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              )
-            ],
-          ),
-          errorText: AppLocalizations.of(context)!.trackDetailsLoadingError,
-          noDataText: AppLocalizations.of(context)!.trackDetailsNoTrackData,
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: <Color>[
+                              Colors.green,
+                              Colors.orange,
+                              Colors.red,
+                            ], // Gradient from https://learnui.design/tools/gradient-generator.html
+                            tileMode: TileMode.mirror,
+                          ))),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Text(minSensorValue),
+                    const Spacer(),
+                    Text(maxSensorValue)
+                  ])
+                ])),
+            SensorTileList(
+              sensorData: sensorData,
+              selectedSensorType: _sensorType,
+              onSensorTypeSelected: (type) {
+                setState(() {
+                  _sensorType = type;
+                });
+              },
+            )
+          ],
         ),
       ),
     );
