@@ -147,17 +147,3 @@ class TracksScreenState extends State<TracksScreen> {
   }
 }
 
-class CenteredMessage extends StatelessWidget {
-  final Widget child;
-
-  const CenteredMessage({required this.child, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        Center(child: child),
-      ],
-    );
-  }
-}
