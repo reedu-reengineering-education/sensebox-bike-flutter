@@ -54,9 +54,6 @@ class GeolocationBloc with ChangeNotifier {
           defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.best,
-          // activityType: ActivityType.fitness,
-          // Only set to true if our app will be started up in the background.
-          // showBackgroundLocationIndicator: false,
         );
       }
 
