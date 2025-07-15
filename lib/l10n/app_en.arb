@@ -22,7 +22,7 @@
     "generalPrivacyZones": "Privacy Zones",
     "generalSettings": "Settings",
     "generalShare": "Share",
-    "generalTrackDuration": "{hours}h {minutes}min",
+    "generalTrackDuration": "{hours} h {minutes} min",
     "@generalTrackDuration": {
         "placeholders": {
             "hours": {
@@ -30,6 +30,17 @@
             },
             "minutes": {
                 "type": "int"
+            }
+        }
+    },
+    "generalTrackDurationShort": "{hours}:{minutes} hrs",
+    "@generalTrackDurationShort": {
+        "placeholders": {
+            "hours": {
+                "type": "String"
+            },
+            "minutes": {
+                "type": "String"
             }
         }
     },
@@ -48,7 +59,6 @@
     "generalProceed": "Proceed",
     "homeBottomBarHome": "Home",
     "homeBottomBarTracks": "Tracks",
-    "tracksAppBarTitle": "Tracks",
     "tracksAppBarSumTracks": "{count, plural, =0{No tracks} =1{1 track} other{{count} tracks}}",
     "tracksNoTracks": "No tracks available",
     "tracksTrackDeleted": "Track deleted",
@@ -168,5 +178,15 @@
     "accountManagement": "Account Management",
     "deleteAllHint": "This will delete all your tracks from the app.",
     "generalConfirmation": "Confirmation",
-    "privacyPolicyAccept": "I have read and accept the Privacy Policy."
+    "privacyPolicyAccept": "I have read and accept the Privacy Policy.",
+    "trackNoGeolocations": "No geolocations available for this track.",
+    "tracksAppBarTitle": "Your tracks",
+    "loadMore": "Load more",
+    "tracksStatisticsTitle": "Track Statistics",
+    "tracksStatisticsTotalData": "Total Data",
+    "tracksStatisticsThisWeek": "This Week",
+    "tracksStatisticsRidesInfo": "rides completed",
+    "tracksStatisticsDistanceInfo": "distance traveled",
+    "tracksStatisticsTimeInfo": "time spent on the road",
+    "trackStatistics": "Track Statistics"
 }

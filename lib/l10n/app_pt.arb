@@ -22,7 +22,7 @@
     "generalPrivacyZones": "Áreas de Privacidade",
     "generalSettings": "Configurações",
     "generalShare": "Compartilhar",
-    "generalTrackDuration": "{hours}h{minutes}min",
+    "generalTrackDuration": "{hours} h {minutes} min",
     "@generalTrackDuration": {
         "placeholders": {
             "hours": {
@@ -30,6 +30,17 @@
             },
             "minutes": {
                 "type": "int"
+            }
+        }
+    },
+    "generalTrackDurationShort": "{hours}:{minutes} h",
+    "@generalTrackDurationShort": {
+        "placeholders": {
+            "hours": {
+                "type": "String"
+            },
+            "minutes": {
+                "type": "String"
             }
         }
     },
@@ -48,7 +59,6 @@
     "generalProceed": "Prosseguir",
     "homeBottomBarHome": "Início",
     "homeBottomBarTracks": "Trajetos",
-    "tracksAppBarTitle": "Trajetos",
     "tracksAppBarSumTracks": "{count, plural, =0{Nenhum trajeto} =1{1 trajeto} other{{count} trajetos}}",
     "tracksNoTracks": "Nenhum trajeto disponível",
     "tracksTrackDeleted": "Trajeto excluído",
@@ -168,5 +178,15 @@
     "accountManagement": "Gerenciamento de Conta",
     "deleteAllHint": "Isso excluirá todas as suas faixas do aplicativo.",
     "generalConfirmation": "Confirmação",
-    "privacyPolicyAccept": "Eu li e aceito a política de privacidade."
+    "privacyPolicyAccept": "Eu li e aceito a política de privacidade.",
+    "trackNoGeolocations": "Nenhuma geolocalização disponível para este trajeto.",
+    "tracksAppBarTitle": "Seus trajetos",
+    "loadMore": "Carregar mais",
+    "tracksStatisticsTitle": "Estatísticas do Trajeto",
+    "tracksStatisticsTotalData": "Dados Totais",
+    "tracksStatisticsThisWeek": "Esta Semana",
+    "tracksStatisticsRidesInfo": "viagens concluídas",
+    "tracksStatisticsDistanceInfo": "distância percorrida",
+    "tracksStatisticsTimeInfo": "tempo gasto na estrada",
+    "trackStatistics": "Estatísticas do Trajeto"
 }

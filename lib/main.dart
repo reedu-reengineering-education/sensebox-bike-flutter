@@ -5,6 +5,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mapbox_maps_flutter_draw/mapbox_maps_flutter_draw.dart';
 import 'package:provider/provider.dart';
@@ -65,6 +66,21 @@ class SenseBoxBikeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     _initErrorHandlers();
+    // Manipulations below are to make sure default Android status bar is visible
+    final isDarkMode =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent, // Transparent status bar
+        statusBarIconBrightness: isDarkMode
+            ? Brightness.light
+            : Brightness
+                .dark, // Light icons for dark mode, dark icons for light mode
+        statusBarBrightness: isDarkMode
+            ? Brightness.dark
+            : Brightness.light, // For iOS compatibility
+      ),
+    );
 
     final appLinks = AppLinks();
     // Initialize providers at the top level
