@@ -1,10 +1,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
+import 'package:sensebox_bike/models/track_data.dart';
 
 double getMinSensorValue(List<GeolocationData> data, String sensorType) {
   double minVal = double.infinity;
@@ -154,4 +156,17 @@ List<Map<String, String?>> buildSensorTiles(List<SensorData> sensorData) {
   });
 
   return sensorTitles;
+}
+
+String trackName(TrackData track, {String errorMessage = "No data available"}) {
+  if (track.geolocations.isEmpty) {
+    return errorMessage;
+  }
+
+  String trackStart =
+      DateFormat('dd-MM-yyyy HH:mm').format(track.geolocations.first.timestamp);
+  String trackEnd =
+      DateFormat('HH:mm').format(track.geolocations.last.timestamp);
+
+  return '$trackStart - $trackEnd';
 }

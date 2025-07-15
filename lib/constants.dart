@@ -231,3 +231,27 @@ const defaultCameraOptions = {
   "zoom": 16.0,
   "pitch": 45.0,
 };
+
+/// The canonical order of sensors for display and sorting throughout the app.
+const List<String> sensorOrder = [
+  'temperature',
+  'humidity',
+  'distance',
+  'overtaking',
+  'surface_classification_asphalt',
+  'surface_classification_compacted',
+  'surface_classification_paving',
+  'surface_classification_sett',
+  'surface_classification_standing',
+  'surface_anomaly',
+  'acceleration_x',
+  'acceleration_y',
+  'acceleration_z',
+  'finedust_pm1',
+  'finedust_pm2.5',
+  'finedust_pm4',
+  'finedust_pm10',
+  'gps_latitude',
+  'gps_longitude',
+  'gps_speed',
+];
