@@ -33,7 +33,7 @@
             }
         }
     },
-    "generalTrackDurationShort": "{hours}:{minutes} min",
+    "generalTrackDurationShort": "{hours}:{minutes} hrs",
     "@generalTrackDurationShort": {
         "placeholders": {
             "hours": {
