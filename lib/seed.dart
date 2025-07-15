@@ -132,9 +132,9 @@ Future<void> seedIsarWithSampleData(IsarService isarService) async {
   const int numTracks = 5;
   const int minDurationSec = 2 * 60; // 2 minutes
   const int maxDurationSec = 60 * 60; // 1 hour
-  const int geolocationsPerMinute = 60; // 10 geolocations per minute
+  const int geolocationsPerMinute = 60; // 60 geolocations per minute
   const double geolocationsPerSecond =
-      geolocationsPerMinute / 60.0; // ≈ 0.1667 per second
+      geolocationsPerMinute / 60.0; // ≈ 1 per second
   final now = DateTime.now();
 
   final isar = await isarService.isarProvider.getDatabase();
