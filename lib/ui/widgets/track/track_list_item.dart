@@ -183,60 +183,11 @@ class TrackListItem extends StatelessWidget {
                     ],
                   ),
                 ],
-              );
-            },
-          );
-        },
-        onDismissed: (direction) => onDismissed(),
-        child: InkWell(
-            onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => TrackDetailScreen(track: track)),
-                ),
-            child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      DateFormat('yyyy-MM-dd HH:mm')
-                          .format(track.geolocations.first.timestamp),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.timer_outlined),
-                        const SizedBox(width: 8),
-                        Text(
-                            AppLocalizations.of(context)!.generalTrackDuration(
-                                track.duration.inHours,
-                                track.duration.inMinutes.remainder(60)),
-                            style: Theme.of(context).textTheme.bodyMedium),
-                        const SizedBox(width: 24),
-                        const Icon(Icons.straighten),
-                        const SizedBox(width: 8),
-                        Text(
-                            AppLocalizations.of(context)!.generalTrackDistance(
-                                track.distance.toStringAsFixed(2)),
-                            style: Theme.of(context).textTheme.bodyMedium),
-                      ],
-                    ),
-                    Card.filled(
-                      clipBehavior: Clip.antiAlias,
-                      child: CachedNetworkImage(
-                        imageUrl: buildStaticMapboxUrl(context),
-                        progressIndicatorBuilder:
-                            (context, url, downloadProgress) =>
-                                CircularProgressIndicator(
-                                    value: downloadProgress.progress),
-                        errorWidget: (context, url, error) =>
-                            const Icon(Icons.error),
-                      ),
-                      // expanded
-                    )
-                  ],
-                ))));
+              )
+            ],
+          ),
+        )
+      ],
+    );
   }
 }
