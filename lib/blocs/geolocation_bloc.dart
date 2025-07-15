@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/geolocation_dto.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
@@ -25,6 +26,11 @@ class GeolocationBloc with ChangeNotifier {
   final IsarService isarService;
   final RecordingBloc recordingBloc;
   final SettingsBloc settingsBloc;
+
+  // Buffering for background writes
+  final List<GeolocationDto> _geoBuffer = [];
+  final int _bufferSize = 10; // Adjust as needed
+  bool _isWriting = false;
 
   GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc);
 
@@ -71,7 +77,8 @@ class GeolocationBloc with ChangeNotifier {
             ..timestamp = position.timestamp
             ..track.value = recordingBloc.currentTrack;
 
-          await _saveGeolocationData(geolocationData); // Save to database
+          await _bufferGeolocationData(
+              geolocationData); // Buffer instead of immediate save
         }
 
         // _geolocationController.add(geolocationData);
@@ -93,6 +100,59 @@ class GeolocationBloc with ChangeNotifier {
   // function to stop listening to geolocation changes
   void stopListening() {
     _positionStreamSubscription?.cancel();
+    // Flush any remaining buffered data
+    _flushGeolocationBuffer();
+  }
+
+  /// Buffer geolocation data and write in batches
+  Future<void> _bufferGeolocationData(GeolocationData data) async {
+    try {
+      // Get the privacy zones from the settings bloc
+      final privacyZones = settingsBloc.privacyZones
+          .map((e) => Turf.Polygon.fromJson(jsonDecode(e)));
+
+      // Check if the current location is in a privacy zone
+      bool isInZone = isInsidePrivacyZone(privacyZones, data);
+
+      if (!isInZone) {
+        // Convert to DTO for buffering
+        final dto = GeolocationDto(
+          latitude: data.latitude,
+          longitude: data.longitude,
+          speed: data.speed,
+          timestamp: data.timestamp,
+          trackId: recordingBloc.currentTrack!.id,
+        );
+
+        _geoBuffer.add(dto);
+
+        // If buffer is full and not already writing, flush in background
+        if (_geoBuffer.length >= _bufferSize && !_isWriting) {
+          await _flushGeolocationBuffer();
+        }
+      }
+    } catch (e) {
+      print('Error buffering geolocation data: $e');
+    }
+  }
+
+  /// Flush buffered geolocations to background write
+  Future<void> _flushGeolocationBuffer() async {
+    if (_geoBuffer.isNotEmpty && !_isWriting) {
+      _isWriting = true;
+      final batch = List<GeolocationDto>.from(_geoBuffer);
+      _geoBuffer.clear();
+
+      try {
+        await isarService.geolocationService.saveGeolocationsBatch(batch);
+      } catch (e) {
+        print('Error writing geolocation batch: $e');
+        // Optionally add back to buffer on error
+        _geoBuffer.addAll(batch);
+      } finally {
+        _isWriting = false;
+      }
+    }
   }
 
   /// Save the geolocation data to the database

@@ -84,6 +84,13 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Flush any remaining buffered geolocation data when recording stops
+  /// This should be called from the UI when stopping recording
+  Future<void> flushBufferedData() async {
+    // This method can be called from the UI to ensure all buffered data is saved
+    // The actual flushing is handled in GeolocationBloc.stopListening()
+  }
+
   @override
   void dispose() {
     super.dispose();

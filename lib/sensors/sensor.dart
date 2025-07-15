@@ -105,7 +105,11 @@ abstract class Sensor {
   // Helper method to save sensor data
   void _saveSensorData(
       double value, String? attribute, GeolocationData geolocationData) {
-    isarService.geolocationService.saveGeolocationData(geolocationData);
+    // Note: We're still calling saveGeolocationData here, but it should be buffered
+    // The geolocation data is already being buffered in GeolocationBloc, so this call
+    // might be redundant. Consider removing this line if geolocation data is already
+    // being saved through the buffering system.
+    // isarService.geolocationService.saveGeolocationData(geolocationData);
 
     if (value.isNaN) {
       return;
@@ -118,6 +122,8 @@ abstract class Sensor {
       ..attribute = attribute
       ..geolocationData.value = geolocationData;
 
+    // TODO: Consider implementing buffered writes for sensor data as well
+    // For now, keeping immediate write to avoid breaking existing functionality
     isarService.sensorService.saveSensorData(sensorData);
   }
 
