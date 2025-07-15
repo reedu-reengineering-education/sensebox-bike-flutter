@@ -1,0 +1,76 @@
+name: Build APK
+
+on:
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      KEYSTORE_FILE: release.keystore
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          flutter-version: "3.29.1"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Decode keystore file
+        if: env.KEYSTORE_PASSWORD != ''
+        run: |
+          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > android/app/release.keystore
+
+      - name: Create .env file
+        run: |
+          echo "MAPBOX_ACCESS_TOKEN=${MAPBOX_ACCESS_TOKEN}" > .env
+          echo "SENTRY_DSN=${SENTRY_DSN}" >> .env
+          echo "KEYSTORE_FILE=release.keystore" >> .env
+          echo "KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD}" >> .env
+          echo "KEY_ALIAS=${KEY_ALIAS}" >> .env
+          echo "KEY_PASSWORD=${KEY_PASSWORD}" >> .env
+
+      - name: Build APK
+        run: flutter build apk --release --dart-define-from-file=.env
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Comment APK link on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: APK Download
+          message: |
+            📱 [Download the latest APK built for this PR from the Actions artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+      - name: Upload APK to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
