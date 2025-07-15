@@ -22,13 +22,15 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
   double _distanceThisWeek = 0.0;
   Duration _timeThisWeek = Duration.zero;
   bool _isLoading = true;
-  late DateTime weekStart;
+  DateTime? _start;
+  late DateTime _now;
+  late DateTime _weekStart;
 
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    weekStart = now.subtract(Duration(days: now.weekday - 1));
+    _now = DateTime.now();
+    _weekStart = _now.subtract(Duration(days: _now.weekday - 1));
     _loadStats();
   }
 
@@ -37,11 +39,14 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
       _isLoading = true;
     });
     final tracks = await widget.isarService.trackService.getAllTracks();
+    _start = tracks.isNotEmpty
+        ? tracks.first.geolocations.first.timestamp
+        : DateTime.now();
     final tracksThisWeek = tracks.where((track) =>
             track.geolocations.isNotEmpty &&
-            (track.geolocations.first.timestamp.isAfter(weekStart) ||
+            (track.geolocations.first.timestamp.isAfter(_weekStart) ||
                 DateUtils.isSameDay(
-                    track.geolocations.first.timestamp, weekStart))
+                    track.geolocations.first.timestamp, _weekStart))
     ).toList();
 
     setState(() {
@@ -60,12 +65,16 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final textTheme = Theme.of(context).textTheme;
+    final totalSubtitle =
+        '${DateFormat('dd.MM.yyyy').format(_start ?? _now)} - ${DateFormat('dd.MM.yyyy').format(_now)}';
+    final thisWeekSubtitle =
+        '${DateFormat('dd.MM.yyyy').format(_weekStart)} - ${DateFormat('dd.MM.yyyy').format(_now)}';
     final stats = [
       // TOTAL DATA CARD
       _StatsCard(
         icon: Icons.bar_chart_outlined,
         title: l10n.tracksStatisticsTotalData,
-        subtitle: l10n.tracksStatisticsTotalDataInfo,
+        subtitle: totalSubtitle,
         stats: [
           _StatRow(
             icon: Icons.directions_bike_outlined,
@@ -95,9 +104,8 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
       // THIS WEEK CARD
       _StatsCard(
         icon: Icons.calendar_today_outlined,
-        title: l10n
-            .tracksStatisticsThisWeek(DateFormat('dd.MM').format(weekStart)),
-        subtitle: l10n.tracksStatisticsThisWeekInfo,
+        title: l10n.tracksStatisticsThisWeek,
+        subtitle: thisWeekSubtitle,
         stats: [
           _StatRow(
             icon: Icons.event_outlined,

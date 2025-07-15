@@ -184,16 +184,7 @@
     "loadMore": "Load more",
     "tracksStatisticsTitle": "Track Statistics",
     "tracksStatisticsTotalData": "Total Data",
-    "tracksStatisticsTotalDataInfo": "Data collected during all rides",
-    "tracksStatisticsThisWeek": "This Week: ({start} - today)",
-    "@tracksStatisticsThisWeek": {
-        "placeholders": {
-            "start": {
-                "type": "String"
-            }
-        }
-    },
-    "tracksStatisticsThisWeekInfo": "Statistics for the current week",
+    "tracksStatisticsThisWeek": "This Week",
     "tracksStatisticsRidesInfo": "rides completed",
     "tracksStatisticsDistanceInfo": "distance traveled",
     "tracksStatisticsTimeInfo": "time spent on the road",
