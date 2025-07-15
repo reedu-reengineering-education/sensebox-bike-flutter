@@ -132,15 +132,14 @@ Future<void> seedIsarWithSampleData(IsarService isarService) async {
   const int numTracks = 5;
   const int minDurationSec = 2 * 60; // 2 minutes
   const int maxDurationSec = 60 * 60; // 1 hour
-  const int geolocationsPerMinute = 10; // 10 geolocations per minute
+  const int geolocationsPerMinute = 60; // 10 geolocations per minute
   const double geolocationsPerSecond =
       geolocationsPerMinute / 60.0; // ≈ 0.1667 per second
   final now = DateTime.now();
 
-
-
   final isar = await isarService.isarProvider.getDatabase();
   for (int t = 0; t < numTracks; t++) {
+    debugPrint('Seeding track $t of $numTracks');
     await isar.writeTxn(() async {
       // Random start time within last 30 days
       final startOffset = random.nextInt(30 * 24 * 60 * 60); // seconds
@@ -159,8 +158,8 @@ Future<void> seedIsarWithSampleData(IsarService isarService) async {
       await isar.trackDatas.put(track);
       List<GeolocationData> geos = [];
       for (int i = 0; i < numGeolocations; i++) {
-        lat += (random.nextDouble() - 0.5) * 0.01;
-        lon += (random.nextDouble() - 0.5) * 0.01;
+        lat += (random.nextDouble() - 0.5) * 0.0001;
+        lon += (random.nextDouble() - 0.5) * 0.0001;
         final timestamp = startTime.add(Duration(seconds: (i * (60 ~/ geolocationsPerMinute))));
         final speed = (sensorSpecs.last['min']! as double) +
             random.nextDouble() *
