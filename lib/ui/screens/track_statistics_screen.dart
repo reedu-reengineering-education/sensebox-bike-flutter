@@ -4,7 +4,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 class TrackStatisticsScreen extends StatefulWidget {
   final IsarService isarService;
@@ -42,21 +42,25 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
     _start = tracks.isNotEmpty
         ? tracks.first.geolocations.first.timestamp
         : DateTime.now();
-    final tracksThisWeek = tracks.where((track) =>
+    final tracksThisWeek = tracks
+        .where((track) =>
             track.geolocations.isNotEmpty &&
             (track.geolocations.first.timestamp.isAfter(_weekStart) ||
                 DateUtils.isSameDay(
-                    track.geolocations.first.timestamp, _weekStart))
-    ).toList();
+                    track.geolocations.first.timestamp, _weekStart)))
+        .toList();
 
     setState(() {
       _trackCount = tracks.length;
-      _totalDuration = tracks.fold(Duration.zero, (prev, track) => prev + track.duration);
+      _totalDuration =
+          tracks.fold(Duration.zero, (prev, track) => prev + track.duration);
       _totalDistance = tracks.fold(0.0, (prev, track) => prev + track.distance);
 
       _ridesThisWeek = tracksThisWeek.length;
-      _distanceThisWeek = tracksThisWeek.fold(0.0, (prev, track) => prev + track.distance);
-      _timeThisWeek = tracksThisWeek.fold(Duration.zero, (prev, track) => prev + track.duration);
+      _distanceThisWeek =
+          tracksThisWeek.fold(0.0, (prev, track) => prev + track.distance);
+      _timeThisWeek = tracksThisWeek.fold(
+          Duration.zero, (prev, track) => prev + track.duration);
       _isLoading = false;
     });
   }
@@ -170,27 +174,27 @@ class _StatsCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: spacing, vertical: spacing * 2),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 28),
-                const SizedBox(width: spacing),
-                Text( title, style: textTheme.titleLarge),
-              ],
-            ),
-            const SizedBox(height: spacing/2),
-            Text(
-              subtitle,
-              style: textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-            ),
-            const SizedBox(height: spacing *2),
-            ...stats.map((w) => Padding(
-                  padding: const EdgeInsets.only(bottom: spacing),
-                  child: w,
-                )),
-          ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 28),
+              const SizedBox(width: spacing),
+              Text(title, style: textTheme.titleLarge),
+            ],
+          ),
+          const SizedBox(height: spacing / 2),
+          Text(
+            subtitle,
+            style: textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+          ),
+          const SizedBox(height: spacing * 2),
+          ...stats.map((w) => Padding(
+                padding: const EdgeInsets.only(bottom: spacing),
+                child: w,
+              )),
+        ],
       ),
     );
   }
@@ -220,13 +224,11 @@ class _StatRow extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text(
-                  value,
-                  style: textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold)
-                ),
-                const SizedBox(width: spacing/2),
-                Text(label ),
+                Text(value,
+                    style: textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold)),
+                const SizedBox(width: spacing / 2),
+                Text(label),
               ],
             ),
           ],

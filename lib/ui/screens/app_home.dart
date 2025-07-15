@@ -5,7 +5,7 @@ import 'package:sensebox_bike/ui/screens/home_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 class AppHome extends StatefulWidget {
   const AppHome({super.key});
@@ -36,7 +36,7 @@ class _AppHomeState extends State<AppHome> {
   @override
   Widget build(BuildContext context) {
     final openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context);
-    
+
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,

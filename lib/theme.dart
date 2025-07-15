@@ -20,7 +20,7 @@ final lightTheme = ThemeData(
       tertiary: Color.fromRGBO(2, 59, 35, 1),
       onTertiaryContainer: Colors.white),
   canvasColor: Colors.grey[50],
-  cardTheme: CardTheme(
+  cardTheme: CardThemeData(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(24),
     ),
@@ -53,7 +53,7 @@ final darkTheme = ThemeData(
       tertiary: Color.fromRGBO(2, 59, 35, 1),
       onTertiaryContainer: Colors.white,
       surface: Color(0xFF121212)),
-  cardTheme: CardTheme(
+  cardTheme: CardThemeData(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(24),
     ),

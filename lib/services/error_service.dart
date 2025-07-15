@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sentry_flutter/sentry_flutter.dart'; 
+import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 class ErrorService {
   static final GlobalKey<ScaffoldMessengerState> scaffoldKey =
@@ -10,7 +10,8 @@ class ErrorService {
   static void reportToSentry(dynamic error, StackTrace stack) {
     logToConsole(error, stack);
     Sentry.captureException(error, stackTrace: stack);
-  }  
+  }
+
   static void handleError(dynamic error, StackTrace stack,
       {bool sendToSentry = true}) {
     logToConsole(error, stack);
@@ -38,21 +39,18 @@ class ErrorService {
 
   static Color get errorColor => scaffoldKey.currentContext != null
       ? Theme.of(scaffoldKey.currentContext!).colorScheme.error
-        : Colors.red;
+      : Colors.red;
 
   static void showUserFeedback(dynamic error) {
     final context = scaffoldKey.currentContext;
 
     if (context == null) return;
 
-    scaffoldKey.currentState?.showSnackBar(
-      SnackBar(
+    scaffoldKey.currentState?.showSnackBar(SnackBar(
         content: Text(parseError(error, context)),
         backgroundColor: errorColor,
         showCloseIcon: true,
-        duration: Duration(seconds: 10)
-      )
-    );
+        duration: Duration(seconds: 10)));
   }
 
   static String parseError(dynamic error, BuildContext context) {

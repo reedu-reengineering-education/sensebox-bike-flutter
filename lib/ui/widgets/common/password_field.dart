@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 class PasswordField extends StatefulWidget {
   final TextEditingController controller;
-  final String? Function(BuildContext, String?)? validator; // Validator function
+  final String? Function(BuildContext, String?)?
+      validator; // Validator function
   final bool isConfirmationField; // Flag for confirmation field
-  final String? Function(BuildContext, String?, String?)?
-    confirmationValidator; 
-  final TextEditingController? passwordController; 
+  final String? Function(BuildContext, String?, String?)? confirmationValidator;
+  final TextEditingController? passwordController;
   final bool enabled; // Flag to enable/disable the field
 
-  const PasswordField({
-    super.key,
-    required this.controller,
-    this.validator,
-    this.isConfirmationField = false, // Default: not a confirmation field
-    this.confirmationValidator, // Optional: validator for confirmation field
-    this.passwordController, // Optional: original password for comparison
-      this.enabled = true
-  });
+  const PasswordField(
+      {super.key,
+      required this.controller,
+      this.validator,
+      this.isConfirmationField = false, // Default: not a confirmation field
+      this.confirmationValidator, // Optional: validator for confirmation field
+      this.passwordController, // Optional: original password for comparison
+      this.enabled = true});
 
   @override
   _PasswordFieldState createState() => _PasswordFieldState();
@@ -44,7 +43,8 @@ class _PasswordFieldState extends State<PasswordField> {
           ),
           onPressed: () {
             setState(() {
-              _isPasswordVisible = !_isPasswordVisible; // Toggle visibility state
+              _isPasswordVisible =
+                  !_isPasswordVisible; // Toggle visibility state
             });
           },
         ),

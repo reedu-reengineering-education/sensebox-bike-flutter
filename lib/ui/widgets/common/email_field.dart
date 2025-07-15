@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
 
 class EmailField extends StatelessWidget {

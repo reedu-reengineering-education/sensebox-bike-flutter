@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 void main() {
   group('ErrorService', () {
@@ -80,7 +80,7 @@ void main() {
         expect(message,
             'An unknown error occurred.\n Details: Exception: Test error');
       });
-    
+
       testWidgets('returns correct message for ExportDirectoryAccessError',
           (WidgetTester tester) async {
         await initializeContext(tester);
@@ -126,7 +126,7 @@ void main() {
         );
       });
     });
-  
+
     group('logToConsole', () {
       test('logs error and stack trace to console', () {
         final error = Exception('Test error');
@@ -148,7 +148,7 @@ void main() {
         expect(log, contains(error.toString()));
       });
     });
-  
+
     group('showUserFeedback', () {
       testWidgets('displays SnackBar with correct message',
           (WidgetTester tester) async {

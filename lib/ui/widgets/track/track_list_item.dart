@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/secrets.dart';
@@ -44,11 +44,11 @@ class TrackListItem extends StatelessWidget {
     return Padding(
         padding: EdgeInsets.only(bottom: spacing, top: spacing),
         child: Dismissible(
-      key: Key(track.id.toString()),
-      background: _buildDismissBackground(theme),
-      confirmDismiss: (direction) =>
-          _confirmDismiss(context, localizations, theme),
-      onDismissed: (direction) => onDismissed(),
+            key: Key(track.id.toString()),
+            background: _buildDismissBackground(theme),
+            confirmDismiss: (direction) =>
+                _confirmDismiss(context, localizations, theme),
+            onDismissed: (direction) => onDismissed(),
             child: ClickableTile(
               onTap: () => Navigator.push(
                 context,
@@ -56,9 +56,9 @@ class TrackListItem extends StatelessWidget {
                   builder: (context) => TrackDetailScreen(track: track),
                 ),
               ),
-          child: hasGeolocations
-              ? _buildTrackContent(context, localizations, theme, track)
-              : _buildNoGeolocationsContent(context, localizations, theme),
+              child: hasGeolocations
+                  ? _buildTrackContent(context, localizations, theme, track)
+                  : _buildNoGeolocationsContent(context, localizations, theme),
             )));
   }
 
@@ -110,8 +110,7 @@ class TrackListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildTrackContent(
-      BuildContext context,
+  Widget _buildTrackContent(BuildContext context,
       AppLocalizations localizations, ThemeData theme, TrackData track) {
     final date =
         DateFormat('dd.MM.yyyy').format(track.geolocations.first.timestamp);
@@ -122,10 +121,7 @@ class TrackListItem extends StatelessWidget {
     final times = '$trackStart - $trackEnd';
     final duration = localizations.generalTrackDurationShort(
         track.duration.inHours.toString(),
-        track.duration.inMinutes
-            .remainder(60)
-            .toString()
-            .padLeft(2, '0'));
+        track.duration.inMinutes.remainder(60).toString().padLeft(2, '0'));
     final distance =
         localizations.generalTrackDistance(track.distance.toStringAsFixed(2));
     final colorScheme = Theme.of(context).colorScheme;

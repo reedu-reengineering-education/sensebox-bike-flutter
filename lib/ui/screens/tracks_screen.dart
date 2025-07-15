@@ -7,7 +7,7 @@ import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/constants.dart';
 
 class TracksScreen extends StatefulWidget {
@@ -19,12 +19,12 @@ class TracksScreen extends StatefulWidget {
 
 class TracksScreenState extends State<TracksScreen> {
   late IsarService _isarService;
-  final ScrollController _scrollController = ScrollController(); 
+  final ScrollController _scrollController = ScrollController();
   List<TrackData> _displayedTracks = [];
   // Pagination variables
   int _currentPage = 0;
   bool _hasMoreTracks = true;
-  bool _isLoading = false; 
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -130,19 +130,17 @@ class TracksScreenState extends State<TracksScreen> {
                               isLoading: _isLoading,
                               onPressed: _isLoading ? null : _loadMoreTracks,
                               text: AppLocalizations.of(context)!.loadMore,
-                              width: 0.6, 
+                              width: 0.6,
                             ),
                           );
                         }
                       },
                     ),
                   ),
-                )
-            ),
+                )),
           ),
         ],
       ),
     );
   }
 }
-

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 
 class SenseBoxSelectionWidget extends StatefulWidget {
@@ -159,7 +159,7 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
                         await bloc.setSelectedSenseBox(null);
                       } else {
                         // Select the box
-                      await bloc.setSelectedSenseBox(senseBox);
+                        await bloc.setSelectedSenseBox(senseBox);
                       }
                       if (context.mounted) {
                         Navigator.pop(context); // Go back after selecting
