@@ -2,7 +2,7 @@ name: Build APK
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   release:
     types: [published]
 
@@ -25,15 +25,15 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          distribution: "temurin"
+          java-version: "21"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-          flutter-version: '3.29.1'
+          flutter-version: "3.29.1"
 
       - name: Install dependencies
         run: flutter pub get
