@@ -112,7 +112,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// Widget for senseBox selection
+// Widget for senseBox selection as a badge-like button
 class _SenseBoxSelectionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -120,58 +120,109 @@ class _SenseBoxSelectionButton extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    // Show the button only if the user is authenticated
     if (!osemBloc.isAuthenticated) {
-      return const SizedBox
-          .shrink(); // Return an empty widget if not authenticated
+      return const SizedBox.shrink();
     }
 
-    return IconButton.outlined(
-        style: OutlinedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          side: BorderSide(
-            color: osemBloc.selectedSenseBox == null
-                ? colorScheme.error
-                : colorScheme.tertiary,
-            width: borderWidth,
-          ),
-        ),
-        onPressed: () => showSenseBoxSelection(context, osemBloc),
-        icon: StreamBuilder<SenseBox?>(
-          stream: osemBloc.senseBoxStream,
-          initialData: osemBloc.selectedSenseBox,
-          builder: (context, snapshot) {
-            var selectedBox = snapshot.data;
+    return StreamBuilder<SenseBox?>(
+      stream: osemBloc.senseBoxStream,
+      initialData: osemBloc.selectedSenseBox,
+      builder: (context, snapshot) {
+        final selectedBox = snapshot.data;
+        final bool hasError = snapshot.hasError;
+        final bool noBox = selectedBox == null;
 
-            if (snapshot.hasError) {
-              return Icon(Icons.error, color: colorScheme.error);
-            } else if (selectedBox == null) {
-              // If no box is selected, show a red icon
-              return Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.link, color: colorScheme.error),
-                const SizedBox(width: 8),
-                Text(
-                  '...',
-                  style:
-                      textTheme.bodyMedium?.copyWith(color: colorScheme.error),
+        Color textColor = hasError
+            ? colorScheme.onErrorContainer
+            : Theme.of(context).colorScheme.onTertiaryContainer;
+        IconData icon = hasError
+            ? Icons.error
+            : noBox
+                ? Icons.add_box_outlined
+                : Icons.emergency_share_rounded;
+        String label = hasError
+            ? AppLocalizations.of(context)!.generalError
+            : noBox
+                ? AppLocalizations.of(context)!.selectOrCreateBox
+                : selectedBox.name ?? '';
+
+        return InkWell(
+          onTap: () => showSenseBoxSelection(context, osemBloc),
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 48),
+            decoration: BoxDecoration(
+              color: hasError
+                  ? colorScheme.errorContainer
+                  : Theme.of(context).colorScheme.tertiary,
+              borderRadius: BorderRadius.circular(borderRadiusSmall),
+              border: Border.all(
+                color: hasError
+                    ? colorScheme.outlineVariant
+                    : Theme.of(context).colorScheme.tertiary,
+                width: 1.0,
+                style: BorderStyle.solid,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.03),
+                  blurRadius: 1.5,
+                  offset: const Offset(0, 1),
                 ),
-              ]);
-            } else {
-              // If a box is selected, show a green checkbox and the name of the box
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check, color: colorScheme.tertiary),
-                  const SizedBox(width: 8),
-                  Text(truncateBoxName(selectedBox.name ?? ''),
-                      style: textTheme.bodyMedium
-                          ?.copyWith(color: colorScheme.tertiary)),
-                ],
-              );
-            }
-          },
-        ));
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Icon in a small circle background
+                SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: Center(
+                    child: Icon(
+                      icon,
+                      color: hasError
+                          ? colorScheme.onErrorContainer
+                          : Theme.of(context).colorScheme.onTertiaryContainer,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Title
+                Expanded(
+                  child: Text(
+                    label,
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: textColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                  ),
+                ),
+                // Optional description (for error or noBox)
+                if (hasError)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Icon(Icons.refresh,
+                        color: colorScheme.onErrorContainer, size: 16),
+                  )
+                else if (noBox)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Icon(Icons.arrow_forward,
+                        color:
+                            Theme.of(context).colorScheme.onTertiaryContainer,
+                        size: 16),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -191,22 +242,30 @@ class _FloatingButtons extends StatelessWidget {
           builder: (context, selectedDevice, child) {
             // Show buttons if device is connected or if reconnecting
             if (selectedDevice == null && !isReconnecting) {
-              return Row(
+              return Column(
+                spacing: 12,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: _ConnectButton(bleBloc: bleBloc),
-                  ),
-                  const SizedBox(width: 12),
+                  _ConnectButton(bleBloc: bleBloc),
                   _SenseBoxSelectionButton(),
                 ],
               );
             } else {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: 12,
                 children: [
-                  _StartStopButton(recordingBloc: recordingBloc),
-                  _DisconnectButton(bleBloc: bleBloc),
+                  Row(
+                    spacing: 12,
+                    children: [
+                      Expanded(
+                        child: _StartStopButton(recordingBloc: recordingBloc),
+                      ),
+                      Expanded(
+                        child: _DisconnectButton(bleBloc: bleBloc),
+                      ),
+                    ],
+                  ),
                   _SenseBoxSelectionButton(),
                 ],
               );
@@ -235,7 +294,7 @@ class _ConnectButton extends StatelessWidget {
               return Align(
                 alignment: Alignment.center,
                 child: SizedBox(
-                  width: 200, // Set a fixed width for the button
+                  width: double.infinity, // Full width for the button
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
@@ -253,7 +312,7 @@ class _ConnectButton extends StatelessWidget {
               return Align(
                 alignment: Alignment.center,
                 child: SizedBox(
-                  width: 200, // Set a fixed width for the button
+                  width: double.infinity, // Set a fixed width for the button
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
                       backgroundColor: isBluetoothEnabled

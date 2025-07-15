@@ -61,6 +61,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String generalTrackDurationShort(String hours, String minutes) {
+    return '$hours:$minutes Std.';
+  }
+
+  @override
   String generalTrackDistance(String distance) {
     return '$distance km';
   }
@@ -85,9 +90,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get homeBottomBarTracks => 'Tracks';
-
-  @override
-  String get tracksAppBarTitle => 'Tracks';
 
   @override
   String tracksAppBarSumTracks(num count) {
@@ -184,6 +186,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noBleDevicesFound => 'Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.';
+
+  @override
+  String get selectOrCreateBox => 'senseBox wählen oder erstellen';
 
   @override
   String get createBoxTitle => 'senseBox:bike erstellen';
@@ -435,4 +440,34 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get privacyPolicyAccept => 'Ich habe die Datenschutzerklärung gelesen und stimme ihr zu.';
+
+  @override
+  String get trackNoGeolocations => 'Keine Positionsdaten für diesen Track verfügbar.';
+
+  @override
+  String get tracksAppBarTitle => 'Deine Tracks';
+
+  @override
+  String get loadMore => 'Mehr laden';
+
+  @override
+  String get tracksStatisticsTitle => 'Track-Statistiken';
+
+  @override
+  String get tracksStatisticsTotalData => 'Gesamtdaten';
+
+  @override
+  String get tracksStatisticsThisWeek => 'Diese Woche';
+
+  @override
+  String get tracksStatisticsRidesInfo => 'Abgeschlossene Fahrten';
+
+  @override
+  String get tracksStatisticsDistanceInfo => 'zurückgelegte Strecke';
+
+  @override
+  String get tracksStatisticsTimeInfo => 'Fahrzeit';
+
+  @override
+  String get trackStatistics => 'Track-Statistiken';
 }

@@ -22,7 +22,7 @@
     "generalPrivacyZones": "Áreas de Privacidade",
     "generalSettings": "Configurações",
     "generalShare": "Compartilhar",
-    "generalTrackDuration": "{hours}h{minutes}min",
+    "generalTrackDuration": "{hours} h {minutes} min",
     "@generalTrackDuration": {
         "placeholders": {
             "hours": {
@@ -30,6 +30,17 @@
             },
             "minutes": {
                 "type": "int"
+            }
+        }
+    },
+    "generalTrackDurationShort": "{hours}:{minutes} h",
+    "@generalTrackDurationShort": {
+        "placeholders": {
+            "hours": {
+                "type": "String"
+            },
+            "minutes": {
+                "type": "String"
             }
         }
     },
@@ -48,7 +59,6 @@
     "generalProceed": "Prosseguir",
     "homeBottomBarHome": "Início",
     "homeBottomBarTracks": "Trajetos",
-    "tracksAppBarTitle": "Trajetos",
     "tracksAppBarSumTracks": "{count, plural, =0{Nenhum trajeto} =1{1 trajeto} other{{count} trajetos}}",
     "tracksNoTracks": "Nenhum trajeto disponível",
     "tracksTrackDeleted": "Trajeto excluído",
@@ -78,6 +88,7 @@
     "connectionButtonStop": "Parar",
     "bleDeviceSelectTitle": "Toque para conectar",
     "noBleDevicesFound": "Nenhuma senseBox encontrada. Certifique-se de que sua senseBox está ligada, toque fora desta janela e tente novamente.",
+    "selectOrCreateBox": "Selecionar ou criar senseBox",
     "createBoxTitle": "Criar senseBox:bike",
     "createBoxModel": "Modelo",
     "createBoxModelErrorEmpty": "Por favor, selecione um modelo",
@@ -150,8 +161,8 @@
     "noCampaignsAvailable": "Não há campanhas disponíveis",
     "loginScreenTitle": "openSenseMap Conta",
     "connectionButtonEnableBluetooth": "Ativar Bluetooth",
-    "errorNoLocationAccess": "Para gravar faixas, permita que a aplicação aceda à localização atual do dispositivo nas definições do telefone.", 
-    "errorNoScanAccess": "Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.", 
+    "errorNoLocationAccess": "Para gravar faixas, permita que a aplicação aceda à localização atual do dispositivo nas definições do telefone.",
+    "errorNoScanAccess": "Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.",
     "errorNoSenseBoxSelected": "Para permitir o envio de dados do sensor para a nuvem, inicie sessão na sua conta do openSenseMap e selecione a caixa.",
     "errorExportDirectoryAccess": "Erro ao acessar o diretório de exportação. Por favor, verifique se o aplicativo tem permissão para acessar o armazenamento.",
     "errorLoginFailed": "Falha no login. Por favor, verifique suas credenciais.",
@@ -167,6 +178,15 @@
     "accountManagement": "Gerenciamento de Conta",
     "deleteAllHint": "Isso excluirá todas as suas faixas do aplicativo.",
     "generalConfirmation": "Confirmação",
-    "privacyPolicyAccept": "Eu li e aceito a política de privacidade."
-
+    "privacyPolicyAccept": "Eu li e aceito a política de privacidade.",
+    "trackNoGeolocations": "Nenhuma geolocalização disponível para este trajeto.",
+    "tracksAppBarTitle": "Seus trajetos",
+    "loadMore": "Carregar mais",
+    "tracksStatisticsTitle": "Estatísticas do Trajeto",
+    "tracksStatisticsTotalData": "Dados Totais",
+    "tracksStatisticsThisWeek": "Esta Semana",
+    "tracksStatisticsRidesInfo": "viagens concluídas",
+    "tracksStatisticsDistanceInfo": "distância percorrida",
+    "tracksStatisticsTimeInfo": "tempo gasto na estrada",
+    "trackStatistics": "Estatísticas do Trajeto"
 }

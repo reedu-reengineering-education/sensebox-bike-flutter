@@ -7,7 +7,7 @@ import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
-import 'package:sensebox_bike/ui/screens/login_screen.dart';
+import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
@@ -103,6 +103,7 @@ class SettingsScreen extends StatelessWidget {
   // General Settings Section
   Widget _buildGeneralSettingsSection(
       BuildContext context, SettingsBloc settingsBloc) {
+    final isarService = Provider.of<TrackBloc>(context).isarService;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -136,6 +137,16 @@ class SettingsScreen extends StatelessWidget {
           trailing: Badge.count(
             count: settingsBloc.privacyZones.length,
             backgroundColor: Theme.of(context).iconTheme.color,
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.trending_up_outlined),
+          title: Text(AppLocalizations.of(context)!.trackStatistics),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    TrackStatisticsScreen(isarService: isarService)),
           ),
         ),
       ],

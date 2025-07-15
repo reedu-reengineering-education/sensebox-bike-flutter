@@ -1,5 +1,9 @@
 import 'package:geolocator/geolocator.dart' as Geolocator;
 
+// Tracks screen
+const tracksPerPage = 5;
+
+// LiveUploadService
 const maxRetries = 10;
 const retryPeriod = 2; // in minutes
 const premanentConnectivityFalurePeriod = 10; // in minutes

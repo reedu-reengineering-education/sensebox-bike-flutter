@@ -57,7 +57,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String generalTrackDuration(int hours, int minutes) {
-    return '${hours}h${minutes}min';
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String generalTrackDurationShort(String hours, String minutes) {
+    return '$hours:$minutes h';
   }
 
   @override
@@ -85,9 +90,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get homeBottomBarTracks => 'Trajetos';
-
-  @override
-  String get tracksAppBarTitle => 'Trajetos';
 
   @override
   String tracksAppBarSumTracks(num count) {
@@ -184,6 +186,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get noBleDevicesFound => 'Nenhuma senseBox encontrada. Certifique-se de que sua senseBox está ligada, toque fora desta janela e tente novamente.';
+
+  @override
+  String get selectOrCreateBox => 'Selecionar ou criar senseBox';
 
   @override
   String get createBoxTitle => 'Criar senseBox:bike';
@@ -435,4 +440,34 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get privacyPolicyAccept => 'Eu li e aceito a política de privacidade.';
+
+  @override
+  String get trackNoGeolocations => 'Nenhuma geolocalização disponível para este trajeto.';
+
+  @override
+  String get tracksAppBarTitle => 'Seus trajetos';
+
+  @override
+  String get loadMore => 'Carregar mais';
+
+  @override
+  String get tracksStatisticsTitle => 'Estatísticas do Trajeto';
+
+  @override
+  String get tracksStatisticsTotalData => 'Dados Totais';
+
+  @override
+  String get tracksStatisticsThisWeek => 'Esta Semana';
+
+  @override
+  String get tracksStatisticsRidesInfo => 'viagens concluídas';
+
+  @override
+  String get tracksStatisticsDistanceInfo => 'distância percorrida';
+
+  @override
+  String get tracksStatisticsTimeInfo => 'tempo gasto na estrada';
+
+  @override
+  String get trackStatistics => 'Estatísticas do Trajeto';
 }

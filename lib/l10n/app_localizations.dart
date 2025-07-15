@@ -190,8 +190,14 @@ abstract class AppLocalizations {
   /// No description provided for @generalTrackDuration.
   ///
   /// In en, this message translates to:
-  /// **'{hours}h {minutes}min'**
+  /// **'{hours} h {minutes} min'**
   String generalTrackDuration(int hours, int minutes);
+
+  /// No description provided for @generalTrackDurationShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}:{minutes} hrs'**
+  String generalTrackDurationShort(String hours, String minutes);
 
   /// No description provided for @generalTrackDistance.
   ///
@@ -240,12 +246,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tracks'**
   String get homeBottomBarTracks;
-
-  /// No description provided for @tracksAppBarTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Tracks'**
-  String get tracksAppBarTitle;
 
   /// No description provided for @tracksAppBarSumTracks.
   ///
@@ -420,6 +420,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.'**
   String get noBleDevicesFound;
+
+  /// No description provided for @selectOrCreateBox.
+  ///
+  /// In en, this message translates to:
+  /// **'Select or create senseBox:bike'**
+  String get selectOrCreateBox;
 
   /// No description provided for @createBoxTitle.
   ///
@@ -634,7 +640,7 @@ abstract class AppLocalizations {
   /// No description provided for @sensorDistance.
   ///
   /// In en, this message translates to:
-  /// **'Overtaking Distance\''**
+  /// **'Overtaking Distance'**
   String get sensorDistance;
 
   /// No description provided for @sensorOvertaking.
@@ -918,6 +924,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'I have read and accept the Privacy Policy.'**
   String get privacyPolicyAccept;
+
+  /// No description provided for @trackNoGeolocations.
+  ///
+  /// In en, this message translates to:
+  /// **'No geolocations available for this track.'**
+  String get trackNoGeolocations;
+
+  /// No description provided for @tracksAppBarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your tracks'**
+  String get tracksAppBarTitle;
+
+  /// No description provided for @loadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get loadMore;
+
+  /// No description provided for @tracksStatisticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track Statistics'**
+  String get tracksStatisticsTitle;
+
+  /// No description provided for @tracksStatisticsTotalData.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Data'**
+  String get tracksStatisticsTotalData;
+
+  /// No description provided for @tracksStatisticsThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This Week'**
+  String get tracksStatisticsThisWeek;
+
+  /// No description provided for @tracksStatisticsRidesInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'rides completed'**
+  String get tracksStatisticsRidesInfo;
+
+  /// No description provided for @tracksStatisticsDistanceInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'distance traveled'**
+  String get tracksStatisticsDistanceInfo;
+
+  /// No description provided for @tracksStatisticsTimeInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'time spent on the road'**
+  String get tracksStatisticsTimeInfo;
+
+  /// No description provided for @trackStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Track Statistics'**
+  String get trackStatistics;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

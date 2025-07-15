@@ -35,72 +35,74 @@ class _LoginFormState extends State<LoginForm> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom, // Adjust for keyboard
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              EmailField(
-                controller: emailController,
-                enabled: !isLoading,
-              ),
-              const CustomSpacer(),
-              PasswordField(
-                controller: passwordController,
-                enabled: !isLoading,
-                validator: (context, value) =>
-                    passwordValidatorSimple(context, value),
-              ),
-              const CustomSpacer(),
-              ButtonWithLoader(
-                isLoading: isLoading,
-                text: AppLocalizations.of(context)!.generalLogin,
-                width: 0.4,
-                onPressed: isLoading
-                    ? null // Disable button when loading
-                    : () async {
-                        bool isLoginSuccessful = false;
-                        if (formKey.currentState?.validate() == true) {
-                          setState(() {
-                            isLoading = true; // Start loading
-                          });
-
-                          try {
-                            await widget.bloc.login(
-                              emailController.value.text,
-                              passwordController.value.text,
-                            );
-                            isLoginSuccessful = true;
-                          } catch (e, stack) {
-                            ErrorService.handleError(LoginError(e), stack,
-                                sendToSentry: false);
-                          } finally {
-                            setState(() {
-                              isLoading = false; // Stop loading
-                            });
-                          }
-
-                          // Navigate only if login was successful
-                          if (isLoginSuccessful && context.mounted) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const AppHome(),
-                              ),
-                            );
-                          }
-                        }
-                      },
-              ),
-            ],
-          ),
+        padding: EdgeInsets.only(
+          bottom:
+              MediaQuery.of(context).viewInsets.bottom, // Adjust for keyboard
         ),
-      ),
-    );
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: formKey,
+            child: AutofillGroup(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  EmailField(
+                    controller: emailController,
+                    enabled: !isLoading,
+                  ),
+                  const CustomSpacer(),
+                  PasswordField(
+                    controller: passwordController,
+                    enabled: !isLoading,
+                    validator: (context, value) =>
+                        passwordValidatorSimple(context, value),
+                  ),
+                  const CustomSpacer(),
+                  ButtonWithLoader(
+                    isLoading: isLoading,
+                    text: AppLocalizations.of(context)!.generalLogin,
+                    width: 0.4,
+                    onPressed: isLoading
+                        ? null // Disable button when loading
+                        : () async {
+                            bool isLoginSuccessful = false;
+                            if (formKey.currentState?.validate() == true) {
+                              setState(() {
+                                isLoading = true; // Start loading
+                              });
+
+                              try {
+                                await widget.bloc.login(
+                                  emailController.value.text,
+                                  passwordController.value.text,
+                                );
+                                isLoginSuccessful = true;
+                              } catch (e, stack) {
+                                ErrorService.handleError(LoginError(e), stack,
+                                    sendToSentry: false);
+                              } finally {
+                                setState(() {
+                                  isLoading = false; // Stop loading
+                                });
+                              }
+
+                              // Navigate only if login was successful
+                              if (isLoginSuccessful && context.mounted) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const AppHome(),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ));
   }
 }

@@ -57,7 +57,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String generalTrackDuration(int hours, int minutes) {
-    return '${hours}h ${minutes}min';
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String generalTrackDurationShort(String hours, String minutes) {
+    return '$hours:$minutes hrs';
   }
 
   @override
@@ -85,9 +90,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeBottomBarTracks => 'Tracks';
-
-  @override
-  String get tracksAppBarTitle => 'Tracks';
 
   @override
   String tracksAppBarSumTracks(num count) {
@@ -184,6 +186,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noBleDevicesFound => 'No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.';
+
+  @override
+  String get selectOrCreateBox => 'Select or create senseBox:bike';
 
   @override
   String get createBoxTitle => 'Create senseBox:bike';
@@ -293,7 +298,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sensorFinedustPM1 => 'Finedust PM1';
 
   @override
-  String get sensorDistance => 'Overtaking Distance\'';
+  String get sensorDistance => 'Overtaking Distance';
 
   @override
   String get sensorOvertaking => 'Overtaking Manoeuvre';
@@ -435,4 +440,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyPolicyAccept => 'I have read and accept the Privacy Policy.';
+
+  @override
+  String get trackNoGeolocations => 'No geolocations available for this track.';
+
+  @override
+  String get tracksAppBarTitle => 'Your tracks';
+
+  @override
+  String get loadMore => 'Load more';
+
+  @override
+  String get tracksStatisticsTitle => 'Track Statistics';
+
+  @override
+  String get tracksStatisticsTotalData => 'Total Data';
+
+  @override
+  String get tracksStatisticsThisWeek => 'This Week';
+
+  @override
+  String get tracksStatisticsRidesInfo => 'rides completed';
+
+  @override
+  String get tracksStatisticsDistanceInfo => 'distance traveled';
+
+  @override
+  String get tracksStatisticsTimeInfo => 'time spent on the road';
+
+  @override
+  String get trackStatistics => 'Track Statistics';
 }

@@ -22,7 +22,8 @@ class TrackService {
 
   Future<List<TrackData>> getAllTracks() async {
     final isar = await isarProvider.getDatabase();
-    return await isar.trackDatas.where().findAll();
+    final tracks = await isar.trackDatas.where().findAll();
+    return tracks.toList();
   }
 
   Future<void> deleteTrack(int id) async {
@@ -37,5 +38,16 @@ class TrackService {
     await isar.writeTxn(() async {
       await isar.trackDatas.clear();
     });
+  }
+
+  Future<List<TrackData>> getTracksPaginated(
+      {required int offset, required int limit}) async {
+    final isar = await isarProvider.getDatabase();
+    return await isar.trackDatas
+        .where(sort: Sort.desc)
+        .anyId()
+        .offset(offset)
+        .limit(limit)
+        .findAll();
   }
 }

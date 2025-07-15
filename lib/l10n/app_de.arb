@@ -33,6 +33,17 @@
             }
         }
     },
+    "generalTrackDurationShort": "{hours}:{minutes} Std.",
+    "@generalTrackDurationShort": {
+        "placeholders": {
+            "hours": {
+                "type": "String"
+            },
+            "minutes": {
+                "type": "String"
+            }
+        }
+    },
     "generalTrackDistance": "{distance} km",
     "@generalTrackDistance": {
         "placeholders": {
@@ -48,7 +59,6 @@
     "generalProceed": "Fortfahren",
     "homeBottomBarHome": "Start",
     "homeBottomBarTracks": "Tracks",
-    "tracksAppBarTitle": "Tracks",
     "tracksAppBarSumTracks": "{count, plural, =0{Keine Tracks} =1{1 Track} other{{count} Tracks}}",
     "tracksNoTracks": "Keine Tracks verfügbar",
     "tracksTrackDeleted": "Track gelöscht",
@@ -75,6 +85,7 @@
     "connectionButtonStop": "Stop",
     "bleDeviceSelectTitle": "Tippen, um zu verbinden",
     "noBleDevicesFound": "Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.",
+    "selectOrCreateBox": "senseBox wählen oder erstellen",
     "createBoxTitle": "senseBox:bike erstellen",
     "createBoxModel": "Modell",
     "createBoxModelErrorEmpty": "Bitte wähle ein Modell",
@@ -150,8 +161,8 @@
     "noCampaignsAvailable": "Keine Kampagnen verfügbar",
     "loginScreenTitle": "openSenseMap Konto",
     "connectionButtonEnableBluetooth": "Bluetooth aktivieren",
-    "errorNoLocationAccess": "Um Tracks aufzuzeichnen, erlauben Sie bitte der App in den Telefoneinstellungen den Zugriff auf den aktuellen Standort des Geräts.", 
-    "errorNoScanAccess": "Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.", 
+    "errorNoLocationAccess": "Um Tracks aufzuzeichnen, erlauben Sie bitte der App in den Telefoneinstellungen den Zugriff auf den aktuellen Standort des Geräts.",
+    "errorNoScanAccess": "Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.",
     "errorNoSenseBoxSelected": "Um den Upload von Sensordaten in die Cloud zu erlauben, melden Sie sich bitte bei Ihrem openSenseMap-Konto an und aktivieren Sie das Kästchen.",
     "errorExportDirectoryAccess": "Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.",
     "errorLoginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
@@ -167,5 +178,15 @@
     "accountManagement": "Kontoverwaltung",
     "deleteAllHint": "Dies löscht alle Ihre Tracks aus der App.",
     "generalConfirmation": "Bestätigung",
-    "privacyPolicyAccept": "Ich habe die Datenschutzerklärung gelesen und stimme ihr zu."
+    "privacyPolicyAccept": "Ich habe die Datenschutzerklärung gelesen und stimme ihr zu.",
+    "trackNoGeolocations": "Keine Positionsdaten für diesen Track verfügbar.",
+    "tracksAppBarTitle": "Deine Tracks",
+    "loadMore": "Mehr laden",
+    "tracksStatisticsTitle": "Track-Statistiken",
+    "tracksStatisticsTotalData": "Gesamtdaten",
+    "tracksStatisticsThisWeek": "Diese Woche",
+    "tracksStatisticsRidesInfo": "Abgeschlossene Fahrten",
+    "tracksStatisticsDistanceInfo": "zurückgelegte Strecke",
+    "tracksStatisticsTimeInfo": "Fahrzeit",
+    "trackStatistics": "Track-Statistiken"
 }

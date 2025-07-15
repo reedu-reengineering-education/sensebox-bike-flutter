@@ -140,7 +140,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       ErrorService.handleError('Error exporting CSV: $e', StackTrace.current);
     } finally {
       setState(() {
-        _isDownloading = false; // Hide spinner
+        _isDownloading = false; 
       });
     }
   }
