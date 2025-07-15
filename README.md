@@ -47,7 +47,7 @@ To populate the app with sample data for development or testing, use the provide
     await seedIsarWithSampleData(isarService);
     ```
 *   This will generate several tracks, geolocations, and sensor data in your local database.
-*   You can call this function in your app’s initialization code, or a dedicated admin/debug screen.
+*   You can call this function in your app's initialisation code or anywhere else in the app. Personally, I prefer to replace the IsarService call used to delete all data on the app's Settings screen with the above code.
 
 **Note:**
 Seeding will only affect your local Isar database and is safe for development and testing purposes.
