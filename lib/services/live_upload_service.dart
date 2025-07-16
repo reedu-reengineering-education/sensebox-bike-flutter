@@ -66,14 +66,11 @@ class LiveUploadService {
 
   /// Trigger an immediate upload when new sensor data is available
   void triggerUpload() {
-    debugPrint('Live upload triggered by new data');
-    
     // Check if we're within the minimum upload interval
     final now = DateTime.now();
     if (_lastUploadAttempt != null) {
       final timeSinceLastAttempt = now.difference(_lastUploadAttempt!);
       if (timeSinceLastAttempt < _minUploadInterval) {
-        debugPrint('Upload throttled: too soon since last attempt');
         return;
       }
     }
@@ -98,14 +95,17 @@ class LiveUploadService {
 
   Future<void> _performUpload() async {
     if (_isUploading) {
-      debugPrint('Upload already in progress, skipping');
       return; // Prevent concurrent uploads
     }
 
-    debugPrint('Starting live upload process');
     _isUploading = true;
 
     try {
+      // Get current senseBox - this ensures we always use the latest senseBox
+      final senseBox = getCurrentSenseBox();
+      if (senseBox == null) {
+        return;
+      }
       // Add a small delay to reduce main thread load
       await Future.delayed(const Duration(milliseconds: 100));
       
@@ -116,15 +116,12 @@ class LiveUploadService {
             await OptimizedDatabaseService.getGeolocationCount(trackId);
         _lastKnownCount = currentCount;
       } catch (e) {
-        debugPrint('Error getting geolocation count: $e');
         // Use last known count as fallback
         currentCount = _lastKnownCount;
       }
       
       // Only process if we have new data (more than 2 records and more than last processed)
       if (currentCount < 2 || currentCount <= _lastProcessedCount) {
-        debugPrint(
-            'No new data to upload. Current count: $currentCount, Last processed: $_lastProcessedCount');
         return;
       }
 
@@ -137,7 +134,6 @@ class LiveUploadService {
           chunkSize: 25, // Use smaller chunks for better performance
         );
       } catch (e) {
-        debugPrint('Error processing data: $e');
         // If processing fails, try again later
         return;
       }
@@ -153,11 +149,6 @@ class LiveUploadService {
         _lastSuccessfulUpload = DateTime.now();
         _consecutiveFails = 0;
         _lastProcessedCount = currentCount;
-
-        debugPrint(
-            'Successfully uploaded ${processedData.length} geolocation records with ${dataToUpload.length} sensor data points to senseBox: ${senseBox.id}');
-      } else {
-        debugPrint('No new data to upload after processing');
       }
     } catch (e) {
       _consecutiveFails++;
@@ -167,7 +158,6 @@ class LiveUploadService {
           e.toString().contains('RootIsolateToken') ||
           e.toString().contains('isolate') ||
           e.toString().contains('Instance has already been opened')) {
-        debugPrint('Database processing error, will retry on next cycle: $e');
         // Don't count processing errors as upload failures
         _consecutiveFails = max(0, _consecutiveFails - 1);
       } else {
@@ -183,10 +173,6 @@ class LiveUploadService {
               'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.',
               StackTrace.current);
           return;
-        } else {
-          debugPrint(
-              'Failed to upload data: $e. Retrying in $retryPeriod minutes (Attempt $_consecutiveFails of $maxRetries).');
-          // Don't delay here since we're using a timer
         }
       }
     } finally {
@@ -200,7 +186,6 @@ class LiveUploadService {
     SenseBox senseBox, // Pass senseBox as parameter
   ) {
     Map<String, dynamic> data = {};
-
     for (final geoData in processedData) {
       final timestamp = DateTime.parse(geoData['timestamp'] as String);
       final sensorDataList = geoData['sensorData'] as List;
@@ -213,8 +198,6 @@ class LiveUploadService {
         String? sensorTitle = getTitleFromSensorKey(title, attribute);
 
         if (sensorTitle == null) {
-          debugPrint(
-              'Could not get sensor title for: $title, attribute: $attribute');
           continue;
         }
 
@@ -278,7 +261,6 @@ class LiveUploadService {
     // Get current senseBox and check if it's available
     final senseBox = getCurrentSenseBox();
     if (senseBox == null) {
-      debugPrint('No senseBox available for data preparation');
       return data;
     }
 
