@@ -134,7 +134,6 @@ abstract class Sensor {
     isarService.sensorService.saveSensorData(sensorData);
     
     // Trigger live upload when new sensor data is saved
-    debugPrint('Sensor data saved for $title, triggering live upload');
     recordingBloc.liveUploadService?.triggerUpload();
   }
 

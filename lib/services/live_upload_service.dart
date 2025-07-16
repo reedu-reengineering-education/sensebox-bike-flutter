@@ -16,8 +16,7 @@ class LiveUploadService {
   final OpenSenseMapService openSenseMapService;
   final SettingsBloc settingsBloc;
   final IsarService isarService;
-  final SenseBox? Function()
-      getCurrentSenseBox; // Function to get current senseBox (nullable)
+  final SenseBox? Function() getCurrentSenseBox; 
 
   final int trackId;
 
@@ -48,7 +47,7 @@ class LiveUploadService {
     required this.openSenseMapService,
     required this.settingsBloc,
     required this.isarService,
-    required this.getCurrentSenseBox, // Function to get current senseBox
+    required this.getCurrentSenseBox,
     required this.trackId,
   });
 
@@ -64,9 +63,7 @@ class LiveUploadService {
     });
   }
 
-  /// Trigger an immediate upload when new sensor data is available
   void triggerUpload() {
-    // Check if we're within the minimum upload interval
     final now = DateTime.now();
     if (_lastUploadAttempt != null) {
       final timeSinceLastAttempt = now.difference(_lastUploadAttempt!);
@@ -75,10 +72,7 @@ class LiveUploadService {
       }
     }
     
-    // Cancel any existing debounce timer
     _debounceTimer?.cancel();
-    
-    // Set a new debounce timer
     _debounceTimer = Timer(_debounceDelay, () {
       _lastUploadAttempt = DateTime.now();
       _performUpload();
@@ -101,15 +95,12 @@ class LiveUploadService {
     _isUploading = true;
 
     try {
-      // Get current senseBox - this ensures we always use the latest senseBox
       final senseBox = getCurrentSenseBox();
       if (senseBox == null) {
         return;
       }
-      // Add a small delay to reduce main thread load
       await Future.delayed(const Duration(milliseconds: 100));
-      
-      // Check if there's new data to upload first
+
       int currentCount;
       try {
         currentCount =
@@ -131,7 +122,7 @@ class LiveUploadService {
         processedData = await OptimizedDatabaseService.processDataInChunks(
           trackId,
           _uploadedIds,
-          chunkSize: 25, // Use smaller chunks for better performance
+          chunkSize: 25, 
         );
       } catch (e) {
         // If processing fails, try again later
@@ -153,12 +144,10 @@ class LiveUploadService {
     } catch (e) {
       _consecutiveFails++;
       
-      // Handle any remaining isolate-related errors
-      if (e.toString().contains('BackgroundIsolateBinaryMessenger') ||
-          e.toString().contains('RootIsolateToken') ||
-          e.toString().contains('isolate') ||
-          e.toString().contains('Instance has already been opened')) {
-        // Don't count processing errors as upload failures
+      // Handle database and upload errors
+      if (e.toString().contains('Instance has already been opened') ||
+          e.toString().contains('Database processing error')) {
+        // Don't count database processing errors as upload failures
         _consecutiveFails = max(0, _consecutiveFails - 1);
       } else {
         final lastSuccessfulUploadPeriod = DateTime.now()

@@ -339,9 +339,7 @@ class BleBloc with ChangeNotifier {
 
     try {
       await characteristic.setNotifyValue(true);
-      debugPrint(
-          'Successfully enabled notifications for characteristic: $uuid');
-      
+
       characteristic.onValueReceived.listen((value) {
         if (!controller.isClosed) {
           List<double> parsedData = _parseData(Uint8List.fromList(value));
@@ -373,7 +371,6 @@ class BleBloc with ChangeNotifier {
       // Supress sending report to Sentry and show error in UI
       debugPrint(
           'Characteristic stream not found for UUID: $characteristicUuid');
-      debugPrint('Available streams: ${_characteristicStreams.keys.toList()}');
     }
     return _characteristicStreams[characteristicUuid]!.stream;
   }

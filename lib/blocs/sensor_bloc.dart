@@ -113,23 +113,18 @@ class SensorBloc with ChangeNotifier {
   }
 
   void _startListening() {
-    debugPrint('Starting to listen to ${_sensors.length} sensors');
     for (var sensor in _sensors) {
-      debugPrint(
-          'Starting sensor: ${sensor.title} with UUID: ${sensor.characteristicUuid}');
       sensor.startListening();
     }
   }
 
   void _stopListening() {
-    debugPrint('Stopping all sensors');
     for (var sensor in _sensors) {
       sensor.stopListening();
     }
   }
 
   void _restartAllSensors() {
-    debugPrint('Restarting all sensors');
     _stopListening();
     _startListening();
   }
@@ -138,23 +133,17 @@ class SensorBloc with ChangeNotifier {
     final availableUuids = bleBloc.availableCharacteristics.value
         .map((e) => e.uuid.toString())
         .toSet();
-    
-    debugPrint('Available UUIDs: $availableUuids');
-    debugPrint('Total sensors: ${_sensors.length}');
 
     final availableSensors = _sensors.where((sensor) {
       if (FeatureFlags.hideSurfaceAnomalySensor &&
           sensor is SurfaceAnomalySensor) {
-        debugPrint('Filtering out SurfaceAnomalySensor due to feature flag');
         return false;
       }
       final isAvailable = availableUuids.contains(sensor.characteristicUuid);
-      debugPrint(
-          'Sensor ${sensor.title} (${sensor.characteristicUuid}): ${isAvailable ? 'available' : 'not available'}');
+
       return isAvailable;
     }).toList();
 
-    debugPrint('Available sensors: ${availableSensors.length}');
     availableSensors.sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
     return availableSensors.map((sensor) => sensor.buildWidget()).toList();
   }

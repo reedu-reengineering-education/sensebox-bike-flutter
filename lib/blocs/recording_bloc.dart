@@ -36,12 +36,12 @@ class RecordingBloc with ChangeNotifier {
     openSenseMapBloc.senseBoxStream
         .listen(_onSenseBoxChanged).onError((error) {
       ErrorService.handleError(error, StackTrace.current);
-    }); // Listen to senseBoxStream
+    }); 
   }
 
   void _onSenseBoxChanged(SenseBox? senseBox) {
     _selectedSenseBox = senseBox;
-    notifyListeners(); // If you want to notify listeners when the senseBox changes
+    notifyListeners(); 
   }
 
   void startRecording() async {
@@ -66,7 +66,7 @@ class RecordingBloc with ChangeNotifier {
           settingsBloc: settingsBloc,
           isarService: isarService,
           getCurrentSenseBox: () =>
-              _selectedSenseBox, // Function to get current senseBox
+              _selectedSenseBox, 
           trackId: trackBloc.currentTrack!.id);
 
       _liveUploadService!.startUploading();

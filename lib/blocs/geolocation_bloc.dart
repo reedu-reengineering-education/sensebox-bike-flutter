@@ -69,8 +69,6 @@ class GeolocationBloc with ChangeNotifier {
             final track = await isarService.trackService
                 .getTrackById(recordingBloc.currentTrack!.id);
             if (track == null) {
-              print(
-                  'Warning: Track not found in database, skipping geolocation data');
               return;
             }
             
@@ -124,7 +122,6 @@ class GeolocationBloc with ChangeNotifier {
         await isarService.geolocationService.saveGeolocationData(data);
         
         // Trigger live upload when new geolocation data is saved
-        debugPrint('Geolocation data saved, triggering live upload');
         recordingBloc.liveUploadService?.triggerUpload();
       }
     } catch (e) {

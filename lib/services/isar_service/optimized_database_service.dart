@@ -1,4 +1,3 @@
-// lib/services/isar_service/optimized_database_service.dart
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
@@ -8,19 +7,12 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 
-/// Optimized database service that avoids isolates and uses efficient async operations
 class OptimizedDatabaseService {
   static const int _defaultBatchSize = uploadBatchSize;
-  static const int _maxBatchSize = maxUploadBatchSize;
-  
-  // Simple mutex to prevent concurrent database operations
   static bool _isProcessing = false;
   static final Duration _processingTimeout = Duration(seconds: 10);
-  
-  // Use the existing IsarProvider
   static final IsarProvider _isarProvider = IsarProvider();
 
-  /// Process geolocation data for upload using efficient async operations
   static Future<List<Map<String, dynamic>>> processGeolocationDataForUpload(
     int trackId,
     List<int> uploadedIds,
@@ -28,12 +20,10 @@ class OptimizedDatabaseService {
     return await _processDataEfficiently(trackId, uploadedIds);
   }
 
-  /// Get geolocation data count efficiently
   static Future<int> getGeolocationCount(int trackId) async {
     return await _getGeolocationCountEfficiently(trackId);
   }
 
-  /// Process data in batches using efficient async operations
   static Future<List<Map<String, dynamic>>> processDataInBatches(
     int trackId,
     List<int> uploadedIds, {
@@ -42,12 +32,10 @@ class OptimizedDatabaseService {
     return await _processDataEfficiently(trackId, uploadedIds, batchSize: batchSize);
   }
 
-  /// Get the existing Isar instance from IsarProvider
   static Future<Isar> _getIsarInstance() async {
     return await _isarProvider.getDatabase();
   }
 
-  /// Wait for processing to complete or timeout
   static Future<void> _waitForProcessing() async {
     if (!_isProcessing) return;
     
@@ -62,7 +50,6 @@ class OptimizedDatabaseService {
     }
   }
 
-  /// Efficient method to get count without blocking main thread
   static Future<int> _getGeolocationCountEfficiently(int trackId) async {
     try {
       await _waitForProcessing();
@@ -173,11 +160,10 @@ class OptimizedDatabaseService {
     }
   }
 
-  /// Process data in smaller chunks to avoid memory issues
   static Future<List<Map<String, dynamic>>> processDataInChunks(
     int trackId,
     List<int> uploadedIds, {
-    int chunkSize = 25, // Smaller chunks for better memory management
+    int chunkSize = 25, 
   }) async {
     try {
       await _waitForProcessing();
