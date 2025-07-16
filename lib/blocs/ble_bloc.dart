@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -183,6 +182,8 @@ class BleBloc with ChangeNotifier {
       } catch (e) {
         ErrorService.handleError(e, StackTrace.current);
       }
+    } else {
+      debugPrint('Failed to discover services after $maxGlobalRetries retries');
     }
   }
 
@@ -336,13 +337,21 @@ class BleBloc with ChangeNotifier {
     final controller = StreamController<List<double>>.broadcast();
     _characteristicStreams[uuid] = controller;
 
-    await characteristic.setNotifyValue(true);
-    characteristic.onValueReceived.listen((value) {
-      if (!controller.isClosed) {
-        List<double> parsedData = _parseData(Uint8List.fromList(value));
-        controller.add(parsedData);
-      }
-    });
+    try {
+      await characteristic.setNotifyValue(true);
+      debugPrint(
+          'Successfully enabled notifications for characteristic: $uuid');
+      
+      characteristic.onValueReceived.listen((value) {
+        if (!controller.isClosed) {
+          List<double> parsedData = _parseData(Uint8List.fromList(value));
+          controller.add(parsedData);
+        }
+      });
+    } catch (e) {
+      debugPrint('Error setting up characteristic listener for $uuid: $e');
+      // Don't rethrow - we want to continue with other characteristics
+    }
   }
 
   // Future<void> _listenToDeviceInfoCharacteristic(
@@ -362,7 +371,9 @@ class BleBloc with ChangeNotifier {
   Stream<List<double>> getCharacteristicStream(String characteristicUuid) {
     if (!_characteristicStreams.containsKey(characteristicUuid)) {
       // Supress sending report to Sentry and show error in UI
-      debugPrint('Characteristic stream not found');
+      debugPrint(
+          'Characteristic stream not found for UUID: $characteristicUuid');
+      debugPrint('Available streams: ${_characteristicStreams.keys.toList()}');
     }
     return _characteristicStreams[characteristicUuid]!.stream;
   }

@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -22,13 +23,15 @@ class SurfaceClassificationSensor extends Sensor {
       'b944af10-f495-4560-968f-2f0d18cab521';
 
   SurfaceClassificationSensor(
-      BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
+      BleBloc bleBloc, GeolocationBloc geolocationBloc,
+      RecordingBloc recordingBloc, IsarService isarService)
       : super(
             sensorCharacteristicUuid,
             "surface_classification",
             ["asphalt", "compacted", "paving", "sett", "standing"],
             bleBloc,
             geolocationBloc,
+            recordingBloc,
             isarService);
 
   @override

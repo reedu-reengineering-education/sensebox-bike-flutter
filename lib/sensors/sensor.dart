@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -13,6 +14,7 @@ abstract class Sensor {
 
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
+  final RecordingBloc recordingBloc;
   final IsarService isarService;
   StreamSubscription<List<double>>? _subscription;
 
@@ -33,6 +35,7 @@ abstract class Sensor {
     this.attributes,
     this.bleBloc,
     this.geolocationBloc,
+    this.recordingBloc,
     this.isarService,
   );
 
@@ -63,7 +66,7 @@ abstract class Sensor {
         }
       });
     } catch (e) {
-      print('Error starting sensor: $e');
+      debugPrint('Error starting sensor $title: $e');
     }
   }
 
@@ -82,6 +85,11 @@ abstract class Sensor {
 
   // Aggregate sensor data and store it with the latest geolocation
   void _aggregateAndStoreData(GeolocationData geolocationData) {
+    // Only process sensor data if recording is active
+    if (!recordingBloc.isRecording || recordingBloc.currentTrack == null) {
+      return;
+    }
+
     if (_valueBuffer.isEmpty) {
       return;
     }
@@ -105,8 +113,13 @@ abstract class Sensor {
   // Helper method to save sensor data
   void _saveSensorData(
       double value, String? attribute, GeolocationData geolocationData) {
-    isarService.geolocationService.saveGeolocationData(geolocationData);
+    // Double-check recording state before saving
+    if (!recordingBloc.isRecording || recordingBloc.currentTrack == null) {
+      return;
+    }
 
+    // Don't save geolocation data here - it's already saved by the geolocation bloc
+    // Only save sensor data if we have a valid value
     if (value.isNaN) {
       return;
     }
@@ -119,6 +132,10 @@ abstract class Sensor {
       ..geolocationData.value = geolocationData;
 
     isarService.sensorService.saveSensorData(sensorData);
+    
+    // Trigger live upload when new sensor data is saved
+    debugPrint('Sensor data saved for $title, triggering live upload');
+    recordingBloc.liveUploadService?.triggerUpload();
   }
 
   // Abstract method to build a widget for the sensor (UI representation)

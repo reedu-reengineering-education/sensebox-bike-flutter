@@ -64,14 +64,28 @@ class GeolocationBloc with ChangeNotifier {
         // TODO: this is not a good practice to create a new object and not save it
 
         if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
-          GeolocationData geolocationData = GeolocationData()
-            ..latitude = position.latitude
-            ..longitude = position.longitude
-            ..speed = position.speed
-            ..timestamp = position.timestamp
-            ..track.value = recordingBloc.currentTrack;
+          try {
+            // Get a fresh reference to the track from the database to avoid link conflicts
+            final track = await isarService.trackService
+                .getTrackById(recordingBloc.currentTrack!.id);
+            if (track == null) {
+              print(
+                  'Warning: Track not found in database, skipping geolocation data');
+              return;
+            }
+            
+            GeolocationData geolocationData = GeolocationData()
+              ..latitude = position.latitude
+              ..longitude = position.longitude
+              ..speed = position.speed
+              ..timestamp = position.timestamp
+              ..track.value = track;
 
-          await _saveGeolocationData(geolocationData); // Save to database
+            await _saveGeolocationData(geolocationData); // Save to database
+          } catch (e) {
+            print('Error creating geolocation data: $e');
+            // Don't let geolocation errors stop the recording
+          }
         }
 
         // _geolocationController.add(geolocationData);
@@ -108,6 +122,10 @@ class GeolocationBloc with ChangeNotifier {
 
       if (!isInZone) {
         await isarService.geolocationService.saveGeolocationData(data);
+        
+        // Trigger live upload when new geolocation data is saved
+        debugPrint('Geolocation data saved, triggering live upload');
+        recordingBloc.liveUploadService?.triggerUpload();
       }
     } catch (e) {
       print('Error saving geolocation data: $e');

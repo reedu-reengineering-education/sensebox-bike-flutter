@@ -21,6 +21,7 @@ class RecordingBloc with ChangeNotifier {
   bool _isRecording = false;
   TrackData? _currentTrack;
   SenseBox? _selectedSenseBox;
+  LiveUploadService? _liveUploadService;
 
   bool get isRecording => _isRecording;
 
@@ -28,6 +29,7 @@ class RecordingBloc with ChangeNotifier {
 
   TrackData? get currentTrack => _currentTrack;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
+  LiveUploadService? get liveUploadService => _liveUploadService;
 
   RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
       this.openSenseMapBloc, this.settingsBloc) {
@@ -59,7 +61,7 @@ class RecordingBloc with ChangeNotifier {
         return;
       }
 
-      LiveUploadService liveUploadService = LiveUploadService(
+      _liveUploadService = LiveUploadService(
           openSenseMapService: OpenSenseMapService(),
           settingsBloc: settingsBloc,
           isarService: isarService,
@@ -67,7 +69,7 @@ class RecordingBloc with ChangeNotifier {
               _selectedSenseBox!, // Use the cached value of selectedSenseBox
           trackId: trackBloc.currentTrack!.id);
 
-      liveUploadService.startUploading();
+      _liveUploadService!.startUploading();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
@@ -79,6 +81,11 @@ class RecordingBloc with ChangeNotifier {
     if (!_isRecording) return;
 
     _isRecording = false;
+    
+    // Stop the live upload service
+    _liveUploadService?.stopUploading();
+    _liveUploadService = null;
+    
     _currentTrack = null;
 
     notifyListeners();
@@ -86,6 +93,7 @@ class RecordingBloc with ChangeNotifier {
 
   @override
   void dispose() {
+    _liveUploadService?.stopUploading();
     super.dispose();
   }
 }

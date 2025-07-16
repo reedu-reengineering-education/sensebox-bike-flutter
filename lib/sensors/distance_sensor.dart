@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -19,9 +20,10 @@ class DistanceSensor extends Sensor {
       'b3491b60-c0f3-4306-a30d-49c91f37a62b';
 
   DistanceSensor(
-      BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
+      BleBloc bleBloc, GeolocationBloc geolocationBloc,
+      RecordingBloc recordingBloc, IsarService isarService)
       : super(sensorCharacteristicUuid, "distance", [], bleBloc,
-            geolocationBloc, isarService);
+            geolocationBloc, recordingBloc, isarService);
 
   @override
   void onDataReceived(List<double> data) {
