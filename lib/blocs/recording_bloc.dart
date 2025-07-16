@@ -65,8 +65,8 @@ class RecordingBloc with ChangeNotifier {
           openSenseMapService: OpenSenseMapService(),
           settingsBloc: settingsBloc,
           isarService: isarService,
-          senseBox:
-              _selectedSenseBox!, // Use the cached value of selectedSenseBox
+          getCurrentSenseBox: () =>
+              _selectedSenseBox, // Function to get current senseBox
           trackId: trackBloc.currentTrack!.id);
 
       _liveUploadService!.startUploading();

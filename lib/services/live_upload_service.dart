@@ -16,7 +16,8 @@ class LiveUploadService {
   final OpenSenseMapService openSenseMapService;
   final SettingsBloc settingsBloc;
   final IsarService isarService;
-  final SenseBox senseBox; // ID of the senseBox to upload data to
+  final SenseBox? Function()
+      getCurrentSenseBox; // Function to get current senseBox (nullable)
 
   final int trackId;
 
@@ -47,7 +48,7 @@ class LiveUploadService {
     required this.openSenseMapService,
     required this.settingsBloc,
     required this.isarService,
-    required this.senseBox,
+    required this.getCurrentSenseBox, // Function to get current senseBox
     required this.trackId,
   });
 
@@ -66,7 +67,7 @@ class LiveUploadService {
   /// Trigger an immediate upload when new sensor data is available
   void triggerUpload() {
     debugPrint('Live upload triggered by new data');
-
+    
     // Check if we're within the minimum upload interval
     final now = DateTime.now();
     if (_lastUploadAttempt != null) {
@@ -107,7 +108,7 @@ class LiveUploadService {
     try {
       // Add a small delay to reduce main thread load
       await Future.delayed(const Duration(milliseconds: 100));
-
+      
       // Check if there's new data to upload first
       int currentCount;
       try {
@@ -119,7 +120,7 @@ class LiveUploadService {
         // Use last known count as fallback
         currentCount = _lastKnownCount;
       }
-
+      
       // Only process if we have new data (more than 2 records and more than last processed)
       if (currentCount < 2 || currentCount <= _lastProcessedCount) {
         debugPrint(
@@ -142,9 +143,10 @@ class LiveUploadService {
       }
 
       if (processedData.isNotEmpty) {
-        final dataToUpload = _convertProcessedDataToUploadFormat(processedData);
+        final dataToUpload =
+            _convertProcessedDataToUploadFormat(processedData, senseBox);
 
-        await uploadDataWithRetry(dataToUpload);
+        await uploadDataWithRetry(dataToUpload, senseBox.id!);
 
         // Mark as uploaded
         _uploadedIds.addAll(processedData.map((d) => d['id'] as int));
@@ -153,7 +155,7 @@ class LiveUploadService {
         _lastProcessedCount = currentCount;
 
         debugPrint(
-            'Successfully uploaded ${processedData.length} geolocation records with ${dataToUpload.length} sensor data points');
+            'Successfully uploaded ${processedData.length} geolocation records with ${dataToUpload.length} sensor data points to senseBox: ${senseBox.id}');
       } else {
         debugPrint('No new data to upload after processing');
       }
@@ -195,6 +197,7 @@ class LiveUploadService {
   /// Convert processed background data to upload format
   Map<String, dynamic> _convertProcessedDataToUploadFormat(
     List<Map<String, dynamic>> processedData,
+    SenseBox senseBox, // Pass senseBox as parameter
   ) {
     Map<String, dynamic> data = {};
 
@@ -210,10 +213,13 @@ class LiveUploadService {
         String? sensorTitle = getTitleFromSensorKey(title, attribute);
 
         if (sensorTitle == null) {
+          debugPrint(
+              'Could not get sensor title for: $title, attribute: $attribute');
           continue;
         }
 
-        Sensor? sensor = getMatchingSensor(sensorTitle);
+        Sensor? sensor =
+            getMatchingSensor(sensorTitle, senseBox); // Pass senseBox
 
         // Skip if sensor is not found
         if (sensor == null || value.isNaN) {
@@ -231,7 +237,7 @@ class LiveUploadService {
         };
       }
 
-      String speedSensorId = getSpeedSensorId();
+      String speedSensorId = getSpeedSensorId(senseBox); // Pass senseBox
 
       data['speed_${timestamp.toIso8601String()}'] = {
         'sensor': speedSensorId,
@@ -247,15 +253,17 @@ class LiveUploadService {
     return data;
   }
 
-  Future<void> uploadDataWithRetry(Map<String, dynamic> data) async {
+  Future<void> uploadDataWithRetry(
+      Map<String, dynamic> data, String senseBoxId) async {
     try {
-      await uploadDataToOpenSenseMap(data);
+      await uploadDataToOpenSenseMap(data, senseBoxId);
     } catch (e) {
       if (e is TooManyRequestsException) {
         debugPrint(
             'Received 429 Too Many Requests. Retrying after ${e.retryAfter} seconds.');
         await Future.delayed(Duration(seconds: e.retryAfter));
-        await uploadDataToOpenSenseMap(data); // Retry once after waiting
+        await uploadDataToOpenSenseMap(
+            data, senseBoxId); // Retry once after waiting
       } else {
         rethrow; // Propagate other exceptions
       }
@@ -267,6 +275,13 @@ class LiveUploadService {
       List<GeolocationData> geoDataToUpload) {
     Map<String, dynamic> data = {};
 
+    // Get current senseBox and check if it's available
+    final senseBox = getCurrentSenseBox();
+    if (senseBox == null) {
+      debugPrint('No senseBox available for data preparation');
+      return data;
+    }
+
     for (var geoData in geoDataToUpload) {
       for (var sensorData in geoData.sensorData) {
         String? sensorTitle =
@@ -276,7 +291,8 @@ class LiveUploadService {
           continue;
         }
 
-        Sensor? sensor = getMatchingSensor(sensorTitle);
+        Sensor? sensor = getMatchingSensor(
+            sensorTitle, senseBox); // Use non-nullable senseBox
 
         // Skip if sensor is not found
         if (sensor == null || sensorData.value.isNaN) {
@@ -294,7 +310,8 @@ class LiveUploadService {
         };
       }
 
-      String speedSensorId = getSpeedSensorId();
+      String speedSensorId =
+          getSpeedSensorId(senseBox); // Use non-nullable senseBox
 
       data['speed_${geoData.timestamp.toIso8601String()}'] = {
         'sensor': speedSensorId,
@@ -310,22 +327,23 @@ class LiveUploadService {
     return data;
   }
 
-  Sensor? getMatchingSensor(String sensorTitle) {
+  Sensor? getMatchingSensor(String sensorTitle, SenseBox senseBox) {
     return senseBox.sensors!
         .where((sensor) =>
             sensor.title!.toLowerCase() == sensorTitle.toLowerCase())
         .firstOrNull;
   }
 
-  String getSpeedSensorId() {
+  String getSpeedSensorId(SenseBox senseBox) {
     return senseBox.sensors!
         .firstWhere((sensor) => sensor.title == 'Speed')
         .id!;
   }
 
-  Future<void> uploadDataToOpenSenseMap(Map<String, dynamic> data) async {
+  Future<void> uploadDataToOpenSenseMap(
+      Map<String, dynamic> data, String senseBoxId) async {
     try {
-      await openSenseMapService.uploadData(senseBox.id, data);
+      await openSenseMapService.uploadData(senseBoxId, data);
     } catch (error, stack) {
       ErrorService.handleError(error, stack, sendToSentry: false);
     }

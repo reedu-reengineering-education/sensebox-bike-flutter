@@ -191,7 +191,7 @@ class OpenSenseMapService {
         ).timeout(const Duration(seconds: defaultTimeout));
 
         if (response.statusCode == 201) {
-          debugPrint('Data uploaded');
+          debugPrint('Data uploaded successfully to senseBox: $senseBoxId');
           return;
         } else if (response.statusCode == 401) {
           await refreshToken();
