@@ -1,6 +1,4 @@
 import 'dart:math';
-
-import 'package:fl_chart/fl_chart.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -23,7 +21,7 @@ class DistanceSensor extends Sensor {
   DistanceSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc,
       RecordingBloc recordingBloc, IsarService isarService)
-      : super(sensorCharacteristicUuid, "overtaking_distance", ['Distance'],
+      : super(sensorCharacteristicUuid, "distance", [],
             bleBloc, geolocationBloc, recordingBloc, isarService);
 
   @override

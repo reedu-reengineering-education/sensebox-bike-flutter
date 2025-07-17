@@ -22,7 +22,7 @@ class OvertakingPredictionSensor extends Sensor {
   OvertakingPredictionSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc,
       RecordingBloc recordingBloc, IsarService isarService)
-      : super(sensorCharacteristicUuid, "overtaking_prediction", ['prediction'],
+      : super(sensorCharacteristicUuid, "overtaking", [],
             bleBloc, geolocationBloc, recordingBloc, isarService);
 
   @override

@@ -20,7 +20,7 @@ class SurfaceAnomalySensor extends Sensor {
   SurfaceAnomalySensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc,
       RecordingBloc recordingBloc, IsarService isarService)
-      : super(sensorCharacteristicUuid, "surface_anomaly", ['anomaly_level'],
+      : super(sensorCharacteristicUuid, "surface_anomaly", [],
             bleBloc, geolocationBloc, recordingBloc, isarService);
 
   @override

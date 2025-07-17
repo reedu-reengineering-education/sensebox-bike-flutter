@@ -21,7 +21,7 @@ class HumiditySensor extends Sensor {
   HumiditySensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc,
       RecordingBloc recordingBloc, IsarService isarService)
-      : super(sensorCharacteristicUuid, "humidity", ['Relative'], bleBloc,
+      : super(sensorCharacteristicUuid, "humidity", [], bleBloc,
             geolocationBloc, recordingBloc, isarService);
 
   @override
