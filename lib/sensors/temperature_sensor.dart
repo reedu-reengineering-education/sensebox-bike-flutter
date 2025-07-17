@@ -1,5 +1,6 @@
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -17,9 +18,10 @@ class TemperatureSensor extends Sensor {
       '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8';
 
   TemperatureSensor(
-      BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
+      BleBloc bleBloc, GeolocationBloc geolocationBloc,
+      RecordingBloc recordingBloc, IsarService isarService)
       : super(sensorCharacteristicUuid, "temperature", [], bleBloc,
-            geolocationBloc, isarService);
+            geolocationBloc, recordingBloc, isarService);
 
   @override
   void onDataReceived(List<double> data) {

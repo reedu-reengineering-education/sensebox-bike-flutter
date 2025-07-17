@@ -13,17 +13,19 @@ import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/sensors/temperature_sensor.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 
 class SensorBloc with ChangeNotifier {
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
+  final RecordingBloc recordingBloc;
   final List<Sensor> _sensors = [];
   late final VoidCallback _characteristicsListener;
   late final VoidCallback _characteristicStreamsVersionListener;
   late final VoidCallback _selectedDeviceListener;
   List<String> _lastCharacteristicUuids = [];
 
-  SensorBloc(this.bleBloc, this.geolocationBloc) {
+  SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc) {
     _initializeSensors();
 
     // Listen to changes in the BLE device connection state
@@ -75,17 +77,24 @@ class SensorBloc with ChangeNotifier {
   void _initializeSensors() {
     final isarService = geolocationBloc.isarService;
     // Initialize sensors with specific UUIDs
-    _sensors.add(TemperatureSensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(HumiditySensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(DistanceSensor(bleBloc, geolocationBloc, isarService));
+    _sensors.add(TemperatureSensor(
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(
-        SurfaceClassificationSensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(AccelerationSensor(bleBloc, geolocationBloc, isarService));
+        HumiditySensor(bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(
+        DistanceSensor(bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(SurfaceClassificationSensor(
+        bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(AccelerationSensor(
+        bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(OvertakingPredictionSensor(
+        bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(SurfaceAnomalySensor(
+        bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(
+        FinedustSensor(bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors
-        .add(OvertakingPredictionSensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(SurfaceAnomalySensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(FinedustSensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(GPSSensor(bleBloc, geolocationBloc, isarService));
+        .add(GPSSensor(bleBloc, geolocationBloc, recordingBloc, isarService));
   }
 
   void _startListening() {

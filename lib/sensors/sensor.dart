@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -13,6 +14,7 @@ abstract class Sensor {
 
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
+  final RecordingBloc recordingBloc;
   final IsarService isarService;
   StreamSubscription<List<double>>? _subscription;
 
@@ -33,6 +35,7 @@ abstract class Sensor {
     this.attributes,
     this.bleBloc,
     this.geolocationBloc,
+    this.recordingBloc,
     this.isarService,
   );
 
@@ -48,7 +51,7 @@ abstract class Sensor {
       // Listen to geolocation updates
       (await isarService.geolocationService.getGeolocationStream())
           .listen((_) async {
-        if (_valueBuffer.isNotEmpty) {
+        if (_valueBuffer.isNotEmpty && recordingBloc.isRecording) {
           GeolocationData? geolocationData = await isarService
               .geolocationService
               .getLastGeolocationData(); // Get the latest geolocation data
@@ -75,7 +78,9 @@ abstract class Sensor {
   // Method to handle incoming sensor data
   void onDataReceived(List<double> data) {
     if (data.isNotEmpty) {
-      _valueBuffer.add(data); // Buffer the sensor data
+      if (recordingBloc.isRecording) {
+        _valueBuffer.add(data); // Buffer the sensor data
+      }
       _valueController.add(data); // Emit the latest sensor value to the stream
     }
   }
