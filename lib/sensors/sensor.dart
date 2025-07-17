@@ -110,8 +110,6 @@ abstract class Sensor {
   // Helper method to save sensor data
   void _saveSensorData(
       double value, String? attribute, GeolocationData geolocationData) {
-    isarService.geolocationService.saveGeolocationData(geolocationData);
-
     if (value.isNaN) {
       return;
     }
