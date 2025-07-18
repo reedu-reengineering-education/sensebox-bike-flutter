@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -10,24 +11,25 @@ import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 class OvertakingPredictionSensor extends Sensor {
-  List<double> _latestPrediction = [0.0];
+  List<double> _latestValue = [0.0];
 
   @override
-  get uiPriority => 40;
+  get uiPriority => 80;
 
   static const String sensorCharacteristicUuid =
       'fc01c688-2c44-4965-ae18-373af9fed18d';
 
   OvertakingPredictionSensor(
-      BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
+      BleBloc bleBloc, GeolocationBloc geolocationBloc,
+      RecordingBloc recordingBloc, IsarService isarService)
       : super(sensorCharacteristicUuid, "overtaking", [], bleBloc,
-            geolocationBloc, isarService);
+            geolocationBloc, recordingBloc, isarService);
 
   @override
   void onDataReceived(List<double> data) {
     super.onDataReceived(data); // Call the parent class to handle buffering
     if (data.isNotEmpty) {
-      _latestPrediction =
+      _latestValue =
           data; // Assuming the first value is the prediction score
     }
   }
@@ -42,9 +44,9 @@ class OvertakingPredictionSensor extends Sensor {
   Widget buildWidget() {
     return StreamBuilder<List<double>>(
       stream: valueStream,
-      initialData: _latestPrediction,
+      initialData: _latestValue,
       builder: (context, snapshot) {
-        double displayValue = snapshot.data?[0] ?? _latestPrediction[0];
+        double displayValue = snapshot.data?[0] ?? _latestValue[0];
 
         return SensorCard(
             title: AppLocalizations.of(context)!.sensorOvertakingShort,

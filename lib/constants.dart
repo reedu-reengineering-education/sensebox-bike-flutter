@@ -9,6 +9,11 @@ const retryPeriod = 2; // in minutes
 const premanentConnectivityFalurePeriod = 10; // in minutes
 const defaultTimeout = 30; // in seconds
 
+// Performance optimization constants
+const uploadIntervalSeconds = 10; // Upload every 10 seconds as fallback
+const uploadBatchSize = 50; // Process 50 records per batch
+const maxUploadBatchSize = 100; // Maximum batch size for uploads
+
 class SharedPreferencesKeys {
   static const String privacyPolicyAcceptedAt = 'privacyPolicyAcceptedAt';
   static const String privacyZones = 'privacyZones';

@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -21,13 +22,15 @@ class FinedustSensor extends Sensor {
       '7e14e070-84ea-489f-b45a-e1317364b979';
 
   FinedustSensor(
-      BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
+      BleBloc bleBloc, GeolocationBloc geolocationBloc,
+      RecordingBloc recordingBloc, IsarService isarService)
       : super(
             sensorCharacteristicUuid,
             "finedust",
             ['pm1', 'pm2.5', 'pm4', 'pm10'],
             bleBloc,
             geolocationBloc,
+            recordingBloc,
             isarService);
 
   @override

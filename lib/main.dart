@@ -93,7 +93,7 @@ class SenseBoxBikeApp extends StatelessWidget {
         isarService, bleBloc, trackBloc, openSenseMapBloc, settingsBloc);
     final geolocationBloc =
         GeolocationBloc(isarService, recordingBloc, settingsBloc);
-    final sensorBloc = SensorBloc(bleBloc, geolocationBloc);
+    final sensorBloc = SensorBloc(bleBloc, geolocationBloc, recordingBloc);
     final MapboxDrawController mapboxDrawController = MapboxDrawController();
 
     // Subscribe to all events (initial link and further)
