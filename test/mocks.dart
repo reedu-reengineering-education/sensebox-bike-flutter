@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
@@ -33,7 +34,10 @@ class MockBleBloc extends Mock implements BleBloc {}
 class MockTrackBloc extends Mock with ChangeNotifier implements TrackBloc {}
 
 class MockGeolocationBloc extends Mock implements GeolocationBloc {}
-class MockOpenSenseMapBloc extends OpenSenseMapBloc {
+
+class MockOpenSenseMapBloc extends Mock
+    with ChangeNotifier
+    implements OpenSenseMapBloc {
   @override
   bool isAuthenticated = false;
 
@@ -42,6 +46,10 @@ class MockOpenSenseMapBloc extends OpenSenseMapBloc {
     isAuthenticated = false;
   }
 }
+
+class MockSettingsBloc extends Mock
+    with ChangeNotifier
+    implements SettingsBloc {}
 
 class MockSensor extends Mock implements Sensor {}
 class FakeSensorData extends Fake implements SensorData {}
