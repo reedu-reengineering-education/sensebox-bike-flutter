@@ -15,6 +15,7 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
+import 'package:easy_debounce/easy_debounce.dart';
 
 class GeolocationMapWidget extends StatefulWidget {
   const GeolocationMapWidget({super.key});
@@ -26,7 +27,7 @@ class GeolocationMapWidget extends StatefulWidget {
 class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   late final MapboxMap mapInstance;
   StreamSubscription? _isarGeolocationSubscription;
-  StreamSubscription<TrackData?>? _trackSubscription; // Track ID subscription
+  StreamSubscription<TrackData?>? _trackSubscription;
 
   late PolylineAnnotationManager lineAnnotationManager;
 
@@ -41,16 +42,17 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
     // Listen to track changes from the TrackBloc
     _trackSubscription =
         context.read<TrackBloc>().currentTrackStream.listen((track) async {
-      if (!mounted) return; // Check if the widget is still mounted
-      // Handle trackId changes
+      if (!mounted) return; 
+      
       if (track != null) {
         _isarGeolocationSubscription =
             await _listenToGeolocationStream(track.id);
       } else {
+        // Clear annotations when no track is active
         try {
           await lineAnnotationManager.deleteAll();
         } catch (e) {
-          debugPrint('Error deleting all annotations: $e');
+          debugPrint('Error clearing annotations when no track: $e');
         }
       }
     });
@@ -85,7 +87,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
     // check connection status
     context.read<BleBloc>().isConnectingNotifier.addListener(() async {
-      if (!mounted) return; // Check if the widget is still mounted
+      if (!mounted) return;
       bool enableLocationPuck = context.read<BleBloc>().isConnected;
       mapInstance.location.updateSettings(LocationComponentSettings(
         enabled: enableLocationPuck,
@@ -123,32 +125,68 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
     final isarService = context.read<TrackBloc>().isarService;
     return (await isarService.geolocationService.getGeolocationStream())
         .listen((_) async {
-      List<GeolocationData> geoData = await isarService.geolocationService
-          .getGeolocationDataByTrackId(trackId);
+      try {
+        EasyDebounce.debounce(
+          'map_update_$trackId',
+          const Duration(milliseconds: 500),
+          () async {
+            try {
+              List<GeolocationData> geoData = await isarService
+                  .geolocationService
+                  .getGeolocationDataByTrackId(trackId);
 
-      // If geolocation data is available, update the map source and layer
-      if (geoData.isNotEmpty) {
-        _updateMapWithGeolocationData(geoData);
+              if (geoData.isNotEmpty) {
+                _updateMapWithGeolocationData(geoData);
+              }
+            } catch (e) {
+              debugPrint('Error in debounced map update: $e');
+            }
+          },
+        );
+      } catch (e) {
+        debugPrint('Error in geolocation stream listener: $e');
+        // Don't rethrow to prevent stream cancellation
       }
     }).onError((error) {
-      ErrorService.handleError(error, StackTrace.current);
+      debugPrint('Geolocation stream error: $error');
     });
   }
 
-  // Create or update the map source with new geolocation data
   void _updateMapWithGeolocationData(List<GeolocationData> geoData) async {
     try {
-      // Delete existing annotations if any
-      await lineAnnotationManager.deleteAll();
+      try {
+        await lineAnnotationManager.deleteAll();
+      } catch (e) {
+        // Ignore errors when deleting annotations - this can happen when there are no annotations to delete
+        debugPrint('Note: No existing annotations to delete: $e');
+      }
 
       List<Point> points = geoData.map((location) {
         return Point(
             coordinates: Position(location.longitude, location.latitude));
       }).toList();
 
-      // Ensure there are at least two points before creating the LineString
+      if (points.isEmpty) {
+        debugPrint('No geolocation points available for map update');
+        return;
+      }
+
+      if (points.length == 1) {
+        final singlePoint = points.first;
+        final offset = 0.00001; // Small offset for visibility
+
+        points = [
+          singlePoint,
+          Point(
+              coordinates: Position(singlePoint.coordinates.lng + offset,
+                  singlePoint.coordinates.lat + offset))
+        ];
+
+        debugPrint(
+            'Single geolocation point detected, creating small line segment for visibility');
+      }
+
       if (points.length < 2) {
-        debugPrint('Not enough points to create a LineString.');
         return;
       }
 
@@ -157,11 +195,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
       );
 
       await lineAnnotationManager.create(polyline);
-
-      // get last geolocation data
       GeolocationData lastLocation = geoData.last;
-
-      // Fit the camera to the bounds of the geolocation data
       await mapInstance.flyTo(
           CameraOptions(
             center: Point(
@@ -173,11 +207,14 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
           MapAnimationOptions(duration: 1000));
     } catch (e) {
       debugPrint('Error updating map with geolocation data: $e');
+      // Don't rethrow the error to prevent app crashes
     }
   }
 
   @override
   void dispose() {
+    EasyDebounce.cancel(
+        'map_update_${context.read<TrackBloc>().currentTrack?.id ?? 0}');
     _isarGeolocationSubscription?.cancel();
     _trackSubscription?.cancel();
     super.dispose();
