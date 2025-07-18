@@ -9,6 +9,7 @@ import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
+import 'package:sensebox_bike/ui/widgets/common/no_tracks_message.dart';
 
 class MockIsarService extends Mock implements IsarService {}
 
@@ -32,9 +33,12 @@ void main() {
 
   Future<void> pumpTracksScreen(
     WidgetTester tester, {
-    required Future<List<TrackData>> tracksFuture,
+    required List<TrackData> tracks,
   }) async {
-    when(() => mockTrackService.getAllTracks()).thenAnswer((_) => tracksFuture);
+    when(() => mockIsarService.getTracksPaginated(
+          offset: any(named: 'offset'),
+          limit: any(named: 'limit'),
+        )).thenAnswer((_) async => tracks);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -47,10 +51,23 @@ void main() {
       ),
     );
 
+    // Allow the initial loading to complete
     await tester.pump();
   }
 
   group('TracksScreen', () {
+    testWidgets('displays no tracks message when no tracks are available',
+        (WidgetTester tester) async {
+      await pumpTracksScreen(tester, tracks: []);
+
+      // Wait for the loading to complete
+      await tester.pump();
+
+      // Should show the NoTracksMessage widget
+      expect(find.byType(NoTracksMessage), findsOneWidget);
+      expect(find.text('No tracks available'), findsOneWidget);
+    });
+
     // TBD: fix tests for loading tracks
     // testWidgets('displays loading indicator while tracks are loading',
     //     (WidgetTester tester) async {

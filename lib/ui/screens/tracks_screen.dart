@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
+import 'package:sensebox_bike/ui/widgets/common/no_tracks_message.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -31,6 +32,9 @@ class TracksScreenState extends State<TracksScreen> {
     super.initState();
 
     _isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
+    
+    // Load initial tracks when the screen is first created
+    _fetchInitialTracks();
   }
 
   Future<void> _fetchInitialTracks() async {
@@ -98,44 +102,46 @@ class TracksScreenState extends State<TracksScreen> {
                     controller: _scrollController,
                     thumbVisibility: true,
                     thickness: 2,
-                    child: ListView.separated(
-                      separatorBuilder: (context, index) => CustomDivider(
-                        showDivider: !(index == _displayedTracks.length - 1 &&
-                            _hasMoreTracks),
-                      ),
-                      controller: _scrollController,
-                      itemCount: _hasMoreTracks
-                          ? _displayedTracks.length + 1 // Add 1 for "Load More"
-                          : _displayedTracks.length, // No "Load More" button
-                      itemBuilder: (context, index) {
-                        if (index < _displayedTracks.length) {
-                          TrackData track = _displayedTracks[index];
-                          return TrackListItem(
-                            track: track,
-                            onDismissed: () async {
-                              await _isarService.trackService
-                                  .deleteTrack(track.id);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content:
-                                      Text(localizations.tracksTrackDeleted),
-                                ),
-                              );
-                              _handleRefresh();
-                            },
-                          );
-                        } else {
-                          return Center(
-                            child: ButtonWithLoader(
-                              isLoading: _isLoading,
-                              onPressed: _isLoading ? null : _loadMoreTracks,
-                              text: AppLocalizations.of(context)!.loadMore,
-                              width: 0.6,
+                    child: _displayedTracks.isEmpty && !_isLoading
+                        ? const NoTracksMessage()
+                        : ListView.separated(
+                            separatorBuilder: (context, index) => CustomDivider(
+                              showDivider: !(index == _displayedTracks.length - 1 &&
+                                  _hasMoreTracks),
                             ),
-                          );
-                        }
-                      },
-                    ),
+                            controller: _scrollController,
+                            itemCount: _hasMoreTracks
+                                ? _displayedTracks.length + 1 // Add 1 for "Load More"
+                                : _displayedTracks.length, // No "Load More" button
+                            itemBuilder: (context, index) {
+                              if (index < _displayedTracks.length) {
+                                TrackData track = _displayedTracks[index];
+                                return TrackListItem(
+                                  track: track,
+                                  onDismissed: () async {
+                                    await _isarService.trackService
+                                        .deleteTrack(track.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content:
+                                            Text(localizations.tracksTrackDeleted),
+                                      ),
+                                    );
+                                    _handleRefresh();
+                                  },
+                                );
+                              } else {
+                                return Center(
+                                  child: ButtonWithLoader(
+                                    isLoading: _isLoading,
+                                    onPressed: _isLoading ? null : _loadMoreTracks,
+                                    text: AppLocalizations.of(context)!.loadMore,
+                                    width: 0.6,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
                   ),
                 )),
           ),
