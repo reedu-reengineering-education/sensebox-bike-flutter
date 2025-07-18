@@ -18,7 +18,10 @@ Closes #
 [ ] I have added or updated relevant documentation
 
 ### Additional Information
+
 <!-- Add any other relevant information that the reviewer should know. This might include:
     *   Screenshots or videos demonstrating the changes
     *   Links to external resources or documentation
 -->
+
+> **Note:** To trigger a build of the APK for this pull request, add a comment with `/build-apk`.
