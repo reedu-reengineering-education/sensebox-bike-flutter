@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:geolocator/geolocator.dart' as Geolocator;
+import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
@@ -21,17 +22,21 @@ class GeolocationMapWidget extends StatefulWidget {
   const GeolocationMapWidget({super.key});
 
   @override
-  _GeolocationMapWidgetState createState() => _GeolocationMapWidgetState();
+  State<GeolocationMapWidget> createState() => _GeolocationMapWidgetState();
 }
 
 class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   late final MapboxMap mapInstance;
-  StreamSubscription? _isarGeolocationSubscription;
-  StreamSubscription<TrackData?>? _trackSubscription;
+  StreamSubscription<GeolocationData>? _gpsSubscription;
+  VoidCallback? _recordingListener;
 
   late PolylineAnnotationManager lineAnnotationManager;
 
   late OpenSenseMapBloc osemBloc;
+
+  // Local buffer for GPS data during recording
+  final List<GeolocationData> _gpsBuffer = [];
+  bool _isRecording = false;
 
   static const double authenticatedMargin = 125;
   static const double unauthenticatedMargin = 75;
@@ -39,23 +44,23 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   @override
   void initState() {
     super.initState();
-    // Listen to track changes from the TrackBloc
-    _trackSubscription =
-        context.read<TrackBloc>().currentTrackStream.listen((track) async {
-      if (!mounted) return; 
-      
-      if (track != null) {
-        _isarGeolocationSubscription =
-            await _listenToGeolocationStream(track.id);
-      } else {
-        // Clear annotations when no track is active
-        try {
-          await lineAnnotationManager.deleteAll();
-        } catch (e) {
-          debugPrint('Error clearing annotations when no track: $e');
-        }
+    
+    _isRecording = context.read<RecordingBloc>().isRecording;
+    _recordingListener = () {
+      final newRecordingState = context.read<RecordingBloc>().isRecording;
+
+      if (_isRecording && !newRecordingState) {
+        _clearGpsBuffer();
       }
-    });
+      
+      _isRecording = newRecordingState;
+    };
+    context
+        .read<RecordingBloc>()
+        .isRecordingNotifier
+        .addListener(_recordingListener!);
+
+    _startListeningToGPS();
 
     // Listen to authentication state changes
     // This will update the map's logo and attribution margins based on authentication state
@@ -99,7 +104,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
           final hasPermission =
               await PermissionService.isLocationPermissionGranted();
           final geoPosition = hasPermission
-              ? await Geolocator.Geolocator.getCurrentPosition()
+              ? await geolocator.Geolocator.getCurrentPosition()
               : globePosition;
           final isGlobe =
               geoPosition.latitude == 0.0 && geoPosition.longitude == 0.0;
@@ -121,47 +126,57 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
     });
   }
 
-  Future _listenToGeolocationStream(int trackId) async {
-    final isarService = context.read<TrackBloc>().isarService;
-    return (await isarService.geolocationService.getGeolocationStream())
-        .listen((_) async {
-      try {
-        EasyDebounce.debounce(
-          'map_update_$trackId',
-          const Duration(milliseconds: 500),
-          () async {
-            try {
-              List<GeolocationData> geoData = await isarService
-                  .geolocationService
-                  .getGeolocationDataByTrackId(trackId);
+  void _startListeningToGPS() {
+    final geolocationBloc = context.read<GeolocationBloc>();
 
-              if (geoData.isNotEmpty) {
-                _updateMapWithGeolocationData(geoData);
-              }
-            } catch (e) {
-              debugPrint('Error in debounced map update: $e');
-            }
-          },
-        );
-      } catch (e) {
-        debugPrint('Error in geolocation stream listener: $e');
-        // Don't rethrow to prevent stream cancellation
+    _gpsSubscription = geolocationBloc.geolocationStream.listen((geoData) {
+      if (geoData.latitude == 0.0 && geoData.longitude == 0.0) {
+        return;
       }
-    }).onError((error) {
-      debugPrint('Geolocation stream error: $error');
+
+      if (_isRecording) {
+        _addToGpsBuffer(geoData);
+        _updateMapWithTrack();
+      } else {
+        _showCurrentLocation(geoData);
+      }
     });
   }
 
-  void _updateMapWithGeolocationData(List<GeolocationData> geoData) async {
-    try {
-      try {
-        await lineAnnotationManager.deleteAll();
-      } catch (e) {
-        // Ignore errors when deleting annotations - this can happen when there are no annotations to delete
-        debugPrint('Note: No existing annotations to delete: $e');
-      }
+  void _addToGpsBuffer(GeolocationData geoData) {
+    // Check if this point already exists in buffer (avoid duplicates)
+    final existingPoint = _gpsBuffer
+        .where((point) =>
+            point.latitude == geoData.latitude &&
+            point.longitude == geoData.longitude &&
+            point.timestamp == geoData.timestamp)
+        .firstOrNull;
 
-      List<Point> points = geoData.map((location) {
+    if (existingPoint == null) {
+      _gpsBuffer.add(geoData);
+    } 
+  }
+
+  void _clearGpsBuffer() {
+    _gpsBuffer.clear();
+    _clearTrackLine();
+  }
+
+  void _clearTrackLine() {
+    lineAnnotationManager.deleteAll().catchError((e) {
+      debugPrint('Error clearing track line: $e');
+    });
+  }
+
+  void _updateMapWithTrack() async {
+    if (_gpsBuffer.isEmpty) {
+      return;
+    }
+
+    try {
+      _clearTrackLine();
+
+      List<Point> points = _gpsBuffer.map((location) {
         return Point(
             coordinates: Position(location.longitude, location.latitude));
       }).toList();
@@ -172,7 +187,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
       if (points.length == 1) {
         final singlePoint = points.first;
-        final offset = 0.00001; // Small offset for visibility
+        final offset = 0.00001; 
 
         points = [
           singlePoint,
@@ -182,16 +197,12 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
         ];
       }
 
-      if (points.length < 2) {
-        return;
-      }
-
       PolylineAnnotationOptions polyline = PolylineAnnotationOptions(
         geometry: LineString.fromPoints(points: points),
       );
-
       await lineAnnotationManager.create(polyline);
-      GeolocationData lastLocation = geoData.last;
+      // Fly to the last GPS position
+      GeolocationData lastLocation = _gpsBuffer.last;
       await mapInstance.flyTo(
           CameraOptions(
             center: Point(
@@ -202,8 +213,22 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
           ),
           MapAnimationOptions(duration: 1000));
     } catch (e) {
-      debugPrint('Error updating map with geolocation data: $e');
-      // Don't rethrow the error to prevent app crashes
+      debugPrint('Error updating map with track: $e');
+    }
+  }
+
+  void _showCurrentLocation(GeolocationData geoData) async {
+    try {
+      await mapInstance.flyTo(
+          CameraOptions(
+            center: Point(
+                coordinates: Position(geoData.longitude, geoData.latitude)),
+            zoom: 16.0,
+            pitch: 45,
+          ),
+          MapAnimationOptions(duration: 1000));
+    } catch (e) {
+      debugPrint('Error updating map with current location: $e');
     }
   }
 
@@ -211,8 +236,15 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   void dispose() {
     EasyDebounce.cancel(
         'map_update_${context.read<TrackBloc>().currentTrack?.id ?? 0}');
-    _isarGeolocationSubscription?.cancel();
-    _trackSubscription?.cancel();
+    _gpsSubscription?.cancel();
+    if (_recordingListener != null) {
+      context
+          .read<RecordingBloc>()
+          .isRecordingNotifier
+          .removeListener(_recordingListener!);
+    }
+    // Clear buffer to free memory
+    _gpsBuffer.clear();
     super.dispose();
   }
 
@@ -242,13 +274,15 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
             zoom: 3.25,
             pitch: 25,
           ));
+          
+          // Capture theme before async operations
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          
           try {
             lineAnnotationManager = await mapInstance.annotations
                 .createPolylineAnnotationManager(id: 'lineAnnotationManager');
             lineAnnotationManager.setLineColor(
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.value
-                    : Colors.black.value);
+                isDark ? Colors.white.toARGB32() : Colors.black.toARGB32());
             lineAnnotationManager.setLineWidth(4.0);
             lineAnnotationManager.setLineEmissiveStrength(1);
             lineAnnotationManager.setLineCap(LineCap.ROUND);
@@ -264,7 +298,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
             final polygonAnnotationManager =
                 await mapInstance.annotations.createPolygonAnnotationManager();
-            polygonAnnotationManager.setFillColor(Colors.red.value);
+            polygonAnnotationManager.setFillColor(Colors.red.toARGB32());
             polygonAnnotationManager.setFillOpacity(0.5);
             polygonAnnotationManager.setFillEmissiveStrength(1);
 
@@ -274,7 +308,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
             }).toList();
             polygonAnnotationManager.createMulti(polygonOptions);
           } catch (e) {
-            print(e);
+            debugPrint('Error adding privacy zones: $e');
           }
         });
   }

@@ -15,10 +15,10 @@ import 'package:sensebox_bike/utils/geo_utils.dart';
 import 'package:turf/turf.dart' as Turf;
 
 class GeolocationBloc with ChangeNotifier {
-  // final StreamController<GeolocationData> _geolocationController =
-  //     StreamController.broadcast();
-  // Stream<GeolocationData> get geolocationStream =>
-  //     _geolocationController.stream;
+  final StreamController<GeolocationData> _geolocationController =
+      StreamController.broadcast();
+  Stream<GeolocationData> get geolocationStream =>
+      _geolocationController.stream;
 
   StreamSubscription<Position>? _positionStreamSubscription;
 
@@ -61,20 +61,21 @@ class GeolocationBloc with ChangeNotifier {
       _positionStreamSubscription =
           Geolocator.getPositionStream(locationSettings: locationSettings)
               .listen((Position position) async {
-        // TODO: this is not a good practice to create a new object and not save it
+        
+        // Create geolocation data object
+        GeolocationData geolocationData = GeolocationData()
+          ..latitude = position.latitude
+          ..longitude = position.longitude
+          ..speed = position.speed
+          ..timestamp = position.timestamp;
+
+        // Emit to stream for real-time updates
+        _geolocationController.add(geolocationData);
 
         if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
-          GeolocationData geolocationData = GeolocationData()
-            ..latitude = position.latitude
-            ..longitude = position.longitude
-            ..speed = position.speed
-            ..timestamp = position.timestamp
-            ..track.value = recordingBloc.currentTrack;
-
+          geolocationData.track.value = recordingBloc.currentTrack;
           await _saveGeolocationData(geolocationData); // Save to database
         }
-
-        // _geolocationController.add(geolocationData);
 
         notifyListeners();
       });
@@ -116,7 +117,7 @@ class GeolocationBloc with ChangeNotifier {
 
   @override
   void dispose() {
-    // _geolocationController.close();
+    _geolocationController.close();
     super.dispose();
   }
 }

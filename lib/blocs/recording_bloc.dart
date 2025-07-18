@@ -21,10 +21,11 @@ class RecordingBloc with ChangeNotifier {
   bool _isRecording = false;
   TrackData? _currentTrack;
   SenseBox? _selectedSenseBox;
+  final ValueNotifier<bool> _isRecordingNotifier = ValueNotifier<bool>(false);
 
   bool get isRecording => _isRecording;
 
-  ValueNotifier<bool> get isRecordingNotifier => ValueNotifier(_isRecording);
+  ValueNotifier<bool> get isRecordingNotifier => _isRecordingNotifier;
 
   TrackData? get currentTrack => _currentTrack;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
@@ -34,18 +35,19 @@ class RecordingBloc with ChangeNotifier {
     openSenseMapBloc.senseBoxStream
         .listen(_onSenseBoxChanged).onError((error) {
       ErrorService.handleError(error, StackTrace.current);
-    }); // Listen to senseBoxStream
+    }); 
   }
 
   void _onSenseBoxChanged(SenseBox? senseBox) {
     _selectedSenseBox = senseBox;
-    notifyListeners(); // If you want to notify listeners when the senseBox changes
+    notifyListeners(); 
   }
 
   void startRecording() async {
     if (_isRecording) return;
 
     _isRecording = true;
+    _isRecordingNotifier.value = true; 
     await trackBloc.startNewTrack();
 
     _currentTrack = trackBloc.currentTrack;
@@ -63,8 +65,7 @@ class RecordingBloc with ChangeNotifier {
           openSenseMapService: OpenSenseMapService(),
           settingsBloc: settingsBloc,
           isarService: isarService,
-          senseBox:
-              _selectedSenseBox!, // Use the cached value of selectedSenseBox
+          senseBox: _selectedSenseBox!, 
           trackId: trackBloc.currentTrack!.id);
 
       liveUploadService.startUploading();
@@ -79,6 +80,12 @@ class RecordingBloc with ChangeNotifier {
     if (!_isRecording) return;
 
     _isRecording = false;
+    _isRecordingNotifier.value = false;
+
+    isarService.sensorService.flushPendingData().catchError((e) {
+      debugPrint('Error flushing pending sensor data: $e');
+    });
+    
     _currentTrack = null;
 
     notifyListeners();
@@ -86,6 +93,7 @@ class RecordingBloc with ChangeNotifier {
 
   @override
   void dispose() {
+    _isRecordingNotifier.dispose();
     super.dispose();
   }
 }
