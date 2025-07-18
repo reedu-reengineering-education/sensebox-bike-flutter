@@ -1,10 +1,10 @@
 name: Build APK
 
 on:
-  pull_request:
-    branches: [main]
   release:
     types: [published]
+  issue_comment:
+    types: [created]
 
 jobs:
   build-android:
@@ -18,6 +18,9 @@ jobs:
       KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
       KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
       KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+    if: |
+      github.event_name == 'release' ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '/build-apk'))
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -61,12 +64,13 @@ jobs:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Comment APK link on PR
-        if: github.event_name == 'pull_request'
-        uses: marocchino/sticky-pull-request-comment@v2
+      - name: Reply to /build-apk comment with APK link
+        if: github.event_name == 'issue_comment'
+        uses: peter-evans/create-or-update-comment@v4
         with:
-          header: APK Download
-          message: |
+          issue-number: ${{ github.event.issue.number }}
+          comment-id: ${{ github.event.comment.id }}
+          body: |
             📱 [Download the latest APK built for this PR from the Actions artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
       - name: Upload APK to GitHub Release
