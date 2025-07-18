@@ -167,7 +167,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
       }).toList();
 
       if (points.isEmpty) {
-        debugPrint('No geolocation points available for map update');
         return;
       }
 
@@ -181,9 +180,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
               coordinates: Position(singlePoint.coordinates.lng + offset,
                   singlePoint.coordinates.lat + offset))
         ];
-
-        debugPrint(
-            'Single geolocation point detected, creating small line segment for visibility');
       }
 
       if (points.length < 2) {
