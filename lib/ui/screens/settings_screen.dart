@@ -61,6 +61,7 @@ class SettingsScreen extends StatelessWidget {
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: 12,
             children: [
               Container(
                 decoration: BoxDecoration(
@@ -77,7 +78,6 @@ class SettingsScreen extends StatelessWidget {
                   color: Theme.of(context).colorScheme.onTertiaryContainer,
                 ),
               ),
-              const SizedBox(width: 12),
               if (isAuthenticated)
                 FutureBuilder(
                     future: userData,
@@ -85,7 +85,8 @@ class SettingsScreen extends StatelessWidget {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return CircularProgressIndicator();
                       } else if (snapshot.hasError) {
-                        return Text("Error: ${snapshot.error}");
+                        // Catch error and do nothing (return empty SizedBox)
+                        return const SizedBox.shrink();
                       } else {
                         final userData = snapshot.data;
 
@@ -94,20 +95,8 @@ class SettingsScreen extends StatelessWidget {
                         final email = user['email'];
                         final name = user['name'];
 
-                        if (user == null) {
-                          return Text(
-                            "No user data available",
-                            style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onTertiaryContainer,
-                            ),
-                          );
-                        }
-
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 2,
                           children: [
                             Text(
                               email ?? "No email",
@@ -118,6 +107,8 @@ class SettingsScreen extends StatelessWidget {
                                     .colorScheme
                                     .onTertiaryContainer,
                               ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                             Text(
                               name ?? "John Doe",
@@ -126,6 +117,8 @@ class SettingsScreen extends StatelessWidget {
                                     .colorScheme
                                     .onTertiaryContainer,
                               ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ],
                         );
@@ -134,10 +127,9 @@ class SettingsScreen extends StatelessWidget {
               else
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 2,
                   children: [
                     Text(
-                      "openSenseMap Account",
+                      AppLocalizations.of(context)!.openSenseMapLogin,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
@@ -146,11 +138,13 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "Sign in to share your data",
+                      AppLocalizations.of(context)!
+                          .openSenseMapLoginDescription,
                       style: TextStyle(
                         color:
                             Theme.of(context).colorScheme.onTertiaryContainer,
                       ),
+                      softWrap: true,
                     ),
                   ],
                 )
@@ -158,14 +152,11 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ButtonWithLoader(
-            inverted: true,
+            inverted: Theme.of(context).brightness == Brightness.light,
             isLoading: false,
             onPressed: () async {
               if (isAuthenticated) {
                 await openSenseMapBloc.logout();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Successfully logged out")),
-                );
               } else {
                 await showModalBottomSheet(
                   context: context,
@@ -188,7 +179,9 @@ class SettingsScreen extends StatelessWidget {
                 );
               }
             },
-            text: isAuthenticated ? "Logout" : "Sign in",
+            text: isAuthenticated
+                ? AppLocalizations.of(context)!.generalLogout
+                : AppLocalizations.of(context)!.generalLogin,
             width: 1,
           ),
           const SizedBox(height: 8),

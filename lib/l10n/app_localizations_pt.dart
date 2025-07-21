@@ -113,6 +113,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get openSenseMapLogin => 'Entrar com openSenseMap';
 
   @override
+  String get openSenseMapLoginDescription => 'Faça login para compartilhar seus dados.';
+
+  @override
   String get openSenseMapLogout => 'Sair';
 
   @override
