@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
+import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
@@ -22,6 +24,8 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingsBloc = Provider.of<SettingsBloc>(context);
+    final OpenSenseMapBloc openSenseMapBloc =
+        Provider.of<OpenSenseMapBloc>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -29,10 +33,165 @@ class SettingsScreen extends StatelessWidget {
       ),
       body: ListView(
         children: <Widget>[
+          _buildLoginLogoutSection(context, openSenseMapBloc),
           _buildGeneralSettingsSection(context, settingsBloc),
           _buildAccountManagementSection(context),
           _buildOtherSection(context),
           _buildHelpSection(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginLogoutSection(
+      BuildContext context, OpenSenseMapBloc openSenseMapBloc) {
+    bool isAuthenticated = openSenseMapBloc.isAuthenticated;
+
+    Future<Map<String, dynamic>?> userData = openSenseMapBloc.userData;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadiusSmall),
+        color: Theme.of(context).colorScheme.tertiary,
+      ),
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onTertiaryContainer
+                      .withAlpha(50),
+                ),
+                padding: const EdgeInsets.all(6),
+                child: Icon(
+                  Icons.account_circle,
+                  size: 28,
+                  color: Theme.of(context).colorScheme.onTertiaryContainer,
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (isAuthenticated)
+                FutureBuilder(
+                    future: userData,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return CircularProgressIndicator();
+                      } else if (snapshot.hasError) {
+                        return Text("Error: ${snapshot.error}");
+                      } else {
+                        final userData = snapshot.data;
+
+                        final user = userData?['data']?['me'];
+
+                        final email = user['email'];
+                        final name = user['name'];
+
+                        if (user == null) {
+                          return Text(
+                            "No user data available",
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onTertiaryContainer,
+                            ),
+                          );
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 2,
+                          children: [
+                            Text(
+                              email ?? "No email",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onTertiaryContainer,
+                              ),
+                            ),
+                            Text(
+                              name ?? "John Doe",
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onTertiaryContainer,
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                    })
+              else
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 2,
+                  children: [
+                    Text(
+                      "openSenseMap Account",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color:
+                            Theme.of(context).colorScheme.onTertiaryContainer,
+                      ),
+                    ),
+                    Text(
+                      "Sign in to share your data",
+                      style: TextStyle(
+                        color:
+                            Theme.of(context).colorScheme.onTertiaryContainer,
+                      ),
+                    ),
+                  ],
+                )
+            ],
+          ),
+          const SizedBox(height: 16),
+          ButtonWithLoader(
+            inverted: true,
+            isLoading: false,
+            onPressed: () async {
+              if (isAuthenticated) {
+                await openSenseMapBloc.logout();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Successfully logged out")),
+                );
+              } else {
+                await showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (context) {
+                    return SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.9,
+                      // border radius top
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(borderRadius),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: LoginScreen(),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+            },
+            text: isAuthenticated ? "Logout" : "Sign in",
+            width: 1,
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -50,47 +209,50 @@ class SettingsScreen extends StatelessWidget {
           children: [
             _buildSectionHeader(context, localizations.accountManagement),
             Center(
-              child: ButtonWithLoader(
-                isLoading: isDeleting,
-                onPressed: isDeleting
-                    ? null
-                    : () async {
-                        final confirmation = await showCustomDialog(
-                          context: context,
-                          message:
-                              localizations.settingsDeleteAllDataConfirmation,
-                          type: DialogType.confirmation,
-                        );
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ButtonWithLoader(
+                  isLoading: isDeleting,
+                  onPressed: isDeleting
+                      ? null
+                      : () async {
+                          final confirmation = await showCustomDialog(
+                            context: context,
+                            message:
+                                localizations.settingsDeleteAllDataConfirmation,
+                            type: DialogType.confirmation,
+                          );
 
-                        if (confirmation == true) {
-                          setState(() {
-                            isDeleting = true;
-                          });
-
-                          try {
-                            await isarService.deleteAllData();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    localizations.settingsDeleteAllDataSuccess),
-                              ),
-                            );
-                          } catch (error) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    localizations.settingsDeleteAllDataError),
-                              ),
-                            );
-                          } finally {
+                          if (confirmation == true) {
                             setState(() {
-                              isDeleting = false;
+                              isDeleting = true;
                             });
+
+                            try {
+                              await isarService.deleteAllData();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(localizations
+                                      .settingsDeleteAllDataSuccess),
+                                ),
+                              );
+                            } catch (error) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      localizations.settingsDeleteAllDataError),
+                                ),
+                              );
+                            } finally {
+                              setState(() {
+                                isDeleting = false;
+                              });
+                            }
                           }
-                        }
-                      },
-                text: localizations.settingsDeleteAllData,
-                width: 0.7,
+                        },
+                  text: localizations.settingsDeleteAllData,
+                  width: 1,
+                ),
               ),
             ),
             Hint(text: localizations.deleteAllHint),

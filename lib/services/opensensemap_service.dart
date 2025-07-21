@@ -95,6 +95,26 @@ class OpenSenseMapService {
     await removeTokens();
   }
 
+  // get user data (name and email)
+  Future<Map<String, dynamic>?> getUserData() async {
+    final accessToken = await getAccessToken();
+    if (accessToken == null) throw Exception('Not authenticated');
+
+    final response = await client.get(
+      Uri.parse('$_baseUrl/users/me'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 401) {
+      await refreshToken();
+      return getUserData();
+    } else {
+      throw Exception('Failed to load user data');
+    }
+  }
+
   Future<String?> getAccessToken() async {
     final prefs = await _prefs;
     return prefs.getString('accessToken');

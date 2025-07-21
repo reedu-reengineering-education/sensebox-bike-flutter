@@ -58,22 +58,11 @@ class _AppHomeState extends State<AppHome> {
           child: NavigationBar(
             onDestinationSelected: (value) {
               setState(() {
-                if (value == 3) {
-                  // If the user selects the login/logout destination
-                  if (openSenseMapBloc.isAuthenticated) {
-                    // Log out the user if authenticated
-                    openSenseMapBloc.logout();
-                  } else {
-                    // Navigate to the login screen if not authenticated
-                    _selectedIndex = value;
-                  }
-                } else {
-                  _selectedIndex = value;
+                _selectedIndex = value;
 
-                  // Refresh tracks when navigating to tracks tab
-                  if (value == 1) {
-                    _tracksScreenKey.currentState?.refreshTracks();
-                  }
+                // Refresh tracks when navigating to tracks tab
+                if (value == 1) {
+                  _tracksScreenKey.currentState?.refreshTracks();
                 }
               });
             },
@@ -88,13 +77,6 @@ class _AppHomeState extends State<AppHome> {
               NavigationDestination(
                   icon: Icon(Icons.settings),
                   label: AppLocalizations.of(context)!.generalSettings),
-              NavigationDestination(
-                  icon: Icon(openSenseMapBloc.isAuthenticated
-                      ? Icons.logout
-                      : Icons.login),
-                  label: openSenseMapBloc.isAuthenticated
-                      ? AppLocalizations.of(context)!.generalLogout
-                      : AppLocalizations.of(context)!.generalLogin),
             ],
           ),
         ),
