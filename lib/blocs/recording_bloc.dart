@@ -81,11 +81,6 @@ class RecordingBloc with ChangeNotifier {
 
     _isRecording = false;
     _isRecordingNotifier.value = false;
-
-    isarService.sensorService.flushPendingData().catchError((e) {
-      debugPrint('Error flushing pending sensor data: $e');
-    });
-    
     _currentTrack = null;
 
     notifyListeners();
