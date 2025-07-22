@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -8,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart';
 
 class HumiditySensor extends Sensor {
   List<double> _latestValue = [0.0];
@@ -41,25 +41,25 @@ class HumiditySensor extends Sensor {
 
   @override
   Widget buildWidget() {
-    return StreamBuilder<List<double>>(
-      stream: valueStream,
-      initialData: _latestValue,
-      builder: (context, snapshot) {
+    return SensorConditionalRerender(
+      valueStream: valueStream,
+      initialValue: _latestValue,
+      latestValue: _latestValue,
+      decimalPlaces: 1,
+      builder: (context, value) {
         return SensorCard(
             title: AppLocalizations.of(context)!.sensorHumidity,
-            icon: getSensorIcon(title),
-            color: getSensorColor(title),
+            icon: getSensorIcon('humidity'),
+            color: getSensorColor('humidity'),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  _latestValue[0].toStringAsFixed(1),
+                  value[0].toStringAsFixed(1),
                   style: const TextStyle(fontSize: 48),
                 ),
-                const Text(
-                  '%',
-                ),
+                const Text('%'),
               ],
             ));
       },

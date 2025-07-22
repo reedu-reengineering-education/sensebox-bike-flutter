@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart';
 
 class OvertakingPredictionSensor extends Sensor {
   List<double> _latestPrediction = [0.0];
@@ -42,29 +43,29 @@ class OvertakingPredictionSensor extends Sensor {
 
   @override
   Widget buildWidget() {
-    return StreamBuilder<List<double>>(
-      stream: valueStream,
-      initialData: _latestPrediction,
-      builder: (context, snapshot) {
-        double displayValue = snapshot.data?[0] ?? _latestPrediction[0];
-
+    return SensorConditionalRerender(
+      valueStream: valueStream,
+      initialValue: _latestPrediction,
+      latestValue: _latestPrediction,
+      decimalPlaces: 0,
+      builder: (context, value) {
+        double displayValue = value[0];
         return SensorCard(
-            title: AppLocalizations.of(context)!.sensorOvertakingShort,
-            icon: getSensorIcon(title),
-            color: getSensorColor(title),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  (displayValue * 100).toStringAsFixed(0),
-                  style: const TextStyle(fontSize: 48),
-                ),
-                const Text(
-                  '%',
-                ),
-              ],
-            ));
+          title: AppLocalizations.of(context)!.sensorOvertakingShort,
+          icon: getSensorIcon('overtaking_prediction'),
+          color: getSensorColor('overtaking_prediction'),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                (displayValue * 100).toStringAsFixed(0),
+                style: const TextStyle(fontSize: 48),
+              ),
+              const Text('%'),
+            ],
+          ),
+        );
       },
     );
   }
