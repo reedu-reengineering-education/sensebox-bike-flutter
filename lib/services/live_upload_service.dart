@@ -46,7 +46,7 @@ class LiveUploadService {
         isUploading = true;
 
         List<GeolocationData> geoData = await isarService.geolocationService
-            .getGeolocationDataByTrackId(trackId);
+            .getGeolocationDataWithPreloadedSensors(trackId);
 
         // remove latest item from the list, as it may still be filled with new data
         if (geoData.isNotEmpty) {
