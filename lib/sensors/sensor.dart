@@ -23,6 +23,7 @@ abstract class Sensor {
   Stream<List<double>> get valueStream => _valueController.stream;
 
   final List<List<double>> _valueBuffer = [];
+  List<double>? _lastEmittedValue;
 
   late int uiPriority;
 
@@ -81,8 +82,20 @@ abstract class Sensor {
       if (recordingBloc.isRecording) {
         _valueBuffer.add(data); // Buffer the sensor data
       }
-      _valueController.add(data); // Emit the latest sensor value to the stream
+      // Only emit if value changed
+      if (_lastEmittedValue == null || !_listEquals(_lastEmittedValue!, data)) {
+        _valueController.add(data);
+        _lastEmittedValue = List<double>.from(data);
+      }
     }
+  }
+
+  bool _listEquals(List<double> a, List<double> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   // Aggregate sensor data and store it with the latest geolocation
