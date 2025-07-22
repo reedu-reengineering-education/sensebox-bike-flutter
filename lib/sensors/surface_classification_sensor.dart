@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart';
 
 class SurfaceClassificationSensor extends Sensor {
   double _latestAsphalt = 0.0;
@@ -85,36 +86,44 @@ class SurfaceClassificationSensor extends Sensor {
 
   @override
   Widget buildWidget() {
-    return StreamBuilder<List<double>>(
-      stream: valueStream
+    return SensorConditionalRerender(
+      valueStream: valueStream
           .map((event) => [event[0], event[1], event[2], event[3], event[4]]),
-      initialData: [
+      initialValue: [
         _latestAsphalt,
         _latestCompacted,
         _latestPaving,
         _latestSett,
         _latestStanding
       ],
-      builder: (context, snapshot) {
-        List<double> displayValues = snapshot.data ??
-            [
-              _latestAsphalt,
-              _latestCompacted,
-              _latestPaving,
-              _latestSett,
-              _latestStanding
-            ];
-
+      latestValue: [
+        _latestAsphalt,
+        _latestCompacted,
+        _latestPaving,
+        _latestSett,
+        _latestStanding
+      ],
+      decimalPlaces: 0,
+      shouldRerender: (old, next) {
+        if (old.length != next.length) return true;
+        for (int i = 0; i < old.length; i++) {
+          if (old[i].round() != next[i].round()) {
+            return true;
+          }
+        }
+        return false;
+      },
+      builder: (context, value) {
         return SensorCard(
             title: AppLocalizations.of(context)!.sensorSurface,
-            icon: getSensorIcon(title),
-            color: getSensorColor(title),
+            icon: getSensorIcon('surface_classification'),
+            color: getSensorColor('surface_classification'),
             child: Column(
               children: [
                 const SizedBox(
                   height: 2,
                 ),
-                for (int i = 0; i < displayValues.length; i++)
+                for (int i = 0; i < value.length; i++)
                   _buildLegendEntry(
                       [
                         AppLocalizations.of(context)!.sensorSurfaceAsphaltShort,
@@ -131,7 +140,7 @@ class SurfaceClassificationSensor extends Sensor {
                         Colors.orange,
                         Colors.blueGrey
                       ][i],
-                      displayValues[i],
+                      value[i],
                       context),
                 SizedBox(
                   width: double.infinity,
@@ -150,12 +159,10 @@ class SurfaceClassificationSensor extends Sensor {
                             BarChartRodData(
                               toY: 1,
                               rodStackItems: [
-                                for (int i = 0; i < displayValues.length; i++)
+                                for (int i = 0; i < value.length; i++)
                                   BarChartRodStackItem(
-                                    displayValues
-                                        .take(i)
-                                        .fold(0.0, (a, b) => a + b),
-                                    displayValues
+                                    value.take(i).fold(0.0, (a, b) => a + b),
+                                    value
                                         .take(i + 1)
                                         .fold(0.0, (a, b) => a + b),
                                     [

@@ -6,12 +6,14 @@ class SensorConditionalRerender extends StatefulWidget {
   final List<double> latestValue;
   final Widget Function(BuildContext, List<double>) builder;
   final int decimalPlaces;
+  final bool Function(List<double> old, List<double> next)? shouldRerender;
   const SensorConditionalRerender({
     required this.valueStream,
     required this.initialValue,
     required this.latestValue,
     required this.builder,
     this.decimalPlaces = 1,
+    this.shouldRerender,
     Key? key,
   }) : super(key: key);
 
@@ -37,7 +39,13 @@ class _SensorConditionalRerenderState extends State<SensorConditionalRerender> {
       initialData: widget.initialValue,
       builder: (context, snapshot) {
         final data = snapshot.data ?? widget.initialValue;
-        if (_round(widget.latestValue[0]) == _round(data[0]) && _cachedWidget != null) {
+        final defaultResult =
+            _defaultShouldRerender(_lastValue, data, widget.decimalPlaces);
+        final shouldSkip = widget.shouldRerender != null
+            ? !widget.shouldRerender!(_lastValue, data)
+            : !defaultResult;
+  
+        if (shouldSkip && _cachedWidget != null) {
           return _cachedWidget!;
         } else {
           _lastValue = List<double>.from(data);
@@ -48,5 +56,17 @@ class _SensorConditionalRerenderState extends State<SensorConditionalRerender> {
     );
   }
 
-  double _round(double v) => double.parse(v.toStringAsFixed(widget.decimalPlaces));
+  bool _defaultShouldRerender(
+      List<double> old, List<double> next, int decimalPlaces) {
+    if (old.length != next.length) return true;
+    for (int i = 0; i < old.length; i++) {
+      if (_round(old[i], decimalPlaces) != _round(next[i], decimalPlaces)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  double _round(double v, int decimalPlaces) =>
+      double.parse(v.toStringAsFixed(decimalPlaces));
 } 
