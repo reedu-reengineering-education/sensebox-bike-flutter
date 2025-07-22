@@ -126,9 +126,9 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
           zoom: isGlobe ? 1.5 : defaultCameraOptions['zoom'],
           pitch: defaultCameraOptions['pitch'],
         );
-        final animationOptions = MapAnimationOptions(duration: 1000);
 
-        await mapInstance.flyTo(cameraOptions, animationOptions);
+        // Use setCamera instead of flyTo for immediate positioning
+        await mapInstance.setCamera(cameraOptions);
       } catch (e, stack) {
         ErrorService.handleError(e, stack);
       }
@@ -151,7 +151,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
       if (points.isEmpty) return;
 
       await _drawTrackLine(points);
-      await _flyToLastLocation();
+      await _setCameraToLastLocation();
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);
     }
@@ -191,31 +191,31 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     await lineAnnotationManager.create(polyline);
   }
 
-  Future<void> _flyToLastLocation() async {
+  Future<void> _setCameraToLastLocation() async {
     final lastLocation = _mapBloc.lastLocationForMap;
     if (lastLocation == null) return;
 
-    await _flyToLocation(lastLocation);
+    await _setCameraToLocation(lastLocation);
   }
 
   void _showCurrentLocation(GeolocationData geoData) async {
     try {
-      await _flyToLocation(geoData);
+      await _setCameraToLocation(geoData);
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);
     }
   }
 
-  Future<void> _flyToLocation(GeolocationData location) async {
+  Future<void> _setCameraToLocation(GeolocationData location) async {
     final cameraOptions = CameraOptions(
       center:
           Point(coordinates: Position(location.longitude, location.latitude)),
       zoom: 16.0,
       pitch: 45,
     );
-    final animationOptions = MapAnimationOptions(duration: 1000);
 
-    await mapInstance.flyTo(cameraOptions, animationOptions);
+    // Use setCamera instead of flyTo for immediate positioning
+    await mapInstance.setCamera(cameraOptions);
   }
 
   @override
