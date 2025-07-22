@@ -5,6 +5,7 @@ import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:geolocator/geolocator.dart' as geolocator;
 
 class GeolocationMapBloc extends ChangeNotifier {
   // Dependencies
@@ -18,6 +19,7 @@ class GeolocationMapBloc extends ChangeNotifier {
   bool _isRecording = false;
   bool _isConnected = false;
   GeolocationData? _latestLocation;
+  GeolocationData? _lastNotifiedLocation;
 
   // Stream subscriptions and listeners
   StreamSubscription<GeolocationData>? _gpsSubscription;
@@ -93,12 +95,27 @@ class GeolocationMapBloc extends ChangeNotifier {
     }
 
     _latestLocation = geoData;
-
-    if (_isRecording) {
-      _addToGpsBuffer(geoData);
+    bool shouldNotify = false;
+    if (_lastNotifiedLocation == null) {
+      shouldNotify = true;
+    } else {
+      final dist = geolocator.Geolocator.distanceBetween(
+        _lastNotifiedLocation!.latitude,
+        _lastNotifiedLocation!.longitude,
+        geoData.latitude,
+        geoData.longitude,
+      );
+      if (dist >= 1.0) {
+        shouldNotify = true;
+      }
     }
-    
-    notifyListeners();
+    if (shouldNotify) {
+      _lastNotifiedLocation = geoData;
+      if (_isRecording) {
+        _addToGpsBuffer(geoData);
+      }
+      notifyListeners();
+    }
   }
 
   // GPS Buffer Management

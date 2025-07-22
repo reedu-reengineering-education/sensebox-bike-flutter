@@ -24,7 +24,8 @@ class GeolocationMapWidget extends StatefulWidget {
   State<GeolocationMapWidget> createState() => _GeolocationMapWidgetState();
 }
 
-class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
+class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
+    with WidgetsBindingObserver {
   // Map instances
   late final MapboxMap mapInstance;
   late PolylineAnnotationManager lineAnnotationManager;
@@ -35,10 +36,12 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   // Constants
   static const double authenticatedMargin = 125;
   static const double unauthenticatedMargin = 75;
+  bool _isVisible = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeMapBloc();
     _setupMapBlocListener();
   }
@@ -57,7 +60,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
   }
 
   void _onMapBlocChanged() {
-    if (!mounted) return;
+    if (!mounted || !_isVisible) return;
     
     // Update map based on bloc state
     if (_mapBloc.shouldShowTrack) {
@@ -217,9 +220,17 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _mapBloc.removeListener(_onMapBlocChanged);
     _mapBloc.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    setState(() {
+      _isVisible = (state == AppLifecycleState.resumed);
+    });
   }
 
   @override
