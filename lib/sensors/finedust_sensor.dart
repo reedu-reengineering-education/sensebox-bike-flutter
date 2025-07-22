@@ -68,7 +68,7 @@ class FinedustSensor extends Sensor {
           valueStream.map((event) => [event[0], event[1], event[2], event[3]]),
       initialValue: [_latestPM1, _latestPM2_5, _latestPM4, _latestPM10],
       latestValue: [_latestPM1, _latestPM2_5, _latestPM4, _latestPM10],
-      decimalPlaces: 1,
+      decimalPlaces: 2,
       shouldRerender: (old, next) {
         if (old.length != next.length) return true;
         for (int i = 0; i < old.length; i++) {
