@@ -27,7 +27,7 @@ class GeolocationMapWidget extends StatefulWidget {
 class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     with WidgetsBindingObserver {
   // Map instances
-  late final MapboxMap mapInstance;
+  MapboxMap? mapInstance;
   late PolylineAnnotationManager lineAnnotationManager;
 
   // Bloc
@@ -85,13 +85,13 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
       right: 8,
     );
 
-    mapInstance.logo.updateSettings(
+    mapInstance?.logo.updateSettings(
       LogoSettings(
         marginBottom: logoAttributionMargins.bottom,
         marginLeft: logoAttributionMargins.left,
       ),
     );
-    mapInstance.attribution.updateSettings(
+    mapInstance?.attribution.updateSettings(
       AttributionSettings(
         marginBottom: logoAttributionMargins.bottom,
         marginRight: logoAttributionMargins.right,
@@ -103,7 +103,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     if (!mounted) return;
     
     bool enableLocationPuck = _mapBloc.isConnected;
-    mapInstance.location.updateSettings(LocationComponentSettings(
+    mapInstance?.location.updateSettings(LocationComponentSettings(
       enabled: enableLocationPuck,
       showAccuracyRing: enableLocationPuck,
     ));
@@ -128,7 +128,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
         );
 
         // Use setCamera instead of flyTo for immediate positioning
-        await mapInstance.setCamera(cameraOptions);
+        await mapInstance?.setCamera(cameraOptions);
       } catch (e, stack) {
         ErrorService.handleError(e, stack);
       }
@@ -215,7 +215,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     );
 
     // Use setCamera instead of flyTo for immediate positioning
-    await mapInstance.setCamera(cameraOptions);
+    await mapInstance?.setCamera(cameraOptions);
   }
 
   @override
@@ -261,11 +261,11 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   }
 
   void _configureMapSettings() {
-    mapInstance.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-    mapInstance.compass.updateSettings(CompassSettings(enabled: false));
+    mapInstance?.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    mapInstance?.compass.updateSettings(CompassSettings(enabled: false));
 
     // Set initial camera position
-    mapInstance.setCamera(CameraOptions(
+    mapInstance?.setCamera(CameraOptions(
       center: Point(coordinates: Position(9, 45)),
       zoom: 3.25,
       pitch: 25,
@@ -274,7 +274,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
   Future<void> _setupMapComponents() async {
     try {
-      lineAnnotationManager = await mapInstance.annotations
+      lineAnnotationManager = await mapInstance!.annotations
           .createPolylineAnnotationManager(id: 'lineAnnotationManager');
       
       final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -294,7 +294,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
       if (settingsBloc.privacyZones.isEmpty) return;
 
       final polygonAnnotationManager =
-          await mapInstance.annotations.createPolygonAnnotationManager();
+          await mapInstance!.annotations.createPolygonAnnotationManager();
       polygonAnnotationManager.setFillColor(Colors.red.toARGB32());
       polygonAnnotationManager.setFillOpacity(0.5);
       polygonAnnotationManager.setFillEmissiveStrength(1);
