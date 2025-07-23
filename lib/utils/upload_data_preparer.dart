@@ -57,7 +57,6 @@ class UploadDataPreparer {
     return data;
   }
 
-  /// Prepare data for upload from sensor buffer and GPS buffer (used by DirectUploadService)
   Map<String, dynamic> prepareDataFromBuffers(
       List<Map<String, dynamic>> sensorBuffer, List<GeolocationData> gpsBuffer) {
     final Map<String, dynamic> data = {};
@@ -80,27 +79,17 @@ class UploadDataPreparer {
                   : prev);
 
       if (gps == null) {
-        debugPrint('GPS not found: $sensorEntry.title');
         continue;
       }
 
-      // Get sensor title for matching - properly construct the search key
-      String? sensorTitleForMatching = getTitleFromSensorKey(sensorTitle, attribute);
-      debugPrint('SENSOR TITLE FOR MATCHING: $sensorTitleForMatching');
+      String? sensorTitleForMatching =
+          getTitleFromSensorKey(sensorTitle, attribute);
       if (sensorTitleForMatching == null) {
-        debugPrint('SENSOR NOT FOUND: $sensorEntry.title');
         continue;
       }
 
-      // Find matching sensor in senseBox
       Sensor? sensor = getMatchingSensor(sensorTitleForMatching);
-      debugPrint('SENSOR: ${sensor?.title}');
-      if (sensor == null) {
-        debugPrint('SENSOR NOT FOUND: $sensorEntry.title');
-        continue;
-      }
-      if (value.isNaN) {
-        debugPrint('SENSOR value is NaN: $sensorEntry.title');
+      if (sensor == null || value.isNaN) {
         continue;
       }
 
