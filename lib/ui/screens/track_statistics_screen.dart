@@ -5,6 +5,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/models/track_data.dart';
 
 class TrackStatisticsScreen extends StatefulWidget {
   final IsarService isarService;
@@ -34,14 +35,28 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
     _loadStats();
   }
 
+  /// Helper method to find the first track with geolocations
+  TrackData? _findFirstTrackWithGeolocations(List<TrackData> tracks) {
+    for (final track in tracks) {
+      if (track.geolocations.isNotEmpty) {
+        return track;
+      }
+    }
+    return null;
+  }
+
   Future<void> _loadStats() async {
     setState(() {
       _isLoading = true;
     });
     final tracks = await widget.isarService.trackService.getAllTracks();
-    _start = tracks.isNotEmpty
-        ? tracks.first.geolocations.first.timestamp
+    
+    // Find the first track with geolocations as fallback
+    final firstTrackWithGeolocations = _findFirstTrackWithGeolocations(tracks);
+    _start = firstTrackWithGeolocations != null
+        ? firstTrackWithGeolocations.geolocations.first.timestamp
         : DateTime.now();
+        
     final tracksThisWeek = tracks
         .where((track) =>
             track.geolocations.isNotEmpty &&
