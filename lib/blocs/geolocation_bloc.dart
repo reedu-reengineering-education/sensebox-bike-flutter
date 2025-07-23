@@ -13,6 +13,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/utils/geo_utils.dart';
 import 'package:turf/turf.dart' as Turf;
+import 'package:sensebox_bike/utils/sensor_data_helper.dart';
 
 class GeolocationBloc with ChangeNotifier {
   final StreamController<GeolocationData> _geolocationController =
@@ -108,7 +109,17 @@ class GeolocationBloc with ChangeNotifier {
       bool isInZone = isInsidePrivacyZone(privacyZones, data);
 
       if (!isInZone) {
+        // Save the geolocation data first
         await isarService.geolocationService.saveGeolocationData(data);
+        
+        // Create and save GPS speed as SensorData for consistent UI display
+        if (data.speed > 0) {
+          final gpsSpeedSensorData =
+              SensorDataHelper.createGpsSpeedSensorData(data);
+          if (SensorDataHelper.shouldStoreSensorData(gpsSpeedSensorData)) {
+            await isarService.sensorService.saveSensorData(gpsSpeedSensorData);
+          }
+        }
       }
     } catch (e) {
       print('Error saving geolocation data: $e');
