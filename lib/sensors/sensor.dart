@@ -6,6 +6,7 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
+import 'package:isar/isar.dart';
 
 abstract class Sensor {
   final String characteristicUuid;
@@ -21,13 +22,12 @@ abstract class Sensor {
   final StreamController<List<double>> _valueController =
       StreamController<List<double>>.broadcast();
   Stream<List<double>> get valueStream => _valueController.stream;
+  static const Duration _batchTimeout = Duration(seconds: 5);
+  Timer? _batchTimer;
 
-  final List<List<double>> _valueBuffer = [];
-
-  late int uiPriority;
-
-  late Icon uiIcon;
-  late Color uiColor;
+  // Buffers for batching
+  final List<Map<String, dynamic>> _sensorBuffer = [];
+  final List<GeolocationData> _gpsBuffer = [];
 
   Sensor(
     this.characteristicUuid,
@@ -39,95 +39,110 @@ abstract class Sensor {
     this.isarService,
   );
 
+  // On each sensor data event, buffer with timestamp
+  void onDataReceived(List<double> data) {
+    if (data.isNotEmpty && recordingBloc.isRecording) {
+      final now = DateTime.now();
+      for (int i = 0; i < data.length; i++) {
+        final singleData = [data[i]];
+        final singleAttribute = (attributes.isNotEmpty && i < attributes.length)
+            ? [attributes[i]]
+            : [];
+
+        debugPrint(
+            'onDataReceived: data=$singleData, attributes=$singleAttribute, sensor=$title');
+        
+        _sensorBuffer.add({
+          'timestamp': now,
+          'value': data[i],
+          'index': i,
+          'sensor': title,
+          'attribute': (attributes.isNotEmpty && i < attributes.length)
+              ? attributes[i]
+              : null,
+        });
+        
+      }
+    }
+    _valueController.add(data);
+    
+  }
+
+  // On each GPS event, buffer the GeolocationData
   void startListening() async {
     try {
-      // Listen to the sensor data stream
       _subscription = bleBloc
           .getCharacteristicStream(characteristicUuid)
           .listen((data) {
         onDataReceived(data);
       });
 
-      // Listen to geolocation updates
-      (await isarService.geolocationService.getGeolocationStream())
-          .listen((_) async {
-        if (_valueBuffer.isNotEmpty && recordingBloc.isRecording) {
-          GeolocationData? geolocationData = await isarService
-              .geolocationService
-              .getLastGeolocationData(); // Get the latest geolocation data
-
-          if (geolocationData == null) {
-            return;
-          }
-
-          _aggregateAndStoreData(
-              geolocationData); // Aggregate and store sensor data
-          _valueBuffer.clear(); // Clear the list after aggregation
+      geolocationBloc.geolocationStream.listen((geo) {
+        if (geo != null) {
+          _gpsBuffer.add(geo);
         }
       });
+
+      _batchTimer = Timer.periodic(_batchTimeout, (_) async {
+        await _flushBuffers();
+      });
     } catch (e) {
-      print('Error starting sensor: $e');
+      debugPrint('Error starting sensor: $e');
     }
   }
 
   Future<void> stopListening() async {
     await _subscription?.cancel();
     _subscription = null;
+    _batchTimer?.cancel();
+    _batchTimer = null;
+    await _flushBuffers();
   }
 
-  // Method to handle incoming sensor data
-  void onDataReceived(List<double> data) {
-    if (data.isNotEmpty) {
-      if (recordingBloc.isRecording) {
-        _valueBuffer.add(data); // Buffer the sensor data
+  // On flush, match each sensor data to the latest GPS (by timestamp)
+  Future<void> _flushBuffers() async {
+    if (_sensorBuffer.isEmpty) return;
+    debugPrint('Flushing buffer with count: ${_sensorBuffer.length}');
+    final List<SensorData> batch = [];
+    for (final entry in _sensorBuffer) {
+      final DateTime sensorTs = entry['timestamp'] as DateTime;
+      final double value = entry['value'] as double;
+      final int index = entry['index'] as int;
+      final String sensorTitle = entry['sensor'] as String;
+      final String? attr = entry['attribute'] as String?;
+      // Find the latest GPS with gps.timestamp <= sensorTs
+      GeolocationData? gps = _gpsBuffer
+          .where((g) =>
+              g.timestamp.isBefore(sensorTs) ||
+              g.timestamp.isAtSameMomentAs(sensorTs))
+          .fold<GeolocationData?>(
+              null,
+              (prev, g) => prev == null || g.timestamp.isAfter(prev.timestamp)
+                  ? g
+                  : prev);
+      if (gps == null) continue;
+      // Ensure GPS is saved and has an id
+      if (gps.id == Isar.autoIncrement || gps.id == 0) {
+        gps.id = await isarService.geolocationService.saveGeolocationData(gps);
       }
-      _valueController.add(data); // Emit the latest sensor value to the stream
+      final sensorData = SensorData()
+        ..characteristicUuid = characteristicUuid
+        ..title = sensorTitle
+        ..value = value
+        ..attribute = attr
+        ..geolocationData.value = gps;
+      batch.add(sensorData);
+    }
+    if (batch.isNotEmpty) {
+      await isarService.sensorService.saveSensorDataBatch(batch);
+    }
+    _sensorBuffer.clear();
+    if (_gpsBuffer.length > 100) {
+      _gpsBuffer.removeRange(0, _gpsBuffer.length - 100);
     }
   }
 
-  // Aggregate sensor data and store it with the latest geolocation
-  void _aggregateAndStoreData(GeolocationData geolocationData) {
-    if (_valueBuffer.isEmpty) {
-      return;
-    }
-
-    List<double> aggregatedValues = aggregateData(_valueBuffer);
-
-    if (attributes.isEmpty) {
-      _saveSensorData(aggregatedValues[0], null, geolocationData);
-    } else {
-      if (attributes.length != aggregatedValues.length) {
-        throw Exception(
-            'Number of attributes does not match the number of aggregated values');
-      }
-
-      for (int i = 0; i < attributes.length; i++) {
-        _saveSensorData(aggregatedValues[i], attributes[i], geolocationData);
-      }
-    }
-  }
-
-  // Helper method to save sensor data
-  void _saveSensorData(
-      double value, String? attribute, GeolocationData geolocationData) {
-    if (value.isNaN) {
-      return;
-    }
-
-    final sensorData = SensorData()
-      ..characteristicUuid = characteristicUuid
-      ..title = title
-      ..value = value
-      ..attribute = attribute
-      ..geolocationData.value = geolocationData;
-
-    isarService.sensorService.saveSensorData(sensorData);
-  }
-
-  // Abstract method to build a widget for the sensor (UI representation)
   Widget buildWidget();
-
-  // Abstract method to aggregate sensor data
   List<double> aggregateData(List<List<double>> valueBuffer);
 
   void dispose() {
