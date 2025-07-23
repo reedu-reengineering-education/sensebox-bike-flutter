@@ -35,7 +35,7 @@ class DirectUploadService {
     required this.openSenseMapService,
     required this.settingsBloc,
     required this.senseBox,
-  }) : _dataPreparer = UploadDataPreparer(senseBox: senseBox) {}
+  }) : _dataPreparer = UploadDataPreparer(senseBox: senseBox);
 
   void enable() {
     _isEnabled = true;

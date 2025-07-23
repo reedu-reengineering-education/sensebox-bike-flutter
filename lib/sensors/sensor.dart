@@ -57,7 +57,7 @@ abstract class Sensor {
           'value': data[i],
           'index': i,
           'sensor': title,
-          'attribute': attributes.isNotEmpty ? attributes[i]: null,
+          'attribute': attributes.isNotEmpty ? attributes[i] : null,
         });
         
       }

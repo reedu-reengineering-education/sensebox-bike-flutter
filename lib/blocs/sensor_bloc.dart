@@ -61,7 +61,7 @@ class SensorBloc with ChangeNotifier {
         _flushAllSensorBuffers();
       }
     };
-    recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
+    recordingBloc.isRecordingNotifier.addListener(_recordingListener);
     recordingBloc.setRecordingCallbacks(
       onRecordingStart: _onRecordingStart,
       onRecordingStop: _onRecordingStop,

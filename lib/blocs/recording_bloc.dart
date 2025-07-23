@@ -24,7 +24,6 @@ class RecordingBloc with ChangeNotifier {
   final ValueNotifier<bool> _isRecordingNotifier = ValueNotifier<bool>(false);
   DirectUploadService? _directUploadService;
 
-  // Callback-based approach to avoid 
   VoidCallback? _onRecordingStart;
   VoidCallback? _onRecordingStop;
 
