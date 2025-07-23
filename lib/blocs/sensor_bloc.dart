@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
 import 'package:sensebox_bike/sensors/finedust_sensor.dart';
@@ -170,6 +171,11 @@ class SensorBloc with ChangeNotifier {
         .toSet();
 
     final availableSensors = _sensors.where((sensor) {
+      // Filter out surface_anomaly if the feature flag is enabled
+      if (FeatureFlags.hideSurfaceAnomalySensor &&
+          sensor.title == 'surface_anomaly') {
+        return false;
+      }
       return availableUuids.contains(sensor.characteristicUuid);
     }).toList();
 
