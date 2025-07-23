@@ -49,8 +49,8 @@ class DistanceSensor extends Sensor {
       builder: (context, value) {
         return SensorCard(
           title: AppLocalizations.of(context)!.sensorDistanceShort,
-          icon: getSensorIcon('distance'),
-          color: getSensorColor('distance'),
+          icon: getSensorIcon(title),
+          color: getSensorColor(title),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,

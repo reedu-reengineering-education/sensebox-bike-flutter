@@ -52,8 +52,8 @@ class OvertakingPredictionSensor extends Sensor {
         double displayValue = value[0];
         return SensorCard(
           title: AppLocalizations.of(context)!.sensorOvertakingShort,
-          icon: getSensorIcon('overtaking_prediction'),
-          color: getSensorColor('overtaking_prediction'),
+          icon: getSensorIcon(title),
+          color: getSensorColor(title),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,

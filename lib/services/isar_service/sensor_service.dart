@@ -64,7 +64,6 @@ class SensorService {
     if (batch.isEmpty) return;
     final isar = await isarProvider.getDatabase();
     await isar.writeTxn(() async {
-      // Save each sensor data individually to ensure proper link establishment
       for (final sensor in batch) {
         await isar.sensorDatas.put(sensor);
         await sensor.geolocationData.save();

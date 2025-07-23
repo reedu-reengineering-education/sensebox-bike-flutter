@@ -116,8 +116,8 @@ class SurfaceClassificationSensor extends Sensor {
       builder: (context, value) {
         return SensorCard(
             title: AppLocalizations.of(context)!.sensorSurface,
-            icon: getSensorIcon('surface_classification'),
-            color: getSensorColor('surface_classification'),
+            icon: getSensorIcon(title),
+            color: getSensorColor(title),
             child: Column(
               children: [
                 const SizedBox(

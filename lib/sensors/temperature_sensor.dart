@@ -50,8 +50,8 @@ class TemperatureSensor extends Sensor {
       builder: (context, value) {
         return SensorCard(
           title: AppLocalizations.of(context)!.sensorTemperature,
-          icon: getSensorIcon('temperature'),
-          color: getSensorColor('temperature'),
+          icon: getSensorIcon(title),
+          color: getSensorColor(title),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,

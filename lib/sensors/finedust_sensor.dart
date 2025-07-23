@@ -82,8 +82,8 @@ class FinedustSensor extends Sensor {
       builder: (context, value) {
         return SensorCard(
           title: AppLocalizations.of(context)!.sensorFinedust,
-          icon: getSensorIcon('finedust'),
-          color: getSensorColor('finedust'),
+          icon: getSensorIcon(title),
+          color: getSensorColor(title),
           child: AspectRatio(
             aspectRatio: 1.3,
             child: BarChart(

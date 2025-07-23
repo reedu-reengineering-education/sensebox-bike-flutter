@@ -49,8 +49,8 @@ class HumiditySensor extends Sensor {
       builder: (context, value) {
         return SensorCard(
             title: AppLocalizations.of(context)!.sensorHumidity,
-            icon: getSensorIcon('humidity'),
-            color: getSensorColor('humidity'),
+            icon: getSensorIcon(title),
+            color: getSensorColor(title),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,

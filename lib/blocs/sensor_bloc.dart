@@ -30,7 +30,6 @@ class SensorBloc with ChangeNotifier {
   SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc) {
     _initializeSensors();
 
-    // Listen to changes in the BLE device connection state
     _selectedDeviceListener = () {
       if (bleBloc.selectedDevice != null &&
           bleBloc.selectedDevice!.isConnected) {
@@ -43,7 +42,6 @@ class SensorBloc with ChangeNotifier {
       notifyListeners();
     };
 
-    // Listen to changes in available characteristics
     _characteristicsListener = () {
       final currentUuids = bleBloc.availableCharacteristics.value
           .map((e) => e.uuid.toString())
@@ -54,21 +52,16 @@ class SensorBloc with ChangeNotifier {
       }
     };
 
-    // Listen to changes in characteristic streams version
     _characteristicStreamsVersionListener = () {
       _restartAllSensors();
     };
 
-    // Listen to recording state changes
     _recordingListener = () {
       if (!recordingBloc.isRecording) {
-        debugPrint('Recording stopped, flushing all sensor buffers');
         _flushAllSensorBuffers();
       }
     };
     recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
-
-    // Set up recording callbacks to avoid circular dependency
     recordingBloc.setRecordingCallbacks(
       onRecordingStart: _onRecordingStart,
       onRecordingStop: _onRecordingStop,
@@ -81,31 +74,24 @@ class SensorBloc with ChangeNotifier {
         .addListener(_characteristicStreamsVersionListener);
   }
 
-  /// Callback when recording starts - set up direct upload for all sensors
   void _onRecordingStart() {
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
-      // Set the upload service for all sensors
+
       for (final sensor in _sensors) {
         sensor.setDirectUploadService(directUploadService);
       }
 
-      // Enable direct upload mode
       directUploadService.enable();
-      debugPrint('SensorBloc: Direct upload mode enabled for all sensors');
     }
   }
 
-  /// Callback when recording stops - clean up direct upload
   Future<void> _onRecordingStop() async {
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
-      // Upload any remaining buffered data
       await directUploadService.uploadRemainingBufferedData();
 
-      // Disable direct upload mode
       directUploadService.disable();
-      debugPrint('SensorBloc: Direct upload mode disabled for all sensors');
     }
   }
 
@@ -118,7 +104,7 @@ class SensorBloc with ChangeNotifier {
 
   void _initializeSensors() {
     final isarService = geolocationBloc.isarService;
-    // Initialize sensors with specific UUIDs
+
     _sensors.add(TemperatureSensor(
         bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(
@@ -156,7 +142,6 @@ class SensorBloc with ChangeNotifier {
     _startListening();
   }
 
-  /// Flush all sensor buffers - useful for immediate saving when recording stops
   Future<void> _flushAllSensorBuffers() async {
     for (var sensor in _sensors) {
       await sensor.flushBuffers();
@@ -185,7 +170,6 @@ class SensorBloc with ChangeNotifier {
 
   @override
   void dispose() {
-    // Remove all listeners
     bleBloc.selectedDeviceNotifier.removeListener(_selectedDeviceListener);
     bleBloc.availableCharacteristics.removeListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
@@ -194,7 +178,6 @@ class SensorBloc with ChangeNotifier {
     
     _stopListening();
     
-    // Dispose all sensors
     for (final sensor in _sensors) {
       sensor.dispose();
     }

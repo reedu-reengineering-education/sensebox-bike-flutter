@@ -24,7 +24,7 @@ class RecordingBloc with ChangeNotifier {
   final ValueNotifier<bool> _isRecordingNotifier = ValueNotifier<bool>(false);
   DirectUploadService? _directUploadService;
 
-  // Callback-based approach to avoid circular dependency
+  // Callback-based approach to avoid 
   VoidCallback? _onRecordingStart;
   VoidCallback? _onRecordingStop;
 
@@ -43,7 +43,6 @@ class RecordingBloc with ChangeNotifier {
     }); 
   }
 
-  /// Set callbacks for recording state changes (avoids circular dependency)
   void setRecordingCallbacks({
     VoidCallback? onRecordingStart,
     VoidCallback? onRecordingStop,
@@ -68,20 +67,17 @@ class RecordingBloc with ChangeNotifier {
 
     try {
       if (_selectedSenseBox == null) {
-        // Supress sending this error to Sentry
         ErrorService.handleError(NoSenseBoxSelected(), StackTrace.current,
             sendToSentry: false);
         notifyListeners();
         return;
       }
 
-      // Create DirectUploadService for direct buffered data upload
       _directUploadService = DirectUploadService(
           openSenseMapService: OpenSenseMapService(),
           settingsBloc: settingsBloc,
           senseBox: _selectedSenseBox!);
 
-      // Notify via callback that recording has started
       _onRecordingStart?.call();
 
     } catch (e, stack) {
@@ -96,20 +92,14 @@ class RecordingBloc with ChangeNotifier {
 
     _isRecording = false;
     _isRecordingNotifier.value = false;
-
-    // Notify via callback that recording has stopped
     _onRecordingStop?.call();
-
-    // Dispose the direct upload service
     _directUploadService?.dispose();
     _directUploadService = null;
-
     _currentTrack = null;
 
     notifyListeners();
   }
 
-  /// Get the DirectUploadService for external use (e.g., by SensorBloc)
   DirectUploadService? get directUploadService => _directUploadService;
 
   @override
