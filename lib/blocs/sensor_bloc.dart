@@ -23,6 +23,7 @@ class SensorBloc with ChangeNotifier {
   late final VoidCallback _characteristicsListener;
   late final VoidCallback _characteristicStreamsVersionListener;
   late final VoidCallback _selectedDeviceListener;
+  late final VoidCallback _recordingListener;
   List<String> _lastCharacteristicUuids = [];
 
   SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc) {
@@ -65,6 +66,15 @@ class SensorBloc with ChangeNotifier {
     };
     bleBloc.characteristicStreamsVersion
         .addListener(_characteristicStreamsVersionListener);
+
+    // Listen to recording state changes to flush all sensor buffers when recording stops
+    _recordingListener = () {
+      if (!recordingBloc.isRecording) {
+        debugPrint('Recording stopped, flushing all sensor buffers');
+        _flushAllSensorBuffers();
+      }
+    };
+    recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
   }
 
   bool _listEqualsUnordered(List<String> a, List<String> b) {
@@ -114,6 +124,17 @@ class SensorBloc with ChangeNotifier {
     _startListening();
   }
 
+  /// Flush all sensor buffers - useful for immediate saving when recording stops
+  Future<void> _flushAllSensorBuffers() async {
+    for (var sensor in _sensors) {
+      try {
+        await sensor.flushBuffers();
+      } catch (e) {
+        debugPrint('Error flushing buffers for sensor ${sensor.title}: $e');
+      }
+    }
+  }
+
   List<Widget> getSensorWidgets() {
     final availableUuids = bleBloc.availableCharacteristics.value
         .map((e) => e.uuid.toString())
@@ -133,15 +154,20 @@ class SensorBloc with ChangeNotifier {
 
   @override
   void dispose() {
-    for (var sensor in _sensors) {
-      sensor.dispose();
-    }
-
+    // Remove all listeners
     bleBloc.selectedDeviceNotifier.removeListener(_selectedDeviceListener);
     bleBloc.availableCharacteristics.removeListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .removeListener(_characteristicStreamsVersionListener);
-        
+    recordingBloc.isRecordingNotifier.removeListener(_recordingListener);
+
+    _stopListening();
+
+    // Dispose all sensors
+    for (var sensor in _sensors) {
+      sensor.dispose();
+    }
+    
     super.dispose();
   }
 }

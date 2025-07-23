@@ -18,6 +18,7 @@ abstract class Sensor {
   final RecordingBloc recordingBloc;
   final IsarService isarService;
   StreamSubscription<List<double>>? _subscription;
+  VoidCallback? _recordingListener;
 
   final StreamController<List<double>> _valueController =
       StreamController<List<double>>.broadcast();
@@ -39,19 +40,14 @@ abstract class Sensor {
     this.isarService,
   );
 
+  // Abstract getter for UI priority - must be implemented by subclasses
+  int get uiPriority;
+
   // On each sensor data event, buffer with timestamp
   void onDataReceived(List<double> data) {
     if (data.isNotEmpty && recordingBloc.isRecording) {
       final now = DateTime.now();
       for (int i = 0; i < data.length; i++) {
-        final singleData = [data[i]];
-        final singleAttribute = (attributes.isNotEmpty && i < attributes.length)
-            ? [attributes[i]]
-            : [];
-
-        debugPrint(
-            'onDataReceived: data=$singleData, attributes=$singleAttribute, sensor=$title');
-        
         _sensorBuffer.add({
           'timestamp': now,
           'value': data[i],
@@ -86,6 +82,14 @@ abstract class Sensor {
       _batchTimer = Timer.periodic(_batchTimeout, (_) async {
         await _flushBuffers();
       });
+
+      // Listen to recording state changes to flush buffers when recording stops
+      _recordingListener = () {
+        if (!recordingBloc.isRecording) {
+          _flushBuffers();
+        }
+      };
+      recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
     } catch (e) {
       debugPrint('Error starting sensor: $e');
     }
@@ -96,6 +100,18 @@ abstract class Sensor {
     _subscription = null;
     _batchTimer?.cancel();
     _batchTimer = null;
+    
+    // Remove recording listener
+    if (_recordingListener != null) {
+      recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
+      _recordingListener = null;
+    }
+
+    await _flushBuffers();
+  }
+
+  /// Public method to manually flush buffers - useful for immediate saving when recording stops
+  Future<void> flushBuffers() async {
     await _flushBuffers();
   }
 
