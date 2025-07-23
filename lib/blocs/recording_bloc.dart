@@ -8,7 +8,7 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:sensebox_bike/services/live_upload_service.dart';
+import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 
 class RecordingBloc with ChangeNotifier {
@@ -22,6 +22,11 @@ class RecordingBloc with ChangeNotifier {
   TrackData? _currentTrack;
   SenseBox? _selectedSenseBox;
   final ValueNotifier<bool> _isRecordingNotifier = ValueNotifier<bool>(false);
+  DirectUploadService? _directUploadService;
+
+  // Callback-based approach to avoid circular dependency
+  VoidCallback? _onRecordingStart;
+  VoidCallback? _onRecordingStop;
 
   bool get isRecording => _isRecording;
 
@@ -36,6 +41,15 @@ class RecordingBloc with ChangeNotifier {
         .listen(_onSenseBoxChanged).onError((error) {
       ErrorService.handleError(error, StackTrace.current);
     }); 
+  }
+
+  /// Set callbacks for recording state changes (avoids circular dependency)
+  void setRecordingCallbacks({
+    VoidCallback? onRecordingStart,
+    VoidCallback? onRecordingStop,
+  }) {
+    _onRecordingStart = onRecordingStart;
+    _onRecordingStop = onRecordingStop;
   }
 
   void _onSenseBoxChanged(SenseBox? senseBox) {
@@ -61,14 +75,15 @@ class RecordingBloc with ChangeNotifier {
         return;
       }
 
-      LiveUploadService liveUploadService = LiveUploadService(
+      // Create DirectUploadService for direct buffered data upload
+      _directUploadService = DirectUploadService(
           openSenseMapService: OpenSenseMapService(),
           settingsBloc: settingsBloc,
-          isarService: isarService,
-          senseBox: _selectedSenseBox!, 
-          trackId: trackBloc.currentTrack!.id);
+          senseBox: _selectedSenseBox!);
 
-      liveUploadService.startUploading();
+      // Notify via callback that recording has started
+      _onRecordingStart?.call();
+
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
@@ -76,18 +91,30 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  void stopRecording() {
+  void stopRecording() async {
     if (!_isRecording) return;
 
     _isRecording = false;
     _isRecordingNotifier.value = false;
+
+    // Notify via callback that recording has stopped
+    _onRecordingStop?.call();
+
+    // Dispose the direct upload service
+    _directUploadService?.dispose();
+    _directUploadService = null;
+
     _currentTrack = null;
 
     notifyListeners();
   }
 
+  /// Get the DirectUploadService for external use (e.g., by SensorBloc)
+  DirectUploadService? get directUploadService => _directUploadService;
+
   @override
   void dispose() {
+    _directUploadService?.dispose();
     _isRecordingNotifier.dispose();
     super.dispose();
   }

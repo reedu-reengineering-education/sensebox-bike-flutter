@@ -5,6 +5,7 @@ import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 
@@ -17,6 +18,7 @@ abstract class Sensor {
   final GeolocationBloc geolocationBloc;
   final RecordingBloc recordingBloc;
   final IsarService isarService;
+  DirectUploadService? _directUploadService;
   StreamSubscription<List<double>>? _subscription;
   VoidCallback? _recordingListener;
 
@@ -42,6 +44,11 @@ abstract class Sensor {
 
   // Abstract getter for UI priority - must be implemented by subclasses
   int get uiPriority;
+
+  /// Set the DirectUploadService for direct buffered data upload
+  void setDirectUploadService(DirectUploadService uploadService) {
+    _directUploadService = uploadService;
+  }
 
   // On each sensor data event, buffer with timestamp
   void onDataReceived(List<double> data) {
@@ -118,16 +125,22 @@ abstract class Sensor {
   // On flush, match each sensor data to the latest GPS (by timestamp)
   Future<void> _flushBuffers() async {
     if (_sensorBuffer.isEmpty) return;
-    debugPrint('Flushing buffer with count: ${_sensorBuffer.length}');
+    
+    // Send buffered data for direct upload if DirectUploadService is available
+    if (_directUploadService != null && recordingBloc.isRecording) {
+      _directUploadService!.addBufferedDataForUpload(
+          List.from(_sensorBuffer), List.from(_gpsBuffer));
+    }
+    
     final List<SensorData> batch = [];
-    for (final entry in _sensorBuffer) {
+    for (final entry in List.from(_sensorBuffer)) {
       final DateTime sensorTs = entry['timestamp'] as DateTime;
       final double value = entry['value'] as double;
       final int index = entry['index'] as int;
       final String sensorTitle = entry['sensor'] as String;
       final String? attr = entry['attribute'] as String?;
       // Find the latest GPS with gps.timestamp <= sensorTs
-      GeolocationData? gps = _gpsBuffer
+      GeolocationData? gps = List.from(_gpsBuffer)
           .where((g) =>
               g.timestamp.isBefore(sensorTs) ||
               g.timestamp.isAtSameMomentAs(sensorTs))
