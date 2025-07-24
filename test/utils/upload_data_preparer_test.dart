@@ -537,5 +537,49 @@ void main() {
       expect(tempEntry['location']['lat'], 10.123456);
       expect(tempEntry['location']['lng'], 20.654321);
     });
+
+    test(
+        'prepareDataFromGroupedData handles sensor data that arrived before first GPS point',
+        () {
+      final tempSensor = Sensor()
+        ..id = 'tempSensorId'
+        ..title = 'Temperature';
+      final speedSensor = Sensor()
+        ..id = 'speedSensorId'
+        ..title = 'Speed';
+      final senseBox = SenseBox(sensors: [tempSensor, speedSensor]);
+      final preparer = UploadDataPreparer(senseBox: senseBox);
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      // Simulate sensor data that arrived before GPS (multiple readings)
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.0, 22.5, 23.0], // Multiple readings before GPS
+        },
+      };
+
+      final result =
+          preparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
+
+      // Should have speed data and temperature data
+      expect(result.length, 2);
+
+      // Check temperature data (should be aggregated from multiple readings)
+      final tempKey =
+          result.keys.firstWhere((k) => k.startsWith('tempSensorId'));
+      final tempEntry = result[tempKey] as Map<String, dynamic>;
+      expect(tempEntry['sensor'], 'tempSensorId');
+      expect(tempEntry['value'], '22.50'); // Mean of 22.0, 22.5, 23.0
+      expect(tempEntry['location']['lat'], 10.0);
+      expect(tempEntry['location']['lng'], 20.0);
+      expect(tempEntry['createdAt'], '2024-01-01T12:00:00.000Z');
+    });
   });
 } 

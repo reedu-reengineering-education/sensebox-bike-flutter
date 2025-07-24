@@ -32,6 +32,9 @@ abstract class Sensor {
   final Map<GeolocationData, Map<String, List<List<double>>>> _groupedBuffer =
       {};
   GeolocationData? _lastGeolocation;
+  
+  // Temporary buffer for sensor data that arrives before first GPS point
+  final List<List<double>> _preGpsSensorBuffer = [];
 
   Sensor(
     this.characteristicUuid,
@@ -50,13 +53,16 @@ abstract class Sensor {
   }
 
   void onDataReceived(List<double> data) {
-    if (data.isNotEmpty &&
-        recordingBloc.isRecording &&
-        _lastGeolocation != null) {
-      // Add sensor data to the grouped buffer
-      _groupedBuffer.putIfAbsent(_lastGeolocation!, () => {});
-      _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
-      _groupedBuffer[_lastGeolocation!]![title]!.add(data);
+    if (data.isNotEmpty && recordingBloc.isRecording) {
+      if (_lastGeolocation != null) {
+        // Add sensor data to the grouped buffer
+        _groupedBuffer.putIfAbsent(_lastGeolocation!, () => {});
+        _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
+        _groupedBuffer[_lastGeolocation!]![title]!.add(data);
+      } else {
+        // Store sensor data in temporary buffer until first GPS point arrives
+        _preGpsSensorBuffer.add(data);
+      }
     }
     _valueController.add(data);
   }
@@ -72,6 +78,14 @@ abstract class Sensor {
       geolocationBloc.geolocationStream.listen((geo) {
         if (geo != null) {
           _lastGeolocation = geo;
+          // Flush temporary buffer when GPS point is available
+          if (_preGpsSensorBuffer.isNotEmpty) {
+            _groupedBuffer.putIfAbsent(_lastGeolocation!, () => {});
+            _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
+            _groupedBuffer[_lastGeolocation!]![title]!
+                .addAll(_preGpsSensorBuffer);
+            _preGpsSensorBuffer.clear();
+          }
         }
       });
 
