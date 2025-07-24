@@ -5,11 +5,13 @@ import 'package:provider/provider.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 
 import '../test_helpers.dart';
+import '../mocks.dart';
 
 class MockIsarService extends Mock implements IsarService {}
 
@@ -19,6 +21,7 @@ void main() {
   late MockIsarService mockIsarService;
   late MockTrackBloc mockTrackBloc;
   late SettingsBloc mockSettingsBloc;
+  late MockOpenSenseMapBloc mockOpenSenseMapBloc;
 
   setUpAll(() {
     // Register fallback values for complex types
@@ -44,6 +47,7 @@ void main() {
     mockIsarService = MockIsarService();
     mockTrackBloc = MockTrackBloc();
     mockSettingsBloc = SettingsBloc();
+    mockOpenSenseMapBloc = MockOpenSenseMapBloc();
 
     // Setup service mocks
     when(() => mockTrackBloc.isarService).thenReturn(mockIsarService);
@@ -58,6 +62,8 @@ void main() {
         providers: [
           ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
           ChangeNotifierProvider<TrackBloc>.value(value: mockTrackBloc),
+          ChangeNotifierProvider<OpenSenseMapBloc>.value(
+              value: mockOpenSenseMapBloc),
         ],
         child: const SettingsScreen(),
       ),
