@@ -8,7 +8,6 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/upload_data_preparer.dart';
 import "package:sensebox_bike/constants.dart";
 import 'package:retry/retry.dart';
-import 'package:meta/meta.dart';
 
 class DirectUploadService {
   final String instanceId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -132,12 +131,4 @@ class DirectUploadService {
 
   // Internal flag to prevent concurrent uploads
   bool _isDirectUploading = false;
-
-  @visibleForTesting
-  List<Map<String, dynamic>> get directUploadBufferForTest =>
-      _directUploadBuffer;
-
-  @visibleForTesting
-  set lastSuccessfulUploadForTest(DateTime? value) =>
-      _lastSuccessfulUpload = value;
 } 
