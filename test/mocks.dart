@@ -51,7 +51,7 @@ class MockOpenSenseMapBloc extends Mock
   }
   
   @override
-  dynamic get userData => null;
+  Future<Map<String, dynamic>?> get userData => Future.value(null);
 }
 
 class MockSettingsBloc extends Mock
