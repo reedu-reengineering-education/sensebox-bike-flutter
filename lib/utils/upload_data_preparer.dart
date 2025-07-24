@@ -8,54 +8,6 @@ class UploadDataPreparer {
 
   UploadDataPreparer({required this.senseBox});
 
-  /// Prepare data for upload from GeolocationData list (used by LiveUploadService)
-  Map<String, dynamic> prepareDataFromGeolocationData(
-      List<GeolocationData> geoDataToUpload) {
-    Map<String, dynamic> data = {};
-
-    for (var geoData in geoDataToUpload) {
-      for (var sensorData in geoData.sensorData) {
-        String? sensorTitle =
-            getTitleFromSensorKey(sensorData.title, sensorData.attribute);
-
-        if (sensorTitle == null) {
-          continue;
-        }
-
-        Sensor? sensor = getMatchingSensor(sensorTitle);
-
-        // Skip if sensor is not found
-        if (sensor == null || sensorData.value.isNaN) {
-          continue;
-        }
-
-        data[sensor.id! + geoData.timestamp.toIso8601String()] = {
-          'sensor': sensor.id,
-          'value': sensorData.value.toStringAsFixed(2),
-          'createdAt': geoData.timestamp.toUtc().toIso8601String(),
-          'location': {
-            'lat': geoData.latitude,
-            'lng': geoData.longitude,
-          }
-        };
-      }
-
-      String speedSensorId = getSpeedSensorId();
-
-      data['speed_${geoData.timestamp.toIso8601String()}'] = {
-        'sensor': speedSensorId,
-        'value': geoData.speed.toStringAsFixed(2),
-        'createdAt': geoData.timestamp.toUtc().toIso8601String(),
-        'location': {
-          'lat': geoData.latitude,
-          'lng': geoData.longitude,
-        }
-      };
-    }
-
-    return data;
-  }
-
   Map<String, dynamic> prepareDataFromGroupedData(
       Map<GeolocationData, Map<String, List<double>>> groupedData,
       List<GeolocationData> gpsBuffer) {
