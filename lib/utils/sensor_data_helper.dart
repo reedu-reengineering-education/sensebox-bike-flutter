@@ -13,21 +13,6 @@ class SensorDataHelper {
       ..geolocationData.value = geoData;
   }
 
-  /// Creates SensorData for surface anomaly with proper attribute
-  /// Ensures surface anomaly data has a consistent attribute for UI identification
-  static SensorData createSurfaceAnomalySensorData(
-    GeolocationData geoData,
-    double anomalyValue,
-    String characteristicUuid,
-  ) {
-    return SensorData()
-      ..title = 'surface_anomaly'
-      ..attribute = 'anomaly_level' // Consistent attribute for surface anomaly
-      ..value = anomalyValue
-      ..characteristicUuid = characteristicUuid
-      ..geolocationData.value = geoData;
-  }
-
   static bool shouldStoreSensorData(SensorData sensorData) {
     // Don't store NaN or infinite values
     if (sensorData.value.isNaN || sensorData.value.isInfinite) {
@@ -42,10 +27,5 @@ class SensorDataHelper {
     }
     
     return true;
-  }
-
-  static String getSensorKey(SensorData sensorData) {
-    final attribute = sensorData.attribute != null ? '_${sensorData.attribute}' : '';
-    return '${sensorData.title}$attribute';
   }
 } 

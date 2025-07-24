@@ -26,23 +26,6 @@ void main() {
         expect(sensorData.geolocationData.value, equals(mockGeoData));
       });
     });
-
-    group('createSurfaceAnomalySensorData', () {
-      test('creates surface anomaly sensor data correctly', () {
-        final sensorData = SensorDataHelper.createSurfaceAnomalySensorData(
-          mockGeoData,
-          2.5,
-          'test-uuid',
-        );
-
-        expect(sensorData.title, equals('surface_anomaly'));
-        expect(sensorData.attribute, equals('anomaly_level'));
-        expect(sensorData.value, equals(2.5));
-        expect(sensorData.characteristicUuid, equals('test-uuid'));
-        expect(sensorData.geolocationData.value, equals(mockGeoData));
-      });
-    });
-
     group('shouldStoreSensorData', () {
       test('returns true for valid sensor data', () {
         final sensorData = SensorData()
@@ -75,24 +58,6 @@ void main() {
           ..value = 0.0;
 
         expect(SensorDataHelper.shouldStoreSensorData(sensorData), isFalse);
-      });
-    });
-
-    group('getSensorKey', () {
-      test('returns correct key for sensor with attribute', () {
-        final sensorData = SensorData()
-          ..title = 'gps'
-          ..attribute = 'speed';
-
-        expect(SensorDataHelper.getSensorKey(sensorData), equals('gps_speed'));
-      });
-
-      test('returns correct key for sensor without attribute', () {
-        final sensorData = SensorData()
-          ..title = 'temperature'
-          ..attribute = null;
-
-        expect(SensorDataHelper.getSensorKey(sensorData), equals('temperature'));
       });
     });
   });
