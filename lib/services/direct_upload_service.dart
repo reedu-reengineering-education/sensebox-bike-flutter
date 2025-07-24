@@ -8,6 +8,7 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/upload_data_preparer.dart';
 import "package:sensebox_bike/constants.dart";
 import 'package:retry/retry.dart';
+import 'package:meta/meta.dart';
 
 class DirectUploadService {
   final String instanceId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -15,6 +16,7 @@ class DirectUploadService {
   final SettingsBloc settingsBloc;
   final SenseBox senseBox;
   final UploadDataPreparer _dataPreparer;
+  final RetryOptions _retryOptions;
 
   // vars to handle connectivity issues
   DateTime? _lastSuccessfulUpload;
@@ -23,19 +25,19 @@ class DirectUploadService {
   // Buffer for direct uploads - stores prepared data maps
   final List<Map<String, dynamic>> _directUploadBuffer = [];
   bool _isEnabled = false;
-  
-  // Direct upload retry mechanism
-  Timer? _directUploadRetryTimer;
-  bool _isDirectUploading = false;
-  int _directUploadRetryCount = 0;
-  static const int _maxDirectUploadRetries = 5;
-  static const Duration _directUploadRetryDelay = Duration(minutes: 2);
 
   DirectUploadService({
     required this.openSenseMapService,
     required this.settingsBloc,
     required this.senseBox,
-  }) : _dataPreparer = UploadDataPreparer(senseBox: senseBox);
+    RetryOptions? retryOptions,
+  })  : _dataPreparer = UploadDataPreparer(senseBox: senseBox),
+        _retryOptions = retryOptions ??
+            const RetryOptions(
+              maxAttempts: 6,
+              delayFactor: Duration(seconds: 10),
+              maxDelay: Duration(seconds: 30),
+            );
 
   void enable() {
     _isEnabled = true;
@@ -43,9 +45,6 @@ class DirectUploadService {
 
   void disable() {
     _isEnabled = false;
-    
-    _directUploadRetryTimer?.cancel();
-    _directUploadRetryTimer = null;
   }
 
   bool get isEnabled => _isEnabled;
@@ -69,10 +68,12 @@ class DirectUploadService {
   }
 
   Future<void> _uploadDirectBuffer() async {
-    if (_directUploadBuffer.isEmpty || _isDirectUploading) return;
+    if (_directUploadBuffer.isEmpty) return;
 
+    // Prevent concurrent uploads
+    if (_isDirectUploading) return;
     _isDirectUploading = true;
-    
+
     try {
       // Merge all prepared data maps into one
       final Map<String, dynamic> data = {};
@@ -86,27 +87,21 @@ class DirectUploadService {
       // Track successful upload
       _lastSuccessfulUpload = DateTime.now();
       _consecutiveFails = 0;
-      _directUploadRetryCount = 0;
-    } catch (e) {
+    } catch (e, st) {
       // Do NOT clear the buffer here; keep it for the next retry
       _consecutiveFails++;
-      _directUploadRetryCount++;
       final lastSuccessfulUploadPeriod = DateTime.now()
           .subtract(Duration(minutes: premanentConnectivityFalurePeriod));
       final isPermanentConnectivityIssue =
           _lastSuccessfulUpload != null &&
               _lastSuccessfulUpload!.isBefore(lastSuccessfulUploadPeriod);
       final isMaxRetries = _consecutiveFails >= maxRetries;
-      final isMaxDirectUploadRetries =
-          _directUploadRetryCount >= _maxDirectUploadRetries;
-      if (isPermanentConnectivityIssue || isMaxRetries || isMaxDirectUploadRetries) {
+      if (isPermanentConnectivityIssue || isMaxRetries) {
         ErrorService.handleError(
             'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes or max retries exceeded.',
-            StackTrace.current);
-        return;
+            st);
       } else {
-        // Schedule retry for direct upload
-        _scheduleDirectUploadRetry();
+        // No custom retry, just leave buffer for next attempt
       }
     } finally {
       _isDirectUploading = false;
@@ -114,14 +109,7 @@ class DirectUploadService {
   }
 
   Future<void> _uploadDirectBufferWithRetry(Map<String, dynamic> data) async {
-    // Use the same retry configuration as the original OpenSenseMap service
-    final r = RetryOptions(
-      maxAttempts: 6, // 6 attempts per minute
-      delayFactor: const Duration(seconds: 10), // 10s between attempts
-      maxDelay: const Duration(seconds: 15),
-    );
-
-    await r.retry(
+    await _retryOptions.retry(
       () async {
         await openSenseMapService.uploadData(senseBox.id, data);
       },
@@ -137,19 +125,19 @@ class DirectUploadService {
     );
   }
 
-  void _scheduleDirectUploadRetry() {
-    _directUploadRetryTimer?.cancel();
-    _directUploadRetryTimer = Timer(_directUploadRetryDelay, () {
-      if (_directUploadBuffer.isNotEmpty && _isEnabled) {
-        _uploadDirectBuffer();
-      }
-    });
-  }
-
   void dispose() {
-    _directUploadRetryTimer?.cancel();
-    _directUploadRetryTimer = null;
     _isDirectUploading = false;
     _directUploadBuffer.clear();
   }
+
+  // Internal flag to prevent concurrent uploads
+  bool _isDirectUploading = false;
+
+  @visibleForTesting
+  List<Map<String, dynamic>> get directUploadBufferForTest =>
+      _directUploadBuffer;
+
+  @visibleForTesting
+  set lastSuccessfulUploadForTest(DateTime? value) =>
+      _lastSuccessfulUpload = value;
 } 
