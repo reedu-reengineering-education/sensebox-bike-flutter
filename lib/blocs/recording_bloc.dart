@@ -40,6 +40,16 @@ class RecordingBloc with ChangeNotifier {
         .listen(_onSenseBoxChanged).onError((error) {
       ErrorService.handleError(error, StackTrace.current);
     }); 
+
+    // Listen to permanent BLE connection loss and stop recording
+    bleBloc.permanentConnectionLossNotifier
+        .addListener(_onPermanentConnectionLoss);
+  }
+
+  void _onPermanentConnectionLoss() {
+    if (_isRecording) {
+      stopRecording();
+    }
   }
 
   void setRecordingCallbacks({
@@ -103,6 +113,8 @@ class RecordingBloc with ChangeNotifier {
 
   @override
   void dispose() {
+    bleBloc.permanentConnectionLossNotifier
+        .removeListener(_onPermanentConnectionLoss);
     _directUploadService?.dispose();
     _isRecordingNotifier.dispose();
     super.dispose();
