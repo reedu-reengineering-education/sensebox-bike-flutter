@@ -61,6 +61,10 @@ class UploadDataPreparer {
       List<Map<String, dynamic>> sensorBuffer, List<GeolocationData> gpsBuffer) {
     final Map<String, dynamic> data = {};
 
+    // Group sensor readings by geolocation and sensor type for aggregation
+    final Map<GeolocationData, Map<String, List<Map<String, dynamic>>>>
+        readingsByGeolocation = {};
+
     for (final sensorEntry in List.from(sensorBuffer)) {
       final DateTime sensorTs = sensorEntry['timestamp'] as DateTime;
       final double value = sensorEntry['value'] as double;
@@ -93,27 +97,52 @@ class UploadDataPreparer {
         continue;
       }
 
-      // Create OpenSenseMap format data - use map format like LiveUploadService
-      final attrKey = attribute != null ? '_$attribute' : '';
-      final bufferIndex =
-          sensorEntry['index'] != null ? '_${sensorEntry['index']}' : '';
-      final uniqueKey = sensor.id! +
-          attrKey +
-          sensorTs.toIso8601String() +
-          bufferIndex +
-          '_${identityHashCode(sensorEntry)}';
-      data[uniqueKey] = {
-        'sensor': sensor.id,
-        'value': value.toStringAsFixed(2),
-        'createdAt': sensorTs.toUtc().toIso8601String(),
-        'location': {
-          'lat': gps.latitude,
-          'lng': gps.longitude,
-        }
-      };
+      // Create a unique key for each sensor type (title + attribute)
+      String sensorKey =
+          attribute != null ? '${sensorTitle}_$attribute' : sensorTitle;
+
+      // Group by geolocation and sensor type
+      readingsByGeolocation.putIfAbsent(gps, () => {});
+      readingsByGeolocation[gps]!.putIfAbsent(sensorKey, () => []);
+      readingsByGeolocation[gps]![sensorKey]!.add({
+        'sensor': sensor,
+        'value': value,
+        'timestamp': sensorTs,
+        'attribute': attribute,
+      });
     }
 
-    // Add speed data from ALL GPS points (not just the last one)
+    // Aggregate sensor data per geolocation and create one entry per sensor type
+    for (final entry in readingsByGeolocation.entries) {
+      final GeolocationData gps = entry.key;
+      final Map<String, List<Map<String, dynamic>>> sensorReadings =
+          entry.value;
+
+      for (final sensorKey in sensorReadings.keys) {
+        final List<Map<String, dynamic>> readings = sensorReadings[sensorKey]!;
+        final Sensor sensor = readings.first['sensor'] as Sensor;
+        final String? attribute = readings.first['attribute'] as String?;
+
+        // Aggregate the values for this sensor type
+        final List<double> values =
+            readings.map((r) => r['value'] as double).toList();
+        final double aggregatedValue = _aggregateValues(values, sensor);
+
+        // Create one entry per sensor type per geolocation
+        final attrKey = attribute != null ? '_$attribute' : '';
+        data['${sensor.id}${attrKey}_${gps.timestamp.toIso8601String()}'] = {
+          'sensor': sensor.id,
+          'value': aggregatedValue.toStringAsFixed(2),
+          'createdAt': gps.timestamp.toUtc().toIso8601String(),
+          'location': {
+            'lat': gps.latitude,
+            'lng': gps.longitude,
+          }
+        };
+      }
+    }
+
+    // Add speed data from ALL GPS points (one per geolocation)
     if (gpsBuffer.isNotEmpty) {
       String speedSensorId = getSpeedSensorId();
       for (final gps in gpsBuffer) {
@@ -130,6 +159,17 @@ class UploadDataPreparer {
     }
 
     return data;
+  }
+
+  /// Aggregate sensor values using the sensor's aggregation method
+  double _aggregateValues(List<double> values, Sensor sensor) {
+    if (values.isEmpty) return 0.0;
+    if (values.length == 1) return values.first;
+
+    // For now, use mean aggregation (this could be made configurable per sensor type)
+    // In the future, we could call sensor.aggregateData() if we had access to the sensor instance
+    final sum = values.reduce((a, b) => a + b);
+    return sum / values.length;
   }
 
   /// Get matching sensor from senseBox

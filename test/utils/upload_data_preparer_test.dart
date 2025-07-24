@@ -387,5 +387,129 @@ void main() {
       // Should have exactly 3 entries
       expect(result.keys.where((k) => k.startsWith('speed_')).length, 3);
     });
+
+    test('sends only one aggregated value per sensor per geolocation', () {
+      // Setup a senseBox with a temperature sensor and speed sensor
+      final tempSensor = Sensor()
+        ..id = 'tempSensorId'
+        ..title = 'Temperature';
+      final speedSensor = Sensor()
+        ..id = 'speedSensorId'
+        ..title = 'Speed';
+      final senseBox = SenseBox(sensors: [tempSensor, speedSensor]);
+      final preparer = UploadDataPreparer(senseBox: senseBox);
+
+      // Create one GPS point
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      // Create multiple sensor readings for the same geolocation
+      final sensorBuffer = [
+        {
+          'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 0),
+          'value': 25.0,
+          'sensor': 'temperature',
+          'attribute': null,
+        },
+        {
+          'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 1),
+          'value': 25.5,
+          'sensor': 'temperature',
+          'attribute': null,
+        },
+        {
+          'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 2),
+          'value': 26.0,
+          'sensor': 'temperature',
+          'attribute': null,
+        },
+      ];
+
+      final result = preparer.prepareDataFromBuffers(sensorBuffer, gpsBuffer);
+
+      // Should have only ONE temperature entry for this geolocation
+      final tempEntries =
+          result.keys.where((k) => k.startsWith('tempSensorId')).toList();
+      expect(tempEntries.length, 1,
+          reason: 'Should have only one temperature entry per geolocation');
+
+      // Should have one speed entry
+      final speedEntries =
+          result.keys.where((k) => k.startsWith('speed_')).toList();
+      expect(speedEntries.length, 1,
+          reason: 'Should have one speed entry per geolocation');
+
+      // Total entries should be 2 (1 temperature + 1 speed)
+      expect(result.length, 2, reason: 'Should have exactly 2 entries total');
+    });
+
+    test(
+        'aggregates multiple sensor readings into single value per geolocation',
+        () {
+      // Setup a senseBox with a temperature sensor and speed sensor
+      final tempSensor = Sensor()
+        ..id = 'tempSensorId'
+        ..title = 'Temperature';
+      final speedSensor = Sensor()
+        ..id = 'speedSensorId'
+        ..title = 'Speed';
+      final senseBox = SenseBox(sensors: [tempSensor, speedSensor]);
+      final preparer = UploadDataPreparer(senseBox: senseBox);
+
+      // Create one GPS point
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      // Create multiple temperature readings for the same geolocation
+      final sensorBuffer = [
+        {
+          'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 0),
+          'value': 20.0,
+          'sensor': 'temperature',
+          'attribute': null,
+        },
+        {
+          'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 1),
+          'value': 22.0,
+          'sensor': 'temperature',
+          'attribute': null,
+        },
+        {
+          'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 2),
+          'value': 24.0,
+          'sensor': 'temperature',
+          'attribute': null,
+        },
+      ];
+
+      final result = preparer.prepareDataFromBuffers(sensorBuffer, gpsBuffer);
+
+      // Should have only ONE temperature entry
+      final tempEntries =
+          result.keys.where((k) => k.startsWith('tempSensorId')).toList();
+      expect(tempEntries.length, 1,
+          reason: 'Should have only one temperature entry');
+
+      // Get the temperature entry
+      final tempKey = tempEntries.first;
+      final tempEntry = result[tempKey] as Map<String, dynamic>;
+
+      // The aggregated value should be the mean of [20.0, 22.0, 24.0] = 22.0
+      expect(tempEntry['value'], '22.00',
+          reason: 'Should be the mean of the three readings');
+      expect(tempEntry['sensor'], 'tempSensorId');
+      expect(tempEntry['location']['lat'], 10.0);
+      expect(tempEntry['location']['lng'], 20.0);
+    });
   });
 } 
