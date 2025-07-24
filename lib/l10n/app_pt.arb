@@ -63,7 +63,6 @@
     "tracksNoTracks": "Nenhum trajeto disponível",
     "tracksTrackDeleted": "Trajeto excluído",
     "openSenseMapLogin": "Entrar com openSenseMap",
-    "openSenseMapLoginDescription": "Faça login para compartilhar seus dados.",
     "openSenseMapLogout": "Sair",
     "openSenseMapEmail": "E-mail",
     "openSenseMapPassword": "Senha",
