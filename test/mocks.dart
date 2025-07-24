@@ -49,6 +49,9 @@ class MockOpenSenseMapBloc extends Mock
   Future<void> logout() async {
     isAuthenticated = false;
   }
+  
+  @override
+  dynamic get userData => null;
 }
 
 class MockSettingsBloc extends Mock

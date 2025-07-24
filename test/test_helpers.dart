@@ -128,7 +128,7 @@ SensorData createMockSensorData(GeolocationData geolocationData) {
   return SensorData()
     ..title = 'temperature'
     ..value = 25.0
-    ..attribute = 'Celsius'
+    ..attribute = null
     ..characteristicUuid = '1234-5678-9012-3456'
     ..geolocationData.value = geolocationData;
 }
