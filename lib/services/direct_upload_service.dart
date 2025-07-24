@@ -8,6 +8,7 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/upload_data_preparer.dart';
 import "package:sensebox_bike/constants.dart";
 import 'package:retry/retry.dart';
+import 'package:flutter/foundation.dart';
 
 class DirectUploadService {
   final String instanceId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -60,6 +61,21 @@ class DirectUploadService {
     }
   }
 
+  /// Add grouped sensor data for upload (more efficient - avoids duplicate grouping)
+  void addGroupedDataForUpload(
+      Map<GeolocationData, Map<String, List<double>>> groupedData,
+      List<GeolocationData> gpsBuffer) {
+    if (!_isEnabled) return;
+
+    final uploadData =
+        _dataPreparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
+    _directUploadBuffer.add(uploadData);
+
+    if (_directUploadBuffer.length >= 10) {
+      _uploadDirectBuffer();
+    }
+  }
+
   Future<void> uploadRemainingBufferedData() async {
     if (_directUploadBuffer.isNotEmpty) {
       await _uploadDirectBuffer();
@@ -80,6 +96,8 @@ class DirectUploadService {
         data.addAll(preparedData);
       }
 
+      if (data.isEmpty) return;
+
       await _uploadDirectBufferWithRetry(data);
       // Only clear the buffer after successful upload
       _directUploadBuffer.clear();
@@ -89,16 +107,27 @@ class DirectUploadService {
     } catch (e, st) {
       // Do NOT clear the buffer here; keep it for the next retry
       _consecutiveFails++;
-      final lastSuccessfulUploadPeriod = DateTime.now()
-          .subtract(Duration(minutes: premanentConnectivityFalurePeriod));
-      final isPermanentConnectivityIssue =
-          _lastSuccessfulUpload != null &&
-              _lastSuccessfulUpload!.isBefore(lastSuccessfulUploadPeriod);
-      final isMaxRetries = _consecutiveFails >= maxRetries;
+
+      // Check if we should treat this as a permanent connectivity issue
+      bool isPermanentConnectivityIssue = false;
+      bool isMaxRetries = _consecutiveFails >= maxRetries;
+
+      if (_lastSuccessfulUpload != null) {
+        final lastSuccessfulUploadPeriod = DateTime.now()
+            .subtract(Duration(minutes: premanentConnectivityFalurePeriod));
+        isPermanentConnectivityIssue =
+            _lastSuccessfulUpload!.isBefore(lastSuccessfulUploadPeriod);
+      } else {
+        // If we've never had a successful upload and we've failed many times,
+        // it might be a permanent issue, but we should give it more chances
+        isPermanentConnectivityIssue = _consecutiveFails >= maxRetries * 2;
+      }
+      
       if (isPermanentConnectivityIssue || isMaxRetries) {
-        ErrorService.handleError(
-            'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes or max retries exceeded.',
-            st);
+        final message = isPermanentConnectivityIssue
+            ? 'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.'
+            : 'Permanent connectivity failure: Max retries ($maxRetries) exceeded.';
+        ErrorService.handleError(message, st);
       } else {
         // No custom retry, just leave buffer for next attempt
       }

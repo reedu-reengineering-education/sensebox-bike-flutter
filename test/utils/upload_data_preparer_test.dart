@@ -140,17 +140,13 @@ void main() {
         final sensorBuffer = [
           {
             'timestamp': DateTime.parse('2025-01-01T12:00:00'),
-            'value': 22.5,
-            'index': 0,
+            'data': [22.5], // Single value for temperature
             'sensor': 'temperature',
-            'attribute': null,
           },
           {
-            'timestamp': DateTime.parse('2025-01-01T12:00:01'),
-            'value': 60.0,
-            'index': 0,
+            'timestamp': DateTime.parse('2025-01-01T12:00:00'),
+            'data': [60.0], // Single value for humidity
             'sensor': 'humidity',
-            'attribute': null,
           }
         ];
 
@@ -185,10 +181,8 @@ void main() {
         final sensorBuffer = [
           {
             'timestamp': DateTime.parse('2025-01-01T12:00:00'),
-            'value': 22.5,
-            'index': 0,
+            'data': [22.5], // Single value for temperature
             'sensor': 'temperature',
-            'attribute': 'ambient',
           }
         ];
 
@@ -210,10 +204,8 @@ void main() {
         final sensorBuffer = [
           {
             'timestamp': DateTime.parse('2025-01-01T12:00:00'),
-            'value': 22.5,
-            'index': 0,
+            'data': [22.5], // Single value for temperature
             'sensor': 'temperature',
-            'attribute': null,
           }
         ];
 
@@ -259,10 +251,8 @@ void main() {
         final sensorBuffer = [
           {
             'timestamp': DateTime.parse('2025-01-01T12:00:00'),
-            'value': double.nan,
-            'index': 0,
+            'data': [double.nan], // Single value for temperature
             'sensor': 'temperature',
-            'attribute': null,
           }
         ];
 
@@ -412,21 +402,18 @@ void main() {
       final sensorBuffer = [
         {
           'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 0),
-          'value': 25.0,
+          'data': [25.0],
           'sensor': 'temperature',
-          'attribute': null,
         },
         {
           'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 1),
-          'value': 25.5,
+          'data': [25.5],
           'sensor': 'temperature',
-          'attribute': null,
         },
         {
           'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 2),
-          'value': 26.0,
+          'data': [26.0],
           'sensor': 'temperature',
-          'attribute': null,
         },
       ];
 
@@ -451,7 +438,7 @@ void main() {
     test(
         'aggregates multiple sensor readings into single value per geolocation',
         () {
-      // Setup a senseBox with a temperature sensor and speed sensor
+      // Setup a senseBox with sensors
       final tempSensor = Sensor()
         ..id = 'tempSensorId'
         ..title = 'Temperature';
@@ -461,7 +448,7 @@ void main() {
       final senseBox = SenseBox(sensors: [tempSensor, speedSensor]);
       final preparer = UploadDataPreparer(senseBox: senseBox);
 
-      // Create one GPS point
+      // Create GPS buffer
       final gpsBuffer = [
         GeolocationData()
           ..latitude = 10.0
@@ -470,46 +457,110 @@ void main() {
           ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
       ];
 
-      // Create multiple temperature readings for the same geolocation
+      // Create sensor buffer with multiple readings for the same geolocation
       final sensorBuffer = [
         {
           'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 0),
-          'value': 20.0,
+          'data': [20.0],
           'sensor': 'temperature',
-          'attribute': null,
         },
         {
-          'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 1),
-          'value': 22.0,
+          'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 0),
+          'data': [22.0],
           'sensor': 'temperature',
-          'attribute': null,
         },
         {
-          'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 2),
-          'value': 24.0,
+          'timestamp': DateTime.utc(2024, 1, 1, 12, 0, 0),
+          'data': [24.0],
           'sensor': 'temperature',
-          'attribute': null,
         },
       ];
 
       final result = preparer.prepareDataFromBuffers(sensorBuffer, gpsBuffer);
 
-      // Should have only ONE temperature entry
-      final tempEntries =
-          result.keys.where((k) => k.startsWith('tempSensorId')).toList();
-      expect(tempEntries.length, 1,
-          reason: 'Should have only one temperature entry');
+      // Should have speed data and one aggregated temperature value
+      expect(result.length, 2);
+      expect(result.keys.where((k) => k.startsWith('speed_')).length, 1);
+      expect(result.keys.where((k) => k.startsWith('tempSensorId')).length, 1);
 
-      // Get the temperature entry
-      final tempKey = tempEntries.first;
+      // Check temperature entry
+      final tempKey =
+          result.keys.firstWhere((k) => k.startsWith('tempSensorId'));
       final tempEntry = result[tempKey] as Map<String, dynamic>;
-
-      // The aggregated value should be the mean of [20.0, 22.0, 24.0] = 22.0
-      expect(tempEntry['value'], '22.00',
-          reason: 'Should be the mean of the three readings');
+      expect(tempEntry['value'], '22.00'); // Mean of 20.0, 22.0, 24.0
       expect(tempEntry['sensor'], 'tempSensorId');
       expect(tempEntry['location']['lat'], 10.0);
       expect(tempEntry['location']['lng'], 20.0);
+    });
+
+    test(
+        'prepareDataFromGroupedData handles surface_classification with Standing sensor correctly',
+        () {
+      // Setup a senseBox with surface classification sensors including the "Standing" sensor
+      final surfaceAsphaltSensor = Sensor()
+        ..id = 'surfaceAsphaltSensorId'
+        ..title = 'Surface Asphalt';
+      final surfaceSettSensor = Sensor()
+        ..id = 'surfaceSettSensorId'
+        ..title = 'Surface Sett';
+      final surfaceCompactedSensor = Sensor()
+        ..id = 'surfaceCompactedSensorId'
+        ..title = 'Surface Compacted';
+      final surfacePavingSensor = Sensor()
+        ..id = 'surfacePavingSensorId'
+        ..title = 'Surface Paving';
+      final standingSensor = Sensor()
+        ..id = 'standingSensorId'
+        ..title =
+            'Standing'; // Note: this is just "Standing", not "Surface Standing"
+      final speedSensor = Sensor()
+        ..id = 'speedSensorId'
+        ..title = 'Speed';
+      final senseBox = SenseBox(sensors: [
+        surfaceAsphaltSensor,
+        surfaceSettSensor,
+        surfaceCompactedSensor,
+        surfacePavingSensor,
+        standingSensor,
+        speedSensor
+      ]);
+      final preparer = UploadDataPreparer(senseBox: senseBox);
+
+      // Create GPS buffer
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      // Create grouped data with surface_classification (5 values: asphalt, compacted, paving, sett, standing)
+      final groupedData = {
+        gpsBuffer[0]: {
+          'surface_classification': [10.0, 15.0, 20.0, 25.0, 30.0], // 5 values
+        },
+      };
+
+      final result =
+          preparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
+
+      // Should have 5 surface_classification entries (one for each value including Standing)
+      final surfaceEntries = result.keys
+          .where((k) => k.contains('surface') || k.contains('standing'))
+          .toList();
+      expect(surfaceEntries.length, 5);
+
+      // Check that the Standing sensor is included
+      final standingEntries =
+          result.keys.where((k) => k.contains('standingSensorId')).toList();
+      expect(standingEntries.length, 1);
+
+      // Check Standing entry
+      final standingKey = standingEntries.first;
+      final standingEntry = result[standingKey] as Map<String, dynamic>;
+      expect(standingEntry['value'], '30.00'); // 5th value in the array
+      expect(standingEntry['sensor'], 'standingSensorId');
     });
   });
 } 
