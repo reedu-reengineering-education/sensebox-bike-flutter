@@ -8,7 +8,6 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/upload_data_preparer.dart';
 import "package:sensebox_bike/constants.dart";
 import 'package:retry/retry.dart';
-import 'package:flutter/foundation.dart';
 
 class DirectUploadService {
   final String instanceId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -49,19 +48,6 @@ class DirectUploadService {
 
   bool get isEnabled => _isEnabled;
 
-  void addBufferedDataForUpload(List<Map<String, dynamic>> sensorBuffer, List<GeolocationData> gpsBuffer) {
-    if (!_isEnabled) return;
-
-    final uploadData = _dataPreparer.prepareDataFromBuffers(
-        List.from(sensorBuffer), List.from(gpsBuffer));
-    _directUploadBuffer.add(uploadData);
-
-    if (_directUploadBuffer.length >= 10) {
-      _uploadDirectBuffer();
-    }
-  }
-
-  /// Add grouped sensor data for upload (more efficient - avoids duplicate grouping)
   void addGroupedDataForUpload(
       Map<GeolocationData, Map<String, List<double>>> groupedData,
       List<GeolocationData> gpsBuffer) {
@@ -105,10 +91,8 @@ class DirectUploadService {
       _lastSuccessfulUpload = DateTime.now();
       _consecutiveFails = 0;
     } catch (e, st) {
-      // Do NOT clear the buffer here; keep it for the next retry
       _consecutiveFails++;
 
-      // Check if we should treat this as a permanent connectivity issue
       bool isPermanentConnectivityIssue = false;
       bool isMaxRetries = _consecutiveFails >= maxRetries;
 
@@ -118,9 +102,7 @@ class DirectUploadService {
         isPermanentConnectivityIssue =
             _lastSuccessfulUpload!.isBefore(lastSuccessfulUploadPeriod);
       } else {
-        // If we've never had a successful upload and we've failed many times,
-        // it might be a permanent issue, but we should give it more chances
-        isPermanentConnectivityIssue = _consecutiveFails >= maxRetries * 2;
+        isPermanentConnectivityIssue = _consecutiveFails >= maxRetries;
       }
       
       if (isPermanentConnectivityIssue || isMaxRetries) {
