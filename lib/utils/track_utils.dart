@@ -170,3 +170,14 @@ String trackName(TrackData track, {String errorMessage = "No data available"}) {
 
   return '$trackStart - $trackEnd';
 }
+
+/// Extracts all unique sensor data from a list of geolocations.
+/// This function collects sensor data from all geolocations in a track,
+/// ensuring that all sensors available on the box during recording are represented.
+List<SensorData> getAllUniqueSensorData(List<GeolocationData> geolocations) {
+  final allSensorData = <SensorData>{};
+  for (final geolocation in geolocations) {
+    allSensorData.addAll(geolocation.sensorData);
+  }
+  return allSensorData.toList();
+}

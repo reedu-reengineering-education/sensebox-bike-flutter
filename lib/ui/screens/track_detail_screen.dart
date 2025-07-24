@@ -205,7 +205,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       );
     }
 
-    final sensorData = _geolocations.first.sensorData.toList();
+    // Get all unique sensor data from all geolocations in the track
+    final sensorData = getAllUniqueSensorData(_geolocations);
+    
     final minSensorValue =
         getMinSensorValue(_geolocations, _sensorType).toStringAsFixed(1);
     final maxSensorValue =
