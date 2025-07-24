@@ -91,6 +91,14 @@ class DirectUploadService {
       _lastSuccessfulUpload = DateTime.now();
       _consecutiveFails = 0;
     } catch (e, st) {
+      // Check if this is an authentication error
+      if (e.toString().contains('Not authenticated') ||
+          e.toString().contains('401')) {
+        // Authentication errors are handled in _uploadDirectBufferWithRetry
+        // Just disable the service and return
+        return;
+      }
+
       _consecutiveFails++;
 
       bool isPermanentConnectivityIssue = false;
@@ -121,7 +129,24 @@ class DirectUploadService {
   Future<void> _uploadDirectBufferWithRetry(Map<String, dynamic> data) async {
     await _retryOptions.retry(
       () async {
-        await openSenseMapService.uploadData(senseBox.id, data);
+        try {
+          await openSenseMapService.uploadData(senseBox.id, data);
+        } catch (e) {
+          // Handle authentication errors gracefully
+          if (e.toString().contains('Not authenticated') ||
+              e.toString().contains('401')) {
+            // User is not authenticated, disable direct upload and log the issue
+            disable();
+            ErrorService.handleError(
+                'Direct upload disabled: User not authenticated. Please log in to enable direct upload.',
+                StackTrace.current,
+                sendToSentry: false);
+            // Don't retry authentication errors
+            return;
+          }
+          // Re-throw other exceptions for retry logic
+          rethrow;
+        }
       },
       retryIf: (e) =>
           e is TooManyRequestsException ||
