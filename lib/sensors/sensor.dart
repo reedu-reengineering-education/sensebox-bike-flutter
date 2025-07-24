@@ -25,7 +25,7 @@ abstract class Sensor {
   final StreamController<List<double>> _valueController =
       StreamController<List<double>>.broadcast();
   Stream<List<double>> get valueStream => _valueController.stream;
-  static const Duration _batchTimeout = Duration(seconds: 5);
+  static const Duration _batchTimeout = Duration(seconds: 10);
   Timer? _batchTimer;
 
   // Buffers for batching
@@ -122,14 +122,14 @@ abstract class Sensor {
           List.from(_sensorBuffer), List.from(_gpsBuffer));
     }
     
-    final List<SensorData> batch = [];
+    // Group sensor readings by geolocation
+    final Map<GeolocationData, List<Map<String, dynamic>>>
+        readingsByGeolocation = {};
+    
     for (final entry in List.from(_sensorBuffer)) {
       final DateTime sensorTs = entry['timestamp'] as DateTime;
-      final double value = entry['value'] as double;
-      //final int index = entry['index'] as int;
-      final String sensorTitle = entry['sensor'] as String;
-      final String? attr = entry['attribute'] as String?;
 
+      // Find the closest GPS point (before or at the same time)
       GeolocationData? gps = List.from(_gpsBuffer)
           .where((g) =>
               g.timestamp.isBefore(sensorTs) ||
@@ -141,17 +141,82 @@ abstract class Sensor {
                   : prev);
       if (gps == null) continue;
 
+      // Group readings by geolocation
+      readingsByGeolocation.putIfAbsent(gps, () => []).add(entry);
+    }
+
+    // Save aggregated data to database
+    final List<SensorData> batch = [];
+    for (final entry in readingsByGeolocation.entries) {
+      final GeolocationData gps = entry.key;
+      final List<Map<String, dynamic>> readings = entry.value;
+
+      // Save geolocation if needed
       if (gps.id == Isar.autoIncrement || gps.id == 0) {
         gps.id = await isarService.geolocationService.saveGeolocationData(gps);
       }
-      final sensorData = SensorData()
-        ..characteristicUuid = characteristicUuid
-        ..title = sensorTitle
-        ..value = value
-        ..attribute = attr
-        ..geolocationData.value = gps;
-      batch.add(sensorData);
+      
+      // Group readings by sensor type and timestamp to reconstruct full arrays
+      final Map<DateTime, Map<int, double>> readingsByTimestamp = {};
+      for (final reading in readings) {
+        final DateTime timestamp = reading['timestamp'] as DateTime;
+        final int index = reading['index'] as int;
+        final double value = reading['value'] as double;
+
+        readingsByTimestamp
+            .putIfAbsent(timestamp, () => {})
+            .putIfAbsent(index, () => value);
+      }
+
+      // Reconstruct full arrays for each timestamp and aggregate
+      final List<List<double>> fullValueArrays = [];
+      for (final timestampEntry in readingsByTimestamp.entries) {
+        final Map<int, double> indexValues = timestampEntry.value;
+        final List<double> fullArray =
+            List.filled(attributes.isNotEmpty ? attributes.length : 1, 0.0);
+
+        for (final indexEntry in indexValues.entries) {
+          final int index = indexEntry.key;
+          final double value = indexEntry.value;
+          if (index < fullArray.length) {
+            fullArray[index] = value;
+          }
+        }
+
+        fullValueArrays.add(fullArray);
+      }
+
+      // Aggregate the values using the sensor's aggregation method
+      if (fullValueArrays.isNotEmpty) {
+        final aggregatedValues = aggregateData(fullValueArrays);
+
+        // Create sensor data for each attribute
+        if (attributes.isNotEmpty) {
+          // Multi-value sensor (like finedust, surface_classification)
+          for (int i = 0;
+              i < attributes.length && i < aggregatedValues.length;
+              i++) {
+            final sensorData = SensorData()
+              ..characteristicUuid = characteristicUuid
+              ..title = title
+              ..value = aggregatedValues[i]
+              ..attribute = attributes[i]
+              ..geolocationData.value = gps;
+            batch.add(sensorData);
+          }
+        } else {
+          // Single-value sensor (like temperature, humidity)
+          final sensorData = SensorData()
+            ..characteristicUuid = characteristicUuid
+            ..title = title
+            ..value = aggregatedValues.isNotEmpty ? aggregatedValues[0] : 0.0
+            ..attribute = null
+            ..geolocationData.value = gps;
+          batch.add(sensorData);
+        }
+      }
     }
+    
     if (batch.isNotEmpty) {
       await isarService.sensorService.saveSensorDataBatch(batch);
     }
