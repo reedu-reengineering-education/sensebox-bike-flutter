@@ -336,4 +336,56 @@ void main() {
       });
     });
   });
+
+  group('UploadDataPreparer', () {
+    test(
+        'uploads all geo datapoints as speed data with correct timestamps and locations',
+        () {
+      // Setup a senseBox with a speed sensor
+      final speedSensor = Sensor()
+        ..id = 'speedSensorId'
+        ..title = 'Speed';
+      final senseBox = SenseBox(sensors: [speedSensor]);
+      final preparer = UploadDataPreparer(senseBox: senseBox);
+
+      // Create GPS buffer with 3 points
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        GeolocationData()
+          ..latitude = 10.1
+          ..longitude = 20.1
+          ..speed = 6.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 10),
+        GeolocationData()
+          ..latitude = 10.2
+          ..longitude = 20.2
+          ..speed = 7.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 20),
+      ];
+
+      // No sensor buffer needed for this test
+      final sensorBuffer = <Map<String, dynamic>>[];
+
+      final result = preparer.prepareDataFromBuffers(sensorBuffer, gpsBuffer);
+
+      // Should have 3 speed entries, one for each GPS point
+      for (final gps in gpsBuffer) {
+        final key = 'speed_${gps.timestamp.toIso8601String()}';
+        expect(result.containsKey(key), isTrue,
+            reason: 'Missing speed entry for ${gps.timestamp}');
+        final entry = result[key] as Map<String, dynamic>;
+        expect(entry['sensor'], speedSensor.id);
+        expect(entry['value'], gps.speed.toStringAsFixed(2));
+        expect(entry['createdAt'], gps.timestamp.toUtc().toIso8601String());
+        expect(entry['location']['lat'], gps.latitude);
+        expect(entry['location']['lng'], gps.longitude);
+      }
+      // Should have exactly 3 entries
+      expect(result.keys.where((k) => k.startsWith('speed_')).length, 3);
+    });
+  });
 } 

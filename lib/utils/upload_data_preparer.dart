@@ -113,19 +113,20 @@ class UploadDataPreparer {
       };
     }
 
-    // Add speed data from GPS (like LiveUploadService)
+    // Add speed data from ALL GPS points (not just the last one)
     if (gpsBuffer.isNotEmpty) {
-      final latestGps = gpsBuffer.last;
       String speedSensorId = getSpeedSensorId();
-      data['speed_${latestGps.timestamp.toIso8601String()}'] = {
-        'sensor': speedSensorId,
-        'value': latestGps.speed.toStringAsFixed(2),
-        'createdAt': latestGps.timestamp.toUtc().toIso8601String(),
-        'location': {
-          'lat': latestGps.latitude,
-          'lng': latestGps.longitude,
-        }
-      };
+      for (final gps in gpsBuffer) {
+        data['speed_${gps.timestamp.toIso8601String()}'] = {
+          'sensor': speedSensorId,
+          'value': gps.speed.toStringAsFixed(2),
+          'createdAt': gps.timestamp.toUtc().toIso8601String(),
+          'location': {
+            'lat': gps.latitude,
+            'lng': gps.longitude,
+          }
+        };
+      }
     }
 
     return data;
