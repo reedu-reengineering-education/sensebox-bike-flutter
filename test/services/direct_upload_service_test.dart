@@ -10,6 +10,7 @@ class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 class MockSettingsBloc extends Mock implements SettingsBloc {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('DirectUploadService Tests', () {
     late DirectUploadService directUploadService;
     late MockOpenSenseMapService mockOpenSenseMapService;
