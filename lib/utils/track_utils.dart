@@ -205,7 +205,7 @@ class UploadDataPreparer {
       data['speed_${gps.timestamp.toIso8601String()}'] = {
         'sensor': speedSensorId,
         'value': gps.speed.toStringAsFixed(2),
-        'createdAt': gps.timestamp.toUtc().toIso8601String(),
+        'createdAt': gps.timestamp.toIso8601String(),
         'location': {
           'lat': gps.latitude,
           'lng': gps.longitude,
@@ -257,7 +257,7 @@ class UploadDataPreparer {
                 {
               'sensor': individualSensor.id,
               'value': aggregatedValues[j].toStringAsFixed(2),
-              'createdAt': geolocation.timestamp.toUtc().toIso8601String(),
+              'createdAt': geolocation.timestamp.toIso8601String(),
               'location': {
                 'lat': geolocation.latitude,
                 'lng': geolocation.longitude,
@@ -282,7 +282,7 @@ class UploadDataPreparer {
             'value': aggregatedValues.isNotEmpty
                 ? aggregatedValues[0].toStringAsFixed(2)
                 : '0.00',
-            'createdAt': geolocation.timestamp.toUtc().toIso8601String(),
+            'createdAt': geolocation.timestamp.toIso8601String(),
             'location': {
               'lat': geolocation.latitude,
               'lng': geolocation.longitude,
