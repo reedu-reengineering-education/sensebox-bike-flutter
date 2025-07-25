@@ -58,7 +58,7 @@ String? getTitleFromSensorKey(String key, String? attribute) {
     case 'gps_longitude':
       return 'GPS Longitude';
     case 'gps_speed':
-      return 'GPS Speed';
+      return 'Speed';
     default:
       debugPrint("Unknown sensor key: $searchKey");
       return null;
@@ -111,7 +111,7 @@ String? getTranslatedTitleFromSensorKey(
     case 'gps_longitude':
       return AppLocalizations.of(context)!.sensorGPSLong;
     case 'gps_speed':
-      return AppLocalizations.of(context)!.sensorGPSSpeed;
+      return AppLocalizations.of(context)!.sensorSpeed;
     default:
       debugPrint("Unknown sensor key: $searchKey");
       return null;

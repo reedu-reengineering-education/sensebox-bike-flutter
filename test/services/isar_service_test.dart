@@ -229,7 +229,7 @@ void main() {
       // Test that the title can be retrieved correctly
       final title = getTitleFromSensorKey(
           gpsSpeedSensorData.title, gpsSpeedSensorData.attribute);
-      expect(title, equals('GPS Speed'));
+      expect(title, equals('Speed'));
     });
 
     test('GPS speed data is saved with correct title and attribute format',
