@@ -93,8 +93,6 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget>
         }
       },
       onMapCreated: (mapInstance) {
-        if (!mounted) return;
-
         this.mapInstance = mapInstance;
 
         // Apply passed or default camera options
