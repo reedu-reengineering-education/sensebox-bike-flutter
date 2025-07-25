@@ -9,7 +9,7 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
-import 'package:sensebox_bike/utils/sensor_data_helper.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 import '../mocks.dart';
 import '../test_helpers.dart';
@@ -410,9 +410,9 @@ void main() {
         ..speed = 15.5
         ..timestamp = DateTime.parse('2025-01-01T12:00:00');
 
-      // Create GPS speed data using SensorDataHelper (as GeolocationBloc does)
+      // Create GPS speed data using sensor_utils (as GeolocationBloc does)
       final gpsSpeedData =
-          SensorDataHelper.createGpsSpeedSensorData(mockGeoData);
+            createGpsSpeedSensorData(mockGeoData);
 
       // Verify it matches GPS sensor format
       expect(gpsSpeedData.title, equals('gps'));
@@ -475,9 +475,9 @@ void main() {
 
       // Verify the order: temperature (0), gps_speed (19)
       expect(sensorTitles.length, equals(2));
-      expect(sensorTitles[0]['title']!, equals('temperature'));
-      expect(sensorTitles[1]['title']!, equals('gps'));
-      expect(sensorTitles[1]['attribute']!, equals('speed'));
+      expect(sensorTitles[0]['title'], equals('temperature'));
+      expect(sensorTitles[1]['title'], equals('gps'));
+      expect(sensorTitles[1]['attribute'], equals('speed'));
     });
   });
 

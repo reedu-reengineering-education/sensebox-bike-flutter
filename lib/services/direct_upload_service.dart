@@ -5,7 +5,7 @@ import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
-import 'package:sensebox_bike/utils/upload_data_preparer.dart';
+import 'package:sensebox_bike/utils/track_utils.dart';
 import "package:sensebox_bike/constants.dart";
 
 class DirectUploadService {

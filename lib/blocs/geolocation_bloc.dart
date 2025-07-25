@@ -13,7 +13,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/utils/geo_utils.dart';
 import 'package:turf/turf.dart' as Turf;
-import 'package:sensebox_bike/utils/sensor_data_helper.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class GeolocationBloc with ChangeNotifier {
   final StreamController<GeolocationData> _geolocationController =
@@ -115,8 +115,8 @@ class GeolocationBloc with ChangeNotifier {
         // Create and save GPS speed as SensorData for consistent UI display
         if (data.speed > 0) {
           final gpsSpeedSensorData =
-              SensorDataHelper.createGpsSpeedSensorData(data);
-          if (SensorDataHelper.shouldStoreSensorData(gpsSpeedSensorData)) {
+                          createGpsSpeedSensorData(data);
+          if (shouldStoreSensorData(gpsSpeedSensorData)) {
             await isarService.sensorService.saveSensorData(gpsSpeedSensorData);
           }
         }
