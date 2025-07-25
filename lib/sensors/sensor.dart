@@ -13,28 +13,25 @@ abstract class Sensor {
   final String characteristicUuid;
   final String title;
   final List<String> attributes;
-
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
   final RecordingBloc recordingBloc;
   final IsarService isarService;
-  DirectUploadService? _directUploadService;
-  StreamSubscription<List<double>>? _subscription;
-  VoidCallback? _recordingListener;
 
-  final StreamController<List<double>> _valueController =
+  StreamController<List<double>> _valueController =
       StreamController<List<double>>.broadcast();
-  Stream<List<double>> get valueStream => _valueController.stream;
-  static const Duration _batchTimeout = Duration(seconds: 10);
+  StreamSubscription<List<double>>? _subscription;
   Timer? _batchTimer;
-
-  // Buffers for batching
+  final Duration _batchTimeout = Duration(seconds: 5);
   final Map<GeolocationData, Map<String, List<List<double>>>> _groupedBuffer =
       {};
-  GeolocationData? _lastGeolocation;
-  
-  // Temporary buffer for sensor data that arrives before first GPS point
   final List<List<double>> _preGpsSensorBuffer = [];
+  GeolocationData? _lastGeolocation;
+  DirectUploadService? _directUploadService;
+  VoidCallback? _recordingListener;
+  bool _isFlushing = false; // Add flag to prevent multiple simultaneous flushes
+  final Set<int> _processedGeolocationIds =
+      {}; // Track processed geolocation IDs
 
   Sensor(
     this.characteristicUuid,
@@ -45,6 +42,10 @@ abstract class Sensor {
     this.recordingBloc,
     this.isarService,
   );
+
+  Stream<List<double>> get valueStream => _valueController.stream;
+
+  List<double> aggregateData(List<List<double>> rawData);
 
   int get uiPriority;
 
@@ -110,7 +111,6 @@ abstract class Sensor {
     _batchTimer?.cancel();
     _batchTimer = null;
     
-    // Remove recording listener
     if (_recordingListener != null) {
       recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
       _recordingListener = null;
@@ -128,98 +128,127 @@ abstract class Sensor {
       return;
     }
     
-    final List<SensorData> batch = [];
-    
-    // Process the grouped data
-    for (final entry in _groupedBuffer.entries) {
-      final GeolocationData geolocation = entry.key;
-      final Map<String, List<List<double>>> sensorData = entry.value;
-      
-      // Save geolocation if needed
-      if (geolocation.id == Isar.autoIncrement || geolocation.id == 0) {
-        geolocation.id = await isarService.geolocationService
-            .saveGeolocationData(geolocation);
-      }
-      
-      // Process sensor data for this geolocation
-      for (final sensorEntry in sensorData.entries) {
-        final String sensorTitle = sensorEntry.key;
-        final List<List<double>> rawValues = sensorEntry.value;
-        
-        // Only process data for this specific sensor
-        if (sensorTitle == title) {
-          // Aggregate the raw values using the sensor's aggregation method
-          final List<double> aggregatedValues = aggregateData(rawValues);
-          
-          // Create sensor data for each attribute
-          if (attributes.isNotEmpty) {
-            // Multi-value sensor (like finedust, surface_classification)
-            for (int j = 0;
-                j < attributes.length && j < aggregatedValues.length;
-                j++) {
-              final sensorData = SensorData()
-                ..characteristicUuid = characteristicUuid
-                ..title = title
-                ..value = aggregatedValues[j]
-                ..attribute = attributes[j]
-                ..geolocationData.value = geolocation;
-              
-              batch.add(sensorData);
-            }
-          } else {
-            // Single-value sensor (like temperature, humidity)
-            final sensorData = SensorData()
-              ..characteristicUuid = characteristicUuid
-              ..title = title
-              ..value = aggregatedValues.isNotEmpty ? aggregatedValues[0] : 0.0
-              ..attribute = null
-              ..geolocationData.value = geolocation;
-            
-            batch.add(sensorData);
-          }
-        }
-      }
+    // Prevent multiple simultaneous flushes
+    if (_isFlushing) {
+      return;
     }
-    
-    // Save sensor data to database
-    if (batch.isNotEmpty) {
-      await isarService.sensorService.saveSensorDataBatch(batch);
-    }
-    
-    // Send data for direct upload if enabled
-    if (_directUploadService != null && recordingBloc.isRecording) {
-      // Convert the grouped buffer to the format expected by DirectUploadService
-      final Map<GeolocationData, Map<String, List<double>>>
-          groupedDataForUpload = {};
-      
+    _isFlushing = true;
+
+    try {
+      final List<SensorData> batch = [];
+      final Set<int> processedInThisFlush =
+          {}; // Track geolocations processed in this flush
+
+      // Process the grouped data
       for (final entry in _groupedBuffer.entries) {
         final GeolocationData geolocation = entry.key;
         final Map<String, List<List<double>>> sensorData = entry.value;
-        
-        groupedDataForUpload[geolocation] = {};
-        
+
+        // Skip if geolocation doesn't have an ID (not saved by GeolocationBloc yet)
+        if (geolocation.id == Isar.autoIncrement || geolocation.id == 0) {
+          continue; // Skip this geolocation until it's saved by GeolocationBloc
+        }
+
+        // Skip if this geolocation has already been processed in this flush
+        if (processedInThisFlush.contains(geolocation.id)) {
+          continue;
+        }
+
+        // Skip if this geolocation has already been processed in a previous flush
+        if (_processedGeolocationIds.contains(geolocation.id)) {
+          continue;
+        }
+
+        // Process sensor data for this geolocation
         for (final sensorEntry in sensorData.entries) {
           final String sensorTitle = sensorEntry.key;
           final List<List<double>> rawValues = sensorEntry.value;
-          
-          // Aggregate the raw values
-          final List<double> aggregatedValues = aggregateData(rawValues);
-          groupedDataForUpload[geolocation]![sensorTitle] = aggregatedValues;
+
+          if (sensorTitle == title) {
+            final List<double> aggregatedValues = aggregateData(rawValues);
+            if (attributes.isNotEmpty) {
+              // Multi-value sensor (like finedust, surface_classification)
+              for (int j = 0;
+                  j < attributes.length && j < aggregatedValues.length;
+                  j++) {
+                final sensorData = SensorData()
+                  ..characteristicUuid = characteristicUuid
+                  ..title = title
+                  ..value = aggregatedValues[j]
+                  ..attribute = attributes[j]
+                  ..geolocationData.value = geolocation;
+
+                batch.add(sensorData);
+              }
+            } else {
+              // Single-value sensor (like temperature, humidity)
+              final sensorData = SensorData()
+                ..characteristicUuid = characteristicUuid
+                ..title = title
+                ..value =
+                    aggregatedValues.isNotEmpty ? aggregatedValues[0] : 0.0
+                ..attribute = null
+                ..geolocationData.value = geolocation;
+
+              batch.add(sensorData);
+            }
+          }
         }
+
+        processedInThisFlush.add(geolocation.id);
+        _processedGeolocationIds.add(geolocation.id);
       }
-      
-      final List<GeolocationData> geolocations = List.from(_groupedBuffer.keys);
-      _directUploadService!
-          .addGroupedDataForUpload(groupedDataForUpload, geolocations);
+
+      // Save sensor data to database
+      if (batch.isNotEmpty) {
+        await isarService.sensorService.saveSensorDataBatch(batch);
+      }
+
+      // Send data for direct upload if enabled - use grouped buffer data directly
+      if (_directUploadService != null && recordingBloc.isRecording) {
+        // Convert the grouped buffer data directly to the format expected by DirectUploadService
+        final Map<GeolocationData, Map<String, List<double>>>
+            groupedDataForUpload = {};
+
+        // Process the grouped buffer data directly
+        for (final entry in _groupedBuffer.entries) {
+          final GeolocationData geolocation = entry.key;
+          final Map<String, List<List<double>>> sensorData = entry.value;
+
+          // Skip if geolocation doesn't have an ID (same logic as above)
+          if (geolocation.id == Isar.autoIncrement || geolocation.id == 0) {
+            continue;
+          }
+
+          groupedDataForUpload[geolocation] = {};
+
+          for (final sensorEntry in sensorData.entries) {
+            final String sensorTitle = sensorEntry.key;
+            final List<List<double>> rawValues = sensorEntry.value;
+
+            // Only process data for this specific sensor
+            if (sensorTitle == title) {
+              // Aggregate the raw values using the sensor's aggregation method
+              final List<double> aggregatedValues = aggregateData(rawValues);
+              groupedDataForUpload[geolocation]![sensorTitle] =
+                  aggregatedValues;
+            }
+          }
+        }
+
+        final List<GeolocationData> geolocations =
+            groupedDataForUpload.keys.toList();
+        _directUploadService!
+            .addGroupedDataForUpload(groupedDataForUpload, geolocations);
+      }
+    } finally {
+      // Always clear the grouped buffer, even if an error occurred
+      _groupedBuffer.clear();
+      _isFlushing = false;
     }
-    
-    // Clear the grouped buffer
-    _groupedBuffer.clear();
   }
 
   Widget buildWidget();
-  List<double> aggregateData(List<List<double>> valueBuffer);
-
   void dispose() {
     stopListening();
     _valueController.close();

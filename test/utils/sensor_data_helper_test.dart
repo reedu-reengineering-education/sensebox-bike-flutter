@@ -19,10 +19,13 @@ void main() {
       test('creates GPS speed sensor data correctly', () {
         final sensorData = SensorDataHelper.createGpsSpeedSensorData(mockGeoData);
 
-        expect(sensorData.title, equals('gps'));
-        expect(sensorData.attribute, equals('speed'));
+        expect(
+            sensorData.title, equals('gps')); // Match GPS sensor format
+        expect(
+            sensorData.attribute, equals('speed')); // Match GPS sensor format
         expect(sensorData.value, equals(15.5));
-        expect(sensorData.characteristicUuid, equals('gps_speed_from_geolocation'));
+        expect(sensorData.characteristicUuid,
+            equals('8edf8ebb-1246-4329-928d-ee0c91db2389'));
         expect(sensorData.geolocationData.value, equals(mockGeoData));
       });
     });

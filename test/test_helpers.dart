@@ -98,10 +98,18 @@ void mockSenseBoxInSharedPreferences() {
     grouptag: ['Sensor Group'],
     sensors: [
       Sensor(
-        title: 'Temperature Sensor',
-        unit: 'Celsius',
-        sensorType: 'DHT22',
-        icon: 'thermometer',
+        id: 'test-temp-sensor',
+        title: 'Temperature',
+        unit: '°C',
+        sensorType: 'HDC1080',
+        icon: 'osem-thermometer',
+      ),
+      Sensor(
+        id: 'test-speed-sensor',
+        title: 'Speed',
+        unit: 'm/s',
+        sensorType: 'GPS',
+        icon: 'osem-dashboard',
       ),
     ],
   );

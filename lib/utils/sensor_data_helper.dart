@@ -1,15 +1,14 @@
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
+import 'package:sensebox_bike/sensors/gps_sensor.dart';
 
-/// Helper class for sensor data transformation and formatting
-/// Extracted from upload_data_preparer.dart to be reused across the app
 class SensorDataHelper {
   static SensorData createGpsSpeedSensorData(GeolocationData geoData) {
     return SensorData()
       ..title = 'gps'
-      ..attribute = 'speed'
+      ..attribute = 'speed' 
       ..value = geoData.speed
-      ..characteristicUuid = 'gps_speed_from_geolocation'
+      ..characteristicUuid = GPSSensor.sensorCharacteristicUuid
       ..geolocationData.value = geoData;
   }
 
