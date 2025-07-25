@@ -63,7 +63,8 @@ void main() {
 
       directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
       await directUploadService.uploadRemainingBufferedData();
-      expect(directUploadService.isEnabled, false);
+      // Service should remain enabled because OpenSenseMapService handles token refresh
+      expect(directUploadService.isEnabled, true);
     });
 
     test('handles 401 errors gracefully', () async {
@@ -90,7 +91,8 @@ void main() {
       directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
       await directUploadService.uploadRemainingBufferedData();
 
-      expect(directUploadService.isEnabled, false);
+      // Service should remain enabled because OpenSenseMapService handles token refresh
+      expect(directUploadService.isEnabled, true);
     });
 
     test('continues to work normally for non-authentication errors', () async {
@@ -119,6 +121,64 @@ void main() {
 
       // Verify that the service remains enabled for non-authentication errors
       expect(directUploadService.isEnabled, true);
+    });
+
+    test('disables service for true authentication failures', () async {
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+
+      // Test with "No refresh token found" error
+      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+          .thenThrow(Exception('No refresh token found'));
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.5],
+        },
+      };
+
+      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      await directUploadService.uploadRemainingBufferedData();
+
+      // Service should be disabled for true authentication failures
+      expect(directUploadService.isEnabled, false);
+    });
+
+    test('disables service for failed token refresh', () async {
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+
+      // Test with "Failed to refresh token" error
+      when(() => mockOpenSenseMapService.uploadData(any(), any())).thenThrow(
+          Exception('Failed to refresh token: Invalid refresh token'));
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.5],
+        },
+      };
+
+      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      await directUploadService.uploadRemainingBufferedData();
+
+      // Service should be disabled for failed token refresh
+      expect(directUploadService.isEnabled, false);
     });
   });
 } 
