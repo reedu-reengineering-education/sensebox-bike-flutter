@@ -21,7 +21,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   bool get isAuthenticated => _isAuthenticated;
   List<dynamic> get senseBoxes => _senseBoxes.values.expand((e) => e).toList();
-  dynamic get userData => _service.getUserData();
 
   OpenSenseMapBloc() {
     _initializeAuth();
