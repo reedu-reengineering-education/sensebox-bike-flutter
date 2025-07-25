@@ -1,13 +1,12 @@
 import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
-import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/upload_data_preparer.dart';
 import "package:sensebox_bike/constants.dart";
-import 'package:retry/retry.dart';
 
 class DirectUploadService {
   final String instanceId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -15,9 +14,8 @@ class DirectUploadService {
   final SettingsBloc settingsBloc;
   final SenseBox senseBox;
   final UploadDataPreparer _dataPreparer;
-  final RetryOptions _retryOptions;
 
-  // vars to handle connectivity issues
+  // vars to handle connectivity issues (same as LiveUploadService)
   DateTime? _lastSuccessfulUpload;
   int _consecutiveFails = 0;
 
@@ -29,14 +27,7 @@ class DirectUploadService {
     required this.openSenseMapService,
     required this.settingsBloc,
     required this.senseBox,
-    RetryOptions? retryOptions,
-  })  : _dataPreparer = UploadDataPreparer(senseBox: senseBox),
-        _retryOptions = retryOptions ??
-            const RetryOptions(
-              maxAttempts: 6,
-              delayFactor: Duration(seconds: 10),
-              maxDelay: Duration(seconds: 30),
-            );
+  }) : _dataPreparer = UploadDataPreparer(senseBox: senseBox);
 
   void enable() {
     _isEnabled = true;
@@ -91,35 +82,27 @@ class DirectUploadService {
       _lastSuccessfulUpload = DateTime.now();
       _consecutiveFails = 0;
     } catch (e, st) {
-      // Check if this is an authentication error
-      if (e.toString().contains('Not authenticated') ||
-          e.toString().contains('401')) {
-        // Authentication errors are handled in _uploadDirectBufferWithRetry
-        // Just disable the service and return
-        return;
-      }
-
+      // Handle upload error (same logic as LiveUploadService)
       _consecutiveFails++;
-
-      bool isPermanentConnectivityIssue = false;
-      bool isMaxRetries = _consecutiveFails >= maxRetries;
-
-      if (_lastSuccessfulUpload != null) {
-        final lastSuccessfulUploadPeriod = DateTime.now()
-            .subtract(Duration(minutes: premanentConnectivityFalurePeriod));
-        isPermanentConnectivityIssue =
-            _lastSuccessfulUpload!.isBefore(lastSuccessfulUploadPeriod);
-      } else {
-        isPermanentConnectivityIssue = _consecutiveFails >= maxRetries;
-      }
       
+      final lastSuccessfulUploadPeriod = DateTime.now()
+          .subtract(Duration(minutes: premanentConnectivityFalurePeriod));
+      final isPermanentConnectivityIssue = _lastSuccessfulUpload != null &&
+          _lastSuccessfulUpload!.isBefore(lastSuccessfulUploadPeriod);
+      final isMaxRetries = _consecutiveFails >= maxRetries;
+
       if (isPermanentConnectivityIssue || isMaxRetries) {
         final message = isPermanentConnectivityIssue
             ? 'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.'
             : 'Permanent connectivity failure: Max retries ($maxRetries) exceeded.';
         ErrorService.handleError(message, st);
+        disable(); // Disable service on permanent failure
       } else {
-        // No custom retry, just leave buffer for next attempt
+        // Log retry attempt (same as LiveUploadService)
+        debugPrint(
+            'Failed to upload data: $e. Retrying in $retryPeriod minutes (Attempt $_consecutiveFails of $maxRetries).');
+        // Note: We don't delay here since this is called from sensor buffer flush
+        // The delay will happen naturally when the next buffer flush occurs
       }
     } finally {
       _isDirectUploading = false;
@@ -127,37 +110,23 @@ class DirectUploadService {
   }
 
   Future<void> _uploadDirectBufferWithRetry(Map<String, dynamic> data) async {
-    await _retryOptions.retry(
-      () async {
-        try {
-          await openSenseMapService.uploadData(senseBox.id, data);
-        } catch (e) {
-          // Handle authentication errors gracefully
-          if (e.toString().contains('Not authenticated') ||
-              e.toString().contains('401')) {
-            // User is not authenticated, disable direct upload and log the issue
-            disable();
-            ErrorService.handleError(
-                'Direct upload disabled: User not authenticated. Please log in to enable direct upload.',
-                StackTrace.current,
-                sendToSentry: false);
-            // Don't retry authentication errors
-            return;
-          }
-          // Re-throw other exceptions for retry logic
-          rethrow;
-        }
-      },
-      retryIf: (e) =>
-          e is TooManyRequestsException ||
-          e.toString().contains('Token refreshed') ||
-          e is TimeoutException,
-      onRetry: (e) async {
-        if (e is TooManyRequestsException) {
-          await Future.delayed(Duration(seconds: e.retryAfter));
-        }
-      },
-    );
+    try {
+      await openSenseMapService.uploadData(senseBox.id, data);
+    } catch (e) {
+      // Handle authentication errors gracefully
+      if (e.toString().contains('Not authenticated') ||
+          e.toString().contains('401')) {
+        // User is not authenticated, disable direct upload and log the issue
+        disable();
+        ErrorService.handleError(
+            'Direct upload disabled: User not authenticated. Please log in to enable direct upload.',
+            StackTrace.current,
+            sendToSentry: false);
+        return;
+      }
+      // Re-throw other exceptions for error handling in _uploadDirectBuffer
+      rethrow;
+    }
   }
 
   void dispose() {
