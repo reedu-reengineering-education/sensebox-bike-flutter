@@ -144,47 +144,46 @@ abstract class Sensor {
         final GeolocationData geolocation = entry.key;
         final Map<String, List<List<double>>> sensorData = entry.value;
 
-        // Process sensor data regardless of GPS database saving status
-        // This ensures no sensor data is lost due to GPS filtering or database delays
-        
-        // Process sensor data for this geolocation
-        for (final sensorEntry in sensorData.entries) {
-          final String sensorTitle = sensorEntry.key;
-          final List<List<double>> rawValues = sensorEntry.value;
+        // Process sensor data for database only if geolocation has been saved
+        // This prevents IsarError when linking objects without IDs
+        if (geolocation.id != Isar.autoIncrement && geolocation.id != 0) {
+          // Process sensor data for this geolocation
+          for (final sensorEntry in sensorData.entries) {
+            final String sensorTitle = sensorEntry.key;
+            final List<List<double>> rawValues = sensorEntry.value;
 
-          if (sensorTitle == title) {
-            final List<double> aggregatedValues = aggregateData(rawValues);
-            if (attributes.isNotEmpty) {
-              // Multi-value sensor (like finedust, surface_classification)
-              for (int j = 0;
-                  j < attributes.length && j < aggregatedValues.length;
-                  j++) {
+            if (sensorTitle == title) {
+              final List<double> aggregatedValues = aggregateData(rawValues);
+              if (attributes.isNotEmpty) {
+                // Multi-value sensor (like finedust, surface_classification)
+                for (int j = 0;
+                    j < attributes.length && j < aggregatedValues.length;
+                    j++) {
+                  final sensorData = SensorData()
+                    ..characteristicUuid = characteristicUuid
+                    ..title = title
+                    ..value = aggregatedValues[j]
+                    ..attribute = attributes[j]
+                    ..geolocationData.value = geolocation;
+
+                  batch.add(sensorData);
+                }
+              } else {
+                // Single-value sensor (like temperature, humidity)
                 final sensorData = SensorData()
                   ..characteristicUuid = characteristicUuid
                   ..title = title
-                  ..value = aggregatedValues[j]
-                  ..attribute = attributes[j]
+                  ..value =
+                      aggregatedValues.isNotEmpty ? aggregatedValues[0] : 0.0
+                  ..attribute = null
                   ..geolocationData.value = geolocation;
 
                 batch.add(sensorData);
               }
-            } else {
-              // Single-value sensor (like temperature, humidity)
-              final sensorData = SensorData()
-                ..characteristicUuid = characteristicUuid
-                ..title = title
-                ..value =
-                    aggregatedValues.isNotEmpty ? aggregatedValues[0] : 0.0
-                ..attribute = null
-                ..geolocationData.value = geolocation;
-
-              batch.add(sensorData);
             }
           }
-        }
 
-        // Track processed geolocations to prevent duplicates
-        if (geolocation.id != Isar.autoIncrement && geolocation.id != 0) {
+          // Track processed geolocations to prevent duplicates
           processedInThisFlush.add(geolocation.id);
           _processedGeolocationIds.add(geolocation.id);
         }
