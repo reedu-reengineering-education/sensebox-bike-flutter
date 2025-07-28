@@ -218,18 +218,13 @@ abstract class Sensor {
             if (sensorTitle == title) {
               // Aggregate the raw values using the sensor's aggregation method
               final List<double> aggregatedValues = aggregateData(rawValues);
-              groupedDataForUpload[geolocation]![sensorTitle] = aggregatedValues;
-              
-              // Debug logging to track data processing
-              debugPrint('Sensor $title: Added ${aggregatedValues.length} values for GPS point at ${geolocation.timestamp}');
+              groupedDataForUpload[geolocation]![sensorTitle] =
+                  aggregatedValues;
             }
           }
         }
 
         final List<GeolocationData> geolocations = groupedDataForUpload.keys.toList();
-        
-        // Debug logging to track upload data
-        debugPrint('Sensor $title: Preparing upload with ${geolocations.length} GPS points and ${groupedDataForUpload.length} data entries');
         
         // Only send data if DirectUploadService is enabled
         if (_directUploadService!.isEnabled) {
@@ -237,16 +232,13 @@ abstract class Sensor {
               .addGroupedDataForUpload(groupedDataForUpload, geolocations);
           // Clear buffer only if data was successfully added to upload service
           _groupedBuffer.clear();
-          debugPrint('Sensor $title: Data sent to DirectUploadService, buffer cleared');
         } else {
           // Keep buffer data if upload service is disabled (e.g., due to connectivity issues)
           // Data will be retried on next flush when service is re-enabled
-          debugPrint('DirectUploadService is disabled, preserving buffer data for retry');
         }
       } else {
         // Clear buffer if no upload service available or not recording
         _groupedBuffer.clear();
-        debugPrint('Sensor $title: No upload service or not recording, buffer cleared');
       }
     } finally {
       // Only reset flushing flag, don't clear buffer here

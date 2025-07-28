@@ -38,8 +38,6 @@ class DirectUploadService {
     // Start timer to ensure data gets uploaded even with few GPS points
     _uploadTimer = Timer.periodic(Duration(seconds: 30), (_) {
       if (_accumulatedSensorData.isNotEmpty) {
-        debugPrint(
-            'DirectUploadService: Timer triggered upload for ${_accumulatedSensorData.length} GPS points');
         _prepareAndUploadData([]);
       }
     });
@@ -70,10 +68,6 @@ class DirectUploadService {
       _accumulatedSensorData[geolocation]!.addAll(sensorData);
     }
 
-    // Debug logging to track data accumulation
-    debugPrint(
-        'DirectUploadService: Accumulated data for ${_accumulatedSensorData.length} GPS points');
-
     // Check if we have enough data to upload (reduced threshold)
     if (_accumulatedSensorData.length >= 2) {
       _prepareAndUploadData(gpsBuffer);
@@ -100,8 +94,6 @@ class DirectUploadService {
   Future<void> uploadRemainingBufferedData() async {
     // Force upload of any remaining accumulated sensor data
     if (_accumulatedSensorData.isNotEmpty) {
-      debugPrint(
-          'DirectUploadService: Uploading remaining accumulated data for ${_accumulatedSensorData.length} GPS points');
       _prepareAndUploadData([]);
     }
 
