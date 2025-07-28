@@ -25,6 +25,7 @@ class DirectUploadService {
   final Map<GeolocationData, Map<String, List<double>>> _accumulatedSensorData =
       {};
   bool _isEnabled = false;
+  Timer? _uploadTimer;
 
   DirectUploadService({
     required this.openSenseMapService,
@@ -34,10 +35,20 @@ class DirectUploadService {
 
   void enable() {
     _isEnabled = true;
+    // Start timer to ensure data gets uploaded even with few GPS points
+    _uploadTimer = Timer.periodic(Duration(seconds: 30), (_) {
+      if (_accumulatedSensorData.isNotEmpty) {
+        debugPrint(
+            'DirectUploadService: Timer triggered upload for ${_accumulatedSensorData.length} GPS points');
+        _prepareAndUploadData([]);
+      }
+    });
   }
 
   void disable() {
     _isEnabled = false;
+    _uploadTimer?.cancel();
+    _uploadTimer = null;
   }
 
   bool get isEnabled => _isEnabled;
@@ -63,8 +74,8 @@ class DirectUploadService {
     debugPrint(
         'DirectUploadService: Accumulated data for ${_accumulatedSensorData.length} GPS points');
 
-    // Check if we have enough data to upload (either by buffer size or time)
-    if (_accumulatedSensorData.length >= 5) {
+    // Check if we have enough data to upload (reduced threshold)
+    if (_accumulatedSensorData.length >= 2) {
       _prepareAndUploadData(gpsBuffer);
     }
   }
@@ -170,7 +181,10 @@ class DirectUploadService {
 
   void dispose() {
     _isDirectUploading = false;
+    _uploadTimer?.cancel();
+    _uploadTimer = null;
     _directUploadBuffer.clear();
+    _accumulatedSensorData.clear();
   }
 
   // Internal flag to prevent concurrent uploads
