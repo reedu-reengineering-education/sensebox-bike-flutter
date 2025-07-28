@@ -21,6 +21,9 @@ class DirectUploadService {
 
   // Buffer for direct uploads - stores prepared data maps
   final List<Map<String, dynamic>> _directUploadBuffer = [];
+  // Buffer for accumulating sensor data before preparing upload
+  final Map<GeolocationData, Map<String, List<double>>> _accumulatedSensorData =
+      {};
   bool _isEnabled = false;
 
   DirectUploadService({
@@ -44,16 +47,54 @@ class DirectUploadService {
       List<GeolocationData> gpsBuffer) {
     if (!_isEnabled) return;
 
-    final uploadData =
-        _dataPreparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
+    // Accumulate sensor data from all sensors
+    for (final entry in groupedData.entries) {
+      final GeolocationData geolocation = entry.key;
+      final Map<String, List<double>> sensorData = entry.value;
+
+      // Initialize geolocation entry if not exists
+      _accumulatedSensorData.putIfAbsent(geolocation, () => {});
+
+      // Add all sensor data for this geolocation
+      _accumulatedSensorData[geolocation]!.addAll(sensorData);
+    }
+
+    // Debug logging to track data accumulation
+    debugPrint(
+        'DirectUploadService: Accumulated data for ${_accumulatedSensorData.length} GPS points');
+
+    // Check if we have enough data to upload (either by buffer size or time)
+    if (_accumulatedSensorData.length >= 5) {
+      _prepareAndUploadData(gpsBuffer);
+    }
+  }
+
+  void _prepareAndUploadData(List<GeolocationData> gpsBuffer) {
+    if (_accumulatedSensorData.isEmpty) return;
+
+    // Prepare upload data from accumulated sensor data
+    final uploadData = _dataPreparer.prepareDataFromGroupedData(
+        _accumulatedSensorData, gpsBuffer);
     _directUploadBuffer.add(uploadData);
 
+    // Clear accumulated data after preparing upload
+    _accumulatedSensorData.clear();
+
+    // Upload if buffer is ready
     if (_directUploadBuffer.length >= 10) {
       _uploadDirectBuffer();
     }
   }
 
   Future<void> uploadRemainingBufferedData() async {
+    // Force upload of any remaining accumulated sensor data
+    if (_accumulatedSensorData.isNotEmpty) {
+      debugPrint(
+          'DirectUploadService: Uploading remaining accumulated data for ${_accumulatedSensorData.length} GPS points');
+      _prepareAndUploadData([]);
+    }
+
+    // Upload any remaining buffered data
     if (_directUploadBuffer.isNotEmpty) {
       await _uploadDirectBuffer();
     }

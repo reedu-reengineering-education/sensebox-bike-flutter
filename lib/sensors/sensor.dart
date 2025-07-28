@@ -144,21 +144,9 @@ abstract class Sensor {
         final GeolocationData geolocation = entry.key;
         final Map<String, List<List<double>>> sensorData = entry.value;
 
-        // Skip if geolocation doesn't have an ID (not saved by GeolocationBloc yet)
-        if (geolocation.id == Isar.autoIncrement || geolocation.id == 0) {
-          continue; // Skip this geolocation until it's saved by GeolocationBloc
-        }
-
-        // Skip if this geolocation has already been processed in this flush
-        if (processedInThisFlush.contains(geolocation.id)) {
-          continue;
-        }
-
-        // Skip if this geolocation has already been processed in a previous flush
-        if (_processedGeolocationIds.contains(geolocation.id)) {
-          continue;
-        }
-
+        // Process sensor data regardless of GPS database saving status
+        // This ensures no sensor data is lost due to GPS filtering or database delays
+        
         // Process sensor data for this geolocation
         for (final sensorEntry in sensorData.entries) {
           final String sensorTitle = sensorEntry.key;
@@ -195,8 +183,11 @@ abstract class Sensor {
           }
         }
 
-        processedInThisFlush.add(geolocation.id);
-        _processedGeolocationIds.add(geolocation.id);
+        // Track processed geolocations to prevent duplicates
+        if (geolocation.id != Isar.autoIncrement && geolocation.id != 0) {
+          processedInThisFlush.add(geolocation.id);
+          _processedGeolocationIds.add(geolocation.id);
+        }
       }
 
       // Save sensor data to database
@@ -215,35 +206,50 @@ abstract class Sensor {
           final GeolocationData geolocation = entry.key;
           final Map<String, List<List<double>>> sensorData = entry.value;
 
-          // Skip if geolocation doesn't have an ID (same logic as above)
-          if (geolocation.id == Isar.autoIncrement || geolocation.id == 0) {
-            continue;
-          }
-
+          // Include all GPS points in upload data, regardless of database ID status
+          // This ensures no sensor data is lost due to GPS filtering or database delays
           groupedDataForUpload[geolocation] = {};
 
           for (final sensorEntry in sensorData.entries) {
             final String sensorTitle = sensorEntry.key;
             final List<List<double>> rawValues = sensorEntry.value;
 
-            // Only process data for this specific sensor
+            // Process data for this specific sensor
             if (sensorTitle == title) {
               // Aggregate the raw values using the sensor's aggregation method
               final List<double> aggregatedValues = aggregateData(rawValues);
-              groupedDataForUpload[geolocation]![sensorTitle] =
-                  aggregatedValues;
+              groupedDataForUpload[geolocation]![sensorTitle] = aggregatedValues;
+              
+              // Debug logging to track data processing
+              debugPrint('Sensor $title: Added ${aggregatedValues.length} values for GPS point at ${geolocation.timestamp}');
             }
           }
         }
 
-        final List<GeolocationData> geolocations =
-            groupedDataForUpload.keys.toList();
-        _directUploadService!
-            .addGroupedDataForUpload(groupedDataForUpload, geolocations);
+        final List<GeolocationData> geolocations = groupedDataForUpload.keys.toList();
+        
+        // Debug logging to track upload data
+        debugPrint('Sensor $title: Preparing upload with ${geolocations.length} GPS points and ${groupedDataForUpload.length} data entries');
+        
+        // Only send data if DirectUploadService is enabled
+        if (_directUploadService!.isEnabled) {
+          _directUploadService!
+              .addGroupedDataForUpload(groupedDataForUpload, geolocations);
+          // Clear buffer only if data was successfully added to upload service
+          _groupedBuffer.clear();
+          debugPrint('Sensor $title: Data sent to DirectUploadService, buffer cleared');
+        } else {
+          // Keep buffer data if upload service is disabled (e.g., due to connectivity issues)
+          // Data will be retried on next flush when service is re-enabled
+          debugPrint('DirectUploadService is disabled, preserving buffer data for retry');
+        }
+      } else {
+        // Clear buffer if no upload service available or not recording
+        _groupedBuffer.clear();
+        debugPrint('Sensor $title: No upload service or not recording, buffer cleared');
       }
     } finally {
-      // Always clear the grouped buffer, even if an error occurred
-      _groupedBuffer.clear();
+      // Only reset flushing flag, don't clear buffer here
       _isFlushing = false;
     }
   }
