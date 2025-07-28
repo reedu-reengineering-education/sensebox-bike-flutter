@@ -60,6 +60,11 @@ abstract class Sensor {
         _groupedBuffer.putIfAbsent(_lastGeolocation!, () => {});
         _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
         _groupedBuffer[_lastGeolocation!]![title]!.add(data);
+        
+        // Force flush if buffer gets too large to prevent memory issues
+        if (_groupedBuffer.length > 50) {
+          _flushBuffers();
+        }
       } else {
         // Store sensor data in temporary buffer until first GPS point arrives
         _preGpsSensorBuffer.add(data);
@@ -144,9 +149,9 @@ abstract class Sensor {
         final GeolocationData geolocation = entry.key;
         final Map<String, List<List<double>>> sensorData = entry.value;
 
-        // Process sensor data for database only if geolocation has been saved
-        // This prevents IsarError when linking objects without IDs
-        if (geolocation.id != Isar.autoIncrement && geolocation.id != 0) {
+        // Process sensor data for database only if we haven't already processed this geolocation
+        // GPS data should now have valid IDs since it's saved before being emitted
+        if (!_processedGeolocationIds.contains(geolocation.id)) {
           // Process sensor data for this geolocation
           for (final sensorEntry in sensorData.entries) {
             final String sensorTitle = sensorEntry.key;
@@ -154,6 +159,7 @@ abstract class Sensor {
 
             if (sensorTitle == title) {
               final List<double> aggregatedValues = aggregateData(rawValues);
+              
               if (attributes.isNotEmpty) {
                 // Multi-value sensor (like finedust, surface_classification)
                 for (int j = 0;
@@ -199,6 +205,7 @@ abstract class Sensor {
         // Convert the grouped buffer data directly to the format expected by DirectUploadService
         final Map<GeolocationData, Map<String, List<double>>>
             groupedDataForUpload = {};
+        final List<GeolocationData> processedGeolocations = [];
 
         // Process the grouped buffer data directly
         for (final entry in _groupedBuffer.entries) {
@@ -219,8 +226,13 @@ abstract class Sensor {
               final List<double> aggregatedValues = aggregateData(rawValues);
               groupedDataForUpload[geolocation]![sensorTitle] =
                   aggregatedValues;
+
+
             }
           }
+          
+          // Track which GPS points have been processed for upload
+          processedGeolocations.add(geolocation);
         }
 
         final List<GeolocationData> geolocations = groupedDataForUpload.keys.toList();
@@ -229,7 +241,9 @@ abstract class Sensor {
         if (_directUploadService!.isEnabled) {
           _directUploadService!
               .addGroupedDataForUpload(groupedDataForUpload, geolocations);
-          // Clear buffer only if data was successfully added to upload service
+          
+          // Clear all processed GPS points since they should now have valid IDs
+          // (GPS data is saved to database before being emitted to sensors)
           _groupedBuffer.clear();
         } else {
           // Keep buffer data if upload service is disabled (e.g., due to connectivity issues)

@@ -36,7 +36,8 @@ class DirectUploadService {
   void enable() {
     _isEnabled = true;
     // Start timer to ensure data gets uploaded even with few GPS points
-    _uploadTimer = Timer.periodic(Duration(seconds: 30), (_) {
+    // Reduced timer to 15 seconds for more frequent uploads
+    _uploadTimer = Timer.periodic(Duration(seconds: 15), (_) {
       if (_accumulatedSensorData.isNotEmpty) {
         _prepareAndUploadData([]);
       }
@@ -68,8 +69,12 @@ class DirectUploadService {
       _accumulatedSensorData[geolocation]!.addAll(sensorData);
     }
 
-    // Check if we have enough data to upload (reduced threshold)
-    if (_accumulatedSensorData.length >= 2) {
+    // Check if we have enough data to upload (adaptive threshold)
+    // Upload immediately if we have 3+ GPS points, or if we have 2+ points and timer hasn't fired recently
+    final bool shouldUpload = _accumulatedSensorData.length >= 3 ||
+        (_accumulatedSensorData.length >= 2 && _uploadTimer != null);
+
+    if (shouldUpload) {
       _prepareAndUploadData(gpsBuffer);
     }
   }

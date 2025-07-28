@@ -70,13 +70,13 @@ class GeolocationBloc with ChangeNotifier {
           ..speed = position.speed
           ..timestamp = position.timestamp;
 
-        // Emit to stream for real-time updates
-        _geolocationController.add(geolocationData);
-
-        if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
+                if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
           geolocationData.track.value = recordingBloc.currentTrack;
-          await _saveGeolocationData(geolocationData); // Save to database
+          await _saveGeolocationData(geolocationData); // Save to database first
         }
+
+        // Emit to stream for real-time updates AFTER saving to database
+        _geolocationController.add(geolocationData);
 
         notifyListeners();
       });
@@ -109,8 +109,12 @@ class GeolocationBloc with ChangeNotifier {
       bool isInZone = isInsidePrivacyZone(privacyZones, data);
 
       if (!isInZone) {
-        // Save the geolocation data first
-        await isarService.geolocationService.saveGeolocationData(data);
+        // Save the geolocation data first and get the assigned ID
+        final savedId =
+            await isarService.geolocationService.saveGeolocationData(data);
+
+        // Update the GPS object's ID with the actual database ID
+        data.id = savedId;
         
         // Create and save GPS speed as SensorData for consistent UI display
         if (data.speed > 0) {
