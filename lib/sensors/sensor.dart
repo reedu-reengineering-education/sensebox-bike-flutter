@@ -150,8 +150,19 @@ abstract class Sensor {
         final Map<String, List<List<double>>> sensorData = entry.value;
 
         // Process sensor data for database only if we haven't already processed this geolocation
-        // GPS data should now have valid IDs since it's saved before being emitted
+        // If GPS point doesn't have a valid ID, save it to database first
         if (!_processedGeolocationIds.contains(geolocation.id)) {
+          // Ensure GPS point is saved to database before linking SensorData
+          if (geolocation.id == Isar.autoIncrement || geolocation.id == 0) {
+            try {
+              final savedId = await isarService.geolocationService
+                  .saveGeolocationData(geolocation);
+              geolocation.id = savedId;
+            } catch (e) {
+              // If saving fails, skip this GPS point for database but still include in upload
+              continue;
+            }
+          }
           // Process sensor data for this geolocation
           for (final sensorEntry in sensorData.entries) {
             final String sensorTitle = sensorEntry.key;
