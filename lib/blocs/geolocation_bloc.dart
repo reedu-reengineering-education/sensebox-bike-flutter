@@ -117,12 +117,9 @@ class GeolocationBloc with ChangeNotifier {
         data.id = savedId;
         
         // Create and save GPS speed as SensorData for consistent UI display
-        if (data.speed > 0) {
-          final gpsSpeedSensorData =
-                          createGpsSpeedSensorData(data);
-          if (shouldStoreSensorData(gpsSpeedSensorData)) {
-            await isarService.sensorService.saveSensorData(gpsSpeedSensorData);
-          }
+        final gpsSpeedSensorData = createGpsSpeedSensorData(data);
+        if (shouldStoreSensorData(gpsSpeedSensorData)) {
+          await isarService.sensorService.saveSensorData(gpsSpeedSensorData);
         }
       }
     } catch (e) {

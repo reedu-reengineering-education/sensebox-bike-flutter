@@ -83,11 +83,19 @@ abstract class Sensor {
         
         // Force flush if buffer gets too large to prevent memory issues
         if (_groupedBuffer.length > 50) {
+          print('Sensor $title: Buffer size exceeded 50, forcing flush');
           _flushBuffers();
         }
       } else {
         // Store sensor data in temporary buffer until first GPS point arrives
         _preGpsSensorBuffer.add(data);
+        
+        // Log when sensor data is buffered without GPS
+        if (_preGpsSensorBuffer.length % 10 == 0) {
+          // Log every 10th buffer entry
+          print(
+              'Sensor $title: ${_preGpsSensorBuffer.length} data points buffered without GPS location');
+        }
       }
     }
     _valueController.add(data);
@@ -110,6 +118,11 @@ abstract class Sensor {
             _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
             _groupedBuffer[_lastGeolocation!]![title]!
                 .addAll(_preGpsSensorBuffer);
+            
+            // Log when pre-GPS buffer is flushed
+            print(
+                'Sensor $title: Flushed ${_preGpsSensorBuffer.length} pre-GPS data points to GPS location ${geo.latitude}, ${geo.longitude}');
+                
             _preGpsSensorBuffer.clear();
           }
         }
@@ -139,6 +152,16 @@ abstract class Sensor {
     if (_recordingListener != null) {
       recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
       _recordingListener = null;
+    }
+
+    // Check for any remaining buffered data before stopping
+    if (_preGpsSensorBuffer.isNotEmpty) {
+      print(
+          'Sensor $title: ${_preGpsSensorBuffer.length} pre-GPS data points remaining when stopping');
+    }
+    if (_groupedBuffer.isNotEmpty) {
+      print(
+          'Sensor $title: ${_groupedBuffer.length} GPS points with buffered data remaining when stopping');
     }
 
     await _flushBuffers();
@@ -183,8 +206,10 @@ abstract class Sensor {
               // Update the original GPS object with the saved ID
               geolocation.id = savedId;
             } catch (e) {
-              // If saving fails, skip this GPS point for database but still include in upload
-              continue;
+              // Log the error but don't skip the GPS point - try to save sensor data anyway
+              print(
+                  'Failed to save GPS point for sensor data: $e. GPS: ${geolocation.latitude}, ${geolocation.longitude}, ${geolocation.timestamp}');
+              // Don't continue here - try to save sensor data even if GPS save failed
             }
           }
           // Process sensor data for this geolocation
@@ -230,9 +255,18 @@ abstract class Sensor {
         }
       }
 
-      // Save sensor data to database
+      // Save sensor data to database with better error handling
       if (batch.isNotEmpty) {
-        await isarService.sensorService.saveSensorDataBatch(batch);
+        try {
+          await isarService.sensorService.saveSensorDataBatch(batch);
+          print(
+              'Successfully saved ${batch.length} sensor data points for sensor $title');
+        } catch (e) {
+          print(
+              'Failed to save sensor data batch for sensor $title: $e. Batch size: ${batch.length}');
+          // Don't clear buffer on save failure - data will be retried
+          return;
+        }
       }
 
       // Send data for direct upload if enabled - use grouped buffer data directly
@@ -287,6 +321,8 @@ abstract class Sensor {
         // Clear buffer if no upload service available or not recording
         _groupedBuffer.clear();
       }
+    } catch (e) {
+      print('Error in _flushBuffers for sensor $title: $e');
     } finally {
       // Only reset flushing flag, don't clear buffer here
       _isFlushing = false;
