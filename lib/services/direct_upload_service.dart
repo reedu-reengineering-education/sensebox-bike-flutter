@@ -28,7 +28,9 @@ class DirectUploadService {
   final Map<GeolocationData, Map<String, List<double>>> _accumulatedSensorData =
       {};
   bool _isEnabled = false;
+  bool _isManuallyDisabled = false;
   Timer? _uploadTimer;
+  Timer? _restartTimer;
 
   DirectUploadService({
     required this.openSenseMapService,
@@ -38,6 +40,7 @@ class DirectUploadService {
 
   void enable() {
     _isEnabled = true;
+    _isManuallyDisabled = false;
     // Start timer to ensure data gets uploaded even with few GPS points
     // Reduced timer to 15 seconds for more frequent uploads
     _uploadTimer = Timer.periodic(Duration(seconds: 15), (_) {
@@ -49,14 +52,33 @@ class DirectUploadService {
 
   void disable() {
     _isEnabled = false;
+    _isManuallyDisabled = true;
     _uploadTimer?.cancel();
     _uploadTimer = null;
+    _restartTimer?.cancel();
+    _restartTimer = null;
   }
 
   bool get isEnabled => _isEnabled;
 
   void setUploadSuccessCallback(Function(List<GeolocationData>) callback) {
     _onUploadSuccess = callback;
+  }
+
+  void _scheduleRestart() {
+    // Cancel any existing restart timer
+    _restartTimer?.cancel();
+
+    // Schedule restart after 5 minutes
+    _restartTimer = Timer(Duration(seconds: 30), () {
+      if (!_isEnabled && !_isManuallyDisabled) {
+        ErrorService.handleError(
+            'Direct upload: Auto-restarting service after API error timeout.',
+            StackTrace.current,
+            sendToSentry: true);
+        enable();
+      }
+    });
   }
 
 
@@ -191,11 +213,15 @@ class DirectUploadService {
             ? 'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.'
             : 'Permanent connectivity failure: Max retries ($maxRetries) exceeded.';
         ErrorService.handleError(message, st, sendToSentry: true);
-        disable(); // Disable service on permanent failure
+        
+        // Instead of permanently disabling, schedule a restart
+        _isEnabled = false;
+        _uploadTimer?.cancel();
+        _uploadTimer = null;
+        _scheduleRestart();
       } else {
-
-        // Note: We don't delay here since this is called from sensor buffer flush
-        // The delay will happen naturally when the next buffer flush occurs
+        // For temporary errors, also schedule a restart after a shorter timeout
+        _scheduleRestart();
       }
     } finally {
       _isDirectUploading = false;
@@ -212,6 +238,8 @@ class DirectUploadService {
     _isDirectUploading = false;
     _uploadTimer?.cancel();
     _uploadTimer = null;
+    _restartTimer?.cancel();
+    _restartTimer = null;
     _directUploadBuffer.clear();
     _accumulatedSensorData.clear();
   }
