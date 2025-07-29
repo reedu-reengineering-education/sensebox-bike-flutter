@@ -14,6 +14,9 @@ class DirectUploadService {
   final SettingsBloc settingsBloc;
   final SenseBox senseBox;
   final UploadDataPreparer _dataPreparer;
+  
+  // Callback to notify when upload succeeds
+  Function(List<GeolocationData>)? _onUploadSuccess;
 
   // vars to handle connectivity issues (same as LiveUploadService)
   DateTime? _lastSuccessfulUpload;
@@ -52,10 +55,16 @@ class DirectUploadService {
 
   bool get isEnabled => _isEnabled;
 
-  void addGroupedDataForUpload(
+  void setUploadSuccessCallback(Function(List<GeolocationData>) callback) {
+    _onUploadSuccess = callback;
+  }
+
+
+
+  bool addGroupedDataForUpload(
       Map<GeolocationData, Map<String, List<double>>> groupedData,
       List<GeolocationData> gpsBuffer) {
-    if (!_isEnabled) return;
+    if (!_isEnabled) return false;
 
     // Accumulate sensor data from all sensors
     for (final entry in groupedData.entries) {
@@ -77,22 +86,31 @@ class DirectUploadService {
     if (shouldUpload) {
       _prepareAndUploadData(gpsBuffer);
     }
+    
+    return true; // Data was successfully added to buffer
   }
 
   void _prepareAndUploadData(List<GeolocationData> gpsBuffer) {
     if (_accumulatedSensorData.isEmpty) return;
+
+    // Store the GPS points that are being uploaded
+    final List<GeolocationData> gpsPointsBeingUploaded =
+        _accumulatedSensorData.keys.toList();
 
     // Prepare upload data from accumulated sensor data
     final uploadData = _dataPreparer.prepareDataFromGroupedData(
         _accumulatedSensorData, gpsBuffer);
     _directUploadBuffer.add(uploadData);
 
-    // Clear accumulated data after preparing upload
-    _accumulatedSensorData.clear();
-
     // Upload if buffer is ready
     if (_directUploadBuffer.length >= 10) {
-      _uploadDirectBuffer();
+      _uploadDirectBuffer().then((_) {
+        // Notify success callback with the GPS points that were uploaded
+        _onUploadSuccess?.call(gpsPointsBeingUploaded);
+      }).catchError((e) {
+        // Upload failed, don't notify success callback
+        // Data will be retried on next flush
+      });
     }
   }
 
@@ -105,6 +123,14 @@ class DirectUploadService {
     // Upload any remaining buffered data
     if (_directUploadBuffer.isNotEmpty) {
       await _uploadDirectBuffer();
+    }
+    
+    // If there's still accumulated data after upload attempts, report it
+    if (_accumulatedSensorData.isNotEmpty) {
+      ErrorService.handleError(
+          'Direct upload: ${_accumulatedSensorData.length} GPS points still in buffer after upload attempts. Data may be lost.',
+          StackTrace.current,
+          sendToSentry: true);
     }
   }
 
@@ -125,12 +151,20 @@ class DirectUploadService {
       if (data.isEmpty) return;
 
       await _uploadDirectBufferWithRetry(data);
-      // Only clear the buffer after successful upload
+      
+      // Only clear buffers after successful upload
       _directUploadBuffer.clear();
+      _accumulatedSensorData.clear();
+      
       // Track successful upload
       _lastSuccessfulUpload = DateTime.now();
       _consecutiveFails = 0;
     } catch (e, st) {
+      // Report API errors to Sentry for tracking missing data
+      ErrorService.handleError(
+          'Direct upload API error: $e. Data buffers preserved for retry.', st,
+          sendToSentry: true);
+      
       // Check if this is a true authentication failure (no refresh token or invalid refresh token)
       if (e.toString().contains('No refresh token found') ||
           e.toString().contains('Failed to refresh token')) {
@@ -156,12 +190,10 @@ class DirectUploadService {
         final message = isPermanentConnectivityIssue
             ? 'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.'
             : 'Permanent connectivity failure: Max retries ($maxRetries) exceeded.';
-        ErrorService.handleError(message, st);
+        ErrorService.handleError(message, st, sendToSentry: true);
         disable(); // Disable service on permanent failure
       } else {
-        // Log retry attempt (same as LiveUploadService)
-        debugPrint(
-            'Failed to upload data: $e. Retrying in $retryPeriod minutes (Attempt $_consecutiveFails of $maxRetries).');
+
         // Note: We don't delay here since this is called from sensor buffer flush
         // The delay will happen naturally when the next buffer flush occurs
       }

@@ -32,6 +32,7 @@ abstract class Sensor {
   bool _isFlushing = false; // Add flag to prevent multiple simultaneous flushes
   final Set<int> _processedGeolocationIds =
       {}; // Track processed geolocation IDs
+  final Set<int> _uploadedGeolocationIds = {}; // Track uploaded geolocation IDs
 
   Sensor(
     this.characteristicUuid,
@@ -51,6 +52,25 @@ abstract class Sensor {
 
   void setDirectUploadService(DirectUploadService uploadService) {
     _directUploadService = uploadService;
+    
+    // Set up upload success callback to clear successfully uploaded GPS points
+    uploadService.setUploadSuccessCallback((uploadedGpsPoints) {
+      for (final gpsPoint in uploadedGpsPoints) {
+        _uploadedGeolocationIds.add(gpsPoint.id);
+      }
+
+      // Clear GPS points that have been successfully uploaded
+      final List<GeolocationData> pointsToRemove = [];
+      for (final entry in _groupedBuffer.entries) {
+        if (_uploadedGeolocationIds.contains(entry.key.id)) {
+          pointsToRemove.add(entry.key);
+        }
+      }
+
+      for (final point in pointsToRemove) {
+        _groupedBuffer.remove(point);
+      }
+    });
   }
 
   void onDataReceived(List<double> data) {
@@ -128,6 +148,8 @@ abstract class Sensor {
     await _flushBuffers();
   }
 
+
+
   Future<void> _flushBuffers() async {
     if (_groupedBuffer.isEmpty) {
       return;
@@ -157,6 +179,8 @@ abstract class Sensor {
             try {
               final savedId = await isarService.geolocationService
                   .saveGeolocationData(geolocation);
+              
+              // Update the original GPS object with the saved ID
               geolocation.id = savedId;
             } catch (e) {
               // If saving fails, skip this GPS point for database but still include in upload
@@ -250,12 +274,11 @@ abstract class Sensor {
         
         // Only send data if DirectUploadService is enabled
         if (_directUploadService!.isEnabled) {
-          _directUploadService!
+          final bool dataAdded = _directUploadService!
               .addGroupedDataForUpload(groupedDataForUpload, geolocations);
           
-          // Clear all processed GPS points since they should now have valid IDs
-          // (GPS data is saved to database before being emitted to sensors)
-          _groupedBuffer.clear();
+          // Don't clear buffer here - it will be cleared via upload success callback
+          // This ensures data is preserved if upload fails
         } else {
           // Keep buffer data if upload service is disabled (e.g., due to connectivity issues)
           // Data will be retried on next flush when service is re-enabled
