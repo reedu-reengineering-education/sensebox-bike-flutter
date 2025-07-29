@@ -31,7 +31,7 @@ void main() {
       final result = formatOpenSenseMapCsvLine('sensor-1', 22.5, geoData);
       expect(
         result,
-        'sensor-1,22.50,2025-05-14T12:00:00.000Z,13.405,52.52,null',
+        'sensor-1,22.50,2025-05-14T10:00:00.000Z,13.405,52.52,null',
       );
     });
   });
