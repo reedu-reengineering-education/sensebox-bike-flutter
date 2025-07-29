@@ -40,6 +40,10 @@ void main() {
       );
     });
 
+    tearDown(() {
+      directUploadService.dispose();
+    });
+
     test('handles authentication errors gracefully', () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
@@ -64,6 +68,7 @@ void main() {
 
       directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
       await directUploadService.uploadRemainingBufferedData();
+      
       // Service should remain enabled because OpenSenseMapService handles token refresh
       expect(directUploadService.isEnabled, true);
     });
@@ -71,10 +76,10 @@ void main() {
     test('handles 401 errors gracefully', () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
+      
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
           .thenThrow(Exception('401 Unauthorized'));
 
-      // Create test data
       final gpsBuffer = [
         GeolocationData()
           ..latitude = 10.0
@@ -93,34 +98,6 @@ void main() {
       await directUploadService.uploadRemainingBufferedData();
 
       // Service should remain enabled because OpenSenseMapService handles token refresh
-      expect(directUploadService.isEnabled, true);
-    });
-
-    test('continues to work normally for non-authentication errors', () async {
-      directUploadService.enable();
-      expect(directUploadService.isEnabled, true);
-
-      when(() => mockOpenSenseMapService.uploadData(any(), any()))
-          .thenThrow(Exception('Network timeout'));
-
-      final gpsBuffer = [
-        GeolocationData()
-          ..latitude = 10.0
-          ..longitude = 20.0
-          ..speed = 5.0
-          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
-      ];
-
-      final groupedData = {
-        gpsBuffer[0]: {
-          'temperature': [22.5],
-        },
-      };
-
-      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
-      await directUploadService.uploadRemainingBufferedData();
-
-      // Verify that the service remains enabled for non-authentication errors
       expect(directUploadService.isEnabled, true);
     });
 
@@ -180,6 +157,103 @@ void main() {
 
       // Service should be disabled for failed token refresh
       expect(directUploadService.isEnabled, false);
+    });
+
+    test('handles network errors and schedules restart', () async {
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+
+      // Setup mock to throw network timeout error
+      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+          .thenThrow(Exception('Network timeout'));
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.5],
+        },
+      };
+
+      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      
+      // Call upload once - it should fail and disable the service
+      await directUploadService.uploadRemainingBufferedData();
+      
+      // Service should be temporarily disabled after network errors
+      expect(directUploadService.isEnabled, false);
+    });
+
+    test('successful upload clears buffers and resets counters', () async {
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+
+      // Setup mock to succeed
+      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+          .thenAnswer((_) async {});
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.5],
+        },
+      };
+
+      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      await directUploadService.uploadRemainingBufferedData();
+
+      // Service should remain enabled after successful upload
+      expect(directUploadService.isEnabled, true);
+    });
+
+    test('can be manually re-enabled after being disabled', () async {
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+
+      // Disable the service
+      directUploadService.disable();
+      expect(directUploadService.isEnabled, false);
+
+      // Re-enable the service
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+    });
+
+    test('returns false when adding data while disabled', () async {
+      // Start with disabled service
+      expect(directUploadService.isEnabled, false);
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.5],
+        },
+      };
+
+      // Should return false when service is disabled
+      final result =
+          directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      expect(result, false);
     });
   });
 } 
