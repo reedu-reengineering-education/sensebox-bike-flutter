@@ -5,12 +5,14 @@ import 'package:mocktail/mocktail.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../test_helpers.dart';
+import '../../mocks.dart';
 
 class MockLaunchUrl extends Mock {
   Future<bool> call(Uri url, {LaunchMode mode});
@@ -27,6 +29,7 @@ void main() {
   late SettingsBloc mockSettingsBloc;
   late MockTrackBloc mockTrackBloc;
   late MockIsarService mockIsarService;
+  late MockOpenSenseMapBloc mockOpenSenseMapBloc;
 
   setUpAll(() {
     // Register fallback values for Uri and LaunchMode
@@ -51,6 +54,7 @@ void main() {
     mockSettingsBloc = SettingsBloc();
     mockTrackBloc = MockTrackBloc();
     mockIsarService = MockIsarService();
+    mockOpenSenseMapBloc = MockOpenSenseMapBloc();
 
     when(() => mockTrackBloc.isarService).thenReturn(mockIsarService);
   });
@@ -67,6 +71,8 @@ void main() {
           providers: [
             ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
             Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockOpenSenseMapBloc),
           ],
         child: SettingsScreen(launchUrlFunction: mockLaunchUrl.call),
       ),
@@ -112,6 +118,8 @@ void main() {
           providers: [
             ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
             Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockOpenSenseMapBloc),
           ],
           child: const SettingsScreen(),
         ),
@@ -143,6 +151,8 @@ void main() {
           providers: [
             ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
             Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockOpenSenseMapBloc),
           ],
           child: const SettingsScreen(),
         ),
