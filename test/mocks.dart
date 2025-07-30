@@ -49,6 +49,21 @@ class MockOpenSenseMapBloc extends Mock
   Future<void> logout() async {
     isAuthenticated = false;
   }
+
+  @override
+  Future<Map<String, dynamic>?> getUserData() async {
+    if (!isAuthenticated) {
+      return null;
+    }
+    return {
+      'data': {
+        'me': {
+          'email': 'test@example.com',
+          'name': 'Test User',
+        }
+      }
+    };
+  }
   
   @override
   Future<Map<String, dynamic>?> get userData => Future.value(null);

@@ -22,6 +22,19 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   bool get isAuthenticated => _isAuthenticated;
   List<dynamic> get senseBoxes => _senseBoxes.values.expand((e) => e).toList();
 
+  Future<Map<String, dynamic>?> getUserData() async {
+    try {
+      return await _service.getUserData();
+    } catch (e) {
+      // Handle authentication exceptions gracefully
+      if (e.toString().contains('Not authenticated')) {
+        _isAuthenticated = false;
+        notifyListeners();
+      }
+      return null;
+    }
+  }
+
   OpenSenseMapBloc() {
     _initializeAuth();
   }
@@ -89,6 +102,10 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       await _service.register(name, email, password);
       _isAuthenticated = true;
+      // Clear senseBox cache for new account
+      _senseBoxes.clear();
+      _selectedSenseBox = null;
+      _senseBoxController.add(null);
       notifyListeners();
     } catch (e) {
       _isAuthenticated = false;
@@ -137,7 +154,13 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       await _service.createSenseBoxBike(
           name, latitude, longitude, model, selectedTag);
     } catch (e, stack) {
-      ErrorService.handleError(e, stack);
+      // Handle authentication exceptions gracefully
+      if (e.toString().contains('Not authenticated')) {
+        _isAuthenticated = false;
+        notifyListeners();
+      } else {
+        ErrorService.handleError(e, stack);
+      }
     }
   }
 
@@ -163,7 +186,12 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _senseBoxes[page] = myBoxes;
       notifyListeners();
       return myBoxes;
-    } catch (_) {
+    } catch (e) {
+      // Handle authentication exceptions gracefully
+      if (e.toString().contains('Not authenticated')) {
+        _isAuthenticated = false;
+        notifyListeners();
+      }
       return [];
     }
   }

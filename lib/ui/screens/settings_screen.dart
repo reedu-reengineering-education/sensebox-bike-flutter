@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
+import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/services/isar_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   final Future<bool> Function(Uri url, {LaunchMode mode}) launchUrlFunction;
@@ -22,6 +25,8 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingsBloc = Provider.of<SettingsBloc>(context);
+    final OpenSenseMapBloc openSenseMapBloc =
+        Provider.of<OpenSenseMapBloc>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -29,6 +34,7 @@ class SettingsScreen extends StatelessWidget {
       ),
       body: ListView(
         children: <Widget>[
+          _buildLoginLogoutSection(context, openSenseMapBloc),
           _buildGeneralSettingsSection(context, settingsBloc),
           _buildAccountManagementSection(context),
           _buildOtherSection(context),
@@ -38,59 +44,218 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildLoginLogoutSection(
+      BuildContext context, OpenSenseMapBloc openSenseMapBloc) {
+    final isAuthenticated = openSenseMapBloc.isAuthenticated;
+    final userData = openSenseMapBloc.getUserData();
+
+    return _buildSettingsContainer(
+      context,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildUserInfoRow(context, isAuthenticated, userData),
+          const SizedBox(height: 16),
+          _buildLoginLogoutButton(context, isAuthenticated, openSenseMapBloc),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsContainer(BuildContext context,
+      {required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadiusSmall),
+        color: Theme.of(context).colorScheme.tertiary,
+      ),
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(16),
+      child: child,
+    );
+  }
+
+  Widget _buildUserInfoRow(BuildContext context, bool isAuthenticated,
+      Future<Map<String, dynamic>?> userData) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      spacing: 12,
+      children: [
+        _buildUserIcon(context),
+        if (isAuthenticated)
+          _buildAuthenticatedUserInfo(context, userData)
+        else
+          _buildUnauthenticatedUserInfo(context),
+      ],
+    );
+  }
+
+  Widget _buildUserIcon(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Theme.of(context).colorScheme.onTertiaryContainer.withAlpha(50),
+      ),
+      padding: const EdgeInsets.all(6),
+      child: Icon(
+        Icons.account_circle,
+        size: 28,
+        color: Theme.of(context).colorScheme.onTertiaryContainer,
+      ),
+    );
+  }
+
+  Widget _buildAuthenticatedUserInfo(
+      BuildContext context, Future<Map<String, dynamic>?> userData) {
+    return FutureBuilder(
+      future: userData,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        } else if (snapshot.hasError) {
+          // Handle authentication errors gracefully
+          if (snapshot.error.toString().contains('Not authenticated')) {
+            return _buildUnauthenticatedUserInfo(context);
+          }
+          return const SizedBox.shrink();
+        } else {
+          return _buildUserDataDisplay(context, snapshot.data);
+        }
+      },
+    );
+  }
+
+  Widget _buildUserDataDisplay(
+      BuildContext context, Map<String, dynamic>? userData) {
+    final user = userData?['data']?['me'];
+    final email = user?['email'] ?? "No email";
+    final name = user?['name'] ?? "John Doe";
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          email,
+          style: _getPrimaryTextStyle(context),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+        Text(
+          name,
+          style: _getSecondaryTextStyle(context),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUnauthenticatedUserInfo(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context)!.openSenseMapLogin,
+          style: _getPrimaryTextStyle(context),
+        ),
+        Text(
+          AppLocalizations.of(context)!.openSenseMapLoginDescription,
+          style: _getSecondaryTextStyle(context),
+          softWrap: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginLogoutButton(BuildContext context, bool isAuthenticated,
+      OpenSenseMapBloc openSenseMapBloc) {
+    return ButtonWithLoader(
+      inverted: Theme.of(context).brightness == Brightness.light,
+      isLoading: false,
+      onPressed: () =>
+          _handleLoginLogoutAction(context, isAuthenticated, openSenseMapBloc),
+      text: isAuthenticated
+          ? AppLocalizations.of(context)!.generalLogout
+          : AppLocalizations.of(context)!.generalLogin,
+      width: 1,
+    );
+  }
+
+  Future<void> _handleLoginLogoutAction(BuildContext context,
+      bool isAuthenticated, OpenSenseMapBloc openSenseMapBloc) async {
+    if (isAuthenticated) {
+      await openSenseMapBloc.logout();
+    } else {
+      await _showModalBottomSheet(context, _buildLoginModalContent);
+    }
+  }
+
+  Future<void> _showModalBottomSheet(BuildContext context,
+      Widget Function(BuildContext) contentBuilder) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => contentBuilder(context),
+    );
+  }
+
+  Widget _buildLoginModalContent(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.9,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(borderRadius),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.only(top: 16),
+          child: LoginScreen(),
+        ),
+      ),
+    );
+  }
+
+  TextStyle _getPrimaryTextStyle(BuildContext context) {
+    return TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: Theme.of(context).colorScheme.onTertiaryContainer,
+    );
+  }
+
+  TextStyle _getSecondaryTextStyle(BuildContext context) {
+    return TextStyle(
+      color: Theme.of(context).colorScheme.onTertiaryContainer,
+    );
+  }
+
   Widget _buildAccountManagementSection(BuildContext context) {
     final isarService = Provider.of<TrackBloc>(context).isarService;
     final localizations = AppLocalizations.of(context)!;
-    bool isDeleting = false;
 
     return StatefulBuilder(
       builder: (context, setState) {
+        bool isDeleting = false;
+        
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionHeader(context, localizations.accountManagement),
             Center(
-              child: ButtonWithLoader(
-                isLoading: isDeleting,
-                onPressed: isDeleting
-                    ? null
-                    : () async {
-                        final confirmation = await showCustomDialog(
-                          context: context,
-                          message:
-                              localizations.settingsDeleteAllDataConfirmation,
-                          type: DialogType.confirmation,
-                        );
-
-                        if (confirmation == true) {
-                          setState(() {
-                            isDeleting = true;
-                          });
-
-                          try {
-                            await isarService.deleteAllData();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    localizations.settingsDeleteAllDataSuccess),
-                              ),
-                            );
-                          } catch (error) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    localizations.settingsDeleteAllDataError),
-                              ),
-                            );
-                          } finally {
-                            setState(() {
-                              isDeleting = false;
-                            });
-                          }
-                        }
-                      },
-                text: localizations.settingsDeleteAllData,
-                width: 0.7,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _buildActionButton(
+                  context: context,
+                  text: localizations.settingsDeleteAllData,
+                  isLoading: isDeleting,
+                  onPressed: () => _handleDeleteAllData(
+                      context,
+                      isarService,
+                      localizations,
+                      setState,
+                      () => isDeleting = true,
+                      () => isDeleting = false),
+                ),
               ),
             ),
             Hint(text: localizations.deleteAllHint),
@@ -98,6 +263,62 @@ class SettingsScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Widget _buildActionButton({
+    required BuildContext context,
+    required String text,
+    required VoidCallback onPressed,
+    bool isLoading = false,
+  }) {
+    return ButtonWithLoader(
+      isLoading: isLoading,
+      onPressed: isLoading ? null : onPressed,
+      text: text,
+      width: 1,
+    );
+  }
+
+  Future<void> _handleDeleteAllData(
+    BuildContext context,
+    IsarService isarService,
+    AppLocalizations localizations,
+    StateSetter setState,
+    VoidCallback setLoading,
+    VoidCallback clearLoading,
+  ) async {
+    final confirmation = await showCustomDialog(
+      context: context,
+      message: localizations.settingsDeleteAllDataConfirmation,
+      type: DialogType.confirmation,
+    );
+
+    if (confirmation == true) {
+      setLoading();
+      setState(() {});
+
+      try {
+        await isarService.deleteAllData();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localizations.settingsDeleteAllDataSuccess),
+            ),
+          );
+        }
+      } catch (error) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localizations.settingsDeleteAllDataError),
+            ),
+          );
+        }
+      } finally {
+        clearLoading();
+        setState(() {});
+      }
+    }
   }
 
   // General Settings Section

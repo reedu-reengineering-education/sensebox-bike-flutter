@@ -224,4 +224,87 @@ void main() {
       await expectLater(service.uploadData('id', { "data": "data" }), throwsException);
     });
   });
+
+  group('getUserData()', () {
+    test('when success, retrieves user data', () async {
+      await setTokens();
+      mockHTTPGETResponse(
+          '{"name": "Test User", "email": "test@example.com"}', 200);
+
+      var userData = await service.getUserData();
+
+      expect(userData, {"name": "Test User", "email": "test@example.com"});
+    });
+
+    test('when no accessToken, throws error', () async {
+      mockHTTPGETResponse(
+          '{"name": "Test User", "email": "test@example.com"}', 200);
+
+      await expectLater(service.getUserData(), throwsException);
+    });
+
+    test('when receives 401, refreshes token and retries once', () async {
+      await setTokens();
+
+      int callCount = 0;
+      when(() => mockHttpClient.get(
+            any(),
+            headers: any(named: 'headers'),
+          )).thenAnswer((_) async {
+        callCount++;
+        if (callCount == 1) {
+          return http.Response('Unauthorized', 401);
+        } else {
+          return http.Response(
+              '{"name": "Test User", "email": "test@example.com"}', 200);
+        }
+      });
+
+      // Mock successful token refresh
+      mockHTTPPOSTResponse(
+          '{"token": "new_token", "refreshToken": "new_refresh"}', 200);
+
+      var userData = await service.getUserData();
+
+      expect(userData, {"name": "Test User", "email": "test@example.com"});
+    });
+
+    test('when receives 401 after token refresh, throws exception', () async {
+      await setTokens();
+      // Both calls return 401
+      when(() => mockHttpClient.get(
+            any(),
+            headers: any(named: 'headers'),
+          )).thenAnswer((_) async => http.Response('Unauthorized', 401));
+
+      // Mock successful token refresh
+      mockHTTPPOSTResponse(
+          '{"token": "new_token", "refreshToken": "new_refresh"}', 200);
+
+      await expectLater(service.getUserData(), throwsException);
+    });
+
+    test('when token refresh fails, throws exception', () async {
+      await setTokens();
+      // First call returns 401
+      when(() => mockHttpClient.get(
+            any(),
+            headers: any(named: 'headers'),
+          )).thenAnswer((_) async => http.Response('Unauthorized', 401));
+
+      // Mock failed token refresh
+      mockHTTPPOSTResponse('{"error": "Invalid refresh token"}', 400);
+
+      await expectLater(service.getUserData(), throwsException);
+    });
+
+    test('when receives error response other than 401, throws error', () async {
+      await setTokens();
+      mockHTTPGETResponse('error', 500);
+
+      await expectLater(service.getUserData(), throwsException);
+    });
+  });
+
+  
 }

@@ -107,6 +107,7 @@ void main() {
           mode: any(named: 'mode'),
         )).called(1);
   });
+
   testWidgets('shows confirmation dialog and deletes data when confirmed',
       (WidgetTester tester) async {
     when(() => mockIsarService.deleteAllData()).thenAnswer((_) async {});
@@ -170,5 +171,187 @@ void main() {
     await tester.pumpAndSettle();
 
     verifyNever(() => mockIsarService.deleteAllData());
+  });
+
+  testWidgets('shows login button when not authenticated',
+      (WidgetTester tester) async {
+    // Ensure mock is not authenticated
+    mockOpenSenseMapBloc.isAuthenticated = false;
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
+            Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockOpenSenseMapBloc),
+          ],
+          child: const SettingsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Login'), findsOneWidget);
+  });
+
+  testWidgets(
+      'shows logout button when authenticated and calls logout when tapped',
+      (WidgetTester tester) async {
+    // Create a proper mock for verification
+    final mockBlocForVerification = MockOpenSenseMapBloc();
+    mockBlocForVerification.isAuthenticated = true;
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
+            Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockBlocForVerification),
+          ],
+          child: const SettingsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Logout'), findsOneWidget);
+
+    await tester.tap(find.text('Logout'));
+    await tester.pumpAndSettle();
+
+    expect(mockBlocForVerification.isAuthenticated, false);
+  });
+
+  testWidgets('displays user data when authenticated',
+      (WidgetTester tester) async {
+    // Set up authenticated user with mock data
+    mockOpenSenseMapBloc.isAuthenticated = true;
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
+            Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockOpenSenseMapBloc),
+          ],
+          child: const SettingsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('test@example.com'), findsOneWidget);
+    expect(find.text('Test User'), findsOneWidget);
+  });
+
+  testWidgets('shows error message when data deletion fails',
+      (WidgetTester tester) async {
+    when(() => mockIsarService.deleteAllData()).thenThrow('Database error');
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
+            Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockOpenSenseMapBloc),
+          ],
+          child: const SettingsScreen(),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Delete All Data'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Ok'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Failed to delete all data. Please try again.'),
+        findsOneWidget);
+  });
+
+  testWidgets('handles URL launch failures gracefully',
+      (WidgetTester tester) async {
+    when(() => mockLaunchUrl.call(any(), mode: any(named: 'mode')))
+        .thenThrow('URL launch failed');
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
+            Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockOpenSenseMapBloc),
+          ],
+          child: SettingsScreen(launchUrlFunction: mockLaunchUrl.call),
+        ),
+      ),
+    );
+
+    await tester.scrollUntilVisible(find.text('Privacy Policy'), 200.0);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Privacy Policy'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsScreen), findsOneWidget);
+  });
+
+  testWidgets('displays privacy zones count badge',
+      (WidgetTester tester) async {
+    mockSettingsBloc.privacyZones.addAll(['Zone 1', 'Zone 2']);
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
+            Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockOpenSenseMapBloc),
+          ],
+          child: const SettingsScreen(),
+        ),
+      ),
+    );
+
+    await tester.scrollUntilVisible(find.text('Privacy Zones'), 200.0);
+    await tester.pumpAndSettle();
+
+    expect(find.text('2'), findsOneWidget);
+  });
+
+  testWidgets('shows all required sections', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
+            Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockOpenSenseMapBloc),
+          ],
+          child: const SettingsScreen(),
+        ),
+      ),
+    );
+
+    expect(find.text('General'), findsOneWidget);
+    expect(find.text('Account Management'), findsOneWidget);
   });
 }
