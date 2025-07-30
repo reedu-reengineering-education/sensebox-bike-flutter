@@ -47,7 +47,7 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildLoginLogoutSection(
       BuildContext context, OpenSenseMapBloc openSenseMapBloc) {
     final isAuthenticated = openSenseMapBloc.isAuthenticated;
-    final userData = openSenseMapBloc.userData;
+    final userData = openSenseMapBloc.getUserData();
 
     return _buildSettingsContainer(
       context,
@@ -114,6 +114,10 @@ class SettingsScreen extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
         } else if (snapshot.hasError) {
+          // Handle authentication errors gracefully
+          if (snapshot.error.toString().contains('Not authenticated')) {
+            return _buildUnauthenticatedUserInfo(context);
+          }
           return const SizedBox.shrink();
         } else {
           return _buildUserDataDisplay(context, snapshot.data);

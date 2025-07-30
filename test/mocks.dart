@@ -43,7 +43,7 @@ class MockOpenSenseMapBloc extends OpenSenseMapBloc {
   }
 
   @override
-  Future<Map<String, dynamic>?> get userData async {
+  Future<Map<String, dynamic>?> getUserData() async {
     if (!isAuthenticated) {
       return null;
     }
