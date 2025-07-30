@@ -97,22 +97,14 @@ class OpenSenseMapService {
 
   // get user data (name and email)
   Future<Map<String, dynamic>?> getUserData() async {
-    final accessToken = await getAccessToken();
-    if (accessToken == null) throw Exception('Not authenticated');
-
-    final response = await client.get(
-      Uri.parse('$_baseUrl/users/me'),
-      headers: {'Authorization': 'Bearer $accessToken'},
+    return _makeAuthenticatedRequest<Map<String, dynamic>?>(
+      requestFn: (accessToken) => client.get(
+        Uri.parse('$_baseUrl/users/me'),
+        headers: {'Authorization': 'Bearer $accessToken'},
+      ),
+      successHandler: (response) => jsonDecode(response.body),
+      errorMessage: 'Failed to load user data',
     );
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else if (response.statusCode == 401) {
-      await refreshToken();
-      return getUserData();
-    } else {
-      throw Exception('Failed to load user data');
-    }
   }
 
   Future<String?> getAccessToken() async {
@@ -141,48 +133,76 @@ class OpenSenseMapService {
     }
   }
 
-  Future<void> createSenseBoxBike(String name, double latitude,
-      double longitude, SenseBoxBikeModel model, String? selectedTag) async {
+  /// Generic method to handle authenticated requests with automatic token refresh
+  /// 
+  /// [requestFn] is a function that makes the HTTP request and returns the response
+  /// [successHandler] is a function that processes the successful response
+  /// [errorMessage] is the error message to show if the request fails after token refresh
+  Future<T> _makeAuthenticatedRequest<T>({
+    required Future<http.Response> Function(String accessToken) requestFn,
+    required T Function(http.Response response) successHandler,
+    required String errorMessage,
+  }) async {
     final accessToken = await getAccessToken();
     if (accessToken == null) throw Exception('Not authenticated');
 
-    final response = await client.post(
-      Uri.parse('$_baseUrl/boxes'),
-      body: jsonEncode(createSenseBoxBikeModel(name, latitude, longitude,
-          model: model, selectedTag: selectedTag)),
-      headers: {
-        'Authorization': 'Bearer $accessToken',
-        'Content-Type': 'application/json',
-      },
-    );
+    final response = await requestFn(accessToken);
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return successHandler(response);
     } else if (response.statusCode == 401) {
-      await refreshToken();
-      return createSenseBoxBike(name, latitude, longitude, model, selectedTag);
+      // Try to refresh token and retry once
+      try {
+        await refreshToken();
+        final newAccessToken = await getAccessToken();
+        if (newAccessToken == null) {
+          throw Exception('Not authenticated after token refresh');
+        }
+        
+        final retryResponse = await requestFn(newAccessToken);
+        
+        if (retryResponse.statusCode == 200 || retryResponse.statusCode == 201) {
+          return successHandler(retryResponse);
+        } else {
+          throw Exception('$errorMessage after token refresh');
+        }
+      } catch (refreshError) {
+        throw Exception('Failed to refresh token: $refreshError');
+      }
     } else {
-      throw Exception('Failed to create senseBox');
+      throw Exception('$errorMessage: ${response.body}');
     }
   }
 
-  Future<List<dynamic>> getSenseBoxes({int page = 0}) async {
-    final accessToken = await getAccessToken();
-    if (accessToken == null) throw Exception('Not authenticated');
-
-    final response = await client.get(
-      Uri.parse('$_baseUrl/users/me/boxes?page=$page'),
-      headers: {'Authorization': 'Bearer $accessToken'},
+  Future<void> createSenseBoxBike(String name, double latitude,
+      double longitude, SenseBoxBikeModel model, String? selectedTag) async {
+    return _makeAuthenticatedRequest<void>(
+      requestFn: (accessToken) => client.post(
+        Uri.parse('$_baseUrl/boxes'),
+        body: jsonEncode(createSenseBoxBikeModel(name, latitude, longitude,
+            model: model, selectedTag: selectedTag)),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      ),
+      successHandler: (response) {}, // void return
+      errorMessage: 'Failed to create senseBox',
     );
+  }
 
-    if (response.statusCode == 200) {
-      dynamic responseData = jsonDecode(response.body);
-      return responseData['data']['boxes'];
-    } else if (response.statusCode == 401) {
-      await refreshToken();
-      return getSenseBoxes();
-    } else {
-      throw Exception('Failed to load senseBoxes');
-    }
+  Future<List<dynamic>> getSenseBoxes({int page = 0}) async {
+    return _makeAuthenticatedRequest<List<dynamic>>(
+      requestFn: (accessToken) => client.get(
+        Uri.parse('$_baseUrl/users/me/boxes?page=$page'),
+        headers: {'Authorization': 'Bearer $accessToken'},
+      ),
+      successHandler: (response) {
+        dynamic responseData = jsonDecode(response.body);
+        return responseData['data']['boxes'];
+      },
+      errorMessage: 'Failed to load senseBoxes',
+    );
   }
 
   Future<void> uploadData(
