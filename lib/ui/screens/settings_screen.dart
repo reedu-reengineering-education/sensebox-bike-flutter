@@ -15,6 +15,7 @@ import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/services/isar_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   final Future<bool> Function(Uri url, {LaunchMode mode}) launchUrlFunction;
@@ -45,10 +46,25 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildLoginLogoutSection(
       BuildContext context, OpenSenseMapBloc openSenseMapBloc) {
-    bool isAuthenticated = openSenseMapBloc.isAuthenticated;
+    final isAuthenticated = openSenseMapBloc.isAuthenticated;
+    final userData = openSenseMapBloc.userData;
 
-    Future<Map<String, dynamic>?> userData = openSenseMapBloc.userData;
+    return _buildSettingsContainer(
+      context,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildUserInfoRow(context, isAuthenticated, userData),
+          const SizedBox(height: 16),
+          _buildLoginLogoutButton(context, isAuthenticated, openSenseMapBloc),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildSettingsContainer(BuildContext context,
+      {required Widget child}) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadiusSmall),
@@ -56,147 +72,167 @@ class SettingsScreen extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            spacing: 12,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onTertiaryContainer
-                      .withAlpha(50),
-                ),
-                padding: const EdgeInsets.all(6),
-                child: Icon(
-                  Icons.account_circle,
-                  size: 28,
-                  color: Theme.of(context).colorScheme.onTertiaryContainer,
-                ),
-              ),
-              if (isAuthenticated)
-                FutureBuilder(
-                    future: userData,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return CircularProgressIndicator();
-                      } else if (snapshot.hasError) {
-                        // Catch error and do nothing (return empty SizedBox)
-                        return const SizedBox.shrink();
-                      } else {
-                        final userData = snapshot.data;
+      child: child,
+    );
+  }
 
-                        final user = userData?['data']?['me'];
+  Widget _buildUserInfoRow(BuildContext context, bool isAuthenticated,
+      Future<Map<String, dynamic>?> userData) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      spacing: 12,
+      children: [
+        _buildUserIcon(context),
+        if (isAuthenticated)
+          _buildAuthenticatedUserInfo(context, userData)
+        else
+          _buildUnauthenticatedUserInfo(context),
+      ],
+    );
+  }
 
-                        final email = user?['email'] ?? "No email";
-                        final name = user?['name'] ?? "John Doe";
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              email,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onTertiaryContainer,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                            Text(
-                              name,
-                              style: TextStyle(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onTertiaryContainer,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ],
-                        );
-                      }
-                    })
-              else
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)!.openSenseMapLogin,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color:
-                            Theme.of(context).colorScheme.onTertiaryContainer,
-                      ),
-                    ),
-                    Text(
-                      AppLocalizations.of(context)!
-                          .openSenseMapLoginDescription,
-                      style: TextStyle(
-                        color:
-                            Theme.of(context).colorScheme.onTertiaryContainer,
-                      ),
-                      softWrap: true,
-                    ),
-                  ],
-                )
-            ],
-          ),
-          const SizedBox(height: 16),
-          ButtonWithLoader(
-            inverted: Theme.of(context).brightness == Brightness.light,
-            isLoading: false,
-            onPressed: () async {
-              if (isAuthenticated) {
-                await openSenseMapBloc.logout();
-              } else {
-                await showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (context) {
-                    return SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.9,
-                      // border radius top
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(borderRadius),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: LoginScreen(),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }
-            },
-            text: isAuthenticated
-                ? AppLocalizations.of(context)!.generalLogout
-                : AppLocalizations.of(context)!.generalLogin,
-            width: 1,
-          ),
-          const SizedBox(height: 8),
-        ],
+  Widget _buildUserIcon(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Theme.of(context).colorScheme.onTertiaryContainer.withAlpha(50),
       ),
+      padding: const EdgeInsets.all(6),
+      child: Icon(
+        Icons.account_circle,
+        size: 28,
+        color: Theme.of(context).colorScheme.onTertiaryContainer,
+      ),
+    );
+  }
+
+  Widget _buildAuthenticatedUserInfo(
+      BuildContext context, Future<Map<String, dynamic>?> userData) {
+    return FutureBuilder(
+      future: userData,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        } else if (snapshot.hasError) {
+          return const SizedBox.shrink();
+        } else {
+          return _buildUserDataDisplay(context, snapshot.data);
+        }
+      },
+    );
+  }
+
+  Widget _buildUserDataDisplay(
+      BuildContext context, Map<String, dynamic>? userData) {
+    final user = userData?['data']?['me'];
+    final email = user?['email'] ?? "No email";
+    final name = user?['name'] ?? "John Doe";
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          email,
+          style: _getPrimaryTextStyle(context),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+        Text(
+          name,
+          style: _getSecondaryTextStyle(context),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUnauthenticatedUserInfo(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context)!.openSenseMapLogin,
+          style: _getPrimaryTextStyle(context),
+        ),
+        Text(
+          AppLocalizations.of(context)!.openSenseMapLoginDescription,
+          style: _getSecondaryTextStyle(context),
+          softWrap: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginLogoutButton(BuildContext context, bool isAuthenticated,
+      OpenSenseMapBloc openSenseMapBloc) {
+    return ButtonWithLoader(
+      inverted: Theme.of(context).brightness == Brightness.light,
+      isLoading: false,
+      onPressed: () =>
+          _handleLoginLogoutAction(context, isAuthenticated, openSenseMapBloc),
+      text: isAuthenticated
+          ? AppLocalizations.of(context)!.generalLogout
+          : AppLocalizations.of(context)!.generalLogin,
+      width: 1,
+    );
+  }
+
+  Future<void> _handleLoginLogoutAction(BuildContext context,
+      bool isAuthenticated, OpenSenseMapBloc openSenseMapBloc) async {
+    if (isAuthenticated) {
+      await openSenseMapBloc.logout();
+    } else {
+      await _showModalBottomSheet(context, _buildLoginModalContent);
+    }
+  }
+
+  Future<void> _showModalBottomSheet(BuildContext context,
+      Widget Function(BuildContext) contentBuilder) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => contentBuilder(context),
+    );
+  }
+
+  Widget _buildLoginModalContent(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.9,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(borderRadius),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.only(top: 16),
+          child: LoginScreen(),
+        ),
+      ),
+    );
+  }
+
+  TextStyle _getPrimaryTextStyle(BuildContext context) {
+    return TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: Theme.of(context).colorScheme.onTertiaryContainer,
+    );
+  }
+
+  TextStyle _getSecondaryTextStyle(BuildContext context) {
+    return TextStyle(
+      color: Theme.of(context).colorScheme.onTertiaryContainer,
     );
   }
 
   Widget _buildAccountManagementSection(BuildContext context) {
     final isarService = Provider.of<TrackBloc>(context).isarService;
     final localizations = AppLocalizations.of(context)!;
-    bool isDeleting = false;
 
     return StatefulBuilder(
       builder: (context, setState) {
+        bool isDeleting = false;
+        
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -204,47 +240,17 @@ class SettingsScreen extends StatelessWidget {
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ButtonWithLoader(
-                  isLoading: isDeleting,
-                  onPressed: isDeleting
-                      ? null
-                      : () async {
-                          final confirmation = await showCustomDialog(
-                            context: context,
-                            message:
-                                localizations.settingsDeleteAllDataConfirmation,
-                            type: DialogType.confirmation,
-                          );
-
-                          if (confirmation == true) {
-                            setState(() {
-                              isDeleting = true;
-                            });
-
-                            try {
-                              await isarService.deleteAllData();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(localizations
-                                      .settingsDeleteAllDataSuccess),
-                                ),
-                              );
-                            } catch (error) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      localizations.settingsDeleteAllDataError),
-                                ),
-                              );
-                            } finally {
-                              setState(() {
-                                isDeleting = false;
-                              });
-                            }
-                          }
-                        },
+                child: _buildActionButton(
+                  context: context,
                   text: localizations.settingsDeleteAllData,
-                  width: 1,
+                  isLoading: isDeleting,
+                  onPressed: () => _handleDeleteAllData(
+                      context,
+                      isarService,
+                      localizations,
+                      setState,
+                      () => isDeleting = true,
+                      () => isDeleting = false),
                 ),
               ),
             ),
@@ -253,6 +259,62 @@ class SettingsScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Widget _buildActionButton({
+    required BuildContext context,
+    required String text,
+    required VoidCallback onPressed,
+    bool isLoading = false,
+  }) {
+    return ButtonWithLoader(
+      isLoading: isLoading,
+      onPressed: isLoading ? null : onPressed,
+      text: text,
+      width: 1,
+    );
+  }
+
+  Future<void> _handleDeleteAllData(
+    BuildContext context,
+    IsarService isarService,
+    AppLocalizations localizations,
+    StateSetter setState,
+    VoidCallback setLoading,
+    VoidCallback clearLoading,
+  ) async {
+    final confirmation = await showCustomDialog(
+      context: context,
+      message: localizations.settingsDeleteAllDataConfirmation,
+      type: DialogType.confirmation,
+    );
+
+    if (confirmation == true) {
+      setLoading();
+      setState(() {});
+
+      try {
+        await isarService.deleteAllData();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localizations.settingsDeleteAllDataSuccess),
+            ),
+          );
+        }
+      } catch (error) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localizations.settingsDeleteAllDataError),
+            ),
+          );
+        }
+      } finally {
+        clearLoading();
+        setState(() {});
+      }
+    }
   }
 
   // General Settings Section
