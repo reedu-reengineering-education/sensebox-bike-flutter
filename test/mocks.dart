@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
@@ -28,12 +29,19 @@ class MockTrackService extends Mock implements TrackService {}
 class MockGeolocationService extends Mock implements GeolocationService {}
 class MockSensorService extends Mock implements SensorService {}
 
-class MockBleBloc extends Mock implements BleBloc {}
+class MockBleBloc extends Mock implements BleBloc {
+  @override
+  ValueNotifier<bool> get permanentConnectionLossNotifier =>
+      ValueNotifier<bool>(false);
+}
 
 class MockTrackBloc extends Mock with ChangeNotifier implements TrackBloc {}
 
 class MockGeolocationBloc extends Mock implements GeolocationBloc {}
-class MockOpenSenseMapBloc extends OpenSenseMapBloc {
+
+class MockOpenSenseMapBloc extends Mock
+    with ChangeNotifier
+    implements OpenSenseMapBloc {
   @override
   bool isAuthenticated = false;
 
@@ -56,7 +64,14 @@ class MockOpenSenseMapBloc extends OpenSenseMapBloc {
       }
     };
   }
+  
+  @override
+  Future<Map<String, dynamic>?> get userData => Future.value(null);
 }
+
+class MockSettingsBloc extends Mock
+    with ChangeNotifier
+    implements SettingsBloc {}
 
 class MockSensor extends Mock implements Sensor {}
 class FakeSensorData extends Fake implements SensorData {}

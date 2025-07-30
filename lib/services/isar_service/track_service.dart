@@ -41,13 +41,29 @@ class TrackService {
   }
 
   Future<List<TrackData>> getTracksPaginated(
-      {required int offset, required int limit}) async {
+      {required int offset,
+      required int limit,
+      bool skipLastTrack = false}) async {
     final isar = await isarProvider.getDatabase();
-    return await isar.trackDatas
-        .where(sort: Sort.desc)
-        .anyId()
-        .offset(offset)
-        .limit(limit)
-        .findAll();
+    
+    if (skipLastTrack) {
+      // Get one extra track to account for skipping the last one
+      final tracks = await isar.trackDatas
+          .where(sort: Sort.desc)
+          .anyId()
+          .offset(offset)
+          .limit(limit + 1)
+          .findAll();
+
+      // Skip the last track (which is the first in the list due to Sort.desc)
+      return tracks.skip(1).toList();
+    } else {
+      return await isar.trackDatas
+          .where(sort: Sort.desc)
+          .anyId()
+          .offset(offset)
+          .limit(limit)
+          .findAll();
+    }
   }
 }

@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:geolocator/geolocator.dart' as Geolocator;
+import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/blocs/geolocation_map_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
@@ -20,174 +21,63 @@ class GeolocationMapWidget extends StatefulWidget {
   const GeolocationMapWidget({super.key});
 
   @override
-  _GeolocationMapWidgetState createState() => _GeolocationMapWidgetState();
+  State<GeolocationMapWidget> createState() => _GeolocationMapWidgetState();
 }
 
-class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
-  late final MapboxMap mapInstance;
-  StreamSubscription? _isarGeolocationSubscription;
-  StreamSubscription<TrackData?>? _trackSubscription; // Track ID subscription
-
+class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
+    with WidgetsBindingObserver {
+  // Map instances
+  MapboxMap? mapInstance;
   late PolylineAnnotationManager lineAnnotationManager;
 
-  late OpenSenseMapBloc osemBloc;
+  // Bloc
+  late GeolocationMapBloc _mapBloc;
 
+  // Constants
   static const double authenticatedMargin = 125;
   static const double unauthenticatedMargin = 75;
+  bool _isVisible = true;
 
   @override
   void initState() {
     super.initState();
-    // Listen to track changes from the TrackBloc
-    _trackSubscription =
-        context.read<TrackBloc>().currentTrackStream.listen((track) async {
-      if (!mounted) return; // Check if the widget is still mounted
-      // Handle trackId changes
-      if (track != null) {
-        _isarGeolocationSubscription =
-            await _listenToGeolocationStream(track.id);
-      } else {
-        try {
-          await lineAnnotationManager.deleteAll();
-        } catch (e) {
-          debugPrint('Error deleting all annotations: $e');
-        }
-      }
-    });
-
-    // Listen to authentication state changes
-    // This will update the map's logo and attribution margins based on authentication state
-    // Not authenticated: no select box dialog shown ==> margin bottom 75
-    // Authenticated: select box dialog shown ==> margin bottom 125
-    osemBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
-    osemBloc.addListener(() {
-      final isAuthenticated = osemBloc.isAuthenticated;
-
-      var logoAttributionMargins = EdgeInsets.only(
-        bottom: isAuthenticated ? authenticatedMargin : unauthenticatedMargin,
-        left: 8,
-        right: 8,
-      );
-
-      mapInstance.logo.updateSettings(
-        LogoSettings(
-          marginBottom: logoAttributionMargins.bottom,
-          marginLeft: logoAttributionMargins.left,
-        ),
-      );
-      mapInstance.attribution.updateSettings(
-        AttributionSettings(
-          marginBottom: logoAttributionMargins.bottom,
-          marginRight: logoAttributionMargins.right,
-        ),
-      );
-    });
-
-    // check connection status
-    context.read<BleBloc>().isConnectingNotifier.addListener(() async {
-      if (!mounted) return; // Check if the widget is still mounted
-      bool enableLocationPuck = context.read<BleBloc>().isConnected;
-      mapInstance.location.updateSettings(LocationComponentSettings(
-        enabled: enableLocationPuck,
-        showAccuracyRing: enableLocationPuck,
-      ));
-      if (enableLocationPuck) {
-        if (!mounted) return;
-        try {
-          final hasPermission =
-              await PermissionService.isLocationPermissionGranted();
-          final geoPosition = hasPermission
-              ? await Geolocator.Geolocator.getCurrentPosition()
-              : globePosition;
-          final isGlobe =
-              geoPosition.latitude == 0.0 && geoPosition.longitude == 0.0;
-          final cameraOptions = CameraOptions(
-            center: Point(
-              coordinates:
-                  Position(geoPosition.longitude, geoPosition.latitude),
-            ),
-            zoom: isGlobe ? 1.5 : defaultCameraOptions['zoom'],
-            pitch: defaultCameraOptions['pitch'],
-          );
-          final animationOptions = MapAnimationOptions(duration: 1000);
-
-          await mapInstance.flyTo(cameraOptions, animationOptions);
-        } catch (e, stack) {
-          ErrorService.handleError(e, stack);
-        }
-      }
-    });
+    WidgetsBinding.instance.addObserver(this);
+    _initializeMapBloc();
+    _setupMapBlocListener();
   }
 
-  Future _listenToGeolocationStream(int trackId) async {
-    final isarService = context.read<TrackBloc>().isarService;
-    return (await isarService.geolocationService.getGeolocationStream())
-        .listen((_) async {
-      List<GeolocationData> geoData = await isarService.geolocationService
-          .getGeolocationDataByTrackId(trackId);
-
-      // If geolocation data is available, update the map source and layer
-      if (geoData.isNotEmpty) {
-        _updateMapWithGeolocationData(geoData);
-      }
-    }).onError((error) {
-      ErrorService.handleError(error, StackTrace.current);
-    });
+  void _initializeMapBloc() {
+    _mapBloc = GeolocationMapBloc(
+      geolocationBloc: context.read<GeolocationBloc>(),
+      recordingBloc: context.read<RecordingBloc>(),
+      osemBloc: context.read<OpenSenseMapBloc>(),
+      bleBloc: context.read<BleBloc>(),
+    );
   }
 
-  // Create or update the map source with new geolocation data
-  void _updateMapWithGeolocationData(List<GeolocationData> geoData) async {
-    try {
-      // Delete existing annotations if any
-      await lineAnnotationManager.deleteAll();
+  void _setupMapBlocListener() {
+    _mapBloc.addListener(_onMapBlocChanged);
+  }
 
-      List<Point> points = geoData.map((location) {
-        return Point(
-            coordinates: Position(location.longitude, location.latitude));
-      }).toList();
-
-      // Ensure there are at least two points before creating the LineString
-      if (points.length < 2) {
-        debugPrint('Not enough points to create a LineString.');
-        return;
-      }
-
-      PolylineAnnotationOptions polyline = PolylineAnnotationOptions(
-        geometry: LineString.fromPoints(points: points),
-      );
-
-      await lineAnnotationManager.create(polyline);
-
-      // get last geolocation data
-      GeolocationData lastLocation = geoData.last;
-
-      // Fit the camera to the bounds of the geolocation data
-      await mapInstance.flyTo(
-          CameraOptions(
-            center: Point(
-                coordinates:
-                    Position(lastLocation.longitude, lastLocation.latitude)),
-            zoom: 16.0,
-            pitch: 45,
-          ),
-          MapAnimationOptions(duration: 1000));
-    } catch (e) {
-      debugPrint('Error updating map with geolocation data: $e');
+  void _onMapBlocChanged() {
+    if (!mounted || !_isVisible) return;
+    
+    // Update map based on bloc state
+    if (_mapBloc.shouldShowTrack) {
+      _updateMapWithTrack();
+    } else if (_mapBloc.shouldShowCurrentLocation) {
+      _showCurrentLocation(_mapBloc.latestLocation!);
     }
+    
+    // Update margins
+    _updateMapMargins();
+
+    // Update BLE connection status
+    _updateBleConnectionStatus();
   }
 
-  @override
-  void dispose() {
-    _isarGeolocationSubscription?.cancel();
-    _trackSubscription?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final settingsBloc = Provider.of<SettingsBloc>(context);
-
-    final isAuthenticated = osemBloc.isAuthenticated;
+  void _updateMapMargins() {
+    final isAuthenticated = _mapBloc.isAuthenticated;
 
     var logoAttributionMargins = EdgeInsets.only(
       bottom: isAuthenticated ? authenticatedMargin : unauthenticatedMargin,
@@ -195,54 +85,227 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget> {
       right: 8,
     );
 
+    mapInstance?.logo.updateSettings(
+      LogoSettings(
+        marginBottom: logoAttributionMargins.bottom,
+        marginLeft: logoAttributionMargins.left,
+      ),
+    );
+    mapInstance?.attribution.updateSettings(
+      AttributionSettings(
+        marginBottom: logoAttributionMargins.bottom,
+        marginRight: logoAttributionMargins.right,
+      ),
+    );
+  }
+
+  void _updateBleConnectionStatus() async {
+    if (!mounted) return;
+    
+    bool enableLocationPuck = _mapBloc.isConnected;
+    mapInstance?.location.updateSettings(LocationComponentSettings(
+      enabled: enableLocationPuck,
+      showAccuracyRing: enableLocationPuck,
+    ));
+    
+    if (enableLocationPuck) {
+      if (!mounted) return;
+      try {
+        final hasPermission =
+            await PermissionService.isLocationPermissionGranted();
+        final geoPosition = hasPermission
+            ? await geolocator.Geolocator.getCurrentPosition()
+            : globePosition;
+        final isGlobe =
+            geoPosition.latitude == 0.0 && geoPosition.longitude == 0.0;
+        
+        final cameraOptions = CameraOptions(
+          center: Point(
+            coordinates: Position(geoPosition.longitude, geoPosition.latitude),
+          ),
+          zoom: isGlobe ? 1.5 : defaultCameraOptions['zoom'],
+          pitch: defaultCameraOptions['pitch'],
+        );
+
+        // Use setCamera instead of flyTo for immediate positioning
+        await mapInstance?.setCamera(cameraOptions);
+      } catch (e, stack) {
+        ErrorService.handleError(e, stack);
+      }
+    }
+  }
+  // Map Management
+  void _clearTrackLine() {
+    lineAnnotationManager.deleteAll().catchError((e) {
+      // Ignore errors when clearing track line
+    });
+  }
+
+  // Map Update Methods
+  void _updateMapWithTrack() async {
+    if (_mapBloc.gpsBuffer.isEmpty) return;
+
+    try {
+      _clearTrackLine();
+      final points = _createTrackPoints();
+      if (points.isEmpty) return;
+
+      await _drawTrackLine(points);
+      await _setCameraToLastLocation();
+    } catch (e) {
+      ErrorService.handleError(e, StackTrace.current);
+    }
+  }
+
+  List<Point> _createTrackPoints() {
+    List<Point> points = _mapBloc.gpsBuffer.map((location) {
+      return Point(
+          coordinates: Position(location.longitude, location.latitude));
+    }).toList();
+
+    if (points.isEmpty) return [];
+
+    // Create a line segment for single points
+    if (points.length == 1) {
+      final singlePoint = points.first;
+      final offset = 0.00001;
+      points = [
+        singlePoint,
+        Point(
+            coordinates: Position(
+          singlePoint.coordinates.lng + offset,
+          singlePoint.coordinates.lat + offset,
+        ))
+      ];
+    }
+
+    return points;
+  }
+
+  Future<void> _drawTrackLine(List<Point> points) async {
+    if (points.length < 2) return;
+
+    final polyline = PolylineAnnotationOptions(
+      geometry: LineString.fromPoints(points: points),
+    );
+    await lineAnnotationManager.create(polyline);
+  }
+
+  Future<void> _setCameraToLastLocation() async {
+    final lastLocation = _mapBloc.lastLocationForMap;
+    if (lastLocation == null) return;
+
+    await _setCameraToLocation(lastLocation);
+  }
+
+  void _showCurrentLocation(GeolocationData geoData) async {
+    try {
+      await _setCameraToLocation(geoData);
+    } catch (e) {
+      ErrorService.handleError(e, StackTrace.current);
+    }
+  }
+
+  Future<void> _setCameraToLocation(GeolocationData location) async {
+    final cameraOptions = CameraOptions(
+      center:
+          Point(coordinates: Position(location.longitude, location.latitude)),
+      zoom: 16.0,
+      pitch: 45,
+    );
+
+    // Use setCamera instead of flyTo for immediate positioning
+    await mapInstance?.setCamera(cameraOptions);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _mapBloc.removeListener(_onMapBlocChanged);
+    _mapBloc.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    setState(() {
+      _isVisible = (state == AppLifecycleState.resumed);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final margins = _getMapMargins();
+
     return ReusableMapWidget(
-        logoMargins: logoAttributionMargins,
-        attributionMargins: logoAttributionMargins,
-        onMapCreated: (mapInstance) async {
-          this.mapInstance = mapInstance;
-          mapInstance.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-          mapInstance.compass.updateSettings(CompassSettings(enabled: false));
+      logoMargins: margins,
+      attributionMargins: margins,
+      onMapCreated: _onMapCreated,
+    );
+  }
 
-          // Set initial camera position
-          mapInstance.setCamera(CameraOptions(
-            center: Point(coordinates: Position(9, 45)),
-            zoom: 3.25,
-            pitch: 25,
-          ));
-          try {
-            lineAnnotationManager = await mapInstance.annotations
-                .createPolylineAnnotationManager(id: 'lineAnnotationManager');
-            lineAnnotationManager.setLineColor(
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.value
-                    : Colors.black.value);
-            lineAnnotationManager.setLineWidth(4.0);
-            lineAnnotationManager.setLineEmissiveStrength(1);
-            lineAnnotationManager.setLineCap(LineCap.ROUND);
-          } catch (e) {
-            debugPrint('Error creating lineAnnotationManager: $e');
-          }
+  EdgeInsets _getMapMargins() {
+    final isAuthenticated = _mapBloc.isAuthenticated;
+    return EdgeInsets.only(
+      bottom: isAuthenticated ? authenticatedMargin : unauthenticatedMargin,
+      left: 8,
+      right: 8,
+    );
+  }
 
-          // Add privacy zones to the map
-          try {
-            if (settingsBloc.privacyZones.isEmpty) {
-              return;
-            }
+  void _onMapCreated(MapboxMap mapInstance) async {
+    this.mapInstance = mapInstance;
+    _configureMapSettings();
+    await _setupMapComponents();
+    await _addPrivacyZones();
+  }
 
-            final polygonAnnotationManager =
-                await mapInstance.annotations.createPolygonAnnotationManager();
-            polygonAnnotationManager.setFillColor(Colors.red.value);
-            polygonAnnotationManager.setFillOpacity(0.5);
-            polygonAnnotationManager.setFillEmissiveStrength(1);
+  void _configureMapSettings() {
+    mapInstance?.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    mapInstance?.compass.updateSettings(CompassSettings(enabled: false));
 
-            final polygonOptions = settingsBloc.privacyZones.map((e) {
-              final polygon = Polygon.fromJson(jsonDecode(e));
-              return PolygonAnnotationOptions(geometry: polygon);
-            }).toList();
-            polygonAnnotationManager.createMulti(polygonOptions);
-          } catch (e) {
-            print(e);
-          }
-        });
+    // Set initial camera position
+    mapInstance?.setCamera(CameraOptions(
+      center: Point(coordinates: Position(9, 45)),
+      zoom: 3.25,
+      pitch: 25,
+    ));
+  }
+
+  Future<void> _setupMapComponents() async {
+    try {
+      lineAnnotationManager = await mapInstance!.annotations
+          .createPolylineAnnotationManager(id: 'lineAnnotationManager');
+      
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      lineAnnotationManager.setLineColor(
+          isDark ? Colors.white.toARGB32() : Colors.black.toARGB32());
+      lineAnnotationManager.setLineWidth(4.0);
+      lineAnnotationManager.setLineEmissiveStrength(1);
+      lineAnnotationManager.setLineCap(LineCap.ROUND);
+    } catch (e) {
+      ErrorService.handleError(e, StackTrace.current);
+    }
+  }
+
+  Future<void> _addPrivacyZones() async {
+    try {
+      final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
+      if (settingsBloc.privacyZones.isEmpty) return;
+
+      final polygonAnnotationManager =
+          await mapInstance!.annotations.createPolygonAnnotationManager();
+      polygonAnnotationManager.setFillColor(Colors.red.toARGB32());
+      polygonAnnotationManager.setFillOpacity(0.5);
+      polygonAnnotationManager.setFillEmissiveStrength(1);
+
+      final polygonOptions = settingsBloc.privacyZones.map((e) {
+        final polygon = Polygon.fromJson(jsonDecode(e));
+        return PolygonAnnotationOptions(geometry: polygon);
+      }).toList();
+      polygonAnnotationManager.createMulti(polygonOptions);
+    } catch (e) {
+      ErrorService.handleError(e, StackTrace.current);
+    }
   }
 }

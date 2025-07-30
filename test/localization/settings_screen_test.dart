@@ -83,7 +83,15 @@ void main() {
       expect(find.text('General'), findsOneWidget);
       expect(find.text('Vibrate on disconnect'), findsOneWidget);
       expect(find.text('Privacy Zones'), findsOneWidget);
+      
+      // Scroll to find "Other" section
+      await tester.scrollUntilVisible(find.text('Other'), 200.0);
+      await tester.pumpAndSettle();
       expect(find.text('Other'), findsOneWidget);
+      
+      // Scroll to find "About" section
+      await tester.scrollUntilVisible(find.text('About'), 200.0);
+      await tester.pumpAndSettle();
       expect(find.text('About'), findsOneWidget);
       expect(find.text('Help or feedback?'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
@@ -102,7 +110,12 @@ void main() {
       expect(find.text('Allgemeine'), findsOneWidget);
       expect(find.text('Vibration bei Verbindungsabbruch'), findsOneWidget);
       expect(find.text('Privatzonen'), findsOneWidget);
+      
+      // Scroll to find "Andere" section
+      await tester.scrollUntilVisible(find.text('Andere'), 200.0);
+      await tester.pumpAndSettle();
       expect(find.text('Andere'), findsOneWidget);
+
       expect(find.text('Über die App'), findsOneWidget);
       expect(find.text('Hilfe oder Feedback?'), findsOneWidget);
       expect(find.text('E-Mail'), findsOneWidget);
@@ -121,7 +134,15 @@ void main() {
       expect(find.text('Geral'), findsOneWidget);
       expect(find.text('Vibrar ao desconectar'), findsOneWidget);
       expect(find.text('Áreas de Privacidade'), findsOneWidget);
+      
+      // Scroll to find "Outros" section
+      await tester.scrollUntilVisible(find.text('Outros'), 200.0);
+      await tester.pumpAndSettle();
       expect(find.text('Outros'), findsOneWidget);
+      
+      // Scroll to find "Sobre" section
+      await tester.scrollUntilVisible(find.text('Sobre'), 200.0);
+      await tester.pumpAndSettle();
       expect(find.text('Sobre'), findsOneWidget);
       expect(find.text('Ajuda ou feedback?'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);

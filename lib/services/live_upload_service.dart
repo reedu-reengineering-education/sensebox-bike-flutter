@@ -1,3 +1,4 @@
+// Once we confirm that the data is uploaded correctly, we can remove this service
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';

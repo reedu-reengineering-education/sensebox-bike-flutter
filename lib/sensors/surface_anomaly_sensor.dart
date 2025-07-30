@@ -1,5 +1,6 @@
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -17,9 +18,10 @@ class SurfaceAnomalySensor extends Sensor {
       'b944af10-f495-4560-968f-2f0d18cab523';
 
   SurfaceAnomalySensor(
-      BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
-      : super(sensorCharacteristicUuid, "surface_anomaly", [], bleBloc,
-            geolocationBloc, isarService);
+      BleBloc bleBloc, GeolocationBloc geolocationBloc,
+      RecordingBloc recordingBloc, IsarService isarService)
+      : super(sensorCharacteristicUuid, "surface_anomaly", [],
+            bleBloc, geolocationBloc, recordingBloc, isarService);
 
   @override
   void onDataReceived(List<double> data) {

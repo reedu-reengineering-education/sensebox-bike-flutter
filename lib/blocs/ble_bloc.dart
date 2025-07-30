@@ -31,6 +31,8 @@ class BleBloc with ChangeNotifier {
       ValueNotifier([]);
   final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
+  final ValueNotifier<bool> permanentConnectionLossNotifier =
+      ValueNotifier(false);
 
   final List<BluetoothDevice> devicesList = [];
   final StreamController<List<BluetoothDevice>> _devicesListController =
@@ -304,23 +306,11 @@ class BleBloc with ChangeNotifier {
   void _handleConnectionError({required BuildContext context}) {
     selectedDeviceNotifier.value = null;
     connectionErrorNotifier.value = true;
+    permanentConnectionLossNotifier.value = true;
     notifyListeners();
 
     ErrorService.reportToSentry(
         "Permanent connection error with senseBox", StackTrace.current);
-
-    if (!context.mounted) return;
-
-    try {
-      RecordingBloc? recordingBloc =
-          Provider.of<RecordingBloc>(context, listen: false);
-      if (recordingBloc.isRecording) {
-        recordingBloc.stopRecording();
-      }
-    } catch (e) {
-      ErrorService.handleError(
-          'RecordingBloc not found in the widget tree: $e', StackTrace.current);
-    }
   }
 
   Future<void> _listenToCharacteristic(
