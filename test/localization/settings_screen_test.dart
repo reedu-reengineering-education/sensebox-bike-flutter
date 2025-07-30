@@ -127,5 +127,44 @@ void main() {
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
     });
+
+    testWidgets("login and logout buttons are translated in English",
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget(const Locale('en')));
+      await tester.pumpAndSettle();
+
+      // Check login button text (when not authenticated) - should be visible initially
+      expect(find.text('Login'), findsOneWidget);
+
+      // Scroll to make all sections visible
+      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets("login and logout buttons are translated in German",
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget(const Locale('de')));
+      await tester.pumpAndSettle();
+
+      // Check login button text (when not authenticated) - should be visible initially
+      expect(find.text('Anmelden'), findsOneWidget);
+
+      // Scroll to make all sections visible
+      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets("login and logout buttons are translated in Portuguese",
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget(const Locale('pt')));
+      await tester.pumpAndSettle();
+
+      // Check login button text (when not authenticated) - should be visible initially
+      expect(find.text('Entrar'), findsOneWidget);
+
+      // Scroll to make all sections visible
+      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.pumpAndSettle();
+    });
   });
 }

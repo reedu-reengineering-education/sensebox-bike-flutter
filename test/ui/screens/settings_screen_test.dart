@@ -171,4 +171,63 @@ void main() {
 
     verifyNever(() => mockIsarService.deleteAllData());
   });
+
+  testWidgets('shows login button when not authenticated',
+      (WidgetTester tester) async {
+    // Ensure mock is not authenticated
+    mockOpenSenseMapBloc.isAuthenticated = false;
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
+            Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockOpenSenseMapBloc),
+          ],
+          child: const SettingsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Should show login button
+    expect(find.text('Login'), findsOneWidget);
+  });
+
+  testWidgets(
+      'shows logout button when authenticated and calls logout when tapped',
+      (WidgetTester tester) async {
+    // Create a proper mock for verification
+    final mockBlocForVerification = MockOpenSenseMapBloc();
+    mockBlocForVerification.isAuthenticated = true;
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
+            Provider<TrackBloc>.value(value: mockTrackBloc),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                value: mockBlocForVerification),
+          ],
+          child: const SettingsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Should show logout button
+    expect(find.text('Logout'), findsOneWidget);
+
+    // Tap the logout button
+    await tester.tap(find.text('Logout'));
+    await tester.pumpAndSettle();
+
+    // Verify logout was called by checking the state change
+    expect(mockBlocForVerification.isAuthenticated, false);
+  });
 }
