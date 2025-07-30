@@ -101,6 +101,10 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       await _service.register(name, email, password);
       _isAuthenticated = true;
+      // Clear senseBox cache for new account
+      _senseBoxes.clear();
+      _selectedSenseBox = null;
+      _senseBoxController.add(null);
       notifyListeners();
     } catch (e) {
       _isAuthenticated = false;
