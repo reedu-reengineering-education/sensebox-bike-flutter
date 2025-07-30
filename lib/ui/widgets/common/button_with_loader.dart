@@ -6,6 +6,7 @@ class ButtonWithLoader extends StatelessWidget {
   final VoidCallback? onPressed;
   final String text;
   final double? width; // Make width optional
+  final bool? inverted; // Use dark theme if true
 
   const ButtonWithLoader({
     super.key,
@@ -13,14 +14,22 @@ class ButtonWithLoader extends StatelessWidget {
     required this.onPressed,
     required this.text,
     this.width, // Optional
+    this.inverted = false, // Default to false (light theme)
   });
 
   @override
   Widget build(BuildContext context) {
     final button = FilledButton(
       style: FilledButton.styleFrom(
-        padding:
-            const EdgeInsets.symmetric(vertical: 12), // Vertical padding only
+        backgroundColor: inverted == true
+            ? Theme.of(context).colorScheme.surface
+            : Theme.of(context).colorScheme.primary,
+        foregroundColor: inverted == true
+            ? Theme.of(context).colorScheme.onSurface
+            : Theme.of(context).colorScheme.onPrimary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
       ),
       onPressed: onPressed,
       child: Row(

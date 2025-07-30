@@ -113,6 +113,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get openSenseMapLogin => 'Mit openSenseMap anmelden';
 
   @override
+  String get openSenseMapLoginDescription => 'Melde dich an, um deine Daten zu teilen.';
+
+  @override
   String get openSenseMapLogout => 'Ausloggen';
 
   @override

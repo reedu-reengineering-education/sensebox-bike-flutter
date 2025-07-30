@@ -63,6 +63,7 @@
     "tracksNoTracks": "Keine Tracks verfügbar",
     "tracksTrackDeleted": "Track gelöscht",
     "openSenseMapLogin": "Mit openSenseMap anmelden",
+    "openSenseMapLoginDescription": "Melde dich an, um deine Daten zu teilen.",
     "openSenseMapLogout": "Ausloggen",
     "openSenseMapEmail": "E-Mail",
     "openSenseMapPassword": "Passwort",

@@ -271,6 +271,12 @@ abstract class AppLocalizations {
   /// **'Login with openSenseMap'**
   String get openSenseMapLogin;
 
+  /// No description provided for @openSenseMapLoginDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in to share your data.'**
+  String get openSenseMapLoginDescription;
+
   /// No description provided for @openSenseMapLogout.
   ///
   /// In en, this message translates to:

@@ -95,6 +95,17 @@ class OpenSenseMapService {
     await removeTokens();
   }
 
+  Future<Map<String, dynamic>?> getUserData() async {
+    return _makeAuthenticatedRequest<Map<String, dynamic>?>(
+      requestFn: (accessToken) => client.get(
+        Uri.parse('$_baseUrl/users/me'),
+        headers: {'Authorization': 'Bearer $accessToken'},
+      ),
+      successHandler: (response) => jsonDecode(response.body),
+      errorMessage: 'Failed to load user data',
+    );
+  }
+
   Future<String?> getAccessToken() async {
     final prefs = await _prefs;
     return prefs.getString('accessToken');
