@@ -38,6 +38,7 @@ class SettingsScreen extends StatelessWidget {
           _buildGeneralSettingsSection(context, settingsBloc),
           _buildAccountManagementSection(context),
           _buildOtherSection(context),
+          _buildHelpSection(context),
         ],
       ),
     );
