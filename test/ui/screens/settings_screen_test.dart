@@ -194,7 +194,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Should show login button
     expect(find.text('Login'), findsOneWidget);
   });
 
@@ -221,14 +220,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Should show logout button
     expect(find.text('Logout'), findsOneWidget);
 
-    // Tap the logout button
     await tester.tap(find.text('Logout'));
     await tester.pumpAndSettle();
 
-    // Verify logout was called by checking the state change
     expect(mockBlocForVerification.isAuthenticated, false);
   });
 
@@ -253,7 +249,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Should show user email and name (from mock)
     expect(find.text('test@example.com'), findsOneWidget);
     expect(find.text('Test User'), findsOneWidget);
   });
@@ -283,7 +278,6 @@ void main() {
     await tester.tap(find.text('Ok'));
     await tester.pumpAndSettle();
 
-    // Should show error message
     expect(find.text('Failed to delete all data. Please try again.'),
         findsOneWidget);
   });
@@ -313,13 +307,11 @@ void main() {
     await tester.tap(find.text('Privacy Policy'));
     await tester.pumpAndSettle();
 
-    // Should not crash and should handle the error
     expect(find.byType(SettingsScreen), findsOneWidget);
   });
 
   testWidgets('displays privacy zones count badge',
       (WidgetTester tester) async {
-    // Add some privacy zones to the settings bloc
     mockSettingsBloc.privacyZones.addAll(['Zone 1', 'Zone 2']);
 
     await tester.pumpWidget(
@@ -340,7 +332,6 @@ void main() {
     await tester.scrollUntilVisible(find.text('Privacy Zones'), 200.0);
     await tester.pumpAndSettle();
 
-    // Should show badge with count 2
     expect(find.text('2'), findsOneWidget);
   });
 
@@ -360,9 +351,7 @@ void main() {
       ),
     );
 
-    // Should show all main sections
     expect(find.text('General'), findsOneWidget);
     expect(find.text('Account Management'), findsOneWidget);
-    // Note: "Help or feedback?" might not be visible without scrolling
   });
 }
