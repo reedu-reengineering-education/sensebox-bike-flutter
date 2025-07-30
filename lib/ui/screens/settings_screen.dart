@@ -92,14 +92,14 @@ class SettingsScreen extends StatelessWidget {
 
                         final user = userData?['data']?['me'];
 
-                        final email = user['email'];
-                        final name = user['name'];
+                        final email = user?['email'] ?? "No email";
+                        final name = user?['name'] ?? "John Doe";
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              email ?? "No email",
+                              email,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
@@ -111,7 +111,7 @@ class SettingsScreen extends StatelessWidget {
                               maxLines: 1,
                             ),
                             Text(
-                              name ?? "John Doe",
+                              name,
                               style: TextStyle(
                                 color: Theme.of(context)
                                     .colorScheme
