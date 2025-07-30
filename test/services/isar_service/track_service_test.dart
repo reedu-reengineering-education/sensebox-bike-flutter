@@ -129,5 +129,57 @@ group('TrackService', () {
         expect(tracks.length, equals(1)); // Original track remains
       });
     });
+
+    group('getTracksPaginated', () {
+      test('retrieves paginated tracks without skipping last track', () async {
+        // Create multiple tracks
+        final track1 = TrackData();
+        final track2 = TrackData();
+        final track3 = TrackData();
+
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(track1);
+          await isar.trackDatas.put(track2);
+          await isar.trackDatas.put(track3);
+        });
+
+        final tracks = await trackService.getTracksPaginated(
+            offset: 0, limit: 2, skipLastTrack: false);
+
+        expect(tracks.length, equals(2));
+        // Should return newest tracks first (highest IDs)
+        expect(tracks[0].id, greaterThan(tracks[1].id));
+      });
+
+      test(
+          'retrieves paginated tracks and skips the last track when skipLastTrack is true',
+          () async {
+        // Create multiple tracks
+        final track1 = TrackData();
+        final track2 = TrackData();
+        final track3 = TrackData();
+
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(track1);
+          await isar.trackDatas.put(track2);
+          await isar.trackDatas.put(track3);
+        });
+
+        final tracks = await trackService.getTracksPaginated(
+            offset: 0, limit: 2, skipLastTrack: true);
+
+        expect(tracks.length, equals(2));
+        // Should skip the newest track (highest ID) and return the next two
+        expect(tracks[0].id,
+            lessThan(track3.id)); // Should not include the newest track
+      });
+
+      test('handles empty result when skipLastTrack is true', () async {
+        final tracks = await trackService.getTracksPaginated(
+            offset: 0, limit: 10, skipLastTrack: true);
+
+        expect(tracks.isEmpty, isTrue);
+      });
+    });
 });
 }

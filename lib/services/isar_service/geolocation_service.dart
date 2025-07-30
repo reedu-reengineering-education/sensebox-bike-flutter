@@ -45,6 +45,25 @@ class GeolocationService {
     }).findAll();
   }
 
+  Future<List<GeolocationData>> getGeolocationDataWithPreloadedSensors(
+      int trackId) async {
+    final isar = await isarProvider.getDatabase();
+    return await isar.txn(() async {
+      final geolocations = await isar.geolocationDatas
+          .where()
+          .filter()
+          .track((q) => q.idEqualTo(trackId))
+          .findAll();
+
+      // Pre-load sensor data for all geolocations
+      for (final geo in geolocations) {
+        await geo.sensorData.load();
+      }
+
+      return geolocations;
+    });
+  }
+
   Future<void> deleteAllGeolocations() async {
     final isar = await isarProvider.getDatabase();
     await isar.writeTxn(() async {

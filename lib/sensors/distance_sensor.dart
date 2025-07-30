@@ -1,13 +1,14 @@
 import 'dart:math';
-
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart';
 
 class DistanceSensor extends Sensor {
   List<double> _latestValue = [0.0];
@@ -19,9 +20,10 @@ class DistanceSensor extends Sensor {
       'b3491b60-c0f3-4306-a30d-49c91f37a62b';
 
   DistanceSensor(
-      BleBloc bleBloc, GeolocationBloc geolocationBloc, IsarService isarService)
-      : super(sensorCharacteristicUuid, "distance", [], bleBloc,
-            geolocationBloc, isarService);
+      BleBloc bleBloc, GeolocationBloc geolocationBloc,
+      RecordingBloc recordingBloc, IsarService isarService)
+      : super(sensorCharacteristicUuid, "distance", [],
+            bleBloc, geolocationBloc, recordingBloc, isarService);
 
   @override
   void onDataReceived(List<double> data) {
@@ -39,27 +41,28 @@ class DistanceSensor extends Sensor {
 
   @override
   Widget buildWidget() {
-    return StreamBuilder<List<double>>(
-      stream: valueStream, // Listen to the stream of distance values
-      initialData: _latestValue,
-      builder: (context, snapshot) {
+    return SensorConditionalRerender(
+      valueStream: valueStream,
+      initialValue: _latestValue,
+      latestValue: _latestValue,
+      decimalPlaces: 0,
+      builder: (context, value) {
         return SensorCard(
-            title: AppLocalizations.of(context)!.sensorDistanceShort,
-            icon: getSensorIcon(title),
-            color: getSensorColor(title),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  _latestValue[0].toStringAsFixed(0),
-                  style: const TextStyle(fontSize: 48),
-                ),
-                const Text(
-                  'cm',
-                ),
-              ],
-            ));
+          title: AppLocalizations.of(context)!.sensorDistanceShort,
+          icon: getSensorIcon(title),
+          color: getSensorColor(title),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                value[0].toStringAsFixed(0),
+                style: const TextStyle(fontSize: 48),
+              ),
+              const Text('cm'),
+            ],
+          ),
+        );
       },
     );
   }

@@ -1,5 +1,9 @@
 // File: lib/blocs/sensor_bloc.dart
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
@@ -10,23 +14,22 @@ import 'package:sensebox_bike/sensors/overtaking_prediction_sensor.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
-import 'package:flutter/material.dart';
 import 'package:sensebox_bike/sensors/temperature_sensor.dart';
-import 'package:sensebox_bike/blocs/ble_bloc.dart';
 
 class SensorBloc with ChangeNotifier {
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
+  final RecordingBloc recordingBloc;
   final List<Sensor> _sensors = [];
   late final VoidCallback _characteristicsListener;
   late final VoidCallback _characteristicStreamsVersionListener;
   late final VoidCallback _selectedDeviceListener;
+  late final VoidCallback _recordingListener;
   List<String> _lastCharacteristicUuids = [];
 
-  SensorBloc(this.bleBloc, this.geolocationBloc) {
+  SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc) {
     _initializeSensors();
 
-    // Listen to changes in the BLE device connection state
     _selectedDeviceListener = () {
       if (bleBloc.selectedDevice != null &&
           bleBloc.selectedDevice!.isConnected) {
@@ -36,33 +39,60 @@ class SensorBloc with ChangeNotifier {
         _stopListening();
         geolocationBloc.stopListening();
       }
+      notifyListeners();
     };
 
-    bleBloc.selectedDeviceNotifier.addListener(_selectedDeviceListener);
-
-    // Listen to changes in available characteristics (after reconnect)
     _characteristicsListener = () {
-      if (bleBloc.selectedDevice != null &&
-          bleBloc.selectedDevice!.isConnected) {
-        final currentUuids = bleBloc.availableCharacteristics.value
-            .map((e) => e.uuid.toString())
-            .toList();
-
-        // Only restart if the set of UUIDs has changed
-        if (!_listEqualsUnordered(_lastCharacteristicUuids, currentUuids)) {
-          _lastCharacteristicUuids = List.from(currentUuids);
-          _restartAllSensors();
-        }
+      final currentUuids = bleBloc.availableCharacteristics.value
+          .map((e) => e.uuid.toString())
+          .toList();
+      if (!_listEqualsUnordered(_lastCharacteristicUuids, currentUuids)) {
+        _lastCharacteristicUuids = List.from(currentUuids);
+        _restartAllSensors();
       }
     };
-    bleBloc.availableCharacteristics.addListener(_characteristicsListener);
 
-    // Listen for characteristic stream version changes (after reconnect)
     _characteristicStreamsVersionListener = () {
       _restartAllSensors();
     };
+
+    _recordingListener = () {
+      if (!recordingBloc.isRecording) {
+        _flushAllSensorBuffers();
+      }
+    };
+    recordingBloc.isRecordingNotifier.addListener(_recordingListener);
+    recordingBloc.setRecordingCallbacks(
+      onRecordingStart: _onRecordingStart,
+      onRecordingStop: _onRecordingStop,
+    );
+
+    // Add listeners
+    bleBloc.selectedDeviceNotifier.addListener(_selectedDeviceListener);
+    bleBloc.availableCharacteristics.addListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .addListener(_characteristicStreamsVersionListener);
+  }
+
+  void _onRecordingStart() {
+    final directUploadService = recordingBloc.directUploadService;
+    if (directUploadService != null) {
+
+      for (final sensor in _sensors) {
+        sensor.setDirectUploadService(directUploadService);
+      }
+
+      directUploadService.enable();
+    }
+  }
+
+  Future<void> _onRecordingStop() async {
+    final directUploadService = recordingBloc.directUploadService;
+    if (directUploadService != null) {
+      await directUploadService.uploadRemainingBufferedData();
+
+      directUploadService.disable();
+    }
   }
 
   bool _listEqualsUnordered(List<String> a, List<String> b) {
@@ -74,18 +104,25 @@ class SensorBloc with ChangeNotifier {
 
   void _initializeSensors() {
     final isarService = geolocationBloc.isarService;
-    // Initialize sensors with specific UUIDs
-    _sensors.add(TemperatureSensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(HumiditySensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(DistanceSensor(bleBloc, geolocationBloc, isarService));
+
+    _sensors.add(TemperatureSensor(
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(
-        SurfaceClassificationSensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(AccelerationSensor(bleBloc, geolocationBloc, isarService));
+        HumiditySensor(bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(
+        DistanceSensor(bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(SurfaceClassificationSensor(
+        bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(AccelerationSensor(
+        bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(OvertakingPredictionSensor(
+        bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(SurfaceAnomalySensor(
+        bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(
+        FinedustSensor(bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors
-        .add(OvertakingPredictionSensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(SurfaceAnomalySensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(FinedustSensor(bleBloc, geolocationBloc, isarService));
-    _sensors.add(GPSSensor(bleBloc, geolocationBloc, isarService));
+        .add(GPSSensor(bleBloc, geolocationBloc, recordingBloc, isarService));
   }
 
   void _startListening() {
@@ -105,14 +142,23 @@ class SensorBloc with ChangeNotifier {
     _startListening();
   }
 
+  Future<void> _flushAllSensorBuffers() async {
+    for (var sensor in _sensors) {
+      await sensor.flushBuffers();
+    }
+  }
+
+  List<Sensor> get sensors => _sensors;
+
   List<Widget> getSensorWidgets() {
     final availableUuids = bleBloc.availableCharacteristics.value
         .map((e) => e.uuid.toString())
         .toSet();
 
     final availableSensors = _sensors.where((sensor) {
+      // Filter out surface_anomaly if the feature flag is enabled
       if (FeatureFlags.hideSurfaceAnomalySensor &&
-          sensor is SurfaceAnomalySensor) {
+          sensor.title == 'surface_anomaly') {
         return false;
       }
       return availableUuids.contains(sensor.characteristicUuid);
@@ -124,15 +170,18 @@ class SensorBloc with ChangeNotifier {
 
   @override
   void dispose() {
-    for (var sensor in _sensors) {
-      sensor.dispose();
-    }
-
     bleBloc.selectedDeviceNotifier.removeListener(_selectedDeviceListener);
     bleBloc.availableCharacteristics.removeListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .removeListener(_characteristicStreamsVersionListener);
-        
+    recordingBloc.isRecordingNotifier.removeListener(_recordingListener);
+    
+    _stopListening();
+    
+    for (final sensor in _sensors) {
+      sensor.dispose();
+    }
+    
     super.dispose();
   }
 }

@@ -72,7 +72,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       try {
         await _service.refreshToken();
         _isAuthenticated = true;
-        
+
         // Avoid creating duplicate SenseBoxes by checking current state
         if (_selectedSenseBox == null) {
           await loadSelectedSenseBox();
@@ -178,7 +178,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _selectedSenseBox = null;
       notifyListeners();
       return;
-    } 
+    }
 
     await prefs.setString('selectedSenseBox', jsonEncode(senseBox.toJson()));
     _senseBoxController.add(senseBox); // Push selected senseBox to the stream

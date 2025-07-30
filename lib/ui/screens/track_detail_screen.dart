@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:flutter/material.dart';
@@ -31,14 +32,33 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   late final IsarService isarService;
   bool _isDownloading = false;
   late String _sensorType = 'temperature';
+  List<GeolocationData> _geolocations = [];
+  bool _isLoading = true;
 
   _TrackDetailScreenState();
 
   @override
   void initState() {
     super.initState();
-
     isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
+    _loadTrackData();
+  }
+
+  Future<void> _loadTrackData() async {
+    try {
+      final geolocations = await isarService.geolocationService
+          .getGeolocationDataWithPreloadedSensors(widget.track.id);
+      setState(() {
+        _geolocations = geolocations;
+        _isLoading = false;
+      });
+    } catch (e) {
+      ErrorService.handleError(
+          'Error loading track data: $e', StackTrace.current);
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _shareFile(String filePath) async {
@@ -169,12 +189,29 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final geolocations = widget.track.geolocations.toList();
-    final sensorData = geolocations.first.sensorData.toList();
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: _buildAppBarTitle(widget.track)),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_geolocations.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: _buildAppBarTitle(widget.track)),
+        body: Center(
+          child: Text(AppLocalizations.of(context)!.trackDetailsNoData),
+        ),
+      );
+    }
+
+    // Get all unique sensor data from all geolocations in the track
+    final sensorData = getAllUniqueSensorData(_geolocations);
+    
     final minSensorValue =
-        getMinSensorValue(geolocations, _sensorType).toStringAsFixed(1);
+        getMinSensorValue(_geolocations, _sensorType).toStringAsFixed(1);
     final maxSensorValue =
-        getMaxSensorValue(geolocations, _sensorType).toStringAsFixed(1);
+        getMaxSensorValue(_geolocations, _sensorType).toStringAsFixed(1);
 
     return Scaffold(
       appBar: AppBar(title: _buildAppBarTitle(widget.track)),
@@ -189,7 +226,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                   clipBehavior: Clip.hardEdge,
                   elevation: 4,
                   child: TrajectoryWidget(
-                      geolocationData: geolocations, sensorType: _sensorType),
+                      geolocationData: _geolocations, sensorType: _sensorType),
                 ),
               ),
             ),

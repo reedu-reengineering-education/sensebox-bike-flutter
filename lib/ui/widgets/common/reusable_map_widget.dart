@@ -28,7 +28,8 @@ class ReusableMapWidget extends StatefulWidget {
   _ReusableMapWidgetState createState() => _ReusableMapWidgetState();
 }
 
-class _ReusableMapWidgetState extends State<ReusableMapWidget> with WidgetsBindingObserver {
+class _ReusableMapWidgetState extends State<ReusableMapWidget>
+    with WidgetsBindingObserver {
   late MapboxMap mapInstance;
   AppLifecycleState? _lastLifecycleState;
 
@@ -64,9 +65,11 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget> with WidgetsBindi
   void _updateMapStyle() {
     // Use Theme.of(context).brightness for current theme
     if (!mounted) return;
-    String style = Theme.of(context).brightness == Brightness.dark ? "night" : "day";
+    String style =
+        Theme.of(context).brightness == Brightness.dark ? "night" : "day";
     try {
-      mapInstance.style.setStyleImportConfigProperty("basemap", "lightPreset", style);
+      mapInstance.style
+          .setStyleImportConfigProperty("basemap", "lightPreset", style);
     } catch (e) {
       debugPrint('Error setting style property: $e');
     }

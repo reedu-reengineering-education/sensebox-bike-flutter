@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
+import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/sensors/gps_sensor.dart';
 
 String? getSearchKey(String key, String? attribute) {
   if (attribute != null) {
@@ -56,7 +58,7 @@ String? getTitleFromSensorKey(String key, String? attribute) {
     case 'gps_longitude':
       return 'GPS Longitude';
     case 'gps_speed':
-      return 'GPS Speed';
+      return 'Speed';
     default:
       debugPrint("Unknown sensor key: $searchKey");
       return null;
@@ -109,7 +111,7 @@ String? getTranslatedTitleFromSensorKey(
     case 'gps_longitude':
       return AppLocalizations.of(context)!.sensorGPSLong;
     case 'gps_speed':
-      return AppLocalizations.of(context)!.sensorGPSSpeed;
+      return AppLocalizations.of(context)!.sensorSpeed;
     default:
       debugPrint("Unknown sensor key: $searchKey");
       return null;
@@ -183,4 +185,30 @@ String? findSensorIdByData(SensorData sensorData, List<Sensor> boxSensors) {
   }
   // Return null if no match is found
   return null;
+}
+
+SensorData createGpsSpeedSensorData(GeolocationData geoData) {
+  return SensorData()
+    ..title = 'gps'
+    ..attribute = 'speed'
+    ..value = geoData.speed
+    ..characteristicUuid = GPSSensor.sensorCharacteristicUuid
+    ..geolocationData.value = geoData;
+}
+
+bool shouldStoreSensorData(SensorData sensorData) {
+  // Don't store NaN or infinite values
+  if (sensorData.value.isNaN || sensorData.value.isInfinite) {
+    return false;
+  }
+
+  // Don't store zero GPS coordinates (invalid GPS data)
+  if (sensorData.title == 'gps' &&
+      (sensorData.attribute == 'latitude' ||
+          sensorData.attribute == 'longitude') &&
+      sensorData.value == 0.0) {
+    return false;
+  }
+
+  return true;
 }

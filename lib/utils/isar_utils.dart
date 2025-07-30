@@ -22,10 +22,20 @@ Future<SenseBox> getSelectedSenseBoxOrThrow() async {
 }
 
 String formatOpenSenseMapCsvLine(String? sensorId, double? value, GeolocationData geoData) {
+  // Handle both old format (local time) and new format (UTC time)
+  String timestampString;
+  if (geoData.timestamp.isUtc) {
+    // Timestamp is already in UTC, just format it
+    timestampString = '${geoData.timestamp.toIso8601String()}';
+  } else {
+    // Timestamp is in local time, convert to UTC
+    timestampString = '${geoData.timestamp.toUtc().toIso8601String()}';
+  }
+  
   return [
     sensorId,
     value?.toStringAsFixed(2) ?? '', // format value to 2 decimal places
-    '${geoData.timestamp.toIso8601String()}Z',
+    timestampString,
     geoData.longitude.toString(),
     geoData.latitude.toString(),
     'null'

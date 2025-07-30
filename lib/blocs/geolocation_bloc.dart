@@ -13,12 +13,13 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/utils/geo_utils.dart';
 import 'package:turf/turf.dart' as Turf;
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class GeolocationBloc with ChangeNotifier {
-  // final StreamController<GeolocationData> _geolocationController =
-  //     StreamController.broadcast();
-  // Stream<GeolocationData> get geolocationStream =>
-  //     _geolocationController.stream;
+  final StreamController<GeolocationData> _geolocationController =
+      StreamController.broadcast();
+  Stream<GeolocationData> get geolocationStream =>
+      _geolocationController.stream;
 
   StreamSubscription<Position>? _positionStreamSubscription;
 
@@ -61,20 +62,21 @@ class GeolocationBloc with ChangeNotifier {
       _positionStreamSubscription =
           Geolocator.getPositionStream(locationSettings: locationSettings)
               .listen((Position position) async {
-        // TODO: this is not a good practice to create a new object and not save it
+        
+        // Create geolocation data object
+        GeolocationData geolocationData = GeolocationData()
+          ..latitude = position.latitude
+          ..longitude = position.longitude
+          ..speed = position.speed
+          ..timestamp = position.timestamp;
 
-        if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
-          GeolocationData geolocationData = GeolocationData()
-            ..latitude = position.latitude
-            ..longitude = position.longitude
-            ..speed = position.speed
-            ..timestamp = position.timestamp
-            ..track.value = recordingBloc.currentTrack;
-
-          await _saveGeolocationData(geolocationData); // Save to database
+                if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
+          geolocationData.track.value = recordingBloc.currentTrack;
+          await _saveGeolocationData(geolocationData); // Save to database first
         }
 
-        // _geolocationController.add(geolocationData);
+        // Emit to stream for real-time updates AFTER saving to database
+        _geolocationController.add(geolocationData);
 
         notifyListeners();
       });
@@ -107,7 +109,18 @@ class GeolocationBloc with ChangeNotifier {
       bool isInZone = isInsidePrivacyZone(privacyZones, data);
 
       if (!isInZone) {
-        await isarService.geolocationService.saveGeolocationData(data);
+        // Save the geolocation data first and get the assigned ID
+        final savedId =
+            await isarService.geolocationService.saveGeolocationData(data);
+
+        // Update the GPS object's ID with the actual database ID
+        data.id = savedId;
+        
+        // Create and save GPS speed as SensorData for consistent UI display
+        final gpsSpeedSensorData = createGpsSpeedSensorData(data);
+        if (shouldStoreSensorData(gpsSpeedSensorData)) {
+          await isarService.sensorService.saveSensorData(gpsSpeedSensorData);
+        }
       }
     } catch (e) {
       print('Error saving geolocation data: $e');
@@ -116,7 +129,7 @@ class GeolocationBloc with ChangeNotifier {
 
   @override
   void dispose() {
-    // _geolocationController.close();
+    _geolocationController.close();
     super.dispose();
   }
 }
