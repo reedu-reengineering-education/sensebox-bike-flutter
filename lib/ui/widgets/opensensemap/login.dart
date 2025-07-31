@@ -91,8 +91,7 @@ class _LoginFormState extends State<LoginForm> {
 
                               // Navigate only if login was successful and user is still on the page
                               if (isLoginSuccessful &&
-                                  context.mounted &&
-                                  mounted) {
+                                  context.mounted) {
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
