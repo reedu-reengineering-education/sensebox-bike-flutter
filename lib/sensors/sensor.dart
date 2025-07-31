@@ -81,11 +81,11 @@ abstract class Sensor {
         _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
         _groupedBuffer[_lastGeolocation!]![title]!.add(data);
         
-        // // Force flush if buffer gets too large to prevent memory issues
-        // if (_groupedBuffer.length > 50) {
-        //   print('Sensor $title: Buffer size exceeded 50, forcing flush');
-        //   _flushBuffers();
-        // }
+        // Force flush if buffer gets too large to prevent memory issues
+        if (_groupedBuffer.length > 1000) {
+          debugPrint('Sensor $title: Buffer size exceeded 50, forcing flush');
+          _flushBuffers();
+        }
       } else {
         // Store sensor data in temporary buffer until first GPS point arrives
         _preGpsSensorBuffer.add(data);
