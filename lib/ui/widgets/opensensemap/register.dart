@@ -197,8 +197,7 @@ class _RegisterFormState extends State<RegisterForm> {
                             }
 
                             if (context.mounted &&
-                                isRegistrationSuccessful &&
-                                mounted) {
+                                isRegistrationSuccessful) {
                               // Navigate to the home screen after successful login
                               Navigator.pushReplacement(
                                 context,
