@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:geolocator/geolocator.dart' as geolocator;
-import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_map_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -51,7 +48,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
       geolocationBloc: context.read<GeolocationBloc>(),
       recordingBloc: context.read<RecordingBloc>(),
       osemBloc: context.read<OpenSenseMapBloc>(),
-      bleBloc: context.read<BleBloc>(),
     );
   }
 
@@ -71,9 +67,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     
     // Update margins
     _updateMapMargins();
-
-    // Update BLE connection status
-    _updateBleConnectionStatus();
   }
 
   void _updateMapMargins() {
@@ -99,41 +92,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     );
   }
 
-  void _updateBleConnectionStatus() async {
-    if (!mounted) return;
-    
-    bool enableLocationPuck = _mapBloc.isConnected;
-    mapInstance?.location.updateSettings(LocationComponentSettings(
-      enabled: enableLocationPuck,
-      showAccuracyRing: enableLocationPuck,
-    ));
-    
-    if (enableLocationPuck) {
-      if (!mounted) return;
-      try {
-        final hasPermission =
-            await PermissionService.isLocationPermissionGranted();
-        final geoPosition = hasPermission
-            ? await geolocator.Geolocator.getCurrentPosition()
-            : globePosition;
-        final isGlobe =
-            geoPosition.latitude == 0.0 && geoPosition.longitude == 0.0;
-        
-        final cameraOptions = CameraOptions(
-          center: Point(
-            coordinates: Position(geoPosition.longitude, geoPosition.latitude),
-          ),
-          zoom: isGlobe ? 1.5 : defaultCameraOptions['zoom'],
-          pitch: defaultCameraOptions['pitch'],
-        );
-
-        // Use setCamera instead of flyTo for immediate positioning
-        await mapInstance?.setCamera(cameraOptions);
-      } catch (e, stack) {
-        ErrorService.handleError(e, stack);
-      }
-    }
-  }
   // Map Management
   void _clearTrackLine() {
     lineAnnotationManager.deleteAll().catchError((e) {
@@ -277,12 +235,23 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
       lineAnnotationManager = await mapInstance!.annotations
           .createPolylineAnnotationManager(id: 'lineAnnotationManager');
       
+      // Store brightness before async operation to avoid context gap
       final isDark = Theme.of(context).brightness == Brightness.dark;
       lineAnnotationManager.setLineColor(
           isDark ? Colors.white.toARGB32() : Colors.black.toARGB32());
       lineAnnotationManager.setLineWidth(4.0);
       lineAnnotationManager.setLineEmissiveStrength(1);
       lineAnnotationManager.setLineCap(LineCap.ROUND);
+
+      // Enable location puck if location permissions are granted
+      final hasPermission =
+          await PermissionService.isLocationPermissionGranted();
+      if (hasPermission && mounted) {
+        mapInstance?.location.updateSettings(LocationComponentSettings(
+          enabled: true,
+          showAccuracyRing: true,
+        ));
+      }
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);
     }
