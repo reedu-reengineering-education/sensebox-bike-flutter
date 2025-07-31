@@ -82,9 +82,13 @@ abstract class Sensor {
         _groupedBuffer[_lastGeolocation!]![title]!.add(data);
         
         // Force flush if buffer gets too large to prevent memory issues
-        if (_groupedBuffer.length > 1000) {
+        if (_groupedBuffer.length > 500) {
           debugPrint('Sensor $title: Buffer size exceeded 50, forcing flush');
-          _flushBuffers();
+          // Use unawaited to prevent blocking the main thread
+          _flushBuffers().catchError((e) {
+            debugPrint(
+                'Error during forced buffer flush for sensor $title: $e');
+          });
         }
       } else {
         // Store sensor data in temporary buffer until first GPS point arrives
@@ -184,6 +188,9 @@ abstract class Sensor {
     }
     _isFlushing = true;
 
+    // Add timeout protection to prevent hanging operations
+    final timeoutDuration = Duration(seconds: 30);
+    
     try {
       final List<SensorData> batch = [];
       final Set<int> processedInThisFlush =
@@ -194,8 +201,6 @@ abstract class Sensor {
         final GeolocationData geolocation = entry.key;
         final Map<String, List<List<double>>> sensorData = entry.value;
 
-        // Process sensor data for database only if we haven't already processed this geolocation
-        // If GPS point doesn't have a valid ID, save it to database first
         if (!_processedGeolocationIds.contains(geolocation.id)) {
           // Ensure GPS point is saved to database before linking SensorData
           if (geolocation.id == Isar.autoIncrement || geolocation.id == 0) {
@@ -206,10 +211,6 @@ abstract class Sensor {
               // Update the original GPS object with the saved ID
               geolocation.id = savedId;
             } catch (e) {
-              // Log the error but don't skip the GPS point - try to save sensor data anyway
-              print(
-                  'Failed to save GPS point for sensor data: $e. GPS: ${geolocation.latitude}, ${geolocation.longitude}, ${geolocation.timestamp}');
-              // Don't continue here - try to save sensor data even if GPS save failed
             }
           }
           // Process sensor data for this geolocation
@@ -255,16 +256,27 @@ abstract class Sensor {
         }
       }
 
-      // Save sensor data to database with better error handling
+      // Save sensor data to database with better error handling and timeout protection
       if (batch.isNotEmpty) {
         try {
-          await isarService.sensorService.saveSensorDataBatch(batch);
-          print(
-              'Successfully saved ${batch.length} sensor data points for sensor $title');
+          await isarService.sensorService
+              .saveSensorDataBatch(batch)
+              .timeout(timeoutDuration);
         } catch (e) {
           print(
               'Failed to save sensor data batch for sensor $title: $e. Batch size: ${batch.length}');
           // Don't clear buffer on save failure - data will be retried
+          // But limit the buffer size to prevent memory issues
+          if (_groupedBuffer.length > 100) {
+            debugPrint(
+                'Sensor $title: Buffer too large after save failure, clearing oldest entries');
+            final entriesToRemove = _groupedBuffer.entries
+                .take(_groupedBuffer.length - 50)
+                .toList();
+            for (final entry in entriesToRemove) {
+              _groupedBuffer.remove(entry.key);
+            }
+          }
           return;
         }
       }
@@ -306,23 +318,19 @@ abstract class Sensor {
 
         final List<GeolocationData> geolocations = groupedDataForUpload.keys.toList();
         
-        // Only send data if DirectUploadService is enabled
         if (_directUploadService!.isEnabled) {
           final bool dataAdded = _directUploadService!
               .addGroupedDataForUpload(groupedDataForUpload, geolocations);
           
           // Don't clear buffer here - it will be cleared via upload success callback
-          // This ensures data is preserved if upload fails
-        } else {
-          // Keep buffer data if upload service is disabled (e.g., due to connectivity issues)
-          // Data will be retried on next flush when service is re-enabled
+          // This ensures data is preserved if upload fails Data will be retried on next flush when service is re-enabled
         }
       } else {
         // Clear buffer if no upload service available or not recording
         _groupedBuffer.clear();
       }
     } catch (e) {
-      print('Error in _flushBuffers for sensor $title: $e');
+      debugPrint('Error in _flushBuffers for sensor $title: $e');
     } finally {
       // Only reset flushing flag, don't clear buffer here
       _isFlushing = false;
