@@ -258,7 +258,7 @@ class BleBloc with ChangeNotifier {
     
     bool hasVibrated = false;
     int reconnectionAttempts = 0;
-    const int maxReconnectionAttempts = 1;
+    const int maxReconnectionAttempts = 5;
     bool isFirstReconnection = true;
     bool isReconnecting = false;
 
