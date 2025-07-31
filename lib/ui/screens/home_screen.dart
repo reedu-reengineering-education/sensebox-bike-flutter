@@ -41,7 +41,7 @@ class HomeScreen extends StatelessWidget {
                 actions: [
                   TextButton(
                     onPressed: () {
-                      bleBloc.connectionErrorNotifier.value = false;
+                      bleBloc.resetConnectionError();
                       ScaffoldMessenger.of(context).clearMaterialBanners();
                     },
                     child: Text(
