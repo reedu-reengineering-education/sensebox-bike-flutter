@@ -313,6 +313,12 @@ class BleBloc with ChangeNotifier {
         "Permanent connection error with senseBox", StackTrace.current);
   }
 
+  void resetConnectionError() {
+    connectionErrorNotifier.value = false;
+    permanentConnectionLossNotifier.value = false;
+    notifyListeners();
+  }
+
   Future<void> _listenToCharacteristic(
       BluetoothCharacteristic characteristic) async {
     final uuid = characteristic.uuid.toString();
