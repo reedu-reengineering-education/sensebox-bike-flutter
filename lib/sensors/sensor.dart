@@ -82,7 +82,7 @@ abstract class Sensor {
         _groupedBuffer[_lastGeolocation!]![title]!.add(data);
         
         // Force flush if buffer gets too large to prevent memory issues
-        if (_groupedBuffer.length > 500) {
+        if (_groupedBuffer.length > 100) {
           debugPrint('Sensor $title: Buffer size exceeded 50, forcing flush');
           // Use unawaited to prevent blocking the main thread
           _flushBuffers().catchError((e) {
