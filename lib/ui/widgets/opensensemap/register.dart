@@ -189,12 +189,15 @@ class _RegisterFormState extends State<RegisterForm> {
                               ErrorService.handleError(
                                   RegistrationError(e), stack);
                             } finally {
-                              setState(() {
-                                isLoading = false; // Stop loading
-                              });
+                              if (mounted) {
+                                setState(() {
+                                  isLoading = false; // Stop loading
+                                });
+                              }
                             }
 
-                            if (context.mounted && isRegistrationSuccessful) {
+                            if (context.mounted &&
+                                isRegistrationSuccessful) {
                               // Navigate to the home screen after successful login
                               Navigator.pushReplacement(
                                 context,
