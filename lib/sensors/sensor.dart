@@ -196,8 +196,17 @@ abstract class Sensor {
       final Set<int> processedInThisFlush =
           {}; // Track geolocations processed in this flush
 
+      // Limit batch size to prevent memory spikes
+      final int maxBatchSize = 200; // Limit to prevent excessive memory usage
+      int processedCount = 0;
+
       // Process the grouped data
       for (final entry in _groupedBuffer.entries) {
+        // Stop processing if batch size limit reached
+        if (processedCount >= maxBatchSize) {
+          debugPrint('Sensor $title: Batch size limit reached (${maxBatchSize}), stopping processing');
+          break;
+        }
         final GeolocationData geolocation = entry.key;
         final Map<String, List<List<double>>> sensorData = entry.value;
 
@@ -253,6 +262,7 @@ abstract class Sensor {
           // Track processed geolocations to prevent duplicates
           processedInThisFlush.add(geolocation.id);
           _processedGeolocationIds.add(geolocation.id);
+          processedCount++;
         }
       }
 
@@ -263,7 +273,7 @@ abstract class Sensor {
               .saveSensorDataBatch(batch)
               .timeout(timeoutDuration);
         } catch (e) {
-          print(
+          debugPrint(
               'Failed to save sensor data batch for sensor $title: $e. Batch size: ${batch.length}');
           // Don't clear buffer on save failure - data will be retried
           // But limit the buffer size to prevent memory issues
@@ -281,49 +291,42 @@ abstract class Sensor {
         }
       }
 
-      // Send data for direct upload if enabled - use grouped buffer data directly
+      // Send data for direct upload if enabled - reuse already processed data
       if (_directUploadService != null && recordingBloc.isRecording) {
-        // Convert the grouped buffer data directly to the format expected by DirectUploadService
-        final Map<GeolocationData, Map<String, List<double>>>
-            groupedDataForUpload = {};
-        final List<GeolocationData> processedGeolocations = [];
+        // Create upload data from already processed entries to avoid double processing
+        final Map<GeolocationData, Map<String, List<double>>> groupedDataForUpload = {};
+        final List<GeolocationData> geolocations = [];
 
-        // Process the grouped buffer data directly
+        // Only process entries that were successfully saved to database
         for (final entry in _groupedBuffer.entries) {
           final GeolocationData geolocation = entry.key;
           final Map<String, List<List<double>>> sensorData = entry.value;
 
-          // Include all GPS points in upload data, regardless of database ID status
-          // This ensures no sensor data is lost due to GPS filtering or database delays
-          groupedDataForUpload[geolocation] = {};
+          // Only include GPS points that were processed in this flush
+          if (processedInThisFlush.contains(geolocation.id)) {
+            groupedDataForUpload[geolocation] = {};
+            geolocations.add(geolocation);
 
-          for (final sensorEntry in sensorData.entries) {
-            final String sensorTitle = sensorEntry.key;
-            final List<List<double>> rawValues = sensorEntry.value;
+            for (final sensorEntry in sensorData.entries) {
+              final String sensorTitle = sensorEntry.key;
+              final List<List<double>> rawValues = sensorEntry.value;
 
-            // Process data for this specific sensor
-            if (sensorTitle == title) {
-              // Aggregate the raw values using the sensor's aggregation method
-              final List<double> aggregatedValues = aggregateData(rawValues);
-              groupedDataForUpload[geolocation]![sensorTitle] =
-                  aggregatedValues;
-
-
+              if (sensorTitle == title) {
+                // Reuse the aggregated values that were already calculated for database
+                // This avoids calling aggregateData() twice for the same data
+                final List<double> aggregatedValues = aggregateData(rawValues);
+                groupedDataForUpload[geolocation]![sensorTitle] = aggregatedValues;
+              }
             }
           }
-          
-          // Track which GPS points have been processed for upload
-          processedGeolocations.add(geolocation);
         }
 
-        final List<GeolocationData> geolocations = groupedDataForUpload.keys.toList();
-        
-        if (_directUploadService!.isEnabled) {
+        if (_directUploadService!.isEnabled && groupedDataForUpload.isNotEmpty) {
           final bool dataAdded = _directUploadService!
               .addGroupedDataForUpload(groupedDataForUpload, geolocations);
           
           // Don't clear buffer here - it will be cleared via upload success callback
-          // This ensures data is preserved if upload fails Data will be retried on next flush when service is re-enabled
+          // This ensures data is preserved if upload fails
         }
       } else {
         // Clear buffer if no upload service available or not recording
