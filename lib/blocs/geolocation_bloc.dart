@@ -92,6 +92,29 @@ class GeolocationBloc with ChangeNotifier {
     return Geolocator.getCurrentPosition();
   }
 
+  Future<void> getCurrentLocationAndEmit() async {
+    try {
+      final position = await getCurrentLocation();
+
+      // Create geolocation data object
+      GeolocationData geolocationData = GeolocationData()
+        ..latitude = position.latitude
+        ..longitude = position.longitude
+        ..speed = position.speed
+        ..timestamp = position.timestamp;
+
+      if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
+        geolocationData.track.value = recordingBloc.currentTrack;
+        await _saveGeolocationData(geolocationData);
+      }
+
+      _geolocationController.add(geolocationData);
+      notifyListeners();
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
+    }
+  }
+
   // function to stop listening to geolocation changes
   void stopListening() {
     _positionStreamSubscription?.cancel();

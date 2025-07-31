@@ -84,6 +84,11 @@ class SensorBloc with ChangeNotifier {
 
       directUploadService.enable();
     }
+    
+    geolocationBloc.startListening();
+    geolocationBloc.getCurrentLocationAndEmit().catchError((e) {
+      debugPrint('Failed to get initial GPS location: $e');
+    });
   }
 
   Future<void> _onRecordingStop() async {
