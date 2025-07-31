@@ -82,13 +82,17 @@ class _LoginFormState extends State<LoginForm> {
                                 ErrorService.handleError(LoginError(e), stack,
                                     sendToSentry: false);
                               } finally {
-                                setState(() {
+                                if (mounted) {
+                                  setState(() {
                                   isLoading = false; // Stop loading
                                 });
+                                }
                               }
 
-                              // Navigate only if login was successful
-                              if (isLoginSuccessful && context.mounted) {
+                              // Navigate only if login was successful and user is still on the page
+                              if (isLoginSuccessful &&
+                                  context.mounted &&
+                                  mounted) {
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
