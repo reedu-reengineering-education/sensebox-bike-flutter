@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
@@ -18,6 +20,10 @@ class DirectUploadService {
   // Callback to notify when upload succeeds
   Function(List<GeolocationData>)? _onUploadSuccess;
 
+  // Notifier for permanent upload loss (similar to BLE connection loss)
+  final ValueNotifier<bool> permanentUploadLossNotifier =
+      ValueNotifier<bool>(false);
+
   // vars to handle connectivity issues (same as LiveUploadService)
   DateTime? _lastSuccessfulUpload;
   int _consecutiveFails = 0;
@@ -30,7 +36,6 @@ class DirectUploadService {
   bool _isEnabled = false;
   bool _isPermanentlyDisabled = false;
   Timer? _uploadTimer;
-  Timer? _restartTimer;
 
   DirectUploadService({
     required this.openSenseMapService,
@@ -41,9 +46,27 @@ class DirectUploadService {
   void enable() {
     _isEnabled = true;
     _isPermanentlyDisabled = false;
+    
+    // Check if there's any accumulated data to upload immediately
+    if (_accumulatedSensorData.isNotEmpty) {
+      debugPrint(
+          'Direct upload: Service re-enabled, uploading ${_accumulatedSensorData.length} preserved GPS points');
+      final gpsBuffer = _accumulatedSensorData.keys.toList();
+      _prepareAndUploadData(gpsBuffer);
+
+      // Force immediate upload of preserved data regardless of buffer thresholds
+      if (_directUploadBuffer.isNotEmpty) {
+        _uploadDirectBuffer().catchError((e) {
+          debugPrint(
+              'Failed to upload preserved data on service re-enable: $e');
+        });
+      }
+    }
+    
     // Start timer to ensure data gets uploaded even with few GPS points
-    // Reduced timer to 15 seconds for more frequent uploads
     _uploadTimer = Timer.periodic(Duration(seconds: 15), (_) {
+      debugPrint(
+          '[${DateTime.now().toString()}] Direct upload: Timer fired, accumulated data: ${_accumulatedSensorData.length}');
       if (_accumulatedSensorData.isNotEmpty) {
         _prepareAndUploadData([]);
       }
@@ -55,38 +78,27 @@ class DirectUploadService {
     _isPermanentlyDisabled = true;
     _uploadTimer?.cancel();
     _uploadTimer = null;
-    _restartTimer?.cancel();
-    _restartTimer = null;
+  }
+
+  void disableTemporarily() {
+    _isEnabled = false;
+    _uploadTimer?.cancel();
+    _uploadTimer = null;
   }
 
   bool get isEnabled => _isEnabled;
+  bool get hasPreservedData => _accumulatedSensorData.isNotEmpty;
 
   void setUploadSuccessCallback(Function(List<GeolocationData>) callback) {
     _onUploadSuccess = callback;
   }
 
-  void _scheduleRestart() {
-    // Cancel any existing restart timer
-    _restartTimer?.cancel();
-    
-    // Schedule restart after 30 seconds
-    _restartTimer = Timer(Duration(seconds: 30), () {
-      if (!_isEnabled && !_isPermanentlyDisabled) {
-        ErrorService.handleError(
-            'Direct upload: Auto-restarting service after API error timeout.',
-            StackTrace.current,
-            sendToSentry: true);
-        enable();
-      }
-    });
-  }
-
-
-
   bool addGroupedDataForUpload(
       Map<GeolocationData, Map<String, List<double>>> groupedData,
       List<GeolocationData> gpsBuffer) {
-    if (!_isEnabled) return false;
+    // Always accept data unless permanently disabled
+    // This allows data to be accumulated even when service is temporarily disabled
+    if (_isPermanentlyDisabled) return false;
 
     // Accumulate sensor data from all sensors
     for (final entry in groupedData.entries) {
@@ -100,13 +112,28 @@ class DirectUploadService {
       _accumulatedSensorData[geolocation]!.addAll(sensorData);
     }
 
-    // Check if we have enough data to upload (adaptive threshold)
-    // Upload immediately if we have 3+ GPS points, or if we have 2+ points and timer hasn't fired recently
-    final bool shouldUpload = _accumulatedSensorData.length >= 3 ||
-        (_accumulatedSensorData.length >= 2 && _uploadTimer != null);
+    debugPrint(
+        '[${DateTime.now().toString()}] Direct upload: Received ${groupedData.length} GPS points, accumulated: ${_accumulatedSensorData.length}');
 
-    if (shouldUpload) {
-      _prepareAndUploadData(gpsBuffer);
+    // Always accumulate data, but only attempt upload if service is enabled
+    if (_isEnabled) {
+      // Check if we have enough data to upload (threshold-based)
+      // Upload immediately if we have 3+ GPS points
+      final bool shouldUpload = _accumulatedSensorData.length >= 3;
+
+      debugPrint(
+          '[${DateTime.now().toString()}] Direct upload: Upload threshold check - accumulated: ${_accumulatedSensorData.length}, shouldUpload: $shouldUpload');
+
+      if (shouldUpload) {
+        _prepareAndUploadData(gpsBuffer);
+        // Clear accumulated data immediately after preparing for upload
+        // This prevents the same GPS points from being processed multiple times
+        _accumulatedSensorData.clear();
+      }
+    } else {
+      // Service is temporarily disabled, just accumulate data for later
+      debugPrint(
+          'Direct upload: Service temporarily disabled, accumulating data for later upload');
     }
     
     return true; // Data was successfully added to buffer
@@ -114,6 +141,9 @@ class DirectUploadService {
 
   void _prepareAndUploadData(List<GeolocationData> gpsBuffer) {
     if (_accumulatedSensorData.isEmpty) return;
+
+    debugPrint(
+        '[${DateTime.now().toString()}] Direct upload: Preparing upload for ${_accumulatedSensorData.length} GPS points, buffer size: ${_directUploadBuffer.length}');
 
     // Store the GPS points that are being uploaded
     final List<GeolocationData> gpsPointsBeingUploaded =
@@ -161,10 +191,19 @@ class DirectUploadService {
 
     // Force upload even if buffer threshold is not met (for testing and final flush)
     if (_directUploadBuffer.isNotEmpty) {
-      await _uploadDirectBufferSync();
+      try {
+        await _uploadDirectBufferSync();
+      } catch (e, st) {
+        // Upload failed during recording stop - preserve data for next session
+        ErrorService.handleError(
+            'Direct upload failed during recording stop at ${DateTime.now()}: $e. Data preserved for next session.',
+            st,
+            sendToSentry: true);
+        return; // Don't clear buffers on upload failure
+      }
     }
     
-    // If there's still accumulated data after upload attempts, report it
+    // Only report remaining data if upload was successful
     if (_accumulatedSensorData.isNotEmpty) {
       ErrorService.handleError(
           'Direct upload: ${_accumulatedSensorData.length} GPS points still in buffer after upload attempts. Data may be lost.',
@@ -180,6 +219,9 @@ class DirectUploadService {
     if (_isDirectUploading) return;
     _isDirectUploading = true;
 
+    debugPrint(
+        '[${DateTime.now().toString()}] Direct upload: Starting upload of ${_directUploadBuffer.length} buffers');
+
     try {
       // Merge all prepared data maps into one
       final Map<String, dynamic> data = {};
@@ -191,6 +233,9 @@ class DirectUploadService {
 
       await _uploadDirectBufferWithRetry(data);
       
+      debugPrint(
+          '[${DateTime.now().toString()}] Direct upload: Successfully uploaded ${_directUploadBuffer.length} buffers');
+      
       // Only clear buffers after successful upload
       _directUploadBuffer.clear();
       _accumulatedSensorData.clear();
@@ -199,51 +244,52 @@ class DirectUploadService {
       _lastSuccessfulUpload = DateTime.now();
       _consecutiveFails = 0;
     } catch (e, st) {
-      // Report API errors to Sentry for tracking missing data
-      ErrorService.handleError(
-          'Direct upload API error: $e. Data buffers preserved for retry.', st,
-          sendToSentry: true);
-      
-      // Check if this is a true authentication failure (no refresh token or invalid refresh token)
-      if (e.toString().contains('No refresh token found') ||
-          e.toString().contains('Failed to refresh token')) {
-        // User is truly not authenticated, permanently disable direct upload
-        _isEnabled = false;
-        _isPermanentlyDisabled = true;
-        _uploadTimer?.cancel();
-        _uploadTimer = null;
-        _restartTimer?.cancel();
-        _restartTimer = null;
+      // Check if this is an authentication error that should be handled by OpenSenseMapService
+      if (e.toString().contains('Not authenticated') ||
+          e.toString().contains('401 Unauthorized')) {
+        // Authentication errors are handled by OpenSenseMapService (token refresh)
+        // Don't disable the service, just report and continue
         ErrorService.handleError(
-            'Direct upload disabled: User not authenticated. Please log in to enable direct upload.',
+            'Direct upload authentication error at ${DateTime.now()}: $e. Will retry after token refresh.',
             st,
             sendToSentry: false);
-        return;
-      }
-
-      // Handle other upload errors (same logic as LiveUploadService)
-      _consecutiveFails++;
-      
-      final lastSuccessfulUploadPeriod = DateTime.now()
-          .subtract(Duration(minutes: premanentConnectivityFalurePeriod));
-      final isPermanentConnectivityIssue = _lastSuccessfulUpload != null &&
-          _lastSuccessfulUpload!.isBefore(lastSuccessfulUploadPeriod);
-      final isMaxRetries = _consecutiveFails >= maxRetries;
-
-      if (isPermanentConnectivityIssue || isMaxRetries) {
-        final message = isPermanentConnectivityIssue
-            ? 'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.'
-            : 'Permanent connectivity failure: Max retries ($maxRetries) exceeded.';
-        ErrorService.handleError(message, st, sendToSentry: true);
-        
-        // Instead of permanently disabling, schedule a restart
-        _isEnabled = false;
-        _uploadTimer?.cancel();
-        _uploadTimer = null;
-        _scheduleRestart();
+        // Don't return here - let the finally block reset _isDirectUploading
       } else {
-        // For temporary errors, also schedule a restart after a shorter timeout
-        _scheduleRestart();
+        // Report API errors to Sentry for tracking missing data
+        ErrorService.handleError(
+            'Direct upload API error at ${DateTime.now()}: $e. Data buffers preserved for retry.',
+            st,
+            sendToSentry: true);
+        
+
+
+        // Handle other upload errors (same logic as LiveUploadService)
+        _consecutiveFails++;
+
+        final lastSuccessfulUploadPeriod = DateTime.now()
+            .subtract(Duration(minutes: premanentConnectivityFalurePeriod));
+        final isPermanentConnectivityIssue = _lastSuccessfulUpload != null &&
+            _lastSuccessfulUpload!.isBefore(lastSuccessfulUploadPeriod);
+        final isMaxRetries = _consecutiveFails >= maxRetries;
+
+        if (isPermanentConnectivityIssue || isMaxRetries) {
+          final message = isPermanentConnectivityIssue
+              ? 'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.'
+              : 'Permanent connectivity failure: Max retries ($maxRetries) exceeded.';
+          ErrorService.handleError(message, st, sendToSentry: true);
+
+          // Permanently disable for connectivity issues
+          _isEnabled = false;
+          _isPermanentlyDisabled = true;
+          _uploadTimer?.cancel();
+          _uploadTimer = null;
+          permanentUploadLossNotifier.value = true;
+          ErrorService.handleError(UploadFailureError(), st,
+              sendToSentry: true);
+        } else {
+          // For temporary errors, just disable temporarily
+          disableTemporarily();
+        }
       }
     } finally {
       _isDirectUploading = false;
@@ -282,41 +328,26 @@ class DirectUploadService {
       _lastSuccessfulUpload = DateTime.now();
       _consecutiveFails = 0;
     } catch (e, st) {
-      // Report API errors to Sentry for tracking missing data
-      ErrorService.handleError(
-          'Direct upload API error: $e. Data buffers preserved for retry.', st,
-          sendToSentry: true);
-
-      // Check if this is a true authentication failure (no refresh token or invalid refresh token)
-      if (e.toString().contains('No refresh token found') ||
-          e.toString().contains('Failed to refresh token')) {
-        // User is truly not authenticated, permanently disable direct upload
-        _isEnabled = false;
-        _isPermanentlyDisabled = true;
-        _uploadTimer?.cancel();
-        _uploadTimer = null;
-        _restartTimer?.cancel();
-        _restartTimer = null;
-        ErrorService.handleError(
-            'Direct upload disabled: User not authenticated. Please log in to enable direct upload.',
-            st,
-            sendToSentry: false);
-        return;
-      }
-
-      // Check if this is a general authentication error that should be handled by OpenSenseMapService
+      // Check if this is an authentication error that should be handled by OpenSenseMapService
       if (e.toString().contains('Not authenticated') ||
           e.toString().contains('401 Unauthorized')) {
-        // These are handled by OpenSenseMapService (token refresh), so don't disable the service
-        // Just report the error and continue
+        // Authentication errors are handled by OpenSenseMapService (token refresh)
+        // Don't disable the service, just report and continue
         ErrorService.handleError(
-            'Direct upload authentication error handled by OpenSenseMapService: $e',
+            'Direct upload authentication error at ${DateTime.now()}: $e. Will retry after token refresh.',
             st,
             sendToSentry: false);
-        return;
-      }
+        // Don't return here - let the finally block reset _isDirectUploading
+      } else {
+        // Report API errors to Sentry for tracking missing data
+        ErrorService.handleError(
+            'Direct upload API error at ${DateTime.now()}: $e. Data buffers preserved for retry.',
+            st,
+            sendToSentry: true);
 
-      // Handle other upload errors (same logic as LiveUploadService)
+
+
+        // Handle other upload errors (same logic as LiveUploadService)
       _consecutiveFails++;
 
       final lastSuccessfulUploadPeriod = DateTime.now()
@@ -331,17 +362,18 @@ class DirectUploadService {
             : 'Permanent connectivity failure: Max retries ($maxRetries) exceeded.';
         ErrorService.handleError(message, st, sendToSentry: true);
 
-        // Instead of permanently disabling, schedule a restart
+          // Permanently disable for connectivity issues
         _isEnabled = false;
+          _isPermanentlyDisabled = true;
         _uploadTimer?.cancel();
         _uploadTimer = null;
-        _scheduleRestart();
+          permanentUploadLossNotifier.value = true;
+          ErrorService.handleError(UploadFailureError(), st,
+              sendToSentry: true);
       } else {
-        // For temporary errors, temporarily disable and schedule a restart
-        _isEnabled = false;
-        _uploadTimer?.cancel();
-        _uploadTimer = null;
-        _scheduleRestart();
+          // For temporary errors, just disable temporarily
+          disableTemporarily();
+        }
       }
     } finally {
       _isDirectUploading = false;
@@ -352,10 +384,9 @@ class DirectUploadService {
     _isDirectUploading = false;
     _uploadTimer?.cancel();
     _uploadTimer = null;
-    _restartTimer?.cancel();
-    _restartTimer = null;
     _directUploadBuffer.clear();
     _accumulatedSensorData.clear();
+    permanentUploadLossNotifier.dispose();
   }
 
   // Internal flag to prevent concurrent uploads

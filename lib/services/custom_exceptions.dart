@@ -45,3 +45,9 @@ class ExportDirectoryAccessError implements Exception {
   String toString() =>
       'Error accessing export directory. Please make sure the app has permission to access the storage.';
 }
+
+class UploadFailureError implements Exception {
+  @override
+  String toString() =>
+      'Data upload failed. Please check your internet connection and try again.';
+}

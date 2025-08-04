@@ -128,7 +128,7 @@ class OpenSenseMapService {
       await setTokens(response);
     } else {
       await removeTokens();
-      throw Exception('Failed to refresh token: ${response.body}');
+      throw Exception('Token refresh failed - retrying');
     }
   }
 
@@ -233,14 +233,24 @@ class OpenSenseMapService {
           debugPrint('Data uploaded');
           return;
         } else if (response.statusCode == 401) {
-          await refreshToken();
-          throw Exception('Token refreshed, retrying');
+          try {
+            await refreshToken();
+            throw Exception('Token refreshed, retrying');
+          } catch (e) {
+            // If refresh token fails, don't retry - user needs to re-login
+            throw Exception('Authentication failed - user needs to re-login');
+          }
         } else if (response.statusCode == 429) {
           final retryAfter = response.headers['retry-after'];
           final waitTime = retryAfter != null
               ? int.tryParse(retryAfter) ?? defaultTimeout
               : defaultTimeout * 2;
           throw TooManyRequestsException(waitTime);
+        } else if (response.statusCode == 502 ||
+            response.statusCode == 503 ||
+            response.statusCode == 504) {
+          // 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout - temporary server errors, should retry
+          throw Exception('Server error ${response.statusCode} - retrying');
         } else {
           throw Exception(
               'Failed to upload data (${response.statusCode}) ${response.body}');
@@ -249,6 +259,7 @@ class OpenSenseMapService {
       retryIf: (e) =>
           e is TooManyRequestsException ||
           e.toString().contains('Token refreshed') ||
+          e.toString().contains('Server error') ||
           e is TimeoutException,
       onRetry: (e) async {
         if (e is TooManyRequestsException) {

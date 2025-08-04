@@ -152,6 +152,16 @@ abstract class Sensor {
     await _flushBuffers();
   }
 
+  void clearBuffersOnRecordingStop() {
+    // Only clear buffers when recording stops and upload is confirmed successful
+    if (!recordingBloc.isRecording) {
+      _groupedBuffer.clear();
+      _processedGeolocationIds.clear();
+    }
+  }
+
+
+
 
 
   Future<void> _flushBuffers() async {
@@ -251,14 +261,11 @@ abstract class Sensor {
       if (_directUploadService != null &&
           recordingBloc.isRecording &&
           groupedDataForUpload.isNotEmpty) {
-        if (_directUploadService!.isEnabled) {
-          _directUploadService!.addGroupedDataForUpload(
-              groupedDataForUpload, geolocationsForUpload);
-        }
-      } else {
-        // Clear buffer if no upload service available or not recording
-        _groupedBuffer.clear();
+        _directUploadService!.addGroupedDataForUpload(
+            groupedDataForUpload, geolocationsForUpload);
       }
+      // Note: Buffer clearing is now handled by upload success callback
+      // This prevents data loss when recording stops but upload fails
     } catch (e) {
       debugPrint('Error in _flushBuffers for sensor $title: $e');
     } finally {

@@ -94,9 +94,18 @@ class SensorBloc with ChangeNotifier {
   Future<void> _onRecordingStop() async {
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
-      await directUploadService.uploadRemainingBufferedData();
-
-      directUploadService.disable();
+      try {
+        await directUploadService.uploadRemainingBufferedData();
+        // Only clear sensor buffers after successful upload
+        for (var sensor in _sensors) {
+          sensor.clearBuffersOnRecordingStop();
+        }
+      } catch (e) {
+        // Upload failed - preserve data for next session
+        debugPrint('Upload failed during recording stop: $e');
+      } finally {
+        directUploadService.disable();
+      }
     }
   }
 
