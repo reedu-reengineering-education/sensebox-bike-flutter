@@ -94,27 +94,16 @@ class SensorBloc with ChangeNotifier {
   }
 
   Future<void> _onRecordingStop() async {
-    debugPrint('SensorBloc: Recording stop initiated');
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
-      debugPrint('SensorBloc: Starting upload of remaining buffered data');
       await directUploadService.uploadRemainingBufferedData();
-      debugPrint('SensorBloc: Upload completed (success or failure)');
 
-      // Always clear sensor buffers regardless of upload success/failure
-      debugPrint('SensorBloc: Clearing all sensor buffers');
       for (var sensor in _sensors) {
         sensor.clearBuffersOnRecordingStop();
       }
-      debugPrint('SensorBloc: All sensor buffers cleared');
 
-      debugPrint('SensorBloc: Disabling direct upload service');
       directUploadService.disable();
-      
-      debugPrint('SensorBloc: Recording stop completed');
-    } else {
-      debugPrint('SensorBloc: No direct upload service available');
-      debugPrint('SensorBloc: Recording stop completed');
+
     }
   }
 
@@ -171,9 +160,7 @@ class SensorBloc with ChangeNotifier {
     }
   }
 
-  /// Clears all sensor buffers when starting a new recording to prevent uploading data from previous tracks
   void _clearAllSensorBuffersForNewRecording() {
-    debugPrint('SensorBloc: Clearing all sensor buffers for new recording');
     for (var sensor in _sensors) {
       sensor.clearBuffersForNewRecording();
     }

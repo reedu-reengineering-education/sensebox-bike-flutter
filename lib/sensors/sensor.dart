@@ -29,10 +29,9 @@ abstract class Sensor {
   GeolocationData? _lastGeolocation;
   DirectUploadService? _directUploadService;
   VoidCallback? _recordingListener;
-  bool _isFlushing = false; // Add flag to prevent multiple simultaneous flushes
-  final Set<int> _processedGeolocationIds =
-      {}; // Track processed geolocation IDs
-  final Set<int> _uploadedGeolocationIds = {}; // Track uploaded geolocation IDs
+  bool _isFlushing = false;
+  final Set<int> _processedGeolocationIds = {};
+  final Set<int> _uploadedGeolocationIds = {}; 
 
   Sensor(
     this.characteristicUuid,
@@ -53,13 +52,11 @@ abstract class Sensor {
   void setDirectUploadService(DirectUploadService uploadService) {
     _directUploadService = uploadService;
     
-    // Set up upload success callback to clear successfully uploaded GPS points
     uploadService.setUploadSuccessCallback((uploadedGpsPoints) {
       for (final gpsPoint in uploadedGpsPoints) {
         _uploadedGeolocationIds.add(gpsPoint.id);
       }
 
-      // Clear GPS points that have been successfully uploaded
       final List<GeolocationData> pointsToRemove = [];
       for (final entry in _groupedBuffer.entries) {
         if (_uploadedGeolocationIds.contains(entry.key.id)) {
@@ -76,15 +73,9 @@ abstract class Sensor {
   void onDataReceived(List<double> data) {
     if (data.isNotEmpty && recordingBloc.isRecording) {
       if (_lastGeolocation != null) {
-        // Add sensor data to the grouped buffer
         _groupedBuffer.putIfAbsent(_lastGeolocation!, () => {});
         _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
         _groupedBuffer[_lastGeolocation!]![title]!.add(data);
-        
-        // // Force flush if buffer gets too large to prevent memory issues
-        // if (_groupedBuffer.length > 50) {
-        //   _flushBuffers();
-        // }
       } else {
         _preGpsSensorBuffer.add(data);
       }
@@ -103,16 +94,12 @@ abstract class Sensor {
       geolocationBloc.geolocationStream.listen((geo) {
         if (geo != null) {
           _lastGeolocation = geo;
-          // Flush temporary buffer when GPS point is available
+
           if (_preGpsSensorBuffer.isNotEmpty) {
             _groupedBuffer.putIfAbsent(_lastGeolocation!, () => {});
             _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
             _groupedBuffer[_lastGeolocation!]![title]!
                 .addAll(_preGpsSensorBuffer);
-            
-            // Log when pre-GPS buffer is flushed
-            print(
-                'Sensor $title: Flushed ${_preGpsSensorBuffer.length} pre-GPS data points to GPS location ${geo.latitude}, ${geo.longitude}');
                 
             _preGpsSensorBuffer.clear();
           }
@@ -153,22 +140,13 @@ abstract class Sensor {
   }
 
   void clearBuffersOnRecordingStop() {
-    // Only clear buffers when recording stops and upload is confirmed successful
     if (!recordingBloc.isRecording) {
-      debugPrint(
-          'Sensor $title: Clearing buffers on recording stop (upload successful)');
       _groupedBuffer.clear();
       _processedGeolocationIds.clear();
-    } else {
-      debugPrint(
-          'Sensor $title: Not clearing buffers - recording still active');
     }
   }
 
-  /// Clears all buffers when starting a new recording to prevent uploading data from previous tracks
   void clearBuffersForNewRecording() {
-    debugPrint(
-        'Sensor $title: Clearing buffers for new recording (previous track data)');
     _groupedBuffer.clear();
     _processedGeolocationIds.clear();
   }
@@ -181,8 +159,7 @@ abstract class Sensor {
     if (_groupedBuffer.isEmpty) {
       return;
     }
-    
-    // Prevent multiple simultaneous flushes
+
     if (_isFlushing) {
       return;
     }
@@ -194,12 +171,9 @@ abstract class Sensor {
       final Map<GeolocationData, Map<String, List<double>>>
           groupedDataForUpload = {};
       final List<GeolocationData> geolocationsForUpload = [];
-      
-      // Batch size limit to prevent memory issues
       final int maxBatchSize = 100;
       int processedCount = 0;
 
-      // Process the grouped data in a single pass
       for (final entry in _groupedBuffer.entries) {
         if (processedCount >= maxBatchSize) {
           break;
@@ -262,7 +236,6 @@ abstract class Sensor {
         processedCount++;
       }
 
-      // Save sensor data to database
       if (batch.isNotEmpty) {
         try {
           await isarService.sensorService.saveSensorDataBatch(batch);
