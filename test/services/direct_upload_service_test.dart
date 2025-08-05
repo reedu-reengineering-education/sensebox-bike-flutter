@@ -107,12 +107,11 @@ void main() {
       expect(directUploadService.isEnabled, true);
     });
 
-    test('disables service and clears buffers after network timeout error',
+    test('remains enabled after network timeout error',
         () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
 
-      // Add some data first
       final gpsBuffer = [
         GeolocationData()
           ..latitude = 10.0
@@ -123,19 +122,20 @@ void main() {
 
       final groupedData = {
         gpsBuffer[0]: {
-          'temperature': [22.5]
+          'temperature': [22.5],
         },
       };
 
       directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
       expect(directUploadService.hasPreservedData, true);
 
-      // Setup mock to throw network error to trigger permanent disable
+      // Setup mock to throw network error - should be handled by OpenSenseMapService
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
           .thenThrow(Exception('Network timeout'));
 
       await directUploadService.uploadRemainingBufferedData();
-      expect(directUploadService.isEnabled, false);
+      // Service should remain enabled because network timeouts are handled by OpenSenseMapService
+      expect(directUploadService.isEnabled, true);
       expect(directUploadService.hasPreservedData, false);
     });
 
@@ -235,14 +235,14 @@ void main() {
     });
 
     test(
-        'disables service for permanent authentication failures - forbidden access',
+        'disables service for client errors - forbidden access',
         () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
 
-      // Test with "403 Forbidden" error
+      // Test with "403 Forbidden" error - should be treated as client error
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
-          .thenThrow(Exception('403 Forbidden'));
+          .thenThrow(Exception('Client error 403: Forbidden'));
 
       final gpsBuffer = [
         GeolocationData()
@@ -261,7 +261,7 @@ void main() {
       directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
       await directUploadService.uploadRemainingBufferedData();
 
-      // Service should be disabled for permanent authentication failures
+      // Service should be disabled for client errors (4xx)
       expect(directUploadService.isEnabled, false);
     });
 
@@ -293,37 +293,6 @@ void main() {
       await directUploadService.uploadRemainingBufferedData();
 
       // Service should be disabled for permanent authentication failures
-      expect(directUploadService.isEnabled, false);
-    });
-
-    test('disables service after network timeout error', () async {
-      directUploadService.enable();
-      expect(directUploadService.isEnabled, true);
-
-      // Setup mock to throw network timeout error
-      when(() => mockOpenSenseMapService.uploadData(any(), any()))
-          .thenThrow(Exception('Network timeout'));
-
-      final gpsBuffer = [
-        GeolocationData()
-          ..latitude = 10.0
-          ..longitude = 20.0
-          ..speed = 5.0
-          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
-      ];
-
-      final groupedData = {
-        gpsBuffer[0]: {
-          'temperature': [22.5],
-        },
-      };
-
-      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
-      
-      // Call upload once - it should fail and disable the service
-      await directUploadService.uploadRemainingBufferedData();
-      
-      // Service should be temporarily disabled after network errors
       expect(directUploadService.isEnabled, false);
     });
 

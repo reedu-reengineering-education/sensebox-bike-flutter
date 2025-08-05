@@ -4,11 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
-import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
-import "package:sensebox_bike/constants.dart";
 
 class DirectUploadService {
   final String instanceId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -25,14 +23,15 @@ class DirectUploadService {
       ValueNotifier<bool>(false);
 
   // vars to handle connectivity issues (same as LiveUploadService)
-  DateTime? _lastSuccessfulUpload;
-  int _consecutiveFails = 0;
+  // Remove _consecutiveFails since we no longer track consecutive failures
   
-  // Automatic restart mechanism
+  // Automatic restart mechanism - simplified since we only restart on permanent failures
   Timer? _restartTimer;
   int _restartAttempts = 0;
-  static const int maxRestartAttempts = 5;
-  static const int baseRestartDelayMinutes = 2;
+  static const int maxRestartAttempts =
+      3; // Reduced since we only restart on permanent failures
+  static const int baseRestartDelayMinutes =
+      5; // Increased delay since these are permanent failures
   
 
 
@@ -60,9 +59,6 @@ class DirectUploadService {
     
     // Clear all buffers when starting a new recording to prevent uploading data from previous tracks
     _clearAllBuffersForNewRecording();
-    
-    // Start upload timer
-    _startUploadTimer();
   }
 
   void disable() {
@@ -101,7 +97,8 @@ class DirectUploadService {
       _accumulatedSensorData[geolocation]!.addAll(sensorData);
     }
 
-    final bool shouldUpload = _accumulatedSensorData.length >= 3;
+    final bool shouldUpload = _accumulatedSensorData.length >=
+        6; // Increased from 3 to 6 for better upload efficiency
 
     if (shouldUpload) {
       _prepareAndUploadData(gpsBuffer);
@@ -124,16 +121,30 @@ class DirectUploadService {
         _accumulatedSensorData, gpsBuffer);
     _directUploadBuffer.add(uploadData);
 
-    // Clear accumulated sensor data after preparing upload data
-    // This prevents duplicate data from being uploaded in subsequent batches
-    _accumulatedSensorData.clear();
-
+    // DO NOT clear accumulated sensor data here - wait for successful upload confirmation
+    // This prevents data loss when multiple triggers happen in quick succession
 
     if (_directUploadBuffer.length >= 3) {
+      // Balanced threshold for efficient uploads
       _uploadDirectBuffer().then((_) {
+        // NOW clear the accumulated data after successful upload confirmation
+        _clearAccumulatedDataForUploadedPoints(gpsPointsBeingUploaded);
+        
         _onUploadSuccess?.call(gpsPointsBeingUploaded);
       }).catchError((e) {
+        // Don't clear data on upload failure - it will be retried
       });
+    }
+  }
+
+  /// Clears only the accumulated data for GPS points that were successfully uploaded
+  /// This prevents data loss and ensures data is only cleared after upload confirmation
+  void _clearAccumulatedDataForUploadedPoints(
+      List<GeolocationData> uploadedPoints) {
+    for (final point in uploadedPoints) {
+      if (_accumulatedSensorData.containsKey(point)) {
+        _accumulatedSensorData.remove(point);
+      }
     }
   }
 
@@ -192,24 +203,19 @@ class DirectUploadService {
         return;
       }
 
-      await _uploadDirectBufferWithRetry(data);
+      // Let OpenSenseMapService handle all retries internally
+      await openSenseMapService.uploadData(senseBox.id, data);
       
       // Only clear upload buffer after successful upload (accumulated data already cleared in _prepareAndUploadData)
       _directUploadBuffer.clear();
       
       // Track successful upload
-      _lastSuccessfulUpload = DateTime.now();
-      _consecutiveFails = 0;
+      // Remove _consecutiveFails since we no longer track consecutive failures
     } catch (e, st) {
       await _handleUploadError(e, st);
     } finally {
       _isDirectUploading = false;
     }
-  }
-
-  Future<void> _uploadDirectBufferWithRetry(Map<String, dynamic> data) async {
-
-    await openSenseMapService.uploadData(senseBox.id, data);
   }
 
   /// Clears all buffers
@@ -220,7 +226,7 @@ class DirectUploadService {
 
   void _clearAllBuffersForNewRecording() {
     _clearAllBuffers();
-    _consecutiveFails = 0;
+    // Remove _consecutiveFails since we no longer track consecutive failures
   }
 
   void _disableAndClearBuffers() {
@@ -251,155 +257,63 @@ class DirectUploadService {
     _restartAttempts = 0;
     _restartTimer?.cancel();
     _restartTimer = null;
+    debugPrint(
+        '[DirectUploadService] Restart attempts reset at ${DateTime.now()}');
   }
 
-  void _startUploadTimer() {
-    _uploadTimer = Timer.periodic(Duration(seconds: 15), (_) {
-      if (_accumulatedSensorData.isNotEmpty) {
-        final gpsBuffer = _accumulatedSensorData.keys.toList();
+  // REMOVED: _startUploadTimer() method - timer was causing race conditions and data loss
+  // Now relying only on GPS threshold (3 points) for uploads
 
-        _prepareAndUploadData(gpsBuffer);
-      } 
-    });
-  }
   Future<void> _handleUploadError(dynamic e, StackTrace st) async {
-    if (_isAuthenticationError(e)) {
-      await _handleAuthenticationError(e, st);
-    } else {
-      _handleNonAuthenticationError(e, st);
-    }
-  }
-
-  bool _isAuthenticationError(dynamic e) {
     final errorString = e.toString();
+    ErrorService.handleError(errorString, st, sendToSentry: true);
     
-    // Permanent authentication failures that should disable the service
+    // Handle permanent authentication failures
     if (errorString
             .contains('Authentication failed - user needs to re-login') ||
         errorString.contains('No refresh token found') ||
         errorString.contains('Failed to refresh token:')) {
-      return true;
-    }
-
-    // Temporary authentication errors that should be handled by OpenSenseMap service
-    if (errorString.contains('Not authenticated') ||
-        errorString.contains('Token refreshed, retrying')) {
-      return false; // Let OpenSenseMap service handle these
-    }
-
-    return false;
-  }
-
-  Future<void> _handleAuthenticationError(dynamic e, StackTrace st) async {
-    final errorString = e.toString();
-    
-    if (errorString
-            .contains('Authentication failed - user needs to re-login') ||
-        errorString.contains('No refresh token found') ||
-        errorString.contains('Failed to refresh token:')) {
-      // Permanent authentication failure - disable service permanently
-      ErrorService.handleError(
-          'Direct upload permanent authentication failure at ${DateTime.now()}: $e. Service disabled.',
-          st,
-          sendToSentry: true);
-      
-      _disableAndClearBuffers();
+      await _handlePermanentAuthenticationError(e, st);
+    } else if (errorString.contains('Client error')) {
+      // Handle client errors (4xx) as permanent failures
+      await _handlePermanentClientError(e, st);
     } else {
-      // This shouldn't happen with current logic, but keeping for safety
+      // For all other errors, let OpenSenseMapService handle retries
+      // Only log the error but don't take action
       ErrorService.handleError(
-          'Direct upload authentication error at ${DateTime.now()}: $e. Will retry after token refresh.',
+          'Direct upload temporary error at ${DateTime.now()}: $e. OpenSenseMap service will handle retry.',
           st,
           sendToSentry: false);
-      
-      // Add a delay to allow token refresh to complete
-      await Future.delayed(Duration(seconds: 5));
     }
   }
 
-  void _handleNonAuthenticationError(dynamic e, StackTrace st) {
-    final errorString = e.toString();
-    
-    // Don't count temporary authentication errors as failures
-    // These should be handled by OpenSenseMap service's retry mechanism
-    if (errorString.contains('Not authenticated') ||
-        errorString.contains('Token refreshed, retrying')) {
-      ErrorService.handleError(
-          'Direct upload temporary authentication error at ${DateTime.now()}: $e. OpenSenseMap service will handle retry.',
-          st,
-          sendToSentry: false);
-      return; // Don't count as failure, don't disable service
-    }
-    
-    // Don't count temporary server errors (5xx) as permanent failures
-    // These should be retried by the OpenSenseMap service
-    if (errorString.contains('Server error 502') ||
-        errorString.contains('Server error 503') ||
-        errorString.contains('Server error 504') ||
-        errorString.contains('Server error 500')) {
-      ErrorService.handleError(
-          'Direct upload temporary server error at ${DateTime.now()}: $e. OpenSenseMap service will handle retry.',
-          st,
-          sendToSentry: false);
-      return; // Don't count as failure, don't disable service
-    }
-
-    // Don't count rate limiting errors as permanent failures
-    if (errorString.contains('TooManyRequestsException') ||
-        errorString.contains('429')) {
-      ErrorService.handleError(
-          'Direct upload rate limited at ${DateTime.now()}: $e. OpenSenseMap service will handle retry.',
-          st,
-          sendToSentry: false);
-      return; // Don't count as failure, don't disable service
-    }
-
-    // Handle other errors (likely 4xx client errors) as potential permanent failures
+  Future<void> _handlePermanentAuthenticationError(
+      dynamic e, StackTrace st) async {
     ErrorService.handleError(
-        'Direct upload API error at ${DateTime.now()}: $e. Data buffers preserved for retry.',
+        'Direct upload permanent authentication failure at ${DateTime.now()}: $e. Service disabled.',
         st,
         sendToSentry: true);
-
-    _consecutiveFails++;
-
-    final lastSuccessfulUploadPeriod = DateTime.now()
-        .subtract(Duration(minutes: premanentConnectivityFalurePeriod));
-    final isPermanentConnectivityIssue = _lastSuccessfulUpload != null &&
-        _lastSuccessfulUpload!.isBefore(lastSuccessfulUploadPeriod);
-    final isMaxRetries = _consecutiveFails >= maxRetries;
-
-    if (isPermanentConnectivityIssue || isMaxRetries) {
-      _handlePermanentFailure(st, isPermanentConnectivityIssue);
-    } else {
-      disableTemporarily();
-    }
-  }
-
-  void _handlePermanentFailure(
-      StackTrace st, bool isPermanentConnectivityIssue) {
-    final message = isPermanentConnectivityIssue
-        ? 'Permanent connectivity failure: No connection for more than $premanentConnectivityFalurePeriod minutes.'
-        : 'Permanent connectivity failure: Max retries ($maxRetries) exceeded.';
-    ErrorService.handleError(message, st, sendToSentry: true);
+    
     _disableAndClearBuffers();
     _scheduleRestart();
+  }
 
-    ErrorService.handleError(UploadFailureError(), st, sendToSentry: true);
+  Future<void> _handlePermanentClientError(dynamic e, StackTrace st) async {
+    ErrorService.handleError(
+        'Direct upload permanent client error at ${DateTime.now()}: $e. Service disabled.',
+        st,
+        sendToSentry: true);
+    
+    _disableAndClearBuffers();
+    _scheduleRestart();
   }
 
   void _attemptRestart() {
     _clearAllBuffers();
 
-    // Reset failure counters
-    _consecutiveFails = 0;
-    _lastSuccessfulUpload = null;
-
-    // Re-enable the service
     _isEnabled = true;
     _isPermanentlyDisabled = false;
     permanentUploadLossNotifier.value = false;
-
-    // Restart the upload timer
-    _startUploadTimer();
   }
 
   Future<void> _uploadDirectBufferSync() async {
@@ -417,14 +331,12 @@ class DirectUploadService {
 
       if (data.isEmpty) return;
 
-      await _uploadDirectBufferWithRetry(data);
+      // Let OpenSenseMapService handle all retries internally
+      await openSenseMapService.uploadData(senseBox.id, data);
 
-      // Only clear upload buffer after successful upload (accumulated data already cleared in _prepareAndUploadDataSync)
       _directUploadBuffer.clear();
 
-      // Track successful upload
-      _lastSuccessfulUpload = DateTime.now();
-      _consecutiveFails = 0;
+      // Remove _consecutiveFails since we no longer track consecutive failures
     } catch (e, st) {
       await _handleUploadError(e, st);
       rethrow;
@@ -441,7 +353,57 @@ class DirectUploadService {
     _restartTimer = null;
     _directUploadBuffer.clear();
     _accumulatedSensorData.clear();
-    permanentUploadLossNotifier.dispose();
+    
+    // Log final statistics
+    // _logDebugStatistics(); // REMOVED: Debug statistics methods
   }
+
+  /// Logs a summary of debug statistics for monitoring timer synchronization and data loss
+  // void _logDebugStatistics() { // REMOVED: Debug statistics methods
+  //   debugPrint('[DirectUploadService] === DEBUG STATISTICS SUMMARY ===');
+  //   debugPrint(
+  //       '[DirectUploadService] GPS threshold triggers: $_gpsThresholdTriggerCount');
+  //   debugPrint(
+  //       '[DirectUploadService] Concurrent upload preventions: $_concurrentUploadPreventions');
+  //   debugPrint(
+  //       '[DirectUploadService] Data clearing operations: $_dataClearingCount');
+  //   debugPrint(
+  //       '[DirectUploadService] Successful upload completions: $_uploadCompletionCount');
+  //   debugPrint(
+  //       '[DirectUploadService] Data preparation operations: $_dataPreparationCount');
+
+  //   if (_lastGpsThresholdTrigger != null) {
+  //     debugPrint(
+  //         '[DirectUploadService] Last GPS threshold trigger: $_lastGpsThresholdTrigger');
+  //   }
+
+  //   // Calculate potential data loss indicators
+  //   final dataLossIndicator = _dataClearingCount - _uploadCompletionCount;
+  //   if (dataLossIndicator > 0) {
+  //     debugPrint(
+  //         '[DirectUploadService] ⚠️  POTENTIAL DATA LOSS INDICATOR: $_dataClearingCount data clearings vs $_uploadCompletionCount uploads');
+  //   }
+
+  //   // Calculate data preparation vs upload completion mismatch
+  //   final preparationUploadMismatch =
+  //       _dataPreparationCount - _uploadCompletionCount;
+  //   if (preparationUploadMismatch > 0) {
+  //     debugPrint(
+  //         '[DirectUploadService] ⚠️  DATA PREPARATION MISMATCH: $_dataPreparationCount preparations vs $_uploadCompletionCount uploads');
+  //   }
+
+  //   // Check for accumulated data that hasn't been processed
+  //   if (_accumulatedSensorData.isNotEmpty) {
+  //     debugPrint(
+  //         '[DirectUploadService] ⚠️  UNPROCESSED DATA: ${_accumulatedSensorData.length} accumulated data points not yet processed');
+  //   }
+
+  //   debugPrint('[DirectUploadService] === END DEBUG STATISTICS ===');
+  // }
+
+  /// Public method to log current debug statistics (can be called during recording)
+  // void logCurrentStatistics() { // REMOVED: Debug statistics methods
+  //   _logDebugStatistics();
+  // }
   bool _isDirectUploading = false;
 } 

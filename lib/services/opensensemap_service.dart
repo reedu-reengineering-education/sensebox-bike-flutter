@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retry/retry.dart';
@@ -208,6 +209,9 @@ class OpenSenseMapService {
       String senseBoxId, Map<String, dynamic> sensorData) async {
     List<dynamic> data = sensorData.values.toList();
 
+    debugPrint('[OpenSenseMapService] Starting upload at ${DateTime.now()}. '
+        'Data points: ${data.length}, senseBoxId: $senseBoxId');
+
     // API allows up to 6 requests per minute, so set maxAttempts and delays accordingly
     final r = RetryOptions(
       maxAttempts: 6, // 6 attempts per minute
@@ -251,16 +255,23 @@ class OpenSenseMapService {
             response.statusCode == 504) {
           // 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout - temporary server errors, should retry
           throw Exception('Server error ${response.statusCode} - retrying');
-        } else {
+        } else if (response.statusCode >= 400 && response.statusCode < 500) {
+          // 4xx client errors - these are likely permanent and shouldn't be retried
           throw Exception(
-              'Failed to upload data (${response.statusCode}) ${response.body}');
+              'Client error ${response.statusCode}: ${response.body}');
+        } else {
+          // 5xx server errors and other errors - retry these
+          throw Exception(
+              'Server error ${response.statusCode}: ${response.body}');
         }
       },
-      retryIf: (e) =>
-          e is TooManyRequestsException ||
-          e.toString().contains('Token refreshed') ||
-          e.toString().contains('Server error') ||
-          e is TimeoutException,
+      retryIf: (e) {
+        final errorString = e.toString();
+        final shouldRetry = e is TooManyRequestsException ||
+            errorString.contains('Token refreshed') ||
+            errorString.contains('Server error') ||
+            e is TimeoutException;
+      },
       onRetry: (e) async {
         if (e is TooManyRequestsException) {
           await Future.delayed(Duration(seconds: e.retryAfter));

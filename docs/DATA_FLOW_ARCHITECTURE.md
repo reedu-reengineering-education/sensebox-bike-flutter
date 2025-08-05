@@ -2,7 +2,7 @@
 
 ## 🎯 **Overview**
 
-This document describes the complete data flow from track recording initiation to data upload to openSenseMap, including the role of each component in the system.
+This document describes the complete data flow from track recording initiation to data upload to openSenseMap, including the role of each component in the system. The architecture has been updated to implement a decoupled retry logic system that prevents circular retry patterns and app hangs.
 
 ## 🔄 **High-Level Data Flow**
 
@@ -77,7 +77,7 @@ Sensor Buffers → DirectUploadService → Upload Buffers → API
 - **`DirectUploadService`**: 
   - Accumulates data from all sensors (`_accumulatedSensorData`)
   - Prepares data for API upload (`_directUploadBuffer`)
-  - Manages upload timing and retry logic
+  - Manages upload timing and delegates retry logic to OpenSenseMapService
 
 ### **2.2 Data Storage Layers**
 
@@ -94,7 +94,7 @@ Sensor Buffers → DirectUploadService → Upload Buffers → API
 
 3. **`_directUploadBuffer`** (in DirectUploadService):
    - **Purpose**: Prepares data for API upload
-   - **Lifetime**: Until upload threshold is met (10+ buffers)
+   - **Lifetime**: Until upload threshold is met (3+ buffers)
    - **Clearing**: After successful API upload
 
 #### **Permanent Storage (Isar Database)**
@@ -167,8 +167,8 @@ _uploadDirectBuffer() {
       data.addAll(preparedData);
     }
     
-    // 3. Upload via API
-    await _uploadDirectBufferWithRetry(data);
+    // 3. Upload via API - OpenSenseMapService handles all retries internally
+    await openSenseMapService.uploadData(senseBox.id, data);
     
     // 4. Clear upload buffer after successful upload
     // Note: _accumulatedSensorData already cleared in _prepareAndUploadData
@@ -177,28 +177,48 @@ _uploadDirectBuffer() {
 }
 ```
 
-### **3.3 Error Handling & Retry Logic**
+### **3.3 Decoupled Error Handling & Retry Logic**
 
-#### **Authentication Errors**
-- **Detection**: "Not authenticated" or "401 Unauthorized"
-- **Action**: Let `OpenSenseMapService` handle token refresh
-- **Behavior**: Continue processing, don't disable service
+#### **OpenSenseMapService Retry Logic**
+The `OpenSenseMapService` now handles all retry logic internally with the following configuration:
+- **Max Attempts**: 6 attempts per minute
+- **Delay Factor**: 10 seconds between attempts
+- **Max Delay**: 15 seconds maximum delay
+- **Retry Conditions**: Only retry on appropriate errors:
+  - `TooManyRequestsException` (rate limiting)
+  - `'Token refreshed, retrying'` (authentication refresh)
+  - `'Server error'` (5xx server errors)
+  - `TimeoutException` (network timeouts)
 
-#### **Temporary Errors**
-- **Detection**: Network timeouts, temporary API failures
-- **Action**: Call `disableTemporarily()`
-- **Behavior**: Preserve data, retry on next cycle
+#### **DirectUploadService Error Handling**
+The `DirectUploadService` now only handles permanent failures and delegates all retry logic to `OpenSenseMapService`:
 
-#### **Permanent Errors**
-- **Detection**: Max retries exceeded or long-term connectivity issues
-- **Action**: Permanently disable service
-- **Behavior**: Set `permanentUploadLossNotifier.value = true`
+**Permanent Failures (Service Disabled)**:
+- **Authentication Failures**: 
+  - `'Authentication failed - user needs to re-login'`
+  - `'No refresh token found'`
+  - `'Failed to refresh token:'`
+- **Client Errors (4xx)**: 
+  - `'Client error 403: Forbidden'`
+  - `'Client error 400: Bad Request'`
+  - Any 4xx status code errors
 
-#### **Recording Stop Upload Failures**
-- **Detection**: `uploadRemainingBufferedData()` fails
-- **Retry Limit**: Uses same `maxRetries` constant (10 attempts)
-- **Action**: After max retries, flush all buffers to prevent data accumulation
-- **Behavior**: Clear `_accumulatedSensorData`, `_directUploadBuffer`, and reset counters
+**Temporary Errors (Handled by OpenSenseMapService)**:
+- **Network Timeouts**: `'Network timeout'`
+- **Server Errors (5xx)**: `'Server error 503 - retrying'`
+- **Rate Limiting**: `'TooManyRequestsException'`
+- **Temporary Authentication**: `'Not authenticated'`
+
+#### **Error Handling Behavior**
+- **Permanent Failures**: Service is permanently disabled, buffers cleared, restart scheduled
+- **Temporary Errors**: Service remains enabled, errors logged but no action taken
+- **No Circular Retries**: Eliminates the feedback loop that was causing app hangs
+
+#### **Automatic Restart Mechanism**
+- **Max Restart Attempts**: 3 attempts (reduced from 5)
+- **Base Delay**: 5 minutes (increased from 2 minutes)
+- **Exponential Backoff**: 5, 10, 15 minutes delays
+- **Buffer Management**: All buffers cleared on restart for fresh start
 
 ---
 
@@ -230,19 +250,21 @@ _uploadDirectBuffer() {
 ### **4.2 Service Layer**
 
 #### **`DirectUploadService`**
-- **Primary Role**: Real-time data upload management
+- **Primary Role**: Real-time data upload management (simplified)
 - **Key Methods**:
   - `addGroupedDataForUpload()`: Accumulate sensor data
-  - `_uploadDirectBuffer()`: Execute API uploads
+  - `_uploadDirectBuffer()`: Execute API uploads (no retry logic)
   - `uploadRemainingBufferedData()`: Final upload on stop
 - **Buffers Managed**: `_accumulatedSensorData`, `_directUploadBuffer`
+- **Error Handling**: Only handles permanent failures, delegates retries to OpenSenseMapService
 
 #### **`OpenSenseMapService`**
-- **Primary Role**: API communication with openSenseMap
+- **Primary Role**: API communication with openSenseMap (enhanced)
 - **Key Methods**:
-  - `uploadData()`: Send data to API
+  - `uploadData()`: Send data to API with comprehensive retry logic
   - `refreshToken()`: Handle authentication
-- **Error Handling**: Token refresh, API retries
+- **Retry Logic**: Handles all retry attempts internally (6 attempts, 10-15s delays)
+- **Error Classification**: Distinguishes between client errors (4xx) and server errors (5xx)
 
 #### **`IsarService`**
 - **Primary Role**: Local database operations
@@ -257,8 +279,9 @@ _uploadDirectBuffer() {
 - **Primary Role**: Common sensor functionality
 - **Key Methods**:
   - `onDataReceived()`: Process raw BLE data
-  - `_flushBuffers()`: Save data to Isar
+  - `_flushBuffers()`: Save data to Isar and prepare for upload
 - **Buffering**: `_groupedBuffer` management
+- **Upload Integration**: Sends data to DirectUploadService via `addGroupedDataForUpload()`
 
 #### **Individual Sensor Implementations**
 - **Examples**: `TemperatureSensor`, `GPSSensor`, `HumiditySensor`
@@ -284,8 +307,8 @@ _uploadDirectBuffer() {
 
 ### **5.3 Error Scenarios**
 1. **BLE Disconnection**: Data continues to accumulate locally
-2. **Network Issues**: Data preserved for retry
-3. **API Errors**: Graceful degradation with error reporting
+2. **Network Issues**: Data preserved for retry by OpenSenseMapService
+3. **API Errors**: Graceful degradation with proper error classification
 
 ---
 
@@ -323,23 +346,31 @@ _uploadDirectBuffer() {
 - **Cause**: Buffers not cleared when starting new recording
 - **Solution**: Clear all buffers in `enable()` and `_onRecordingStart()`
 
-#### **Authentication Error Handling**
+#### **Decoupled Error Handling**
 
-The DirectUploadService classifies authentication errors into two categories based on the actual error messages thrown by OpenSenseMapService:
+The error handling system has been completely decoupled to prevent circular retry patterns:
 
-**Permanent Authentication Failures** (Service Disabled):
-- `'Authentication failed - user needs to re-login'` - When token refresh fails in OpenSenseMapService
-- `'No refresh token found'` - When trying to refresh but no refresh token exists  
-- `'Failed to refresh token: $refreshError'` - When token refresh throws an error
+**OpenSenseMapService Responsibilities**:
+- Handle all retry logic internally (6 attempts, 10-15s delays)
+- Classify errors as retryable vs non-retryable
+- Handle authentication token refresh
+- Manage rate limiting with proper delays
 
-**Temporary Authentication Errors** (Handled by OpenSenseMap Service):
-- `'Not authenticated'` - When no access token is available
-- `'Token refreshed, retrying'` - After successful token refresh (caught by retry mechanism)
+**DirectUploadService Responsibilities**:
+- Only handle permanent failures that require service disable
+- Delegate all temporary errors to OpenSenseMapService
+- Schedule automatic restarts for permanent failures
+- Clear buffers on permanent failures
 
-**Behavior:**
-- **Permanent failures**: Service is permanently disabled, buffers cleared, error logged to Sentry
-- **Temporary errors**: Service remains enabled, errors delegated to OpenSenseMap service's retry mechanism
-- **Logging**: Permanent failures sent to Sentry, temporary errors logged locally only
+**Error Classification**:
+- **Permanent failures** (service disabled): Authentication failures, client errors (4xx)
+- **Temporary errors** (handled by OpenSenseMapService): Network timeouts, server errors (5xx), rate limiting
+
+**Benefits**:
+- ✅ No more circular retry patterns
+- ✅ No more app hangs
+- ✅ Clear separation of concerns
+- ✅ Proper error recovery
 
 #### **Buffer Clearing on Recording Stop**
 - **Symptom**: Buffers not cleared when upload fails during recording stop
@@ -349,7 +380,7 @@ The DirectUploadService classifies authentication errors into two categories bas
 #### **Automatic Service Restart**
 - **Symptom**: Service permanently disabled after connectivity issues
 - **Cause**: No automatic restart mechanism
-- **Solution**: Implement exponential backoff restart with up to 5 attempts (2, 4, 6, 8, 10 minutes delays)
+- **Solution**: Implement exponential backoff restart with up to 3 attempts (5, 10, 15 minutes delays)
 - **Buffer Management**: Clear all buffers on restart for fresh start
 
 #### **Data Buffering During Service Disabled**
@@ -370,8 +401,8 @@ lib/
 │   ├── sensor_bloc.dart        # Sensor orchestration
 │   └── geolocation_bloc.dart   # GPS data management
 ├── services/
-│   ├── direct_upload_service.dart    # Real-time upload management
-│   ├── opensensemap_service.dart     # API communication
+│   ├── direct_upload_service.dart    # Real-time upload management (simplified)
+│   ├── opensensemap_service.dart     # API communication (enhanced retry logic)
 │   └── isar_service.dart             # Local database operations
 └── sensors/
     ├── sensor.dart             # Base sensor class
@@ -411,7 +442,7 @@ lib/models/
 1. Data prepared for API format
 2. **Accumulated data cleared immediately** after preparation to prevent duplicates
 3. Buffered until threshold met (3+ items for frequent uploads)
-4. Upload executed via `OpenSenseMapService`
+4. Upload executed via `OpenSenseMapService` (with internal retry logic)
 5. Upload buffer cleared after successful upload
 6. Success callback notifies sensors to clear their buffers
 
@@ -436,24 +467,26 @@ lib/models/
 - **Buffer Management**: Separate clearing of accumulated data (after preparation) and upload buffer (after successful upload)
 - **Upload Frequency**: Reduced buffer threshold from 10 to 3 for more frequent uploads
 
-### **9.3 Error Handling**
+### **9.3 Decoupled Error Handling**
 
-**Authentication Error Classification:**
-- **Permanent failures** (service disabled): `'Authentication failed - user needs to re-login'`, `'No refresh token found'`, `'Failed to refresh token:'`
-- **Temporary errors** (handled by OpenSenseMap service): `'Not authenticated'`, `'Token refreshed, retrying'`
+**OpenSenseMapService Retry Configuration:**
+- **Max Attempts**: 6 attempts per minute
+- **Delay Factor**: 10 seconds between attempts
+- **Max Delay**: 15 seconds maximum delay
+- **Retry Conditions**: Only retry on appropriate errors (server errors, rate limiting, timeouts)
 
-**Server Error Handling:**
-- **Temporary server errors** (5xx): `'Server error 502'`, `'Server error 503'`, `'Server error 504'`, `'Server error 500'`
-- **Rate limiting**: `'TooManyRequestsException'`, `'429'`
-- **Other errors**: Treated as potential permanent failures, counted toward retry limits
-
-**Logging Strategy:**
-- Permanent failures sent to Sentry for monitoring
-- Temporary errors logged locally only
-- Network timeouts and connectivity issues handled separately
+**DirectUploadService Error Classification:**
+- **Permanent failures** (service disabled): Authentication failures, client errors (4xx)
+- **Temporary errors** (handled by OpenSenseMapService): Network timeouts, server errors (5xx), rate limiting
 
 **Error Message Sources:**
 All error messages are based on actual exceptions thrown by OpenSenseMapService, ensuring accurate classification and handling.
+
+**Benefits of Decoupling:**
+- ✅ Eliminates circular retry patterns that caused app hangs
+- ✅ Clear separation of responsibilities
+- ✅ Proper error recovery without infinite loops
+- ✅ Better performance and reliability
 
 ### **9.4 Performance Tuning**
 - **Buffer Sizes**: Balance between memory usage and upload efficiency
@@ -462,4 +495,4 @@ All error messages are based on actual exceptions thrown by OpenSenseMapService,
 
 ---
 
-This documentation provides a complete overview of how data flows through the system from recording start to successful upload to openSenseMap. 
+This documentation provides a complete overview of how data flows through the system from recording start to successful upload to openSenseMap, with the updated decoupled retry logic architecture that prevents circular retry patterns and app hangs. 
