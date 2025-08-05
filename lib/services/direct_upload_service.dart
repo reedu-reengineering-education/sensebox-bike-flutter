@@ -200,8 +200,6 @@ class DirectUploadService {
 
     // Prevent concurrent uploads
     if (_isDirectUploading) {
-      debugPrint(
-          '[${DateTime.now().toString()}] Direct upload: Upload already in progress, skipping');
       return;
     }
     _isDirectUploading = true;
