@@ -139,13 +139,15 @@ void main() {
       expect(directUploadService.hasPreservedData, false);
     });
 
+
+
     test(
-        'remains enabled after authentication errors due to token refresh handling',
+        'remains enabled after temporary authentication errors',
         () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
 
-      // Setup mock to throw authentication error
+      // Setup mock to throw temporary authentication error
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
           .thenThrow(Exception('Not authenticated'));
 
@@ -166,11 +168,13 @@ void main() {
       directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
       await directUploadService.uploadRemainingBufferedData();
       
-      // Service should remain enabled because OpenSenseMapService handles token refresh
+      // Service should remain enabled because temporary auth errors are handled by OpenSenseMap service
       expect(directUploadService.isEnabled, true);
     });
 
-    test('disables service for true authentication failures', () async {
+    test(
+        'disables service for permanent authentication failures - no refresh token',
+        () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
 
@@ -195,7 +199,100 @@ void main() {
       directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
       await directUploadService.uploadRemainingBufferedData();
 
-      // Service should be disabled for true authentication failures
+      // Service should be disabled for permanent authentication failures
+      expect(directUploadService.isEnabled, false);
+    });
+
+    test(
+        'disables service for permanent authentication failures - user needs re-login',
+        () async {
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+
+      // Test with "Authentication failed - user needs to re-login" error
+      when(() => mockOpenSenseMapService.uploadData(any(), any())).thenThrow(
+          Exception('Authentication failed - user needs to re-login'));
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.5],
+        },
+      };
+
+      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      await directUploadService.uploadRemainingBufferedData();
+
+      // Service should be disabled for permanent authentication failures
+      expect(directUploadService.isEnabled, false);
+    });
+
+    test(
+        'disables service for permanent authentication failures - forbidden access',
+        () async {
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+
+      // Test with "403 Forbidden" error
+      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+          .thenThrow(Exception('403 Forbidden'));
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.5],
+        },
+      };
+
+      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      await directUploadService.uploadRemainingBufferedData();
+
+      // Service should be disabled for permanent authentication failures
+      expect(directUploadService.isEnabled, false);
+    });
+
+    test(
+        'disables service for permanent authentication failures - failed token refresh',
+        () async {
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+
+      // Test with "Failed to refresh token" error
+      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+          .thenThrow(Exception('Failed to refresh token: Network error'));
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.5],
+        },
+      };
+
+      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      await directUploadService.uploadRemainingBufferedData();
+
+      // Service should be disabled for permanent authentication failures
       expect(directUploadService.isEnabled, false);
     });
 
@@ -228,6 +325,64 @@ void main() {
       
       // Service should be temporarily disabled after network errors
       expect(directUploadService.isEnabled, false);
+    });
+
+    test('remains enabled after temporary server errors', () async {
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+
+      // Setup mock to throw temporary server error
+      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+          .thenThrow(Exception('Server error 503 - retrying'));
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.5],
+        },
+      };
+
+      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      await directUploadService.uploadRemainingBufferedData();
+
+      // Service should remain enabled because temporary server errors are handled by OpenSenseMap service
+      expect(directUploadService.isEnabled, true);
+    });
+
+    test('remains enabled after rate limiting errors', () async {
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+
+      // Setup mock to throw rate limiting error
+      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+          .thenThrow(Exception('TooManyRequestsException'));
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.5],
+        },
+      };
+
+      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      await directUploadService.uploadRemainingBufferedData();
+
+      // Service should remain enabled because rate limiting errors are handled by OpenSenseMap service
+      expect(directUploadService.isEnabled, true);
     });
 
     test('remains enabled after successful upload', () async {

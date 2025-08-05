@@ -271,22 +271,89 @@ class DirectUploadService {
   }
 
   bool _isAuthenticationError(dynamic e) {
-    return e.toString().contains('Not authenticated') ||
-        e.toString().contains('401 Unauthorized') ||
-        e.toString().contains('Authentication failed');
+    final errorString = e.toString();
+    
+    // Permanent authentication failures that should disable the service
+    if (errorString
+            .contains('Authentication failed - user needs to re-login') ||
+        errorString.contains('No refresh token found') ||
+        errorString.contains('Failed to refresh token:')) {
+      return true;
+    }
+
+    // Temporary authentication errors that should be handled by OpenSenseMap service
+    if (errorString.contains('Not authenticated') ||
+        errorString.contains('Token refreshed, retrying')) {
+      return false; // Let OpenSenseMap service handle these
+    }
+
+    return false;
   }
 
   Future<void> _handleAuthenticationError(dynamic e, StackTrace st) async {
-    ErrorService.handleError(
-        'Direct upload authentication error at ${DateTime.now()}: $e. Will retry after token refresh.',
-        st,
-        sendToSentry: false);
+    final errorString = e.toString();
     
-    // Add a delay to allow token refresh to complete
-    await Future.delayed(Duration(seconds: 5));
+    if (errorString
+            .contains('Authentication failed - user needs to re-login') ||
+        errorString.contains('No refresh token found') ||
+        errorString.contains('Failed to refresh token:')) {
+      // Permanent authentication failure - disable service permanently
+      ErrorService.handleError(
+          'Direct upload permanent authentication failure at ${DateTime.now()}: $e. Service disabled.',
+          st,
+          sendToSentry: true);
+      
+      _disableAndClearBuffers();
+    } else {
+      // This shouldn't happen with current logic, but keeping for safety
+      ErrorService.handleError(
+          'Direct upload authentication error at ${DateTime.now()}: $e. Will retry after token refresh.',
+          st,
+          sendToSentry: false);
+      
+      // Add a delay to allow token refresh to complete
+      await Future.delayed(Duration(seconds: 5));
+    }
   }
 
   void _handleNonAuthenticationError(dynamic e, StackTrace st) {
+    final errorString = e.toString();
+    
+    // Don't count temporary authentication errors as failures
+    // These should be handled by OpenSenseMap service's retry mechanism
+    if (errorString.contains('Not authenticated') ||
+        errorString.contains('Token refreshed, retrying')) {
+      ErrorService.handleError(
+          'Direct upload temporary authentication error at ${DateTime.now()}: $e. OpenSenseMap service will handle retry.',
+          st,
+          sendToSentry: false);
+      return; // Don't count as failure, don't disable service
+    }
+    
+    // Don't count temporary server errors (5xx) as permanent failures
+    // These should be retried by the OpenSenseMap service
+    if (errorString.contains('Server error 502') ||
+        errorString.contains('Server error 503') ||
+        errorString.contains('Server error 504') ||
+        errorString.contains('Server error 500')) {
+      ErrorService.handleError(
+          'Direct upload temporary server error at ${DateTime.now()}: $e. OpenSenseMap service will handle retry.',
+          st,
+          sendToSentry: false);
+      return; // Don't count as failure, don't disable service
+    }
+
+    // Don't count rate limiting errors as permanent failures
+    if (errorString.contains('TooManyRequestsException') ||
+        errorString.contains('429')) {
+      ErrorService.handleError(
+          'Direct upload rate limited at ${DateTime.now()}: $e. OpenSenseMap service will handle retry.',
+          st,
+          sendToSentry: false);
+      return; // Don't count as failure, don't disable service
+    }
+
+    // Handle other errors (likely 4xx client errors) as potential permanent failures
     ErrorService.handleError(
         'Direct upload API error at ${DateTime.now()}: $e. Data buffers preserved for retry.',
         st,

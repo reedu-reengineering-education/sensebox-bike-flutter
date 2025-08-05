@@ -324,9 +324,22 @@ _uploadDirectBuffer() {
 - **Solution**: Clear all buffers in `enable()` and `_onRecordingStart()`
 
 #### **Authentication Error Handling**
-- **Symptom**: Repeated authentication errors without token refresh
-- **Cause**: Authentication errors not properly handled with delays
-- **Solution**: Add 5-second delay after authentication errors to allow token refresh
+
+The DirectUploadService classifies authentication errors into two categories based on the actual error messages thrown by OpenSenseMapService:
+
+**Permanent Authentication Failures** (Service Disabled):
+- `'Authentication failed - user needs to re-login'` - When token refresh fails in OpenSenseMapService
+- `'No refresh token found'` - When trying to refresh but no refresh token exists  
+- `'Failed to refresh token: $refreshError'` - When token refresh throws an error
+
+**Temporary Authentication Errors** (Handled by OpenSenseMap Service):
+- `'Not authenticated'` - When no access token is available
+- `'Token refreshed, retrying'` - After successful token refresh (caught by retry mechanism)
+
+**Behavior:**
+- **Permanent failures**: Service is permanently disabled, buffers cleared, error logged to Sentry
+- **Temporary errors**: Service remains enabled, errors delegated to OpenSenseMap service's retry mechanism
+- **Logging**: Permanent failures sent to Sentry, temporary errors logged locally only
 
 #### **Buffer Clearing on Recording Stop**
 - **Symptom**: Buffers not cleared when upload fails during recording stop
@@ -424,12 +437,23 @@ lib/models/
 - **Upload Frequency**: Reduced buffer threshold from 10 to 3 for more frequent uploads
 
 ### **9.3 Error Handling**
-- **Upload Attempts**: Single attempt during recording stop (no retry mechanism)
-- **Permanent Failure**: 10+ consecutive failures or 10+ minute connectivity loss
-- **Auth Refresh**: Automatic token refresh on 401 errors with 5-second delay
-- **Buffer Management**: Clear buffers when service is permanently disabled or restarted
-- **Automatic Restart**: Exponential backoff restart (2, 4, 6, 8, 10 minutes) with max 5 attempts
-- **Service State**: Prevent data buffering when service is disabled
+
+**Authentication Error Classification:**
+- **Permanent failures** (service disabled): `'Authentication failed - user needs to re-login'`, `'No refresh token found'`, `'Failed to refresh token:'`
+- **Temporary errors** (handled by OpenSenseMap service): `'Not authenticated'`, `'Token refreshed, retrying'`
+
+**Server Error Handling:**
+- **Temporary server errors** (5xx): `'Server error 502'`, `'Server error 503'`, `'Server error 504'`, `'Server error 500'`
+- **Rate limiting**: `'TooManyRequestsException'`, `'429'`
+- **Other errors**: Treated as potential permanent failures, counted toward retry limits
+
+**Logging Strategy:**
+- Permanent failures sent to Sentry for monitoring
+- Temporary errors logged locally only
+- Network timeouts and connectivity issues handled separately
+
+**Error Message Sources:**
+All error messages are based on actual exceptions thrown by OpenSenseMapService, ensuring accurate classification and handling.
 
 ### **9.4 Performance Tuning**
 - **Buffer Sizes**: Balance between memory usage and upload efficiency
