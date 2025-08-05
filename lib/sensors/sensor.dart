@@ -155,9 +155,22 @@ abstract class Sensor {
   void clearBuffersOnRecordingStop() {
     // Only clear buffers when recording stops and upload is confirmed successful
     if (!recordingBloc.isRecording) {
+      debugPrint(
+          'Sensor $title: Clearing buffers on recording stop (upload successful)');
       _groupedBuffer.clear();
       _processedGeolocationIds.clear();
+    } else {
+      debugPrint(
+          'Sensor $title: Not clearing buffers - recording still active');
     }
+  }
+
+  /// Clears all buffers when starting a new recording to prevent uploading data from previous tracks
+  void clearBuffersForNewRecording() {
+    debugPrint(
+        'Sensor $title: Clearing buffers for new recording (previous track data)');
+    _groupedBuffer.clear();
+    _processedGeolocationIds.clear();
   }
 
 
