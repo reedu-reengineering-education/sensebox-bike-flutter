@@ -209,9 +209,6 @@ class OpenSenseMapService {
       String senseBoxId, Map<String, dynamic> sensorData) async {
     List<dynamic> data = sensorData.values.toList();
 
-    debugPrint('[OpenSenseMapService] Starting upload at ${DateTime.now()}. '
-        'Data points: ${data.length}, senseBoxId: $senseBoxId');
-
     // API allows up to 6 requests per minute, so set maxAttempts and delays accordingly
     final r = RetryOptions(
       maxAttempts: 6, // 6 attempts per minute
@@ -267,7 +264,7 @@ class OpenSenseMapService {
       },
       retryIf: (e) {
         final errorString = e.toString();
-        final shouldRetry = e is TooManyRequestsException ||
+        return e is TooManyRequestsException ||
             errorString.contains('Token refreshed') ||
             errorString.contains('Server error') ||
             e is TimeoutException;
