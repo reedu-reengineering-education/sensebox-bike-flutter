@@ -89,33 +89,18 @@ class DirectUploadService {
       Map<GeolocationData, Map<String, List<double>>> groupedData,
       List<GeolocationData> gpsBuffer) {
     // Don't accept data if service is permanently disabled
-    if (_isPermanentlyDisabled) {
-      debugPrint(
-          '[${DateTime.now().toString()}] Direct upload: Service permanently disabled, rejecting data');
+    if (_isPermanentlyDisabled || !_isEnabled) {
       return false;
     }
 
-    // Don't accept data if service is temporarily disabled
-    if (!_isEnabled) {
-      debugPrint(
-          '[${DateTime.now().toString()}] Direct upload: Service temporarily disabled, rejecting data');
-      return false;
-    }
-
-    // Accumulate sensor data from all sensors
     for (final entry in groupedData.entries) {
       final GeolocationData geolocation = entry.key;
       final Map<String, List<double>> sensorData = entry.value;
 
-      // Initialize geolocation entry if not exists
       _accumulatedSensorData.putIfAbsent(geolocation, () => {});
-
-      // Add all sensor data for this geolocation
       _accumulatedSensorData[geolocation]!.addAll(sensorData);
     }
 
-    // Check if we have enough data to upload (threshold-based)
-    // Upload immediately if we have 3+ GPS points
     final bool shouldUpload = _accumulatedSensorData.length >= 3;
 
     if (shouldUpload) {
@@ -164,18 +149,12 @@ class DirectUploadService {
   }
 
   Future<void> uploadRemainingBufferedData() async {
-    debugPrint(
-        '[${DateTime.now().toString()}] Direct upload: Starting uploadRemainingBufferedData');
-    
     if (_accumulatedSensorData.isNotEmpty) {
       final gpsBuffer = _accumulatedSensorData.keys.toList();
       _prepareAndUploadDataSync(gpsBuffer);
     } 
 
-    // Force upload even if buffer threshold is not met (for testing and final flush)
     if (_directUploadBuffer.isNotEmpty) {
-      debugPrint(
-          '[${DateTime.now().toString()}] Direct upload: Found ${_directUploadBuffer.length} prepared buffers to upload');
       try {
         await _uploadDirectBufferSync();
       } catch (e, st) {
@@ -193,8 +172,6 @@ class DirectUploadService {
 
   Future<void> _uploadDirectBuffer() async {
     if (_directUploadBuffer.isEmpty) {
-      debugPrint(
-          '[${DateTime.now().toString()}] Direct upload: No prepared buffers to upload');
       return;
     }
 
