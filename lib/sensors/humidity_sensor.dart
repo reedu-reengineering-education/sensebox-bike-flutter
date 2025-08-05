@@ -1,6 +1,7 @@
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -20,9 +21,11 @@ class HumiditySensor extends Sensor {
 
   HumiditySensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc,
-      RecordingBloc recordingBloc, IsarService isarService)
+      RecordingBloc recordingBloc,
+      SettingsBloc settingsBloc,
+      IsarService isarService)
       : super(sensorCharacteristicUuid, "humidity", [], bleBloc,
-            geolocationBloc, recordingBloc, isarService);
+            geolocationBloc, recordingBloc, settingsBloc, isarService);
 
   @override
   void onDataReceived(List<double> data) {
