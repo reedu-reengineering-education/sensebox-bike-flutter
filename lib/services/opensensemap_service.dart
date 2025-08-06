@@ -234,7 +234,12 @@ class OpenSenseMapService {
           debugPrint('Data uploaded');
           return;
         } else if (response.statusCode == 401) {
+          ErrorService.handleError(
+              'Client error ${response.statusCode}: ${response.body}',
+              StackTrace.current,
+              sendToSentry: true);
           try {
+            
             await refreshToken();
             throw Exception('Token refreshed, retrying');
           } catch (e) {
@@ -242,6 +247,10 @@ class OpenSenseMapService {
             throw Exception('Authentication failed - user needs to re-login');
           }
         } else if (response.statusCode == 429) {
+          ErrorService.handleError(
+              'Client error ${response.statusCode}: ${response.body}',
+              StackTrace.current,
+              sendToSentry: true);
           final retryAfter = response.headers['retry-after'];
           final waitTime = retryAfter != null
               ? int.tryParse(retryAfter) ?? defaultTimeout
@@ -250,14 +259,26 @@ class OpenSenseMapService {
         } else if (response.statusCode == 502 ||
             response.statusCode == 503 ||
             response.statusCode == 504) {
+          ErrorService.handleError(
+              'Client error ${response.statusCode}: ${response.body}',
+              StackTrace.current,
+              sendToSentry: true);
           // 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout - temporary server errors, should retry
           throw Exception('Server error ${response.statusCode} - retrying');
         } else if (response.statusCode >= 400 && response.statusCode < 500) {
+          ErrorService.handleError(
+              'Client error ${response.statusCode}: ${response.body}',
+              StackTrace.current,
+              sendToSentry: true);
           // 4xx client errors - these are likely permanent and shouldn't be retried
           throw Exception(
               'Client error ${response.statusCode}: ${response.body}');
         } else {
           // 5xx server errors and other errors - retry these
+          ErrorService.handleError(
+              'Client error ${response.statusCode}: ${response.body}',
+              StackTrace.current,
+              sendToSentry: true);
           throw Exception(
               'Server error ${response.statusCode}: ${response.body}');
         }

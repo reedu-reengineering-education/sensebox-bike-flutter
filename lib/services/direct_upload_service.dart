@@ -97,8 +97,7 @@ class DirectUploadService {
       _accumulatedSensorData[geolocation]!.addAll(sensorData);
     }
 
-    final bool shouldUpload = _accumulatedSensorData.length >=
-        6; // Increased from 3 to 6 for better upload efficiency
+    final bool shouldUpload = _accumulatedSensorData.length >= 6; 
 
     if (shouldUpload) {
       _prepareAndUploadData(gpsBuffer);
@@ -132,6 +131,10 @@ class DirectUploadService {
         
         _onUploadSuccess?.call(gpsPointsBeingUploaded);
       }).catchError((e) {
+        ErrorService.handleError(
+            'Direct upload failed at ${DateTime.now()}: ${e.toString()}',
+            StackTrace.current,
+            sendToSentry: true);
         // Don't clear data on upload failure - it will be retried
       });
     }
@@ -212,13 +215,16 @@ class DirectUploadService {
       // Track successful upload
       // Remove _consecutiveFails since we no longer track consecutive failures
     } catch (e, st) {
+      ErrorService.handleError(
+          'Direct upload failed at ${DateTime.now()}: ${e.toString()}',
+          StackTrace.current,
+          sendToSentry: true);
       await _handleUploadError(e, st);
     } finally {
       _isDirectUploading = false;
     }
   }
 
-  /// Clears all buffers
   void _clearAllBuffers() {
     _accumulatedSensorData.clear();
     _directUploadBuffer.clear();
@@ -226,7 +232,6 @@ class DirectUploadService {
 
   void _clearAllBuffersForNewRecording() {
     _clearAllBuffers();
-    // Remove _consecutiveFails since we no longer track consecutive failures
   }
 
   void _disableAndClearBuffers() {
@@ -261,8 +266,6 @@ class DirectUploadService {
         '[DirectUploadService] Restart attempts reset at ${DateTime.now()}');
   }
 
-  // REMOVED: _startUploadTimer() method - timer was causing race conditions and data loss
-  // Now relying only on GPS threshold (3 points) for uploads
 
   Future<void> _handleUploadError(dynamic e, StackTrace st) async {
     final errorString = e.toString();
@@ -331,13 +334,15 @@ class DirectUploadService {
 
       if (data.isEmpty) return;
 
-      // Let OpenSenseMapService handle all retries internally
       await openSenseMapService.uploadData(senseBox.id, data);
 
       _directUploadBuffer.clear();
 
-      // Remove _consecutiveFails since we no longer track consecutive failures
     } catch (e, st) {
+      ErrorService.handleError(
+          'Direct upload failed at ${DateTime.now()}: ${e.toString()}',
+          StackTrace.current,
+          sendToSentry: true);
       await _handleUploadError(e, st);
       rethrow;
     } finally {
@@ -353,57 +358,7 @@ class DirectUploadService {
     _restartTimer = null;
     _directUploadBuffer.clear();
     _accumulatedSensorData.clear();
-    
-    // Log final statistics
-    // _logDebugStatistics(); // REMOVED: Debug statistics methods
   }
 
-  /// Logs a summary of debug statistics for monitoring timer synchronization and data loss
-  // void _logDebugStatistics() { // REMOVED: Debug statistics methods
-  //   debugPrint('[DirectUploadService] === DEBUG STATISTICS SUMMARY ===');
-  //   debugPrint(
-  //       '[DirectUploadService] GPS threshold triggers: $_gpsThresholdTriggerCount');
-  //   debugPrint(
-  //       '[DirectUploadService] Concurrent upload preventions: $_concurrentUploadPreventions');
-  //   debugPrint(
-  //       '[DirectUploadService] Data clearing operations: $_dataClearingCount');
-  //   debugPrint(
-  //       '[DirectUploadService] Successful upload completions: $_uploadCompletionCount');
-  //   debugPrint(
-  //       '[DirectUploadService] Data preparation operations: $_dataPreparationCount');
-
-  //   if (_lastGpsThresholdTrigger != null) {
-  //     debugPrint(
-  //         '[DirectUploadService] Last GPS threshold trigger: $_lastGpsThresholdTrigger');
-  //   }
-
-  //   // Calculate potential data loss indicators
-  //   final dataLossIndicator = _dataClearingCount - _uploadCompletionCount;
-  //   if (dataLossIndicator > 0) {
-  //     debugPrint(
-  //         '[DirectUploadService] ⚠️  POTENTIAL DATA LOSS INDICATOR: $_dataClearingCount data clearings vs $_uploadCompletionCount uploads');
-  //   }
-
-  //   // Calculate data preparation vs upload completion mismatch
-  //   final preparationUploadMismatch =
-  //       _dataPreparationCount - _uploadCompletionCount;
-  //   if (preparationUploadMismatch > 0) {
-  //     debugPrint(
-  //         '[DirectUploadService] ⚠️  DATA PREPARATION MISMATCH: $_dataPreparationCount preparations vs $_uploadCompletionCount uploads');
-  //   }
-
-  //   // Check for accumulated data that hasn't been processed
-  //   if (_accumulatedSensorData.isNotEmpty) {
-  //     debugPrint(
-  //         '[DirectUploadService] ⚠️  UNPROCESSED DATA: ${_accumulatedSensorData.length} accumulated data points not yet processed');
-  //   }
-
-  //   debugPrint('[DirectUploadService] === END DEBUG STATISTICS ===');
-  // }
-
-  /// Public method to log current debug statistics (can be called during recording)
-  // void logCurrentStatistics() { // REMOVED: Debug statistics methods
-  //   _logDebugStatistics();
-  // }
   bool _isDirectUploading = false;
 } 
