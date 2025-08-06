@@ -17,7 +17,7 @@ class ErrorService {
     logToConsole(error, stack);
     // This exception was already reported to Sentry
     // end exceptions generated during debugging are not reported
-    if (sendToSentry && !kDebugMode) {
+    if (sendToSentry) {
       Sentry.captureException(error, stackTrace: stack);
     }
 
