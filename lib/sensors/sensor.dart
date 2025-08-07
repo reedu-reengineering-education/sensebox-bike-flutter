@@ -276,7 +276,8 @@ abstract class Sensor {
 
       if (_directUploadService != null &&
           recordingBloc.isRecording &&
-          groupedDataForUpload.isNotEmpty) {
+          groupedDataForUpload.isNotEmpty &&
+          !_directUploadService!.permanentlyDisabled) {
         _directUploadService!.addGroupedDataForUpload(
             groupedDataForUpload, geolocationsForUpload);
       }

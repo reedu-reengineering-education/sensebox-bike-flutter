@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
@@ -331,7 +333,7 @@ void main() {
 
       // Setup mock to throw rate limiting error
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
-          .thenThrow(Exception('TooManyRequestsException'));
+          .thenThrow(TooManyRequestsException(30));
 
       final gpsBuffer = [
         GeolocationData()
@@ -381,6 +383,327 @@ void main() {
 
       // Service should remain enabled after successful upload
       expect(directUploadService.isEnabled, true);
+    });
+
+    // New comprehensive error handling tests
+    group('Error Handling Tests', () {
+      test('handles 429 rate limiting error correctly', () async {
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+
+        // Setup mock to throw 429 rate limiting error
+        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+            .thenThrow(TooManyRequestsException(30));
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        await directUploadService.uploadRemainingBufferedData();
+
+        // Service should remain enabled for 429 errors (temporary)
+        expect(directUploadService.isEnabled, true);
+        // Data is cleared during uploadRemainingBufferedData() even for temporary errors
+        expect(directUploadService.hasPreservedData, false);
+      });
+
+      test('handles 502 server error correctly', () async {
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+
+        // Setup mock to throw 502 server error
+        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+            .thenThrow(Exception('Server error 502 - retrying'));
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        await directUploadService.uploadRemainingBufferedData();
+
+        // Service should remain enabled for 502 errors (temporary)
+        expect(directUploadService.isEnabled, true);
+        // Data is cleared during uploadRemainingBufferedData() even for temporary errors
+        expect(directUploadService.hasPreservedData, false);
+      });
+
+      test(
+          'handles permanent authentication error correctly - no restart scheduled',
+          () async {
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+
+        // Setup mock to throw permanent authentication error
+        when(() => mockOpenSenseMapService.uploadData(any(), any())).thenThrow(
+            Exception('Authentication failed - user needs to re-login'));
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        await directUploadService.uploadRemainingBufferedData();
+
+        // Service should be permanently disabled for authentication failures
+        expect(directUploadService.isEnabled, false);
+        // No restart timer should be scheduled for auth errors
+        expect(directUploadService.hasPendingRestartTimer, false);
+        // Data should be cleared
+        expect(directUploadService.hasPreservedData, false);
+      });
+
+      test('handles token refresh error correctly', () async {
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+
+        // Setup mock to throw token refresh error
+        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+            .thenThrow(Exception('Token refreshed, retrying'));
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        await directUploadService.uploadRemainingBufferedData();
+
+        // Service should remain enabled for token refresh errors (temporary)
+        expect(directUploadService.isEnabled, true);
+        // Data is cleared during uploadRemainingBufferedData() even for temporary errors
+        expect(directUploadService.hasPreservedData, false);
+      });
+
+      test('handles "Not authenticated" error correctly - permanent auth error',
+          () async {
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+
+        // Setup mock to throw "Not authenticated" error
+        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+            .thenThrow(Exception('Not authenticated'));
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        await directUploadService.uploadRemainingBufferedData();
+
+        // Service should be permanently disabled for "Not authenticated" errors (treated as permanent auth error)
+        expect(directUploadService.isEnabled, false);
+        // No restart timer should be scheduled for auth errors
+        expect(directUploadService.hasPendingRestartTimer, false);
+        // Data should be cleared
+        expect(directUploadService.hasPreservedData, false);
+      });
+
+      test('handles timeout error correctly', () async {
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+
+        // Setup mock to throw timeout error
+        when(() => mockOpenSenseMapService.uploadData(any(), any())).thenThrow(
+            TimeoutException('Upload timeout', const Duration(seconds: 30)));
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        await directUploadService.uploadRemainingBufferedData();
+
+        // Service should remain enabled for timeout errors (temporary)
+        expect(directUploadService.isEnabled, true);
+        // Data is cleared during uploadRemainingBufferedData() even for temporary errors
+        expect(directUploadService.hasPreservedData, false);
+      });
+
+      test('handles 404 client error correctly', () async {
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+
+        // Setup mock to throw 404 client error
+        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+            .thenThrow(Exception('Client error 404: Not Found'));
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        await directUploadService.uploadRemainingBufferedData();
+
+        // Service should be disabled for 404 client errors (permanent)
+        expect(directUploadService.isEnabled, false);
+        // Restart timer should be scheduled for client errors
+        expect(directUploadService.hasPendingRestartTimer, true);
+        // Data should be cleared
+        expect(directUploadService.hasPreservedData, false);
+      });
+
+      test('verifies different error types have correct behavior', () async {
+        // Test that temporary errors keep service enabled but clear data during final upload
+        final temporaryErrors = [
+          'TooManyRequestsException: Retry after 30 seconds.',
+          'Server error 502 - retrying',
+          'Server error 503 - retrying',
+          'Token refreshed, retrying',
+          'TimeoutException: Upload timeout',
+        ];
+
+        for (final error in temporaryErrors) {
+          directUploadService.enable();
+          expect(directUploadService.isEnabled, true);
+
+          when(() => mockOpenSenseMapService.uploadData(any(), any()))
+              .thenThrow(
+                  error == 'TooManyRequestsException: Retry after 30 seconds.'
+                      ? TooManyRequestsException(30)
+                      : error == 'TimeoutException: Upload timeout'
+                          ? TimeoutException(
+                              'Upload timeout', const Duration(seconds: 30))
+                          : Exception(error));
+
+          final gpsBuffer = [
+            GeolocationData()
+              ..latitude = 10.0
+              ..longitude = 20.0
+              ..speed = 5.0
+              ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+          ];
+
+          final groupedData = {
+            gpsBuffer[0]: {
+              'temperature': [22.5],
+            },
+          };
+
+          directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+          await directUploadService.uploadRemainingBufferedData();
+
+          expect(directUploadService.isEnabled, true,
+              reason: 'Service should remain enabled for error: $error');
+          expect(directUploadService.hasPreservedData, false,
+              reason:
+                  'Data should be cleared during final upload for error: $error');
+
+          directUploadService.dispose();
+        }
+
+        // Test that permanent authentication errors disable service without restart
+        final permanentAuthErrors = [
+          'Authentication failed - user needs to re-login',
+          'No refresh token found',
+          'Failed to refresh token: Network error',
+          'Not authenticated',
+        ];
+
+        for (final error in permanentAuthErrors) {
+          directUploadService.enable();
+          expect(directUploadService.isEnabled, true);
+
+          when(() => mockOpenSenseMapService.uploadData(any(), any()))
+              .thenThrow(Exception(error));
+
+          final gpsBuffer = [
+            GeolocationData()
+              ..latitude = 10.0
+              ..longitude = 20.0
+              ..speed = 5.0
+              ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+          ];
+
+          final groupedData = {
+            gpsBuffer[0]: {
+              'temperature': [22.5],
+            },
+          };
+
+          directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+          await directUploadService.uploadRemainingBufferedData();
+
+          expect(directUploadService.isEnabled, false,
+              reason: 'Service should be disabled for auth error: $error');
+          expect(directUploadService.hasPendingRestartTimer, false,
+              reason: 'No restart should be scheduled for auth error: $error');
+          expect(directUploadService.hasPreservedData, false,
+              reason: 'Data should be cleared for auth error: $error');
+
+          directUploadService.dispose();
+        }
+      });
     });
   });
 } 
