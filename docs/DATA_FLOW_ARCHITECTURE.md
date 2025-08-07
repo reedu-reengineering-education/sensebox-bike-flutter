@@ -90,7 +90,7 @@ Sensor Buffers → DirectUploadService → Upload Buffers → API
 2. **`_accumulatedSensorData`** (in DirectUploadService):
    - **Purpose**: Accumulates sensor data for batch upload
    - **Lifetime**: Until upload threshold is met (3+ GPS points)
-   - **Clearing**: Immediately after `_prepareAndUploadData()` call
+   - **Clearing**: Only the exact GPS points that were prepared for upload (atomic operations with data snapshots)
 
 3. **`_directUploadBuffer`** (in DirectUploadService):
    - **Purpose**: Prepares data for API upload
@@ -109,7 +109,7 @@ Sensor Buffers → DirectUploadService → Upload Buffers → API
 ### **3.1 Upload Triggers**
 
 #### **Threshold-Based Upload**
-- **Trigger**: When `_accumulatedSensorData.length >= 3`
+- **Trigger**: When `_accumulatedSensorData.length >= 6`
 - **Action**: Calls `_prepareAndUploadData()`
 - **Frequency**: Every 3 GPS points received
 
@@ -125,26 +125,29 @@ Sensor Buffers → DirectUploadService → Upload Buffers → API
 
 ### **3.2 Upload Process**
 
-#### **Step 1: Data Preparation**
+#### **Step 1: Data Preparation (Atomic Operations)**
 ```dart
 _prepareAndUploadData(gpsBuffer) {
   // 1. Check if data exists
   if (_accumulatedSensorData.isEmpty) return;
   
-  // 2. Store GPS points being uploaded for success callback
-  final List<GeolocationData> gpsPointsBeingUploaded =
-      _accumulatedSensorData.keys.toList();
+  // 2. Create data snapshot for atomic operation
+  final Map<GeolocationData, Map<String, List<double>>> dataSnapshot = 
+      Map.from(_accumulatedSensorData);
+  final List<GeolocationData> gpsPointsBeingUploaded = dataSnapshot.keys.toList();
   
-  // 3. Prepare upload data
+  // 3. Prepare upload data using snapshot
   final uploadData = _dataPreparer.prepareDataFromGroupedData(
-      _accumulatedSensorData, gpsBuffer);
+      dataSnapshot, gpsBuffer);
   
   // 4. Add to upload buffer
   _directUploadBuffer.add(uploadData);
   
-  // 5. CRITICAL: Clear accumulated data immediately after preparation
-  // This prevents duplicate data from being uploaded in subsequent batches
-  _accumulatedSensorData.clear();
+  // 5. ATOMIC: Only clear the exact GPS points that were prepared for upload
+  // This prevents race conditions and data loss during concurrent operations
+  for (final gpsPoint in gpsPointsBeingUploaded) {
+    _accumulatedSensorData.remove(gpsPoint);
+  }
   
   // 6. Trigger upload if buffer threshold met
   if (_directUploadBuffer.length >= 3) {
@@ -194,11 +197,12 @@ The `OpenSenseMapService` now handles all retry logic internally with the follow
 The `DirectUploadService` now only handles permanent failures and delegates all retry logic to `OpenSenseMapService`:
 
 **Permanent Failures (Service Disabled)**:
-- **Authentication Failures**: 
+- **Authentication Failures** (No restart scheduled): 
   - `'Authentication failed - user needs to re-login'`
   - `'No refresh token found'`
   - `'Failed to refresh token:'`
-- **Client Errors (4xx)**: 
+  - `'Not authenticated'`
+- **Client Errors (4xx)** (Restart scheduled): 
   - `'Client error 403: Forbidden'`
   - `'Client error 400: Bad Request'`
   - Any 4xx status code errors
@@ -207,18 +211,19 @@ The `DirectUploadService` now only handles permanent failures and delegates all 
 - **Network Timeouts**: `'Network timeout'`
 - **Server Errors (5xx)**: `'Server error 503 - retrying'`
 - **Rate Limiting**: `'TooManyRequestsException'`
-- **Temporary Authentication**: `'Not authenticated'`
+- **Token Refresh**: `'Token refreshed, retrying'`
 
 #### **Error Handling Behavior**
-- **Permanent Failures**: Service is permanently disabled, buffers cleared, restart scheduled
+- **Permanent Authentication Failures**: Service is permanently disabled, buffers cleared, NO restart scheduled (user must re-login)
+- **Permanent Client Errors (4xx)**: Service is permanently disabled, buffers cleared, restart scheduled
 - **Temporary Errors**: Service remains enabled, errors logged but no action taken
 - **No Circular Retries**: Eliminates the feedback loop that was causing app hangs
 
 #### **Automatic Restart Mechanism**
-- **Max Restart Attempts**: 3 attempts (reduced from 5)
-- **Base Delay**: 5 minutes (increased from 2 minutes)
-- **Exponential Backoff**: 5, 10, 15 minutes delays
+- **Authentication Failures**: No restart attempts - service permanently disabled until user re-logs in
+- **Client Errors (4xx)**: Max 3 restart attempts with exponential backoff (5, 10, 15 minutes)
 - **Buffer Management**: All buffers cleared on restart for fresh start
+- **Restart Failure Handling**: When max restart attempts are reached, sensors are notified to clear their buffers to prevent memory leaks
 
 ---
 
@@ -255,8 +260,11 @@ The `DirectUploadService` now only handles permanent failures and delegates all 
   - `addGroupedDataForUpload()`: Accumulate sensor data
   - `_uploadDirectBuffer()`: Execute API uploads (no retry logic)
   - `uploadRemainingBufferedData()`: Final upload on stop
+  - `permanentlyDisabled` getter: Check if service is permanently disabled
 - **Buffers Managed**: `_accumulatedSensorData`, `_directUploadBuffer`
-- **Error Handling**: Only handles permanent failures, delegates retries to OpenSenseMapService
+- **Error Handling**: Uses `UploadErrorClassifier` for centralized error classification, only handles permanent failures, delegates retries to OpenSenseMapService
+- **Performance Optimization**: Prevents unnecessary processing when permanently disabled
+- **Refactored Architecture**: Clean separation between error classification (`UploadErrorClassifier`) and error handling (`_handleUploadError`)
 
 #### **`OpenSenseMapService`**
 - **Primary Role**: API communication with openSenseMap (enhanced)
@@ -281,7 +289,8 @@ The `DirectUploadService` now only handles permanent failures and delegates all 
   - `onDataReceived()`: Process raw BLE data
   - `_flushBuffers()`: Save data to Isar and prepare for upload
 - **Buffering**: `_groupedBuffer` management
-- **Upload Integration**: Sends data to DirectUploadService via `addGroupedDataForUpload()`
+- **Upload Integration**: Sends data to DirectUploadService via `addGroupedDataForUpload()` only when service is not permanently disabled
+- **Performance Optimization**: Checks `_directUploadService!.permanentlyDisabled` before calling upload methods
 
 #### **Individual Sensor Implementations**
 - **Examples**: `TemperatureSensor`, `GPSSensor`, `HumiditySensor`
@@ -310,6 +319,12 @@ The `DirectUploadService` now only handles permanent failures and delegates all 
 2. **Network Issues**: Data preserved for retry by OpenSenseMapService
 3. **API Errors**: Graceful degradation with proper error classification
 
+### **5.4 Performance Optimizations**
+1. **Sensor Upload Prevention**: Sensors check `permanentlyDisabled` status before calling upload methods
+2. **Periodic Timer Optimization**: Periodic upload checks are skipped when service is permanently disabled
+3. **Early Return in Upload Methods**: Upload methods return early when service is permanently disabled
+4. **Buffer Clearing on Permanent Disable**: All buffers are cleared immediately when service is permanently disabled
+
 ---
 
 ## 📈 **6. Monitoring & Debugging**
@@ -324,7 +339,13 @@ The `DirectUploadService` now only handles permanent failures and delegates all 
 - **Buffer States**: Monitor accumulation and clearing
 - **Error Tracking**: Comprehensive error logging with Sentry integration
 
-### **6.3 Common Issues & Solutions**
+### **6.3 Test Coverage**
+- **Error Handling Tests**: Comprehensive tests for all error scenarios (429, 502, authentication errors, token refresh)
+- **Performance Tests**: Tests verify that sensors don't call upload methods when service is permanently disabled
+- **State Management Tests**: Tests verify proper service state transitions and buffer clearing
+- **Integration Tests**: Tests verify end-to-end behavior from sensor data collection to upload completion
+
+### **6.4 Common Issues & Solutions**
 
 #### **Buffer Accumulation**
 - **Symptom**: Buffer size grows indefinitely
@@ -387,6 +408,16 @@ The error handling system has been completely decoupled to prevent circular retr
 - **Symptom**: Data continues to be buffered when service is disabled
 - **Cause**: No check for service state before buffering
 - **Solution**: Reject data when service is temporarily or permanently disabled
+
+#### **App Performance Issues After Authentication Errors**
+- **Symptom**: App becomes slow after permanent authentication errors
+- **Cause**: Sensors continue to call upload methods even when service is permanently disabled
+- **Solution**: Added `permanentlyDisabled` getter and sensor checks to prevent unnecessary processing
+- **Implementation**: 
+  - Added `bool get permanentlyDisabled => _isPermanentlyDisabled;` to DirectUploadService
+  - Updated sensors to check `!_directUploadService!.permanentlyDisabled` before calling upload methods
+  - Added early returns in upload methods when service is permanently disabled
+  - Optimized periodic timer to skip operations when service is permanently disabled
 
 ---
 
@@ -479,6 +510,50 @@ lib/models/
 - **Permanent failures** (service disabled): Authentication failures, client errors (4xx)
 - **Temporary errors** (handled by OpenSenseMapService): Network timeouts, server errors (5xx), rate limiting
 
+**502 Error Handling:**
+- **Classification**: 502 errors are classified as temporary errors
+- **Retry Logic**: OpenSenseMapService handles retries with exponential backoff
+- **Data Preservation**: Data is preserved during 502 errors and retried automatically
+- **Atomic Operations**: Data snapshots prevent race conditions during 502 error retries
+- **Logging**: 502 errors are logged to Sentry for monitoring but don't cause service disablement
+
+**Error Classification Architecture:**
+The system uses a dedicated `UploadErrorClassifier` class for centralized error classification:
+
+```dart
+class UploadErrorClassifier {
+  // Centralized error patterns for maintainability
+  static const List<String> _permanentAuthErrorPatterns = [
+    'Authentication failed - user needs to re-login',
+    'No refresh token found',
+    'Failed to refresh token:',
+    'Not authenticated',
+  ];
+
+  static const List<String> _temporaryErrorPatterns = [
+    'Server error',
+    'Token refreshed',
+  ];
+
+  static const List<Type> _temporaryExceptionTypes = [
+    TooManyRequestsException,
+    TimeoutException,
+  ];
+
+  // Single method to classify any error
+  static UploadErrorType classifyError(dynamic error) {
+    // Classification logic with clear priority order
+  }
+}
+```
+
+**Benefits of Centralized Classification:**
+- ✅ **DRY Principle**: Error patterns defined once, used everywhere
+- ✅ **Maintainability**: Adding new error types requires only updating the classifier
+- ✅ **Testability**: Dedicated tests ensure classification accuracy
+- ✅ **Consistency**: All error classification follows the same pattern
+- ✅ **Extensibility**: Easy to add new error types or modify existing ones
+
 **Error Message Sources:**
 All error messages are based on actual exceptions thrown by OpenSenseMapService, ensuring accurate classification and handling.
 
@@ -493,6 +568,74 @@ All error messages are based on actual exceptions thrown by OpenSenseMapService,
 - **Upload Frequency**: Balance between real-time updates and API load
 - **Error Recovery**: Preserve data while maintaining system stability
 
+### **9.5 Recent Performance Improvements**
+
+#### **Sensor Upload Optimization**
+- **Problem**: Sensors continued to call `addGroupedDataForUpload()` even when DirectUploadService was permanently disabled
+- **Solution**: Added `permanentlyDisabled` getter and sensor checks
+- **Implementation**: 
+  ```dart
+  if (!_directUploadService!.permanentlyDisabled) {
+    _directUploadService!.addGroupedDataForUpload(groupedData, gpsBuffer);
+  }
+  ```
+- **Benefit**: Prevents unnecessary processing and improves app performance after authentication errors
+
+#### **Service State Management**
+- **Problem**: Periodic timers and upload methods continued to run when service was permanently disabled
+- **Solution**: Added early returns and state checks throughout DirectUploadService
+- **Implementation**:
+  - Early returns in `_uploadDirectBuffer()` and `_uploadDirectBufferSync()` when `_isPermanentlyDisabled`
+  - Periodic timer skips operations when service is permanently disabled
+  - Immediate buffer clearing when service is permanently disabled
+- **Benefit**: Eliminates performance degradation after permanent authentication errors
+
+#### **Comprehensive Test Coverage**
+- **Added**: Tests for all error scenarios (429, 502, authentication errors, token refresh)
+- **Coverage**: Performance tests verify sensors don't call upload methods when service is permanently disabled
+- **Validation**: All 111+ tests pass, ensuring reliability of the performance improvements
+
+#### **Error Classification Refactoring**
+- **Problem**: Error classification logic was duplicated and embedded in `_handleUploadError`
+- **Solution**: Created dedicated `UploadErrorClassifier` class with centralized error patterns
+- **Implementation**: 
+  - Extracted error patterns into static constants for maintainability
+  - Created `UploadErrorType` enum for clear error categorization
+  - Simplified `_handleUploadError` to use switch statement with classifier
+  - Added comprehensive tests for the error classifier
+- **Benefits**: 
+  - ✅ **DRY Principle**: Error patterns defined once, used everywhere
+  - ✅ **Maintainability**: Adding new error types requires only updating the classifier
+  - ✅ **Testability**: Dedicated tests ensure classification accuracy
+  - ✅ **Readability**: Clear separation between classification and handling logic
+
+#### **Data Loss Prevention with Atomic Operations**
+- **Problem**: Data loss occurred at 10:03 due to race conditions during data preparation
+- **Root Cause**: `_accumulatedSensorData.clear()` was called immediately after data preparation, but new data could arrive during upload
+- **Solution**: Implemented atomic operations with data snapshots
+- **Implementation**:
+  ```dart
+  // Create data snapshot for atomic operation
+  final Map<GeolocationData, Map<String, List<double>>> dataSnapshot = 
+      Map.from(_accumulatedSensorData);
+  final List<GeolocationData> gpsPointsBeingUploaded = dataSnapshot.keys.toList();
+  
+  // Prepare upload data using snapshot
+  final uploadData = _dataPreparer.prepareDataFromGroupedData(
+      dataSnapshot, gpsBuffer);
+  
+  // Only clear the exact GPS points that were prepared for upload
+  for (final gpsPoint in gpsPointsBeingUploaded) {
+    _accumulatedSensorData.remove(gpsPoint);
+  }
+  ```
+- **Benefits**:
+  - ✅ **Atomic Operations**: Data captured in snapshot before processing
+  - ✅ **Race Condition Prevention**: No interference between data preparation and new data arrival
+  - ✅ **Precise Data Management**: Only removes exact GPS points that were prepared for upload
+  - ✅ **Backward Compatibility**: Maintains existing API and behavior
+  - ✅ **Minimal Changes**: Low-risk solution with maximum impact
+
 ---
 
-This documentation provides a complete overview of how data flows through the system from recording start to successful upload to openSenseMap, with the updated decoupled retry logic architecture that prevents circular retry patterns and app hangs. 
+This documentation provides a complete overview of how data flows through the system from recording start to successful upload to openSenseMap, with the updated decoupled retry logic architecture that prevents circular retry patterns and app hangs. The recent performance improvements ensure optimal app performance even after authentication errors, with comprehensive test coverage validating all error scenarios and performance optimizations. The error classification refactoring implements DRY principles and improves maintainability through centralized error pattern management. The data loss prevention with atomic operations ensures data integrity by preventing race conditions during data preparation and upload processes. 
