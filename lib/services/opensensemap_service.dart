@@ -19,11 +19,38 @@ class OpenSenseMapService {
   final http.Client client;
   final Future<SharedPreferences> _prefs;
 
+  // Add rate limiting state
+  bool _isRateLimited = false;
+  DateTime? _rateLimitUntil;
+  
+  // Add permanent authentication failure state
+  bool _isPermanentlyDisabled = false;
+
   OpenSenseMapService({
     http.Client? client,
     Future<SharedPreferences>? prefs,
   })  : client = client ?? http.Client(),
         _prefs = prefs ?? SharedPreferences.getInstance();
+
+  // Add method to check if service is accepting requests
+  bool get isAcceptingRequests => !_isRateLimited && !_isPermanentlyDisabled;
+
+  // Add method to check if service is permanently disabled
+  bool get isPermanentlyDisabled => _isPermanentlyDisabled;
+
+  // Add method to get remaining rate limit time
+  Duration? get remainingRateLimitTime {
+    if (!_isRateLimited || _rateLimitUntil == null) return null;
+    final remaining = _rateLimitUntil!.difference(DateTime.now());
+    return remaining.isNegative ? null : remaining;
+  }
+  
+  // Add method to reset permanent disable state (called after successful re-login)
+  void resetPermanentDisable() {
+    _isPermanentlyDisabled = false;
+    debugPrint(
+        '[OpenSenseMapService] Permanent disable state reset after re-login');
+  }
 
   Future<void> setTokens(http.Response response) async {
     final prefs = await _prefs;
@@ -85,6 +112,9 @@ class OpenSenseMapService {
       final responseData = jsonDecode(response.body);
 
       await setTokens(response);
+      
+      // Reset permanent disable state after successful login
+      resetPermanentDisable();
 
       return responseData;
     } else {
@@ -209,6 +239,18 @@ class OpenSenseMapService {
       String senseBoxId, Map<String, dynamic> sensorData) async {
     List<dynamic> data = sensorData.values.toList();
 
+    // Check if currently rate limited
+    if (_isRateLimited) {
+      final remaining = _rateLimitUntil?.difference(DateTime.now());
+      if (remaining != null && !remaining.isNegative) {
+        throw TooManyRequestsException(remaining.inSeconds);
+      } else {
+        // Rate limit expired, reset state
+        _isRateLimited = false;
+        _rateLimitUntil = null;
+      }
+    }
+
     // API allows up to 6 requests per minute, so set maxAttempts and delays accordingly
     final r = RetryOptions(
       maxAttempts: 6, // 6 attempts per minute
@@ -243,7 +285,10 @@ class OpenSenseMapService {
             await refreshToken();
             throw Exception('Token refreshed, retrying');
           } catch (e) {
-            // If refresh token fails, don't retry - user needs to re-login
+            // If refresh token fails, set permanent disable state - user needs to re-login
+            _isPermanentlyDisabled = true;
+            debugPrint(
+                '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
             throw Exception('Authentication failed - user needs to re-login');
           }
         } else if (response.statusCode == 429) {
@@ -255,6 +300,11 @@ class OpenSenseMapService {
           final waitTime = retryAfter != null
               ? int.tryParse(retryAfter) ?? defaultTimeout
               : defaultTimeout * 2;
+          
+          // Set rate limiting state
+          _isRateLimited = true;
+          _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
+          
           throw TooManyRequestsException(waitTime);
         } else if (response.statusCode == 502 ||
             response.statusCode == 503 ||
