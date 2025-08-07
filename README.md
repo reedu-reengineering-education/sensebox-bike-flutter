@@ -4,6 +4,10 @@
 
 This Flutter app connects to a [senseBox device](https://sensebox.de/en/products-bike) on a bike. It collects valuable data about surroundings while riding and allows user to upload gathered data to the [openSenseMap](https://opensensemap.org/), contributing to urban environmental monitoring and citizen science projects. The app is available for both iOS and Android.
 
+## 📚 Documentation
+
+- **[Data Flow Architecture](docs/DATA_FLOW_ARCHITECTURE.md)**: Comprehensive documentation of the track recording, data storage, and upload system architecture.
+
 ## Getting Started
 
 ### Prerequisites

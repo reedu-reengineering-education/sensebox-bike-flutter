@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retry/retry.dart';
@@ -18,11 +19,38 @@ class OpenSenseMapService {
   final http.Client client;
   final Future<SharedPreferences> _prefs;
 
+  // Add rate limiting state
+  bool _isRateLimited = false;
+  DateTime? _rateLimitUntil;
+  
+  // Add permanent authentication failure state
+  bool _isPermanentlyDisabled = false;
+
   OpenSenseMapService({
     http.Client? client,
     Future<SharedPreferences>? prefs,
   })  : client = client ?? http.Client(),
         _prefs = prefs ?? SharedPreferences.getInstance();
+
+  // Add method to check if service is accepting requests
+  bool get isAcceptingRequests => !_isRateLimited && !_isPermanentlyDisabled;
+
+  // Add method to check if service is permanently disabled
+  bool get isPermanentlyDisabled => _isPermanentlyDisabled;
+
+  // Add method to get remaining rate limit time
+  Duration? get remainingRateLimitTime {
+    if (!_isRateLimited || _rateLimitUntil == null) return null;
+    final remaining = _rateLimitUntil!.difference(DateTime.now());
+    return remaining.isNegative ? null : remaining;
+  }
+  
+  // Add method to reset permanent disable state (called after successful re-login)
+  void resetPermanentDisable() {
+    _isPermanentlyDisabled = false;
+    debugPrint(
+        '[OpenSenseMapService] Permanent disable state reset after re-login');
+  }
 
   Future<void> setTokens(http.Response response) async {
     final prefs = await _prefs;
@@ -84,6 +112,9 @@ class OpenSenseMapService {
       final responseData = jsonDecode(response.body);
 
       await setTokens(response);
+      
+      // Reset permanent disable state after successful login
+      resetPermanentDisable();
 
       return responseData;
     } else {
@@ -128,7 +159,7 @@ class OpenSenseMapService {
       await setTokens(response);
     } else {
       await removeTokens();
-      throw Exception('Failed to refresh token: ${response.body}');
+      throw Exception('Token refresh failed - retrying');
     }
   }
 
@@ -208,6 +239,18 @@ class OpenSenseMapService {
       String senseBoxId, Map<String, dynamic> sensorData) async {
     List<dynamic> data = sensorData.values.toList();
 
+    // Check if currently rate limited
+    if (_isRateLimited) {
+      final remaining = _rateLimitUntil?.difference(DateTime.now());
+      if (remaining != null && !remaining.isNegative) {
+        throw TooManyRequestsException(remaining.inSeconds);
+      } else {
+        // Rate limit expired, reset state
+        _isRateLimited = false;
+        _rateLimitUntil = null;
+      }
+    }
+
     // API allows up to 6 requests per minute, so set maxAttempts and delays accordingly
     final r = RetryOptions(
       maxAttempts: 6, // 6 attempts per minute
@@ -233,23 +276,70 @@ class OpenSenseMapService {
           debugPrint('Data uploaded');
           return;
         } else if (response.statusCode == 401) {
-          await refreshToken();
-          throw Exception('Token refreshed, retrying');
+          ErrorService.handleError(
+              'Client error ${response.statusCode}: ${response.body}',
+              StackTrace.current,
+              sendToSentry: true);
+          try {
+            
+            await refreshToken();
+            throw Exception('Token refreshed, retrying');
+          } catch (e) {
+            // If refresh token fails, set permanent disable state - user needs to re-login
+            _isPermanentlyDisabled = true;
+            debugPrint(
+                '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
+            throw Exception('Authentication failed - user needs to re-login');
+          }
         } else if (response.statusCode == 429) {
+          ErrorService.handleError(
+              'Client error ${response.statusCode}: ${response.body}',
+              StackTrace.current,
+              sendToSentry: true);
           final retryAfter = response.headers['retry-after'];
           final waitTime = retryAfter != null
               ? int.tryParse(retryAfter) ?? defaultTimeout
               : defaultTimeout * 2;
+          
+          // Set rate limiting state
+          _isRateLimited = true;
+          _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
+          
           throw TooManyRequestsException(waitTime);
-        } else {
+        } else if (response.statusCode == 502 ||
+            response.statusCode == 503 ||
+            response.statusCode == 504) {
+          ErrorService.handleError(
+              'Client error ${response.statusCode}: ${response.body}',
+              StackTrace.current,
+              sendToSentry: true);
+          // 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout - temporary server errors, should retry
+          throw Exception('Server error ${response.statusCode} - retrying');
+        } else if (response.statusCode >= 400 && response.statusCode < 500) {
+          ErrorService.handleError(
+              'Client error ${response.statusCode}: ${response.body}',
+              StackTrace.current,
+              sendToSentry: true);
+          // 4xx client errors - these are likely permanent and shouldn't be retried
           throw Exception(
-              'Failed to upload data (${response.statusCode}) ${response.body}');
+              'Client error ${response.statusCode}: ${response.body}');
+        } else {
+          // 5xx server errors and other errors - retry these
+          ErrorService.handleError(
+              'Client error ${response.statusCode}: ${response.body}',
+              StackTrace.current,
+              sendToSentry: true);
+          throw Exception(
+              'Server error ${response.statusCode}: ${response.body}');
         }
       },
-      retryIf: (e) =>
-          e is TooManyRequestsException ||
-          e.toString().contains('Token refreshed') ||
-          e is TimeoutException,
+      retryIf: (e) {
+        final errorString = e.toString();
+        return e is TooManyRequestsException ||
+            errorString.contains('Token refreshed') ||
+            errorString.contains('Server error') ||
+            e is TimeoutException;
+      },
       onRetry: (e) async {
         if (e is TooManyRequestsException) {
           await Future.delayed(Duration(seconds: e.retryAfter));

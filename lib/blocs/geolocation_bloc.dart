@@ -1,6 +1,5 @@
 // File: lib/blocs/geolocation_bloc.dart
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -11,9 +10,6 @@ import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
-import 'package:sensebox_bike/utils/geo_utils.dart';
-import 'package:turf/turf.dart' as Turf;
-import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class GeolocationBloc with ChangeNotifier {
   final StreamController<GeolocationData> _geolocationController =
@@ -40,6 +36,7 @@ class GeolocationBloc with ChangeNotifier {
         if (status.isGranted) {
           locationSettings = AndroidSettings(
               accuracy: LocationAccuracy.best,
+              timeLimit: const Duration(minutes: 1),
               foregroundNotificationConfig: const ForegroundNotificationConfig(
                   notificationText:
                       "senseBox:bike will record your location in the background",
@@ -55,6 +52,7 @@ class GeolocationBloc with ChangeNotifier {
           defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.best,
+          timeLimit: const Duration(minutes: 1),
         );
       }
 
@@ -70,12 +68,13 @@ class GeolocationBloc with ChangeNotifier {
           ..speed = position.speed
           ..timestamp = position.timestamp;
 
-                if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
+        if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
           geolocationData.track.value = recordingBloc.currentTrack;
-          await _saveGeolocationData(geolocationData); // Save to database first
+          // Note: GPS points are now saved by sensor classes when they have associated sensor data
+          // This prevents duplicate GPS point saves
         }
 
-        // Emit to stream for real-time updates AFTER saving to database
+        // Emit to stream for real-time updates
         _geolocationController.add(geolocationData);
 
         notifyListeners();
@@ -92,39 +91,33 @@ class GeolocationBloc with ChangeNotifier {
     return Geolocator.getCurrentPosition();
   }
 
+  Future<void> getCurrentLocationAndEmit() async {
+    try {
+      final position = await getCurrentLocation();
+
+      // Create geolocation data object
+      GeolocationData geolocationData = GeolocationData()
+        ..latitude = position.latitude
+        ..longitude = position.longitude
+        ..speed = position.speed
+        ..timestamp = position.timestamp;
+
+      if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
+        geolocationData.track.value = recordingBloc.currentTrack;
+        // Note: GPS points are now saved by sensor classes when they have associated sensor data
+        // This prevents duplicate GPS point saves
+      }
+
+      _geolocationController.add(geolocationData);
+      notifyListeners();
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
+    }
+  }
+
   // function to stop listening to geolocation changes
   void stopListening() {
     _positionStreamSubscription?.cancel();
-  }
-
-  /// Save the geolocation data to the database
-  /// Check if the current location is in a privacy zone
-  Future<void> _saveGeolocationData(GeolocationData data) async {
-    try {
-      // Get the privacy zones from the settings bloc
-      final privacyZones = settingsBloc.privacyZones
-          .map((e) => Turf.Polygon.fromJson(jsonDecode(e)));
-
-      // Close the privacy zones
-      bool isInZone = isInsidePrivacyZone(privacyZones, data);
-
-      if (!isInZone) {
-        // Save the geolocation data first and get the assigned ID
-        final savedId =
-            await isarService.geolocationService.saveGeolocationData(data);
-
-        // Update the GPS object's ID with the actual database ID
-        data.id = savedId;
-        
-        // Create and save GPS speed as SensorData for consistent UI display
-        final gpsSpeedSensorData = createGpsSpeedSensorData(data);
-        if (shouldStoreSensorData(gpsSpeedSensorData)) {
-          await isarService.sensorService.saveSensorData(gpsSpeedSensorData);
-        }
-      }
-    } catch (e) {
-      print('Error saving geolocation data: $e');
-    }
   }
 
   @override

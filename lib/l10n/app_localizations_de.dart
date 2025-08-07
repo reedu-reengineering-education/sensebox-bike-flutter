@@ -412,6 +412,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorBleConnectionFailed => 'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
 
   @override
+  String get errorUploadFailed => 'Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+
+  @override
   String get selectCsvFormat => 'CSV-Format auswählen';
 
   @override

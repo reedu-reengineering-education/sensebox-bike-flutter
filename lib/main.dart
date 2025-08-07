@@ -49,7 +49,7 @@ class SenseBoxBikeApp extends StatelessWidget {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         ErrorService.handleError(
             details.exception, details.stack ?? StackTrace.empty,
-            sendToSentry: false);
+            sendToSentry: true);
       });
     };
 
@@ -57,7 +57,7 @@ class SenseBoxBikeApp extends StatelessWidget {
       Sentry.captureException(error, stackTrace: stack);
 
       SchedulerBinding.instance.addPostFrameCallback((_) {
-        ErrorService.handleError(error, stack, sendToSentry: false);
+        ErrorService.handleError(error, stack, sendToSentry: true);
       });
       return true;
     };
@@ -93,7 +93,8 @@ class SenseBoxBikeApp extends StatelessWidget {
         isarService, bleBloc, trackBloc, openSenseMapBloc, settingsBloc);
     final geolocationBloc =
         GeolocationBloc(isarService, recordingBloc, settingsBloc);
-    final sensorBloc = SensorBloc(bleBloc, geolocationBloc, recordingBloc);
+    final sensorBloc =
+        SensorBloc(bleBloc, geolocationBloc, recordingBloc, settingsBloc);
     final MapboxDrawController mapboxDrawController = MapboxDrawController();
 
     // Subscribe to all events (initial link and further)

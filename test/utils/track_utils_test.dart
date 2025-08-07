@@ -505,7 +505,7 @@ void main() {
     });
 
     test(
-        'prepareDataFromGroupedData converts acceleration multi-value sensors correctly',
+        'prepareDataFromGroupedData skips acceleration sensors (not uploaded)',
         () {
       final accelerationXSensor = Sensor()
         ..id = 'accelerationXSensorId'
@@ -544,34 +544,18 @@ void main() {
       final result =
           preparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
 
-      // Should have speed data and 3 acceleration entries
-      expect(result.length, 4);
+      // Should only have speed data (acceleration is skipped)
+      expect(result.length, 1);
 
-      // Check acceleration entries
+      // Check that no acceleration entries are present
       final accelerationEntries =
           result.keys.where((k) => k.contains('acceleration')).toList();
-      expect(accelerationEntries.length, 3);
+      expect(accelerationEntries.length, 0);
 
-      // Check X
-      final xKey = accelerationEntries
-          .firstWhere((k) => k.contains('accelerationXSensorId'));
-      final xEntry = result[xKey] as Map<String, dynamic>;
-      expect(xEntry['sensor'], 'accelerationXSensorId');
-      expect(xEntry['value'], '0.10');
-
-      // Check Y
-      final yKey = accelerationEntries
-          .firstWhere((k) => k.contains('accelerationYSensorId'));
-      final yEntry = result[yKey] as Map<String, dynamic>;
-      expect(yEntry['sensor'], 'accelerationYSensorId');
-      expect(yEntry['value'], '0.20');
-
-      // Check Z
-      final zKey = accelerationEntries
-          .firstWhere((k) => k.contains('accelerationZSensorId'));
-      final zEntry = result[zKey] as Map<String, dynamic>;
-      expect(zEntry['sensor'], 'accelerationZSensorId');
-      expect(zEntry['value'], '0.30');
+      // Check speed entry is present
+      final speedEntries =
+          result.keys.where((k) => k.startsWith('speed_')).toList();
+      expect(speedEntries.length, 1);
     });
 
     test('prepareDataFromGroupedData handles multiple geolocations correctly',

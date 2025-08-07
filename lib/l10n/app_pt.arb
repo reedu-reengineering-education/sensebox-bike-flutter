@@ -169,6 +169,7 @@
     "errorLoginFailed": "Falha no login. Por favor, verifique suas credenciais.",
     "errorRegistrationFailed": "Falha no registro. Por favor, verifique suas credenciais.",
     "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.",
+    "errorUploadFailed": "Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.",
     "selectCsvFormat": "Selecionar formato CSV",
     "regularCsv": "CSV padrão",
     "openSenseMapCsv": "CSV openSenseMap",
