@@ -3,12 +3,9 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:provider/provider.dart';
-import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
@@ -43,6 +40,9 @@ class BleBloc with ChangeNotifier {
   BluetoothDevice? selectedDevice;
   bool _isConnected = false;
   bool _userInitiatedDisconnect = false;
+  
+  // Track reconnection listeners to prevent multiple active listeners
+  StreamSubscription<BluetoothConnectionState>? _reconnectionListener;
 
   final Map<String, StreamController<List<double>>> _characteristicStreams = {};
   final Map<String, StreamController<List<String>>>
@@ -109,10 +109,18 @@ class BleBloc with ChangeNotifier {
     selectedDevice = null;
     selectedDeviceNotifier.value = null;
     availableCharacteristics.value = [];
+    
+    _reconnectionListener?.cancel();
+    _reconnectionListener = null;
+
+    resetConnectionError();
+    
     notifyListeners();
   }
 
   Future<void> connectToId(String id, BuildContext context) async {
+    resetConnectionError();
+    
     await FlutterBluePlus.startScan(withNames: [id]);
     FlutterBluePlus.scanResults.listen((results) async {
       for (ScanResult result in results) {
@@ -127,6 +135,8 @@ class BleBloc with ChangeNotifier {
   Future<void> connectToDevice(
       BluetoothDevice device, BuildContext context) async {
     try {
+      resetConnectionError();
+      
       isConnectingNotifier.value = true;
       notifyListeners();
 
@@ -244,14 +254,15 @@ class BleBloc with ChangeNotifier {
   }
 
   void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
+    _reconnectionListener?.cancel();
+    
     bool hasVibrated = false;
     int reconnectionAttempts = 0;
     const int maxReconnectionAttempts = 5;
     bool isFirstReconnection = true;
-    // Flag to prevent multiple reconnection cycles
     bool isReconnecting = false;
 
-    device.connectionState.listen((state) async {
+    _reconnectionListener = device.connectionState.listen((state) async {
       if (state == BluetoothConnectionState.disconnected &&
           !_userInitiatedDisconnect &&
           !isReconnecting) {
@@ -271,8 +282,6 @@ class BleBloc with ChangeNotifier {
             await _forceReconnect(device);
             if (await device.connectionState.first ==
                 BluetoothConnectionState.connected) {
-              // After the first reconnection, wait 5 seconds before trying again
-              // to allow the device to stabilize
               if (isFirstReconnection) {
                 isFirstReconnection = false;
                 await Future.delayed(const Duration(seconds: 5));
@@ -298,7 +307,9 @@ class BleBloc with ChangeNotifier {
         isReconnectingNotifier.value = false;
         isReconnecting = false;
       }
-    }).onError((error) {
+    });
+
+    _reconnectionListener?.onError((error) {
       _handleConnectionError(context: context);
     });
   }
@@ -311,6 +322,12 @@ class BleBloc with ChangeNotifier {
 
     ErrorService.reportToSentry(
         "Permanent connection error with senseBox", StackTrace.current);
+  }
+
+  void resetConnectionError() {
+    connectionErrorNotifier.value = false;
+    permanentConnectionLossNotifier.value = false;
+    notifyListeners();
   }
 
   Future<void> _listenToCharacteristic(
@@ -371,6 +388,7 @@ class BleBloc with ChangeNotifier {
 
   @override
   void dispose() {
+    _reconnectionListener?.cancel();
     _devicesListController.close();
     _clearCharacteristicStreams();
     selectedDeviceNotifier.dispose();
