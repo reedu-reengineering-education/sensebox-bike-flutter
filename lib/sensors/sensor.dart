@@ -75,10 +75,24 @@ abstract class Sensor {
         _groupedBuffer.remove(point);
       }
     });
+
+    uploadService.setPermanentDisableCallback(() {
+      // Clear all sensor buffers when service is permanently disabled
+      _groupedBuffer.clear();
+      _uploadedGeolocationIds.clear();
+      _processedGeolocationIds.clear();
+    });
   }
 
   void onDataReceived(List<double> data) {
     if (data.isNotEmpty && recordingBloc.isRecording) {
+      // Don't buffer data if DirectUploadService is permanently disabled
+      if (_directUploadService != null &&
+          _directUploadService!.permanentlyDisabled) {
+        _valueController.add(data);
+        return;
+      }
+
       if (_lastGeolocation != null) {
         _groupedBuffer.putIfAbsent(_lastGeolocation!, () => {});
         _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
@@ -162,6 +176,14 @@ abstract class Sensor {
 
   Future<void> _flushBuffers() async {
     if (_groupedBuffer.isEmpty) {
+      return;
+    }
+
+    // Don't process buffers if DirectUploadService is permanently disabled
+    if (_directUploadService != null &&
+        _directUploadService!.permanentlyDisabled) {
+      debugPrint(
+          '[Sensor $title] Skipping buffer flush - service permanently disabled');
       return;
     }
 

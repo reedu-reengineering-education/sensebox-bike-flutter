@@ -17,6 +17,7 @@ class DirectUploadService {
   final UploadDataPreparer _dataPreparer;
   
   Function(List<GeolocationData>)? _onUploadSuccess;
+  Function()? _onPermanentDisable;
 
   final ValueNotifier<bool> permanentUploadLossNotifier =
       ValueNotifier<bool>(false);
@@ -81,6 +82,10 @@ class DirectUploadService {
 
   void setUploadSuccessCallback(Function(List<GeolocationData>) callback) {
     _onUploadSuccess = callback;
+  }
+
+  void setPermanentDisableCallback(Function() callback) {
+    _onPermanentDisable = callback;
   }
 
   bool addGroupedDataForUpload(
@@ -149,6 +154,13 @@ class DirectUploadService {
       return;
     }
 
+    // Don't prepare data if service is permanently disabled
+    if (_isPermanentlyDisabled) {
+      debugPrint(
+          '[DirectUploadService] Sync data preparation skipped - service permanently disabled');
+      return;
+    }
+
     final List<GeolocationData> gpsPointsBeingUploaded =
         _accumulatedSensorData.keys.toList();
     final uploadData = _dataPreparer.prepareDataFromGroupedData(
@@ -163,6 +175,7 @@ class DirectUploadService {
   }
 
   Future<void> uploadRemainingBufferedData() async {
+    // Always clear accumulated sensor data first to prevent memory leaks
     if (_accumulatedSensorData.isNotEmpty) {
       final gpsBuffer = _accumulatedSensorData.keys.toList();
       _prepareAndUploadDataSync(gpsBuffer);
@@ -172,6 +185,7 @@ class DirectUploadService {
       try {
         await _uploadDirectBufferSync();
         
+        // Clear buffers after successful upload
         _accumulatedSensorData.clear();
         _directUploadBuffer.clear();
         
@@ -187,13 +201,14 @@ class DirectUploadService {
               'Direct upload failed during recording stop at ${DateTime.now()}: $e. Data cleared due to permanent error.',
               st,
               sendToSentry: true);
+          // Clear buffers on permanent errors
           _accumulatedSensorData.clear();
           _directUploadBuffer.clear();
         }
       }
     } else {
-      // No data to upload, clear accumulated data
-      _accumulatedSensorData.clear();
+      // No direct upload buffer data, but accumulated sensor data was already cleared above
+      // This prevents the memory leak where accumulated data wasn't cleared
     }
   }
 
@@ -377,6 +392,9 @@ class DirectUploadService {
     _restartTimer = null;
     _clearAllBuffers();
     permanentUploadLossNotifier.value = true;
+
+    // Notify sensors to clear their buffers since uploads will never succeed
+    _onPermanentDisable?.call();
 
     debugPrint(
         '[DirectUploadService] Service permanently disabled due to authentication failure. User needs to re-login.');
