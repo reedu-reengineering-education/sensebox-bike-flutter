@@ -225,7 +225,9 @@ class UploadDataPreparer {
         // Handle multi-value sensors directly
         if (sensorTitle == 'surface_classification' ||
             sensorTitle == 'finedust' ||
-            sensorTitle == 'acceleration') {
+            sensorTitle == 'distance' ||
+            sensorTitle == 'overtaking' ||
+            sensorTitle == 'surface_anomaly') {
           // For multi-value sensors, we need to find all the individual sensors
           List<Sensor> individualSensors = [];
 
@@ -241,10 +243,20 @@ class UploadDataPreparer {
                     s.title!.toLowerCase().contains('surface') ||
                     s.title!.toLowerCase() == 'standing')
                 .toList();
-          } else if (sensorTitle == 'acceleration') {
-            // Find all acceleration sensors
+          } else if (sensorTitle == 'distance') {
+            // Find the Overtaking Distance sensor
             individualSensors = senseBox.sensors!
-                .where((s) => s.title!.toLowerCase().contains('acceleration'))
+                .where((s) => s.title!.toLowerCase().contains('overtaking distance'))
+                .toList();
+          } else if (sensorTitle == 'overtaking') {
+            // Find the Overtaking Manoeuvre sensor
+            individualSensors = senseBox.sensors!
+                .where((s) => s.title!.toLowerCase().contains('overtaking manoeuvre'))
+                .toList();
+          } else if (sensorTitle == 'surface_anomaly') {
+            // Find the Surface Anomaly sensor
+            individualSensors = senseBox.sensors!
+                .where((s) => s.title!.toLowerCase().contains('surface anomaly'))
                 .toList();
           }
 

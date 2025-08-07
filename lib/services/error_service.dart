@@ -17,7 +17,7 @@ class ErrorService {
     logToConsole(error, stack);
     // This exception was already reported to Sentry
     // end exceptions generated during debugging are not reported
-    if (sendToSentry && !kDebugMode) {
+    if (sendToSentry) {
       Sentry.captureException(error, stackTrace: stack);
     }
 
@@ -27,7 +27,8 @@ class ErrorService {
           error is RegistrationError ||
           error is ScanPermissionDenied ||
           error is NoSenseBoxSelected ||
-          error is ExportDirectoryAccessError) {
+          error is ExportDirectoryAccessError ||
+          error is UploadFailureError) {
         showUserFeedback(error);
       } else {
         logToConsole(error, stack);
@@ -68,6 +69,9 @@ class ErrorService {
     } else if (error is ExportDirectoryAccessError) {
       return localizations?.errorExportDirectoryAccess ??
           'Error accessing export directory. Please make sure the app has permission to access the storage.';
+    } else if (error is UploadFailureError) {
+      return localizations?.errorUploadFailed ??
+          'Data upload failed. Please check your internet connection and try again.';
     } else if (error is LoginError) {
       return '${localizations?.errorLoginFailed} ${error.toString()}';
     } else if (error is RegistrationError) {

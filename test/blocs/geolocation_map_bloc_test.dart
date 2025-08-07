@@ -46,7 +46,6 @@ void main() {
         geolocationBloc: mockGeolocationBloc,
         recordingBloc: recordingBloc,
         osemBloc: mockOpenSenseMapBloc,
-        bleBloc: mockBleBloc,
       );
     });
 
@@ -58,7 +57,6 @@ void main() {
       test('should initialize with correct initial state', () {
         expect(bloc.isRecording, false);
         expect(bloc.isAuthenticated, false);
-        expect(bloc.isConnected, false);
         expect(bloc.gpsBuffer, isEmpty);
         expect(bloc.latestLocation, isNull);
         expect(bloc.hasGpsData, false);

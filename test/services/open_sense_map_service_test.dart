@@ -213,13 +213,23 @@ void main() {
     });
 
     test('when no valid accessToken, throws exception', () async {
-      mockHTTPPOSTResponse('valid data', 201);
+      // Mock multiple failed attempts due to retry logic
+      when(() => mockHttpClient.post(
+            any(),
+            headers: any(named: 'headers'),
+            body: any(named: 'body'),
+          )).thenAnswer((_) async => http.Response('Not authenticated', 401));
 
       await expectLater(service.uploadData('id', { "data": "data" }), throwsException);
     });
 
     test('when receives error response, throws exception', () async {
-      mockHTTPPOSTResponse('valid data', 400);
+      // Mock multiple failed attempts due to retry logic
+      when(() => mockHttpClient.post(
+            any(),
+            headers: any(named: 'headers'),
+            body: any(named: 'body'),
+          )).thenAnswer((_) async => http.Response('Client error', 400));
 
       await expectLater(service.uploadData('id', { "data": "data" }), throwsException);
     });

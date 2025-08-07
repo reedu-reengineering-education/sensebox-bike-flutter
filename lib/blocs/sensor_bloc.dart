@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
@@ -20,6 +21,7 @@ class SensorBloc with ChangeNotifier {
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
   final RecordingBloc recordingBloc;
+  final SettingsBloc settingsBloc;
   final List<Sensor> _sensors = [];
   late final VoidCallback _characteristicsListener;
   late final VoidCallback _characteristicStreamsVersionListener;
@@ -27,7 +29,8 @@ class SensorBloc with ChangeNotifier {
   late final VoidCallback _recordingListener;
   List<String> _lastCharacteristicUuids = [];
 
-  SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc) {
+  SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc,
+      this.settingsBloc) {
     _initializeSensors();
 
     _selectedDeviceListener = () {
@@ -75,6 +78,8 @@ class SensorBloc with ChangeNotifier {
   }
 
   void _onRecordingStart() {
+    _clearAllSensorBuffersForNewRecording();
+    
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
 
@@ -84,6 +89,11 @@ class SensorBloc with ChangeNotifier {
 
       directUploadService.enable();
     }
+    
+    geolocationBloc.startListening();
+    geolocationBloc.getCurrentLocationAndEmit().catchError((e) {
+      debugPrint('Failed to get initial GPS location: $e');
+    });
   }
 
   Future<void> _onRecordingStop() async {
@@ -91,7 +101,12 @@ class SensorBloc with ChangeNotifier {
     if (directUploadService != null) {
       await directUploadService.uploadRemainingBufferedData();
 
+      for (var sensor in _sensors) {
+        sensor.clearBuffersOnRecordingStop();
+      }
+
       directUploadService.disable();
+
     }
   }
 
@@ -106,23 +121,27 @@ class SensorBloc with ChangeNotifier {
     final isarService = geolocationBloc.isarService;
 
     _sensors.add(TemperatureSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
     _sensors.add(
-        HumiditySensor(bleBloc, geolocationBloc, recordingBloc, isarService));
+        HumiditySensor(
+        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
     _sensors.add(
-        DistanceSensor(bleBloc, geolocationBloc, recordingBloc, isarService));
+        DistanceSensor(
+        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
     _sensors.add(SurfaceClassificationSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
     _sensors.add(AccelerationSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
     _sensors.add(OvertakingPredictionSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
     _sensors.add(SurfaceAnomalySensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
     _sensors.add(
-        FinedustSensor(bleBloc, geolocationBloc, recordingBloc, isarService));
+        FinedustSensor(
+        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
     _sensors
-        .add(GPSSensor(bleBloc, geolocationBloc, recordingBloc, isarService));
+        .add(GPSSensor(
+        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
   }
 
   void _startListening() {
@@ -145,6 +164,12 @@ class SensorBloc with ChangeNotifier {
   Future<void> _flushAllSensorBuffers() async {
     for (var sensor in _sensors) {
       await sensor.flushBuffers();
+    }
+  }
+
+  void _clearAllSensorBuffersForNewRecording() {
+    for (var sensor in _sensors) {
+      sensor.clearBuffersForNewRecording();
     }
   }
 
