@@ -13,6 +13,100 @@ class MockSettingsBloc extends Mock implements SettingsBloc {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  group('UploadErrorClassifier Tests', () {
+    group('classifyError', () {
+      test('classifies permanent authentication errors correctly', () {
+        final authErrors = [
+          'Authentication failed - user needs to re-login',
+          'No refresh token found',
+          'Failed to refresh token: Network error',
+          'Not authenticated',
+        ];
+
+        for (final error in authErrors) {
+          final result = UploadErrorClassifier.classifyError(Exception(error));
+          expect(result, equals(UploadErrorType.permanentAuth),
+              reason: 'Should classify "$error" as permanent auth error');
+        }
+      });
+
+      test('classifies temporary errors correctly', () {
+        final temporaryErrors = [
+          'Server error 502 - retrying',
+          'Server error 503 - retrying',
+          'Token refreshed, retrying',
+        ];
+
+        for (final error in temporaryErrors) {
+          final result = UploadErrorClassifier.classifyError(Exception(error));
+          expect(result, equals(UploadErrorType.temporary),
+              reason: 'Should classify "$error" as temporary error');
+        }
+      });
+
+      test('classifies exception types correctly', () {
+        final temporaryExceptions = [
+          TooManyRequestsException(30),
+          TimeoutException('Upload timeout', const Duration(seconds: 30)),
+        ];
+
+        for (final exception in temporaryExceptions) {
+          final result = UploadErrorClassifier.classifyError(exception);
+          expect(result, equals(UploadErrorType.temporary),
+              reason:
+                  'Should classify ${exception.runtimeType} as temporary error');
+        }
+      });
+
+      test('classifies permanent client errors correctly', () {
+        final clientErrors = [
+          'Client error 403: Forbidden',
+          'Client error 404: Not Found',
+          'Client error 400: Bad Request',
+        ];
+
+        for (final error in clientErrors) {
+          final result = UploadErrorClassifier.classifyError(Exception(error));
+          expect(result, equals(UploadErrorType.permanentClient),
+              reason: 'Should classify "$error" as permanent client error');
+        }
+      });
+
+      test('excludes 429 from permanent client errors', () {
+        final result = UploadErrorClassifier.classifyError(
+            Exception('Client error 429: Too Many Requests'));
+        expect(result, equals(UploadErrorType.temporary),
+            reason:
+                'Should classify 429 as temporary error, not permanent client error');
+      });
+
+      test('defaults to temporary for unknown errors', () {
+        final unknownErrors = [
+          'Unknown error',
+          'Network error',
+          'Some other error',
+        ];
+
+        for (final error in unknownErrors) {
+          final result = UploadErrorClassifier.classifyError(Exception(error));
+          expect(result, equals(UploadErrorType.temporary),
+              reason: 'Should classify "$error" as temporary error by default');
+        }
+      });
+
+      test('prioritizes permanent auth over other classifications', () {
+        // This error contains both "Server error" (temporary) and "Authentication failed" (permanent auth)
+        final mixedError =
+            'Server error 500: Authentication failed - user needs to re-login';
+        final result =
+            UploadErrorClassifier.classifyError(Exception(mixedError));
+        expect(result, equals(UploadErrorType.permanentAuth),
+            reason:
+                'Should prioritize permanent auth over temporary classification');
+      });
+    });
+  });
+
   group('DirectUploadService Tests', () {
     late DirectUploadService directUploadService;
     late MockOpenSenseMapService mockOpenSenseMapService;

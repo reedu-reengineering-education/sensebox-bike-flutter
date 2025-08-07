@@ -9,6 +9,84 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 
+/// Classifies upload errors into different categories for appropriate handling
+class UploadErrorClassifier {
+  // Error patterns for permanent authentication failures
+  static const List<String> _permanentAuthErrorPatterns = [
+    'Authentication failed - user needs to re-login',
+    'No refresh token found',
+    'Failed to refresh token:',
+    'Not authenticated',
+  ];
+
+  // Error patterns for temporary (retryable) errors
+  static const List<String> _temporaryErrorPatterns = [
+    'Server error',
+    'Token refreshed',
+  ];
+
+  // Exception types that are always temporary
+  static const List<Type> _temporaryExceptionTypes = [
+    TooManyRequestsException,
+    TimeoutException,
+  ];
+
+  /// Classifies an error and returns the appropriate error type
+  static UploadErrorType classifyError(dynamic error) {
+    final errorString = error.toString();
+
+    // Check for permanent authentication errors first
+    if (_isPermanentAuthError(errorString)) {
+      return UploadErrorType.permanentAuth;
+    }
+
+    // Check for temporary errors
+    if (_isTemporaryError(error, errorString)) {
+      return UploadErrorType.temporary;
+    }
+
+    // Check for permanent client errors (4xx, excluding 429)
+    if (_isPermanentClientError(errorString)) {
+      return UploadErrorType.permanentClient;
+    }
+
+    // Default to temporary for unknown errors
+    return UploadErrorType.temporary;
+  }
+
+  /// Checks if the error is a permanent authentication error
+  static bool _isPermanentAuthError(String errorString) {
+    return _permanentAuthErrorPatterns.any(
+      (pattern) => errorString.contains(pattern),
+    );
+  }
+
+  /// Checks if the error is a temporary (retryable) error
+  static bool _isTemporaryError(dynamic error, String errorString) {
+    // Check exception types
+    if (_temporaryExceptionTypes.any((type) => error.runtimeType == type)) {
+      return true;
+    }
+
+    // Check error string patterns
+    return _temporaryErrorPatterns.any(
+      (pattern) => errorString.contains(pattern),
+    );
+  }
+
+  /// Checks if the error is a permanent client error (4xx, excluding 429)
+  static bool _isPermanentClientError(String errorString) {
+    return errorString.contains('Client error') && !errorString.contains('429');
+  }
+}
+
+/// Enum representing different types of upload errors
+enum UploadErrorType {
+  temporary,
+  permanentAuth,
+  permanentClient,
+}
+
 class DirectUploadService {
   final String instanceId = DateTime.now().millisecondsSinceEpoch.toString();
   final OpenSenseMapService openSenseMapService;
@@ -336,44 +414,23 @@ class DirectUploadService {
 
 
   Future<void> _handleUploadError(dynamic e, StackTrace st) async {
-    final errorString = e.toString();
+    final errorType = UploadErrorClassifier.classifyError(e);
     
-    // Define non-critical (retryable) error patterns
-    final isNonCriticalError = e is TooManyRequestsException ||
-        errorString.contains('Server error') ||
-        errorString.contains('Token refreshed') ||
-        e is TimeoutException;
-    
-    // Define permanent authentication failures
-    final isPermanentAuthError = errorString
-            .contains('Authentication failed - user needs to re-login') ||
-        errorString.contains('No refresh token found') ||
-        errorString.contains('Failed to refresh token:') ||
-        errorString.contains('Not authenticated');
-
-    // Define permanent client errors (4xx, excluding 429)
-    final isPermanentClientError = errorString.contains('Client error') &&
-        !errorString
-            .contains('429'); // Exclude 429 from permanent client errors
-
-    if (isPermanentAuthError) {
-      await _handlePermanentAuthenticationError(e, st);
-    } else if (isPermanentClientError) {
-      await _handlePermanentClientError(e, st);
-    } else if (isNonCriticalError) {
-      // For all non-critical errors (429, 5xx, timeouts), preserve data and let OpenSenseMapService handle retries
-      ErrorService.handleError(
-          'Direct upload temporary error at ${DateTime.now()}: $e. Data preserved for retry.',
-          st,
-          sendToSentry: false);
-      // Don't clear buffers - data will be retried
-    } else {
-      // Unknown error - log and preserve data
-      ErrorService.handleError(
-          'Direct upload unknown error at ${DateTime.now()}: $e. Data preserved.',
-          st,
-          sendToSentry: true);
-      // Don't clear buffers - treat as temporary
+    switch (errorType) {
+      case UploadErrorType.permanentAuth:
+        await _handlePermanentAuthenticationError(e, st);
+        break;
+      case UploadErrorType.permanentClient:
+        await _handlePermanentClientError(e, st);
+        break;
+      case UploadErrorType.temporary:
+        // For all temporary errors (429, 5xx, timeouts), preserve data and let OpenSenseMapService handle retries
+        ErrorService.handleError(
+            'Direct upload temporary error at ${DateTime.now()}: $e. Data preserved for retry.',
+            st,
+            sendToSentry: false);
+        // Don't clear buffers - data will be retried
+        break;
     }
   }
 
