@@ -151,7 +151,7 @@ void main() {
 
       // Setup mock to throw temporary authentication error
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
-          .thenThrow(Exception('Not authenticated'));
+          .thenThrow(Exception('Token refreshed, retrying'));
 
       final gpsBuffer = [
         GeolocationData()
