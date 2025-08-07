@@ -171,6 +171,11 @@ abstract class Sensor {
     _isFlushing = true;
 
     try {
+      // Create a copy of entries to avoid concurrent modification
+      final bufferCopy =
+          Map<GeolocationData, Map<String, List<List<double>>>>.from(
+              _groupedBuffer);
+      
       final List<SensorData> batch = [];
       final Set<int> processedInThisFlush = {};
       final Map<GeolocationData, Map<String, List<double>>>
@@ -179,7 +184,7 @@ abstract class Sensor {
       final int maxBatchSize = 100;
       int processedCount = 0;
 
-      for (final entry in _groupedBuffer.entries) {
+      for (final entry in bufferCopy.entries) {
         if (processedCount >= maxBatchSize) {
           break;
         }
