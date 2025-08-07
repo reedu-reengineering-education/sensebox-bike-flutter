@@ -203,17 +203,25 @@ class DirectUploadService {
       return;
     }
 
+    // Create a snapshot of current data to ensure atomic operation
+    final Map<GeolocationData, Map<String, List<double>>> dataSnapshot =
+        Map.from(_accumulatedSensorData);
     final List<GeolocationData> gpsPointsBeingUploaded =
-        _accumulatedSensorData.keys.toList();
+        dataSnapshot.keys.toList();
+    
     final uploadData = _dataPreparer.prepareDataFromGroupedData(
-        _accumulatedSensorData, gpsBuffer);
+        dataSnapshot, gpsBuffer);
     final uploadDataWithGps = {
       'data': uploadData,
       'gpsPoints': gpsPointsBeingUploaded,
     };
 
     _directUploadBuffer.add(uploadDataWithGps);
-    _accumulatedSensorData.clear();
+    
+    // Only clear the exact data that was prepared for upload
+    for (final gpsPoint in gpsPointsBeingUploaded) {
+      _accumulatedSensorData.remove(gpsPoint);
+    }
 
     if (_directUploadBuffer.length >= 6) {
       // Balanced threshold for efficient uploads
@@ -239,17 +247,25 @@ class DirectUploadService {
       return;
     }
 
+    // Create a snapshot of current data to ensure atomic operation
+    final Map<GeolocationData, Map<String, List<double>>> dataSnapshot =
+        Map.from(_accumulatedSensorData);
     final List<GeolocationData> gpsPointsBeingUploaded =
-        _accumulatedSensorData.keys.toList();
+        dataSnapshot.keys.toList();
+    
     final uploadData = _dataPreparer.prepareDataFromGroupedData(
-        _accumulatedSensorData, gpsBuffer);
+        dataSnapshot, gpsBuffer);
     final uploadDataWithGps = {
       'data': uploadData,
       'gpsPoints': gpsPointsBeingUploaded,
     };
 
     _directUploadBuffer.add(uploadDataWithGps);
-    _accumulatedSensorData.clear();
+    
+    // Only clear the exact data that was prepared for upload
+    for (final gpsPoint in gpsPointsBeingUploaded) {
+      _accumulatedSensorData.remove(gpsPoint);
+    }
   }
 
   Future<void> uploadRemainingBufferedData() async {
