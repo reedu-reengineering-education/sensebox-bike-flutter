@@ -305,6 +305,10 @@ class DirectUploadService {
     if (_restartAttempts >= maxRestartAttempts) {
       debugPrint(
           '[DirectUploadService] Max restart attempts reached (${maxRestartAttempts}), no more restarts scheduled');
+      
+      // Notify sensors to clear their buffers since service is permanently disabled
+      _onPermanentDisable?.call();
+      
       return;
     }
 
