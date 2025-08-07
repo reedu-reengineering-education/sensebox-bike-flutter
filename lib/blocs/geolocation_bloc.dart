@@ -36,6 +36,7 @@ class GeolocationBloc with ChangeNotifier {
         if (status.isGranted) {
           locationSettings = AndroidSettings(
               accuracy: LocationAccuracy.best,
+              timeLimit: const Duration(minutes: 1),
               foregroundNotificationConfig: const ForegroundNotificationConfig(
                   notificationText:
                       "senseBox:bike will record your location in the background",
@@ -51,6 +52,7 @@ class GeolocationBloc with ChangeNotifier {
           defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.best,
+          timeLimit: const Duration(minutes: 1),
         );
       }
 

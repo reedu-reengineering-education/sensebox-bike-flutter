@@ -215,7 +215,7 @@ class DirectUploadService {
     _directUploadBuffer.add(uploadDataWithGps);
     _accumulatedSensorData.clear();
 
-    if (_directUploadBuffer.length >= 3) {
+    if (_directUploadBuffer.length >= 6) {
       // Balanced threshold for efficient uploads
       _uploadDirectBuffer().catchError((e) {
         ErrorService.handleError(
