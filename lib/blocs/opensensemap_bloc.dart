@@ -41,10 +41,19 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   Future<void> _initializeAuth() async {
     try {
-      await _service.refreshToken();
-      _isAuthenticated = true;
-      notifyListeners();
-      await loadSelectedSenseBox();
+      // Check if we have a valid token first
+      final token = await _service.getAccessToken();
+      if (token != null) {
+        _isAuthenticated = true;
+        notifyListeners();
+        await loadSelectedSenseBox();
+      } else {
+        // Only try to refresh if no token exists
+        await _service.refreshToken();
+        _isAuthenticated = true;
+        notifyListeners();
+        await loadSelectedSenseBox();
+      }
     } catch (_) {
       _isAuthenticated = false;
       notifyListeners();
@@ -83,12 +92,22 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
       try {
-        await _service.refreshToken();
-        _isAuthenticated = true;
-
-        // Avoid creating duplicate SenseBoxes by checking current state
-        if (_selectedSenseBox == null) {
-          await loadSelectedSenseBox();
+        // Check if we have a valid token first
+        final token = await _service.getAccessToken();
+        if (token != null) {
+          _isAuthenticated = true;
+          // Avoid creating duplicate SenseBoxes by checking current state
+          if (_selectedSenseBox == null) {
+            await loadSelectedSenseBox();
+          }
+        } else {
+          // Only try to refresh if no valid token exists
+          await _service.refreshToken();
+          _isAuthenticated = true;
+          // Avoid creating duplicate SenseBoxes by checking current state
+          if (_selectedSenseBox == null) {
+            await loadSelectedSenseBox();
+          }
         }
       } catch (_) {
         _isAuthenticated = false;
