@@ -120,7 +120,7 @@ class _SenseBoxSelectionButton extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    if (!osemBloc.isAuthenticated) {
+    if (!osemBloc.isAuthenticated || osemBloc.isAuthenticating) {
       return const SizedBox.shrink();
     }
 

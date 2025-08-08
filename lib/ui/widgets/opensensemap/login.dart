@@ -22,8 +22,7 @@ class _LoginFormState extends State<LoginForm> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<FormState> formKey =
-      GlobalKey<FormState>(); // Track password visibility
-  bool isLoading = false;
+      GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -37,7 +36,7 @@ class _LoginFormState extends State<LoginForm> {
     return SingleChildScrollView(
         padding: EdgeInsets.only(
           bottom:
-              MediaQuery.of(context).viewInsets.bottom, // Adjust for keyboard
+              MediaQuery.of(context).viewInsets.bottom,
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -49,29 +48,25 @@ class _LoginFormState extends State<LoginForm> {
                 children: [
                   EmailField(
                     controller: emailController,
-                    enabled: !isLoading,
+                    enabled: !widget.bloc.isAuthenticating,
                   ),
                   const CustomSpacer(),
                   PasswordField(
                     controller: passwordController,
-                    enabled: !isLoading,
+                    enabled: !widget.bloc.isAuthenticating,
                     validator: (context, value) =>
                         passwordValidatorSimple(context, value),
                   ),
                   const CustomSpacer(),
                   ButtonWithLoader(
-                    isLoading: isLoading,
+                    isLoading: widget.bloc.isAuthenticating,
                     text: AppLocalizations.of(context)!.generalLogin,
                     width: 0.4,
-                    onPressed: isLoading
-                        ? null // Disable button when loading
+                    onPressed: widget.bloc.isAuthenticating
+                        ? null
                         : () async {
                             bool isLoginSuccessful = false;
                             if (formKey.currentState?.validate() == true) {
-                              setState(() {
-                                isLoading = true; // Start loading
-                              });
-
                               try {
                                 await widget.bloc.login(
                                   emailController.value.text,
@@ -81,15 +76,8 @@ class _LoginFormState extends State<LoginForm> {
                               } catch (e, stack) {
                                 ErrorService.handleError(LoginError(e), stack,
                                     sendToSentry: false);
-                              } finally {
-                                if (mounted) {
-                                  setState(() {
-                                  isLoading = false; // Stop loading
-                                });
-                                }
                               }
 
-                              // Navigate only if login was successful and user is still on the page
                               if (isLoginSuccessful &&
                                   context.mounted) {
                                 Navigator.pushReplacement(
