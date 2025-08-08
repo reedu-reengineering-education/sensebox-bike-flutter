@@ -23,7 +23,7 @@ class OpenSenseMapService {
   // Add rate limiting state
   bool _isRateLimited = false;
   DateTime? _rateLimitUntil;
-  
+
   // Add permanent authentication failure state
   bool _isPermanentlyDisabled = false;
 
@@ -50,7 +50,7 @@ class OpenSenseMapService {
     final remaining = _rateLimitUntil!.difference(DateTime.now());
     return remaining.isNegative ? null : remaining;
   }
-  
+
   // Add method to reset permanent disable state (called after successful re-login)
   void resetPermanentDisable() {
     _isPermanentlyDisabled = false;
@@ -64,7 +64,7 @@ class OpenSenseMapService {
 
     await prefs.setString('accessToken', accessToken);
     await prefs.setString('refreshToken', refreshToken);
-    
+
     // Update cached token with actual expiration
     _cachedAccessToken = accessToken;
     _tokenExpiration = _getTokenExpiration(accessToken);
@@ -75,7 +75,7 @@ class OpenSenseMapService {
 
     await prefs.remove('accessToken');
     await prefs.remove('refreshToken');
-    
+
     // Clear cached token
     _clearCachedToken();
   }
@@ -105,7 +105,7 @@ class OpenSenseMapService {
     final responseData = jsonDecode(response.body);
 
     await setTokens(response);
-    
+
     // Save user data from registration response
     await _saveUserData({
       'data': {
@@ -157,7 +157,7 @@ class OpenSenseMapService {
       final responseData = jsonDecode(response.body);
 
       await setTokens(response);
-      
+
       // Reset permanent disable state after successful login
       resetPermanentDisable();
 
@@ -196,7 +196,7 @@ class OpenSenseMapService {
         successHandler: (response) => jsonDecode(response.body),
         errorMessage: 'Failed to load user data',
       );
-      
+
       // Cache the user data for future use
       if (userData != null) {
         await _saveUserData(userData);
@@ -219,11 +219,11 @@ class OpenSenseMapService {
       if (isValid) {
         final now = DateTime.now();
         final timeUntilExpiry = _tokenExpiration!.difference(now);
-        
+
         if (timeUntilExpiry.inMinutes > 5) {
           return _cachedAccessToken;
         }
-        
+
         if (timeUntilExpiry.inMinutes > 0 && !_isRefreshingToken) {
           _refreshTokenProactively();
         }
@@ -231,10 +231,10 @@ class OpenSenseMapService {
         _clearCachedToken();
       }
     }
-    
+
     final prefs = await _prefs;
     final token = prefs.getString('accessToken');
-    
+
     if (token != null) {
       final isValid = _isTokenValid(token);
       if (isValid) {
@@ -245,7 +245,7 @@ class OpenSenseMapService {
         return null;
       }
     }
-    
+
     return token;
   }
 
@@ -313,14 +313,13 @@ class OpenSenseMapService {
       _clearCachedToken();
 
       throw Exception('Token refresh failed - retrying');
-
     }
   }
 
   /// Proactively refresh token before it expires
   Future<void> _refreshTokenProactively() async {
     if (_isRefreshingToken) return;
-    
+
     _isRefreshingToken = true;
     try {
       await refreshToken();
@@ -344,10 +343,10 @@ class OpenSenseMapService {
     if (_cachedAccessToken == null || _tokenExpiration == null) {
       return null;
     }
-    
+
     final now = DateTime.now();
     final timeUntilExpiry = _tokenExpiration!.difference(now);
-    
+
     return {
       'hasCachedToken': true,
       'isRefreshing': _isRefreshingToken,
@@ -357,7 +356,7 @@ class OpenSenseMapService {
   }
 
   /// Generic method to handle authenticated requests with automatic token refresh
-  /// 
+  ///
   /// [requestFn] is a function that makes the HTTP request and returns the response
   /// [successHandler] is a function that processes the successful response
   /// [errorMessage] is the error message to show if the request fails after token refresh
@@ -373,22 +372,23 @@ class OpenSenseMapService {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return successHandler(response);
-    } else if (response.statusCode == 401) {
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
       // Only try to refresh token once, and only if we're not already refreshing
       if (_isRefreshingToken) {
         throw Exception('Token refresh already in progress');
       }
-      
+
       try {
         await refreshToken();
         final newAccessToken = await getAccessToken();
         if (newAccessToken == null) {
           throw Exception('Not authenticated after token refresh');
         }
-        
+
         final retryResponse = await requestFn(newAccessToken);
-        
-        if (retryResponse.statusCode == 200 || retryResponse.statusCode == 201) {
+
+        if (retryResponse.statusCode == 200 ||
+            retryResponse.statusCode == 201) {
           return successHandler(retryResponse);
         } else {
           throw Exception(
@@ -472,13 +472,12 @@ class OpenSenseMapService {
 
         if (response.statusCode == 201) {
           return;
-        } else if (response.statusCode == 401) {
+        } else if (response.statusCode == 401 || response.statusCode == 403) {
           ErrorService.handleError(
               'Client error ${response.statusCode}: ${response.body}',
               StackTrace.current,
               sendToSentry: true);
           try {
-            
             await refreshToken();
             throw Exception('Token refreshed, retrying');
           } catch (e) {
@@ -497,11 +496,11 @@ class OpenSenseMapService {
           final waitTime = retryAfter != null
               ? int.tryParse(retryAfter) ?? defaultTimeout
               : defaultTimeout * 2;
-          
+
           // Set rate limiting state
           _isRateLimited = true;
           _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
-          
+
           throw TooManyRequestsException(waitTime);
         } else if (response.statusCode == 502 ||
             response.statusCode == 503 ||
