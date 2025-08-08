@@ -46,49 +46,61 @@ class _LoginFormState extends State<LoginForm> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  EmailField(
-                    controller: emailController,
-                    enabled: !widget.bloc.isAuthenticating,
-                  ),
-                  const CustomSpacer(),
-                  PasswordField(
-                    controller: passwordController,
-                    enabled: !widget.bloc.isAuthenticating,
-                    validator: (context, value) =>
-                        passwordValidatorSimple(context, value),
-                  ),
-                  const CustomSpacer(),
-                  ButtonWithLoader(
-                    isLoading: widget.bloc.isAuthenticating,
-                    text: AppLocalizations.of(context)!.generalLogin,
-                    width: 0.4,
-                    onPressed: widget.bloc.isAuthenticating
-                        ? null
-                        : () async {
-                            bool isLoginSuccessful = false;
-                            if (formKey.currentState?.validate() == true) {
-                              try {
-                                await widget.bloc.login(
-                                  emailController.value.text,
-                                  passwordController.value.text,
-                                );
-                                isLoginSuccessful = true;
-                              } catch (e, stack) {
-                                ErrorService.handleError(LoginError(e), stack,
-                                    sendToSentry: false);
-                              }
+                  ValueListenableBuilder<bool>(
+                    valueListenable: widget.bloc.isAuthenticatingNotifier,
+                    builder: (context, isAuthenticating, child) {
+                      return Column(
+                        children: [
+                          EmailField(
+                            controller: emailController,
+                            enabled: !isAuthenticating,
+                          ),
+                          const CustomSpacer(),
+                          PasswordField(
+                            controller: passwordController,
+                            enabled: !isAuthenticating,
+                            validator: (context, value) =>
+                                passwordValidatorSimple(context, value),
+                          ),
+                          const CustomSpacer(),
+                          ButtonWithLoader(
+                            isLoading: isAuthenticating,
+                            text: AppLocalizations.of(context)!.generalLogin,
+                            width: 0.4,
+                            onPressed: isAuthenticating
+                                ? null
+                                : () async {
+                                    bool isLoginSuccessful = false;
+                                    if (formKey.currentState?.validate() ==
+                                        true) {
+                                      try {
+                                        await widget.bloc.login(
+                                          emailController.value.text,
+                                          passwordController.value.text,
+                                        );
+                                        isLoginSuccessful = true;
+                                      } catch (e, stack) {
+                                        ErrorService.handleError(
+                                            LoginError(e), stack,
+                                            sendToSentry: false);
+                                      }
 
-                              if (isLoginSuccessful &&
-                                  context.mounted) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const AppHome(),
-                                  ),
-                                );
-                              }
-                            }
-                          },
+                                      if (isLoginSuccessful &&
+                                          context.mounted) {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const AppHome(),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
