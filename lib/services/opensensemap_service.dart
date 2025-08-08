@@ -66,9 +66,9 @@ class OpenSenseMapService {
     await prefs.setString('accessToken', accessToken);
     await prefs.setString('refreshToken', refreshToken);
     
-    // Update cached token
+    // Update cached token with actual expiration
     _cachedAccessToken = accessToken;
-    _tokenExpiration = DateTime.now().add(Duration(hours: 1));
+    _tokenExpiration = _getTokenExpiration(accessToken);
   }
 
   Future<void> removeTokens() async {
@@ -149,35 +149,81 @@ class OpenSenseMapService {
     );
   }
 
-  /// Get access token with caching and automatic refresh
   Future<String?> getAccessToken() async {
-    // Check if we have a valid cached token
     if (_cachedAccessToken != null && _tokenExpiration != null) {
-      final now = DateTime.now();
-      final timeUntilExpiry = _tokenExpiration!.difference(now);
-      
-      // If token expires in more than 5 minutes, use cached token
-      if (timeUntilExpiry.inMinutes > 5) {
-        return _cachedAccessToken;
-      }
-      
-      // If token expires soon, refresh it proactively
-      if (timeUntilExpiry.inMinutes > 0 && !_isRefreshingToken) {
-        _refreshTokenProactively();
+      final isValid = _isTokenValid(_cachedAccessToken!);
+      if (isValid) {
+        final now = DateTime.now();
+        final timeUntilExpiry = _tokenExpiration!.difference(now);
+        
+        if (timeUntilExpiry.inMinutes > 5) {
+          return _cachedAccessToken;
+        }
+        
+        if (timeUntilExpiry.inMinutes > 0 && !_isRefreshingToken) {
+          _refreshTokenProactively();
+        }
+      } else {
+        _clearCachedToken();
       }
     }
     
-    // Get token from preferences and cache it
     final prefs = await _prefs;
     final token = prefs.getString('accessToken');
     
     if (token != null) {
-      _cachedAccessToken = token;
-      // Set expiration to 1 hour from now (typical JWT lifetime)
-      _tokenExpiration = DateTime.now().add(Duration(hours: 1));
+      final isValid = _isTokenValid(token);
+      if (isValid) {
+        _cachedAccessToken = token;
+        _tokenExpiration = _getTokenExpiration(token);
+      } else {
+        await prefs.remove('accessToken');
+        return null;
+      }
     }
     
     return token;
+  }
+
+  /// Decode JWT payload
+  Map<String, dynamic>? _decodeJwtPayload(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      final payload = parts[1];
+      final paddedPayload = payload + '=' * (4 - payload.length % 4);
+      final decoded = utf8.decode(base64Url.decode(paddedPayload));
+      return jsonDecode(decoded);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Validate JWT token and extract expiration
+  bool _isTokenValid(String token) {
+    final payloadMap = _decodeJwtPayload(token);
+    if (payloadMap == null) return false;
+
+    // Check if token has expired
+    final exp = payloadMap['exp'];
+    if (exp == null) return false;
+
+    final expirationTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+    final now = DateTime.now();
+
+    return expirationTime.isAfter(now);
+  }
+
+  /// Extract expiration time from JWT token
+  DateTime? _getTokenExpiration(String token) {
+    final payloadMap = _decodeJwtPayload(token);
+    if (payloadMap == null) return null;
+
+    final exp = payloadMap['exp'];
+    if (exp == null) return null;
+
+    return DateTime.fromMillisecondsSinceEpoch(exp * 1000);
   }
 
   Future<void> refreshToken() async {
@@ -198,7 +244,7 @@ class OpenSenseMapService {
       // Update cached token after successful refresh
       final prefs = await _prefs;
       _cachedAccessToken = prefs.getString('accessToken');
-      _tokenExpiration = DateTime.now().add(Duration(hours: 1));
+      _tokenExpiration = _getTokenExpiration(_cachedAccessToken!);
     } else {
       await removeTokens();
       _clearCachedToken();
