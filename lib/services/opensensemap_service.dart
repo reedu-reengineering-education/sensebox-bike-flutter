@@ -3,10 +3,10 @@ import 'package:http/http.dart' as http;
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'dart:convert';
-import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retry/retry.dart';
 import 'dart:async';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
 import 'package:sensebox_bike/constants.dart';
 
@@ -249,27 +249,11 @@ class OpenSenseMapService {
     return token;
   }
 
-  /// Decode JWT payload
+  /// Decode JWT payload using dart_jsonwebtoken library
   Map<String, dynamic>? _decodeJwtPayload(String token) {
     try {
-      final parts = token.split('.');
-      if (parts.length != 3) {
-        return null;
-      }
-
-      final payload = parts[1];
-      
-      // Fix base64 padding - only add padding if needed
-      String paddedPayload = payload;
-      final remainder = payload.length % 4;
-      if (remainder > 0) {
-        paddedPayload = payload + '=' * (4 - remainder);
-      }
-      
-      final decoded = utf8.decode(base64Url.decode(paddedPayload));
-      final payloadMap = jsonDecode(decoded);
-
-      return payloadMap;
+      final jwt = JWT.decode(token);
+      return jwt.payload;
     } catch (e) {
       return null;
     }
@@ -277,33 +261,32 @@ class OpenSenseMapService {
 
   /// Validate JWT token and extract expiration
   bool _isTokenValid(String token) {
-    final payloadMap = _decodeJwtPayload(token);
-    if (payloadMap == null) {
+    try {
+      final jwt = JWT.decode(token);
+      final exp = jwt.payload['exp'];
+      if (exp == null) {
+        return false;
+      }
+
+      final expirationTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      final now = DateTime.now();
+      return expirationTime.isAfter(now);
+    } catch (e) {
       return false;
     }
-
-    // Check if token has expired
-    final exp = payloadMap['exp'];
-    if (exp == null) {
-      return false;
-    }
-
-    final expirationTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
-    final now = DateTime.now();
-    final isValid = expirationTime.isAfter(now);
-
-    return isValid;
   }
 
   /// Extract expiration time from JWT token
   DateTime? _getTokenExpiration(String token) {
-    final payloadMap = _decodeJwtPayload(token);
-    if (payloadMap == null) return null;
+    try {
+      final jwt = JWT.decode(token);
+      final exp = jwt.payload['exp'];
+      if (exp == null) return null;
 
-    final exp = payloadMap['exp'];
-    if (exp == null) return null;
-
-    return DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      return DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<void> refreshToken() async {
