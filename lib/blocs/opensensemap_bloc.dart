@@ -10,6 +10,11 @@ import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamCo
 class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   final OpenSenseMapService _service = OpenSenseMapService();
   bool _isAuthenticated = false;
+  final ValueNotifier<bool> _isAuthenticatingNotifier =
+      ValueNotifier<bool>(false);
+  ValueNotifier<bool> get isAuthenticatingNotifier => _isAuthenticatingNotifier;
+  bool get isAuthenticating => _isAuthenticatingNotifier.value;
+  
   // make senseboxes a key value store. key is the page number, value is the list of senseboxes
   final Map<int, List<dynamic>> _senseBoxes = {};
   final _senseBoxController =
@@ -40,14 +45,24 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<void> _initializeAuth() async {
+    _isAuthenticatingNotifier.value = true;
     try {
-      await _service.refreshToken();
-      _isAuthenticated = true;
-      notifyListeners();
-      await loadSelectedSenseBox();
+      final token = await _service.getAccessToken();
+      if (token != null) {
+        _isAuthenticated = true;
+        notifyListeners();
+        await loadSelectedSenseBox();
+      } else {
+        await _service.refreshToken();
+        _isAuthenticated = true;
+        notifyListeners();
+        await loadSelectedSenseBox();
+      }
     } catch (_) {
       _isAuthenticated = false;
       notifyListeners();
+    } finally {
+      _isAuthenticatingNotifier.value = false;
     }
   }
 
@@ -83,12 +98,22 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
       try {
-        await _service.refreshToken();
-        _isAuthenticated = true;
-
-        // Avoid creating duplicate SenseBoxes by checking current state
-        if (_selectedSenseBox == null) {
-          await loadSelectedSenseBox();
+        // Check if we have a valid token first
+        final token = await _service.getAccessToken();
+        if (token != null) {
+          _isAuthenticated = true;
+          // Avoid creating duplicate SenseBoxes by checking current state
+          if (_selectedSenseBox == null) {
+            await loadSelectedSenseBox();
+          }
+        } else {
+          // Only try to refresh if no valid token exists
+          await _service.refreshToken();
+          _isAuthenticated = true;
+          // Avoid creating duplicate SenseBoxes by checking current state
+          if (_selectedSenseBox == null) {
+            await loadSelectedSenseBox();
+          }
         }
       } catch (_) {
         _isAuthenticated = false;
@@ -99,10 +124,10 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<void> register(String name, String email, String password) async {
+    _isAuthenticatingNotifier.value = true;
     try {
       await _service.register(name, email, password);
       _isAuthenticated = true;
-      // Clear senseBox cache for new account
       _senseBoxes.clear();
       _selectedSenseBox = null;
       _senseBoxController.add(null);
@@ -111,20 +136,20 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _isAuthenticated = false;
       rethrow;
     } finally {
+      _isAuthenticatingNotifier.value = false;
       notifyListeners();
     }
   }
 
   Future<void> login(String email, String password) async {
+    _isAuthenticatingNotifier.value = true;
     try {
       await _service.login(email, password);
       _isAuthenticated = true;
       notifyListeners();
 
-      // Fetch the first page of sense boxes
       final senseBoxes = await fetchSenseBoxes(page: 0);
 
-      // If there are sense boxes, set the first one as the selected box
       if (senseBoxes.isNotEmpty) {
         await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
       }
@@ -132,6 +157,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _isAuthenticated = false;
       rethrow;
     } finally {
+      _isAuthenticatingNotifier.value = false;
       notifyListeners();
     }
   }
@@ -216,7 +242,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _senseBoxController.close(); // Close the stream when done
+    _senseBoxController.close();
+    _isAuthenticatingNotifier.dispose();
     super.dispose();
   }
 }

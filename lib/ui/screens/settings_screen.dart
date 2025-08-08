@@ -54,7 +54,8 @@ class SettingsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildUserInfoRow(context, isAuthenticated, userData),
+          _buildUserInfoRow(
+              context, isAuthenticated, userData, openSenseMapBloc),
           const SizedBox(height: 16),
           _buildLoginLogoutButton(context, isAuthenticated, openSenseMapBloc),
           const SizedBox(height: 8),
@@ -77,14 +78,15 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildUserInfoRow(BuildContext context, bool isAuthenticated,
-      Future<Map<String, dynamic>?> userData) {
+      Future<Map<String, dynamic>?> userData,
+      OpenSenseMapBloc openSenseMapBloc) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       spacing: 12,
       children: [
         _buildUserIcon(context),
         if (isAuthenticated)
-          _buildAuthenticatedUserInfo(context, userData)
+          _buildAuthenticatedUserInfo(context, userData, openSenseMapBloc)
         else
           _buildUnauthenticatedUserInfo(context),
       ],
@@ -107,27 +109,34 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildAuthenticatedUserInfo(
-      BuildContext context, Future<Map<String, dynamic>?> userData) {
+      BuildContext context,
+      Future<Map<String, dynamic>?> userData,
+      OpenSenseMapBloc openSenseMapBloc) {
+    if (openSenseMapBloc.isAuthenticating) {
+      return const CircularProgressIndicator();
+    }
+    
     return FutureBuilder(
       future: userData,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
         } else if (snapshot.hasError) {
-          // Handle authentication errors gracefully
           if (snapshot.error.toString().contains('Not authenticated')) {
             return _buildUnauthenticatedUserInfo(context);
           }
           return const SizedBox.shrink();
         } else {
-          return _buildUserDataDisplay(context, snapshot.data);
+          return _buildUserDataDisplay(
+              context, snapshot.data, openSenseMapBloc);
         }
       },
     );
   }
 
   Widget _buildUserDataDisplay(
-      BuildContext context, Map<String, dynamic>? userData) {
+      BuildContext context,
+      Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
     final user = userData?['data']?['me'];
     final email = user?['email'] ?? "No email";
     final name = user?['name'] ?? "John Doe";
@@ -172,9 +181,11 @@ class SettingsScreen extends StatelessWidget {
       OpenSenseMapBloc openSenseMapBloc) {
     return ButtonWithLoader(
       inverted: Theme.of(context).brightness == Brightness.light,
-      isLoading: false,
-      onPressed: () =>
-          _handleLoginLogoutAction(context, isAuthenticated, openSenseMapBloc),
+      isLoading: openSenseMapBloc.isAuthenticating,
+      onPressed: openSenseMapBloc.isAuthenticating
+          ? null
+          : () => _handleLoginLogoutAction(
+              context, isAuthenticated, openSenseMapBloc),
       text: isAuthenticated
           ? AppLocalizations.of(context)!.generalLogout
           : AppLocalizations.of(context)!.generalLogin,

@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retry/retry.dart';
 import 'dart:async';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
 import 'package:sensebox_bike/constants.dart';
 
@@ -22,9 +23,14 @@ class OpenSenseMapService {
   // Add rate limiting state
   bool _isRateLimited = false;
   DateTime? _rateLimitUntil;
-  
+
   // Add permanent authentication failure state
   bool _isPermanentlyDisabled = false;
+
+  // Add token caching fields
+  String? _cachedAccessToken;
+  DateTime? _tokenExpiration;
+  bool _isRefreshingToken = false;
 
   OpenSenseMapService({
     http.Client? client,
@@ -44,12 +50,10 @@ class OpenSenseMapService {
     final remaining = _rateLimitUntil!.difference(DateTime.now());
     return remaining.isNegative ? null : remaining;
   }
-  
+
   // Add method to reset permanent disable state (called after successful re-login)
   void resetPermanentDisable() {
     _isPermanentlyDisabled = false;
-    debugPrint(
-        '[OpenSenseMapService] Permanent disable state reset after re-login');
   }
 
   Future<void> setTokens(http.Response response) async {
@@ -60,6 +64,10 @@ class OpenSenseMapService {
 
     await prefs.setString('accessToken', accessToken);
     await prefs.setString('refreshToken', refreshToken);
+
+    // Update cached token with actual expiration
+    _cachedAccessToken = accessToken;
+    _tokenExpiration = _getTokenExpiration(accessToken);
   }
 
   Future<void> removeTokens() async {
@@ -67,6 +75,9 @@ class OpenSenseMapService {
 
     await prefs.remove('accessToken');
     await prefs.remove('refreshToken');
+
+    // Clear cached token
+    _clearCachedToken();
   }
 
   Future<String?> getRefreshTokenFromPreferences() async {
@@ -95,7 +106,41 @@ class OpenSenseMapService {
 
     await setTokens(response);
 
+    // Save user data from registration response
+    await _saveUserData({
+      'data': {
+        'me': {
+          'name': name,
+          'email': email,
+        }
+      }
+    });
+
     return responseData;
+  }
+
+  Future<void> _saveUserData(Map<String, dynamic> userData) async {
+    final prefs = await _prefs;
+    await prefs.setString('userData', jsonEncode(userData));
+  }
+
+  Future<Map<String, dynamic>?> _getCachedUserData() async {
+    final prefs = await _prefs;
+    final userDataString = prefs.getString('userData');
+    if (userDataString != null) {
+      try {
+        return jsonDecode(userDataString);
+      } catch (e) {
+        // If cached data is corrupted, remove it
+        await prefs.remove('userData');
+      }
+    }
+    return null;
+  }
+
+  Future<void> _clearUserData() async {
+    final prefs = await _prefs;
+    await prefs.remove('userData');
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -112,9 +157,16 @@ class OpenSenseMapService {
       final responseData = jsonDecode(response.body);
 
       await setTokens(response);
-      
+
       // Reset permanent disable state after successful login
       resetPermanentDisable();
+
+      // If the response contains user data, save it
+      if (responseData.containsKey('user')) {
+        await _saveUserData({
+          'data': {'me': responseData['user']}
+        });
+      }
 
       return responseData;
     } else {
@@ -124,22 +176,117 @@ class OpenSenseMapService {
 
   Future<void> logout() async {
     await removeTokens();
+    await _clearUserData();
   }
 
   Future<Map<String, dynamic>?> getUserData() async {
-    return _makeAuthenticatedRequest<Map<String, dynamic>?>(
-      requestFn: (accessToken) => client.get(
-        Uri.parse('$_baseUrl/users/me'),
-        headers: {'Authorization': 'Bearer $accessToken'},
-      ),
-      successHandler: (response) => jsonDecode(response.body),
-      errorMessage: 'Failed to load user data',
-    );
+    // First try to get cached user data
+    final cachedUserData = await _getCachedUserData();
+    if (cachedUserData != null) {
+      return cachedUserData;
+    }
+
+    // If no cached data, try API call
+    try {
+      final userData = await _makeAuthenticatedRequest<Map<String, dynamic>?>(
+        requestFn: (accessToken) => client.get(
+          Uri.parse('$_baseUrl/users/me'),
+          headers: {'Authorization': 'Bearer $accessToken'},
+        ),
+        successHandler: (response) => jsonDecode(response.body),
+        errorMessage: 'Failed to load user data',
+      );
+
+      // Cache the user data for future use
+      if (userData != null) {
+        await _saveUserData(userData);
+      }
+
+      return userData;
+    } catch (e) {
+      // Only set authentication to false if it's a clear authentication error
+      // and we're not in the middle of an authentication process
+      if (e.toString().contains('Not authenticated') && !_isRefreshingToken) {
+        await _clearUserData();
+      }
+      return null;
+    }
   }
 
   Future<String?> getAccessToken() async {
+    if (_cachedAccessToken != null && _tokenExpiration != null) {
+      final isValid = _isTokenValid(_cachedAccessToken!);
+      if (isValid) {
+        final now = DateTime.now();
+        final timeUntilExpiry = _tokenExpiration!.difference(now);
+
+        if (timeUntilExpiry.inMinutes > 5) {
+          return _cachedAccessToken;
+        }
+
+        if (timeUntilExpiry.inMinutes > 0 && !_isRefreshingToken) {
+          _refreshTokenProactively();
+        }
+      } else {
+        _clearCachedToken();
+      }
+    }
+
     final prefs = await _prefs;
-    return prefs.getString('accessToken');
+    final token = prefs.getString('accessToken');
+
+    if (token != null) {
+      final isValid = _isTokenValid(token);
+      if (isValid) {
+        _cachedAccessToken = token;
+        _tokenExpiration = _getTokenExpiration(token);
+      } else {
+        await prefs.remove('accessToken');
+        return null;
+      }
+    }
+
+    return token;
+  }
+
+  /// Decode JWT payload using dart_jsonwebtoken library
+  Map<String, dynamic>? _decodeJwtPayload(String token) {
+    try {
+      final jwt = JWT.decode(token);
+      return jwt.payload;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Validate JWT token and extract expiration
+  bool _isTokenValid(String token) {
+    try {
+      final jwt = JWT.decode(token);
+      final exp = jwt.payload['exp'];
+      if (exp == null) {
+        return false;
+      }
+
+      final expirationTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      final now = DateTime.now();
+      return expirationTime.isAfter(now);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Extract expiration time from JWT token
+  DateTime? _getTokenExpiration(String token) {
+    try {
+      final jwt = JWT.decode(token);
+      final exp = jwt.payload['exp'];
+      if (exp == null) return null;
+
+      return DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<void> refreshToken() async {
@@ -157,14 +304,59 @@ class OpenSenseMapService {
 
     if (response.statusCode == 200) {
       await setTokens(response);
+      // Update cached token after successful refresh
+      final prefs = await _prefs;
+      _cachedAccessToken = prefs.getString('accessToken');
+      _tokenExpiration = _getTokenExpiration(_cachedAccessToken!);
     } else {
       await removeTokens();
+      _clearCachedToken();
+
       throw Exception('Token refresh failed - retrying');
     }
   }
 
+  /// Proactively refresh token before it expires
+  Future<void> _refreshTokenProactively() async {
+    if (_isRefreshingToken) return;
+
+    _isRefreshingToken = true;
+    try {
+      await refreshToken();
+    } catch (e) {
+      // If proactive refresh fails, clear cache and let normal flow handle it
+      _clearCachedToken();
+    } finally {
+      _isRefreshingToken = false;
+    }
+  }
+
+  /// Clear cached token (called on logout or auth failure)
+  void _clearCachedToken() {
+    _cachedAccessToken = null;
+    _tokenExpiration = null;
+    _isRefreshingToken = false;
+  }
+
+  /// Get token status for debugging (returns null if no cached token)
+  Map<String, dynamic>? getTokenStatus() {
+    if (_cachedAccessToken == null || _tokenExpiration == null) {
+      return null;
+    }
+
+    final now = DateTime.now();
+    final timeUntilExpiry = _tokenExpiration!.difference(now);
+
+    return {
+      'hasCachedToken': true,
+      'isRefreshing': _isRefreshingToken,
+      'expiresInMinutes': timeUntilExpiry.inMinutes,
+      'isValid': timeUntilExpiry.inMinutes > 5,
+    };
+  }
+
   /// Generic method to handle authenticated requests with automatic token refresh
-  /// 
+  ///
   /// [requestFn] is a function that makes the HTTP request and returns the response
   /// [successHandler] is a function that processes the successful response
   /// [errorMessage] is the error message to show if the request fails after token refresh
@@ -180,21 +372,27 @@ class OpenSenseMapService {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return successHandler(response);
-    } else if (response.statusCode == 401) {
-      // Try to refresh token and retry once
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
+      // Only try to refresh token once, and only if we're not already refreshing
+      if (_isRefreshingToken) {
+        throw Exception('Token refresh already in progress');
+      }
+
       try {
         await refreshToken();
         final newAccessToken = await getAccessToken();
         if (newAccessToken == null) {
           throw Exception('Not authenticated after token refresh');
         }
-        
+
         final retryResponse = await requestFn(newAccessToken);
-        
-        if (retryResponse.statusCode == 200 || retryResponse.statusCode == 201) {
+
+        if (retryResponse.statusCode == 200 ||
+            retryResponse.statusCode == 201) {
           return successHandler(retryResponse);
         } else {
-          throw Exception('$errorMessage after token refresh');
+          throw Exception(
+              '$errorMessage after token refresh (${retryResponse.statusCode})');
         }
       } catch (refreshError) {
         throw Exception('Failed to refresh token: $refreshError');
@@ -273,15 +471,13 @@ class OpenSenseMapService {
         ).timeout(const Duration(seconds: defaultTimeout));
 
         if (response.statusCode == 201) {
-          debugPrint('Data uploaded');
           return;
-        } else if (response.statusCode == 401) {
+        } else if (response.statusCode == 401 || response.statusCode == 403) {
           ErrorService.handleError(
               'Client error ${response.statusCode}: ${response.body}',
               StackTrace.current,
               sendToSentry: true);
           try {
-            
             await refreshToken();
             throw Exception('Token refreshed, retrying');
           } catch (e) {
@@ -300,11 +496,11 @@ class OpenSenseMapService {
           final waitTime = retryAfter != null
               ? int.tryParse(retryAfter) ?? defaultTimeout
               : defaultTimeout * 2;
-          
+
           // Set rate limiting state
           _isRateLimited = true;
           _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
-          
+
           throw TooManyRequestsException(waitTime);
         } else if (response.statusCode == 502 ||
             response.statusCode == 503 ||

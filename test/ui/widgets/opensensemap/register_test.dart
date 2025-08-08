@@ -6,8 +6,7 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/register.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import '../../../test_helpers.dart';
-
-class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {}
+import '../../../mocks.dart';
 
 class MockNavigatorObserver extends Mock implements NavigatorObserver {}
 
@@ -20,8 +19,6 @@ void main() {
     mockBloc = MockOpenSenseMapBloc();
     mockObserver = MockNavigatorObserver();
 
-    // Mock the isAuthenticated property
-    when(() => mockBloc.isAuthenticated).thenReturn(false);
     // Mock the register method to return a Future<void>
     when(() => mockBloc.register(any(), any(), any()))
         .thenAnswer((_) async => Future.value());

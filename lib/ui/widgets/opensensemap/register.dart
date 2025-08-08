@@ -28,7 +28,6 @@ class _RegisterFormState extends State<RegisterForm> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  bool isLoading = false; // Track loading state
   bool isAccepted = false;
   String? privacyPolicyError;
 
@@ -46,7 +45,7 @@ class _RegisterFormState extends State<RegisterForm> {
       privacyPolicyError = isAccepted
           ? null
           : AppLocalizations.of(context)!
-              .openSenseMapRegisterAcceptTermsError; // Error message
+              .openSenseMapRegisterAcceptTermsError;
     });
   }
 
@@ -54,7 +53,7 @@ class _RegisterFormState extends State<RegisterForm> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom, // Adjust for keyboard
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -66,7 +65,7 @@ class _RegisterFormState extends State<RegisterForm> {
               TextFormField(
                 autofillHints: const [AutofillHints.name],
                 controller: nameController,
-                enabled: !isLoading,
+                enabled: !widget.bloc.isAuthenticating,
                 decoration: InputDecoration(
                     labelText:
                         AppLocalizations.of(context)!.openSenseMapRegisterName),
@@ -74,13 +73,13 @@ class _RegisterFormState extends State<RegisterForm> {
               const CustomSpacer(),
               EmailField(
                 controller: emailController,
-                enabled: !isLoading,
+                enabled: !widget.bloc.isAuthenticating,
               ),
               const CustomSpacer(),
               PasswordField(
                 controller: passwordController,
                 validator: passwordValidator,
-                enabled: !isLoading,
+                enabled: !widget.bloc.isAuthenticating,
               ),
               const CustomSpacer(),
               PasswordField(
@@ -88,7 +87,7 @@ class _RegisterFormState extends State<RegisterForm> {
                 isConfirmationField: true,
                 confirmationValidator: passwordConfirmationValidator,
                 passwordController: passwordController,
-                enabled: !isLoading,
+                enabled: !widget.bloc.isAuthenticating,
               ),
               const CustomSpacer(),
               GestureDetector(
@@ -103,7 +102,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   children: [
                     Row(
                       crossAxisAlignment:
-                          CrossAxisAlignment.center, // Center vertically
+                          CrossAxisAlignment.center,
                       children: [
                         Checkbox(
                           value: isAccepted,
@@ -143,7 +142,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     if (privacyPolicyError != null)
                       Padding(
                         padding: const EdgeInsets.only(
-                            left: 10.0), // Add padding to the error message
+                            left: 10.0),
                         child: Text(
                           privacyPolicyError!,
                           style: TextStyle(
@@ -157,28 +156,22 @@ class _RegisterFormState extends State<RegisterForm> {
               ),
               const CustomSpacer(),
               ButtonWithLoader(
-                  isLoading: isLoading,
+                  isLoading: widget.bloc.isAuthenticating,
                   text: AppLocalizations.of(context)!.generalRegister,
                   width: 0.7,
-                  onPressed: isLoading
-                      ? null // Disable button when loading
+                  onPressed: widget.bloc.isAuthenticating
+                      ? null
                       : () async {
-                          // Validate the form and the privacy policy checkbox
                           final isFormValid =
                               formKey.currentState?.validate() == true;
                           bool isRegistrationSuccessful = false;
 
-                          validatePrivacyPolicy(); // Validate the checkbox
+                          validatePrivacyPolicy();
 
                           if (isFormValid && isAccepted) {
-                            setState(() {
-                              isLoading = true; // Start loading
-                            });
-
                             validatePrivacyPolicy();
 
                             try {
-                              // Registration logic here
                               await widget.bloc.register(
                                   nameController.value.text,
                                   emailController.value.text,
@@ -188,12 +181,6 @@ class _RegisterFormState extends State<RegisterForm> {
                             } catch (e, stack) {
                               ErrorService.handleError(
                                   RegistrationError(e), stack);
-                            } finally {
-                              if (mounted) {
-                                setState(() {
-                                  isLoading = false; // Stop loading
-                                });
-                              }
                             }
 
                             if (context.mounted &&
