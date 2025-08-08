@@ -27,11 +27,9 @@ void main() {
       mockTrackBloc = MockTrackBloc();
       mockSettingsBloc = MockSettingsBloc();
       
-      // Setup mock return values
-      when(() => mockBleBloc.isConnected).thenReturn(false);
-      when(() => mockBleBloc.isConnectingNotifier).thenReturn(ValueNotifier<bool>(false));
-      when(() => mockGeolocationBloc.geolocationStream).thenAnswer((_) => Stream.empty());
-      when(() => mockOpenSenseMapBloc.senseBoxStream).thenAnswer((_) => Stream.empty());
+      // Setup mocks before creating RecordingBloc
+      when(() => mockGeolocationBloc.geolocationStream)
+          .thenAnswer((_) => Stream.empty());
       
       // Create RecordingBloc with correct parameters
       recordingBloc = RecordingBloc(

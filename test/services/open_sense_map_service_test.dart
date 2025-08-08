@@ -10,7 +10,7 @@ void main() {
   late OpenSenseMapService service;
   late MockClient mockHttpClient;
   late SharedPreferences prefs;
-  final String accessToken = 'accessToken';
+  final String accessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjk5OTk5OTk5OTl9.test_signature';
 
   setUpAll(() {
     registerFallbackValue(Uri()); // Register fallback Uri
@@ -246,11 +246,13 @@ void main() {
       expect(userData, {"name": "Test User", "email": "test@example.com"});
     });
 
-    test('when no accessToken, throws error', () async {
+    test('when no accessToken, returns null', () async {
       mockHTTPGETResponse(
           '{"name": "Test User", "email": "test@example.com"}', 200);
 
-      await expectLater(service.getUserData(), throwsException);
+      var userData = await service.getUserData();
+
+      expect(userData, null);
     });
 
     test('when receives 401, refreshes token and retries once', () async {
@@ -270,16 +272,16 @@ void main() {
         }
       });
 
-      // Mock successful token refresh
+      // Mock successful token refresh with valid JWT
       mockHTTPPOSTResponse(
-          '{"token": "new_token", "refreshToken": "new_refresh"}', 200);
+          '{"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjk5OTk5OTk5OTl9.test_signature", "refreshToken": "new_refresh"}', 200);
 
       var userData = await service.getUserData();
 
       expect(userData, {"name": "Test User", "email": "test@example.com"});
     });
 
-    test('when receives 401 after token refresh, throws exception', () async {
+    test('when receives 401 after token refresh, returns null', () async {
       await setTokens();
       // Both calls return 401
       when(() => mockHttpClient.get(
@@ -287,14 +289,16 @@ void main() {
             headers: any(named: 'headers'),
           )).thenAnswer((_) async => http.Response('Unauthorized', 401));
 
-      // Mock successful token refresh
+      // Mock successful token refresh with valid JWT
       mockHTTPPOSTResponse(
-          '{"token": "new_token", "refreshToken": "new_refresh"}', 200);
+          '{"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjk5OTk5OTk5OTl9.test_signature", "refreshToken": "new_refresh"}', 200);
 
-      await expectLater(service.getUserData(), throwsException);
+      var userData = await service.getUserData();
+
+      expect(userData, null);
     });
 
-    test('when token refresh fails, throws exception', () async {
+    test('when token refresh fails, returns null', () async {
       await setTokens();
       // First call returns 401
       when(() => mockHttpClient.get(
@@ -305,14 +309,18 @@ void main() {
       // Mock failed token refresh
       mockHTTPPOSTResponse('{"error": "Invalid refresh token"}', 400);
 
-      await expectLater(service.getUserData(), throwsException);
+      var userData = await service.getUserData();
+
+      expect(userData, null);
     });
 
-    test('when receives error response other than 401, throws error', () async {
+    test('when receives error response other than 401, returns null', () async {
       await setTokens();
       mockHTTPGETResponse('error', 500);
 
-      await expectLater(service.getUserData(), throwsException);
+      var userData = await service.getUserData();
+
+      expect(userData, null);
     });
   });
 

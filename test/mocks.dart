@@ -6,6 +6,7 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
@@ -14,7 +15,7 @@ import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/services/tag_service.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
-import 'package:sensebox_bike/sensors/sensor.dart';
+import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
 
 class MockIsarProvider extends Mock implements IsarProvider {}
 
@@ -46,6 +47,18 @@ class MockOpenSenseMapBloc extends Mock
   bool isAuthenticated = false;
 
   @override
+  bool get isAuthenticating => false;
+
+  @override
+  SenseBox? get selectedSenseBox => null;
+
+  @override
+  Stream<SenseBox?> get senseBoxStream => Stream.value(null);
+
+  @override
+  List<dynamic> get senseBoxes => [];
+
+  @override
   Future<void> logout() async {
     isAuthenticated = false;
   }
@@ -73,7 +86,7 @@ class MockSettingsBloc extends Mock
     with ChangeNotifier
     implements SettingsBloc {}
 
-class MockSensor extends Mock implements Sensor {}
+class MockSensor extends Mock implements sensors.Sensor {}
 class FakeSensorData extends Fake implements SensorData {}
 
 // Mocks for webview_flutter
