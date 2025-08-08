@@ -9,13 +9,14 @@ import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/register.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import '../mocks.dart';
 import '../test_helpers.dart';
+
+class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {}
 
 class MockNavigatorObserver extends Mock implements NavigatorObserver {}
 
 void main() {
-  late OpenSenseMapBloc mockBloc;
+  late MockOpenSenseMapBloc mockBloc;
   late MockNavigatorObserver mockObserver;
 
   setUpAll(() {
@@ -29,6 +30,15 @@ void main() {
   setUp(() {
     mockBloc = MockOpenSenseMapBloc();
     mockObserver = MockNavigatorObserver();
+
+    // Mock the isAuthenticated property
+    when(() => mockBloc.isAuthenticated).thenReturn(false);
+    // Mock the login method to return a Future<void>
+    when(() => mockBloc.login(any(), any()))
+        .thenAnswer((_) async => Future.value());
+    // Mock the getUserData method
+    when(() => mockBloc.getUserData())
+        .thenAnswer((_) async => null);
   });
 
   Widget buildTestWidget(Widget child, Locale locale) {
