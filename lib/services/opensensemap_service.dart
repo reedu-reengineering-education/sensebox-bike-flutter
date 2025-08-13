@@ -283,7 +283,7 @@ class OpenSenseMapService {
       }
       final expirationTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
       final now = DateTime.now();
-      // Code to test if token is expired
+      // Temporary: Code to test if token is expired
       // final fakeExpiredTime = now.subtract(Duration(hours: 1));
       // return expirationTime.isAfter(fakeExpiredTime);
       return expirationTime.isAfter(now);
