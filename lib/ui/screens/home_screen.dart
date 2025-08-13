@@ -116,110 +116,117 @@ class HomeScreen extends StatelessWidget {
 class _SenseBoxSelectionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final OpenSenseMapBloc osemBloc = Provider.of<OpenSenseMapBloc>(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    return Consumer<OpenSenseMapBloc>(
+      builder: (context, osemBloc, child) {
+        final colorScheme = Theme.of(context).colorScheme;
+        final textTheme = Theme.of(context).textTheme;
 
-    if (!osemBloc.isAuthenticated || osemBloc.isAuthenticating) {
-      return const SizedBox.shrink();
-    }
+        if (!osemBloc.isAuthenticated || osemBloc.isAuthenticating) {
+          return const SizedBox.shrink();
+        }
 
-    return StreamBuilder<SenseBox?>(
-      stream: osemBloc.senseBoxStream,
-      initialData: osemBloc.selectedSenseBox,
-      builder: (context, snapshot) {
-        final selectedBox = snapshot.data;
-        final bool hasError = snapshot.hasError;
-        final bool noBox = selectedBox == null;
+        return StreamBuilder<SenseBox?>(
+          stream: osemBloc.senseBoxStream,
+          initialData: osemBloc.selectedSenseBox,
+          builder: (context, snapshot) {
+            final selectedBox = snapshot.data;
+            final bool hasError = snapshot.hasError;
+            final bool noBox = selectedBox == null;
 
-        Color textColor = hasError
-            ? colorScheme.onErrorContainer
-            : Theme.of(context).colorScheme.onTertiaryContainer;
-        IconData icon = hasError
-            ? Icons.error
-            : noBox
-                ? Icons.add_box_outlined
-                : Icons.emergency_share_rounded;
-        String label = hasError
-            ? AppLocalizations.of(context)!.generalError
-            : noBox
-                ? AppLocalizations.of(context)!.selectOrCreateBox
-                : selectedBox.name ?? '';
+            Color textColor = hasError
+                ? colorScheme.onErrorContainer
+                : Theme.of(context).colorScheme.onTertiaryContainer;
+            IconData icon = hasError
+                ? Icons.error
+                : noBox
+                    ? Icons.add_box_outlined
+                    : Icons.emergency_share_rounded;
+            String label = hasError
+                ? AppLocalizations.of(context)!.generalError
+                : noBox
+                    ? AppLocalizations.of(context)!.selectOrCreateBox
+                    : selectedBox.name ?? '';
 
-        return InkWell(
-          onTap: () => showSenseBoxSelection(context, osemBloc),
-          child: Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(minHeight: 48),
-            decoration: BoxDecoration(
-              color: hasError
-                  ? colorScheme.errorContainer
-                  : Theme.of(context).colorScheme.tertiary,
-              borderRadius: BorderRadius.circular(borderRadiusSmall),
-              border: Border.all(
-                color: hasError
-                    ? colorScheme.outlineVariant
-                    : Theme.of(context).colorScheme.tertiary,
-                width: 1.0,
-                style: BorderStyle.solid,
+            return InkWell(
+              onTap: () => showSenseBoxSelection(context, osemBloc),
+              child: Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(minHeight: 48),
+                decoration: BoxDecoration(
+                  color: hasError
+                      ? colorScheme.errorContainer
+                      : Theme.of(context).colorScheme.tertiary,
+                  borderRadius: BorderRadius.circular(borderRadiusSmall),
+                  border: Border.all(
+                    color: hasError
+                        ? colorScheme.outlineVariant
+                        : Theme.of(context).colorScheme.tertiary,
+                    width: 1.0,
+                    style: BorderStyle.solid,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.shadow.withOpacity(0.03),
+                      blurRadius: 1.5,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Icon in a small circle background
+                    SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: Center(
+                        child: Icon(
+                          icon,
+                          color: hasError
+                              ? colorScheme.onErrorContainer
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onTertiaryContainer,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Title
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: textColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                      ),
+                    ),
+                    // Optional description (for error or noBox)
+                    if (hasError)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Icon(Icons.refresh,
+                            color: colorScheme.onErrorContainer, size: 16),
+                      )
+                    else if (noBox)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Icon(Icons.arrow_forward,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onTertiaryContainer,
+                            size: 16),
+                      ),
+                  ],
+                ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.shadow.withOpacity(0.03),
-                  blurRadius: 1.5,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Icon in a small circle background
-                SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: Center(
-                    child: Icon(
-                      icon,
-                      color: hasError
-                          ? colorScheme.onErrorContainer
-                          : Theme.of(context).colorScheme.onTertiaryContainer,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Title
-                Expanded(
-                  child: Text(
-                    label,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: textColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                  ),
-                ),
-                // Optional description (for error or noBox)
-                if (hasError)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: Icon(Icons.refresh,
-                        color: colorScheme.onErrorContainer, size: 16),
-                  )
-                else if (noBox)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: Icon(Icons.arrow_forward,
-                        color:
-                            Theme.of(context).colorScheme.onTertiaryContainer,
-                        size: 16),
-                  ),
-              ],
-            ),
-          ),
+            );
+          },
         );
       },
     );
