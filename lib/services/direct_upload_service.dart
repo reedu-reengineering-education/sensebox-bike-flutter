@@ -31,11 +31,21 @@ class UploadErrorClassifier {
     TimeoutException,
   ];
 
+  // Exception types that are always permanent authentication errors
+  static const List<Type> _permanentAuthExceptionTypes = [
+    PermanentAuthenticationError,
+  ];
+
   /// Classifies an error and returns the appropriate error type
   static UploadErrorType classifyError(dynamic error) {
+    // Check for permanent authentication exception types first
+    if (_isPermanentAuthExceptionType(error)) {
+      return UploadErrorType.permanentAuth;
+    }
+
     final errorString = error.toString();
 
-    // Check for permanent authentication errors first
+    // Check for permanent authentication errors by string pattern
     if (_isPermanentAuthError(errorString)) {
       return UploadErrorType.permanentAuth;
     }
@@ -59,6 +69,12 @@ class UploadErrorClassifier {
     return _permanentAuthErrorPatterns.any(
       (pattern) => errorString.contains(pattern),
     );
+  }
+
+  /// Checks if the error is a permanent authentication exception type
+  static bool _isPermanentAuthExceptionType(dynamic error) {
+    return _permanentAuthExceptionTypes
+        .any((type) => error.runtimeType == type);
   }
 
   /// Checks if the error is a temporary (retryable) error
@@ -452,12 +468,11 @@ class DirectUploadService {
 
   Future<void> _handlePermanentAuthenticationError(
       dynamic e, StackTrace st) async {
-    ErrorService.handleError(
-        'Direct upload permanent authentication failure at ${DateTime.now()}: $e. Service permanently disabled.',
-        st,
-        sendToSentry: true);
-    
+    // First disable the service
     _permanentlyDisableService();
+    
+    // Then throw custom exception instead of calling ErrorService with generic string
+    throw PermanentAuthenticationError(e.toString());
   }
 
   void _permanentlyDisableService() {
