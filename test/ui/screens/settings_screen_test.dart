@@ -307,6 +307,8 @@ void main() {
     await tester.tap(find.text('Privacy Policy'));
     await tester.pumpAndSettle();
 
+    // The error should be handled gracefully and the screen should remain visible
+    // The test should not crash even when URL launch fails
     expect(find.byType(SettingsScreen), findsOneWidget);
   });
 
