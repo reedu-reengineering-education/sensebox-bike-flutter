@@ -120,6 +120,10 @@ void main() {
       mockOpenSenseMapService = MockOpenSenseMapService();
       mockSettingsBloc = MockSettingsBloc();
       mockOpenSenseMapBloc = MockOpenSenseMapBloc();
+      
+      // Setup mock for markAuthenticationFailed method
+      when(() => mockOpenSenseMapBloc.markAuthenticationFailed()).thenAnswer((_) async {});
+      
       mockSenseBox = SenseBox()
         ..sId = 'test-sensebox-id'
         ..name = 'Test SenseBox'
