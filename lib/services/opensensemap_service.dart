@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:sensebox_bike/services/custom_exceptions.dart';
@@ -519,31 +521,24 @@ class OpenSenseMapService {
           _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
 
           throw TooManyRequestsException(waitTime);
-        } else if (response.statusCode == 502 ||
-            response.statusCode == 503 ||
-            response.statusCode == 504) {
-          ErrorService.handleError(
-              'Client error ${response.statusCode}: ${response.body}',
-              StackTrace.current,
-              sendToSentry: true);
-          // 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout - temporary server errors, should retry
-          throw Exception('Server error ${response.statusCode} - retrying');
-        } else if (response.statusCode >= 400 && response.statusCode < 500) {
-          ErrorService.handleError(
-              'Client error ${response.statusCode}: ${response.body}',
-              StackTrace.current,
-              sendToSentry: true);
-          // 4xx client errors - these are likely permanent and shouldn't be retried
-          throw Exception(
-              'Client error ${response.statusCode}: ${response.body}');
         } else {
-          // 5xx server errors and other errors - retry these
-          ErrorService.handleError(
-              'Client error ${response.statusCode}: ${response.body}',
-              StackTrace.current,
-              sendToSentry: true);
-          throw Exception(
-              'Server error ${response.statusCode}: ${response.body}');
+          // All other errors (4xx and 5xx)
+          if (response.statusCode >= 500) {
+            // 5xx server errors - retry these
+            ErrorService.handleError(
+                'Server error ${response.statusCode}: ${response.body}',
+                StackTrace.current,
+                sendToSentry: true);
+            throw Exception('Server error ${response.statusCode} - retrying');
+          } else {
+            // 4xx client errors - don't retry these
+            ErrorService.handleError(
+                'Client error ${response.statusCode}: ${response.body}',
+                StackTrace.current,
+                sendToSentry: true);
+            throw Exception(
+                'Client error ${response.statusCode}: ${response.body}');
+          }
         }
       },
       retryIf: (e) {
@@ -551,6 +546,9 @@ class OpenSenseMapService {
         return e is TooManyRequestsException ||
             errorString.contains('Token refreshed') ||
             errorString.contains('Server error') ||
+            e is TooManyRequestsException ||
+            e is SocketException || // Network connectivity issues
+            e is HttpException || // HTTP protocol errors
             e is TimeoutException;
       },
       onRetry: (e) async {
