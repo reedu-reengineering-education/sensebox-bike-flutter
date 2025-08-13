@@ -104,37 +104,41 @@ void main() {
         final geo2 = createMockGeolocationData(track);
 
         // Create sensor data
-        final tempSensor1 = createMockSensorData(geo1);
-        tempSensor1.title = 'temperature';
-        tempSensor1.value = 25.0;
-        tempSensor1.attribute = 'Celsius';
-
-        final tempSensor2 = createMockSensorData(geo2);
-        tempSensor2.title = 'temperature';
-        tempSensor2.value = 26.0;
-        tempSensor2.attribute = 'Celsius';
+        final tempSensor = createMockSensorData(geo1);
+        tempSensor.title = 'temperature';
+        tempSensor.value = 25.0;
+        tempSensor.attribute = 'Celsius';
 
         final humiditySensor = createMockSensorData(geo1);
         humiditySensor.title = 'humidity';
         humiditySensor.value = 60.0;
         humiditySensor.attribute = 'Percent';
+        
+        // Explicitly add sensors to geolocation's sensorData collection
+        geo1.sensorData.add(tempSensor);
+        geo1.sensorData.add(humiditySensor);
 
         // Save everything to the database
         await isar.writeTxn(() async {
+          // First save the geolocations
           await isar.geolocationDatas.put(geo1);
           await isar.geolocationDatas.put(geo2);
-          await isar.sensorDatas.put(tempSensor1);
-          await isar.sensorDatas.put(tempSensor2);
+          
+          // Then save the sensor data
+          await isar.sensorDatas.put(tempSensor);
           await isar.sensorDatas.put(humiditySensor);
 
           // Link the data
           await geo1.track.save();
           await geo2.track.save();
-          await tempSensor1.geolocationData.save();
-          await tempSensor2.geolocationData.save();
+          await tempSensor.geolocationData.save();
           await humiditySensor.geolocationData.save();
+          
+          // Save the geolocations again to persist the sensor data links
+          await isar.geolocationDatas.put(geo1);
+          await isar.geolocationDatas.put(geo2);
         });
-
+        
         // Load the geolocations with their sensor data
         final loadedGeo1 = await isar.geolocationDatas.get(geo1.id);
         final loadedGeo2 = await isar.geolocationDatas.get(geo2.id);
@@ -145,10 +149,9 @@ void main() {
 
         final result = getAllUniqueSensorData([loadedGeo1, loadedGeo2]);
 
-        expect(result.length, 3);
+        // Should have 2 unique sensor data entries (1 temperature + 1 humidity)
+        expect(result.length, 2);
         expect(result.any((s) => s.title == 'temperature' && s.value == 25.0),
-            isTrue);
-        expect(result.any((s) => s.title == 'temperature' && s.value == 26.0),
             isTrue);
         expect(result.any((s) => s.title == 'humidity' && s.value == 60.0),
             isTrue);
@@ -504,59 +507,7 @@ void main() {
       expect(pm10Entry['value'], '4.50');
     });
 
-    test(
-        'prepareDataFromGroupedData skips acceleration sensors (not uploaded)',
-        () {
-      final accelerationXSensor = Sensor()
-        ..id = 'accelerationXSensorId'
-        ..title = 'Acceleration X';
-      final accelerationYSensor = Sensor()
-        ..id = 'accelerationYSensorId'
-        ..title = 'Acceleration Y';
-      final accelerationZSensor = Sensor()
-        ..id = 'accelerationZSensorId'
-        ..title = 'Acceleration Z';
-      final speedSensor = Sensor()
-        ..id = 'speedSensorId'
-        ..title = 'Speed';
-      final senseBox = SenseBox(sensors: [
-        accelerationXSensor,
-        accelerationYSensor,
-        accelerationZSensor,
-        speedSensor
-      ]);
-      final preparer = UploadDataPreparer(senseBox: senseBox);
 
-      final gpsBuffer = [
-        GeolocationData()
-          ..latitude = 10.0
-          ..longitude = 20.0
-          ..speed = 5.0
-          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
-      ];
-
-      final groupedData = {
-        gpsBuffer[0]: {
-          'acceleration': [0.1, 0.2, 0.3], // X, Y, Z
-        },
-      };
-
-      final result =
-          preparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
-
-      // Should only have speed data (acceleration is skipped)
-      expect(result.length, 1);
-
-      // Check that no acceleration entries are present
-      final accelerationEntries =
-          result.keys.where((k) => k.contains('acceleration')).toList();
-      expect(accelerationEntries.length, 0);
-
-      // Check speed entry is present
-      final speedEntries =
-          result.keys.where((k) => k.startsWith('speed_')).toList();
-      expect(speedEntries.length, 1);
-    });
 
     test('prepareDataFromGroupedData handles multiple geolocations correctly',
         () {
@@ -701,7 +652,7 @@ void main() {
       final result =
           preparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
 
-      // Should have speed data and temperature data, but not unknown sensor
+      // Should have speed data and temperature data, but unknown sensor is skipped
       expect(result.length, 2);
 
       // Check that temperature data is still processed

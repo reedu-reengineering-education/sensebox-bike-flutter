@@ -212,6 +212,9 @@ void main() {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
 
+      // Setup mock to be authenticated
+      when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+
       final gpsBuffer = [
         GeolocationData()
           ..latitude = 10.0
@@ -247,6 +250,9 @@ void main() {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
 
+      // Setup mock to be authenticated
+      when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+
       // Setup mock to throw temporary authentication error
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
           .thenThrow(Exception('Token refreshed, retrying'));
@@ -278,6 +284,9 @@ void main() {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
 
+      // Setup mock to be authenticated initially
+      when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+
       // Test with "No refresh token found" error
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
           .thenThrow(Exception('No refresh token found'));
@@ -298,7 +307,7 @@ void main() {
 
       directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
       await directUploadService.uploadRemainingBufferedData();
-
+      
       // Service should be disabled for permanent authentication failures
       expect(directUploadService.isEnabled, false);
     });
@@ -308,6 +317,9 @@ void main() {
         () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
+
+      // Setup mock to be authenticated initially
+      when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
       // Test with "Authentication failed - user needs to re-login" error
       when(() => mockOpenSenseMapService.uploadData(any(), any())).thenThrow(
@@ -340,6 +352,9 @@ void main() {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
 
+      // Setup mock to be authenticated initially
+      when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+
       // Test with "403 Forbidden" error - should be treated as client error
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
           .thenThrow(Exception('Client error 403: Forbidden'));
@@ -371,6 +386,9 @@ void main() {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
 
+      // Setup mock to be authenticated initially
+      when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+
       // Test with "Failed to refresh token" error
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
           .thenThrow(Exception('Failed to refresh token: Network error'));
@@ -399,6 +417,9 @@ void main() {
     test('remains enabled after temporary server errors', () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
+
+      // Setup mock to be authenticated
+      when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
       // Setup mock to throw temporary server error
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
@@ -429,6 +450,9 @@ void main() {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
 
+      // Setup mock to be authenticated
+      when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+
       // Setup mock to throw rate limiting error
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
           .thenThrow(TooManyRequestsException(30));
@@ -457,6 +481,9 @@ void main() {
     test('remains enabled after successful upload', () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
+
+      // Setup mock to be authenticated
+      when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
       // Setup mock to succeed
       when(() => mockOpenSenseMapService.uploadData(any(), any()))
@@ -489,6 +516,9 @@ void main() {
         directUploadService.enable();
         expect(directUploadService.isEnabled, true);
 
+        // Setup mock to be authenticated
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+
         // Setup mock to throw 429 rate limiting error
         when(() => mockOpenSenseMapService.uploadData(any(), any()))
             .thenThrow(TooManyRequestsException(30));
@@ -519,6 +549,9 @@ void main() {
       test('handles 502 server error correctly', () async {
         directUploadService.enable();
         expect(directUploadService.isEnabled, true);
+
+        // Setup mock to be authenticated
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
         // Setup mock to throw 502 server error
         when(() => mockOpenSenseMapService.uploadData(any(), any()))
@@ -553,6 +586,9 @@ void main() {
         directUploadService.enable();
         expect(directUploadService.isEnabled, true);
 
+        // Setup mock to be authenticated initially
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+
         // Setup mock to throw permanent authentication error
         when(() => mockOpenSenseMapService.uploadData(any(), any())).thenThrow(
             Exception('Authentication failed - user needs to re-login'));
@@ -586,6 +622,9 @@ void main() {
         directUploadService.enable();
         expect(directUploadService.isEnabled, true);
 
+        // Setup mock to be authenticated
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+
         // Setup mock to throw token refresh error
         when(() => mockOpenSenseMapService.uploadData(any(), any()))
             .thenThrow(Exception('Token refreshed, retrying'));
@@ -617,6 +656,9 @@ void main() {
           () async {
         directUploadService.enable();
         expect(directUploadService.isEnabled, true);
+
+        // Setup mock to be authenticated initially
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
         // Setup mock to throw "Not authenticated" error
         when(() => mockOpenSenseMapService.uploadData(any(), any()))
@@ -651,6 +693,9 @@ void main() {
         directUploadService.enable();
         expect(directUploadService.isEnabled, true);
 
+        // Setup mock to be authenticated
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+
         // Setup mock to throw timeout error
         when(() => mockOpenSenseMapService.uploadData(any(), any())).thenThrow(
             TimeoutException('Upload timeout', const Duration(seconds: 30)));
@@ -681,6 +726,9 @@ void main() {
       test('handles 404 client error correctly', () async {
         directUploadService.enable();
         expect(directUploadService.isEnabled, true);
+
+        // Setup mock to be authenticated initially
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
         // Setup mock to throw 404 client error
         when(() => mockOpenSenseMapService.uploadData(any(), any()))
@@ -724,6 +772,9 @@ void main() {
         for (final error in temporaryErrors) {
           directUploadService.enable();
           expect(directUploadService.isEnabled, true);
+
+          // Setup mock to be authenticated
+          when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
           when(() => mockOpenSenseMapService.uploadData(any(), any()))
               .thenThrow(
@@ -771,6 +822,9 @@ void main() {
         for (final error in permanentAuthErrors) {
           directUploadService.enable();
           expect(directUploadService.isEnabled, true);
+
+          // Setup mock to be authenticated initially
+          when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
           when(() => mockOpenSenseMapService.uploadData(any(), any()))
               .thenThrow(Exception(error));
