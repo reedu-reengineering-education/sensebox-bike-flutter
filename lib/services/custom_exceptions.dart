@@ -51,3 +51,14 @@ class UploadFailureError implements Exception {
   String toString() =>
       'Data upload failed. Please check your internet connection and try again.';
 }
+
+class PermanentAuthenticationError implements Exception {
+  final String? details;
+
+  PermanentAuthenticationError([this.details]);
+
+  @override
+  String toString() => details != null
+      ? 'Authentication failed permanently: $details'
+      : 'Authentication failed permanently. Please log in again to continue uploading data.';
+}

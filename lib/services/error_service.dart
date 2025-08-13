@@ -28,7 +28,8 @@ class ErrorService {
           error is ScanPermissionDenied ||
           error is NoSenseBoxSelected ||
           error is ExportDirectoryAccessError ||
-          error is UploadFailureError) {
+          error is UploadFailureError ||
+          error is PermanentAuthenticationError) {
         showUserFeedback(error);
       } else {
         logToConsole(error, stack);
@@ -72,6 +73,9 @@ class ErrorService {
     } else if (error is UploadFailureError) {
       return localizations?.errorUploadFailed ??
           'Data upload failed. Please check your internet connection and try again.';
+    } else if (error is PermanentAuthenticationError) {
+      return localizations?.errorPermanentAuthentication ??
+          'Authentication failed permanently. Please log in again to continue uploading data.';
     } else if (error is LoginError) {
       return '${localizations?.errorLoginFailed} ${error.toString()}';
     } else if (error is RegistrationError) {
