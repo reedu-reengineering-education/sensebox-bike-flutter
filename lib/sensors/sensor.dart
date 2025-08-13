@@ -74,25 +74,23 @@ abstract class Sensor {
       for (final point in pointsToRemove) {
         _groupedBuffer.remove(point);
       }
+      
+
     });
 
     uploadService.setPermanentDisableCallback(() {
-      // Clear all sensor buffers when service is permanently disabled
-      _groupedBuffer.clear();
+      // Don't clear sensor buffers - just clear upload tracking
+      // This allows local data collection to continue even when uploads are disabled
       _uploadedGeolocationIds.clear();
-      _processedGeolocationIds.clear();
+      // Keep _groupedBuffer and _processedGeolocationIds for local persistence
+
     });
   }
 
   void onDataReceived(List<double> data) {
     if (data.isNotEmpty && recordingBloc.isRecording) {
-      // Don't buffer data if DirectUploadService is permanently disabled
-      if (_directUploadService != null &&
-          _directUploadService!.permanentlyDisabled) {
-        _valueController.add(data);
-        return;
-      }
-
+      // Always buffer data for local persistence, regardless of upload service status
+      // This ensures data is collected locally even when uploads are disabled
       if (_lastGeolocation != null) {
         _groupedBuffer.putIfAbsent(_lastGeolocation!, () => {});
         _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
@@ -179,14 +177,8 @@ abstract class Sensor {
       return;
     }
 
-    // Don't process buffers if DirectUploadService is permanently disabled
-    if (_directUploadService != null &&
-        _directUploadService!.permanentlyDisabled) {
-      debugPrint(
-          '[Sensor $title] Skipping buffer flush - service permanently disabled');
-      return;
-    }
-
+    // Always process and save data locally, regardless of upload service status
+    // Uploads are attempted only when the service is available and enabled
     if (_isFlushing) {
       return;
     }
@@ -296,10 +288,11 @@ abstract class Sensor {
         }
       }
 
+      // Only attempt upload if service is available and uploads are enabled
       if (_directUploadService != null &&
           recordingBloc.isRecording &&
           groupedDataForUpload.isNotEmpty &&
-          !_directUploadService!.permanentlyDisabled) {
+          !_directUploadService!.isUploadDisabled) {
         _directUploadService!.addGroupedDataForUpload(
             groupedDataForUpload, geolocationsForUpload);
       }

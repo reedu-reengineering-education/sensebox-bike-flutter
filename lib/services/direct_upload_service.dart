@@ -127,6 +127,7 @@ class DirectUploadService {
       {};
   bool _isEnabled = false;
   bool _isPermanentlyDisabled = false;
+  bool _isUploadDisabled = false; // New flag for upload-only disabling
   Timer? _uploadTimer;
 
   DirectUploadService({
@@ -144,6 +145,7 @@ class DirectUploadService {
     
     _isEnabled = true;
     _isPermanentlyDisabled = false;
+    _isUploadDisabled = false; // Reset upload flag
     
     _resetRestartAttempts();
     _clearAllBuffersForNewRecording();
@@ -155,6 +157,7 @@ class DirectUploadService {
   void disable() {
     _isEnabled = false;
     _isPermanentlyDisabled = true;
+    _isUploadDisabled = true; // Set upload flag
     _uploadTimer?.cancel();
     _uploadTimer = null;
     _restartTimer?.cancel();
@@ -163,6 +166,7 @@ class DirectUploadService {
 
   void disableTemporarily() {
     _isEnabled = false;
+    _isUploadDisabled = true; // Set upload flag
     _uploadTimer?.cancel();
     _uploadTimer = null;
     _restartTimer?.cancel();
@@ -171,6 +175,7 @@ class DirectUploadService {
 
   bool get isEnabled => _isEnabled;
   bool get permanentlyDisabled => _isPermanentlyDisabled;
+  bool get isUploadDisabled => _isUploadDisabled;
   bool get hasPreservedData => _accumulatedSensorData.isNotEmpty;
   bool get hasPendingRestartTimer => _restartTimer != null;
 
@@ -185,8 +190,8 @@ class DirectUploadService {
   bool addGroupedDataForUpload(
       Map<GeolocationData, Map<String, List<double>>> groupedData,
       List<GeolocationData> gpsBuffer) {
-    // Don't accept data if service is permanently disabled
-    if (_isPermanentlyDisabled || !_isEnabled) {
+    // Accept data for local storage even if uploads are disabled
+    if (!_isEnabled) {
       return false;
     }
 
@@ -214,8 +219,6 @@ class DirectUploadService {
 
     // Don't prepare data if service is permanently disabled
     if (_isPermanentlyDisabled) {
-      debugPrint(
-          '[DirectUploadService] Data preparation skipped - service permanently disabled');
       return;
     }
 
@@ -258,8 +261,6 @@ class DirectUploadService {
 
     // Don't prepare data if service is permanently disabled
     if (_isPermanentlyDisabled) {
-      debugPrint(
-          '[DirectUploadService] Sync data preparation skipped - service permanently disabled');
       return;
     }
 
@@ -329,8 +330,6 @@ class DirectUploadService {
 
     // Don't attempt uploads if service is permanently disabled
     if (_isPermanentlyDisabled) {
-      debugPrint(
-          '[DirectUploadService] Upload skipped - service permanently disabled');
       return;
     }
 
@@ -408,6 +407,7 @@ class DirectUploadService {
   void _disableAndClearBuffers() {
     _isEnabled = false;
     _isPermanentlyDisabled = true;
+    _isUploadDisabled = true; // New flag
     _uploadTimer?.cancel();
     _uploadTimer = null;
     _clearAllBuffers();
@@ -417,12 +417,11 @@ class DirectUploadService {
   void _scheduleRestart() {
     // Don't schedule restart if service is already enabled
     if (_isEnabled && !_isPermanentlyDisabled) {
-      debugPrint(
-          '[DirectUploadService] Restart not scheduled - service already enabled');
       return;
     }
     
     if (_restartAttempts >= maxRestartAttempts) {
+      _isUploadDisabled = true; // Set upload flag when max attempts reached
 
       // Notify sensors to clear their buffers since service is permanently disabled
       _onPermanentDisable?.call();
@@ -443,6 +442,7 @@ class DirectUploadService {
     _restartAttempts = 0;
     _restartTimer?.cancel();
     _restartTimer = null;
+    _isUploadDisabled = false; // Reset upload flag
   }
 
 
@@ -477,14 +477,16 @@ class DirectUploadService {
   void _permanentlyDisableService() {
     _isEnabled = false;
     _isPermanentlyDisabled = true;
+    _isUploadDisabled = true; // New flag
     _uploadTimer?.cancel();
     _uploadTimer = null;
     _restartTimer?.cancel();
     _restartTimer = null;
-    _clearAllBuffers();
+
+    
     permanentUploadLossNotifier.value = true;
 
-    // Notify sensors to clear their buffers since uploads will never succeed
+    // Notify sensors that uploads are disabled, but don't clear their buffers
     _onPermanentDisable?.call();
   }
 
@@ -511,13 +513,13 @@ class DirectUploadService {
         _clearAllBuffers();
         _isEnabled = true;
         _isPermanentlyDisabled = false;
+        _isUploadDisabled = false; // Reset upload flag
         permanentUploadLossNotifier.value = false;
-        debugPrint(
-            '[DirectUploadService] Restart successful after uploading remaining data');
       }).catchError((e) {
         // Don't clear buffers - preserve data for next attempt
         _isEnabled = true;
         _isPermanentlyDisabled = false;
+        _isUploadDisabled = false; // Reset upload flag
         permanentUploadLossNotifier.value = false;
       });
     } else {
@@ -525,6 +527,7 @@ class DirectUploadService {
       _clearAllBuffers();
       _isEnabled = true;
       _isPermanentlyDisabled = false;
+      _isUploadDisabled = false; // Reset upload flag
       permanentUploadLossNotifier.value = false;
     }
   }
