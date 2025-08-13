@@ -56,6 +56,17 @@ class OpenSenseMapService {
     _isPermanentlyDisabled = false;
   }
 
+  // Add method to check if service is authenticated
+  bool get isAuthenticated {
+    return _cachedAccessToken != null &&
+        _tokenExpiration != null &&
+        _isTokenValid(_cachedAccessToken!);
+  }
+
+  // Debug getters for troubleshooting
+  bool get hasCachedToken => _cachedAccessToken != null;
+  DateTime? get tokenExpiration => _tokenExpiration;
+
   Future<void> setTokens(http.Response response) async {
     final prefs = await _prefs;
     final responseData = jsonDecode(response.body);
@@ -182,11 +193,8 @@ class OpenSenseMapService {
   Future<Map<String, dynamic>?> getUserData() async {
     // First try to get cached user data
     final cachedUserData = await _getCachedUserData();
-    if (cachedUserData != null) {
-      return cachedUserData;
-    }
-
-    // If no cached data, try API call
+    
+    // Always try to get fresh data from API to validate authentication
     try {
       final userData = await _makeAuthenticatedRequest<Map<String, dynamic>?>(
         requestFn: (accessToken) => client.get(
@@ -197,16 +205,22 @@ class OpenSenseMapService {
         errorMessage: 'Failed to load user data',
       );
 
-      // Cache the user data for future use
+      // Cache the fresh user data
       if (userData != null) {
         await _saveUserData(userData);
+        return userData;
       }
-
-      return userData;
+      
+      // If API call failed but we have cached data, clear it and return null
+      if (cachedUserData != null) {
+        await _clearUserData();
+      }
+      return null;
     } catch (e) {
-      // Only set authentication to false if it's a clear authentication error
-      // and we're not in the middle of an authentication process
-      if (e.toString().contains('Not authenticated') && !_isRefreshingToken) {
+      // Clear cached data on any authentication error
+      if (e.toString().contains('Not authenticated') ||
+          e.toString().contains('Authentication failed') ||
+          e.toString().contains('Failed to refresh token')) {
         await _clearUserData();
       }
       return null;
@@ -267,9 +281,11 @@ class OpenSenseMapService {
       if (exp == null) {
         return false;
       }
-
       final expirationTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
       final now = DateTime.now();
+      // Code to test if token is expired
+      // final fakeExpiredTime = now.subtract(Duration(hours: 1));
+      // return expirationTime.isAfter(fakeExpiredTime);
       return expirationTime.isAfter(now);
     } catch (e) {
       return false;
@@ -291,7 +307,6 @@ class OpenSenseMapService {
 
   Future<void> refreshToken() async {
     final refreshToken = await getRefreshTokenFromPreferences();
-
     if (refreshToken == null) {
       throw Exception('No refresh token found');
     }
@@ -338,7 +353,6 @@ class OpenSenseMapService {
     _isRefreshingToken = false;
   }
 
-  /// Get token status for debugging (returns null if no cached token)
   Map<String, dynamic>? getTokenStatus() {
     if (_cachedAccessToken == null || _tokenExpiration == null) {
       return null;
@@ -469,8 +483,11 @@ class OpenSenseMapService {
             'Content-Type': 'application/json',
           },
         ).timeout(const Duration(seconds: defaultTimeout));
-
+        // TEMPORARY: Simulate 401/403 for testing authentication failure during upload
+        // throw Exception('Authentication failed - user needs to re-login');
         if (response.statusCode == 201) {
+          debugPrint(
+              '[OpenSenseMapService] Data uploaded successfully at ${DateTime.now()}');
           return;
         } else if (response.statusCode == 401 || response.statusCode == 403) {
           ErrorService.handleError(

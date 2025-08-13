@@ -7,9 +7,11 @@ import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 class MockSettingsBloc extends Mock implements SettingsBloc {}
+class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -111,28 +113,30 @@ void main() {
     late DirectUploadService directUploadService;
     late MockOpenSenseMapService mockOpenSenseMapService;
     late MockSettingsBloc mockSettingsBloc;
+    late MockOpenSenseMapBloc mockOpenSenseMapBloc;
     late SenseBox mockSenseBox;
 
     setUp(() {
       mockOpenSenseMapService = MockOpenSenseMapService();
       mockSettingsBloc = MockSettingsBloc();
-      
-      mockSenseBox = SenseBox(
-        sId: 'test-sensebox-id',
-        sensors: [
+      mockOpenSenseMapBloc = MockOpenSenseMapBloc();
+      mockSenseBox = SenseBox()
+        ..sId = 'test-sensebox-id'
+        ..name = 'Test SenseBox'
+        ..sensors = [
           Sensor()
-            ..id = 'temp-sensor-id'
+            ..id = 'temperature-sensor-id'
             ..title = 'Temperature',
           Sensor()
             ..id = 'speed-sensor-id'
             ..title = 'Speed',
-        ],
-      );
+        ];
 
       directUploadService = DirectUploadService(
         openSenseMapService: mockOpenSenseMapService,
         settingsBloc: mockSettingsBloc,
         senseBox: mockSenseBox,
+        openSenseMapBloc: mockOpenSenseMapBloc,
       );
     });
 
