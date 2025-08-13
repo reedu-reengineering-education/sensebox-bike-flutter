@@ -415,6 +415,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorUploadFailed => 'Data upload failed. Please check your internet connection and try again.';
 
   @override
+  String get errorPermanentAuthentication => 'Authentication failed permanently. Please log in again to continue uploading data.';
+
+  @override
   String get selectCsvFormat => 'Select CSV format';
 
   @override

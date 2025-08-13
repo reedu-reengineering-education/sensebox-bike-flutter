@@ -415,6 +415,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorUploadFailed => 'Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
 
   @override
+  String get errorPermanentAuthentication => 'Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich erneut an, um den Upload fortzusetzen.';
+
+  @override
   String get selectCsvFormat => 'CSV-Format auswählen';
 
   @override
