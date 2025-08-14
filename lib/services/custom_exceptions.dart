@@ -10,7 +10,7 @@ class TooManyRequestsException implements Exception {
 class LocationPermissionDenied implements Exception {
   @override
   String toString() =>
-      'Please allow the current app to access location of the current device in the phone settings.';
+      'Location services are disabled or access is denied. Please enable location services and allow the app to access your location in the phone settings.';
 }
 
 class ScanPermissionDenied implements Exception {

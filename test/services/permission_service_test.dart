@@ -24,9 +24,7 @@ void main() {
 
       expect(
         () => PermissionService.ensureLocationPermissionsGranted(),
-        throwsA(predicate((e) =>
-            e is Exception &&
-            e.toString().contains('Location services are disabled.'))),
+        throwsA(isA<LocationPermissionDenied>()),
       );
     });
 

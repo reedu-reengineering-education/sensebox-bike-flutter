@@ -162,7 +162,7 @@
     "noCampaignsAvailable": "Keine Kampagnen verfügbar",
     "loginScreenTitle": "openSenseMap Konto",
     "connectionButtonEnableBluetooth": "Bluetooth aktivieren",
-    "errorNoLocationAccess": "Um Tracks aufzuzeichnen, erlauben Sie bitte der App in den Telefoneinstellungen den Zugriff auf den aktuellen Standort des Geräts.",
+    "errorNoLocationAccess": "Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie bitte die Standortdienste und erlauben Sie der App in den Telefoneinstellungen den Zugriff auf Ihren Standort.",
     "errorNoScanAccess": "Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.",
     "errorNoSenseBoxSelected": "Um den Upload von Sensordaten in die Cloud zu erlauben, melden Sie sich bitte bei Ihrem openSenseMap-Konto an und aktivieren Sie das Kästchen.",
     "errorExportDirectoryAccess": "Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.",
