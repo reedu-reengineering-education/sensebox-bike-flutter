@@ -13,6 +13,7 @@ import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/services/isar_service/sensor_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/services/tag_service.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
@@ -20,6 +21,7 @@ import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
 class MockIsarProvider extends Mock implements IsarProvider {}
 
 class MockTagService extends Mock implements TagService {}
+class MockErrorService extends Mock implements ErrorService {}
 class MockIsarService extends Mock implements IsarService {
   final MockTrackService mockTrackService = MockTrackService();
 
@@ -60,6 +62,11 @@ class MockOpenSenseMapBloc extends Mock
 
   @override
   Future<void> logout() async {
+    isAuthenticated = false;
+  }
+
+  @override
+  Future<void> markAuthenticationFailed() async {
     isAuthenticated = false;
   }
 

@@ -871,6 +871,12 @@ abstract class AppLocalizations {
   /// **'Data upload failed. Please check your internet connection and try again.'**
   String get errorUploadFailed;
 
+  /// No description provided for @errorPermanentAuthentication.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed permanently. Please log in again to continue uploading data.'**
+  String get errorPermanentAuthentication;
+
   /// No description provided for @selectCsvFormat.
   ///
   /// In en, this message translates to:

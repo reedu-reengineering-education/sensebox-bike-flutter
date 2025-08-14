@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:sensebox_bike/services/custom_exceptions.dart';
@@ -55,6 +57,17 @@ class OpenSenseMapService {
   void resetPermanentDisable() {
     _isPermanentlyDisabled = false;
   }
+
+  // Add method to check if service is authenticated
+  bool get isAuthenticated {
+    return _cachedAccessToken != null &&
+        _tokenExpiration != null &&
+        _isTokenValid(_cachedAccessToken!);
+  }
+
+  // Debug getters for troubleshooting
+  bool get hasCachedToken => _cachedAccessToken != null;
+  DateTime? get tokenExpiration => _tokenExpiration;
 
   Future<void> setTokens(http.Response response) async {
     final prefs = await _prefs;
@@ -182,11 +195,8 @@ class OpenSenseMapService {
   Future<Map<String, dynamic>?> getUserData() async {
     // First try to get cached user data
     final cachedUserData = await _getCachedUserData();
-    if (cachedUserData != null) {
-      return cachedUserData;
-    }
-
-    // If no cached data, try API call
+    
+    // Always try to get fresh data from API to validate authentication
     try {
       final userData = await _makeAuthenticatedRequest<Map<String, dynamic>?>(
         requestFn: (accessToken) => client.get(
@@ -197,16 +207,22 @@ class OpenSenseMapService {
         errorMessage: 'Failed to load user data',
       );
 
-      // Cache the user data for future use
+      // Cache the fresh user data
       if (userData != null) {
         await _saveUserData(userData);
+        return userData;
       }
-
-      return userData;
+      
+      // If API call failed but we have cached data, clear it and return null
+      if (cachedUserData != null) {
+        await _clearUserData();
+      }
+      return null;
     } catch (e) {
-      // Only set authentication to false if it's a clear authentication error
-      // and we're not in the middle of an authentication process
-      if (e.toString().contains('Not authenticated') && !_isRefreshingToken) {
+      // Clear cached data on any authentication error
+      if (e.toString().contains('Not authenticated') ||
+          e.toString().contains('Authentication failed') ||
+          e.toString().contains('Failed to refresh token')) {
         await _clearUserData();
       }
       return null;
@@ -267,9 +283,11 @@ class OpenSenseMapService {
       if (exp == null) {
         return false;
       }
-
       final expirationTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
       final now = DateTime.now();
+      // Temporary: Code to test if token is expired
+      // final fakeExpiredTime = now.subtract(Duration(hours: 1));
+      // return expirationTime.isAfter(fakeExpiredTime);
       return expirationTime.isAfter(now);
     } catch (e) {
       return false;
@@ -291,7 +309,6 @@ class OpenSenseMapService {
 
   Future<void> refreshToken() async {
     final refreshToken = await getRefreshTokenFromPreferences();
-
     if (refreshToken == null) {
       throw Exception('No refresh token found');
     }
@@ -338,7 +355,6 @@ class OpenSenseMapService {
     _isRefreshingToken = false;
   }
 
-  /// Get token status for debugging (returns null if no cached token)
   Map<String, dynamic>? getTokenStatus() {
     if (_cachedAccessToken == null || _tokenExpiration == null) {
       return null;
@@ -469,8 +485,11 @@ class OpenSenseMapService {
             'Content-Type': 'application/json',
           },
         ).timeout(const Duration(seconds: defaultTimeout));
-
+        // TEMPORARY: Simulate 401/403 for testing authentication failure during upload
+        // throw Exception('Authentication failed - user needs to re-login');
         if (response.statusCode == 201) {
+          debugPrint(
+              '[OpenSenseMapService] Data uploaded successfully at ${DateTime.now()}');
           return;
         } else if (response.statusCode == 401 || response.statusCode == 403) {
           ErrorService.handleError(
@@ -502,31 +521,24 @@ class OpenSenseMapService {
           _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
 
           throw TooManyRequestsException(waitTime);
-        } else if (response.statusCode == 502 ||
-            response.statusCode == 503 ||
-            response.statusCode == 504) {
-          ErrorService.handleError(
-              'Client error ${response.statusCode}: ${response.body}',
-              StackTrace.current,
-              sendToSentry: true);
-          // 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout - temporary server errors, should retry
-          throw Exception('Server error ${response.statusCode} - retrying');
-        } else if (response.statusCode >= 400 && response.statusCode < 500) {
-          ErrorService.handleError(
-              'Client error ${response.statusCode}: ${response.body}',
-              StackTrace.current,
-              sendToSentry: true);
-          // 4xx client errors - these are likely permanent and shouldn't be retried
-          throw Exception(
-              'Client error ${response.statusCode}: ${response.body}');
         } else {
-          // 5xx server errors and other errors - retry these
-          ErrorService.handleError(
-              'Client error ${response.statusCode}: ${response.body}',
-              StackTrace.current,
-              sendToSentry: true);
-          throw Exception(
-              'Server error ${response.statusCode}: ${response.body}');
+          // All other errors (4xx and 5xx)
+          if (response.statusCode >= 500) {
+            // 5xx server errors - retry these
+            ErrorService.handleError(
+                'Server error ${response.statusCode}: ${response.body}',
+                StackTrace.current,
+                sendToSentry: true);
+            throw Exception('Server error ${response.statusCode} - retrying');
+          } else {
+            // 4xx client errors - don't retry these
+            ErrorService.handleError(
+                'Client error ${response.statusCode}: ${response.body}',
+                StackTrace.current,
+                sendToSentry: true);
+            throw Exception(
+                'Client error ${response.statusCode}: ${response.body}');
+          }
         }
       },
       retryIf: (e) {
@@ -534,6 +546,9 @@ class OpenSenseMapService {
         return e is TooManyRequestsException ||
             errorString.contains('Token refreshed') ||
             errorString.contains('Server error') ||
+            e is TooManyRequestsException ||
+            e is SocketException || // Network connectivity issues
+            e is HttpException || // HTTP protocol errors
             e is TimeoutException;
       },
       onRetry: (e) async {

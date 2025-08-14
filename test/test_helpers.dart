@@ -120,11 +120,13 @@ void mockSenseBoxInSharedPreferences() {
 }
 
 TrackData createMockTrackData() {
-  return TrackData();
+  return TrackData()
+    ..id = Isar.autoIncrement;
 }
 
 GeolocationData createMockGeolocationData(TrackData trackData) {
   return GeolocationData()
+    ..id = Isar.autoIncrement
     ..latitude = 52.5200
     ..longitude = 13.4050
     ..timestamp = DateTime.now()
@@ -134,6 +136,7 @@ GeolocationData createMockGeolocationData(TrackData trackData) {
 
 SensorData createMockSensorData(GeolocationData geolocationData) {
   return SensorData()
+    ..id = Isar.autoIncrement
     ..title = 'temperature'
     ..value = 25.0
     ..attribute = null

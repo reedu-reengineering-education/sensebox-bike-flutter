@@ -85,7 +85,8 @@ class RecordingBloc with ChangeNotifier {
       _directUploadService = DirectUploadService(
           openSenseMapService: OpenSenseMapService(),
           settingsBloc: settingsBloc,
-          senseBox: _selectedSenseBox!);
+          senseBox: _selectedSenseBox!,
+          openSenseMapBloc: openSenseMapBloc);
 
       _onRecordingStart?.call();
 

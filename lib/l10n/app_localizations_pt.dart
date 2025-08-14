@@ -415,6 +415,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get errorUploadFailed => 'Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.';
 
   @override
+  String get errorPermanentAuthentication => 'Falha permanente na autenticação. Por favor, faça login novamente para continuar fazendo upload.';
+
+  @override
   String get selectCsvFormat => 'Selecionar formato CSV';
 
   @override
