@@ -109,6 +109,12 @@ class DirectUploadService {
   final List<Map<String, dynamic>> _directUploadBuffer = [];
   final Map<GeolocationData, Map<String, List<double>>> _accumulatedSensorData =
       {};
+  
+  // Deferred data buffer for GPS-unavailable scenarios
+  final Map<DateTime, Map<String, List<double>>> _deferredSensorData = {};
+  final List<DateTime> _deferredDataTimestamps = [];
+  static const int maxDeferredDataAge = 1; // hours - prevent indefinite storage
+  
   bool _isEnabled = false;
   bool _isPermanentlyDisabled = false;
   bool _isUploadDisabled = false; // New flag for upload-only disabling
@@ -363,10 +369,42 @@ class DirectUploadService {
   void _clearAllBuffers() {
     _accumulatedSensorData.clear();
     _directUploadBuffer.clear();
+    _deferredSensorData.clear();
+    _deferredDataTimestamps.clear();
   }
 
   void _clearAllBuffersForNewRecording() {
     _clearAllBuffers();
+  }
+
+  /// Stores sensor data when GPS is unavailable to prevent data loss
+  void addDeferredSensorData(String sensorTitle, List<double> values) {
+    final timestamp = DateTime.now();
+    
+    // Clean up old deferred data to prevent memory issues
+    _cleanupOldDeferredData();
+    
+    if (!_deferredSensorData.containsKey(timestamp)) {
+      _deferredSensorData[timestamp] = {};
+      _deferredDataTimestamps.add(timestamp);
+    }
+    
+    _deferredSensorData[timestamp]![sensorTitle] = values;
+    
+    debugPrint('[DirectUploadService] Deferred sensor data: $sensorTitle at $timestamp (GPS unavailable)');
+  }
+
+  /// Cleans up deferred data older than maxDeferredDataAge hours
+  void _cleanupOldDeferredData() {
+    final cutoffTime = DateTime.now().subtract(Duration(hours: maxDeferredDataAge));
+    
+    _deferredDataTimestamps.removeWhere((timestamp) {
+      if (timestamp.isBefore(cutoffTime)) {
+        _deferredSensorData.remove(timestamp);
+        return true;
+      }
+      return false;
+    });
   }
 
   void _disableAndClearBuffers() {
@@ -377,6 +415,53 @@ class DirectUploadService {
     _uploadTimer = null;
     _clearAllBuffers();
     permanentUploadLossNotifier.value = true;
+  }
+
+  /// Processes deferred sensor data when GPS becomes available again
+  void processDeferredDataWithGps(GeolocationData gpsPoint) {
+    if (_deferredSensorData.isEmpty) {
+      return;
+    }
+
+    debugPrint('[DirectUploadService] Processing ${_deferredSensorData.length} deferred data entries with new GPS point');
+    
+    // Find the closest timestamp to associate with the GPS point
+    final gpsTimestamp = gpsPoint.timestamp;
+    DateTime? closestTimestamp;
+    Duration? smallestDifference;
+    
+    for (final timestamp in _deferredDataTimestamps) {
+      final difference = (timestamp.difference(gpsTimestamp)).abs();
+      if (smallestDifference == null || difference < smallestDifference) {
+        smallestDifference = difference;
+        closestTimestamp = timestamp;
+      }
+    }
+    
+    if (closestTimestamp != null && smallestDifference != null) {
+      // Only associate if the difference is reasonable (within 5 minutes)
+      if (smallestDifference.inMinutes <= 5) {
+        final deferredData = _deferredSensorData[closestTimestamp]!;
+        
+        // Create a map entry for the GPS point with deferred data
+        final Map<String, List<double>> combinedData = {};
+        combinedData.addAll(deferredData);
+        
+        // Add to accumulated sensor data for upload
+        _accumulatedSensorData[gpsPoint] = combinedData;
+        
+        // Remove the processed deferred data
+        _deferredSensorData.remove(closestTimestamp);
+        _deferredDataTimestamps.remove(closestTimestamp);
+        
+        debugPrint('[DirectUploadService] Associated deferred data with GPS point at ${gpsPoint.timestamp}');
+      } else {
+        debugPrint('[DirectUploadService] Deferred data too old (${smallestDifference.inMinutes} min) - discarding');
+        // Clean up old deferred data
+        _deferredSensorData.remove(closestTimestamp);
+        _deferredDataTimestamps.remove(closestTimestamp);
+      }
+    }
   }
 
   void _scheduleRestart() {
@@ -399,6 +484,23 @@ class DirectUploadService {
     _restartTimer = Timer(Duration(minutes: delayMinutes), () {
       _attemptRestart();
     });
+  }
+
+  // Getters for deferred data status
+  bool get hasDeferredData => _deferredSensorData.isNotEmpty;
+  int get deferredDataCount => _deferredSensorData.length;
+  Duration? get oldestDeferredDataAge {
+    if (_deferredDataTimestamps.isEmpty) return null;
+    final oldest = _deferredDataTimestamps.reduce((a, b) => a.isBefore(b) ? a : b);
+    return DateTime.now().difference(oldest);
+  }
+
+  /// Call this method when GPS becomes available to process deferred data
+  void onGpsAvailable(GeolocationData gpsPoint) {
+    if (hasDeferredData) {
+      processDeferredDataWithGps(gpsPoint);
+      debugPrint('[DirectUploadService] GPS available - processed deferred data');
+    }
   }
 
   void _resetRestartAttempts() {
@@ -598,6 +700,8 @@ class DirectUploadService {
     _restartTimer = null;
     _directUploadBuffer.clear();
     _accumulatedSensorData.clear();
+    _deferredSensorData.clear();
+    _deferredDataTimestamps.clear();
   }
 
   bool _isDirectUploading = false;
