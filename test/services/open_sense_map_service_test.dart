@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
@@ -7,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class MockClient extends Mock implements http.Client {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  
   late OpenSenseMapService service;
   late MockClient mockHttpClient;
   late SharedPreferences prefs;
@@ -232,6 +235,247 @@ void main() {
           )).thenAnswer((_) async => http.Response('Client error', 400));
 
       await expectLater(service.uploadData('id', { "data": "data" }), throwsException);
+    });
+
+    group('data trimming functionality', () {
+      test('when data exceeds 2450 items, trims oldest items before upload', () async {
+        await setTokens();
+        
+        // Create test data with 3000 items
+        final Map<String, dynamic> largeData = {};
+        for (int i = 0; i < 3000; i++) {
+          largeData['sensor_$i'] = 'value_$i';
+        }
+        
+        // Mock successful upload
+        mockHTTPPOSTResponse('success', 201);
+        
+        // Capture the actual data sent to verify trimming
+        List<String> capturedBodies = [];
+        when(() => mockHttpClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        )).thenAnswer((invocation) async {
+          final body = invocation.namedArguments[#body] as String;
+          capturedBodies.add(body);
+          return http.Response('success', 201);
+        });
+        
+        await service.uploadData('id', largeData);
+        
+        // Verify that data was trimmed to exactly 2450 items
+        expect(capturedBodies.length, 1);
+        final uploadedData = jsonDecode(capturedBodies.first) as List;
+        expect(uploadedData.length, 2450);
+        
+        // Verify that oldest items (first 550) were removed
+        expect(uploadedData.first, 'value_550'); // First item should be value_550
+        expect(uploadedData.last, 'value_2999'); // Last item should be value_2999
+      });
+
+      test('when data is exactly 2450 items, no trimming occurs', () async {
+        await setTokens();
+        
+        // Create test data with exactly 2450 items
+        final Map<String, dynamic> exactData = {};
+        for (int i = 0; i < 2450; i++) {
+          exactData['sensor_$i'] = 'value_$i';
+        }
+        
+        // Mock successful upload
+        mockHTTPPOSTResponse('success', 201);
+        
+        // Capture the actual data sent
+        List<String> capturedBodies = [];
+        when(() => mockHttpClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        )).thenAnswer((invocation) async {
+          final body = invocation.namedArguments[#body] as String;
+          capturedBodies.add(body);
+          return http.Response('success', 201);
+        });
+        
+        await service.uploadData('id', exactData);
+        
+        // Verify that no trimming occurred
+        expect(capturedBodies.length, 1);
+        final uploadedData = jsonDecode(capturedBodies.first) as List;
+        expect(uploadedData.length, 2450);
+        
+        // Verify that all original items are preserved
+        expect(uploadedData.first, 'value_0');
+        expect(uploadedData.last, 'value_2449');
+      });
+
+      test('when data is under 2450 items, no trimming occurs', () async {
+        await setTokens();
+        
+        // Create test data with 1000 items
+        final Map<String, dynamic> smallData = {};
+        for (int i = 0; i < 1000; i++) {
+          smallData['sensor_$i'] = 'value_$i';
+        }
+        
+        // Mock successful upload
+        mockHTTPPOSTResponse('success', 201);
+        
+        // Capture the actual data sent
+        List<String> capturedBodies = [];
+        when(() => mockHttpClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        )).thenAnswer((invocation) async {
+          final body = invocation.namedArguments[#body] as String;
+          capturedBodies.add(body);
+          return http.Response('success', 201);
+        });
+        
+        await service.uploadData('id', smallData);
+        
+        // Verify that no trimming occurred
+        expect(capturedBodies.length, 1);
+        final uploadedData = jsonDecode(capturedBodies.first) as List;
+        expect(uploadedData.length, 1000);
+        
+        // Verify that all original items are preserved
+        expect(uploadedData.first, 'value_0');
+        expect(uploadedData.last, 'value_999');
+      });
+
+      test('when data is 2451 items, trims exactly 1 item', () async {
+        await setTokens();
+        
+        // Create test data with 2451 items
+        final Map<String, dynamic> boundaryData = {};
+        for (int i = 0; i < 2451; i++) {
+          boundaryData['sensor_$i'] = 'value_$i';
+        }
+        
+        // Mock successful upload
+        mockHTTPPOSTResponse('success', 201);
+        
+        // Capture the actual data sent
+        List<String> capturedBodies = [];
+        when(() => mockHttpClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        )).thenAnswer((invocation) async {
+          final body = invocation.namedArguments[#body] as String;
+          capturedBodies.add(body);
+          return http.Response('success', 201);
+        });
+        
+        await service.uploadData('id', boundaryData);
+        
+        // Verify that exactly 1 item was trimmed
+        expect(capturedBodies.length, 1);
+        final uploadedData = jsonDecode(capturedBodies.first) as List;
+        expect(uploadedData.length, 2450);
+        
+        // Verify that the first item (value_0) was removed
+        expect(uploadedData.first, 'value_1');
+        expect(uploadedData.last, 'value_2450');
+      });
+
+      test('when data is 5000 items, trims 2550 oldest items', () async {
+        await setTokens();
+        
+        // Create test data with 5000 items
+        final Map<String, dynamic> veryLargeData = {};
+        for (int i = 0; i < 5000; i++) {
+          veryLargeData['sensor_$i'] = 'value_$i';
+        }
+        
+        // Mock successful upload
+        mockHTTPPOSTResponse('success', 201);
+        
+        // Capture the actual data sent
+        List<String> capturedBodies = [];
+        when(() => mockHttpClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        )).thenAnswer((invocation) async {
+          final body = invocation.namedArguments[#body] as String;
+          capturedBodies.add(body);
+          return http.Response('success', 201);
+        });
+        
+        await service.uploadData('id', veryLargeData);
+        
+        // Verify that 2550 items were trimmed
+        expect(capturedBodies.length, 1);
+        final uploadedData = jsonDecode(capturedBodies.first) as List;
+        expect(uploadedData.length, 2450);
+        
+        // Verify that oldest items (first 2550) were removed
+        expect(uploadedData.first, 'value_2550'); // First item should be value_2550
+        expect(uploadedData.last, 'value_4999'); // Last item should be value_4999
+      });
+
+      test('when data is empty, no trimming occurs', () async {
+        await setTokens();
+        
+        // Create empty test data
+        final Map<String, dynamic> emptyData = {};
+        
+        // Mock successful upload
+        mockHTTPPOSTResponse('success', 201);
+        
+        // Capture the actual data sent
+        List<String> capturedBodies = [];
+        when(() => mockHttpClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        )).thenAnswer((invocation) async {
+          final body = invocation.namedArguments[#body] as String;
+          capturedBodies.add(body);
+          return http.Response('success', 201);
+        });
+        
+        await service.uploadData('id', emptyData);
+        
+        // Verify that no trimming occurred
+        expect(capturedBodies.length, 1);
+        final uploadedData = jsonDecode(capturedBodies.first) as List;
+        expect(uploadedData.length, 0);
+      });
+
+      test('when data has exactly 1 item, no trimming occurs', () async {
+        await setTokens();
+        
+        // Create test data with 1 item
+        final Map<String, dynamic> singleItemData = {'sensor_1': 'value_1'};
+        
+        // Mock successful upload
+        mockHTTPPOSTResponse('success', 201);
+        
+        // Capture the actual data sent
+        List<String> capturedBodies = [];
+        when(() => mockHttpClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        )).thenAnswer((invocation) async {
+          final body = invocation.namedArguments[#body] as String;
+          capturedBodies.add(body);
+          return http.Response('success', 201);
+        });
+        
+        await service.uploadData('id', singleItemData);
+        
+        // Verify that no trimming occurred
+        expect(capturedBodies.length, 1);
+        final uploadedData = jsonDecode(capturedBodies.first) as List;
+        expect(uploadedData.length, 1);
+        expect(uploadedData.first, 'value_1');
+      });
     });
   });
 
