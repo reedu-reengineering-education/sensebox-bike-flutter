@@ -4,8 +4,6 @@ import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
-import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/no_tracks_message.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
@@ -44,6 +42,9 @@ class TracksScreenState extends State<TracksScreen> {
       }
     };
     _recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
+
+    // Add scroll listener for pagination
+    _scrollController.addListener(_onScroll);
 
     _fetchInitialTracks();
   }
@@ -104,6 +105,15 @@ class TracksScreenState extends State<TracksScreen> {
     });
   }
 
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 100 &&
+        _hasMoreTracks &&
+        !_isLoading) {
+      _loadMoreTracks();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
@@ -115,59 +125,51 @@ class TracksScreenState extends State<TracksScreen> {
         children: [
           Expanded(
             child: RefreshIndicator(
-                color: Theme.of(context).colorScheme.primaryFixedDim,
-                onRefresh: _handleRefresh,
-                child: ScrollbarTheme(
-                  data: ScrollbarThemeData(
-                    thumbColor:
-                        WidgetStateProperty.all(colorScheme.primaryFixedDim),
-                  ),
-                  child: Scrollbar(
-                    controller: _scrollController,
-                    thumbVisibility: true,
-                    thickness: 2,
-                    child: _displayedTracks.isEmpty && !_isLoading
-                        ? const NoTracksMessage()
-                        : ListView.separated(
-                            separatorBuilder: (context, index) => CustomDivider(
-                              showDivider: !(index == _displayedTracks.length - 1 &&
-                                  _hasMoreTracks),
-                            ),
-                            controller: _scrollController,
-                            itemCount: _hasMoreTracks
-                                ? _displayedTracks.length + 1 // Add 1 for "Load More"
-                                : _displayedTracks.length, // No "Load More" button
-                            itemBuilder: (context, index) {
-                              if (index < _displayedTracks.length) {
-                                TrackData track = _displayedTracks[index];
-                                return TrackListItem(
-                                  track: track,
-                                  onDismissed: () async {
-                                    await _isarService.trackService
-                                        .deleteTrack(track.id);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content:
-                                            Text(localizations.tracksTrackDeleted),
+              color: Theme.of(context).colorScheme.primaryFixedDim,
+              onRefresh: _handleRefresh,
+              child: _displayedTracks.isEmpty
+                  ? const NoTracksMessage()
+                  : ScrollbarTheme(
+                      data: ScrollbarThemeData(
+                        thumbColor: WidgetStateProperty.all(
+                            colorScheme.primaryFixedDim),
+                      ),
+                      child: Scrollbar(
+                        controller: _scrollController,
+                        thumbVisibility: true,
+                        thickness: 2,
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.all(16.0),
+                          itemCount: _displayedTracks.length +
+                              (_hasMoreTracks ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == _displayedTracks.length) {
+                              // Show loading indicator for pagination
+                              return _isLoading
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
                                       ),
-                                    );
-                                    _handleRefresh();
-                                  },
-                                );
-                              } else {
-                                return Center(
-                                  child: ButtonWithLoader(
-                                    isLoading: _isLoading,
-                                    onPressed: _isLoading ? null : _loadMoreTracks,
-                                    text: AppLocalizations.of(context)!.loadMore,
-                                    width: 0.6,
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                  ),
-                )),
+                                    )
+                                  : const SizedBox.shrink();
+                            }
+
+                            final track = _displayedTracks[index];
+                            return TrackListItem(
+                              track: track,
+                              onDismissed: () async {
+                                await _isarService.trackService
+                                    .deleteTrack(track.id);
+                                _handleRefresh();
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+            ),
           ),
         ],
       ),
