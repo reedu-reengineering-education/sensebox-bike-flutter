@@ -453,14 +453,15 @@ class OpenSenseMapService {
       String senseBoxId, Map<String, dynamic> sensorData) async {
     List<dynamic> data = sensorData.values.toList();
 
-    // Check if data exceeds 2450 items and trim if needed to stay under the API limit
-    if (data.length > 2450) {
-      final int itemsToRemove = data.length - 2450;
+    // Check if data exceeds 2500 items and trim if needed to stay under the API limit
+    const maxItems = 2450;
+    if (data.length > maxItems) {
+      final int itemsToRemove = data.length - maxItems;
       data = data.skip(itemsToRemove).toList();
 
       // Log the trimming event
       ErrorService.handleError(
-        'Data trimmed before upload: Removed $itemsToRemove oldest items to stay under 2450 limit (original: ${sensorData.values.length}, final: ${data.length})',
+        'Data trimmed before upload: Removed $itemsToRemove oldest items to stay under $maxItems limit (original: ${sensorData.values.length}, final: ${data.length})',
         StackTrace.current,
         sendToSentry: true,
       );
