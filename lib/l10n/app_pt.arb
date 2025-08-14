@@ -162,7 +162,7 @@
     "noCampaignsAvailable": "Não há campanhas disponíveis",
     "loginScreenTitle": "openSenseMap Conta",
     "connectionButtonEnableBluetooth": "Ativar Bluetooth",
-    "errorNoLocationAccess": "Para gravar faixas, permita que a aplicação aceda à localização atual do dispositivo nas definições do telefone.",
+    "errorNoLocationAccess": "Os serviços de localização estão desativados ou o acesso é negado. Para gravar faixas, ative os serviços de localização e permita que a aplicação aceda à sua localização nas definições do telefone.",
     "errorNoScanAccess": "Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.",
     "errorNoSenseBoxSelected": "Para permitir o envio de dados do sensor para a nuvem, inicie sessão na sua conta do openSenseMap e selecione a caixa.",
     "errorExportDirectoryAccess": "Erro ao acessar o diretório de exportação. Por favor, verifique se o aplicativo tem permissão para acessar o armazenamento.",

@@ -66,7 +66,7 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners(); 
   }
 
-  void startRecording() async {
+  Future<void> startRecording() async {
     if (_isRecording) return;
 
     try {
@@ -106,7 +106,7 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  void stopRecording() async {
+  Future<void> stopRecording() async {
     if (!_isRecording) return;
 
     _isRecording = false;

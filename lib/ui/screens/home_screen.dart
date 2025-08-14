@@ -384,10 +384,12 @@ class _StartStopButton extends StatelessWidget {
           : AppLocalizations.of(context)!.connectionButtonStart),
       icon: Icon(
           recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
-      onPressed: () {
-        recordingBloc.isRecording
-            ? recordingBloc.stopRecording()
-            : recordingBloc.startRecording();
+      onPressed: () async {
+        if (recordingBloc.isRecording) {
+          await recordingBloc.stopRecording();
+        } else {
+          await recordingBloc.startRecording();
+        }
       },
     );
   }

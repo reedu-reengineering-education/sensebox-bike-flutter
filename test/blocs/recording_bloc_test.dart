@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import '../mocks.dart';
 
 class MockGeolocator extends Mock
     with MockPlatformInterfaceMixin
@@ -16,15 +16,19 @@ class MockGeolocator extends Mock
 
 class MockIsarService extends Mock implements IsarService {}
 
-class MockBleBloc extends Mock implements BleBloc {}
+class MockTrackBloc extends Mock with ChangeNotifier implements TrackBloc {}
 
-class MockTrackBloc extends Mock implements TrackBloc {}
+class MockOpenSenseMapBloc extends Mock
+    with ChangeNotifier
+    implements OpenSenseMapBloc {}
 
-class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {}
-
-class MockSettingsBloc extends Mock implements SettingsBloc {}
+class MockSettingsBloc extends Mock
+    with ChangeNotifier
+    implements SettingsBloc {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  
   late MockGeolocator mockGeolocator;
   late MockIsarService mockIsarService;
   late MockBleBloc mockBleBloc;
@@ -98,7 +102,7 @@ void main() {
           .thenAnswer((_) async => true);
       when(() => mockGeolocator.checkPermission())
           .thenAnswer((_) async => geo.LocationPermission.whileInUse);
-      when(() => mockTrackBloc.startNewTrack()).thenAnswer((_) async {});
+      when(() => mockTrackBloc.startNewTrack()).thenAnswer((_) async => 1);
       when(() => mockTrackBloc.currentTrack).thenReturn(null);
 
       // Act
@@ -115,7 +119,7 @@ void main() {
           .thenAnswer((_) async => true);
       when(() => mockGeolocator.checkPermission())
           .thenAnswer((_) async => geo.LocationPermission.whileInUse);
-      when(() => mockTrackBloc.startNewTrack()).thenAnswer((_) async {});
+      when(() => mockTrackBloc.startNewTrack()).thenAnswer((_) async => 1);
       when(() => mockTrackBloc.currentTrack).thenReturn(null);
 
       // Act: start recording twice
@@ -129,21 +133,28 @@ void main() {
   });
 
   group('RecordingBloc.stopRecording', () {
-    test('should stop recording', () {
-      // Setup: manually set recording state to true
-      recordingBloc.startRecording();
+    test('should stop recording', () async {
+      // Setup: manually set recording state to true by calling startRecording with proper mocks
+      when(() => mockGeolocator.isLocationServiceEnabled())
+          .thenAnswer((_) async => true);
+      when(() => mockGeolocator.checkPermission())
+          .thenAnswer((_) async => geo.LocationPermission.whileInUse);
+      when(() => mockTrackBloc.startNewTrack()).thenAnswer((_) async => 1);
+      when(() => mockTrackBloc.currentTrack).thenReturn(null);
+
+      await recordingBloc.startRecording();
 
       // Act
-      recordingBloc.stopRecording();
+      await recordingBloc.stopRecording();
 
       // Assert
       expect(recordingBloc.isRecording, isFalse);
       expect(recordingBloc.currentTrack, isNull);
     });
 
-    test('should not fail if called when not recording', () {
+    test('should not fail if called when not recording', () async {
       // Act
-      recordingBloc.stopRecording();
+      await recordingBloc.stopRecording();
 
       // Assert
       expect(recordingBloc.isRecording, isFalse);
