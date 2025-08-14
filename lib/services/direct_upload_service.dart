@@ -218,7 +218,7 @@ class DirectUploadService {
 
     _directUploadBuffer.add(uploadDataWithGps);
 
-    if (_directUploadBuffer.length >= 6) {
+    if (_directUploadBuffer.length >= 3) {
       _uploadDirectBuffer().catchError((e) {
         ErrorService.handleError(
             'Direct upload failed at ${DateTime.now()}: ${e.toString()}',
