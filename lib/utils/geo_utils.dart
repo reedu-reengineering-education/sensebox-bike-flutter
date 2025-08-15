@@ -1,22 +1,12 @@
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:turf/turf.dart';
 import 'package:turf/turf.dart' as Turf;
+import 'package:sensebox_bike/utils/distance_calculation_utils.dart';
 
 double getDistance(List<GeolocationData> geolocations,
     {Unit unit = Unit.kilometers}) {
-  double tempDistance = 0.0;
 
-  for (int i = 0; i < geolocations.length - 1; i++) {
-    GeolocationData start = geolocations[i];
-    GeolocationData end = geolocations[i + 1];
-
-    var from = Point(coordinates: Position(start.longitude, start.latitude));
-    var to = Point(coordinates: Position(end.longitude, end.latitude));
-
-    tempDistance += distance(from, to, unit);
-  }
-
-  return tempDistance;
+  return calculateDistanceWithSimplify(geolocations);
 }
 
 bool isInsidePrivacyZone(
@@ -38,3 +28,5 @@ bool isInsidePrivacyZone(
 
   return false;
 }
+
+
