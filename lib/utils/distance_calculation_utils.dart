@@ -23,58 +23,24 @@ double calculateDistanceWithSimplify(List<GeolocationData> geolocations) {
     highestQuality: false,
   );
 
-  // Convert back to GeolocationData for distance calculation
-  final simplifiedGeolocations =
-      convertSimplifiedPointsToGeolocations(simplified, geolocations);
-
-  // Calculate distance using simplified points
+  // Calculate distance using simplified points directly
   double tempDistance = 0.0;
-  for (int i = 0; i < simplifiedGeolocations.length - 1; i++) {
-    GeolocationData start = simplifiedGeolocations[i];
-    GeolocationData end = simplifiedGeolocations[i + 1];
+  for (int i = 0; i < simplified.length - 1; i++) {
+    final start = simplified[i];
+    final end = simplified[i + 1];
 
     tempDistance += _calculateHaversineDistance(
-      start.latitude, start.longitude,
-      end.latitude, end.longitude,
+      start.x,
+      start.y,
+      end.x,
+      end.y,
     );
   }
 
   return tempDistance;
 }
 
-/// Converts simplified Point objects back to GeolocationData
-/// Finds the closest original geolocation point for each simplified point
-List<GeolocationData> convertSimplifiedPointsToGeolocations(
-  List<Point<double>> simplifiedPoints,
-  List<GeolocationData> originalGeolocations,
-) {
-  List<GeolocationData> result = [];
 
-  for (final point in simplifiedPoints) {
-    // Find the closest original geolocation point
-    GeolocationData? closest;
-    double minDistance = double.infinity;
-
-    for (final geo in originalGeolocations) {
-      final distance = _calculateHaversineDistance(
-        geo.latitude,
-        geo.longitude,
-        point.x,
-        point.y,
-      );
-      if (distance < minDistance) {
-        minDistance = distance;
-        closest = geo;
-      }
-    }
-
-    if (closest != null) {
-      result.add(closest);
-    }
-  }
-
-  return result;
-}
 
 /// Calculates Haversine distance between two points in kilometers
 double _calculateHaversineDistance(
