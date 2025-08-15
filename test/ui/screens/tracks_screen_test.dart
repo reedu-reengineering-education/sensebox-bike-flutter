@@ -3,56 +3,69 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:sensebox_bike/ui/widgets/common/no_tracks_message.dart';
+import '../../mocks.dart';
 
 class MockIsarService extends Mock implements IsarService {}
 
 class MockTrackService extends Mock implements TrackService {}
 
-class MockTrackBloc extends Mock implements TrackBloc {}
+class MockTrackBloc extends TrackBloc {
+  MockTrackBloc(super.isarService);
+}
 
 void main() {
   late MockIsarService mockIsarService;
   late MockTrackService mockTrackService;
   late MockTrackBloc mockTrackBloc;
+  late MockRecordingBloc mockRecordingBloc;
 
   setUp(() {
     mockIsarService = MockIsarService();
     mockTrackService = MockTrackService();
-    mockTrackBloc = MockTrackBloc();
+    mockTrackBloc = MockTrackBloc(mockIsarService);
+    mockRecordingBloc = MockRecordingBloc();
 
     when(() => mockIsarService.trackService).thenReturn(mockTrackService);
-    when(() => mockTrackBloc.isarService).thenReturn(mockIsarService);
   });
 
   Future<void> pumpTracksScreen(
     WidgetTester tester, {
     required List<TrackData> tracks,
   }) async {
-    when(() => mockIsarService.getTracksPaginated(
+    when(() => mockTrackService.getAllTracks()).thenAnswer((_) async => tracks);
+    when(() => mockTrackService.getTracksPaginated(
           offset: any(named: 'offset'),
           limit: any(named: 'limit'),
+          skipLastTrack: any(named: 'skipLastTrack'),
         )).thenAnswer((_) async => tracks);
 
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: ChangeNotifierProvider<TrackBloc>.value(
-          value: mockTrackBloc,
+        home: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<TrackBloc>.value(
+              value: mockTrackBloc,
+            ),
+            ChangeNotifierProvider<RecordingBloc>.value(
+              value: mockRecordingBloc,
+            ),
+          ],
           child: const TracksScreen(),
         ),
       ),
     );
 
     // Allow the initial loading to complete
-    await tester.pump();
+    await tester.pumpAndSettle();
   }
 
   group('TracksScreen', () {

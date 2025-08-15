@@ -5,6 +5,7 @@ import 'package:webview_flutter_platform_interface/webview_flutter_platform_inte
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -85,6 +86,14 @@ class MockOpenSenseMapBloc extends Mock
 class MockSettingsBloc extends Mock
     with ChangeNotifier
     implements SettingsBloc {}
+
+class MockRecordingBloc extends Mock implements RecordingBloc {
+  @override
+  bool get isRecording => false;
+
+  @override
+  ValueNotifier<bool> get isRecordingNotifier => ValueNotifier<bool>(false);
+}
 
 class MockSensor extends Mock implements sensors.Sensor {}
 class FakeSensorData extends Fake implements SensorData {}

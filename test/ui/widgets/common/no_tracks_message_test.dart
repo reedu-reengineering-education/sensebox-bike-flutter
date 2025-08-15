@@ -34,8 +34,9 @@ void main() {
         ),
       );
 
-      // Check if the widget is wrapped in a Center widget
-      expect(find.byType(Center), findsOneWidget);
+      expect(find.byType(NoTracksMessage), findsOneWidget);
+      expect(find.byIcon(Icons.route_outlined), findsOneWidget);
+      expect(find.text('No tracks available'), findsOneWidget);
     });
   });
 }
