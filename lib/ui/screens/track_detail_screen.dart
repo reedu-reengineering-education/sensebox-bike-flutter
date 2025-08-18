@@ -6,18 +6,23 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
+import 'package:sensebox_bike/ui/widgets/track/upload_status_indicator.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/track/sensor_tile_list.dart';
+import 'package:sensebox_bike/theme.dart';
+import 'package:intl/intl.dart';
 
 class TrackDetailScreen extends StatefulWidget {
   final TrackData track;
@@ -30,7 +35,10 @@ class TrackDetailScreen extends StatefulWidget {
 
 class _TrackDetailScreenState extends State<TrackDetailScreen> {
   late final IsarService isarService;
+  late final OpenSenseMapBloc openSenseMapBloc;
+  late final BatchUploadService batchUploadService;
   bool _isDownloading = false;
+  bool _isUploading = false;
   late String _sensorType = 'temperature';
   List<GeolocationData> _geolocations = [];
   bool _isLoading = true;
@@ -41,7 +49,153 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   void initState() {
     super.initState();
     isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
+    openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    
+    // Initialize batch upload service
+    batchUploadService = BatchUploadService(
+      openSenseMapService: openSenseMapBloc.openSenseMapService,
+      trackService: isarService.trackService,
+      openSenseMapBloc: openSenseMapBloc,
+    );
+    
     _loadTrackData();
+  }
+
+  @override
+  void dispose() {
+    batchUploadService.dispose();
+    super.dispose();
+  }
+
+  Widget _buildUploadStatusSection() {
+    final localizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: spacing, vertical: padding),
+      padding: const EdgeInsets.all(spacing),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.cloud_upload,
+                size: iconSizeLarge,
+                color: theme.colorScheme.onSurface,
+              ),
+              const SizedBox(width: spacing / 2),
+              Text(
+                localizations.uploadProgressTitle,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              UploadStatusIndicator(
+                track: widget.track,
+                onRetryPressed: _isUploading ? null : _retryUpload,
+                showText: true,
+                isCompact: false,
+              ),
+            ],
+          ),
+          const SizedBox(height: spacing / 2),
+          _buildUploadDetails(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUploadDetails() {
+    final localizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.track.uploadAttempts > 0) ...[
+          _buildDetailRow(
+            icon: Icons.refresh,
+            label: 'Upload attempts',
+            value: widget.track.uploadAttempts.toString(),
+            theme: theme,
+          ),
+          const SizedBox(height: spacing / 4),
+        ],
+        if (widget.track.lastUploadAttempt != null) ...[
+          _buildDetailRow(
+            icon: Icons.schedule,
+            label: 'Last attempt',
+            value: DateFormat('dd.MM.yyyy HH:mm').format(widget.track.lastUploadAttempt!),
+            theme: theme,
+          ),
+          const SizedBox(height: spacing / 4),
+        ],
+        if (widget.track.uploaded) ...[
+          _buildDetailRow(
+            icon: Icons.check_circle,
+            label: 'Status',
+            value: localizations.trackStatusUploaded,
+            theme: theme,
+            valueColor: Colors.green,
+          ),
+        ] else if (widget.track.uploadAttempts > 0) ...[
+          _buildDetailRow(
+            icon: Icons.error,
+            label: 'Status',
+            value: localizations.trackStatusUploadFailed,
+            theme: theme,
+            valueColor: theme.colorScheme.error,
+          ),
+        ] else ...[
+          _buildDetailRow(
+            icon: Icons.pending,
+            label: 'Status',
+            value: localizations.trackStatusNotUploaded,
+            theme: theme,
+            valueColor: theme.colorScheme.outline,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required ThemeData theme,
+    Color? valueColor,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: iconSize,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: spacing / 4),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: spacing / 2),
+        Text(
+          value,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: valueColor ?? theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _loadTrackData() async {
@@ -165,6 +319,65 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
+  Future<void> _retryUpload() async {
+    final localizations = AppLocalizations.of(context)!;
+    
+    // Check if user is authenticated
+    if (!openSenseMapBloc.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.uploadProgressAuthenticationError),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    // Check if senseBox is selected
+    if (openSenseMapBloc.selectedSenseBox == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.errorNoSenseBoxSelected),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    try {
+      await batchUploadService.uploadTrack(widget.track, openSenseMapBloc.selectedSenseBox!);
+      
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localizations.trackUploadRetrySuccess),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Refresh the track data to show updated status
+        setState(() {});
+      }
+    } catch (e) {
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localizations.trackUploadRetryFailed),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
   Widget _buildAppBarTitle(TrackData track) {
     String errorMessage = AppLocalizations.of(context)!.trackDetailsNoData;
 
@@ -230,6 +443,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 ),
               ),
             ),
+            // Upload status section
+            _buildUploadStatusSection(),
             Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Column(children: [

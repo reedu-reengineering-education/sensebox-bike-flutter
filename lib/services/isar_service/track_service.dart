@@ -66,4 +66,44 @@ class TrackService {
           .findAll();
     }
   }
+
+  Future<List<TrackData>> getUnuploadedTracksPaginated(
+      {required int offset,
+      required int limit,
+      bool skipLastTrack = false}) async {
+    final isar = await isarProvider.getDatabase();
+    
+    // Get all unuploaded tracks
+    final allUnuploadedTracks = await isar.trackDatas
+        .filter()
+        .uploadedEqualTo(false)
+        .findAll();
+    
+    // Sort by ID in descending order (newest first)
+    allUnuploadedTracks.sort((a, b) => b.id.compareTo(a.id));
+    
+    if (skipLastTrack) {
+      // Skip the last track if it's unuploaded and we need to skip it
+      final lastTrack = await getLastTrack();
+      final tracksToConsider = allUnuploadedTracks.isNotEmpty && 
+          lastTrack != null &&
+          allUnuploadedTracks.first.id == lastTrack.id
+          ? allUnuploadedTracks.skip(1).toList()
+          : allUnuploadedTracks;
+      
+      // Apply pagination
+      return tracksToConsider.skip(offset).take(limit).toList();
+    } else {
+      // Apply pagination
+      return allUnuploadedTracks.skip(offset).take(limit).toList();
+    }
+  }
+
+  Future<TrackData?> getLastTrack() async {
+    final isar = await isarProvider.getDatabase();
+    return await isar.trackDatas
+        .where(sort: Sort.desc)
+        .anyId()
+        .findFirst();
+  }
 }

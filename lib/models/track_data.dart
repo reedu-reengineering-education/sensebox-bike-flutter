@@ -15,6 +15,11 @@ class TrackData {
   @Backlink(to: "track")
   final geolocations = IsarLinks<GeolocationData>();
 
+  // Upload tracking properties
+  bool uploaded = false;
+  int uploadAttempts = 0;
+  DateTime? lastUploadAttempt;
+
   @ignore
   Duration get duration => Duration(
       milliseconds: geolocations.isNotEmpty

@@ -25,6 +25,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   SenseBox? _selectedSenseBox;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   bool get isAuthenticated => _isAuthenticated;
+  OpenSenseMapService get openSenseMapService => _service;
   
   /// Mark authentication as failed and notify listeners
   /// This allows external services to update the authentication state

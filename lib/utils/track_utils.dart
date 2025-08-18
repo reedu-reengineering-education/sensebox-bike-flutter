@@ -92,7 +92,7 @@ Color sensorColorForValue({
   if (allowGray && min == 0.0 && max == 0.0) {
     return Colors.grey;
   }
-  
+
   if (value <= min) {
     return Colors.green;
   } else if (value >= max) {
@@ -205,7 +205,7 @@ class UploadDataPreparer {
       data['speed_${gps.timestamp.toIso8601String()}'] = {
         'sensor': speedSensorId,
         'value': gps.speed.toStringAsFixed(2),
-        'createdAt': gps.timestamp.toIso8601String(),
+        'createdAt': gps.timestamp.toUtc().toIso8601String(),
         'location': {
           'lat': gps.latitude,
           'lng': gps.longitude,
@@ -221,6 +221,10 @@ class UploadDataPreparer {
       for (final sensorEntry in sensorData.entries) {
         final String sensorTitle = sensorEntry.key;
         final List<double> aggregatedValues = sensorEntry.value;
+
+        if (sensorTitle == "gps") {
+          continue;
+        }
 
         // Handle multi-value sensors directly
         if (sensorTitle == 'surface_classification' ||
@@ -246,17 +250,20 @@ class UploadDataPreparer {
           } else if (sensorTitle == 'distance') {
             // Find the Overtaking Distance sensor
             individualSensors = senseBox.sensors!
-                .where((s) => s.title!.toLowerCase().contains('overtaking distance'))
+                .where((s) =>
+                    s.title!.toLowerCase().contains('overtaking distance'))
                 .toList();
           } else if (sensorTitle == 'overtaking') {
             // Find the Overtaking Manoeuvre sensor
             individualSensors = senseBox.sensors!
-                .where((s) => s.title!.toLowerCase().contains('overtaking manoeuvre'))
+                .where((s) =>
+                    s.title!.toLowerCase().contains('overtaking manoeuvre'))
                 .toList();
           } else if (sensorTitle == 'surface_anomaly') {
             // Find the Surface Anomaly sensor
             individualSensors = senseBox.sensors!
-                .where((s) => s.title!.toLowerCase().contains('surface anomaly'))
+                .where(
+                    (s) => s.title!.toLowerCase().contains('surface anomaly'))
                 .toList();
           }
 
@@ -269,7 +276,7 @@ class UploadDataPreparer {
                 {
               'sensor': individualSensor.id,
               'value': aggregatedValues[j].toStringAsFixed(2),
-              'createdAt': geolocation.timestamp.toIso8601String(),
+              'createdAt': geolocation.timestamp.toUtc().toIso8601String(),
               'location': {
                 'lat': geolocation.latitude,
                 'lng': geolocation.longitude,
@@ -294,7 +301,7 @@ class UploadDataPreparer {
             'value': aggregatedValues.isNotEmpty
                 ? aggregatedValues[0].toStringAsFixed(2)
                 : '0.00',
-            'createdAt': geolocation.timestamp.toIso8601String(),
+            'createdAt': geolocation.timestamp.toUtc().toIso8601String(),
             'location': {
               'lat': geolocation.latitude,
               'lng': geolocation.longitude,

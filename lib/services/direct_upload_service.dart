@@ -9,6 +9,7 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/feature_flags.dart';
 
 class UploadErrorClassifier {
   // Error patterns for permanent authentication failures
@@ -145,13 +146,25 @@ class DirectUploadService {
     
     _isEnabled = true;
     _isPermanentlyDisabled = false;
-    _isUploadDisabled = false; // Reset upload flag
     
     _resetRestartAttempts();
     _clearAllBuffersForNewRecording();
-    _startPeriodicUploadCheck();
+    
+    // Check feature flag to determine if live uploads should be disabled
+    // This must be done AFTER _resetRestartAttempts() which resets _isUploadDisabled
+    if (!FeatureFlags.enableLiveUpload) {
+      _isUploadDisabled = true; // Disable uploads when feature flag is off
+      debugPrint('[DirectUploadService] Live uploads disabled by feature flag');
+    } else {
+      _isUploadDisabled = false; // Enable uploads when feature flag is on
+    }
+    
+    // Only start periodic upload check if live uploads are enabled
+    if (FeatureFlags.enableLiveUpload) {
+      _startPeriodicUploadCheck();
+    }
 
-    debugPrint('[DirectUploadService] Service enabled, restart attempts reset');
+    debugPrint('[DirectUploadService] Service enabled, restart attempts reset, live uploads: ${FeatureFlags.enableLiveUpload}');
   }
 
   void disable() {
@@ -178,6 +191,7 @@ class DirectUploadService {
   bool get isUploadDisabled => _isUploadDisabled;
   bool get hasPreservedData => _accumulatedSensorData.isNotEmpty;
   bool get hasPendingRestartTimer => _restartTimer != null;
+  bool get isLiveUploadDisabledByFeatureFlag => !FeatureFlags.enableLiveUpload;
 
   void setUploadSuccessCallback(Function(List<GeolocationData>) callback) {
     _onUploadSuccess = callback;
@@ -205,7 +219,8 @@ class DirectUploadService {
 
     final bool shouldUpload = _accumulatedSensorData.length >= 6; 
 
-    if (shouldUpload) {
+    // Only attempt upload if live uploads are enabled via feature flag
+    if (shouldUpload && FeatureFlags.enableLiveUpload && !_isUploadDisabled) {
       _prepareAndUploadData(gpsBuffer);
     }
     
@@ -219,6 +234,11 @@ class DirectUploadService {
 
     // Don't prepare data if service is permanently disabled
     if (_isPermanentlyDisabled) {
+      return;
+    }
+
+    // Don't prepare data for upload if live uploads are disabled by feature flag
+    if (!FeatureFlags.enableLiveUpload || _isUploadDisabled) {
       return;
     }
 
@@ -330,6 +350,11 @@ class DirectUploadService {
 
     // Don't attempt uploads if service is permanently disabled
     if (_isPermanentlyDisabled) {
+      return;
+    }
+
+    // Don't attempt uploads if live uploads are disabled by feature flag
+    if (!FeatureFlags.enableLiveUpload || _isUploadDisabled) {
       return;
     }
 
@@ -583,6 +608,11 @@ class DirectUploadService {
     _uploadTimer = Timer.periodic(Duration(seconds: 30), (_) {
       // Don't run periodic checks if service is permanently disabled
       if (_isPermanentlyDisabled) {
+        return;
+      }
+      
+      // Don't run periodic checks if live uploads are disabled by feature flag
+      if (!FeatureFlags.enableLiveUpload || _isUploadDisabled) {
         return;
       }
       

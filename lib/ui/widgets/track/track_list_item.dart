@@ -7,6 +7,7 @@ import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
+import 'package:sensebox_bike/ui/widgets/track/upload_status_indicator.dart';
 
 const double kMapPreviewWidth = 140;
 const double kMapPreviewHeight = 140;
@@ -14,10 +15,12 @@ const double kMapPreviewHeight = 140;
 class TrackListItem extends StatelessWidget {
   final TrackData track;
   final Function onDismissed;
+  final Function(TrackData)? onRetryUpload;
 
   const TrackListItem({
     required this.track,
     required this.onDismissed,
+    this.onRetryUpload,
     super.key,
   });
 
@@ -101,12 +104,23 @@ class TrackListItem extends StatelessWidget {
 
   Widget _buildNoGeolocationsContent(
       BuildContext context, AppLocalizations localizations, ThemeData theme) {
-    return Center(
-      child: Text(
-        localizations.trackNoGeolocations,
-        style: theme.textTheme.bodyMedium
-            ?.copyWith(color: theme.colorScheme.error),
-      ),
+    return Row(
+      children: [
+        Expanded(
+          child: Center(
+            child: Text(
+              localizations.trackNoGeolocations,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.colorScheme.error),
+            ),
+          ),
+        ),
+        UploadStatusIndicator(
+          track: track,
+          onRetryPressed: onRetryUpload != null ? () => onRetryUpload!(track) : null,
+          isCompact: true,
+        ),
+      ],
     );
   }
 
@@ -148,39 +162,52 @@ class TrackListItem extends StatelessWidget {
                     ))),
         // Track Info Section
         const SizedBox(width: spacing),
-        SizedBox(
-          height: kMapPreviewHeight,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(date, style: theme.textTheme.titleSmall),
-                  Text(times, style: theme.textTheme.titleSmall),
-                ],
-              ),
-              Column(
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.timer_outlined, size: iconSizeLarge),
-                      const SizedBox(width: spacing / 4),
-                      Text(duration, style: theme.textTheme.headlineLarge),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Icon(Icons.straighten_outlined,
-                          size: iconSizeLarge),
-                      const SizedBox(width: spacing / 4),
-                      Text(distance, style: theme.textTheme.headlineLarge),
-                    ],
-                  ),
-                ],
-              )
-            ],
+        Expanded(
+          child: SizedBox(
+            height: kMapPreviewHeight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(date, style: theme.textTheme.titleSmall),
+                        Text(times, style: theme.textTheme.titleSmall),
+                      ],
+                    ),
+                    UploadStatusIndicator(
+                      track: track,
+                      onRetryPressed: onRetryUpload != null ? () => onRetryUpload!(track) : null,
+                      isCompact: true,
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.timer_outlined, size: iconSizeLarge),
+                        const SizedBox(width: spacing / 4),
+                        Text(duration, style: theme.textTheme.headlineLarge),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Icon(Icons.straighten_outlined,
+                            size: iconSizeLarge),
+                        const SizedBox(width: spacing / 4),
+                        Text(distance, style: theme.textTheme.headlineLarge),
+                      ],
+                    ),
+                  ],
+                )
+              ],
+            ),
           ),
         )
       ],
