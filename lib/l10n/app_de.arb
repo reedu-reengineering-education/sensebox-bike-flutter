@@ -191,5 +191,43 @@
     "tracksStatisticsRidesInfo": "Abgeschlossene Fahrten",
     "tracksStatisticsDistanceInfo": "zurückgelegte Strecke",
     "tracksStatisticsTimeInfo": "Fahrzeit",
-    "trackStatistics": "Track-Statistiken"
+    "trackStatistics": "Track-Statistiken",
+    "uploadProgressTitle": "Upload-Fortschritt",
+    "uploadProgressPreparing": "Upload wird vorbereitet...",
+    "uploadProgressUploading": "Track-Daten werden hochgeladen...",
+    "uploadProgressRetrying": "Upload wird wiederholt...",
+    "uploadProgressCompleted": "Upload erfolgreich abgeschlossen",
+    "uploadProgressFailed": "Upload fehlgeschlagen",
+    "uploadProgressAuthenticationFailed": "Authentifizierung erforderlich",
+    "uploadProgressChunks": "{completed} von {total} Blöcken hochgeladen",
+    "@uploadProgressChunks": {
+        "placeholders": {
+            "completed": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressPercentage": "{percentage}% abgeschlossen",
+    "@uploadProgressPercentage": {
+        "placeholders": {
+            "percentage": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressSuccess": "Track erfolgreich hochgeladen!",
+    "uploadProgressAuthenticationError": "Bitte melden Sie sich erneut an, um das Hochladen von Daten fortzusetzen.",
+    "uploadProgressNetworkError": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+    "uploadProgressGenericError": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "trackStatusUploaded": "Hochgeladen",
+    "trackStatusNotUploaded": "Nicht hochgeladen",
+    "trackStatusUploadFailed": "Upload fehlgeschlagen",
+    "trackStatusRetryUpload": "Upload wiederholen",
+    "trackFilterAll": "Alle Tracks",
+    "trackFilterUnuploaded": "Nur nicht hochgeladene",
+    "trackUploadRetrySuccess": "Track erfolgreich hochgeladen!",
+    "trackUploadRetryFailed": "Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut."
 }

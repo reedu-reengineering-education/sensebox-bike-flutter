@@ -63,7 +63,8 @@ import 'app_localizations_pt.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -71,7 +72,8 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -83,7 +85,8 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
     delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
@@ -1002,9 +1005,136 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Track Statistics'**
   String get trackStatistics;
+
+  /// No description provided for @uploadProgressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Progress'**
+  String get uploadProgressTitle;
+
+  /// No description provided for @uploadProgressPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing upload...'**
+  String get uploadProgressPreparing;
+
+  /// No description provided for @uploadProgressUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading track data...'**
+  String get uploadProgressUploading;
+
+  /// No description provided for @uploadProgressRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying upload...'**
+  String get uploadProgressRetrying;
+
+  /// No description provided for @uploadProgressCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload completed successfully'**
+  String get uploadProgressCompleted;
+
+  /// No description provided for @uploadProgressFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed'**
+  String get uploadProgressFailed;
+
+  /// No description provided for @uploadProgressAuthenticationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication required'**
+  String get uploadProgressAuthenticationFailed;
+
+  /// No description provided for @uploadProgressChunks.
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {total} chunks uploaded'**
+  String uploadProgressChunks(int completed, int total);
+
+  /// No description provided for @uploadProgressPercentage.
+  ///
+  /// In en, this message translates to:
+  /// **'{percentage}% complete'**
+  String uploadProgressPercentage(int percentage);
+
+  /// No description provided for @uploadProgressSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Track uploaded successfully!'**
+  String get uploadProgressSuccess;
+
+  /// No description provided for @uploadProgressAuthenticationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in again to continue uploading data.'**
+  String get uploadProgressAuthenticationError;
+
+  /// No description provided for @uploadProgressNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network connection failed. Please check your internet connection and try again.'**
+  String get uploadProgressNetworkError;
+
+  /// No description provided for @uploadProgressGenericError.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed. Please try again.'**
+  String get uploadProgressGenericError;
+
+  /// No description provided for @trackStatusUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded'**
+  String get trackStatusUploaded;
+
+  /// No description provided for @trackStatusNotUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not uploaded'**
+  String get trackStatusNotUploaded;
+
+  /// No description provided for @trackStatusUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed'**
+  String get trackStatusUploadFailed;
+
+  /// No description provided for @trackStatusRetryUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry upload'**
+  String get trackStatusRetryUpload;
+
+  /// No description provided for @trackFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All tracks'**
+  String get trackFilterAll;
+
+  /// No description provided for @trackFilterUnuploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Unuploaded only'**
+  String get trackFilterUnuploaded;
+
+  /// No description provided for @trackUploadRetrySuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Track uploaded successfully!'**
+  String get trackUploadRetrySuccess;
+
+  /// No description provided for @trackUploadRetryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload retry failed. Please try again.'**
+  String get trackUploadRetryFailed;
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -1013,26 +1143,27 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['de', 'en', 'pt'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['de', 'en', 'pt'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'de': return AppLocalizationsDe();
-    case 'en': return AppLocalizationsEn();
-    case 'pt': return AppLocalizationsPt();
+    case 'de':
+      return AppLocalizationsDe();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'pt':
+      return AppLocalizationsPt();
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

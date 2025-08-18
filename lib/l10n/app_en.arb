@@ -191,5 +191,43 @@
     "tracksStatisticsRidesInfo": "rides completed",
     "tracksStatisticsDistanceInfo": "distance traveled",
     "tracksStatisticsTimeInfo": "time spent on the road",
-    "trackStatistics": "Track Statistics"
+    "trackStatistics": "Track Statistics",
+    "uploadProgressTitle": "Upload Progress",
+    "uploadProgressPreparing": "Preparing upload...",
+    "uploadProgressUploading": "Uploading track data...",
+    "uploadProgressRetrying": "Retrying upload...",
+    "uploadProgressCompleted": "Upload completed successfully",
+    "uploadProgressFailed": "Upload failed",
+    "uploadProgressAuthenticationFailed": "Authentication required",
+    "uploadProgressChunks": "{completed} of {total} chunks uploaded",
+    "@uploadProgressChunks": {
+        "placeholders": {
+            "completed": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressPercentage": "{percentage}% complete",
+    "@uploadProgressPercentage": {
+        "placeholders": {
+            "percentage": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressSuccess": "Track uploaded successfully!",
+    "uploadProgressAuthenticationError": "Please log in again to continue uploading data.",
+    "uploadProgressNetworkError": "Network connection failed. Please check your internet connection and try again.",
+    "uploadProgressGenericError": "Upload failed. Please try again.",
+    "trackStatusUploaded": "Uploaded",
+    "trackStatusNotUploaded": "Not uploaded",
+    "trackStatusUploadFailed": "Upload failed",
+    "trackStatusRetryUpload": "Retry upload",
+    "trackFilterAll": "All tracks",
+    "trackFilterUnuploaded": "Unuploaded only",
+    "trackUploadRetrySuccess": "Track uploaded successfully!",
+    "trackUploadRetryFailed": "Upload retry failed. Please try again."
 }

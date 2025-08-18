@@ -191,5 +191,43 @@
     "tracksStatisticsRidesInfo": "viagens concluídas",
     "tracksStatisticsDistanceInfo": "distância percorrida",
     "tracksStatisticsTimeInfo": "tempo gasto na estrada",
-    "trackStatistics": "Estatísticas do Trajeto"
+    "trackStatistics": "Estatísticas do Trajeto",
+    "uploadProgressTitle": "Progresso do Upload",
+    "uploadProgressPreparing": "Preparando upload...",
+    "uploadProgressUploading": "Enviando dados do trajeto...",
+    "uploadProgressRetrying": "Tentando upload novamente...",
+    "uploadProgressCompleted": "Upload concluído com sucesso",
+    "uploadProgressFailed": "Upload falhou",
+    "uploadProgressAuthenticationFailed": "Autenticação necessária",
+    "uploadProgressChunks": "{completed} de {total} blocos enviados",
+    "@uploadProgressChunks": {
+        "placeholders": {
+            "completed": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressPercentage": "{percentage}% concluído",
+    "@uploadProgressPercentage": {
+        "placeholders": {
+            "percentage": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressSuccess": "Trajeto enviado com sucesso!",
+    "uploadProgressAuthenticationError": "Por favor, faça login novamente para continuar enviando dados.",
+    "uploadProgressNetworkError": "Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.",
+    "uploadProgressGenericError": "Upload falhou. Tente novamente.",
+    "trackStatusUploaded": "Enviado",
+    "trackStatusNotUploaded": "Não enviado",
+    "trackStatusUploadFailed": "Envio falhou",
+    "trackStatusRetryUpload": "Tentar envio novamente",
+    "trackFilterAll": "Todos os trajetos",
+    "trackFilterUnuploaded": "Apenas não enviados",
+    "trackUploadRetrySuccess": "Trajeto enviado com sucesso!",
+    "trackUploadRetryFailed": "Tentativa de envio falhou. Tente novamente."
 }
