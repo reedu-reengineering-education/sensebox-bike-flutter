@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
-import 'package:mocktail/mocktail.dart';
+import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart' as mocktail;
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -94,11 +95,11 @@ class MockSettingsBloc extends Mock
     implements SettingsBloc {}
 
 class MockSensor extends Mock implements sensors.Sensor {}
-class FakeSensorData extends Fake implements SensorData {}
+class FakeSensorData extends mocktail.Fake implements SensorData {}
 
 // Mocks for webview_flutter
 
-class FakeWebViewPlatform extends WebViewPlatform {
+class FakeWebViewPlatform extends mocktail.Fake implements WebViewPlatform {
   @override
   PlatformWebViewController createPlatformWebViewController(
     PlatformWebViewControllerCreationParams params,
@@ -128,8 +129,8 @@ class FakeWebViewPlatform extends WebViewPlatform {
   }
 }
 
-class FakeWebViewController extends PlatformWebViewController {
-  FakeWebViewController(super.params) : super.implementation();
+class FakeWebViewController extends mocktail.Fake implements PlatformWebViewController {
+  FakeWebViewController(PlatformWebViewControllerCreationParams params);
 
   @override
   Future<void> setJavaScriptMode(JavaScriptMode javaScriptMode) async {}
@@ -155,12 +156,12 @@ class FakeWebViewController extends PlatformWebViewController {
   }
 }
 
-class FakeCookieManager extends PlatformWebViewCookieManager {
-  FakeCookieManager(super.params) : super.implementation();
+class FakeCookieManager extends mocktail.Fake implements PlatformWebViewCookieManager {
+  FakeCookieManager(PlatformWebViewCookieManagerCreationParams params);
 }
 
-class FakeWebViewWidget extends PlatformWebViewWidget {
-  FakeWebViewWidget(super.params) : super.implementation();
+class FakeWebViewWidget extends mocktail.Fake implements PlatformWebViewWidget {
+  FakeWebViewWidget(PlatformWebViewWidgetCreationParams params);
 
   @override
   Widget build(BuildContext context) {
@@ -168,8 +169,8 @@ class FakeWebViewWidget extends PlatformWebViewWidget {
   }
 }
 
-class FakeNavigationDelegate extends PlatformNavigationDelegate {
-  FakeNavigationDelegate(super.params) : super.implementation();
+class FakeNavigationDelegate extends mocktail.Fake implements PlatformNavigationDelegate {
+  FakeNavigationDelegate(PlatformNavigationDelegateCreationParams params);
 
   @override
   Future<void> setOnNavigationRequest(

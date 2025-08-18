@@ -8,6 +8,7 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/feature_flags.dart';
 
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 class MockSettingsBloc extends Mock implements SettingsBloc {}
@@ -131,6 +132,10 @@ void main() {
             ..id = 'speed-sensor-id'
             ..title = 'Speed',
         ];
+
+      // Setup default mock behavior
+      when(() => mockOpenSenseMapBloc.markAuthenticationFailed())
+          .thenAnswer((_) async {});
 
       directUploadService = DirectUploadService(
         openSenseMapService: mockOpenSenseMapService,
@@ -855,6 +860,210 @@ void main() {
 
           directUploadService.dispose();
         }
+      });
+    });
+
+    test('disables live uploads when feature flag is false', () async {
+      // Test that data is preserved locally when feature flag disables live uploads
+      FeatureFlags.enableLiveUpload = false;
+      
+      directUploadService.enable();
+      expect(directUploadService.isEnabled, true);
+      expect(directUploadService.isUploadDisabled, true);
+
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [22.5]
+        },
+      };
+
+      // Add data - should be stored locally even when live uploads are disabled
+      final result = directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      
+      expect(result, true);
+      expect(directUploadService.hasPreservedData, true);
+
+      // Verify that no live upload was attempted
+      verifyNever(() => mockOpenSenseMapService.uploadData(any(), any()));
+    });
+
+    // Feature Flag Tests
+    group('Feature Flag Tests', () {
+      setUp(() {
+        // Reset feature flag to default state before each test
+        FeatureFlags.enableLiveUpload = false;
+      });
+
+      test('enables live uploads when feature flag is true', () async {
+        // Enable feature flag
+        FeatureFlags.enableLiveUpload = true;
+        
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+        expect(directUploadService.isLiveUploadDisabledByFeatureFlag, false);
+        expect(directUploadService.isUploadDisabled, false);
+
+        // Setup mock to be authenticated and accepting requests
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(true);
+        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+            .thenAnswer((_) async {});
+
+        // Create GPS points for the buffer
+        final gpsPoints = <GeolocationData>[];
+        final groupedData = <GeolocationData, Map<String, List<double>>>{};
+        
+        for (int i = 0; i < 6; i++) {
+          final gpsPoint = GeolocationData()
+            ..latitude = 10.0 + i
+            ..longitude = 20.0 + i
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, i, 0);
+          
+          gpsPoints.add(gpsPoint);
+          groupedData[gpsPoint] = {
+            'temperature': [22.5 + i],
+          };
+        }
+        
+        // Add all data at once to trigger upload threshold (6 GPS points)
+        directUploadService.addGroupedDataForUpload(groupedData, gpsPoints);
+
+        // Wait a bit for async operations
+        await Future.delayed(Duration(milliseconds: 100));
+
+        // Verify that upload was attempted when feature flag is enabled
+        verify(() => mockOpenSenseMapService.uploadData(any(), any())).called(greaterThan(0));
+      });
+
+      test('preserves data preparation logic when feature flag is false', () async {
+        // Ensure feature flag is false
+        FeatureFlags.enableLiveUpload = false;
+        
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+        expect(directUploadService.isUploadDisabled, true);
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        // Add data - should be accepted for local storage
+        final result = directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        expect(result, true);
+        expect(directUploadService.hasPreservedData, true);
+
+        // Data should be available for batch upload later via uploadRemainingBufferedData
+        // This tests that data preparation logic is preserved
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+            .thenAnswer((_) async {});
+
+        await directUploadService.uploadRemainingBufferedData();
+        
+        // Verify that the data was uploaded via the batch method
+        verify(() => mockOpenSenseMapService.uploadData(any(), any())).called(1);
+      });
+
+      test('feature flag change requires service restart to take effect', () async {
+        // Start with feature flag disabled
+        FeatureFlags.enableLiveUpload = false;
+        directUploadService.enable();
+        expect(directUploadService.isUploadDisabled, true);
+
+        // Change feature flag but don't restart service
+        FeatureFlags.enableLiveUpload = true;
+        // Service should still have uploads disabled until restarted
+        expect(directUploadService.isUploadDisabled, true);
+
+        // Restart service
+        directUploadService.enable();
+        // Now uploads should be enabled
+        expect(directUploadService.isUploadDisabled, false);
+      });
+
+      tearDown(() {
+        // Reset feature flag to default after each test
+        FeatureFlags.enableLiveUpload = false;
+      });
+
+      test('preserves data preparation logic when feature flag is false', () async {
+        // Ensure feature flag is false
+        FeatureFlags.enableLiveUpload = false;
+        
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+        expect(directUploadService.isUploadDisabled, true);
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        // Add data - should be accepted for local storage
+        final result = directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        expect(result, true);
+        expect(directUploadService.hasPreservedData, true);
+
+        // Data should be available for batch upload later via uploadRemainingBufferedData
+        // This tests that data preparation logic is preserved
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+            .thenAnswer((_) async {});
+
+        await directUploadService.uploadRemainingBufferedData();
+        
+        // Verify that the data was uploaded via the batch method
+        verify(() => mockOpenSenseMapService.uploadData(any(), any())).called(1);
+      });
+
+      test('feature flag change requires service restart to take effect', () async {
+        // Start with feature flag disabled
+        FeatureFlags.enableLiveUpload = false;
+        directUploadService.enable();
+        expect(directUploadService.isUploadDisabled, true);
+
+        // Change feature flag but don't restart service
+        FeatureFlags.enableLiveUpload = true;
+        // Service should still have uploads disabled until restarted
+        expect(directUploadService.isUploadDisabled, true);
+
+        // Restart service
+        directUploadService.enable();
+        // Now uploads should be enabled
+        expect(directUploadService.isUploadDisabled, false);
+      });
+
+      tearDown(() {
+        // Reset feature flag to default after each test
+        FeatureFlags.enableLiveUpload = false;
       });
     });
   });

@@ -710,5 +710,57 @@ void main() {
       expect(tempEntry['location']['lat'], 10.123456);
       expect(tempEntry['location']['lng'], 20.654321);
     });
+
+    test('prepareDataFromGroupedData formats timestamps as UTC', () {
+      final tempSensor = Sensor()
+        ..id = 'tempSensorId'
+        ..title = 'Temperature'
+        ..unit = '°C'
+        ..sensorType = 'temperature';
+
+      final senseBox = SenseBox(
+        sId: 'testSenseBoxId',
+        sensors: [
+          Sensor(id: 'speedSensorId', title: 'Speed', unit: 'km/h'),
+          tempSensor,
+        ],
+      );
+
+      final preparer = UploadDataPreparer(senseBox: senseBox);
+
+      // Create a local timestamp (not UTC)
+      final localTime = DateTime(2025, 8, 18, 10, 30, 45, 123); // Local time
+      final geolocation = GeolocationData()
+        ..latitude = 52.5200
+        ..longitude = 13.4050
+        ..speed = 15.0
+        ..timestamp = localTime;
+
+      final groupedData = {
+        geolocation: {
+          'temperature': [22.5],
+        },
+      };
+
+      final gpsBuffer = [geolocation];
+
+      final result = preparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
+
+      // Check that timestamps are formatted as UTC (should end with 'Z')
+      final tempKey = result.keys.firstWhere((k) => k.startsWith('tempSensorId'));
+      final tempEntry = result[tempKey] as Map<String, dynamic>;
+      final createdAt = tempEntry['createdAt'] as String;
+      
+      expect(createdAt, endsWith('Z'), reason: 'Timestamp should be in UTC format ending with Z');
+      expect(createdAt, contains('T'), reason: 'Timestamp should be in ISO8601 format');
+      
+      // Check speed timestamp too
+      final speedKey = result.keys.firstWhere((k) => k.startsWith('speed_'));
+      final speedEntry = result[speedKey] as Map<String, dynamic>;
+      final speedCreatedAt = speedEntry['createdAt'] as String;
+      
+      expect(speedCreatedAt, endsWith('Z'), reason: 'Speed timestamp should be in UTC format ending with Z');
+      expect(speedCreatedAt, contains('T'), reason: 'Speed timestamp should be in ISO8601 format');
+    });
   });
 }
