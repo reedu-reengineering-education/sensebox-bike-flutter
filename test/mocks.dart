@@ -1,7 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mocktail/mocktail.dart' as mocktail;
+import 'package:mocktail/mocktail.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -95,7 +94,7 @@ class MockSettingsBloc extends Mock
     implements SettingsBloc {}
 
 class MockSensor extends Mock implements sensors.Sensor {}
-class FakeSensorData extends mocktail.Fake implements SensorData {}
+class FakeSensorData extends Fake implements SensorData {}
 
 // Mocks for webview_flutter
 

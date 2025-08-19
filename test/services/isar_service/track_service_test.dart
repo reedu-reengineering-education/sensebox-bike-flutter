@@ -181,5 +181,127 @@ group('TrackService', () {
         expect(tracks.isEmpty, isTrue);
       });
     });
+
+    group('getUnuploadedTracksPaginated', () {
+      test('retrieves only unuploaded tracks with pagination', () async {
+        // Create tracks with different upload statuses
+        final uploadedTrack = TrackData()..uploaded = true;
+        final unuploadedTrack1 = TrackData()..uploaded = false;
+        final unuploadedTrack2 = TrackData()..uploaded = false;
+        final unuploadedTrack3 = TrackData()..uploaded = false;
+
+        await isar.writeTxn(() async {
+          await isar.trackDatas.putAll([
+            uploadedTrack,
+            unuploadedTrack1,
+            unuploadedTrack2,
+            unuploadedTrack3
+          ]);
+        });
+
+        final tracks = await trackService.getUnuploadedTracksPaginated(
+            offset: 0, limit: 2, skipLastTrack: false);
+
+        expect(tracks.length, equals(2));
+        // Should only return unuploaded tracks
+        expect(tracks.every((track) => !track.uploaded), isTrue);
+        // Should return newest tracks first (highest IDs)
+        expect(tracks[0].id, greaterThan(tracks[1].id));
+      });
+
+      test('retrieves unuploaded tracks with pagination and skips last track',
+          () async {
+        // Create tracks with different upload statuses
+        final uploadedTrack = TrackData()..uploaded = true;
+        final unuploadedTrack1 = TrackData()..uploaded = false;
+        final unuploadedTrack2 = TrackData()..uploaded = false;
+        final unuploadedTrack3 = TrackData()..uploaded = false;
+
+        await isar.writeTxn(() async {
+          await isar.trackDatas.putAll([
+            uploadedTrack,
+            unuploadedTrack1,
+            unuploadedTrack2,
+            unuploadedTrack3
+          ]);
+        });
+
+        final tracks = await trackService.getUnuploadedTracksPaginated(
+            offset: 0, limit: 2, skipLastTrack: true);
+
+        expect(tracks.length, equals(2));
+        // Should only return unuploaded tracks
+        expect(tracks.every((track) => !track.uploaded), isTrue);
+        // Should skip the newest unuploaded track
+        expect(tracks[0].id, lessThan(unuploadedTrack3.id));
+      });
+
+      test('handles empty result when no unuploaded tracks exist', () async {
+        // Create only uploaded tracks
+        final uploadedTrack1 = TrackData()..uploaded = true;
+        final uploadedTrack2 = TrackData()..uploaded = true;
+
+        await isar.writeTxn(() async {
+          await isar.trackDatas.putAll([uploadedTrack1, uploadedTrack2]);
+        });
+
+        final tracks = await trackService.getUnuploadedTracksPaginated(
+            offset: 0, limit: 10, skipLastTrack: false);
+
+        expect(tracks.isEmpty, isTrue);
+      });
+
+      test('handles pagination correctly for unuploaded tracks', () async {
+        // Create multiple unuploaded tracks
+        final unuploadedTracks =
+            List.generate(5, (index) => TrackData()..uploaded = false);
+
+        await isar.writeTxn(() async {
+          await isar.trackDatas.putAll(unuploadedTracks);
+        });
+
+        // First page
+        final firstPage = await trackService.getUnuploadedTracksPaginated(
+            offset: 0, limit: 2, skipLastTrack: false);
+        expect(firstPage.length, equals(2));
+
+        // Second page
+        final secondPage = await trackService.getUnuploadedTracksPaginated(
+            offset: 2, limit: 2, skipLastTrack: false);
+        expect(secondPage.length, equals(2));
+
+        // Third page (should have only 1 track left)
+        final thirdPage = await trackService.getUnuploadedTracksPaginated(
+            offset: 4, limit: 2, skipLastTrack: false);
+        expect(thirdPage.length, equals(1));
+
+        // Fourth page (should be empty)
+        final fourthPage = await trackService.getUnuploadedTracksPaginated(
+            offset: 6, limit: 2, skipLastTrack: false);
+        expect(fourthPage.isEmpty, isTrue);
+      });
+
+      test('maintains correct sorting order for unuploaded tracks', () async {
+        // Create unuploaded tracks with specific IDs
+        final unuploadedTrack1 = TrackData()..uploaded = false;
+        final unuploadedTrack2 = TrackData()..uploaded = false;
+        final unuploadedTrack3 = TrackData()..uploaded = false;
+
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(unuploadedTrack1);
+          await isar.trackDatas.put(unuploadedTrack2);
+          await isar.trackDatas.put(unuploadedTrack3);
+        });
+
+        final tracks = await trackService.getUnuploadedTracksPaginated(
+            offset: 0, limit: 3, skipLastTrack: false);
+
+        expect(tracks.length, equals(3));
+        // Should be sorted by ID in descending order (newest first)
+        expect(tracks[0].id, equals(unuploadedTrack3.id));
+        expect(tracks[1].id, equals(unuploadedTrack2.id));
+        expect(tracks[2].id, equals(unuploadedTrack1.id));
+      });
+    });
 });
 }

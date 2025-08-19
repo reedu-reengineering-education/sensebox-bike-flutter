@@ -73,29 +73,48 @@ class TrackService {
       bool skipLastTrack = false}) async {
     final isar = await isarProvider.getDatabase();
     
-    // Get all unuploaded tracks
-    final allUnuploadedTracks = await isar.trackDatas
-        .filter()
-        .uploadedEqualTo(false)
-        .findAll();
-    
-    // Sort by ID in descending order (newest first)
-    allUnuploadedTracks.sort((a, b) => b.id.compareTo(a.id));
-    
     if (skipLastTrack) {
-      // Skip the last track if it's unuploaded and we need to skip it
+      // Get the last track to check if it's unuploaded
       final lastTrack = await getLastTrack();
-      final tracksToConsider = allUnuploadedTracks.isNotEmpty && 
-          lastTrack != null &&
-          allUnuploadedTracks.first.id == lastTrack.id
-          ? allUnuploadedTracks.skip(1).toList()
-          : allUnuploadedTracks;
       
-      // Apply pagination
-      return tracksToConsider.skip(offset).take(limit).toList();
+      if (lastTrack != null && !lastTrack.uploaded) {
+        // If the last track is unuploaded, we need to skip it
+        // Get one extra track to account for skipping the last one
+        final tracks = await isar.trackDatas
+            .filter()
+            .uploadedEqualTo(false)
+            .offset(offset)
+            .limit(limit + 1)
+            .findAll();
+        
+        // Sort by ID in descending order (newest first) and skip the last track
+        tracks.sort((a, b) => b.id.compareTo(a.id));
+        return tracks.skip(1).toList();
+      } else {
+        // Last track is uploaded or doesn't exist, no need to skip
+        final tracks = await isar.trackDatas
+            .filter()
+            .uploadedEqualTo(false)
+            .offset(offset)
+            .limit(limit)
+            .findAll();
+        
+        // Sort by ID in descending order (newest first)
+        tracks.sort((a, b) => b.id.compareTo(a.id));
+        return tracks;
+      }
     } else {
-      // Apply pagination
-      return allUnuploadedTracks.skip(offset).take(limit).toList();
+      // No need to skip last track
+      final tracks = await isar.trackDatas
+          .filter()
+          .uploadedEqualTo(false)
+          .offset(offset)
+          .limit(limit)
+          .findAll();
+      
+      // Sort by ID in descending order (newest first)
+      tracks.sort((a, b) => b.id.compareTo(a.id));
+      return tracks;
     }
   }
 
