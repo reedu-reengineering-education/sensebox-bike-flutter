@@ -10,6 +10,7 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
+import 'package:sensebox_bike/services/permission_service.dart';
 
 class RecordingBloc with ChangeNotifier {
   final BleBloc bleBloc;
@@ -65,8 +66,18 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners(); 
   }
 
-  void startRecording() async {
+  Future<void> startRecording() async {
     if (_isRecording) return;
+
+    try {
+      // Check location permissions before starting recording
+      await PermissionService.ensureLocationPermissionsGranted();
+    } catch (e) {
+      // Don't start recording if location permissions are not granted
+      ErrorService.handleError(e, StackTrace.current);
+      notifyListeners();
+      return;
+    }
 
     _isRecording = true;
     _isRecordingNotifier.value = true; 
@@ -97,7 +108,7 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  void stopRecording() async {
+  Future<void> stopRecording() async {
     if (!_isRecording) return;
 
     _isRecording = false;
