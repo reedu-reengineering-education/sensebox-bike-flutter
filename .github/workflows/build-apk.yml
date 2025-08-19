@@ -44,16 +44,19 @@ jobs:
       - name: Decode keystore file
         if: env.KEYSTORE_PASSWORD != ''
         run: |
-          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > android/app/release.keystore
+          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > ${{ github.workspace }}/android/app/release.keystore
+
+      - name: Create key.properties file
+        run: |
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > ${{ github.workspace }}/android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> ${{ github.workspace }}/android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> ${{ github.workspace }}/android/key.properties
+          echo "storeFile=${{ github.workspace }}/android/app/release.keystore" >> ${{ github.workspace }}/android/key.properties
 
       - name: Create .env file
         run: |
           echo "MAPBOX_ACCESS_TOKEN=${MAPBOX_ACCESS_TOKEN}" > .env
           echo "SENTRY_DSN=${SENTRY_DSN}" >> .env
-          echo "KEYSTORE_FILE=release.keystore" >> .env
-          echo "KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD}" >> .env
-          echo "KEY_ALIAS=${KEY_ALIAS}" >> .env
-          echo "KEY_PASSWORD=${KEY_PASSWORD}" >> .env
 
       - name: Build APK
         run: flutter build apk --release --dart-define-from-file=.env
