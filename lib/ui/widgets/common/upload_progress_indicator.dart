@@ -18,20 +18,12 @@ class UploadProgressIndicator extends StatelessWidget {
   /// Current upload progress state
   final UploadProgress progress;
   
-  /// Callback when user taps retry button
-  final VoidCallback? onRetry;
-  
-  /// Callback when user taps cancel button (during upload)
-  final VoidCallback? onCancel;
-  
   /// Whether to show the progress indicator in a compact form
   final bool compact;
 
   const UploadProgressIndicator({
     super.key,
     required this.progress,
-    this.onRetry,
-    this.onCancel,
     this.compact = false,
   });
 
@@ -88,15 +80,6 @@ class UploadProgressIndicator extends StatelessWidget {
               ],
             ),
           ),
-          if (progress.hasFailed && progress.canRetry && onRetry != null) ...[
-            const SizedBox(width: spacing),
-            IconButton(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              iconSize: iconSizeLarge,
-              tooltip: localizations.generalRetry,
-            ),
-          ],
         ],
       ),
     );
@@ -125,13 +108,6 @@ class UploadProgressIndicator extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (progress.isInProgress && onCancel != null)
-                  IconButton(
-                    onPressed: onCancel,
-                    icon: const Icon(Icons.close),
-                    iconSize: iconSizeLarge,
-                    tooltip: localizations.generalCancel,
-                  ),
               ],
             ),
             
@@ -199,26 +175,6 @@ class UploadProgressIndicator extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-            ],
-            
-            // Action buttons
-            if (progress.hasFailed) ...[
-              const SizedBox(height: spacing),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (progress.hasFailed && progress.canRetry && onRetry != null)
-                    FilledButton.icon(
-                      onPressed: onRetry,
-                      icon: const Icon(Icons.refresh),
-                      label: Text(localizations.generalRetry),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                      ),
-                    ),
-                ],
               ),
             ],
           ],

@@ -135,9 +135,6 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
       contentPadding: EdgeInsets.zero,
       content: UploadProgressIndicator(
         progress: progress,
-        onRetry: progress.hasFailed && progress.canRetry 
-            ? _handleRetry 
-            : null,
         compact: false,
       ),
       actions: _buildActions(context, progress),
