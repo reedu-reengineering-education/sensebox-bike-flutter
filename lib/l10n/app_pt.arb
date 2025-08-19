@@ -103,6 +103,18 @@
     "settingsGeneral": "Geral",
     "settingsOther": "Outros",
     "settingsVibrateOnDisconnect": "Vibrar ao desconectar",
+    "settingsUploadMode": "Modo de Upload",
+    "settingsUploadModeDirect": "Upload Direto (Beta)",
+    "settingsUploadModePostRide": "Upload Pós-Corrida",
+    "settingsUploadModeDescription": "Escolha quando enviar seus dados durante a gravação",
+    "settingsUploadModeCurrent": "Atual: {mode}",
+    "@settingsUploadModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
     "settingsAbout": "Sobre",
     "settingsPrivacyPolicy": "Política de Privacidade",
     "settingsVersion": "Versão: {versionNumber}",

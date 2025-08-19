@@ -12,7 +12,6 @@ import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
-import 'package:sensebox_bike/feature_flags.dart';
 
 class RecordingBloc with ChangeNotifier {
   final BleBloc bleBloc;
@@ -101,19 +100,22 @@ class RecordingBloc with ChangeNotifier {
         return;
       }
 
-      // Create DirectUploadService (it will respect the feature flag internally)
-      _directUploadService = DirectUploadService(
+      // Create upload services based on user's upload mode preference
+      if (settingsBloc.directUploadMode) {
+        // Direct upload mode: create DirectUploadService for real-time uploads
+        _directUploadService = DirectUploadService(
+            openSenseMapService: OpenSenseMapService(),
+            settingsBloc: settingsBloc,
+            senseBox: _selectedSenseBox!,
+            openSenseMapBloc: openSenseMapBloc);
+      } else {
+        // Post-ride upload mode: only create BatchUploadService
+        _batchUploadService = BatchUploadService(
           openSenseMapService: OpenSenseMapService(),
-          settingsBloc: settingsBloc,
-          senseBox: _selectedSenseBox!,
-          openSenseMapBloc: openSenseMapBloc);
-
-      // Create BatchUploadService for when recording stops
-      _batchUploadService = BatchUploadService(
-        openSenseMapService: OpenSenseMapService(),
-        trackService: isarService.trackService,
-        openSenseMapBloc: openSenseMapBloc,
-      );
+          trackService: isarService.trackService,
+          openSenseMapBloc: openSenseMapBloc,
+        );
+      }
 
       _onRecordingStart?.call();
 
@@ -135,16 +137,15 @@ class RecordingBloc with ChangeNotifier {
     final trackToUpload = _currentTrack;
     final senseBoxForUpload = _selectedSenseBox;
 
-    // Clean up DirectUploadService
+    // Clean up services and handle post-ride upload if needed
     _directUploadService?.dispose();
     _directUploadService = null;
     _currentTrack = null;
 
-    // Trigger batch upload if feature flag is disabled (batch-only mode)
-    if (!FeatureFlags.enableLiveUpload && 
+    // Trigger batch upload if in post-ride upload mode
+    if (_batchUploadService != null && 
         trackToUpload != null && 
         senseBoxForUpload != null && 
-        _batchUploadService != null &&
         _context != null) {
       
       // Show upload progress modal

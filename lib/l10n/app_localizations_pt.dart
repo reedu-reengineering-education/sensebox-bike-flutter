@@ -233,6 +233,23 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsVibrateOnDisconnect => 'Vibrar ao desconectar';
 
   @override
+  String get settingsUploadMode => 'Modo de Upload';
+
+  @override
+  String get settingsUploadModeDirect => 'Upload Direto (Beta)';
+
+  @override
+  String get settingsUploadModePostRide => 'Upload Pós-Corrida';
+
+  @override
+  String get settingsUploadModeDescription => 'Escolha quando enviar seus dados durante a gravação';
+
+  @override
+  String settingsUploadModeCurrent(String mode) {
+    return 'Atual: $mode';
+  }
+
+  @override
   String get settingsAbout => 'Sobre';
 
   @override

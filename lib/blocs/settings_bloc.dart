@@ -8,9 +8,13 @@ class SettingsBloc with ChangeNotifier {
       StreamController<bool>.broadcast();
   final StreamController<List<String>> _privacyZonesController =
       StreamController<List<String>>.broadcast();
+  final StreamController<bool> _directUploadModeController =
+      StreamController<bool>.broadcast();
 
   bool _vibrateOnDisconnect = false;
   List<String> _privacyZones = [];
+  bool _directUploadMode =
+      false; // false = post-ride upload, true = direct upload
 
   SettingsBloc() {
     _loadSettings();
@@ -22,6 +26,9 @@ class SettingsBloc with ChangeNotifier {
   // Getter for the current privacy zones
   List<String> get privacyZones => _privacyZones;
 
+  // Getter for the current upload mode
+  bool get directUploadMode => _directUploadMode;
+
   // Stream for vibrateOnDisconnect updates
   Stream<bool> get vibrateOnDisconnectStream =>
       _vibrateOnDisconnectController.stream;
@@ -29,15 +36,20 @@ class SettingsBloc with ChangeNotifier {
   // Stream for privacy zones updates
   Stream<List<String>> get privacyZonesStream => _privacyZonesController.stream;
 
+  // Stream for upload mode updates
+  Stream<bool> get directUploadModeStream => _directUploadModeController.stream;
+
   // Load settings from Shared Preferences
   Future<void> _loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _vibrateOnDisconnect = prefs.getBool('vibrateOnDisconnect') ?? false;
     _privacyZones = prefs.getStringList('privacyZones') ?? [];
+    _directUploadMode = prefs.getBool('directUploadMode') ?? false;
 
     // Emit the values to the streams
     _vibrateOnDisconnectController.add(_vibrateOnDisconnect);
     _privacyZonesController.add(_privacyZones);
+    _directUploadModeController.add(_directUploadMode);
 
     notifyListeners();
   }
@@ -68,11 +80,25 @@ class SettingsBloc with ChangeNotifier {
     notifyListeners();
   }
 
+  // Toggle the upload mode setting and save it
+  Future<void> toggleDirectUploadMode(bool value) async {
+    _directUploadMode = value;
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('directUploadMode', value);
+
+    // Emit the new value to the stream
+    _directUploadModeController.add(_directUploadMode);
+
+    notifyListeners();
+  }
+
   // Dispose the StreamController when no longer needed
   @override
   void dispose() {
     _vibrateOnDisconnectController.close();
     _privacyZonesController.close();
+    _directUploadModeController.close();
     super.dispose();
   }
 }

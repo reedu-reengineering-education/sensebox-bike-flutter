@@ -233,6 +233,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsVibrateOnDisconnect => 'Vibration bei Verbindungsabbruch';
 
   @override
+  String get settingsUploadMode => 'Upload-Modus';
+
+  @override
+  String get settingsUploadModeDirect => 'Direkter Upload (Beta)';
+
+  @override
+  String get settingsUploadModePostRide => 'Upload nach der Fahrt';
+
+  @override
+  String get settingsUploadModeDescription => 'Wählen Sie, wann Ihre Daten während der Aufzeichnung hochgeladen werden sollen';
+
+  @override
+  String settingsUploadModeCurrent(String mode) {
+    return 'Aktuell: $mode';
+  }
+
+  @override
   String get settingsAbout => 'Über die App';
 
   @override

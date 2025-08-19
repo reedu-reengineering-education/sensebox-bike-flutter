@@ -1,25 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:sensebox_bike/feature_flags.dart';
 
 void main() {
   group('RecordingBloc Batch Upload Integration', () {
-    setUp(() {
-      // Reset feature flags before each test
-      FeatureFlags.enableLiveUpload = false;
-    });
-
-    test('should respect feature flag for batch upload behavior', () {
-      // Test that feature flag controls batch upload behavior
-      expect(FeatureFlags.enableLiveUpload, false);
+    test('should respect upload mode settings for batch upload behavior', () {
+      // Test that upload mode controls batch upload behavior
+      bool directUploadMode = false; // Default to post-ride upload
       
-      // When live upload is disabled, batch upload should be triggered
-      final shouldTriggerBatchUpload = !FeatureFlags.enableLiveUpload;
+      // When direct upload mode is disabled, batch upload should be triggered
+      final shouldTriggerBatchUpload = !directUploadMode;
       expect(shouldTriggerBatchUpload, true);
       
-      // When live upload is enabled, batch upload should not be triggered
-      FeatureFlags.enableLiveUpload = true;
-      final shouldNotTriggerBatchUpload = !FeatureFlags.enableLiveUpload;
+      // When direct upload mode is enabled, batch upload should not be triggered
+      directUploadMode = true;
+      final shouldNotTriggerBatchUpload = !directUploadMode;
       expect(shouldNotTriggerBatchUpload, false);
     });
 
@@ -96,26 +90,32 @@ void main() {
     });
 
     group('Upload Trigger Conditions', () {
-      test('should trigger upload on manual recording stop when live upload disabled', () {
-        FeatureFlags.enableLiveUpload = false;
+      test(
+          'should trigger upload on manual recording stop when direct upload disabled',
+          () {
+        bool directUploadMode = false;
         
-        final shouldTriggerUpload = !FeatureFlags.enableLiveUpload;
+        final shouldTriggerUpload = !directUploadMode;
         expect(shouldTriggerUpload, true);
       });
 
-      test('should not trigger upload on manual recording stop when live upload enabled', () {
-        FeatureFlags.enableLiveUpload = true;
+      test(
+          'should not trigger upload on manual recording stop when direct upload enabled',
+          () {
+        bool directUploadMode = true;
         
-        final shouldTriggerUpload = !FeatureFlags.enableLiveUpload;
+        final shouldTriggerUpload = !directUploadMode;
         expect(shouldTriggerUpload, false);
       });
 
-      test('should trigger upload on BLE connection loss when live upload disabled', () {
-        FeatureFlags.enableLiveUpload = false;
+      test(
+          'should trigger upload on BLE connection loss when direct upload disabled',
+          () {
+        bool directUploadMode = false;
         
         // Simulate BLE connection loss leading to recording stop
         final bleConnectionLost = true;
-        final shouldTriggerUpload = bleConnectionLost && !FeatureFlags.enableLiveUpload;
+        final shouldTriggerUpload = bleConnectionLost && !directUploadMode;
         expect(shouldTriggerUpload, true);
       });
     });

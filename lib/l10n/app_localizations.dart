@@ -511,6 +511,36 @@ abstract class AppLocalizations {
   /// **'Vibrate on disconnect'**
   String get settingsVibrateOnDisconnect;
 
+  /// No description provided for @settingsUploadMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Mode'**
+  String get settingsUploadMode;
+
+  /// No description provided for @settingsUploadModeDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct Upload (Beta)'**
+  String get settingsUploadModeDirect;
+
+  /// No description provided for @settingsUploadModePostRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Post-Ride Upload'**
+  String get settingsUploadModePostRide;
+
+  /// No description provided for @settingsUploadModeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose when to upload your data during recording'**
+  String get settingsUploadModeDescription;
+
+  /// No description provided for @settingsUploadModeCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current: {mode}'**
+  String settingsUploadModeCurrent(String mode);
+
   /// No description provided for @settingsAbout.
   ///
   /// In en, this message translates to:

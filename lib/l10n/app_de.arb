@@ -103,6 +103,18 @@
     "settingsGeneral": "Allgemeine",
     "settingsOther": "Andere",
     "settingsVibrateOnDisconnect": "Vibration bei Verbindungsabbruch",
+    "settingsUploadMode": "Upload-Modus",
+    "settingsUploadModeDirect": "Direkter Upload (Beta)",
+    "settingsUploadModePostRide": "Upload nach der Fahrt",
+    "settingsUploadModeDescription": "Wählen Sie, wann Ihre Daten während der Aufzeichnung hochgeladen werden sollen",
+    "settingsUploadModeCurrent": "Aktuell: {mode}",
+    "@settingsUploadModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
     "settingsAbout": "Über die App",
     "settingsPrivacyPolicy": "Datenschutz",
     "settingsVersion": "Version: {versionNumber}",

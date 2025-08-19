@@ -358,6 +358,30 @@ class SettingsScreen extends StatelessWidget {
             );
           },
         ),
+        StreamBuilder<bool>(
+          stream: settingsBloc.directUploadModeStream,
+          initialData: settingsBloc.directUploadMode,
+          builder: (context, snapshot) {
+            final isDirectUpload = snapshot.data ?? false;
+            final uploadModeText = isDirectUpload
+                ? AppLocalizations.of(context)!.settingsUploadModeDirect
+                : AppLocalizations.of(context)!.settingsUploadModePostRide;
+
+            return ListTile(
+              leading: const Icon(Icons.cloud_upload),
+              title: Text(AppLocalizations.of(context)!.settingsUploadMode),
+              subtitle: Text(
+                AppLocalizations.of(context)!
+                    .settingsUploadModeCurrent(uploadModeText),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              onTap: () => _showUploadModeDialog(context, settingsBloc),
+            );
+          },
+        ),
         ListTile(
           leading: const Icon(Icons.admin_panel_settings),
           title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
@@ -467,6 +491,86 @@ class SettingsScreen extends StatelessWidget {
         } catch (error, stack) {
           ErrorService.handleError(error, stack);
         }
+      },
+    );
+  }
+
+  void _showUploadModeDialog(BuildContext context, SettingsBloc settingsBloc) {
+    final currentMode = settingsBloc.directUploadMode;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(AppLocalizations.of(context)!.settingsUploadMode),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<bool>(
+                title: Text(
+                    AppLocalizations.of(context)!.settingsUploadModePostRide),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Upload data after recording stops'),
+                    const SizedBox(height: 8),
+                    Text(
+                      '• Data is stored locally during recording\n• Upload happens all at once when you finish\n• More reliable and stable\n• Uses less battery during recording',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+                value: false,
+                groupValue: currentMode,
+                onChanged: (bool? value) {
+                  if (value != null) {
+                    settingsBloc.toggleDirectUploadMode(value);
+                    Navigator.of(context).pop();
+                  }
+                },
+                isThreeLine: true,
+              ),
+              const SizedBox(height: 16),
+              RadioListTile<bool>(
+                title: Text(
+                    AppLocalizations.of(context)!.settingsUploadModeDirect),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                        'Upload data in real-time during recording (experimental)'),
+                    const SizedBox(height: 8),
+                    Text(
+                      '• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+                value: true,
+                groupValue: currentMode,
+                onChanged: (bool? value) {
+                  if (value != null) {
+                    settingsBloc.toggleDirectUploadMode(value);
+                    Navigator.of(context).pop();
+                  }
+                },
+                isThreeLine: true,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(AppLocalizations.of(context)!.generalCancel),
+            ),
+          ],
+        );
       },
     );
   }
