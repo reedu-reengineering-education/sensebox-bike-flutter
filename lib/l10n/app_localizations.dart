@@ -874,7 +874,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorPermanentAuthentication.
   ///
   /// In en, this message translates to:
-  /// **'Authentication failed permanently. Please log in again to continue uploading data.'**
+  /// **'Authentication failed permanently. Please log in to upload data.'**
   String get errorPermanentAuthentication;
 
   /// No description provided for @selectCsvFormat.
@@ -1066,7 +1066,7 @@ abstract class AppLocalizations {
   /// No description provided for @uploadProgressAuthenticationError.
   ///
   /// In en, this message translates to:
-  /// **'Please log in again to continue uploading data.'**
+  /// **'Please log in to upload data.'**
   String get uploadProgressAuthenticationError;
 
   /// No description provided for @uploadProgressNetworkError.

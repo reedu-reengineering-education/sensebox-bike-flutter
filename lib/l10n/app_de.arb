@@ -170,7 +170,7 @@
     "errorRegistrationFailed": "Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
     "errorBleConnectionFailed": "Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.",
     "errorUploadFailed": "Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
-    "errorPermanentAuthentication": "Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich erneut an, um den Upload fortzusetzen.",
+    "errorPermanentAuthentication": "Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich an, um Daten hochzuladen.",
     "selectCsvFormat": "CSV-Format auswählen",
     "regularCsv": "Standard CSV",
     "openSenseMapCsv": "openSenseMap CSV",
@@ -219,7 +219,7 @@
         }
     },
     "uploadProgressSuccess": "Track erfolgreich hochgeladen!",
-    "uploadProgressAuthenticationError": "Bitte melden Sie sich erneut an, um das Hochladen von Daten fortzusetzen.",
+    "uploadProgressAuthenticationError": "Bitte melden Sie sich an, um Daten hochzuladen.",
     "uploadProgressNetworkError": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
     "uploadProgressGenericError": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "trackStatusUploaded": "Hochgeladen",

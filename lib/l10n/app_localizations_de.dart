@@ -415,7 +415,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorUploadFailed => 'Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
 
   @override
-  String get errorPermanentAuthentication => 'Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich erneut an, um den Upload fortzusetzen.';
+  String get errorPermanentAuthentication => 'Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich an, um Daten hochzuladen.';
 
   @override
   String get selectCsvFormat => 'CSV-Format auswählen';
@@ -515,7 +515,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get uploadProgressSuccess => 'Track erfolgreich hochgeladen!';
 
   @override
-  String get uploadProgressAuthenticationError => 'Bitte melden Sie sich erneut an, um das Hochladen von Daten fortzusetzen.';
+  String get uploadProgressAuthenticationError => 'Bitte melden Sie sich an, um Daten hochzuladen.';
 
   @override
   String get uploadProgressNetworkError => 'Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';

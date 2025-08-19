@@ -415,7 +415,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorUploadFailed => 'Data upload failed. Please check your internet connection and try again.';
 
   @override
-  String get errorPermanentAuthentication => 'Authentication failed permanently. Please log in again to continue uploading data.';
+  String get errorPermanentAuthentication => 'Authentication failed permanently. Please log in to upload data.';
 
   @override
   String get selectCsvFormat => 'Select CSV format';
@@ -515,7 +515,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uploadProgressSuccess => 'Track uploaded successfully!';
 
   @override
-  String get uploadProgressAuthenticationError => 'Please log in again to continue uploading data.';
+  String get uploadProgressAuthenticationError => 'Please log in to upload data.';
 
   @override
   String get uploadProgressNetworkError => 'Network connection failed. Please check your internet connection and try again.';

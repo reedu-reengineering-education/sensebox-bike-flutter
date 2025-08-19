@@ -170,7 +170,7 @@
     "errorRegistrationFailed": "Falha no registro. Por favor, verifique suas credenciais.",
     "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.",
     "errorUploadFailed": "Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.",
-    "errorPermanentAuthentication": "Falha permanente na autenticação. Por favor, faça login novamente para continuar fazendo upload.",
+    "errorPermanentAuthentication": "Falha permanente na autenticação. Por favor, faça login para enviar dados.",
     "selectCsvFormat": "Selecionar formato CSV",
     "regularCsv": "CSV padrão",
     "openSenseMapCsv": "CSV openSenseMap",
@@ -219,7 +219,7 @@
         }
     },
     "uploadProgressSuccess": "Trajeto enviado com sucesso!",
-    "uploadProgressAuthenticationError": "Por favor, faça login novamente para continuar enviando dados.",
+    "uploadProgressAuthenticationError": "Por favor, faça login para enviar dados.",
     "uploadProgressNetworkError": "Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.",
     "uploadProgressGenericError": "Upload falhou. Tente novamente.",
     "trackStatusUploaded": "Enviado",

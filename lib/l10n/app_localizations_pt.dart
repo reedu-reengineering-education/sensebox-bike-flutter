@@ -415,7 +415,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get errorUploadFailed => 'Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.';
 
   @override
-  String get errorPermanentAuthentication => 'Falha permanente na autenticação. Por favor, faça login novamente para continuar fazendo upload.';
+  String get errorPermanentAuthentication => 'Falha permanente na autenticação. Por favor, faça login para enviar dados.';
 
   @override
   String get selectCsvFormat => 'Selecionar formato CSV';
@@ -515,7 +515,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get uploadProgressSuccess => 'Trajeto enviado com sucesso!';
 
   @override
-  String get uploadProgressAuthenticationError => 'Por favor, faça login novamente para continuar enviando dados.';
+  String get uploadProgressAuthenticationError => 'Por favor, faça login para enviar dados.';
 
   @override
   String get uploadProgressNetworkError => 'Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.';
