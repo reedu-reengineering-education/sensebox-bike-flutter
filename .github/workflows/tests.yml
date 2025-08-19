@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: macOS-latest
+    runs-on: macOS-14
 
     steps:
       - name: Checkout code
