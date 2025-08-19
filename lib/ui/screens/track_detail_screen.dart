@@ -500,36 +500,39 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           ),
         ),
         const Spacer(),
-        // Upload button - only show if track hasn't been uploaded
-        if (!track.uploaded)
-          GestureDetector(
-            onTap: _isUploading ? null : _startUpload,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: _isUploading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(
-                      Icons.cloud_upload,
-                      size: 20,
-                      color: theme.colorScheme.onSurface,
-                    ),
+        // Only show buttons if track has geolocations
+        if (_geolocations.isNotEmpty) ...[
+          // Upload button - only show if track hasn't been uploaded
+          if (!track.uploaded)
+            GestureDetector(
+              onTap: _isUploading ? null : _startUpload,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: _isUploading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        Icons.cloud_upload,
+                        size: 20,
+                        color: theme.colorScheme.onSurface,
+                      ),
+              ),
             ),
+          ExportButton(
+            isDisabled: false,
+            isDownloading: _isDownloading,
+            onExport: (selectedFormat) async {
+              if (selectedFormat == 'regular') {
+                await _exportTrackToCsv();
+              } else if (selectedFormat == 'openSenseMap') {
+                await _exportTrackToCsv(isOpenSourceMapCompatible: true);
+              }
+            },
           ),
-        ExportButton(
-          isDisabled: false,
-          isDownloading: _isDownloading,
-          onExport: (selectedFormat) async {
-            if (selectedFormat == 'regular') {
-              await _exportTrackToCsv();
-            } else if (selectedFormat == 'openSenseMap') {
-              await _exportTrackToCsv(isOpenSourceMapCompatible: true);
-            }
-          },
-        ),
+        ],
       ],
     );
   }
