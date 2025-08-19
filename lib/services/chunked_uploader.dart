@@ -5,7 +5,6 @@ import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/chunk_upload_result.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
-import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
@@ -22,18 +21,19 @@ class ChunkedUploader {
   })  : _openSenseMapService = openSenseMapService,
         _dataPreparer = UploadDataPreparer(senseBox: senseBox);
 
-  /// Splits a list of GeolocationData into chunks that will generate at most 2500 measurements each.
+  /// Splits a list of GeolocationData into chunks that will generate at most 2400 measurements each.
   ///
   /// This ensures compliance with OpenSenseMap API limitations while maintaining
   /// chronological order of data points. Each GPS point can generate multiple measurements
   /// (speed + sensor data), so we need to estimate the total measurement count.
+  /// Using 2400 instead of 2500 provides a significant safety buffer to avoid hitting the API limit.
   ///
   /// [geolocations] - The list of GPS points to split into chunks
   /// [senseBox] - SenseBox configuration to estimate measurements per point
-  /// Returns a list of chunks, each estimated to generate at most 2500 measurements
+  /// Returns a list of chunks, each estimated to generate at most 2400 measurements
   List<List<GeolocationData>> splitIntoChunks(
       List<GeolocationData> geolocations, SenseBox senseBox) {
-    const int maxMeasurements = 2500;
+    const int maxMeasurements = 2400;
     final List<List<GeolocationData>> chunks = [];
 
     if (geolocations.isEmpty) {
@@ -79,23 +79,30 @@ class ChunkedUploader {
     
     // Multi-value sensors (estimate based on typical configurations)
     if (sensorTitles.any((title) => title.contains('finedust'))) {
-      // Typically PM1, PM2.5, PM4, PM10 = 4 measurements
+      // PM1, PM2.5, PM4, PM10 = 4 measurements
       count += 4;
     }
     
-    if (sensorTitles.any((title) => title.contains('surface'))) {
-      // Surface classification sensors vary, estimate 3-5
-      count += 4;
-    }
+    // Surface classification sensors - count actual surface sensors
+    int surfaceSensorCount = 0;
+    if (sensorTitles.any((title) => title.contains('surface asphalt'))) surfaceSensorCount++;
+    if (sensorTitles.any((title) => title.contains('surface sett'))) surfaceSensorCount++;
+    if (sensorTitles.any((title) => title.contains('surface compacted'))) surfaceSensorCount++;
+    if (sensorTitles.any((title) => title.contains('surface paving'))) surfaceSensorCount++;
+    if (sensorTitles.any((title) => title.contains('standing'))) surfaceSensorCount++;
+    count += surfaceSensorCount;
     
-    if (sensorTitles.any((title) => title.contains('overtaking'))) {
-      // Overtaking distance and manoeuvre = 2 measurements
-      count += 2;
-    }
+    // Overtaking sensors
+    if (sensorTitles.any((title) => title.contains('overtaking distance'))) count++;
+    if (sensorTitles.any((title) => title.contains('overtaking manoeuvre'))) count++;
     
-    if (sensorTitles.any((title) => title.contains('anomaly'))) {
-      count += 1;
-    }
+    // Surface anomaly
+    if (sensorTitles.any((title) => title.contains('surface anomaly'))) count++;
+    
+    // Acceleration sensors (X, Y, Z)
+    if (sensorTitles.any((title) => title.contains('acceleration x'))) count++;
+    if (sensorTitles.any((title) => title.contains('acceleration y'))) count++;
+    if (sensorTitles.any((title) => title.contains('acceleration z'))) count++;
 
     return count;
   }
@@ -106,7 +113,7 @@ class ChunkedUploader {
   /// consistency with the current upload format and sensor mapping.
   /// Implements data preservation on failures and detailed logging.
   ///
-  /// [chunk] - List of GeolocationData points to upload (max 2500 points)
+  /// [chunk] - List of GeolocationData points to upload (max 2400 points)
   /// [senseBox] - SenseBox configuration containing sensor mappings
   /// [chunkIndex] - Index of this chunk for tracking purposes
   ///
