@@ -251,6 +251,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _isAuthenticated = false;
       _senseBoxController.add(null); // Clear senseBox on logout
       _selectedSenseBox = null;
+      _senseBoxes.clear(); // Clear cached senseboxes
       notifyListeners();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
@@ -325,9 +326,20 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   @override
   void dispose() {
+    // Remove observer first to prevent any further lifecycle callbacks
     WidgetsBinding.instance.removeObserver(this);
+    
+    // Close stream controller
     _senseBoxController.close();
+    
+    // Dispose value notifier
     _isAuthenticatingNotifier.dispose();
+    
+    // Clear all data structures
+    _senseBoxes.clear();
+    _selectedSenseBox = null;
+    
+    // Call super dispose last
     super.dispose();
   }
 }
