@@ -102,59 +102,6 @@ class TracksScreenState extends State<TracksScreen> {
     _handleRefresh();
   }
 
-  Future<void> _retryUpload(TrackData track) async {
-    final localizations = AppLocalizations.of(context)!;
-    
-    // Check if user is authenticated
-    if (!_openSenseMapBloc.isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(localizations.uploadProgressAuthenticationError),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
-
-    // Check if senseBox is selected
-    if (_openSenseMapBloc.selectedSenseBox == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(localizations.errorNoSenseBoxSelected),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
-
-    try {
-      await _batchUploadService.uploadTrack(track, _openSenseMapBloc.selectedSenseBox!);
-      
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.trackUploadRetrySuccess),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // Refresh the track list to show updated status
-        _handleRefresh();
-      }
-    } catch (e) {
-      // Show error message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.trackUploadRetryFailed),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
-
   void _toggleFilter() {
     setState(() {
       _showOnlyUnuploaded = !_showOnlyUnuploaded;
@@ -280,7 +227,6 @@ class TracksScreenState extends State<TracksScreen> {
                               );
                               _handleRefresh();
                             },
-                            onRetryUpload: _retryUpload,
                           );
                         } else {
                           return Center(

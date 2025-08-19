@@ -7,7 +7,6 @@ import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
-import 'package:sensebox_bike/ui/widgets/track/upload_status_indicator.dart';
 
 const double kMapPreviewWidth = 140;
 const double kMapPreviewHeight = 140;
@@ -15,12 +14,10 @@ const double kMapPreviewHeight = 140;
 class TrackListItem extends StatelessWidget {
   final TrackData track;
   final Function onDismissed;
-  final Function(TrackData)? onRetryUpload;
 
   const TrackListItem({
     required this.track,
     required this.onDismissed,
-    this.onRetryUpload,
     super.key,
   });
 
@@ -115,11 +112,7 @@ class TrackListItem extends StatelessWidget {
             ),
           ),
         ),
-        UploadStatusIndicator(
-          track: track,
-          onRetryPressed: onRetryUpload != null ? () => onRetryUpload!(track) : null,
-          isCompact: true,
-        ),
+        _buildStatusIcon(context, localizations, theme),
       ],
     );
   }
@@ -180,11 +173,7 @@ class TrackListItem extends StatelessWidget {
                         Text(times, style: theme.textTheme.titleSmall),
                       ],
                     ),
-                    UploadStatusIndicator(
-                      track: track,
-                      onRetryPressed: onRetryUpload != null ? () => onRetryUpload!(track) : null,
-                      isCompact: true,
-                    ),
+                    _buildStatusIcon(context, localizations, theme),
                   ],
                 ),
                 Column(
@@ -212,5 +201,59 @@ class TrackListItem extends StatelessWidget {
         )
       ],
     );
+  }
+
+  Widget _buildStatusIcon(
+      BuildContext context, AppLocalizations localizations, ThemeData theme) {
+    final statusColor = _getStatusColor(theme);
+    final statusIcon = _getStatusIcon();
+    final statusText = _getStatusText(localizations);
+
+    return Tooltip(
+      message: statusText,
+      child: Container(
+        padding: const EdgeInsets.all(padding),
+        decoration: BoxDecoration(
+          color: statusColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(borderRadiusSmall),
+          border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
+        ),
+        child: Icon(
+          statusIcon,
+          size: iconSizeLarge,
+          color: statusColor,
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(ThemeData theme) {
+    if (track.uploaded) {
+      return Colors.green;
+    } else if (track.uploadAttempts > 0) {
+      return theme.colorScheme.error;
+    } else {
+      return theme.colorScheme.outline;
+    }
+  }
+
+  IconData _getStatusIcon() {
+    if (track.uploaded) {
+      return Icons.cloud_done;
+    } else if (track.uploadAttempts > 0) {
+      return Icons.cloud_off;
+    } else {
+      return Icons.cloud_upload;
+    }
+  }
+
+  String _getStatusText(AppLocalizations localizations) {
+    if (track.uploaded) {
+      return localizations.trackStatusUploaded;
+    } else if (track.uploadAttempts > 0) {
+      return localizations.trackStatusUploadFailed;
+    } else {
+      return localizations.trackStatusNotUploaded;
+    }
   }
 }

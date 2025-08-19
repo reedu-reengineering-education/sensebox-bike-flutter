@@ -99,12 +99,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 ),
               ),
               const Spacer(),
-              UploadStatusIndicator(
-                track: widget.track,
-                onRetryPressed: _isUploading ? null : _startUpload,
-                showText: true,
-                isCompact: false,
-              ),
+              _buildStatusIcon(context, localizations, theme),
             ],
           ),
           const SizedBox(height: spacing / 2),
@@ -112,6 +107,69 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildStatusIcon(BuildContext context, AppLocalizations localizations, ThemeData theme) {
+    final statusColor = _getStatusColor(theme);
+    final statusIcon = _getStatusIcon();
+    final statusText = _getStatusText(localizations);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: spacing / 2, vertical: padding / 2),
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(borderRadiusSmall),
+        border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            statusIcon,
+            size: iconSizeLarge,
+            color: statusColor,
+          ),
+          const SizedBox(width: spacing / 2),
+          Text(
+            statusText,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: statusColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(ThemeData theme) {
+    if (widget.track.uploaded) {
+      return Colors.green;
+    } else if (widget.track.uploadAttempts > 0) {
+      return theme.colorScheme.error;
+    } else {
+      return theme.colorScheme.outline;
+    }
+  }
+
+  IconData _getStatusIcon() {
+    if (widget.track.uploaded) {
+      return Icons.cloud_done;
+    } else if (widget.track.uploadAttempts > 0) {
+      return Icons.cloud_off;
+    } else {
+      return Icons.cloud_upload;
+    }
+  }
+
+  String _getStatusText(AppLocalizations localizations) {
+    if (widget.track.uploaded) {
+      return localizations.trackStatusUploaded;
+    } else if (widget.track.uploadAttempts > 0) {
+      return localizations.trackStatusUploadFailed;
+    } else {
+      return localizations.trackStatusNotUploaded;
+    }
   }
 
   Widget _buildUploadDetails() {
@@ -360,12 +418,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           // Upload completed successfully
           setState(() => _isUploading = false);
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(localizations.trackUploadRetrySuccess),
-                backgroundColor: Colors.green,
-              ),
-            );
             // Refresh the track data to show updated status
             setState(() {});
           }
