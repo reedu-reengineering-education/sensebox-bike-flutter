@@ -52,6 +52,17 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
       _onProgressUpdate,
       onError: (error) {
         debugPrint('[UploadProgressModal] Stream error: $error');
+        // Handle stream errors by showing them in the modal
+        setState(() {
+          _currentProgress = UploadProgress(
+            totalChunks: 0,
+            completedChunks: 0,
+            failedChunks: 0,
+            status: UploadStatus.failed,
+            errorMessage: error.toString(),
+            canRetry: true,
+          );
+        });
       },
     );
 
@@ -65,6 +76,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
   @override
   void dispose() {
     _progressSubscription.cancel();
+    UploadProgressOverlay.hide();
     super.dispose();
   }
 
@@ -103,7 +115,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
   }
 
   void _handleDismiss() {
-    // Allow dismissal - the overlay will handle hiding
+    UploadProgressOverlay.hide();
     Navigator.of(context).pop();
   }
 

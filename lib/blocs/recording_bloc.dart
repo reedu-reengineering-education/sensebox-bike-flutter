@@ -162,27 +162,34 @@ class RecordingBloc with ChangeNotifier {
   void _showUploadProgressModal(TrackData track, SenseBox senseBox) {
     if (_context == null || _batchUploadService == null) return;
     
-    // Show the upload progress modal
-    UploadProgressOverlay.show(
-      _context!,
-      batchUploadService: _batchUploadService!,
-      onUploadComplete: () {
-        // Upload completed successfully
-        _cleanupBatchUploadService();
-        debugPrint('[RecordingBloc] Batch upload completed successfully');
-      },
-      onUploadFailed: () {
-        // Upload failed permanently - keep service for potential retry
-        debugPrint('[RecordingBloc] Batch upload failed permanently');
-      },
-      onRetryRequested: () {
-        // User requested retry
-        _retryBatchUpload(track, senseBox);
-      },
-    );
-    
-    // Start the upload
-    _startBatchUpload(track, senseBox);
+    try {
+      // Show the upload progress modal
+      UploadProgressOverlay.show(
+        _context!,
+        batchUploadService: _batchUploadService!,
+        onUploadComplete: () {
+          // Upload completed successfully
+          _cleanupBatchUploadService();
+          debugPrint('[RecordingBloc] Batch upload completed successfully');
+        },
+        onUploadFailed: () {
+          // Upload failed permanently - keep service for potential retry
+          debugPrint('[RecordingBloc] Batch upload failed permanently');
+        },
+        onRetryRequested: () {
+          // User requested retry
+          _retryBatchUpload(track, senseBox);
+        },
+      );
+
+      // Start the upload
+      _startBatchUpload(track, senseBox);
+    } catch (e, stack) {
+      debugPrint('[RecordingBloc] Error showing upload modal: $e');
+      ErrorService.handleError(e, stack);
+      // Ensure modal is hidden if there was an error
+      UploadProgressOverlay.hide();
+    }
   }
   
   /// Starts the batch upload process
