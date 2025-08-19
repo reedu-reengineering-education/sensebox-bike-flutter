@@ -238,5 +238,6 @@
     "trackStatusUploadFailed": "Upload fehlgeschlagen",
     "trackFilterAll": "Alle",
     "trackFilterUnuploaded": "Nicht hochgeladene Tracks",
-    "trackUploadRetryFailed": "Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut."
+    "trackUploadRetryFailed": "Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "errorTrackNoGeolocations": "Track hat keine Geolokationsdaten und kann nicht hochgeladen werden."
 }

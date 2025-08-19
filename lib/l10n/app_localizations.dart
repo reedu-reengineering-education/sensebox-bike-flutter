@@ -1140,6 +1140,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upload retry failed. Please try again.'**
   String get trackUploadRetryFailed;
+
+  /// No description provided for @errorTrackNoGeolocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Track has no geolocation data and cannot be uploaded.'**
+  String get errorTrackNoGeolocations;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

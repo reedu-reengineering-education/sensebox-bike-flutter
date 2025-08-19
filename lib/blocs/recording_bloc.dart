@@ -160,10 +160,18 @@ class RecordingBloc with ChangeNotifier {
   }
   
   /// Shows the upload progress modal and starts the batch upload
-  void _showUploadProgressModal(TrackData track, SenseBox senseBox) {
+  void _showUploadProgressModal(TrackData track, SenseBox senseBox) async {
     if (_context == null || _batchUploadService == null) return;
     
     try {
+      // Check if track has geolocations before showing upload modal
+      await track.geolocations.load();
+      final geolocations = track.geolocations.toList();
+
+      if (geolocations.isEmpty) {
+        throw TrackHasNoGeolocationsException(track.id);
+      }
+      
       // Show the upload progress modal
       UploadProgressOverlay.show(
         _context!,
@@ -215,6 +223,14 @@ class RecordingBloc with ChangeNotifier {
     if (_batchUploadService == null) return;
     
     try {
+      // Check if track has geolocations before attempting retry
+      await track.geolocations.load();
+      final geolocations = track.geolocations.toList();
+
+      if (geolocations.isEmpty) {
+        throw TrackHasNoGeolocationsException(track.id);
+      }
+      
       await _batchUploadService!.uploadTrack(track, senseBox);
     } catch (e, stack) {
       // Log error - the modal will handle showing the error state

@@ -238,5 +238,6 @@
     "trackStatusUploadFailed": "Envio falhou",
     "trackFilterAll": "Todos",
     "trackFilterUnuploaded": "Trajetos não enviados",
-    "trackUploadRetryFailed": "Tentativa de envio falhou. Tente novamente."
+    "trackUploadRetryFailed": "Tentativa de envio falhou. Tente novamente.",
+    "errorTrackNoGeolocations": "Trajeto não possui dados de geolocalização e não pode ser enviado."
 }

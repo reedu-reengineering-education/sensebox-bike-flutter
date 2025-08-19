@@ -554,4 +554,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trackUploadRetryFailed => 'Tentativa de envio falhou. Tente novamente.';
+
+  @override
+  String get errorTrackNoGeolocations => 'Trajeto não possui dados de geolocalização e não pode ser enviado.';
 }

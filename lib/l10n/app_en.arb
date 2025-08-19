@@ -238,5 +238,6 @@
     "trackStatusUploadFailed": "Upload failed",
     "trackFilterAll": "All",
     "trackFilterUnuploaded": "Not uploaded",
-    "trackUploadRetryFailed": "Upload retry failed. Please try again."
+    "trackUploadRetryFailed": "Upload retry failed. Please try again.",
+    "errorTrackNoGeolocations": "Track has no geolocation data and cannot be uploaded."
 }
