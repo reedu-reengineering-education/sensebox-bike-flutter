@@ -447,19 +447,20 @@ class BatchUploadService {
         // Classify the error to determine how to handle it
         final errorType = UploadErrorClassifier.classifyError(e as Exception);
         
+        // If authentication failed, stop retrying other tracks
+        if (errorType == UploadErrorType.permanentAuth) {
+          await _handleAuthenticationError(e.toString());
+          _logError('Retry session stopped',
+              'Stopping retry due to authentication failure', null);
+          break;
+        }
+        
         // Report error for monitoring
         ErrorService.handleError(
           'Failed to retry upload for track ${track.id}: $e',
           stackTrace,
           sendToSentry: errorType != UploadErrorType.temporary,
         );
-        
-        // If authentication failed, stop retrying other tracks
-        if (errorType == UploadErrorType.permanentAuth) {
-          await _handleAuthenticationError(e.toString());
-          _logError('Retry session stopped', 'Stopping retry due to authentication failure', null);
-          break;
-        }
         
         // Count failure types for reporting
         if (errorType == UploadErrorType.temporary) {
@@ -476,6 +477,7 @@ class BatchUploadService {
     
     return successCount;
   }
+
 
   /// Handles authentication errors by marking authentication as failed in OpenSenseMapBloc
   /// This preserves track data locally and allows the user to re-authenticate
