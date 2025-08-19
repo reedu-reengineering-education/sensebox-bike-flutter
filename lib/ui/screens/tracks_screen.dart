@@ -167,7 +167,7 @@ class TracksScreenState extends State<TracksScreen> {
                   size: iconSizeLarge,
                   color: colorScheme.onSurface,
                 ),
-                const SizedBox(width: spacing / 2),
+                const SizedBox(width: spacing),
                 Expanded(
                   child: SegmentedButton<bool>(
                     segments: [
