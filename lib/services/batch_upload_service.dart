@@ -52,6 +52,44 @@ class BatchUploadService {
   /// Whether an upload is currently in progress
   bool get isUploading => _isUploading;
 
+  /// Waits for authentication validation to complete before proceeding with upload.
+  /// This prevents authentication errors when the app resumes from background
+  /// and authentication validation is still in progress.
+  ///
+  /// [timeoutSeconds] - Maximum time to wait for authentication validation (default: 15 seconds)
+  ///
+  /// Throws [Exception] if authentication validation times out or fails
+  Future<void> _waitForAuthenticationValidation(
+      {int timeoutSeconds = 15}) async {
+    _logInfo('Authentication wait',
+        'Waiting for authentication validation to complete', null);
+
+    final startTime = DateTime.now();
+    final timeout = Duration(seconds: timeoutSeconds);
+
+    while (_openSenseMapBloc.isAuthenticating) {
+      // Check if we've exceeded the timeout
+      if (DateTime.now().difference(startTime) > timeout) {
+        const errorMessage = 'Authentication validation timed out';
+        _logError('Authentication timeout', errorMessage, null);
+        throw Exception(errorMessage);
+      }
+
+      // Wait a short interval before checking again
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    // Final authentication check after validation completes
+    if (!_openSenseMapBloc.isAuthenticated) {
+      const errorMessage = 'Authentication validation failed';
+      _logError('Authentication validation failed', errorMessage, null);
+      throw Exception(errorMessage);
+    }
+
+    _logInfo('Authentication wait',
+        'Authentication validation completed successfully', null);
+  }
+
   /// Uploads a complete track by splitting it into chunks and uploading them sequentially.
   /// 
   /// This method handles the complete upload flow:
@@ -93,8 +131,11 @@ class BatchUploadService {
         canRetry: false,
       ));
 
+      // Wait for authentication validation to complete before checking authentication
+      await _waitForAuthenticationValidation();
+
       // Check authentication before starting upload
-      if (!_openSenseMapService.isAuthenticated) {
+      if (!_openSenseMapBloc.isAuthenticated) {
         const errorMessage = 'Authentication failed - user needs to re-login';
         _logError('Authentication check failed', errorMessage, track.id);
         await _handleAuthenticationError(errorMessage);

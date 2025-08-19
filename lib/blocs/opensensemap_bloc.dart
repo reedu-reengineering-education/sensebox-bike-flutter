@@ -164,6 +164,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
+      _isAuthenticatingNotifier.value = true;
+      
       try {
         // Use the same validation logic as _initializeAuth
         final token = await _service.getAccessToken();
@@ -200,6 +202,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       } catch (_) {
         _isAuthenticated = false;
       } finally {
+        _isAuthenticatingNotifier.value = false;
         notifyListeners();
       }
     }
