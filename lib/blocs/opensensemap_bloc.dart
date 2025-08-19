@@ -57,6 +57,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   OpenSenseMapBloc() {
+    // Register as observer to handle app lifecycle events
+    WidgetsBinding.instance.addObserver(this);
     _initializeAuth();
   }
 
@@ -323,6 +325,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _senseBoxController.close();
     _isAuthenticatingNotifier.dispose();
     super.dispose();
