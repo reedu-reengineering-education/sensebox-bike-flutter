@@ -120,6 +120,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
   Widget _buildModalContent(BuildContext context, UploadProgress progress) {
     return AlertDialog(
       title: const Text('Upload Progress'),
+      contentPadding: EdgeInsets.zero,
       content: UploadProgressIndicator(
         progress: progress,
         onRetry: progress.hasFailed && progress.canRetry 
@@ -127,14 +128,60 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
             : null,
         compact: false,
       ),
-      actions: [
-        if (progress.isInProgress != true)
-          TextButton(
-            onPressed: _handleDismiss,
-            child: const Text('Close'),
-          ),
-      ],
+      actions: _buildActions(context, progress),
     );
+  }
+
+  List<Widget> _buildActions(BuildContext context, UploadProgress progress) {
+    final theme = Theme.of(context);
+
+    switch (progress.status) {
+      case UploadStatus.preparing:
+      case UploadStatus.uploading:
+      case UploadStatus.retrying:
+        // No buttons during active upload
+        return [];
+
+      case UploadStatus.completed:
+        // Success button
+        return [
+          FilledButton(
+            onPressed: _handleDismiss,
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.tertiary,
+              foregroundColor: theme.colorScheme.onTertiaryContainer,
+            ),
+            child: const Text('Done'),
+          ),
+        ];
+
+      case UploadStatus.failed:
+        if (progress.canRetry) {
+          // Retry button
+          return [
+            FilledButton(
+              onPressed: _handleRetry,
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+              ),
+              child: const Text('Retry'),
+            ),
+            TextButton(
+              onPressed: _handleDismiss,
+              child: const Text('Cancel'),
+            ),
+          ];
+        } else {
+          // Close button for permanent failure
+          return [
+            TextButton(
+              onPressed: _handleDismiss,
+              child: const Text('Close'),
+            ),
+          ];
+        }
+    }
   }
 }
 

@@ -112,16 +112,16 @@ class UploadProgressIndicator extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header with status icon and title
+            // Status text with icon
             Row(
               children: [
                 _buildStatusIcon(theme),
                 const SizedBox(width: spacing),
                 Expanded(
                   child: Text(
-                    localizations.uploadProgressTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    _getStatusText(localizations),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: _getTextColor(theme),
                     ),
                   ),
                 ),
@@ -133,16 +133,6 @@ class UploadProgressIndicator extends StatelessWidget {
                     tooltip: localizations.generalCancel,
                   ),
               ],
-            ),
-            
-            const SizedBox(height: spacing),
-            
-            // Status text
-            Text(
-              _getStatusText(localizations),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: _getTextColor(theme),
-              ),
             ),
             
             // Progress information and bar
@@ -213,7 +203,7 @@ class UploadProgressIndicator extends StatelessWidget {
             ],
             
             // Action buttons
-            if (progress.hasFailed || progress.isCompleted) ...[
+            if (progress.hasFailed) ...[
               const SizedBox(height: spacing),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -226,24 +216,6 @@ class UploadProgressIndicator extends StatelessWidget {
                       style: FilledButton.styleFrom(
                         backgroundColor: theme.colorScheme.primary,
                         foregroundColor: theme.colorScheme.onPrimary,
-                      ),
-                    ),
-                  if (progress.isCompleted)
-                    FilledButton.icon(
-                      onPressed: () {
-                        // Show success feedback
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(localizations.uploadProgressSuccess),
-                            backgroundColor: theme.colorScheme.tertiary,
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.check),
-                      label: Text(localizations.generalOk),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: theme.colorScheme.tertiary,
-                        foregroundColor: theme.colorScheme.onTertiaryContainer,
                       ),
                     ),
                 ],
@@ -261,6 +233,11 @@ class UploadProgressIndicator extends StatelessWidget {
       case UploadStatus.preparing:
         return const Loader();
       case UploadStatus.uploading:
+        return Icon(
+          Icons.cloud_upload,
+          color: theme.colorScheme.primary,
+          size: circleSize,
+        );
       case UploadStatus.retrying:
         return const Loader();
       case UploadStatus.completed:
