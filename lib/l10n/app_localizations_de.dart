@@ -512,9 +512,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get uploadProgressSuccess => 'Track erfolgreich hochgeladen!';
-
-  @override
   String get uploadProgressAuthenticationError => 'Bitte melden Sie sich an, um Daten hochzuladen.';
 
   @override
@@ -533,16 +530,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackStatusUploadFailed => 'Upload fehlgeschlagen';
 
   @override
-  String get trackStatusRetryUpload => 'Upload wiederholen';
-
-  @override
   String get trackFilterAll => 'Alle Tracks';
 
   @override
   String get trackFilterUnuploaded => 'Nur nicht hochgeladene';
-
-  @override
-  String get trackUploadRetrySuccess => 'Track erfolgreich hochgeladen!';
 
   @override
   String get trackUploadRetryFailed => 'Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut.';

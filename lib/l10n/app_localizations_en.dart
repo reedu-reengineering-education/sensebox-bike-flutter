@@ -512,9 +512,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get uploadProgressSuccess => 'Track uploaded successfully!';
-
-  @override
   String get uploadProgressAuthenticationError => 'Please log in to upload data.';
 
   @override
@@ -533,16 +530,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackStatusUploadFailed => 'Upload failed';
 
   @override
-  String get trackStatusRetryUpload => 'Retry upload';
-
-  @override
   String get trackFilterAll => 'All tracks';
 
   @override
   String get trackFilterUnuploaded => 'Unuploaded only';
-
-  @override
-  String get trackUploadRetrySuccess => 'Track uploaded successfully!';
 
   @override
   String get trackUploadRetryFailed => 'Upload retry failed. Please try again.';

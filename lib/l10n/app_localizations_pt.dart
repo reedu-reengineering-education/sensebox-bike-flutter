@@ -512,9 +512,6 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get uploadProgressSuccess => 'Trajeto enviado com sucesso!';
-
-  @override
   String get uploadProgressAuthenticationError => 'Por favor, faça login para enviar dados.';
 
   @override
@@ -533,16 +530,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackStatusUploadFailed => 'Envio falhou';
 
   @override
-  String get trackStatusRetryUpload => 'Tentar envio novamente';
-
-  @override
   String get trackFilterAll => 'Todos os trajetos';
 
   @override
   String get trackFilterUnuploaded => 'Apenas não enviados';
-
-  @override
-  String get trackUploadRetrySuccess => 'Trajeto enviado com sucesso!';
 
   @override
   String get trackUploadRetryFailed => 'Tentativa de envio falhou. Tente novamente.';

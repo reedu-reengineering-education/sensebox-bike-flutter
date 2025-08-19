@@ -218,16 +218,13 @@
             }
         }
     },
-    "uploadProgressSuccess": "Track uploaded successfully!",
     "uploadProgressAuthenticationError": "Please log in to upload data.",
     "uploadProgressNetworkError": "Network connection failed. Please check your internet connection and try again.",
     "uploadProgressGenericError": "Upload failed. Please try again.",
     "trackStatusUploaded": "Uploaded",
     "trackStatusNotUploaded": "Not uploaded",
     "trackStatusUploadFailed": "Upload failed",
-    "trackStatusRetryUpload": "Retry upload",
     "trackFilterAll": "All tracks",
     "trackFilterUnuploaded": "Unuploaded only",
-    "trackUploadRetrySuccess": "Track uploaded successfully!",
     "trackUploadRetryFailed": "Upload retry failed. Please try again."
 }

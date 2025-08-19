@@ -218,16 +218,13 @@
             }
         }
     },
-    "uploadProgressSuccess": "Trajeto enviado com sucesso!",
     "uploadProgressAuthenticationError": "Por favor, faça login para enviar dados.",
     "uploadProgressNetworkError": "Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.",
     "uploadProgressGenericError": "Upload falhou. Tente novamente.",
     "trackStatusUploaded": "Enviado",
     "trackStatusNotUploaded": "Não enviado",
     "trackStatusUploadFailed": "Envio falhou",
-    "trackStatusRetryUpload": "Tentar envio novamente",
     "trackFilterAll": "Todos os trajetos",
     "trackFilterUnuploaded": "Apenas não enviados",
-    "trackUploadRetrySuccess": "Trajeto enviado com sucesso!",
     "trackUploadRetryFailed": "Tentativa de envio falhou. Tente novamente."
 }

@@ -1057,12 +1057,6 @@ abstract class AppLocalizations {
   /// **'{percentage}% complete'**
   String uploadProgressPercentage(int percentage);
 
-  /// No description provided for @uploadProgressSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Track uploaded successfully!'**
-  String get uploadProgressSuccess;
-
   /// No description provided for @uploadProgressAuthenticationError.
   ///
   /// In en, this message translates to:
@@ -1099,12 +1093,6 @@ abstract class AppLocalizations {
   /// **'Upload failed'**
   String get trackStatusUploadFailed;
 
-  /// No description provided for @trackStatusRetryUpload.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry upload'**
-  String get trackStatusRetryUpload;
-
   /// No description provided for @trackFilterAll.
   ///
   /// In en, this message translates to:
@@ -1116,12 +1104,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unuploaded only'**
   String get trackFilterUnuploaded;
-
-  /// No description provided for @trackUploadRetrySuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Track uploaded successfully!'**
-  String get trackUploadRetrySuccess;
 
   /// No description provided for @trackUploadRetryFailed.
   ///

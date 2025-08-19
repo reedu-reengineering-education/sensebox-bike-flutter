@@ -218,16 +218,13 @@
             }
         }
     },
-    "uploadProgressSuccess": "Track erfolgreich hochgeladen!",
     "uploadProgressAuthenticationError": "Bitte melden Sie sich an, um Daten hochzuladen.",
     "uploadProgressNetworkError": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
     "uploadProgressGenericError": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "trackStatusUploaded": "Hochgeladen",
     "trackStatusNotUploaded": "Nicht hochgeladen",
     "trackStatusUploadFailed": "Upload fehlgeschlagen",
-    "trackStatusRetryUpload": "Upload wiederholen",
     "trackFilterAll": "Alle Tracks",
     "trackFilterUnuploaded": "Nur nicht hochgeladene",
-    "trackUploadRetrySuccess": "Track erfolgreich hochgeladen!",
     "trackUploadRetryFailed": "Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut."
 }
