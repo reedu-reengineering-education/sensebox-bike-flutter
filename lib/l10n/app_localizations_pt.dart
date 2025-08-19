@@ -547,10 +547,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackStatusUploadFailed => 'Envio falhou';
 
   @override
-  String get trackFilterAll => 'Todos os trajetos';
+  String get trackFilterAll => 'Todos';
 
   @override
-  String get trackFilterUnuploaded => 'Apenas não enviados';
+  String get trackFilterUnuploaded => 'Trajetos não enviados';
 
   @override
   String get trackUploadRetryFailed => 'Tentativa de envio falhou. Tente novamente.';

@@ -236,7 +236,7 @@
     "trackStatusUploaded": "Hochgeladen",
     "trackStatusNotUploaded": "Nicht hochgeladen",
     "trackStatusUploadFailed": "Upload fehlgeschlagen",
-    "trackFilterAll": "Alle Tracks",
-    "trackFilterUnuploaded": "Nur nicht hochgeladene",
+    "trackFilterAll": "Alle",
+    "trackFilterUnuploaded": "Nicht hochgeladene Tracks",
     "trackUploadRetryFailed": "Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut."
 }

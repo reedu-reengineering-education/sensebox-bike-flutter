@@ -236,7 +236,7 @@
     "trackStatusUploaded": "Uploaded",
     "trackStatusNotUploaded": "Not uploaded",
     "trackStatusUploadFailed": "Upload failed",
-    "trackFilterAll": "All tracks",
-    "trackFilterUnuploaded": "Unuploaded only",
+    "trackFilterAll": "All",
+    "trackFilterUnuploaded": "Not uploaded",
     "trackUploadRetryFailed": "Upload retry failed. Please try again."
 }

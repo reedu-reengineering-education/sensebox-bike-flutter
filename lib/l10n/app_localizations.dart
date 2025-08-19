@@ -1126,13 +1126,13 @@ abstract class AppLocalizations {
   /// No description provided for @trackFilterAll.
   ///
   /// In en, this message translates to:
-  /// **'All tracks'**
+  /// **'All'**
   String get trackFilterAll;
 
   /// No description provided for @trackFilterUnuploaded.
   ///
   /// In en, this message translates to:
-  /// **'Unuploaded only'**
+  /// **'Not uploaded'**
   String get trackFilterUnuploaded;
 
   /// No description provided for @trackUploadRetryFailed.

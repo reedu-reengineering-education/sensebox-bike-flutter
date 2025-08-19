@@ -236,7 +236,7 @@
     "trackStatusUploaded": "Enviado",
     "trackStatusNotUploaded": "Não enviado",
     "trackStatusUploadFailed": "Envio falhou",
-    "trackFilterAll": "Todos os trajetos",
-    "trackFilterUnuploaded": "Apenas não enviados",
+    "trackFilterAll": "Todos",
+    "trackFilterUnuploaded": "Trajetos não enviados",
     "trackUploadRetryFailed": "Tentativa de envio falhou. Tente novamente."
 }

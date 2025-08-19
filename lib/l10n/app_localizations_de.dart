@@ -547,10 +547,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackStatusUploadFailed => 'Upload fehlgeschlagen';
 
   @override
-  String get trackFilterAll => 'Alle Tracks';
+  String get trackFilterAll => 'Alle';
 
   @override
-  String get trackFilterUnuploaded => 'Nur nicht hochgeladene';
+  String get trackFilterUnuploaded => 'Nicht hochgeladene Tracks';
 
   @override
   String get trackUploadRetryFailed => 'Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut.';
