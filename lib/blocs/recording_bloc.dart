@@ -75,6 +75,7 @@ class RecordingBloc with ChangeNotifier {
     } catch (e) {
       // Don't start recording if location permissions are not granted
       ErrorService.handleError(e, StackTrace.current);
+      notifyListeners();
       return;
     }
 
