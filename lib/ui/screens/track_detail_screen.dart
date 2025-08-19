@@ -17,6 +17,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
 import 'package:sensebox_bike/ui/widgets/track/upload_status_indicator.dart';
+import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -72,7 +73,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     final theme = Theme.of(context);
     
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: spacing, vertical: padding),
+      margin: const EdgeInsets.symmetric(vertical: padding),
       padding: const EdgeInsets.all(spacing),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
@@ -98,7 +99,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
               const Spacer(),
               UploadStatusIndicator(
                 track: widget.track,
-                onRetryPressed: _isUploading ? null : _retryUpload,
+                onRetryPressed: _isUploading ? null : _startUpload,
                 showText: true,
                 isCompact: false,
               ),
@@ -319,7 +320,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
-  Future<void> _retryUpload() async {
+  Future<void> _startUpload() async {
     final localizations = AppLocalizations.of(context)!;
     
     // Check if user is authenticated
@@ -347,21 +348,47 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     setState(() => _isUploading = true);
 
     try {
-      await batchUploadService.uploadTrack(widget.track, openSenseMapBloc.selectedSenseBox!);
-      
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.trackUploadRetrySuccess),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // Refresh the track data to show updated status
-        setState(() {});
-      }
+      // Show upload progress modal
+      UploadProgressOverlay.show(
+        context,
+        batchUploadService: batchUploadService,
+        onUploadComplete: () {
+          // Upload completed successfully
+          setState(() => _isUploading = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(localizations.trackUploadRetrySuccess),
+                backgroundColor: Colors.green,
+              ),
+            );
+            // Refresh the track data to show updated status
+            setState(() {});
+          }
+        },
+        onUploadFailed: () {
+          // Upload failed permanently
+          setState(() => _isUploading = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(localizations.trackUploadRetryFailed),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          }
+        },
+        onRetryRequested: () {
+          // User requested retry - restart upload with fresh service
+          _retryUpload();
+        },
+      );
+
+      // Start the upload
+      await batchUploadService.uploadTrack(
+          widget.track, openSenseMapBloc.selectedSenseBox!);
     } catch (e) {
+      setState(() => _isUploading = false);
       // Show error message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -371,20 +398,123 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           ),
         );
       }
-    } finally {
+    }
+  }
+
+  Future<void> _retryUpload() async {
+    final localizations = AppLocalizations.of(context)!;
+
+    // Check if user is authenticated
+    if (!openSenseMapBloc.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.uploadProgressAuthenticationError),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    // Check if senseBox is selected
+    if (openSenseMapBloc.selectedSenseBox == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.errorNoSenseBoxSelected),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    try {
+      // Reset the batch upload service to start fresh
+      batchUploadService.dispose();
+      batchUploadService = BatchUploadService(
+        openSenseMapService: openSenseMapBloc.openSenseMapService,
+        trackService: isarService.trackService,
+        openSenseMapBloc: openSenseMapBloc,
+      );
+
+      // Show upload progress modal with fresh service
+      UploadProgressOverlay.show(
+        context,
+        batchUploadService: batchUploadService,
+        onUploadComplete: () {
+          // Upload completed successfully
+          setState(() => _isUploading = false);
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        onUploadFailed: () {
+          // Upload failed permanently
+          setState(() => _isUploading = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(localizations.trackUploadRetryFailed),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          }
+        },
+        onRetryRequested: () {
+          // User requested retry again
+          _retryUpload();
+        },
+      );
+
+      // Start the upload with fresh service
+      await batchUploadService.uploadTrack(
+          widget.track, openSenseMapBloc.selectedSenseBox!);
+    } catch (e) {
+      setState(() => _isUploading = false);
+      // Show error message
       if (mounted) {
-        setState(() => _isUploading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localizations.trackUploadRetryFailed),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     }
   }
 
   Widget _buildAppBarTitle(TrackData track) {
     String errorMessage = AppLocalizations.of(context)!.trackDetailsNoData;
+    final theme = Theme.of(context);
 
     return Row(
       children: [
-        Text(trackName(track, errorMessage: errorMessage)),
+        Text(
+          trackName(track, errorMessage: errorMessage),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const Spacer(),
+        // Upload button - only show if track hasn't been uploaded
+        if (!track.uploaded)
+          GestureDetector(
+            onTap: _isUploading ? null : _startUpload,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: _isUploading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      Icons.cloud_upload,
+                      size: 20,
+                      color: theme.colorScheme.onSurface,
+                    ),
+            ),
+          ),
         ExportButton(
           isDisabled: false,
           isDownloading: _isDownloading,
