@@ -9,6 +9,7 @@ import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
@@ -42,6 +43,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   bool _isUploading = false;
   late String _sensorType = 'temperature';
   List<GeolocationData> _geolocations = [];
+  List<SensorData> _sensorData = [];
   bool _isLoading = true;
 
   _TrackDetailScreenState();
@@ -205,6 +207,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           .getGeolocationDataWithPreloadedSensors(widget.track.id);
       setState(() {
         _geolocations = geolocations;
+        _sensorData = getAllUniqueSensorData(geolocations);
+        _sensorType = getFirstAvailableSensorType(_sensorData);
         _isLoading = false;
       });
     } catch (e) {
@@ -548,9 +552,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       );
     }
 
-    // Get all unique sensor data from all geolocations in the track
-    final sensorData = getAllUniqueSensorData(_geolocations);
-    
     final minSensorValue =
         getMinSensorValue(_geolocations, _sensorType).toStringAsFixed(1);
     final maxSensorValue =
@@ -601,7 +602,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                   ])
                 ])),
             SensorTileList(
-              sensorData: sensorData,
+              sensorData: _sensorData,
               selectedSensorType: _sensorType,
               onSensorTypeSelected: (type) {
                 setState(() {

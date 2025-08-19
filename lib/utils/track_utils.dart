@@ -184,6 +184,26 @@ List<SensorData> getAllUniqueSensorData(List<GeolocationData> geolocations) {
   return allSensorData.toList();
 }
 
+String getFirstAvailableSensorType(List<SensorData> sensorData) {
+  if (sensorData.isEmpty) return 'temperature';
+
+  final availableSensors = <String>{};
+  for (final sensor in sensorData) {
+    final sensorKey = sensor.attribute != null
+        ? '${sensor.title}_${sensor.attribute}'
+        : sensor.title;
+    availableSensors.add(sensorKey);
+  }
+
+  for (final sensorType in order) {
+    if (availableSensors.contains(sensorType)) {
+      return sensorType;
+    }
+  }
+
+  return availableSensors.first;
+}
+
 /// Utility class for preparing data for upload to OpenSenseMap
 class UploadDataPreparer {
   final SenseBox senseBox;
