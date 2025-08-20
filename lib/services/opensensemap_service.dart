@@ -29,9 +29,10 @@ class OpenSenseMapService {
   // Add permanent authentication failure state
   bool _isPermanentlyDisabled = false;
 
-  // Simple authentication state flag
-  bool _isAuthenticated = false;
-
+  // Add token caching fields
+  String? _cachedAccessToken;
+  DateTime? _tokenExpiration;
+  bool _isRefreshingToken = false;
 
   OpenSenseMapService({
     http.Client? client,
@@ -57,8 +58,16 @@ class OpenSenseMapService {
     _isPermanentlyDisabled = false;
   }
 
-  // Simple authentication state getter
-  bool get isAuthenticated => _isAuthenticated;
+  // Add method to check if service is authenticated
+  bool get isAuthenticated {
+    return _cachedAccessToken != null &&
+        _tokenExpiration != null &&
+        _isTokenValid(_cachedAccessToken!);
+  }
+
+  // Debug getters for troubleshooting
+  bool get hasCachedToken => _cachedAccessToken != null;
+  DateTime? get tokenExpiration => _tokenExpiration;
 
   Future<void> setTokens(http.Response response) async {
     final prefs = await _prefs;
@@ -69,8 +78,9 @@ class OpenSenseMapService {
     await prefs.setString('accessToken', accessToken);
     await prefs.setString('refreshToken', refreshToken);
 
-    // Update authentication state
-    _isAuthenticated = true;
+    // Update cached token with actual expiration
+    _cachedAccessToken = accessToken;
+    _tokenExpiration = _getTokenExpiration(accessToken);
   }
 
   Future<void> removeTokens() async {
@@ -79,31 +89,14 @@ class OpenSenseMapService {
     await prefs.remove('accessToken');
     await prefs.remove('refreshToken');
 
-    // Update authentication state
-    _isAuthenticated = false;
+    // Clear cached token
+    _clearCachedToken();
   }
 
   Future<String?> getRefreshTokenFromPreferences() async {
     final prefs = await _prefs;
 
     return prefs.getString('refreshToken');
-  }
-
-  /// Initialize authentication state from stored tokens
-  Future<void> initializeAuthState() async {
-    final prefs = await _prefs;
-    final token = prefs.getString('accessToken');
-    
-    if (token != null && _isTokenValid(token)) {
-      _isAuthenticated = true;
-    } else {
-      _isAuthenticated = false;
-      // Clean up invalid tokens
-      if (token != null) {
-        await prefs.remove('accessToken');
-        await prefs.remove('refreshToken');
-      }
-    }
   }
 
   Future<void> register(String name, String email, String password) async {
@@ -237,44 +230,49 @@ class OpenSenseMapService {
   }
 
   Future<String?> getAccessToken() async {
+    if (_cachedAccessToken != null && _tokenExpiration != null) {
+      final isValid = _isTokenValid(_cachedAccessToken!);
+      if (isValid) {
+        final now = DateTime.now();
+        final timeUntilExpiry = _tokenExpiration!.difference(now);
+
+        if (timeUntilExpiry.inMinutes > 5) {
+          return _cachedAccessToken;
+        }
+
+        if (timeUntilExpiry.inMinutes > 0 && !_isRefreshingToken) {
+          _refreshTokenProactively();
+        }
+      } else {
+        _clearCachedToken();
+      }
+    }
+
     final prefs = await _prefs;
     final token = prefs.getString('accessToken');
 
     if (token != null) {
       final isValid = _isTokenValid(token);
       if (isValid) {
-        // Check if token expires soon (within 5 minutes)
-        final expiration = _getTokenExpiration(token);
-        if (expiration != null) {
-          final now = DateTime.now();
-          final timeUntilExpiry = expiration.difference(now);
-          
-          if (timeUntilExpiry.inMinutes <= 5) {
-            // Token expires soon, try to refresh it
-            try {
-              await refreshToken();
-              // Get the new token after refresh
-              return prefs.getString('accessToken');
-            } catch (e) {
-              // If refresh fails, remove invalid tokens
-              await removeTokens();
-              _isAuthenticated = false;
-              return null;
-            }
-          }
-        }
-        return token;
+        _cachedAccessToken = token;
+        _tokenExpiration = _getTokenExpiration(token);
       } else {
-        // Token is invalid, remove it
         await prefs.remove('accessToken');
-        await prefs.remove('refreshToken');
-        _isAuthenticated = false;
         return null;
       }
     }
 
-    _isAuthenticated = false;
-    return null;
+    return token;
+  }
+
+  /// Decode JWT payload using dart_jsonwebtoken library
+  Map<String, dynamic>? _decodeJwtPayload(String token) {
+    try {
+      final jwt = JWT.decode(token);
+      return jwt.payload;
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Validate JWT token and extract expiration
@@ -323,39 +321,51 @@ class OpenSenseMapService {
 
     if (response.statusCode == 200) {
       await setTokens(response);
-      // Remove caching logic
+      // Update cached token after successful refresh
+      final prefs = await _prefs;
+      _cachedAccessToken = prefs.getString('accessToken');
+      _tokenExpiration = _getTokenExpiration(_cachedAccessToken!);
     } else {
       await removeTokens();
-      // Remove cache clearing
+      _clearCachedToken();
 
       throw Exception('Token refresh failed - retrying');
     }
   }
 
-  // Remove proactive token refresh method
+  /// Proactively refresh token before it expires
+  Future<void> _refreshTokenProactively() async {
+    if (_isRefreshingToken) return;
 
-  // Remove cache clearing method
-
-  Future<Map<String, dynamic>?> getTokenStatus() async {
-    // Get token directly from SharedPreferences
-    final prefs = await _prefs;
-    final token = prefs.getString('accessToken');
-    
-    if (token == null) {
-      return null;
+    _isRefreshingToken = true;
+    try {
+      await refreshToken();
+    } catch (e) {
+      // If proactive refresh fails, clear cache and let normal flow handle it
+      _clearCachedToken();
+    } finally {
+      _isRefreshingToken = false;
     }
+  }
 
-    final expiration = _getTokenExpiration(token);
-    if (expiration == null) {
+  /// Clear cached token (called on logout or auth failure)
+  void _clearCachedToken() {
+    _cachedAccessToken = null;
+    _tokenExpiration = null;
+    _isRefreshingToken = false;
+  }
+
+  Map<String, dynamic>? getTokenStatus() {
+    if (_cachedAccessToken == null || _tokenExpiration == null) {
       return null;
     }
 
     final now = DateTime.now();
-    final timeUntilExpiry = expiration.difference(now);
+    final timeUntilExpiry = _tokenExpiration!.difference(now);
 
     return {
-      'hasCachedToken': false, // No longer caching
-      'isRefreshing': false,   // No longer tracking refresh state
+      'hasCachedToken': true,
+      'isRefreshing': _isRefreshingToken,
       'expiresInMinutes': timeUntilExpiry.inMinutes,
       'isValid': timeUntilExpiry.inMinutes > 5,
     };
@@ -379,7 +389,10 @@ class OpenSenseMapService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return successHandler(response);
     } else if (response.statusCode == 401 || response.statusCode == 403) {
-      // Remove refresh token tracking
+      // Only try to refresh token once, and only if we're not already refreshing
+      if (_isRefreshingToken) {
+        throw Exception('Token refresh already in progress');
+      }
 
       try {
         await refreshToken();
