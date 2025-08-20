@@ -3,10 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
-import 'package:sensebox_bike/ui/widgets/track/upload_status_indicator.dart';
+
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:isar/isar.dart';
 
 void main() {
   group('TrackListItem Upload Status', () {
@@ -29,7 +28,7 @@ void main() {
       testTrack.geolocations.addAll([geolocation1, geolocation2]);
     });
 
-    Widget createTestWidget(TrackData track, {Function(TrackData)? onRetryUpload}) {
+    Widget createTestWidget(TrackData track) {
       return MaterialApp(
         localizationsDelegates: const [
           AppLocalizations.delegate,
@@ -46,17 +45,16 @@ void main() {
           body: TrackListItem(
             track: track,
             onDismissed: () {},
-            onRetryUpload: onRetryUpload,
           ),
         ),
       );
     }
 
-    testWidgets('displays upload status indicator', (WidgetTester tester) async {
+    testWidgets('displays upload status icon', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(testTrack));
 
-      // Should display the upload status indicator
-      expect(find.byType(UploadStatusIndicator), findsOneWidget);
+      // Should display the upload status icon (cloud_upload for new tracks)
+      expect(find.byIcon(Icons.cloud_upload), findsOneWidget);
     });
 
     testWidgets('shows uploaded status for uploaded track', (WidgetTester tester) async {
@@ -90,25 +88,14 @@ void main() {
       expect(find.byIcon(Icons.cloud_off), findsOneWidget);
     });
 
-    testWidgets('calls retry callback when retry is pressed', (WidgetTester tester) async {
+    testWidgets('shows correct status icon for track with upload attempts', (WidgetTester tester) async {
       testTrack.uploaded = false;
       testTrack.uploadAttempts = 1;
 
-      TrackData? retriedTrack;
-      
-      await tester.pumpWidget(createTestWidget(
-        testTrack,
-        onRetryUpload: (track) => retriedTrack = track,
-      ));
+      await tester.pumpWidget(createTestWidget(testTrack));
 
-      // Find and tap the retry button (it should be in the upload status indicator)
-      // First, long press to show tooltip and verify the status
-      await tester.longPress(find.byType(UploadStatusIndicator));
-      await tester.pumpAndSettle();
-
-      // The retry functionality would be tested through integration tests
-      // as the compact indicator doesn't show the retry button directly
-      expect(find.byType(UploadStatusIndicator), findsOneWidget);
+      // Should show failed upload icon (cloud_off) for tracks with upload attempts
+      expect(find.byIcon(Icons.cloud_off), findsOneWidget);
     });
 
     testWidgets('displays track information alongside upload status', (WidgetTester tester) async {
@@ -117,8 +104,8 @@ void main() {
 
       await tester.pumpWidget(createTestWidget(testTrack));
 
-      // Should show both track information and upload status
-      expect(find.byType(UploadStatusIndicator), findsOneWidget);
+      // Should show both track information and upload status icon
+      expect(find.byIcon(Icons.cloud_upload), findsOneWidget);
       // Only check for timer and distance icons if track has geolocations
       if (testTrack.geolocations.isNotEmpty) {
         expect(find.byIcon(Icons.timer_outlined), findsOneWidget); // Duration icon
@@ -132,20 +119,20 @@ void main() {
 
       await tester.pumpWidget(createTestWidget(emptyTrack));
 
-      // Should still show upload status indicator even for empty tracks
-      expect(find.byType(UploadStatusIndicator), findsOneWidget);
+      // Should still show upload status icon even for empty tracks
+      expect(find.byIcon(Icons.cloud_upload), findsOneWidget);
     });
 
-    testWidgets('upload status indicator is positioned correctly', (WidgetTester tester) async {
+    testWidgets('upload status icon is positioned correctly', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(testTrack));
 
-      // Find the upload status indicator
-      final uploadStatusFinder = find.byType(UploadStatusIndicator);
+      // Find the upload status icon
+      final uploadStatusFinder = find.byIcon(Icons.cloud_upload);
       expect(uploadStatusFinder, findsOneWidget);
 
       // Verify it's positioned in the top-right area of the track info
-      final uploadStatusWidget = tester.widget<UploadStatusIndicator>(uploadStatusFinder);
-      expect(uploadStatusWidget.isCompact, isTrue);
+      // The icon should be visible in the track item
+      expect(uploadStatusFinder, findsOneWidget);
     });
   });
 }

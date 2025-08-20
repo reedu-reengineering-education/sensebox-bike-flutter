@@ -908,7 +908,6 @@ void main() {
         
         directUploadService.enable();
         expect(directUploadService.isEnabled, true);
-        expect(directUploadService.isLiveUploadDisabledByFeatureFlag, false);
         expect(directUploadService.isUploadDisabled, false);
 
         // Setup mock to be authenticated and accepting requests

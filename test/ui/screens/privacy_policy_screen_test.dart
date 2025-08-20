@@ -20,9 +20,6 @@ void main() {
     </html>
   ''';
 
-  setUpAll(() {
-    WebViewPlatform.instance = FakeWebViewPlatform();
-  });
 
   setUp(() {
     initializeTestDependencies();

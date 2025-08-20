@@ -237,7 +237,9 @@ group('TrackService', () {
       });
 
       test('handles empty result when no unuploaded tracks exist', () async {
-        // Create only uploaded tracks
+        // Clear database first and create only uploaded tracks
+        await trackService.deleteAllTracks();
+        
         final uploadedTrack1 = TrackData()..uploaded = true;
         final uploadedTrack2 = TrackData()..uploaded = true;
 
@@ -252,7 +254,10 @@ group('TrackService', () {
       });
 
       test('handles pagination correctly for unuploaded tracks', () async {
-        // Create multiple unuploaded tracks
+        // Clear database first to have exact control over the number of tracks
+        await trackService.deleteAllTracks();
+        
+        // Create exactly 5 unuploaded tracks
         final unuploadedTracks =
             List.generate(5, (index) => TrackData()..uploaded = false);
 

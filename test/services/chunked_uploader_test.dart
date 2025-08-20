@@ -1,18 +1,17 @@
-import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
-import 'package:sensebox_bike/models/track_data.dart';
-import 'package:sensebox_bike/models/sensor_data.dart';
-import 'package:sensebox_bike/models/chunk_upload_result.dart';
 import 'package:sensebox_bike/services/chunked_uploader.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
-import 'package:sensebox_bike/services/custom_exceptions.dart';
-import 'package:isar/isar.dart';
 
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 void main() {
+  setUpAll(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+  });
+  
   group('ChunkedUploader', () {
     late ChunkedUploader chunkedUploader;
     late MockOpenSenseMapService mockOpenSenseMapService;

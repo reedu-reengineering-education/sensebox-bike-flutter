@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart' as mocktail;
 import 'package:mocktail/mocktail.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -98,95 +99,34 @@ class FakeSensorData extends Fake implements SensorData {}
 
 // Mocks for webview_flutter
 
-class FakeWebViewPlatform extends mocktail.Fake implements WebViewPlatform {
+class FakeWebViewPlatform extends Fake implements WebViewPlatform {
   @override
   PlatformWebViewController createPlatformWebViewController(
     PlatformWebViewControllerCreationParams params,
   ) {
-    return FakeWebViewController(params);
+    throw UnimplementedError('FakeWebViewController not implemented');
   }
 
   @override
   PlatformWebViewWidget createPlatformWebViewWidget(
     PlatformWebViewWidgetCreationParams params,
   ) {
-    return FakeWebViewWidget(params);
+    throw UnimplementedError('FakeWebViewWidget not implemented');
   }
 
   @override
   PlatformWebViewCookieManager createPlatformCookieManager(
     PlatformWebViewCookieManagerCreationParams params,
   ) {
-    return FakeCookieManager(params);
+    throw UnimplementedError('FakeCookieManager not implemented');
   }
 
   @override
   PlatformNavigationDelegate createPlatformNavigationDelegate(
     PlatformNavigationDelegateCreationParams params,
   ) {
-    return FakeNavigationDelegate(params);
+    throw UnimplementedError('FakeNavigationDelegate not implemented');
   }
 }
 
-class FakeWebViewController extends mocktail.Fake implements PlatformWebViewController {
-  FakeWebViewController(PlatformWebViewControllerCreationParams params);
 
-  @override
-  Future<void> setJavaScriptMode(JavaScriptMode javaScriptMode) async {}
-
-  @override
-  Future<void> setBackgroundColor(Color color) async {}
-
-  @override
-  Future<void> setPlatformNavigationDelegate(
-    PlatformNavigationDelegate handler,
-  ) async {}
-
-  @override
-  Future<void> addJavaScriptChannel(
-      JavaScriptChannelParams javaScriptChannelParams) async {}
-
-  @override
-  Future<void> loadRequest(LoadRequestParams params) async {}
-
-  @override
-  Future<String?> currentUrl() async {
-    return 'https://www.google.com';
-  }
-}
-
-class FakeCookieManager extends mocktail.Fake implements PlatformWebViewCookieManager {
-  FakeCookieManager(PlatformWebViewCookieManagerCreationParams params);
-}
-
-class FakeWebViewWidget extends mocktail.Fake implements PlatformWebViewWidget {
-  FakeWebViewWidget(PlatformWebViewWidgetCreationParams params);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Text('Fake WebView Content', key: Key('FakeWebViewWidget'));
-  }
-}
-
-class FakeNavigationDelegate extends mocktail.Fake implements PlatformNavigationDelegate {
-  FakeNavigationDelegate(PlatformNavigationDelegateCreationParams params);
-
-  @override
-  Future<void> setOnNavigationRequest(
-    NavigationRequestCallback onNavigationRequest,
-  ) async {}
-
-  @override
-  Future<void> setOnPageFinished(PageEventCallback onPageFinished) async {}
-
-  @override
-  Future<void> setOnPageStarted(PageEventCallback onPageStarted) async {}
-
-  @override
-  Future<void> setOnProgress(ProgressCallback onProgress) async {}
-
-  @override
-  Future<void> setOnWebResourceError(
-    WebResourceErrorCallback onWebResourceError,
-  ) async {}
-}

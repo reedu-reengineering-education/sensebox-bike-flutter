@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
+import '../../../test_helpers.dart';
 
 // Mock classes
 class MockBatchUploadService extends Mock implements BatchUploadService {}
@@ -36,12 +37,13 @@ void main() {
     testWidgets('should show modal when upload starts', (WidgetTester tester) async {
       // Arrange
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
+        createLocalizedTestApp(
+          child: Scaffold(
             body: UploadProgressModal(
               batchUploadService: mockBatchUploadService,
             ),
           ),
+          locale: const Locale('en'),
         ),
       );
 
@@ -68,12 +70,13 @@ void main() {
     testWidgets('should show progress updates', (WidgetTester tester) async {
       // Arrange
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
+        createLocalizedTestApp(
+          child: Scaffold(
             body: UploadProgressModal(
               batchUploadService: mockBatchUploadService,
             ),
           ),
+          locale: const Locale('en'),
         ),
       );
 
@@ -102,8 +105,8 @@ void main() {
       
       // Arrange
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
+        createLocalizedTestApp(
+          child: Scaffold(
             body: UploadProgressModal(
               batchUploadService: mockBatchUploadService,
               onRetryRequested: () {
@@ -111,6 +114,7 @@ void main() {
               },
             ),
           ),
+          locale: const Locale('en'),
         ),
       );
 
@@ -143,8 +147,8 @@ void main() {
       
       // Arrange
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
+        createLocalizedTestApp(
+          child: Scaffold(
             body: UploadProgressModal(
               batchUploadService: mockBatchUploadService,
               onUploadComplete: () {
@@ -152,6 +156,7 @@ void main() {
               },
             ),
           ),
+          locale: const Locale('en'),
         ),
       );
 
@@ -180,12 +185,13 @@ void main() {
     testWidgets('should show error message for failed uploads', (WidgetTester tester) async {
       // Arrange
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
+        createLocalizedTestApp(
+          child: Scaffold(
             body: UploadProgressModal(
               batchUploadService: mockBatchUploadService,
             ),
           ),
+          locale: const Locale('en'),
         ),
       );
 
@@ -203,10 +209,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // Assert
-      expect(find.text('Upload failed'), findsOneWidget);
+      expect(find.text('Authentication required'), findsOneWidget);
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
-      // Should show user-friendly error message
-      expect(find.textContaining('Please log in again'), findsOneWidget);
+      // Should show user-friendly error message  
+      expect(find.textContaining('Please log in to upload data'), findsOneWidget);
     });
   });
 
@@ -225,8 +231,8 @@ void main() {
 
       // Build app with overlay
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
+        createLocalizedTestApp(
+          child: Builder(
             builder: (context) {
               return Scaffold(
                 body: ElevatedButton(
@@ -241,6 +247,7 @@ void main() {
               );
             },
           ),
+          locale: const Locale('en'),
         ),
       );
 
