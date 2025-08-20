@@ -106,6 +106,16 @@ class OpenSenseMapService {
     }
   }
 
+  /// Check if a refresh token error indicates permanent failure
+  bool _isRefreshTokenErrorPermanent(String errorMessage) {
+    // Check for specific error messages that indicate permanent failure
+    return errorMessage.contains('Refresh token expired') ||
+           errorMessage.contains('Invalid refresh token') ||
+           errorMessage.contains('Refresh token not found') ||
+           errorMessage.contains('401') ||
+           errorMessage.contains('403');
+  }
+
   Future<void> register(String name, String email, String password) async {
     final response = await client.post(
       Uri.parse('$_baseUrl/users/register'),
@@ -250,22 +260,40 @@ class OpenSenseMapService {
           final timeUntilExpiry = expiration.difference(now);
           
           if (timeUntilExpiry.inMinutes <= 5) {
-            // Token expires soon, try to refresh it
+            // Token expires soon, try to refresh it proactively
+            // This prevents API calls from failing due to expired tokens
             try {
               await refreshToken();
               // Get the new token after refresh
               return prefs.getString('accessToken');
             } catch (e) {
-              // If refresh fails, remove invalid tokens
-              await removeTokens();
-              _isAuthenticated = false;
-              return null;
+              // If refresh fails, check if it's a permanent failure
+              debugPrint('[OpenSenseMapService] Proactive token refresh failed: $e');
+              
+              // Don't remove tokens here - let the API call handle it
+              // Just return the current token and let it fail naturally
+              return token;
             }
           }
         }
         return token;
       } else {
-        // Token is invalid, remove it
+        // Token is invalid, but try to refresh it first
+        // This allows expired tokens to be refreshed instead of immediately removed
+        try {
+          await refreshToken();
+          // Get the new token after refresh
+          final newToken = prefs.getString('accessToken');
+          if (newToken != null && _isTokenValid(newToken)) {
+            _isAuthenticated = true;
+            return newToken;
+          }
+        } catch (e) {
+          debugPrint('[OpenSenseMapService] Token refresh failed: $e');
+        }
+        
+        // If refresh failed or new token is still invalid, remove tokens
+        // This prevents invalid tokens from persisting in storage
         await prefs.remove('accessToken');
         await prefs.remove('refreshToken');
         _isAuthenticated = false;
@@ -325,10 +353,11 @@ class OpenSenseMapService {
       await setTokens(response);
       // Remove caching logic
     } else {
+      // Log the actual error for debugging
+      debugPrint('[OpenSenseMapService] Token refresh failed: ${response.statusCode} - ${response.body}');
+      
       await removeTokens();
-      // Remove cache clearing
-
-      throw Exception('Token refresh failed - retrying');
+      throw Exception('Token refresh failed: ${response.statusCode} - ${response.body}');
     }
   }
 
@@ -398,6 +427,14 @@ class OpenSenseMapService {
               '$errorMessage after token refresh (${retryResponse.statusCode})');
         }
       } catch (refreshError) {
+        final errorMessage = refreshError.toString();
+        
+        // Check if this is a permanent refresh token failure
+        if (_isRefreshTokenErrorPermanent(errorMessage)) {
+          _isPermanentlyDisabled = true;
+          debugPrint('[OpenSenseMapService] Permanent refresh token failure - service disabled until re-login');
+        }
+        
         throw Exception('Failed to refresh token: $refreshError');
       }
     } else {
@@ -533,7 +570,6 @@ class OpenSenseMapService {
         return e is TooManyRequestsException ||
             errorString.contains('Token refreshed') ||
             errorString.contains('Server error') ||
-            e is TooManyRequestsException ||
             e is SocketException || // Network connectivity issues
             e is HttpException || // HTTP protocol errors
             e is TimeoutException;
