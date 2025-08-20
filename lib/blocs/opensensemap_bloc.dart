@@ -65,6 +65,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   Future<void> _initializeAuth() async {
     _isAuthenticatingNotifier.value = true;
     try {
+      // Initialize the service's authentication state
+      await _service.initializeAuthState();
+      
       // First check if we have any stored tokens
       final token = await _service.getAccessToken();
       if (token == null) {
