@@ -856,7 +856,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorNoLocationAccess.
   ///
   /// In en, this message translates to:
-  /// **'To record tracks, please allow the app to access the device\'s current location in the phone settings.'**
+  /// **'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.'**
   String get errorNoLocationAccess;
 
   /// No description provided for @errorNoScanAccess.

@@ -408,7 +408,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Ativar Bluetooth';
 
   @override
-  String get errorNoLocationAccess => 'Para gravar faixas, permita que a aplicação aceda à localização atual do dispositivo nas definições do telefone.';
+  String get errorNoLocationAccess => 'Os serviços de localização estão desativados ou o acesso é negado. Para gravar faixas, ative os serviços de localização e permita que a aplicação aceda à sua localização nas definições do telefone.';
 
   @override
   String get errorNoScanAccess => 'Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.';

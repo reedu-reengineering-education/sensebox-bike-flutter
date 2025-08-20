@@ -108,11 +108,16 @@ class SenseBoxBikeApp extends StatelessWidget {
         }
 
         final fullId = "senseBox:bike [$id]";
+
         debugPrint('Connecting to $fullId');
-        if (context.mounted) {
-          await bleBloc.connectToId(fullId, context);
-          await Future.delayed(const Duration(seconds: 2));
-          recordingBloc.startRecording();
+        try {
+          if (context.mounted) {
+            await bleBloc.connectToId(fullId, context);
+            await Future.delayed(const Duration(seconds: 2));
+            recordingBloc.startRecording();
+          }
+        } catch (e) {
+          ErrorService.handleError(e, StackTrace.current, sendToSentry: true);
         }
       }
     });

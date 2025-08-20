@@ -10,11 +10,11 @@ concurrency:
 
 jobs:
   test:
-    runs-on: macOS-latest
+    runs-on: macOS-14
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Emulator
         uses: futureware-tech/simulator-action@v4

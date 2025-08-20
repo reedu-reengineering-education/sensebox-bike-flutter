@@ -408,7 +408,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Enable Bluetooth';
 
   @override
-  String get errorNoLocationAccess => 'To record tracks, please allow the app to access the device\'s current location in the phone settings.';
+  String get errorNoLocationAccess => 'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.';
 
   @override
   String get errorNoScanAccess => 'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.';
