@@ -119,14 +119,14 @@ class SenseBoxBikeApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => settingsBloc),
-        ChangeNotifierProvider(create: (_) => trackBloc),
-        ChangeNotifierProvider(create: (_) => recordingBloc),
-        ChangeNotifierProvider(create: (_) => bleBloc),
-        ChangeNotifierProvider(create: (_) => geolocationBloc),
-        ChangeNotifierProvider(create: (_) => sensorBloc),
-        ChangeNotifierProvider(create: (_) => openSenseMapBloc),
-        ChangeNotifierProvider(create: (_) => mapboxDrawController),
+        ChangeNotifierProvider.value(value: settingsBloc),
+        ChangeNotifierProvider.value(value: trackBloc),
+        ChangeNotifierProvider.value(value: recordingBloc),
+        ChangeNotifierProvider.value(value: bleBloc),
+        ChangeNotifierProvider.value(value: geolocationBloc),
+        ChangeNotifierProvider.value(value: sensorBloc),
+        ChangeNotifierProvider.value(value: openSenseMapBloc),
+        ChangeNotifierProvider.value(value: mapboxDrawController),
       ],
       child: MaterialApp(
         scaffoldMessengerKey: ErrorService.scaffoldKey,
