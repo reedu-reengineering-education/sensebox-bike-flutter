@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mapbox_maps_flutter_draw/mapbox_maps_flutter_draw.dart';
@@ -14,51 +16,51 @@ import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/initial_screen.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env", mergeWith: Platform.environment);
 
-  runApp(const SenseBoxBikeApp());
-
-  // await SentryFlutter.init(
-  //   (options) => options
-  //     ..dsn = sentryDsn
-  //     ..sampleRate = 1.0
-  //     // Disable sending request headers and IP for users
-  //     ..sendDefaultPii = false,
-  //   appRunner: () => runApp(SentryWidget(child: SenseBoxBikeApp())),
-  // );
+  await SentryFlutter.init(
+    (options) => options
+      ..dsn = sentryDsn
+      ..sampleRate = 1.0
+      // Disable sending request headers and IP for users
+      ..sendDefaultPii = false,
+    appRunner: () => runApp(SentryWidget(child: SenseBoxBikeApp())),
+  );
 }
 
 class SenseBoxBikeApp extends StatelessWidget {
   const SenseBoxBikeApp({super.key});
 
   void _initErrorHandlers() {
-  //   FlutterError.onError = (details) {
-  //     Sentry.captureException(details.exception, stackTrace: details.stack);
+    FlutterError.onError = (details) {
+      Sentry.captureException(details.exception, stackTrace: details.stack);
 
-  //     SchedulerBinding.instance.addPostFrameCallback((_) {
-  //       ErrorService.handleError(
-  //           details.exception, details.stack ?? StackTrace.empty,
-  //           sendToSentry: true);
-  //     });
-  //   };
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        ErrorService.handleError(
+            details.exception, details.stack ?? StackTrace.empty,
+            sendToSentry: true);
+      });
+    };
 
-  //   PlatformDispatcher.instance.onError = (error, stack) {
-  //     Sentry.captureException(error, stackTrace: stack);
+    PlatformDispatcher.instance.onError = (error, stack) {
+      Sentry.captureException(error, stackTrace: stack);
 
-  //     SchedulerBinding.instance.addPostFrameCallback((_) {
-  //       ErrorService.handleError(error, stack, sendToSentry: true);
-  //     });
-  //     return true;
-  //   };
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        ErrorService.handleError(error, stack, sendToSentry: true);
+      });
+      return true;
+    };
   }
 
   @override
