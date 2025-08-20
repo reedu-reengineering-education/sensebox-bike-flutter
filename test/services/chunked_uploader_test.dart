@@ -6,6 +6,7 @@ import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/chunked_uploader.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 
+
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 void main() {
   setUpAll(() {
