@@ -169,16 +169,15 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
       try {
-        // Try to get a valid access token first (this will attempt refresh if needed)
+        // Use the same validation logic as _initializeAuth
         final token = await _service.getAccessToken();
         if (token == null) {
-          // No valid token available after refresh attempts
           _isAuthenticated = false;
           notifyListeners();
           return;
         }
 
-        // We have a token, validate it with API call
+        // Validate token with API call
         final userData = await _service.getUserData();
         if (userData != null) {
           _isAuthenticated = true;
@@ -186,11 +185,23 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
             await loadSelectedSenseBox();
           }
         } else {
-          // Token exists but API call failed
-          _isAuthenticated = false;
+          // Token invalid - try refresh
+          try {
+            await _service.refreshToken();
+            final refreshedUserData = await _service.getUserData();
+            if (refreshedUserData != null) {
+              _isAuthenticated = true;
+              if (_selectedSenseBox == null) {
+                await loadSelectedSenseBox();
+              }
+            } else {
+              _isAuthenticated = false;
+            }
+          } catch (refreshError) {
+            _isAuthenticated = false;
+          }
         }
-      } catch (e) {
-        debugPrint('[OpenSenseMapBloc] Background auth check failed: $e');
+      } catch (_) {
         _isAuthenticated = false;
       } finally {
         notifyListeners();
