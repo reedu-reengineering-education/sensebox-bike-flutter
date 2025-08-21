@@ -32,7 +32,7 @@ void main() {
     await prefs.clear();
   });
 
-  // Helper methods
+
   void mockHTTPPOSTResponse(String response, int code) {
     when(() => mockHttpClient.post(
       any(),
@@ -399,7 +399,7 @@ void main() {
     group('Token Caching', () {
       test('isAuthenticated returns true when cached token is valid', () async {
         await setValidTokens();
-        await service.getAccessToken(); // This will cache the token
+        await service.getAccessToken();
 
         expect(service.isAuthenticated, true);
       });
@@ -410,7 +410,7 @@ void main() {
 
       test('tokenExpiration returns cached expiration time', () async {
         await setValidTokens();
-        await service.getAccessToken(); // This will cache the token
+        await service.getAccessToken();
 
         expect(service.tokenExpiration, isA<DateTime>());
         expect(service.tokenExpiration!.isAfter(DateTime.now()), true);
@@ -424,7 +424,7 @@ void main() {
         await setValidTokens();
 
         final token1 = await service.getAccessToken();
-        final token2 = await service.getAccessToken(); // Should use cache
+        final token2 = await service.getAccessToken();
 
         expect(token1, equals(token2));
         expect(service.isAuthenticated, true);
@@ -457,13 +457,11 @@ void main() {
       test('clears cache on authentication error', () async {
         await setValidTokens();
 
-        // First successful call to cache data
-        mockHTTPGETResponse(
+                mockHTTPGETResponse(
           '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
-            200);
+          200);
         await service.getUserData();
 
-        // Second call with auth failure - should clear cache and return null
         mockHTTPGETResponse('Unauthorized', 401);
         final userData = await service.getUserData();
 
@@ -476,7 +474,7 @@ void main() {
           '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
             200);
 
-        await service.getUserData(); // Cache some data
+        await service.getUserData();
         await service.logout();
 
         expect(prefs.getString('userData'), null);
@@ -497,8 +495,6 @@ void main() {
       });
 
       test('resetPermanentDisable resets disabled state', () {
-        // Note: This test would need internal state manipulation
-        // which isn't directly accessible, but the method exists
         service.resetPermanentDisable();
         expect(service.isPermanentlyDisabled, false);
       });
@@ -565,7 +561,6 @@ void main() {
       test('handles coordinates correctly', () {
         final model = service.createSenseBoxBikeModel('Test', 13.4050, 52.5200);
 
-        // Location should be [latitude, longitude]
         expect(model['location'], [52.5200, 13.4050]);
       });
     });

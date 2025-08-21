@@ -14,20 +14,17 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       ValueNotifier<bool>(false);
   ValueNotifier<bool> get isAuthenticatingNotifier => _isAuthenticatingNotifier;
   bool get isAuthenticating => _isAuthenticatingNotifier.value;
-  
-  // make senseboxes a key value store. key is the page number, value is the list of senseboxes
+
   final Map<int, List<dynamic>> _senseBoxes = {};
   final _senseBoxController =
       StreamController<SenseBox?>.broadcast(); // StreamController
   Stream<SenseBox?> get senseBoxStream =>
       _senseBoxController.stream; // Expose stream
-  // get selected sensebox
+
   SenseBox? _selectedSenseBox;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   bool get isAuthenticated => _isAuthenticated;
   
-  /// Mark authentication as failed and notify listeners
-  /// This allows external services to update the authentication state
   Future<void> markAuthenticationFailed() async {
     _isAuthenticated = false;
     _selectedSenseBox = null;
@@ -47,7 +44,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       return await _service.getUserData();
     } catch (e) {
-      // Handle authentication exceptions gracefully
       if (e.toString().contains('Not authenticated')) {
         _isAuthenticated = false;
         notifyListeners();
@@ -57,7 +53,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   OpenSenseMapBloc() {
-    // Register as observer to handle app lifecycle events
     WidgetsBinding.instance.addObserver(this);
     _initializeAuth();
   }
@@ -75,7 +70,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  /// Shared authentication logic used by both app start and background resume
   Future<void> _performAuthentication() async {
     try {
       // Step 1: Check if refresh token exists in SharedPreferences
@@ -84,33 +78,23 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
         _isAuthenticated = false;
         return;
       }
-      
-
       // Step 2: Get and validate access token
       final token = await _service.getAccessToken();
       if (token != null) {
-
         _isAuthenticated = true;
         await loadSelectedSenseBox();
         return;
-      } else {
-
       }
-
       // Step 3: Attempt token refresh
       final refreshSuccess = await _attemptTokenRefresh();
-
+      // Step 4: Token refresh successful - we're authenticated!
       if (refreshSuccess) {
-        // Step 4: Token refresh successful - we're authenticated!
         _isAuthenticated = true;
         await loadSelectedSenseBox();
         return;
-      } else {
       }
-
       // Step 5: All attempts failed
       _isAuthenticated = false;
-      
     } catch (e) {
       _isAuthenticated = false;
     }
@@ -121,7 +105,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
     
     await _performAuthentication();
-
     _isAuthenticatingNotifier.value = false;
     notifyListeners();
   }
@@ -140,12 +123,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     final selectedSenseBoxJson = prefs.getString('selectedSenseBox');
 
     if (selectedSenseBoxJson == null) {
-      _senseBoxController.add(null); // Push null if no senseBox is selected
+      _senseBoxController.add(null); 
       _selectedSenseBox = null;
     } else {
       final newSenseBox = SenseBox.fromJson(jsonDecode(selectedSenseBoxJson));
 
-      // Avoid creating duplicate instances
       if (_selectedSenseBox?.id != newSenseBox.id) {
         _senseBoxController.add(newSenseBox);
         _selectedSenseBox = newSenseBox;
@@ -154,33 +136,10 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
   }
 
-  /// Explicitly validate current authentication state with API call
-  Future<bool> validateAuthenticationState() async {
-    try {
-      final userData = await _service.getUserData();
-      final isValid = userData != null;
-
-      if (_isAuthenticated != isValid) {
-        _isAuthenticated = isValid;
-        notifyListeners();
-      }
-
-      return isValid;
-    } catch (e) {
-      if (_isAuthenticated) {
-        _isAuthenticated = false;
-        notifyListeners();
-      }
-      return false;
-    }
-  }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
       try {
-        // First, try a force refresh if the service was previously disabled
-        // This handles cases where the app was backgrounded during auth issues
         if (_service.isPermanentlyDisabled) {
           final tokens = await _service.refreshToken();
           final refreshSuccess = tokens != null;
@@ -189,18 +148,14 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
           }
         }
 
-        // Use the shared authentication logic
         await _performAuthentication();
-        
       } catch (e) {
-        // Only set to unauthenticated if it's clearly an auth-related error
         if (e.toString().contains('Not authenticated') ||
             e.toString().contains('Authentication failed') ||
             e.toString().contains('No refresh token found') ||
             e.toString().contains('Refresh token is expired')) {
           _isAuthenticated = false;
         }
-        // For other errors (network, etc.), keep current state
       } finally {
         notifyListeners();
       }
@@ -250,9 +205,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       await _service.logout();
       _isAuthenticated = false;
-      _senseBoxController.add(null); // Clear senseBox on logout
+      _senseBoxController.add(null); 
       _selectedSenseBox = null;
-      _senseBoxes.clear(); // Clear cached senseboxes
+      _senseBoxes.clear(); 
       notifyListeners();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
@@ -265,7 +220,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       await _service.createSenseBoxBike(
           name, latitude, longitude, model, selectedTag);
     } catch (e, stack) {
-      // Handle authentication exceptions gracefully
       if (e.toString().contains('Not authenticated')) {
         _isAuthenticated = false;
         notifyListeners();

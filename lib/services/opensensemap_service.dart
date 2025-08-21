@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:sensebox_bike/services/custom_exceptions.dart';
@@ -9,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retry/retry.dart';
 import 'dart:async';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-
 import 'package:sensebox_bike/constants.dart';
 
 enum SenseBoxBikeModel { classic, atrai }
@@ -84,9 +82,6 @@ class OpenSenseMapService {
 
     _cachedAccessToken = accessToken;
     _tokenExpiration = _getTokenExpiration(accessToken);
-    
-    debugPrint(
-        '[OpenSenseMapService] Tokens stored successfully in SharedPreferences');
   }
 
   Future<void> removeTokens() async {
@@ -286,9 +281,6 @@ class OpenSenseMapService {
         throw Exception('No refresh token found');
       }
 
-      debugPrint(
-          '[OpenSenseMapService] Attempting token refresh with retry logic');
-
       final response = await retry(
         () async {
           final response = await client.post(
@@ -335,12 +327,10 @@ class OpenSenseMapService {
           'refreshToken': newRefreshToken,
         };
       } else {
-
         throw Exception('Token refresh failed: ${response.statusCode}');
       }
       
     } catch (e) {
-
       rethrow;
     }
   }
