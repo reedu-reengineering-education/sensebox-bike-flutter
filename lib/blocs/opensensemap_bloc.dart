@@ -64,17 +64,13 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   Future<bool> _attemptTokenRefresh() async {
     try {
-      debugPrint('[OpenSenseMapBloc] Attempting token refresh...');
       final tokens = await _service.refreshToken();
       if (tokens != null) {
-        debugPrint('[OpenSenseMapBloc] Token refresh successful');
         return true;
       } else {
-        debugPrint('[OpenSenseMapBloc] Token refresh returned null');
         return false;
       }
     } catch (e) {
-      debugPrint('[OpenSenseMapBloc] Token refresh failed: $e');
       return false;
     }
   }
@@ -85,48 +81,37 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       // Step 1: Check if refresh token exists in SharedPreferences
       final refreshToken = await _service.getRefreshTokenFromPreferences();
       if (refreshToken == null) {
-        debugPrint(
-            '[OpenSenseMapBloc] No refresh token found - user needs to login');
         _isAuthenticated = false;
         return;
       }
-      debugPrint(
-          '[OpenSenseMapBloc] Found refresh token, proceeding with authentication');
+      
 
       // Step 2: Get and validate access token
       final token = await _service.getAccessToken();
       if (token != null) {
-        debugPrint(
-            '[OpenSenseMapBloc] Valid access token found - authentication complete');
+
         _isAuthenticated = true;
         await loadSelectedSenseBox();
         return;
       } else {
-        debugPrint(
-            '[OpenSenseMapBloc] No valid access token available - will attempt refresh');
+
       }
 
       // Step 3: Attempt token refresh
-      debugPrint('[OpenSenseMapBloc] Attempting token refresh...');
       final refreshSuccess = await _attemptTokenRefresh();
 
       if (refreshSuccess) {
         // Step 4: Token refresh successful - we're authenticated!
-        debugPrint(
-            '[OpenSenseMapBloc] Token refresh successful - authentication complete');
         _isAuthenticated = true;
         await loadSelectedSenseBox();
         return;
       } else {
-        debugPrint('[OpenSenseMapBloc] Token refresh failed');
       }
 
       // Step 5: All attempts failed
-      debugPrint('[OpenSenseMapBloc] All authentication attempts failed');
       _isAuthenticated = false;
       
     } catch (e) {
-      debugPrint('[OpenSenseMapBloc] Authentication failed: $e');
       _isAuthenticated = false;
     }
   }
@@ -197,14 +182,10 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
         // First, try a force refresh if the service was previously disabled
         // This handles cases where the app was backgrounded during auth issues
         if (_service.isPermanentlyDisabled) {
-          debugPrint(
-              '[OpenSenseMapBloc] Service was disabled, attempting token refresh...');
           final tokens = await _service.refreshToken();
           final refreshSuccess = tokens != null;
           if (refreshSuccess) {
             _service.resetPermanentDisable();
-            debugPrint(
-                '[OpenSenseMapBloc] Token refresh succeeded, service re-enabled');
           }
         }
 
@@ -212,7 +193,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
         await _performAuthentication();
         
       } catch (e) {
-        debugPrint('[OpenSenseMapBloc] Background auth check failed: $e');
         // Only set to unauthenticated if it's clearly an auth-related error
         if (e.toString().contains('Not authenticated') ||
             e.toString().contains('Authentication failed') ||

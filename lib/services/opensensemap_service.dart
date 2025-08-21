@@ -282,7 +282,7 @@ class OpenSenseMapService {
       // Check if refresh token exists
       final refreshToken = await getRefreshTokenFromPreferences();
       if (refreshToken == null) {
-        debugPrint('[OpenSenseMapService] No refresh token found');
+  
         throw Exception('No refresh token found');
       }
 
@@ -329,24 +329,18 @@ class OpenSenseMapService {
         // Save tokens to SharedPreferences
         await setTokens(response);
 
-        debugPrint('[OpenSenseMapService] Token refresh successful');
+
         return {
           'accessToken': accessToken,
           'refreshToken': newRefreshToken,
         };
       } else {
-        debugPrint(
-            '[OpenSenseMapService] Token refresh failed: ${response.statusCode} - ${response.body}');
+
         throw Exception('Token refresh failed: ${response.statusCode}');
       }
       
     } catch (e) {
-      if (e is RetryException) {
-        debugPrint(
-            '[OpenSenseMapService] Token refresh failed after all retries: ${e.message}');
-      } else {
-        debugPrint('[OpenSenseMapService] Token refresh error: $e');
-      }
+
       rethrow;
     }
   }
