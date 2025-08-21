@@ -146,7 +146,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   Color _getStatusColor(ThemeData theme) {
     if (widget.track.uploaded) {
-      return Colors.green;
+      return theme.colorScheme.success;
     } else if (widget.track.uploadAttempts > 0) {
       return theme.colorScheme.error;
     } else {
@@ -207,7 +207,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             label: 'Status',
             value: localizations.trackStatusUploaded,
             theme: theme,
-            valueColor: Colors.green,
+            valueColor: theme.colorScheme.success,
           ),
         ] else if (widget.track.uploadAttempts > 0) ...[
           _buildDetailRow(

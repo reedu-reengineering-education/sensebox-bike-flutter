@@ -50,7 +50,7 @@ final darkTheme = ThemeData(
       primary: Colors.white,
       primaryFixedDim: Colors.grey,
       secondary: Colors.white,
-      tertiary: Color.fromRGBO(27, 94, 32, 1),
+      tertiary: Color.fromRGBO(2, 59, 35, 1),
       onTertiaryContainer: Colors.white,
       surface: Color(0xFF121212)),
   cardTheme: CardThemeData(
@@ -64,6 +64,12 @@ final darkTheme = ThemeData(
     headlineSmall: TextStyle(fontSize: 20),
   ),
 );
+
+extension CustomColors on ColorScheme {
+  Color get success =>
+      brightness == Brightness.light ? Colors.green : Colors.green;
+  Color get info => brightness == Brightness.light ? Colors.blue : Colors.blue;
+}
 
 const double circleSize = 16.0;
 const double iconSize = 12.0;

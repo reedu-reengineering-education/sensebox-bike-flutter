@@ -1054,6 +1054,12 @@ abstract class AppLocalizations {
   /// **'Uploading track data...'**
   String get uploadProgressUploading;
 
+  /// No description provided for @uploadProgressInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not close the app while uploading. It can take some time depending on your track length.'**
+  String get uploadProgressInfo;
+
   /// No description provided for @uploadProgressRetrying.
   ///
   /// In en, this message translates to:
@@ -1081,7 +1087,7 @@ abstract class AppLocalizations {
   /// No description provided for @uploadProgressChunks.
   ///
   /// In en, this message translates to:
-  /// **'{completed} of {total} chunks uploaded'**
+  /// **'{completed} of {total, plural, =0{0 chunks} =1{1 chunk} other{{total} chunks}} uploaded'**
   String uploadProgressChunks(int completed, int total);
 
   /// No description provided for @uploadProgressPercentage.

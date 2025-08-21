@@ -530,19 +530,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackStatistics => 'Track-Statistiken';
 
   @override
-  String get uploadProgressTitle => 'Upload-Fortschritt';
+  String get uploadProgressTitle => 'Track Upload';
 
   @override
   String get uploadProgressPreparing => 'Upload wird vorbereitet...';
 
   @override
-  String get uploadProgressUploading => 'Track-Daten werden hochgeladen...';
+  String get uploadProgressUploading => 'Track wird hochgeladen...';
+
+  @override
+  String get uploadProgressInfo =>
+      'Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.';
 
   @override
   String get uploadProgressRetrying => 'Upload wird wiederholt...';
 
   @override
-  String get uploadProgressCompleted => 'Upload erfolgreich abgeschlossen';
+  String get uploadProgressCompleted => 'Upload erfolgreich';
 
   @override
   String get uploadProgressFailed => 'Upload fehlgeschlagen';
@@ -553,7 +557,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String uploadProgressChunks(int completed, int total) {
-    return '$completed von $total Blöcken hochgeladen';
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total Blöcken',
+      one: '1 Block',
+      zero: '0 Blöcken',
+    );
+    return '$completed von $_temp0 hochgeladen';
   }
 
   @override
@@ -591,7 +602,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackFilterAll => 'Alle';
 
   @override
-  String get trackFilterUnuploaded => 'Nicht hochgeladene Tracks';
+  String get trackFilterUnuploaded => 'Nicht hochgeladen';
 
   @override
   String get trackUploadRetryFailed =>

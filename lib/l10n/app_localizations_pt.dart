@@ -536,6 +536,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get uploadProgressUploading => 'Enviando dados do trajeto...';
 
   @override
+  String get uploadProgressInfo =>
+      'Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.';
+
+  @override
   String get uploadProgressRetrying => 'Tentando upload novamente...';
 
   @override
@@ -549,7 +553,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String uploadProgressChunks(int completed, int total) {
-    return '$completed de $total blocos enviados';
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total blocos',
+      one: '1 bloco',
+      zero: '0 blocos',
+    );
+    return '$completed de $_temp0 enviados';
   }
 
   @override
@@ -586,7 +597,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackFilterAll => 'Todos';
 
   @override
-  String get trackFilterUnuploaded => 'Trajetos não enviados';
+  String get trackFilterUnuploaded => 'Não enviados';
 
   @override
   String get trackUploadRetryFailed =>

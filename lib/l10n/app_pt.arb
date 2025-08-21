@@ -207,11 +207,12 @@
     "uploadProgressTitle": "Progresso do Upload",
     "uploadProgressPreparing": "Preparando upload...",
     "uploadProgressUploading": "Enviando dados do trajeto...",
+    "uploadProgressInfo": "Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.",
     "uploadProgressRetrying": "Tentando upload novamente...",
     "uploadProgressCompleted": "Upload concluído com sucesso",
     "uploadProgressFailed": "Upload falhou",
     "uploadProgressAuthenticationFailed": "Autenticação necessária",
-    "uploadProgressChunks": "{completed} de {total} blocos enviados",
+    "uploadProgressChunks": "{completed} de {total, plural, =0{0 blocos} =1{1 bloco} other{{total} blocos}} enviados",
     "@uploadProgressChunks": {
         "placeholders": {
             "completed": {
@@ -245,7 +246,7 @@
     "trackStatusNotUploaded": "Não enviado",
     "trackStatusUploadFailed": "Envio falhou",
     "trackFilterAll": "Todos",
-    "trackFilterUnuploaded": "Trajetos não enviados",
+    "trackFilterUnuploaded": "Não enviados",
     "trackUploadRetryFailed": "Tentativa de envio falhou. Tente novamente.",
     "errorTrackNoGeolocations": "Trajeto não possui dados de geolocalização e não pode ser enviado."
 }

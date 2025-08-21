@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_indicator.dart';
@@ -132,7 +133,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
 
   Widget _buildModalContent(BuildContext context, UploadProgress progress) {
     return AlertDialog(
-      title: const Text('Upload Progress'),
+      title: Text(AppLocalizations.of(context)!.uploadProgressTitle),
       contentPadding: EdgeInsets.zero,
       content: UploadProgressIndicator(
         progress: progress,
@@ -157,7 +158,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
         return [
           FilledButton(
             onPressed: _handleDismiss,
-            child: const Text('Done'),
+            child: Text(AppLocalizations.of(context)!.generalClose),
           ),
         ];
 
@@ -171,11 +172,11 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
               ),
-              child: const Text('Retry'),
+              child: Text(AppLocalizations.of(context)!.generalRetry),
             ),
             TextButton(
               onPressed: _handleDismiss,
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context)!.generalCancel),
             ),
           ];
         } else {
@@ -183,7 +184,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
           return [
             TextButton(
               onPressed: _handleDismiss,
-              child: const Text('Close'),
+              child: Text(AppLocalizations.of(context)!.generalClose),
             ),
           ];
         }

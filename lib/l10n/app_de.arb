@@ -204,14 +204,15 @@
     "tracksStatisticsDistanceInfo": "zurückgelegte Strecke",
     "tracksStatisticsTimeInfo": "Fahrzeit",
     "trackStatistics": "Track-Statistiken",
-    "uploadProgressTitle": "Upload-Fortschritt",
+    "uploadProgressTitle": "Track Upload",
     "uploadProgressPreparing": "Upload wird vorbereitet...",
-    "uploadProgressUploading": "Track-Daten werden hochgeladen...",
+    "uploadProgressUploading": "Track wird hochgeladen...",
+    "uploadProgressInfo": "Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.",
     "uploadProgressRetrying": "Upload wird wiederholt...",
-    "uploadProgressCompleted": "Upload erfolgreich abgeschlossen",
+    "uploadProgressCompleted": "Upload erfolgreich",
     "uploadProgressFailed": "Upload fehlgeschlagen",
     "uploadProgressAuthenticationFailed": "Authentifizierung erforderlich",
-    "uploadProgressChunks": "{completed} von {total} Blöcken hochgeladen",
+    "uploadProgressChunks": "{completed} von {total, plural, =0{0 Blöcken} =1{1 Block} other{{total} Blöcken}} hochgeladen",
     "@uploadProgressChunks": {
         "placeholders": {
             "completed": {
@@ -245,7 +246,7 @@
     "trackStatusNotUploaded": "Nicht hochgeladen",
     "trackStatusUploadFailed": "Upload fehlgeschlagen",
     "trackFilterAll": "Alle",
-    "trackFilterUnuploaded": "Nicht hochgeladene Tracks",
+    "trackFilterUnuploaded": "Nicht hochgeladen",
     "trackUploadRetryFailed": "Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "errorTrackNoGeolocations": "Track hat keine Geolokationsdaten und kann nicht hochgeladen werden."
 }

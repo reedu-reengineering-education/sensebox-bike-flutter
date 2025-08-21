@@ -228,7 +228,7 @@ class TrackListItem extends StatelessWidget {
 
   Color _getStatusColor(ThemeData theme) {
     if (track.uploaded) {
-      return Colors.green;
+      return theme.colorScheme.success;
     } else if (track.uploadAttempts > 0) {
       return theme.colorScheme.error;
     } else {

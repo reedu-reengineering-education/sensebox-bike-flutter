@@ -532,6 +532,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uploadProgressUploading => 'Uploading track data...';
 
   @override
+  String get uploadProgressInfo =>
+      'Do not close the app while uploading. It can take some time depending on your track length.';
+
+  @override
   String get uploadProgressRetrying => 'Retrying upload...';
 
   @override
@@ -545,7 +549,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String uploadProgressChunks(int completed, int total) {
-    return '$completed of $total chunks uploaded';
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total chunks',
+      one: '1 chunk',
+      zero: '0 chunks',
+    );
+    return '$completed of $_temp0 uploaded';
   }
 
   @override

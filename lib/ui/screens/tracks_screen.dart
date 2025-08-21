@@ -43,7 +43,7 @@ class TracksScreenState extends State<TracksScreen> {
     _isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
     _recordingBloc = Provider.of<RecordingBloc>(context, listen: false);
     _openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
-    
+
     // Initialize batch upload service
     _batchUploadService = BatchUploadService(
       openSenseMapService: _openSenseMapBloc.openSenseMapService,
@@ -124,7 +124,7 @@ class TracksScreenState extends State<TracksScreen> {
   Future<void> _loadMoreTracks() async {
     if (_isLoading || !_hasMoreTracks) return;
     setState(() => _isLoading = true);
-    
+
     List<TrackData> tracks;
     if (_showOnlyUnuploaded) {
       tracks = await _isarService.trackService.getUnuploadedTracksPaginated(
@@ -159,34 +159,25 @@ class TracksScreenState extends State<TracksScreen> {
         children: [
           // Filter toggle
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: spacing, vertical: padding),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.filter_list,
-                  size: iconSizeLarge,
-                  color: colorScheme.onSurface,
+            padding: const EdgeInsets.symmetric(
+                horizontal: spacing, vertical: padding),
+            width: double.infinity,
+            child: SegmentedButton<bool>(
+              showSelectedIcon: false,
+              segments: [
+                ButtonSegment<bool>(
+                  value: false,
+                  label: Text(localizations.trackFilterAll),
                 ),
-                const SizedBox(width: spacing),
-                Expanded(
-                  child: SegmentedButton<bool>(
-                    segments: [
-                      ButtonSegment<bool>(
-                        value: false,
-                        label: Text(localizations.trackFilterAll),
-                      ),
-                      ButtonSegment<bool>(
-                        value: true,
-                        label: Text(localizations.trackFilterUnuploaded),
-                      ),
-                    ],
-                    selected: {_showOnlyUnuploaded},
-                    onSelectionChanged: (Set<bool> selection) {
-                      _toggleFilter();
-                    },
-                  ),
+                ButtonSegment<bool>(
+                  value: true,
+                  label: Text(localizations.trackFilterUnuploaded),
                 ),
               ],
+              selected: {_showOnlyUnuploaded},
+              onSelectionChanged: (Set<bool> selection) {
+                _toggleFilter();
+              },
             ),
           ),
           Expanded(

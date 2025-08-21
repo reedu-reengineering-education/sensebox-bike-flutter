@@ -89,7 +89,7 @@ class UploadProgressIndicator extends StatelessWidget {
   /// Builds the full version of the progress indicator with detailed information
   Widget _buildFullIndicator(
       BuildContext context, AppLocalizations localizations, ThemeData theme) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.all(spacing),
       child: Padding(
         padding: const EdgeInsets.all(spacing * 1.5),
@@ -98,20 +98,35 @@ class UploadProgressIndicator extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Status text with icon
-            Row(
-              children: [
-                _buildStatusIcon(theme),
-                const SizedBox(width: spacing),
-                Expanded(
-                  child: Text(
-                    _getStatusText(localizations),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: _getTextColor(theme),
-                    ),
-                  ),
+            Container(
+                margin: const EdgeInsets.only(bottom: spacing / 2),
+                padding: const EdgeInsets.all(padding),
+                decoration: BoxDecoration(
+                  color: _getBackgroundColor(theme).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(borderRadiusSmall),
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    _buildStatusIcon(theme),
+                    const SizedBox(width: spacing),
+                    Expanded(
+                      child: Text(
+                        _getStatusText(localizations),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: _getTextColor(theme),
+                        ),
+                      ),
+                    ),
+                  ],
+                )),
+
+            const SizedBox(height: spacing / 2),
+
+            // Info box with warning not to close the app during upload
+            if (progress.isInProgress) ...[
+              _buildInfoBox(localizations, theme),
+              const SizedBox(height: spacing / 2),
+            ],
 
             // Progress information and bar
             if (progress.totalChunks > 0) ...[
@@ -214,6 +229,34 @@ class UploadProgressIndicator extends StatelessWidget {
     }
   }
 
+  Widget _buildInfoBox(AppLocalizations localizations, ThemeData theme) {
+    return Container(
+        padding: const EdgeInsets.all(padding),
+        decoration: BoxDecoration(
+          color:
+              theme.colorScheme.info.withOpacity(0.2), // light blue background
+          borderRadius: BorderRadius.circular(borderRadiusSmall),
+        ),
+        child: Row(
+          spacing: spacing / 2,
+          children: [
+            Icon(
+              Icons.info,
+              color: theme.colorScheme.info,
+              size: circleSize,
+            ),
+            Expanded(
+              child: Text(
+                localizations.uploadProgressInfo,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            )
+          ],
+        ));
+  }
+
   /// Gets the appropriate status text based on upload state
   String _getStatusText(AppLocalizations localizations) {
     switch (progress.status) {
@@ -266,8 +309,9 @@ class UploadProgressIndicator extends StatelessWidget {
       case UploadStatus.preparing:
       case UploadStatus.uploading:
       case UploadStatus.retrying:
+        return theme.colorScheme.primary;
       case UploadStatus.completed:
-        return theme.colorScheme.surfaceContainerLow;
+        return theme.colorScheme.success;
       case UploadStatus.failed:
         return theme.colorScheme.errorContainer;
     }
@@ -281,7 +325,7 @@ class UploadProgressIndicator extends StatelessWidget {
       case UploadStatus.retrying:
         return theme.colorScheme.outline;
       case UploadStatus.completed:
-        return theme.colorScheme.tertiary;
+        return theme.colorScheme.success;
       case UploadStatus.failed:
         return theme.colorScheme.error;
     }

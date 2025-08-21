@@ -207,11 +207,12 @@
     "uploadProgressTitle": "Upload Progress",
     "uploadProgressPreparing": "Preparing upload...",
     "uploadProgressUploading": "Uploading track data...",
+    "uploadProgressInfo": "Do not close the app while uploading. It can take some time depending on your track length.",
     "uploadProgressRetrying": "Retrying upload...",
     "uploadProgressCompleted": "Upload completed successfully",
     "uploadProgressFailed": "Upload failed",
     "uploadProgressAuthenticationFailed": "Authentication required",
-    "uploadProgressChunks": "{completed} of {total} chunks uploaded",
+    "uploadProgressChunks": "{completed} of {total, plural, =0{0 chunks} =1{1 chunk} other{{total} chunks}} uploaded",
     "@uploadProgressChunks": {
         "placeholders": {
             "completed": {
