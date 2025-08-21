@@ -101,12 +101,19 @@ class TrackListItem extends StatelessWidget {
 
   Widget _buildNoGeolocationsContent(
       BuildContext context, AppLocalizations localizations, ThemeData theme) {
-    return Center(
-      child: Text(
-        localizations.trackNoGeolocations,
-        style: theme.textTheme.bodyMedium
-            ?.copyWith(color: theme.colorScheme.error),
-      ),
+    return Row(
+      children: [
+        Expanded(
+          child: Center(
+            child: Text(
+              localizations.trackNoGeolocations,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.colorScheme.error),
+            ),
+          ),
+        ),
+        _buildStatusIcon(context, localizations, theme),
+      ],
     );
   }
 
@@ -148,42 +155,104 @@ class TrackListItem extends StatelessWidget {
                     ))),
         // Track Info Section
         const SizedBox(width: spacing),
-        SizedBox(
-          height: kMapPreviewHeight,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(date, style: theme.textTheme.titleSmall),
-                  Text(times, style: theme.textTheme.titleSmall),
-                ],
-              ),
-              Column(
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.timer_outlined, size: iconSizeLarge),
-                      const SizedBox(width: spacing / 4),
-                      Text(duration, style: theme.textTheme.headlineLarge),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Icon(Icons.straighten_outlined,
-                          size: iconSizeLarge),
-                      const SizedBox(width: spacing / 4),
-                      Text(distance, style: theme.textTheme.headlineLarge),
-                    ],
-                  ),
-                ],
-              )
-            ],
+        Expanded(
+          child: SizedBox(
+            height: kMapPreviewHeight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(date, style: theme.textTheme.titleSmall),
+                        Text(times, style: theme.textTheme.titleSmall),
+                      ],
+                    ),
+                    _buildStatusIcon(context, localizations, theme),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.timer_outlined, size: iconSizeLarge),
+                        const SizedBox(width: spacing / 4),
+                        Text(duration, style: theme.textTheme.headlineLarge),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Icon(Icons.straighten_outlined,
+                            size: iconSizeLarge),
+                        const SizedBox(width: spacing / 4),
+                        Text(distance, style: theme.textTheme.headlineLarge),
+                      ],
+                    ),
+                  ],
+                )
+              ],
+            ),
           ),
         )
       ],
     );
+  }
+
+  Widget _buildStatusIcon(
+      BuildContext context, AppLocalizations localizations, ThemeData theme) {
+    final statusColor = _getStatusColor(theme);
+    final statusIcon = _getStatusIcon();
+    final statusText = _getStatusText(localizations);
+
+    return Tooltip(
+      message: statusText,
+      child: Container(
+        padding: const EdgeInsets.all(padding),
+        decoration: BoxDecoration(
+          color: statusColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(borderRadiusSmall),
+        ),
+        child: Icon(
+          statusIcon,
+          size: iconSizeLarge,
+          color: statusColor,
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(ThemeData theme) {
+    if (track.uploaded) {
+      return theme.colorScheme.success;
+    } else if (track.uploadAttempts > 0) {
+      return theme.colorScheme.error;
+    } else {
+      return theme.colorScheme.outline;
+    }
+  }
+
+  IconData _getStatusIcon() {
+    if (track.uploaded) {
+      return Icons.cloud_done;
+    } else if (track.uploadAttempts > 0) {
+      return Icons.cloud_off;
+    } else {
+      return Icons.cloud_upload;
+    }
+  }
+
+  String _getStatusText(AppLocalizations localizations) {
+    if (track.uploaded) {
+      return localizations.trackStatusUploaded;
+    } else if (track.uploadAttempts > 0) {
+      return localizations.trackStatusUploadFailed;
+    } else {
+      return localizations.trackStatusNotUploaded;
+    }
   }
 }

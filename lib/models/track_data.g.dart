@@ -16,7 +16,23 @@ extension GetTrackDataCollection on Isar {
 const TrackDataSchema = CollectionSchema(
   name: r'TrackData',
   id: -595095596094647637,
-  properties: {},
+  properties: {
+    r'lastUploadAttempt': PropertySchema(
+      id: 0,
+      name: r'lastUploadAttempt',
+      type: IsarType.dateTime,
+    ),
+    r'uploadAttempts': PropertySchema(
+      id: 1,
+      name: r'uploadAttempts',
+      type: IsarType.long,
+    ),
+    r'uploaded': PropertySchema(
+      id: 2,
+      name: r'uploaded',
+      type: IsarType.bool,
+    )
+  },
   estimateSize: _trackDataEstimateSize,
   serialize: _trackDataSerialize,
   deserialize: _trackDataDeserialize,
@@ -53,7 +69,12 @@ void _trackDataSerialize(
   IsarWriter writer,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
-) {}
+) {
+  writer.writeDateTime(offsets[0], object.lastUploadAttempt);
+  writer.writeLong(offsets[1], object.uploadAttempts);
+  writer.writeBool(offsets[2], object.uploaded);
+}
+
 TrackData _trackDataDeserialize(
   Id id,
   IsarReader reader,
@@ -62,6 +83,9 @@ TrackData _trackDataDeserialize(
 ) {
   final object = TrackData();
   object.id = id;
+  object.lastUploadAttempt = reader.readDateTimeOrNull(offsets[0]);
+  object.uploadAttempts = reader.readLong(offsets[1]);
+  object.uploaded = reader.readBool(offsets[2]);
   return object;
 }
 
@@ -72,6 +96,12 @@ P _trackDataDeserializeProp<P>(
   Map<Type, List<int>> allOffsets,
 ) {
   switch (propertyId) {
+    case 0:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 1:
+      return (reader.readLong(offset)) as P;
+    case 2:
+      return (reader.readBool(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -222,6 +252,146 @@ extension TrackDataQueryFilter
       ));
     });
   }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      lastUploadAttemptIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastUploadAttempt',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      lastUploadAttemptIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastUploadAttempt',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      lastUploadAttemptEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastUploadAttempt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      lastUploadAttemptGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastUploadAttempt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      lastUploadAttemptLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastUploadAttempt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      lastUploadAttemptBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastUploadAttempt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      uploadAttemptsEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'uploadAttempts',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      uploadAttemptsGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'uploadAttempts',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      uploadAttemptsLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'uploadAttempts',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      uploadAttemptsBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'uploadAttempts',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition> uploadedEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'uploaded',
+        value: value,
+      ));
+    });
+  }
 }
 
 extension TrackDataQueryObject
@@ -291,7 +461,44 @@ extension TrackDataQueryLinks
   }
 }
 
-extension TrackDataQuerySortBy on QueryBuilder<TrackData, TrackData, QSortBy> {}
+extension TrackDataQuerySortBy on QueryBuilder<TrackData, TrackData, QSortBy> {
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByLastUploadAttempt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastUploadAttempt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      sortByLastUploadAttemptDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastUploadAttempt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByUploadAttempts() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uploadAttempts', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByUploadAttemptsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uploadAttempts', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByUploaded() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uploaded', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByUploadedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uploaded', Sort.desc);
+    });
+  }
+}
 
 extension TrackDataQuerySortThenBy
     on QueryBuilder<TrackData, TrackData, QSortThenBy> {
@@ -306,16 +513,90 @@ extension TrackDataQuerySortThenBy
       return query.addSortBy(r'id', Sort.desc);
     });
   }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByLastUploadAttempt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastUploadAttempt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      thenByLastUploadAttemptDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastUploadAttempt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByUploadAttempts() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uploadAttempts', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByUploadAttemptsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uploadAttempts', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByUploaded() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uploaded', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByUploadedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uploaded', Sort.desc);
+    });
+  }
 }
 
 extension TrackDataQueryWhereDistinct
-    on QueryBuilder<TrackData, TrackData, QDistinct> {}
+    on QueryBuilder<TrackData, TrackData, QDistinct> {
+  QueryBuilder<TrackData, TrackData, QDistinct> distinctByLastUploadAttempt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastUploadAttempt');
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QDistinct> distinctByUploadAttempts() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'uploadAttempts');
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QDistinct> distinctByUploaded() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'uploaded');
+    });
+  }
+}
 
 extension TrackDataQueryProperty
     on QueryBuilder<TrackData, TrackData, QQueryProperty> {
   QueryBuilder<TrackData, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<TrackData, DateTime?, QQueryOperations>
+      lastUploadAttemptProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastUploadAttempt');
+    });
+  }
+
+  QueryBuilder<TrackData, int, QQueryOperations> uploadAttemptsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'uploadAttempts');
+    });
+  }
+
+  QueryBuilder<TrackData, bool, QQueryOperations> uploadedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'uploaded');
     });
   }
 }

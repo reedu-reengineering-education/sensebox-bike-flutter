@@ -380,6 +380,9 @@ class _StartStopButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Set the context for showing upload modals
+    recordingBloc.setContext(context);
+    
     return FilledButton.icon(
       style: const ButtonStyle(
         padding: WidgetStatePropertyAll(

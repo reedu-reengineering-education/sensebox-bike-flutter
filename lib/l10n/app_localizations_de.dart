@@ -113,7 +113,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get openSenseMapLogin => 'Mit openSenseMap anmelden';
 
   @override
-  String get openSenseMapLoginDescription => 'Melde dich an, um deine Daten zu teilen.';
+  String get openSenseMapLoginDescription =>
+      'Melde dich an, um deine Daten zu teilen.';
 
   @override
   String get openSenseMapLogout => 'Ausloggen';
@@ -146,13 +147,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get openSenseMapRegisterPasswordConfirm => 'Passwort bestätigen';
 
   @override
-  String get openSenseMapRegisterPasswordConfirmErrorEmpty => 'Passwort darf nicht leer sein';
+  String get openSenseMapRegisterPasswordConfirmErrorEmpty =>
+      'Passwort darf nicht leer sein';
 
   @override
-  String get openSenseMapRegisterPasswordErrorMismatch => 'Passwörter stimmen nicht überein';
+  String get openSenseMapRegisterPasswordErrorMismatch =>
+      'Passwörter stimmen nicht überein';
 
   @override
-  String get openSenseMapRegisterPasswordErrorCharacters => 'Passwort muss mindestens 8 Zeichen enthalten';
+  String get openSenseMapRegisterPasswordErrorCharacters =>
+      'Passwort muss mindestens 8 Zeichen enthalten';
 
   @override
   String get openSenseMapRegisterFailed => 'Registrierung fehlgeschlagen';
@@ -161,10 +165,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get openSenesMapRegisterAcceptTermsPrefix => 'Ich akzeptiere die';
 
   @override
-  String get openSenseMapRegisterAcceptTermsPrivacy => 'Datenschutzbestimmungen';
+  String get openSenseMapRegisterAcceptTermsPrivacy =>
+      'Datenschutzbestimmungen';
 
   @override
-  String get openSenseMapRegisterAcceptTermsError => 'Sie müssen die Datenschutzbestimmungen akzeptieren';
+  String get openSenseMapRegisterAcceptTermsError =>
+      'Sie müssen die Datenschutzbestimmungen akzeptieren';
 
   @override
   String get connectionButtonConnect => 'Verbinden';
@@ -188,7 +194,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get bleDeviceSelectTitle => 'Tippen, um zu verbinden';
 
   @override
-  String get noBleDevicesFound => 'Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.';
+  String get noBleDevicesFound =>
+      'Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.';
 
   @override
   String get selectOrCreateBox => 'senseBox wählen oder erstellen';
@@ -206,22 +213,26 @@ class AppLocalizationsDe extends AppLocalizations {
   String get createBoxName => 'Name';
 
   @override
-  String get createBoxNameError => 'Name muss zwischen 2 und 50 Zeichen lang sein';
+  String get createBoxNameError =>
+      'Name muss zwischen 2 und 50 Zeichen lang sein';
 
   @override
-  String get createBoxGeolocationCurrentPosition => 'Deine aktuelle Position wird verwendet';
+  String get createBoxGeolocationCurrentPosition =>
+      'Deine aktuelle Position wird verwendet';
 
   @override
   String get openSenseMapBoxSelectionNoBoxes => 'Keine senseBox verfügbar';
 
   @override
-  String get openSenseMapBoxSelectionCreateHint => 'Erstelle eine mit dem \'+\' Button';
+  String get openSenseMapBoxSelectionCreateHint =>
+      'Erstelle eine mit dem \'+\' Button';
 
   @override
   String get openSenseMapBoxSelectionUnnamedBox => 'Unbenannte senseBox';
 
   @override
-  String get openSenseMapBoxSelectionIncompatible => 'Nicht kompatibel mit senseBox:bike';
+  String get openSenseMapBoxSelectionIncompatible =>
+      'Nicht kompatibel mit senseBox:bike';
 
   @override
   String get settingsGeneral => 'Allgemeine';
@@ -231,6 +242,24 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settingsVibrateOnDisconnect => 'Vibration bei Verbindungsabbruch';
+
+  @override
+  String get settingsUploadMode => 'Upload-Modus';
+
+  @override
+  String get settingsUploadModeDirect => 'Direkter Upload (Beta)';
+
+  @override
+  String get settingsUploadModePostRide => 'Upload nach der Fahrt';
+
+  @override
+  String get settingsUploadModeDescription =>
+      'Wählen Sie, wann Ihre Daten während der Aufzeichnung hochgeladen werden sollen';
+
+  @override
+  String settingsUploadModeCurrent(String mode) {
+    return 'Aktuell: $mode';
+  }
 
   @override
   String get settingsAbout => 'Über die App';
@@ -253,16 +282,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsGithub => 'GitHub issue';
 
   @override
-  String get privacyZonesStart => 'Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.';
+  String get privacyZonesStart =>
+      'Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.';
 
   @override
-  String get privacyZonesDelete => 'Tippen Sie auf eine Zone, um sie zu löschen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.';
+  String get privacyZonesDelete =>
+      'Tippen Sie auf eine Zone, um sie zu löschen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.';
 
   @override
-  String get trackDetailsPermissionsError => 'Keine Berechtigung zum Speichern der Datei auf externem Speicher.';
+  String get trackDetailsPermissionsError =>
+      'Keine Berechtigung zum Speichern der Datei auf externem Speicher.';
 
   @override
-  String get trackDetailsFileSaved => 'Die CSV-Datei wird im Ordner Downloads gespeichert.';
+  String get trackDetailsFileSaved =>
+      'Die CSV-Datei wird im Ordner Downloads gespeichert.';
 
   @override
   String get trackDetailsExport => 'CSV-Export von Trackdaten.';
@@ -280,7 +313,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackDelete => 'Track löschen';
 
   @override
-  String get trackDeleteConfirmation => 'Wollen Sie diesen Track wirklich löschen?';
+  String get trackDeleteConfirmation =>
+      'Wollen Sie diesen Track wirklich löschen?';
 
   @override
   String get sensorTemperature => 'Temperatur';
@@ -376,7 +410,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sensorDistanceShort => 'Abstand';
 
   @override
-  String get campaignLoadError => 'Die Liste der Kampagnen konnte nicht geladen werden.';
+  String get campaignLoadError =>
+      'Die Liste der Kampagnen konnte nicht geladen werden.';
 
   @override
   String get selectCampaign => 'Kampagne auswählen';
@@ -391,31 +426,40 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Bluetooth aktivieren';
 
   @override
-  String get errorNoLocationAccess => 'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie bitte die Standortdienste und erlauben Sie der App in den Telefoneinstellungen den Zugriff auf Ihren Standort.';
+  String get errorNoLocationAccess =>
+      'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie bitte die Standortdienste und erlauben Sie der App in den Telefoneinstellungen den Zugriff auf Ihren Standort.';
 
   @override
-  String get errorNoScanAccess => 'Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.';
+  String get errorNoScanAccess =>
+      'Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.';
 
   @override
-  String get errorNoSenseBoxSelected => 'Um den Upload von Sensordaten in die Cloud zu erlauben, melden Sie sich bitte bei Ihrem openSenseMap-Konto an und aktivieren Sie das Kästchen.';
+  String get errorNoSenseBoxSelected =>
+      'Um den Upload von Sensordaten in die Cloud zu erlauben, melden Sie sich bitte bei Ihrem openSenseMap-Konto an und aktivieren Sie das Kästchen.';
 
   @override
-  String get errorExportDirectoryAccess => 'Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.';
+  String get errorExportDirectoryAccess =>
+      'Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.';
 
   @override
-  String get errorLoginFailed => 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
+  String get errorLoginFailed =>
+      'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
 
   @override
-  String get errorRegistrationFailed => 'Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
+  String get errorRegistrationFailed =>
+      'Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
 
   @override
-  String get errorBleConnectionFailed => 'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
+  String get errorBleConnectionFailed =>
+      'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
 
   @override
-  String get errorUploadFailed => 'Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+  String get errorUploadFailed =>
+      'Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
 
   @override
-  String get errorPermanentAuthentication => 'Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich erneut an, um den Upload fortzusetzen.';
+  String get errorPermanentAuthentication =>
+      'Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich an, um Daten hochzuladen.';
 
   @override
   String get selectCsvFormat => 'CSV-Format auswählen';
@@ -430,13 +474,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsDeleteAllData => 'Alle Daten löschen';
 
   @override
-  String get settingsDeleteAllDataConfirmation => 'Sind Sie sicher, dass Sie alle Daten löschen möchten? Diese Aktion ist nicht umkehrbar.';
+  String get settingsDeleteAllDataConfirmation =>
+      'Sind Sie sicher, dass Sie alle Daten löschen möchten? Diese Aktion ist nicht umkehrbar.';
 
   @override
-  String get settingsDeleteAllDataSuccess => 'Alle Daten wurden erfolgreich gelöscht.';
+  String get settingsDeleteAllDataSuccess =>
+      'Alle Daten wurden erfolgreich gelöscht.';
 
   @override
-  String get settingsDeleteAllDataError => 'Fehler beim Löschen aller Daten. Bitte versuchen Sie es erneut.';
+  String get settingsDeleteAllDataError =>
+      'Fehler beim Löschen aller Daten. Bitte versuchen Sie es erneut.';
 
   @override
   String get accountManagement => 'Kontoverwaltung';
@@ -448,10 +495,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalConfirmation => 'Bestätigung';
 
   @override
-  String get privacyPolicyAccept => 'Ich habe die Datenschutzerklärung gelesen und stimme ihr zu.';
+  String get privacyPolicyAccept =>
+      'Ich habe die Datenschutzerklärung gelesen und stimme ihr zu.';
 
   @override
-  String get trackNoGeolocations => 'Keine Positionsdaten für diesen Track verfügbar.';
+  String get trackNoGeolocations =>
+      'Keine Positionsdaten für diesen Track verfügbar.';
 
   @override
   String get tracksAppBarTitle => 'Deine Tracks';
@@ -479,4 +528,87 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trackStatistics => 'Track-Statistiken';
+
+  @override
+  String get uploadProgressTitle => 'Track Upload';
+
+  @override
+  String get uploadProgressPreparing => 'Upload wird vorbereitet...';
+
+  @override
+  String get uploadProgressUploading => 'Track wird hochgeladen...';
+
+  @override
+  String get uploadProgressInfo =>
+      'Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.';
+
+  @override
+  String get uploadProgressRetrying => 'Upload wird wiederholt...';
+
+  @override
+  String get uploadProgressCompleted => 'Upload erfolgreich';
+
+  @override
+  String get uploadProgressFailed => 'Upload fehlgeschlagen';
+
+  @override
+  String get uploadProgressAuthenticationFailed =>
+      'Authentifizierung erforderlich';
+
+  @override
+  String uploadProgressChunks(int completed, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total Blöcken',
+      one: '1 Block',
+      zero: '0 Blöcken',
+    );
+    return '$completed von $_temp0 hochgeladen';
+  }
+
+  @override
+  String uploadProgressPercentage(int percentage) {
+    return '$percentage% abgeschlossen';
+  }
+
+  @override
+  String get uploadProgressAuthenticationError =>
+      'Bitte melden Sie sich an, um Daten hochzuladen.';
+
+  @override
+  String get uploadProgressNetworkError =>
+      'Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+
+  @override
+  String get uploadProgressGenericError =>
+      'Upload fehlgeschlagen. Bitte versuchen Sie es erneut.';
+
+  @override
+  String get trackStatusUploaded => 'Hochgeladen';
+
+  @override
+  String trackStatusUploadedAt(String date) {
+    return 'Hochgeladen am $date';
+  }
+
+  @override
+  String get trackStatusNotUploaded => 'Nicht hochgeladen';
+
+  @override
+  String get trackStatusUploadFailed => 'Upload fehlgeschlagen';
+
+  @override
+  String get trackFilterAll => 'Alle';
+
+  @override
+  String get trackFilterUnuploaded => 'Nicht hochgeladen';
+
+  @override
+  String get trackUploadRetryFailed =>
+      'Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut.';
+
+  @override
+  String get errorTrackNoGeolocations =>
+      'Track hat keine Geolokationsdaten und kann nicht hochgeladen werden.';
 }

@@ -10,6 +10,8 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
+import 'package:sensebox_bike/services/batch_upload_service.dart';
+import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 
 class RecordingBloc with ChangeNotifier {
@@ -24,9 +26,13 @@ class RecordingBloc with ChangeNotifier {
   SenseBox? _selectedSenseBox;
   final ValueNotifier<bool> _isRecordingNotifier = ValueNotifier<bool>(false);
   DirectUploadService? _directUploadService;
+  BatchUploadService? _batchUploadService;
 
   VoidCallback? _onRecordingStart;
   VoidCallback? _onRecordingStop;
+
+  // Context for showing upload modal
+  BuildContext? _context;
 
   bool get isRecording => _isRecording;
 
@@ -37,10 +43,9 @@ class RecordingBloc with ChangeNotifier {
 
   RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
       this.openSenseMapBloc, this.settingsBloc) {
-    openSenseMapBloc.senseBoxStream
-        .listen(_onSenseBoxChanged).onError((error) {
+    openSenseMapBloc.senseBoxStream.listen(_onSenseBoxChanged).onError((error) {
       ErrorService.handleError(error, StackTrace.current);
-    }); 
+    });
 
     // Listen to permanent BLE connection loss and stop recording
     bleBloc.permanentConnectionLossNotifier
@@ -49,8 +54,15 @@ class RecordingBloc with ChangeNotifier {
 
   void _onPermanentConnectionLoss() {
     if (_isRecording) {
+      // Stop recording will automatically trigger batch upload if needed
       stopRecording();
     }
+  }
+
+  // Test method to expose permanent connection loss handling
+  @visibleForTesting
+  void testOnPermanentConnectionLoss() {
+    _onPermanentConnectionLoss();
   }
 
   void setRecordingCallbacks({
@@ -61,9 +73,14 @@ class RecordingBloc with ChangeNotifier {
     _onRecordingStop = onRecordingStop;
   }
 
+  /// Sets the context for showing upload modals
+  void setContext(BuildContext context) {
+    _context = context;
+  }
+
   void _onSenseBoxChanged(SenseBox? senseBox) {
     _selectedSenseBox = senseBox;
-    notifyListeners(); 
+    notifyListeners();
   }
 
   Future<void> startRecording() async {
@@ -80,27 +97,37 @@ class RecordingBloc with ChangeNotifier {
     }
 
     _isRecording = true;
-    _isRecordingNotifier.value = true; 
+    _isRecordingNotifier.value = true;
     await trackBloc.startNewTrack();
 
     _currentTrack = trackBloc.currentTrack;
 
     try {
-      if (_selectedSenseBox == null) {
+      if (_selectedSenseBox == null && settingsBloc.directUploadMode) {
         ErrorService.handleError(NoSenseBoxSelected(), StackTrace.current,
             sendToSentry: false);
         notifyListeners();
         return;
       }
 
-      _directUploadService = DirectUploadService(
+      // Create upload services based on user's upload mode preference
+      if (settingsBloc.directUploadMode) {
+        // Direct upload mode: create DirectUploadService for real-time uploads
+        _directUploadService = DirectUploadService(
+            openSenseMapService: OpenSenseMapService(),
+            settingsBloc: settingsBloc,
+            senseBox: _selectedSenseBox!,
+            openSenseMapBloc: openSenseMapBloc);
+      } else {
+        // Post-ride upload mode: only create BatchUploadService
+        _batchUploadService = BatchUploadService(
           openSenseMapService: OpenSenseMapService(),
-          settingsBloc: settingsBloc,
-          senseBox: _selectedSenseBox!,
-          openSenseMapBloc: openSenseMapBloc);
+          trackService: isarService.trackService,
+          openSenseMapBloc: openSenseMapBloc,
+        );
+      }
 
       _onRecordingStart?.call();
-
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
@@ -114,21 +141,135 @@ class RecordingBloc with ChangeNotifier {
     _isRecording = false;
     _isRecordingNotifier.value = false;
     _onRecordingStop?.call();
+
+    // Store current track and sensebox for upload
+    final trackToUpload = _currentTrack;
+    final senseBoxForUpload = _selectedSenseBox;
+
+    // Clean up services and handle post-ride upload if needed
     _directUploadService?.dispose();
     _directUploadService = null;
     _currentTrack = null;
 
+    // Trigger batch upload if in post-ride upload mode
+    if (_batchUploadService != null &&
+        trackToUpload != null &&
+        senseBoxForUpload != null &&
+        _context != null) {
+      // Show upload progress modal
+      _showUploadProgressModal(trackToUpload, senseBoxForUpload);
+    } else {
+      // Clean up BatchUploadService if not uploading
+      _batchUploadService?.dispose();
+      _batchUploadService = null;
+    }
+
     notifyListeners();
   }
 
+  /// Shows the upload progress modal and starts the batch upload
+  void _showUploadProgressModal(TrackData track, SenseBox senseBox) async {
+    if (_context == null || _batchUploadService == null) return;
+
+    try {
+      // Check if track has geolocations before showing upload modal
+      await track.geolocations.load();
+      final geolocations = track.geolocations.toList();
+
+      if (geolocations.isEmpty) {
+        throw TrackHasNoGeolocationsException(track.id);
+      }
+
+      // Show the upload progress modal
+      UploadProgressOverlay.show(
+        _context!,
+        batchUploadService: _batchUploadService!,
+        onUploadComplete: () {
+          // Upload completed successfully
+          _cleanupBatchUploadService();
+          debugPrint('[RecordingBloc] Batch upload completed successfully');
+        },
+        onUploadFailed: () {
+          // Upload failed permanently - keep service for potential retry
+          debugPrint('[RecordingBloc] Batch upload failed permanently');
+        },
+        onRetryRequested: () {
+          // User requested retry
+          _retryBatchUpload(track, senseBox);
+        },
+      );
+
+      // Start the upload
+      _startBatchUpload(track, senseBox);
+    } catch (e, stack) {
+      debugPrint('[RecordingBloc] Error showing upload modal: $e');
+      ErrorService.handleError(e, stack);
+      // Ensure modal is hidden if there was an error
+      UploadProgressOverlay.hide();
+    }
+  }
+
+  /// Starts the batch upload process
+  void _startBatchUpload(TrackData track, SenseBox senseBox) async {
+    if (_batchUploadService == null) return;
+
+    try {
+      await _batchUploadService!.uploadTrack(track, senseBox);
+    } catch (e, stack) {
+      // Log error but don't prevent recording from stopping
+      // The modal will show the error state and allow retry
+      ErrorService.handleError(
+        'Batch upload failed after recording stop: $e',
+        stack,
+        sendToSentry: true,
+      );
+    }
+  }
+
+  /// Retries the batch upload
+  void _retryBatchUpload(TrackData track, SenseBox senseBox) async {
+    if (_batchUploadService == null) return;
+
+    try {
+      // Check if track has geolocations before attempting retry
+      await track.geolocations.load();
+      final geolocations = track.geolocations.toList();
+
+      if (geolocations.isEmpty) {
+        throw TrackHasNoGeolocationsException(track.id);
+      }
+
+      await _batchUploadService!.uploadTrack(track, senseBox);
+    } catch (e, stack) {
+      // Log error - the modal will handle showing the error state
+      ErrorService.handleError(
+        'Batch upload retry failed: $e',
+        stack,
+        sendToSentry: true,
+      );
+    }
+  }
+
+  /// Cleans up the batch upload service
+  void _cleanupBatchUploadService() {
+    _batchUploadService?.dispose();
+    _batchUploadService = null;
+  }
+
   DirectUploadService? get directUploadService => _directUploadService;
+  BatchUploadService? get batchUploadService => _batchUploadService;
 
   @override
   void dispose() {
     bleBloc.permanentConnectionLossNotifier
         .removeListener(_onPermanentConnectionLoss);
     _directUploadService?.dispose();
+    _batchUploadService?.dispose();
     _isRecordingNotifier.dispose();
+
+    // Hide any open upload modal
+    UploadProgressOverlay.hide();
+
     super.dispose();
   }
 }

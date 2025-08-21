@@ -161,6 +161,195 @@ void main() {
     });
   });
 
+  group('getFirstAvailableSensorType', () {
+    test('returns temperature for empty sensor data', () {
+      final result = getFirstAvailableSensorType([]);
+      expect(result, 'temperature');
+    });
+
+    test('returns temperature when temperature sensor is available', () {
+      final sensorData = [
+        SensorData()
+          ..characteristicUuid = 'temp-uuid'
+          ..title = 'temperature'
+          ..attribute = null
+          ..value = 25.0,
+      ];
+
+      final result = getFirstAvailableSensorType(sensorData);
+      expect(result, 'temperature');
+    });
+
+    test('returns humidity when temperature is not available but humidity is', () {
+      final sensorData = [
+        SensorData()
+          ..characteristicUuid = 'humidity-uuid'
+          ..title = 'humidity'
+          ..attribute = null
+          ..value = 60.0,
+        SensorData()
+          ..characteristicUuid = 'distance-uuid'
+          ..title = 'distance'
+          ..attribute = null
+          ..value = 100.0,
+      ];
+
+      final result = getFirstAvailableSensorType(sensorData);
+      expect(result, 'humidity');
+    });
+
+    test('returns distance when temperature and humidity are not available', () {
+      final sensorData = [
+        SensorData()
+          ..characteristicUuid = 'distance-uuid'
+          ..title = 'distance'
+          ..attribute = null
+          ..value = 100.0,
+        SensorData()
+          ..characteristicUuid = 'overtaking-uuid'
+          ..title = 'overtaking'
+          ..attribute = null
+          ..value = 1.0,
+      ];
+
+      final result = getFirstAvailableSensorType(sensorData);
+      expect(result, 'distance');
+    });
+
+    test('returns first sensor in order when multiple sensors are available', () {
+      final sensorData = [
+        SensorData()
+          ..characteristicUuid = 'humidity-uuid'
+          ..title = 'humidity'
+          ..attribute = null
+          ..value = 60.0,
+        SensorData()
+          ..characteristicUuid = 'temp-uuid'
+          ..title = 'temperature'
+          ..attribute = null
+          ..value = 25.0,
+        SensorData()
+          ..characteristicUuid = 'distance-uuid'
+          ..title = 'distance'
+          ..attribute = null
+          ..value = 100.0,
+      ];
+
+      final result = getFirstAvailableSensorType(sensorData);
+      expect(result, 'temperature');
+    });
+
+    test('handles sensors with attributes correctly', () {
+      final sensorData = [
+        SensorData()
+          ..characteristicUuid = 'surface-uuid'
+          ..title = 'surface_classification'
+          ..attribute = 'asphalt'
+          ..value = 80.0,
+        SensorData()
+          ..characteristicUuid = 'accel-uuid'
+          ..title = 'acceleration'
+          ..attribute = 'x'
+          ..value = 1.5,
+        SensorData()
+          ..characteristicUuid = 'temp-uuid'
+          ..title = 'temperature'
+          ..attribute = null
+          ..value = 25.0,
+      ];
+
+      final result = getFirstAvailableSensorType(sensorData);
+      expect(result, 'temperature');
+    });
+
+    test('returns first available sensor when none match predefined order', () {
+      final sensorData = [
+        SensorData()
+          ..characteristicUuid = 'custom-uuid'
+          ..title = 'custom_sensor'
+          ..attribute = null
+          ..value = 42.0,
+        SensorData()
+          ..characteristicUuid = 'another-uuid'
+          ..title = 'another_custom_sensor'
+          ..attribute = null
+          ..value = 123.0,
+      ];
+
+      final result = getFirstAvailableSensorType(sensorData);
+      expect(result, 'custom_sensor');
+    });
+
+    test('handles sensors with null attributes', () {
+      final sensorData = [
+        SensorData()
+          ..characteristicUuid = 'temp-uuid'
+          ..title = 'temperature'
+          ..attribute = null
+          ..value = 25.0,
+      ];
+
+      final result = getFirstAvailableSensorType(sensorData);
+      expect(result, 'temperature');
+    });
+
+    test('prioritizes sensors according to predefined order', () {
+      final sensorData = [
+        SensorData()
+          ..characteristicUuid = 'finedust-uuid'
+          ..title = 'finedust_pm2.5'
+          ..attribute = null
+          ..value = 15.0,
+        SensorData()
+          ..characteristicUuid = 'humidity-uuid'
+          ..title = 'humidity'
+          ..attribute = null
+          ..value = 60.0,
+        SensorData()
+          ..characteristicUuid = 'gps-uuid'
+          ..title = 'gps_speed'
+          ..attribute = null
+          ..value = 25.0,
+        SensorData()
+          ..characteristicUuid = 'temp-uuid'
+          ..title = 'temperature'
+          ..attribute = null
+          ..value = 22.0,
+      ];
+
+      final result = getFirstAvailableSensorType(sensorData);
+      expect(result, 'temperature');
+    });
+
+    test('handles complex sensor combinations', () {
+      final sensorData = [
+        SensorData()
+          ..characteristicUuid = 'surface-uuid'
+          ..title = 'surface_classification'
+          ..attribute = 'compacted'
+          ..value = 30.0,
+        SensorData()
+          ..characteristicUuid = 'accel-uuid'
+          ..title = 'acceleration'
+          ..attribute = 'z'
+          ..value = 9.8,
+        SensorData()
+          ..characteristicUuid = 'finedust-uuid'
+          ..title = 'finedust_pm10'
+          ..attribute = null
+          ..value = 25.0,
+        SensorData()
+          ..characteristicUuid = 'distance-uuid'
+          ..title = 'distance'
+          ..attribute = null
+          ..value = 1500.0,
+      ];
+
+      final result = getFirstAvailableSensorType(sensorData);
+      expect(result, 'distance');
+    });
+  });
+
   group('sensorColorForValue', () {
     test('returns green for value at min', () {
       final color = sensorColorForValue(value: 10, min: 10, max: 20);
@@ -709,6 +898,58 @@ void main() {
       // Check location precision (should preserve original precision)
       expect(tempEntry['location']['lat'], 10.123456);
       expect(tempEntry['location']['lng'], 20.654321);
+    });
+
+    test('prepareDataFromGroupedData formats timestamps as UTC', () {
+      final tempSensor = Sensor()
+        ..id = 'tempSensorId'
+        ..title = 'Temperature'
+        ..unit = '°C'
+        ..sensorType = 'temperature';
+
+      final senseBox = SenseBox(
+        sId: 'testSenseBoxId',
+        sensors: [
+          Sensor(id: 'speedSensorId', title: 'Speed', unit: 'km/h'),
+          tempSensor,
+        ],
+      );
+
+      final preparer = UploadDataPreparer(senseBox: senseBox);
+
+      // Create a local timestamp (not UTC)
+      final localTime = DateTime(2025, 8, 18, 10, 30, 45, 123); // Local time
+      final geolocation = GeolocationData()
+        ..latitude = 52.5200
+        ..longitude = 13.4050
+        ..speed = 15.0
+        ..timestamp = localTime;
+
+      final groupedData = {
+        geolocation: {
+          'temperature': [22.5],
+        },
+      };
+
+      final gpsBuffer = [geolocation];
+
+      final result = preparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
+
+      // Check that timestamps are formatted as UTC (should end with 'Z')
+      final tempKey = result.keys.firstWhere((k) => k.startsWith('tempSensorId'));
+      final tempEntry = result[tempKey] as Map<String, dynamic>;
+      final createdAt = tempEntry['createdAt'] as String;
+      
+      expect(createdAt, endsWith('Z'), reason: 'Timestamp should be in UTC format ending with Z');
+      expect(createdAt, contains('T'), reason: 'Timestamp should be in ISO8601 format');
+      
+      // Check speed timestamp too
+      final speedKey = result.keys.firstWhere((k) => k.startsWith('speed_'));
+      final speedEntry = result[speedKey] as Map<String, dynamic>;
+      final speedCreatedAt = speedEntry['createdAt'] as String;
+      
+      expect(speedCreatedAt, endsWith('Z'), reason: 'Speed timestamp should be in UTC format ending with Z');
+      expect(speedCreatedAt, contains('T'), reason: 'Speed timestamp should be in ISO8601 format');
     });
   });
 }

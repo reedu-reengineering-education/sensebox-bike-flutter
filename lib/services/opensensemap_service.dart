@@ -498,7 +498,32 @@ class OpenSenseMapService {
               sendToSentry: true);
           try {
             await refreshToken();
-            throw Exception('Token refreshed, retrying');
+            // Get the new access token and retry the request
+            final newAccessToken = await getAccessToken();
+            if (newAccessToken == null) {
+              throw Exception('Not authenticated after token refresh');
+            }
+            
+            final retryResponse = await client.post(
+              Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
+              body: jsonEncode(data),
+              headers: {
+                'Authorization': 'Bearer $newAccessToken',
+                'Content-Type': 'application/json',
+              },
+            ).timeout(const Duration(seconds: defaultTimeout));
+            
+            if (retryResponse.statusCode == 201) {
+              debugPrint(
+                  '[OpenSenseMapService] Data uploaded successfully after token refresh at ${DateTime.now()}');
+              return;
+            } else {
+              // If retry still fails, throw permanent auth error
+              _isPermanentlyDisabled = true;
+              debugPrint(
+                  '[OpenSenseMapService] Authentication failed after token refresh - service permanently disabled until re-login');
+              throw Exception('Authentication failed - user needs to re-login');
+            }
           } catch (e) {
             // If refresh token fails, set permanent disable state - user needs to re-login
             _isPermanentlyDisabled = true;
@@ -544,9 +569,7 @@ class OpenSenseMapService {
       retryIf: (e) {
         final errorString = e.toString();
         return e is TooManyRequestsException ||
-            errorString.contains('Token refreshed') ||
             errorString.contains('Server error') ||
-            e is TooManyRequestsException ||
             e is SocketException || // Network connectivity issues
             e is HttpException || // HTTP protocol errors
             e is TimeoutException;

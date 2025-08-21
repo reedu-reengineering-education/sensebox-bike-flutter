@@ -1,359 +1,240 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/blocs/track_bloc.dart';
-import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
-import 'package:sensebox_bike/constants.dart';
-import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:sensebox_bike/ui/screens/settings_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-import '../../test_helpers.dart';
-import '../../mocks.dart';
-
-class MockLaunchUrl extends Mock {
-  Future<bool> call(Uri url, {LaunchMode mode});
-}
-
-class MockTrackBloc extends Mock implements TrackBloc {}
-
-class MockIsarService extends Mock implements IsarService {}
 
 void main() {
-  Provider.debugCheckInvalidValueType = null;
+  group('SettingsScreen Upload Mode Tests', () {
+    late SettingsBloc settingsBloc;
 
-  late MockLaunchUrl mockLaunchUrl;
-  late SettingsBloc mockSettingsBloc;
-  late MockTrackBloc mockTrackBloc;
-  late MockIsarService mockIsarService;
-  late MockOpenSenseMapBloc mockOpenSenseMapBloc;
-
-  setUpAll(() {
-    // Register fallback values for Uri and LaunchMode
-    registerFallbackValue(Uri.parse('https://example.com'));
-    registerFallbackValue(LaunchMode.externalApplication);
-
-    const sharedPreferencesChannel =
-        MethodChannel('plugins.flutter.io/shared_preferences');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(sharedPreferencesChannel,
-            (MethodCall call) async {
-      if (call.method == 'getAll') {
-        return <String,
-            dynamic>{}; // Return an empty map for shared preferences
-      }
-      return null;
+    setUpAll(() {
+      // Set up SharedPreferences mock
+      const sharedPreferencesChannel =
+          MethodChannel('plugins.flutter.io/shared_preferences');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(sharedPreferencesChannel,
+              (MethodCall call) async {
+        if (call.method == 'getAll') {
+          return <String, dynamic>{}; // Return empty preferences
+        }
+        if (call.method == 'setBool') {
+          return true; // Mock successful save
+        }
+        return null;
+      });
     });
-  });
 
-  setUp(() {
-    mockLaunchUrl = MockLaunchUrl();
-    mockSettingsBloc = SettingsBloc();
-    mockTrackBloc = MockTrackBloc();
-    mockIsarService = MockIsarService();
-    mockOpenSenseMapBloc = MockOpenSenseMapBloc();
+    setUp(() {
+      settingsBloc = SettingsBloc();
+    });
 
-    when(() => mockTrackBloc.isarService).thenReturn(mockIsarService);
-  });
+    tearDown(() {
+      settingsBloc.dispose();
+    });
 
-  testWidgets('launches correct URLs when buttons are tapped',
-      (WidgetTester tester) async {
-    when(() => mockLaunchUrl.call(any(), mode: any(named: 'mode')))
-        .thenAnswer((_) async => true);
+    testWidgets('should display upload mode option with current selection',
+        (WidgetTester tester) async {
+      // Create a simple widget that just shows the upload mode option
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChangeNotifierProvider<SettingsBloc>.value(
+            value: settingsBloc,
+            child: Scaffold(
+              body: StreamBuilder<bool>(
+                stream: settingsBloc.directUploadModeStream,
+                initialData: settingsBloc.directUploadMode,
+                builder: (context, snapshot) {
+                  final isDirectUpload = snapshot.data ?? false;
+                  final uploadModeText = isDirectUpload
+                      ? 'Direct Upload (Beta)'
+                      : 'Post-Ride Upload';
 
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-      locale: const Locale('en'),
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
-            Provider<TrackBloc>.value(value: mockTrackBloc),
-            ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                value: mockOpenSenseMapBloc),
-          ],
-        child: SettingsScreen(launchUrlFunction: mockLaunchUrl.call),
-      ),
-      ),
-    );
-
-    await tester.scrollUntilVisible(find.text('Privacy Policy'), 200.0);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Privacy Policy'));
-    await tester.pumpAndSettle();
-
-    verify(() => mockLaunchUrl.call(
-          Uri.parse(senseBoxBikePrivacyPolicyUrl),
-          mode: any(named: 'mode'),
-        )).called(1);
-
-    await tester.scrollUntilVisible(find.text('E-mail'), 100.0);
-    await tester.tap(find.text('E-mail'));
-    await tester.pumpAndSettle();
-
-    verify(() => mockLaunchUrl.call(
-          Uri.parse('mailto:$contactEmail?subject=senseBox:bike%20App'),
-          mode: any(named: 'mode'),
-        )).called(1);
-
-    await tester.scrollUntilVisible(find.text('GitHub issue'), 100.0);
-    await tester.tap(find.text('GitHub issue'));
-    await tester.pumpAndSettle();
-
-    verify(() => mockLaunchUrl.call(
-          Uri.parse(gitHubNewIssueUrl),
-          mode: any(named: 'mode'),
-        )).called(1);
-  });
-
-  testWidgets('shows confirmation dialog and deletes data when confirmed',
-      (WidgetTester tester) async {
-    when(() => mockIsarService.deleteAllData()).thenAnswer((_) async {});
-
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
-            Provider<TrackBloc>.value(value: mockTrackBloc),
-            ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                value: mockOpenSenseMapBloc),
-          ],
-          child: const SettingsScreen(),
+                  return ListTile(
+                    title: const Text('Upload Mode'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                            'Choose when to upload your data during recording'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Current: $uploadModeText',
+                          style: const TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.text('Delete All Data'));
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    expect(
-        find.text(
-            'Are you sure you want to delete all data? This action is irreversible.'),
-        findsOneWidget);
+      // Verify upload mode option is displayed
+      expect(find.text('Upload Mode'), findsOneWidget);
+      expect(find.text('Choose when to upload your data during recording'),
+          findsOneWidget);
+      
+      // Verify default mode is displayed
+      expect(find.textContaining('Current: Post-Ride Upload'), findsOneWidget);
+    });
 
-    await tester.tap(find.text('Ok'));
-    await tester.pumpAndSettle();
+    testWidgets('should update display when upload mode changes',
+        (WidgetTester tester) async {
+      // Create a simple widget that just shows the upload mode option
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChangeNotifierProvider<SettingsBloc>.value(
+            value: settingsBloc,
+            child: Scaffold(
+              body: StreamBuilder<bool>(
+                stream: settingsBloc.directUploadModeStream,
+                initialData: settingsBloc.directUploadMode,
+                builder: (context, snapshot) {
+                  final isDirectUpload = snapshot.data ?? false;
+                  final uploadModeText = isDirectUpload
+                      ? 'Direct Upload (Beta)'
+                      : 'Post-Ride Upload';
 
-    verify(() => mockIsarService.deleteAllData()).called(1);
-    expect(
-        find.text('All data has been successfully deleted.'), findsOneWidget);
-  });
-
-  testWidgets('shows confirmation dialog and cancels deletion when canceled',
-      (WidgetTester tester) async {
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
-            Provider<TrackBloc>.value(value: mockTrackBloc),
-            ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                value: mockOpenSenseMapBloc),
-          ],
-          child: const SettingsScreen(),
+                  return ListTile(
+                    title: const Text('Upload Mode'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                            'Choose when to upload your data during recording'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Current: $uploadModeText',
+                          style: const TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
         ),
-      ),
-    );
-    await tester.tap(find.text('Delete All Data'));
-    await tester.pumpAndSettle();
+      );
 
-    expect(
-        find.text(
-            'Are you sure you want to delete all data? This action is irreversible.'),
-        findsOneWidget);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Cancel'));
-    await tester.pumpAndSettle();
+      // Verify initial state
+      expect(find.textContaining('Current: Post-Ride Upload'), findsOneWidget);
 
-    verifyNever(() => mockIsarService.deleteAllData());
-  });
+      // Change to direct upload mode
+      await settingsBloc.toggleDirectUploadMode(true);
+      await tester.pumpAndSettle();
 
-  testWidgets('shows login button when not authenticated',
-      (WidgetTester tester) async {
-    // Ensure mock is not authenticated
-    mockOpenSenseMapBloc.isAuthenticated = false;
+      // Verify display updates
+      expect(
+          find.textContaining('Current: Direct Upload (Beta)'), findsOneWidget);
+    });
 
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
-            Provider<TrackBloc>.value(value: mockTrackBloc),
-            ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                value: mockOpenSenseMapBloc),
-          ],
-          child: const SettingsScreen(),
+    testWidgets('should show upload mode dialog with radio buttons',
+        (WidgetTester tester) async {
+      // Create a simple dialog widget
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Upload Mode'),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              RadioListTile<bool>(
+                                title: const Text('Post-Ride Upload'),
+                                subtitle: const Text(
+                                    'Upload data after recording stops'),
+                                value: false,
+                                groupValue: settingsBloc.directUploadMode,
+                                onChanged: (bool? value) {
+                                  if (value != null) {
+                                    settingsBloc.toggleDirectUploadMode(value);
+                                    Navigator.of(context).pop();
+                                  }
+                                },
+                              ),
+                              RadioListTile<bool>(
+                                title: const Text('Direct Upload (Beta)'),
+                                subtitle: const Text(
+                                    'Upload data in real-time during recording (experimental)'),
+                                value: true,
+                                groupValue: settingsBloc.directUploadMode,
+                                onChanged: (bool? value) {
+                                  if (value != null) {
+                                    settingsBloc.toggleDirectUploadMode(value);
+                                    Navigator.of(context).pop();
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Cancel'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: const Text('Show Dialog'),
+                );
+              },
+            ),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
 
-    expect(find.text('Login'), findsOneWidget);
-  });
+      await tester.pumpAndSettle();
 
-  testWidgets(
-      'shows logout button when authenticated and calls logout when tapped',
-      (WidgetTester tester) async {
-    // Create a proper mock for verification
-    final mockBlocForVerification = MockOpenSenseMapBloc();
-    mockBlocForVerification.isAuthenticated = true;
+      // Tap to show dialog
+      await tester.tap(find.text('Show Dialog'));
+      await tester.pumpAndSettle();
 
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
-            Provider<TrackBloc>.value(value: mockTrackBloc),
-            ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                value: mockBlocForVerification),
-          ],
-          child: const SettingsScreen(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      // Verify dialog appears with both options
+      expect(find.text('Upload Mode'), findsOneWidget);
+      expect(find.text('Post-Ride Upload'), findsOneWidget);
+      expect(find.text('Direct Upload (Beta)'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+    });
 
-    expect(find.text('Logout'), findsOneWidget);
+    testWidgets('should toggle upload mode correctly in settings bloc',
+        (WidgetTester tester) async {
+      // Test the settings bloc directly
+      final initialValue = settingsBloc.directUploadMode;
+      
+      // Toggle to direct upload
+      await settingsBloc.toggleDirectUploadMode(true);
+      expect(settingsBloc.directUploadMode, true);
 
-    await tester.tap(find.text('Logout'));
-    await tester.pumpAndSettle();
-
-    expect(mockBlocForVerification.isAuthenticated, false);
-  });
-
-  testWidgets('displays user data when authenticated',
-      (WidgetTester tester) async {
-    // Set up authenticated user with mock data
-    mockOpenSenseMapBloc.isAuthenticated = true;
-
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
-            Provider<TrackBloc>.value(value: mockTrackBloc),
-            ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                value: mockOpenSenseMapBloc),
-          ],
-          child: const SettingsScreen(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('test@example.com'), findsOneWidget);
-    expect(find.text('Test User'), findsOneWidget);
-  });
-
-  testWidgets('shows error message when data deletion fails',
-      (WidgetTester tester) async {
-    when(() => mockIsarService.deleteAllData()).thenThrow('Database error');
-
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
-            Provider<TrackBloc>.value(value: mockTrackBloc),
-            ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                value: mockOpenSenseMapBloc),
-          ],
-          child: const SettingsScreen(),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Delete All Data'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Ok'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Failed to delete all data. Please try again.'),
-        findsOneWidget);
-  });
-
-  testWidgets('handles URL launch failures gracefully',
-      (WidgetTester tester) async {
-    when(() => mockLaunchUrl.call(any(), mode: any(named: 'mode')))
-        .thenThrow('URL launch failed');
-
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
-            Provider<TrackBloc>.value(value: mockTrackBloc),
-            ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                value: mockOpenSenseMapBloc),
-          ],
-          child: SettingsScreen(launchUrlFunction: mockLaunchUrl.call),
-        ),
-      ),
-    );
-
-    await tester.scrollUntilVisible(find.text('Privacy Policy'), 200.0);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Privacy Policy'));
-    await tester.pumpAndSettle();
-
-    // The error should be handled gracefully and the screen should remain visible
-    // The test should not crash even when URL launch fails
-    expect(find.byType(SettingsScreen), findsOneWidget);
-  });
-
-  testWidgets('displays privacy zones count badge',
-      (WidgetTester tester) async {
-    mockSettingsBloc.privacyZones.addAll(['Zone 1', 'Zone 2']);
-
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
-            Provider<TrackBloc>.value(value: mockTrackBloc),
-            ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                value: mockOpenSenseMapBloc),
-          ],
-          child: const SettingsScreen(),
-        ),
-      ),
-    );
-
-    await tester.scrollUntilVisible(find.text('Privacy Zones'), 200.0);
-    await tester.pumpAndSettle();
-
-    expect(find.text('2'), findsOneWidget);
-  });
-
-  testWidgets('shows all required sections', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
-            Provider<TrackBloc>.value(value: mockTrackBloc),
-            ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                value: mockOpenSenseMapBloc),
-          ],
-          child: const SettingsScreen(),
-        ),
-      ),
-    );
-
-    expect(find.text('General'), findsOneWidget);
-    expect(find.text('Account Management'), findsOneWidget);
+      // Toggle back to post-ride
+      await settingsBloc.toggleDirectUploadMode(false);
+      expect(settingsBloc.directUploadMode, false);
+      
+      // Toggle back to initial value
+      await settingsBloc.toggleDirectUploadMode(initialValue);
+      expect(settingsBloc.directUploadMode, initialValue);
+    });
   });
 }

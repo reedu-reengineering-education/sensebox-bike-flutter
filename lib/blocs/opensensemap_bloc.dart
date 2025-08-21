@@ -25,6 +25,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   SenseBox? _selectedSenseBox;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   bool get isAuthenticated => _isAuthenticated;
+  OpenSenseMapService get openSenseMapService => _service;
   
   /// Mark authentication as failed and notify listeners
   /// This allows external services to update the authentication state
@@ -163,6 +164,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
+      _isAuthenticatingNotifier.value = true;
+      
       try {
         // Use the same validation logic as _initializeAuth
         final token = await _service.getAccessToken();
@@ -199,6 +202,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       } catch (_) {
         _isAuthenticated = false;
       } finally {
+        _isAuthenticatingNotifier.value = false;
         notifyListeners();
       }
     }

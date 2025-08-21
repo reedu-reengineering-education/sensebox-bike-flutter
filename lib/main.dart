@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -98,27 +98,29 @@ class SenseBoxBikeApp extends StatelessWidget {
     final MapboxDrawController mapboxDrawController = MapboxDrawController();
 
     // Subscribe to all events (initial link and further)
-    final sub = appLinks.uriLinkStream.listen((uri) async {
-      print('Received uri: $uri');
+    appLinks.uriLinkStream.listen((uri) async {
+      debugPrint('Received uri: $uri');
       String action = uri.host;
       if (action == "start") {
-        print('Connecting to device and starting recording');
+        debugPrint('Connecting to device and starting recording');
         final id = uri.queryParameters['id'];
         if (id == null) {
-          print('No id provided');
+          debugPrint('No id provided');
           return;
         }
 
         final fullId = "senseBox:bike [$id]";
-        print('Connecting to $fullId');
+
+        debugPrint('Connecting to $fullId');
         try {
-          await bleBloc.connectToId(fullId, context);
-          await Future.delayed(const Duration(seconds: 2));
-          await recordingBloc.startRecording();
+          if (context.mounted) {
+            await bleBloc.connectToId(fullId, context);
+            await Future.delayed(const Duration(seconds: 2));
+            recordingBloc.startRecording();
+          }
         } catch (e) {
           ErrorService.handleError(e, StackTrace.current, sendToSentry: true);
         }
-
       }
     });
 

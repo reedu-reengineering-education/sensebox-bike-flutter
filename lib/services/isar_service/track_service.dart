@@ -66,4 +66,63 @@ class TrackService {
           .findAll();
     }
   }
+
+  Future<List<TrackData>> getUnuploadedTracksPaginated(
+      {required int offset,
+      required int limit,
+      bool skipLastTrack = false}) async {
+    final isar = await isarProvider.getDatabase();
+    
+    if (skipLastTrack) {
+      // Get the last track to check if it's unuploaded
+      final lastTrack = await getLastTrack();
+      
+      if (lastTrack != null && !lastTrack.uploaded) {
+        // If the last track is unuploaded, we need to skip it
+        // Get all tracks, filter unuploaded ones, then apply pagination
+        final allTracks = await isar.trackDatas.where().findAll();
+        final unuploadedTracks = allTracks.where((track) => !track.uploaded).toList();
+        
+        // Sort by ID in descending order (newest first)
+        unuploadedTracks.sort((a, b) => b.id.compareTo(a.id));
+        
+        // Apply pagination and skip the last track
+        final startIndex = offset;
+        final paginatedTracks = unuploadedTracks.skip(startIndex).take(limit + 1).toList();
+        
+        // Skip the last track (which is the first in the list due to descending sort)
+        return paginatedTracks.skip(1).toList();
+      } else {
+        // Last track is uploaded or doesn't exist, no need to skip
+        final allTracks = await isar.trackDatas.where().findAll();
+        final unuploadedTracks = allTracks.where((track) => !track.uploaded).toList();
+        
+        // Sort by ID in descending order (newest first)
+        unuploadedTracks.sort((a, b) => b.id.compareTo(a.id));
+        
+        // Apply pagination
+        final startIndex = offset;
+        return unuploadedTracks.skip(startIndex).take(limit).toList();
+      }
+    } else {
+      // No need to skip last track
+      final allTracks = await isar.trackDatas.where().findAll();
+      final unuploadedTracks = allTracks.where((track) => !track.uploaded).toList();
+      
+      // Sort by ID in descending order (newest first)
+      unuploadedTracks.sort((a, b) => b.id.compareTo(a.id));
+      
+      // Apply pagination
+      final startIndex = offset;
+      return unuploadedTracks.skip(startIndex).take(limit).toList();
+    }
+  }
+
+  Future<TrackData?> getLastTrack() async {
+    final isar = await isarProvider.getDatabase();
+    return await isar.trackDatas
+        .where(sort: Sort.desc)
+        .anyId()
+        .findFirst();
+  }
 }

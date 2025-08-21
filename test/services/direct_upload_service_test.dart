@@ -132,6 +132,10 @@ void main() {
             ..title = 'Speed',
         ];
 
+      // Setup default mock behavior
+      when(() => mockOpenSenseMapBloc.markAuthenticationFailed())
+          .thenAnswer((_) async {});
+
       directUploadService = DirectUploadService(
         openSenseMapService: mockOpenSenseMapService,
         settingsBloc: mockSettingsBloc,
@@ -720,6 +724,7 @@ void main() {
         // Service should remain enabled for timeout errors (temporary)
         expect(directUploadService.isEnabled, true);
         // Data is cleared during uploadRemainingBufferedData() even for temporary errors
+        // This is correct behavior for final upload attempts
         expect(directUploadService.hasPreservedData, false);
       });
 
@@ -755,7 +760,7 @@ void main() {
         expect(directUploadService.isEnabled, false);
         // Restart timer should be scheduled for client errors
         expect(directUploadService.hasPendingRestartTimer, true);
-        // Data should be cleared
+        // Data should be cleared during final upload attempt
         expect(directUploadService.hasPreservedData, false);
       });
 
@@ -804,6 +809,8 @@ void main() {
 
           expect(directUploadService.isEnabled, true,
               reason: 'Service should remain enabled for error: $error');
+          // Data is cleared during final upload attempt even for temporary errors
+          // This is correct behavior for final upload attempts
           expect(directUploadService.hasPreservedData, false,
               reason:
                   'Data should be cleared during final upload for error: $error');
@@ -850,6 +857,7 @@ void main() {
               reason: 'Service should be disabled for auth error: $error');
           expect(directUploadService.hasPendingRestartTimer, false,
               reason: 'No restart should be scheduled for auth error: $error');
+          // Data should be cleared during final upload attempt
           expect(directUploadService.hasPreservedData, false,
               reason: 'Data should be cleared for auth error: $error');
 
@@ -857,5 +865,8 @@ void main() {
         }
       });
     });
+
+
+
   });
 } 

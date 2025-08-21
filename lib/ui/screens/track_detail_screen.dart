@@ -6,18 +6,24 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
+import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/track/sensor_tile_list.dart';
+import 'package:sensebox_bike/theme.dart';
+import 'package:intl/intl.dart';
 
 class TrackDetailScreen extends StatefulWidget {
   final TrackData track;
@@ -30,9 +36,13 @@ class TrackDetailScreen extends StatefulWidget {
 
 class _TrackDetailScreenState extends State<TrackDetailScreen> {
   late final IsarService isarService;
+  late final OpenSenseMapBloc openSenseMapBloc;
+  late final BatchUploadService batchUploadService;
   bool _isDownloading = false;
+  bool _isUploading = false;
   late String _sensorType = 'temperature';
   List<GeolocationData> _geolocations = [];
+  List<SensorData> _sensorData = [];
   bool _isLoading = true;
 
   _TrackDetailScreenState();
@@ -41,7 +51,216 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   void initState() {
     super.initState();
     isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
+    openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+
+    // Initialize batch upload service
+    batchUploadService = BatchUploadService(
+      openSenseMapService: openSenseMapBloc.openSenseMapService,
+      trackService: isarService.trackService,
+      openSenseMapBloc: openSenseMapBloc,
+    );
+
     _loadTrackData();
+  }
+
+  @override
+  void dispose() {
+    batchUploadService.dispose();
+    super.dispose();
+  }
+
+  Widget _buildUploadStatusSection() {
+    final localizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    if (widget.track.uploaded || widget.track.uploadAttempts == 0) {
+      // If uploaded, show only status icon (not collapsible)
+      return Padding(
+        padding:
+            const EdgeInsets.symmetric(vertical: padding, horizontal: spacing),
+        child: _buildStatusIcon(context, localizations, theme),
+      );
+    } else {
+      // Otherwise, show collapsible
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: padding),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: spacing),
+          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+          collapsedBackgroundColor: theme.colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+          title: _buildStatusIcon(context, localizations, theme),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: spacing),
+              child: _buildUploadDetails(),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildStatusIcon(
+      BuildContext context, AppLocalizations localizations, ThemeData theme) {
+    final statusColor = _getStatusColor(theme);
+    final statusIcon = _getStatusIcon();
+    final statusText = _getStatusText(localizations);
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: spacing / 2, vertical: padding / 2),
+        decoration: BoxDecoration(
+          color: statusColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(borderRadiusSmall),
+        ),
+        constraints: const BoxConstraints(
+          minWidth: 0,
+          maxWidth: double.infinity,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              statusIcon,
+              size: iconSizeLarge,
+              color: statusColor,
+            ),
+            const SizedBox(width: spacing / 2),
+            Text(
+              statusText,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: statusColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(ThemeData theme) {
+    if (widget.track.uploaded) {
+      return theme.colorScheme.success;
+    } else if (widget.track.uploadAttempts > 0) {
+      return theme.colorScheme.error;
+    } else {
+      return theme.colorScheme.outline;
+    }
+  }
+
+  IconData _getStatusIcon() {
+    if (widget.track.uploaded) {
+      return Icons.cloud_done;
+    } else if (widget.track.uploadAttempts > 0) {
+      return Icons.cloud_off;
+    } else {
+      return Icons.cloud_upload;
+    }
+  }
+
+  String _getStatusText(AppLocalizations localizations) {
+    if (widget.track.uploaded) {
+      return localizations.trackStatusUploadedAt(DateFormat('dd.MM.yyyy HH:mm')
+          .format(widget.track.lastUploadAttempt ?? DateTime.now()));
+    } else if (widget.track.uploadAttempts > 0) {
+      return localizations.trackStatusUploadFailed;
+    } else {
+      return localizations.trackStatusNotUploaded;
+    }
+  }
+
+  Widget _buildUploadDetails() {
+    final localizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.track.uploadAttempts > 0) ...[
+          _buildDetailRow(
+            icon: Icons.refresh,
+            label: 'Upload attempts',
+            value: widget.track.uploadAttempts.toString(),
+            theme: theme,
+          ),
+          const SizedBox(height: spacing / 4),
+        ],
+        if (widget.track.lastUploadAttempt != null) ...[
+          _buildDetailRow(
+            icon: Icons.schedule,
+            label: 'Last attempt',
+            value: DateFormat('dd.MM.yyyy HH:mm')
+                .format(widget.track.lastUploadAttempt!),
+            theme: theme,
+          ),
+          const SizedBox(height: spacing / 4),
+        ],
+        if (widget.track.uploaded) ...[
+          _buildDetailRow(
+            icon: Icons.check_circle,
+            label: 'Status',
+            value: localizations.trackStatusUploaded,
+            theme: theme,
+            valueColor: theme.colorScheme.success,
+          ),
+        ] else if (widget.track.uploadAttempts > 0) ...[
+          _buildDetailRow(
+            icon: Icons.error,
+            label: 'Status',
+            value: localizations.trackStatusUploadFailed,
+            theme: theme,
+            valueColor: theme.colorScheme.error,
+          ),
+        ] else ...[
+          _buildDetailRow(
+            icon: Icons.pending,
+            label: 'Status',
+            value: localizations.trackStatusNotUploaded,
+            theme: theme,
+            valueColor: theme.colorScheme.outline,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required ThemeData theme,
+    Color? valueColor,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: iconSize,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: spacing / 4),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: spacing / 2),
+        Text(
+          value,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: valueColor ?? theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _loadTrackData() async {
@@ -50,6 +269,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           .getGeolocationDataWithPreloadedSensors(widget.track.id);
       setState(() {
         _geolocations = geolocations;
+        _sensorData = getAllUniqueSensorData(geolocations);
+        _sensorType = getFirstAvailableSensorType(_sensorData);
         _isLoading = false;
       });
     } catch (e) {
@@ -141,8 +362,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       final String csvFilePath;
 
       if (isOpenSourceMapCompatible) {
-        csvFilePath =
-            await isarService
+        csvFilePath = await isarService
             .exportTrackToCsvInOpenSenseMapFormat(widget.track.id);
       } else {
         csvFilePath = await isarService.exportTrackToCsv(widget.track.id);
@@ -160,29 +380,215 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       ErrorService.handleError('Error exporting CSV: $e', StackTrace.current);
     } finally {
       setState(() {
-        _isDownloading = false; 
+        _isDownloading = false;
       });
+    }
+  }
+
+  Future<void> _startUpload() async {
+    final localizations = AppLocalizations.of(context)!;
+
+    // Check if user is authenticated
+    if (!openSenseMapBloc.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.uploadProgressAuthenticationError),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    // Check if senseBox is selected
+    if (openSenseMapBloc.selectedSenseBox == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.errorNoSenseBoxSelected),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    try {
+      // Show upload progress modal
+      UploadProgressOverlay.show(
+        context,
+        batchUploadService: batchUploadService,
+        onUploadComplete: () {
+          // Upload completed successfully
+          setState(() => _isUploading = false);
+          if (mounted) {
+            // Refresh the track data to show updated status
+            setState(() {});
+          }
+        },
+        onUploadFailed: () {
+          // Upload failed permanently
+          setState(() => _isUploading = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(localizations.trackUploadRetryFailed),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          }
+        },
+        onRetryRequested: () {
+          // User requested retry - restart upload with fresh service
+          _retryUpload();
+        },
+      );
+
+      // Start the upload
+      await batchUploadService.uploadTrack(
+          widget.track, openSenseMapBloc.selectedSenseBox!);
+    } catch (e) {
+      setState(() => _isUploading = false);
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localizations.trackUploadRetryFailed),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _retryUpload() async {
+    final localizations = AppLocalizations.of(context)!;
+
+    // Check if user is authenticated
+    if (!openSenseMapBloc.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.uploadProgressAuthenticationError),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    // Check if senseBox is selected
+    if (openSenseMapBloc.selectedSenseBox == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.errorNoSenseBoxSelected),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    try {
+      // Reset the batch upload service to start fresh
+      batchUploadService.dispose();
+      batchUploadService = BatchUploadService(
+        openSenseMapService: openSenseMapBloc.openSenseMapService,
+        trackService: isarService.trackService,
+        openSenseMapBloc: openSenseMapBloc,
+      );
+
+      // Show upload progress modal with fresh service
+      UploadProgressOverlay.show(
+        context,
+        batchUploadService: batchUploadService,
+        onUploadComplete: () {
+          // Upload completed successfully
+          setState(() => _isUploading = false);
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        onUploadFailed: () {
+          // Upload failed permanently
+          setState(() => _isUploading = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(localizations.trackUploadRetryFailed),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          }
+        },
+        onRetryRequested: () {
+          // User requested retry again
+          _retryUpload();
+        },
+      );
+
+      // Start the upload with fresh service
+      await batchUploadService.uploadTrack(
+          widget.track, openSenseMapBloc.selectedSenseBox!);
+    } catch (e) {
+      setState(() => _isUploading = false);
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localizations.trackUploadRetryFailed),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
   Widget _buildAppBarTitle(TrackData track) {
     String errorMessage = AppLocalizations.of(context)!.trackDetailsNoData;
+    final theme = Theme.of(context);
 
     return Row(
       children: [
-        Text(trackName(track, errorMessage: errorMessage)),
-        const Spacer(),
-        ExportButton(
-          isDisabled: false,
-          isDownloading: _isDownloading,
-          onExport: (selectedFormat) async {
-            if (selectedFormat == 'regular') {
-              await _exportTrackToCsv();
-            } else if (selectedFormat == 'openSenseMap') {
-              await _exportTrackToCsv(isOpenSourceMapCompatible: true);
-            }
-          },
+        Text(
+          trackName(track, errorMessage: errorMessage),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
+        const Spacer(),
+        // Only show buttons if track has geolocations
+        if (_geolocations.isNotEmpty) ...[
+          // Upload button - only show if track hasn't been uploaded
+          if (!track.uploaded)
+            GestureDetector(
+              onTap: _isUploading ? null : _startUpload,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: _isUploading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        Icons.cloud_upload,
+                        size: 20,
+                        color: theme.colorScheme.onSurface,
+                      ),
+              ),
+            ),
+          ExportButton(
+            isDisabled: false,
+            isDownloading: _isDownloading,
+            onExport: (selectedFormat) async {
+              if (selectedFormat == 'regular') {
+                await _exportTrackToCsv();
+              } else if (selectedFormat == 'openSenseMap') {
+                await _exportTrackToCsv(isOpenSourceMapCompatible: true);
+              }
+            },
+          ),
+        ],
       ],
     );
   }
@@ -205,9 +611,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       );
     }
 
-    // Get all unique sensor data from all geolocations in the track
-    final sensorData = getAllUniqueSensorData(_geolocations);
-    
     final minSensorValue =
         getMinSensorValue(_geolocations, _sensorType).toStringAsFixed(1);
     final maxSensorValue =
@@ -219,6 +622,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         minimum: const EdgeInsets.only(bottom: 8),
         child: Column(
           children: [
+            // Upload status section
+            _buildUploadStatusSection(),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -256,7 +661,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                   ])
                 ])),
             SensorTileList(
-              sensorData: sensorData,
+              sensorData: _sensorData,
               selectedSensorType: _sensorType,
               onSensorTypeSelected: (type) {
                 setState(() {

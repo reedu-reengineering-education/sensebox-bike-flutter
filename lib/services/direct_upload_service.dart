@@ -145,13 +145,16 @@ class DirectUploadService {
     
     _isEnabled = true;
     _isPermanentlyDisabled = false;
-    _isUploadDisabled = false; // Reset upload flag
     
     _resetRestartAttempts();
     _clearAllBuffersForNewRecording();
+    
+    // DirectUploadService is only created when direct upload mode is enabled
+    // so we can always enable uploads here
+    _isUploadDisabled = false;
     _startPeriodicUploadCheck();
 
-    debugPrint('[DirectUploadService] Service enabled, restart attempts reset');
+    debugPrint('[DirectUploadService] Service enabled for direct upload mode');
   }
 
   void disable() {
@@ -179,6 +182,7 @@ class DirectUploadService {
   bool get hasPreservedData => _accumulatedSensorData.isNotEmpty;
   bool get hasPendingRestartTimer => _restartTimer != null;
 
+
   void setUploadSuccessCallback(Function(List<GeolocationData>) callback) {
     _onUploadSuccess = callback;
   }
@@ -205,7 +209,8 @@ class DirectUploadService {
 
     final bool shouldUpload = _accumulatedSensorData.length >= 6; 
 
-    if (shouldUpload) {
+    // Only attempt upload if service is enabled and not disabled
+    if (shouldUpload && !_isUploadDisabled) {
       _prepareAndUploadData(gpsBuffer);
     }
     
@@ -219,6 +224,11 @@ class DirectUploadService {
 
     // Don't prepare data if service is permanently disabled
     if (_isPermanentlyDisabled) {
+      return;
+    }
+
+    // Don't prepare data for upload if service is disabled
+    if (_isUploadDisabled) {
       return;
     }
 
@@ -330,6 +340,11 @@ class DirectUploadService {
 
     // Don't attempt uploads if service is permanently disabled
     if (_isPermanentlyDisabled) {
+      return;
+    }
+
+    // Don't attempt uploads if service is disabled
+    if (_isUploadDisabled) {
       return;
     }
 
@@ -583,6 +598,11 @@ class DirectUploadService {
     _uploadTimer = Timer.periodic(Duration(seconds: 30), (_) {
       // Don't run periodic checks if service is permanently disabled
       if (_isPermanentlyDisabled) {
+        return;
+      }
+      
+      // Don't run periodic checks if service is disabled
+      if (_isUploadDisabled) {
         return;
       }
       
