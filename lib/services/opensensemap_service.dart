@@ -29,7 +29,6 @@ class OpenSenseMapService {
   final http.Client client;
   final Future<SharedPreferences> _prefs;
 
-  // Add rate limiting state
   bool _isRateLimited = false;
   DateTime? _rateLimitUntil;
   bool _isPermanentlyDisabled = false;
@@ -56,33 +55,6 @@ class OpenSenseMapService {
     _isPermanentlyDisabled = false;
   }
 
-  Future<bool> hasStoredTokens() async {
-    final prefs = await _prefs;
-    final refreshToken = prefs.getString('refreshToken');
-    // Only need refresh token to attempt authentication
-    // Access token can be expired and will be refreshed
-    return refreshToken != null;
-  }
-
-  Future<bool> forceTokenRefresh() async {
-    try {
-      _clearCachedToken();
-      final tokens = await refreshToken();
-      if (tokens != null) {
-        // Update cache immediately with returned tokens
-        _cachedAccessToken = tokens['accessToken'];
-        _tokenExpiration = _getTokenExpiration(tokens['accessToken']!);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      debugPrint('[OpenSenseMapService] Force token refresh failed: $e');
-      return false;
-    }
-  }
-
-
-
   bool get isAuthenticated {
     return _cachedAccessToken != null &&
         _tokenExpiration != null &&
@@ -95,7 +67,6 @@ class OpenSenseMapService {
     final prefs = await _prefs;
     final responseData = jsonDecode(response.body);
     
-    // Validate that required fields exist
     if (!responseData.containsKey('token') ||
         !responseData.containsKey('refreshToken')) {
       throw Exception('Invalid response format: missing token or refreshToken');
@@ -104,16 +75,13 @@ class OpenSenseMapService {
     final String accessToken = responseData['token'];
     final String refreshToken = responseData['refreshToken'];
     
-    // Validate that tokens are not empty
     if (accessToken.isEmpty || refreshToken.isEmpty) {
       throw Exception('Invalid response format: empty token or refreshToken');
     }
 
-    // Store tokens in SharedPreferences
     await prefs.setString('accessToken', accessToken);
     await prefs.setString('refreshToken', refreshToken);
 
-    // Update cached token with actual expiration
     _cachedAccessToken = accessToken;
     _tokenExpiration = _getTokenExpiration(accessToken);
     
@@ -127,14 +95,17 @@ class OpenSenseMapService {
     await prefs.remove('accessToken');
     await prefs.remove('refreshToken');
 
-    // Clear cached token
     _clearCachedToken();
   }
 
   Future<String?> getRefreshTokenFromPreferences() async {
     final prefs = await _prefs;
-
     return prefs.getString('refreshToken');
+  }
+
+  Future<String?> getAccessTokenFromPreferences() async {
+    final prefs = await _prefs;
+    return prefs.getString('accessToken');
   }
 
   Future<void> register(String name, String email, String password) async {
@@ -156,8 +127,6 @@ class OpenSenseMapService {
     final responseData = jsonDecode(response.body);
 
     await setTokens(response);
-
-    // Save user data from registration response
     await _saveUserData({
       'data': {
         'me': {
@@ -182,7 +151,6 @@ class OpenSenseMapService {
       try {
         return jsonDecode(userDataString);
       } catch (e) {
-        // If cached data is corrupted, remove it
         await prefs.remove('userData');
       }
     }
@@ -209,10 +177,8 @@ class OpenSenseMapService {
 
       await setTokens(response);
 
-      // Reset permanent disable state after successful login
       resetPermanentDisable();
 
-      // If the response contains user data, save it
       if (responseData.containsKey('user')) {
         await _saveUserData({
           'data': {'me': responseData['user']}
@@ -231,10 +197,8 @@ class OpenSenseMapService {
   }
 
   Future<Map<String, dynamic>?> getUserData() async {
-    // First try to get cached user data
     final cachedUserData = await _getCachedUserData();
     
-    // Always try to get fresh data from API to validate authentication
     try {
       final userData = await _makeAuthenticatedRequest<Map<String, dynamic>?>(
         requestFn: (accessToken) => client.get(
@@ -245,19 +209,16 @@ class OpenSenseMapService {
         errorMessage: 'Failed to load user data',
       );
 
-      // Cache the fresh user data
       if (userData != null) {
         await _saveUserData(userData);
         return userData;
       }
       
-      // If API call failed but we have cached data, clear it and return null
       if (cachedUserData != null) {
         await _clearUserData();
       }
       return null;
     } catch (e) {
-      // Clear cached data on any authentication error
       if (e.toString().contains('Not authenticated') ||
           e.toString().contains('Authentication failed') ||
           e.toString().contains('Failed to refresh token')) {
@@ -268,7 +229,6 @@ class OpenSenseMapService {
   }
 
   Future<String?> getAccessToken() async {
-    // Check cache first
     if (_cachedAccessToken != null && _tokenExpiration != null) {
       final isValid = _isTokenValid(_cachedAccessToken!);
       if (isValid) {
@@ -278,9 +238,7 @@ class OpenSenseMapService {
       }
     }
 
-    // Get from SharedPreferences
-    final prefs = await _prefs;
-    final token = prefs.getString('accessToken');
+    final token = await getAccessTokenFromPreferences();
 
     if (token != null && _isTokenValid(token)) {
       _cachedAccessToken = token;
@@ -291,9 +249,6 @@ class OpenSenseMapService {
     return null;
   }
 
-
-
-  /// Validate JWT token and extract expiration
   bool _isTokenValid(String token) {
     try {
       final jwt = JWT.decode(token);
@@ -303,16 +258,13 @@ class OpenSenseMapService {
       }
       final expirationTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
       final now = DateTime.now();
-      // Temporary: Code to test if token is expired
-      // final fakeExpiredTime = now.subtract(Duration(hours: 1));
-      // return expirationTime.isAfter(fakeExpiredTime);
+
       return expirationTime.isAfter(now);
     } catch (e) {
       return false;
     }
   }
 
-  /// Extract expiration time from JWT token
   DateTime? _getTokenExpiration(String token) {
     try {
       final jwt = JWT.decode(token);
@@ -325,8 +277,6 @@ class OpenSenseMapService {
     }
   }
 
-
-
   Future<Map<String, String>?> refreshToken() async {
     try {
       // Check if refresh token exists
@@ -335,10 +285,6 @@ class OpenSenseMapService {
         debugPrint('[OpenSenseMapService] No refresh token found');
         throw Exception('No refresh token found');
       }
-
-
-
-
 
       debugPrint(
           '[OpenSenseMapService] Attempting token refresh with retry logic');
@@ -404,16 +350,11 @@ class OpenSenseMapService {
       rethrow;
     }
   }
-
-
-
-  /// Clear cached token (called on logout or auth failure)
   void _clearCachedToken() {
     _cachedAccessToken = null;
     _tokenExpiration = null;
     _isRefreshingToken = false;
   }
-
 
   /// Generic method to handle authenticated requests with automatic token refresh
   ///
@@ -439,12 +380,10 @@ class OpenSenseMapService {
       }
 
       try {
-        final tokens = await refreshToken();
-        if (tokens == null) {
-          throw Exception('Not authenticated after token refresh');
-        }
 
-        final retryResponse = await requestFn(tokens['accessToken']!);
+        final tokens = await refreshToken();
+
+        final retryResponse = await requestFn(tokens!['accessToken']!);
 
         if (retryResponse.statusCode == 200 ||
             retryResponse.statusCode == 201) {
@@ -539,6 +478,8 @@ class OpenSenseMapService {
               'Client error ${response.statusCode}: ${response.body}',
               StackTrace.current,
               sendToSentry: true);
+          
+          // Use the same robust token refresh method
           try {
             final tokens = await refreshToken();
             if (tokens != null) {

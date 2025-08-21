@@ -83,8 +83,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   Future<void> _performAuthentication() async {
     try {
       // Step 1: Check if refresh token exists in SharedPreferences
-      final hasStoredTokens = await _service.hasStoredTokens();
-      if (!hasStoredTokens) {
+      final refreshToken = await _service.getRefreshTokenFromPreferences();
+      if (refreshToken == null) {
         debugPrint(
             '[OpenSenseMapBloc] No refresh token found - user needs to login');
         _isAuthenticated = false;
@@ -198,12 +198,13 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
         // This handles cases where the app was backgrounded during auth issues
         if (_service.isPermanentlyDisabled) {
           debugPrint(
-              '[OpenSenseMapBloc] Service was disabled, attempting force refresh...');
-          final refreshSuccess = await _service.forceTokenRefresh();
+              '[OpenSenseMapBloc] Service was disabled, attempting token refresh...');
+          final tokens = await _service.refreshToken();
+          final refreshSuccess = tokens != null;
           if (refreshSuccess) {
             _service.resetPermanentDisable();
             debugPrint(
-                '[OpenSenseMapBloc] Force refresh succeeded, service re-enabled');
+                '[OpenSenseMapBloc] Token refresh succeeded, service re-enabled');
           }
         }
 
