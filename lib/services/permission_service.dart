@@ -5,7 +5,7 @@ class PermissionService {
   static Future<void> ensureLocationPermissionsGranted() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      throw Exception('Location services are disabled.');
+      throw LocationPermissionDenied();
     }
 
     LocationPermission permission = await Geolocator.checkPermission();
