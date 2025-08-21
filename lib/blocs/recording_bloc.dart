@@ -30,7 +30,7 @@ class RecordingBloc with ChangeNotifier {
 
   VoidCallback? _onRecordingStart;
   VoidCallback? _onRecordingStop;
-  
+
   // Context for showing upload modal
   BuildContext? _context;
 
@@ -43,10 +43,9 @@ class RecordingBloc with ChangeNotifier {
 
   RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
       this.openSenseMapBloc, this.settingsBloc) {
-    openSenseMapBloc.senseBoxStream
-        .listen(_onSenseBoxChanged).onError((error) {
+    openSenseMapBloc.senseBoxStream.listen(_onSenseBoxChanged).onError((error) {
       ErrorService.handleError(error, StackTrace.current);
-    }); 
+    });
 
     // Listen to permanent BLE connection loss and stop recording
     bleBloc.permanentConnectionLossNotifier
@@ -73,7 +72,7 @@ class RecordingBloc with ChangeNotifier {
     _onRecordingStart = onRecordingStart;
     _onRecordingStop = onRecordingStop;
   }
-  
+
   /// Sets the context for showing upload modals
   void setContext(BuildContext context) {
     _context = context;
@@ -81,7 +80,7 @@ class RecordingBloc with ChangeNotifier {
 
   void _onSenseBoxChanged(SenseBox? senseBox) {
     _selectedSenseBox = senseBox;
-    notifyListeners(); 
+    notifyListeners();
   }
 
   Future<void> startRecording() async {
@@ -98,13 +97,13 @@ class RecordingBloc with ChangeNotifier {
     }
 
     _isRecording = true;
-    _isRecordingNotifier.value = true; 
+    _isRecordingNotifier.value = true;
     await trackBloc.startNewTrack();
 
     _currentTrack = trackBloc.currentTrack;
 
     try {
-      if (_selectedSenseBox == null) {
+      if (_selectedSenseBox == null && settingsBloc.directUploadMode) {
         ErrorService.handleError(NoSenseBoxSelected(), StackTrace.current,
             sendToSentry: false);
         notifyListeners();
@@ -129,7 +128,6 @@ class RecordingBloc with ChangeNotifier {
       }
 
       _onRecordingStart?.call();
-
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
@@ -154,11 +152,10 @@ class RecordingBloc with ChangeNotifier {
     _currentTrack = null;
 
     // Trigger batch upload if in post-ride upload mode
-    if (_batchUploadService != null && 
-        trackToUpload != null && 
-        senseBoxForUpload != null && 
+    if (_batchUploadService != null &&
+        trackToUpload != null &&
+        senseBoxForUpload != null &&
         _context != null) {
-      
       // Show upload progress modal
       _showUploadProgressModal(trackToUpload, senseBoxForUpload);
     } else {
@@ -169,11 +166,11 @@ class RecordingBloc with ChangeNotifier {
 
     notifyListeners();
   }
-  
+
   /// Shows the upload progress modal and starts the batch upload
   void _showUploadProgressModal(TrackData track, SenseBox senseBox) async {
     if (_context == null || _batchUploadService == null) return;
-    
+
     try {
       // Check if track has geolocations before showing upload modal
       await track.geolocations.load();
@@ -182,7 +179,7 @@ class RecordingBloc with ChangeNotifier {
       if (geolocations.isEmpty) {
         throw TrackHasNoGeolocationsException(track.id);
       }
-      
+
       // Show the upload progress modal
       UploadProgressOverlay.show(
         _context!,
@@ -211,11 +208,11 @@ class RecordingBloc with ChangeNotifier {
       UploadProgressOverlay.hide();
     }
   }
-  
+
   /// Starts the batch upload process
   void _startBatchUpload(TrackData track, SenseBox senseBox) async {
     if (_batchUploadService == null) return;
-    
+
     try {
       await _batchUploadService!.uploadTrack(track, senseBox);
     } catch (e, stack) {
@@ -228,11 +225,11 @@ class RecordingBloc with ChangeNotifier {
       );
     }
   }
-  
+
   /// Retries the batch upload
   void _retryBatchUpload(TrackData track, SenseBox senseBox) async {
     if (_batchUploadService == null) return;
-    
+
     try {
       // Check if track has geolocations before attempting retry
       await track.geolocations.load();
@@ -241,7 +238,7 @@ class RecordingBloc with ChangeNotifier {
       if (geolocations.isEmpty) {
         throw TrackHasNoGeolocationsException(track.id);
       }
-      
+
       await _batchUploadService!.uploadTrack(track, senseBox);
     } catch (e, stack) {
       // Log error - the modal will handle showing the error state
@@ -252,7 +249,7 @@ class RecordingBloc with ChangeNotifier {
       );
     }
   }
-  
+
   /// Cleans up the batch upload service
   void _cleanupBatchUploadService() {
     _batchUploadService?.dispose();
@@ -269,10 +266,10 @@ class RecordingBloc with ChangeNotifier {
     _directUploadService?.dispose();
     _batchUploadService?.dispose();
     _isRecordingNotifier.dispose();
-    
+
     // Hide any open upload modal
     UploadProgressOverlay.hide();
-    
+
     super.dispose();
   }
 }
