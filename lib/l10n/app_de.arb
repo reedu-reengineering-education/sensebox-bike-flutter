@@ -234,6 +234,14 @@
     "uploadProgressNetworkError": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
     "uploadProgressGenericError": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "trackStatusUploaded": "Hochgeladen",
+    "trackStatusUploadedAt": "Hochgeladen am {date}",
+    "@trackStatusUploadedAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
     "trackStatusNotUploaded": "Nicht hochgeladen",
     "trackStatusUploadFailed": "Upload fehlgeschlagen",
     "trackFilterAll": "Alle",

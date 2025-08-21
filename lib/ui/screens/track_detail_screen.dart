@@ -17,7 +17,6 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
-import 'package:sensebox_bike/ui/widgets/track/upload_status_indicator.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:share_plus/share_plus.dart';
@@ -53,14 +52,14 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     super.initState();
     isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
     openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
-    
+
     // Initialize batch upload service
     batchUploadService = BatchUploadService(
       openSenseMapService: openSenseMapBloc.openSenseMapService,
       trackService: isarService.trackService,
       openSenseMapBloc: openSenseMapBloc,
     );
-    
+
     _loadTrackData();
   }
 
@@ -73,71 +72,74 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   Widget _buildUploadStatusSection() {
     final localizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: padding),
-      padding: const EdgeInsets.all(spacing),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.cloud_upload,
-                size: iconSizeLarge,
-                color: theme.colorScheme.onSurface,
-              ),
-              const SizedBox(width: spacing / 2),
-              Text(
-                localizations.uploadProgressTitle,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              _buildStatusIcon(context, localizations, theme),
-            ],
+
+    if (widget.track.uploaded || widget.track.uploadAttempts == 0) {
+      // If uploaded, show only status icon (not collapsible)
+      return Padding(
+        padding:
+            const EdgeInsets.symmetric(vertical: padding, horizontal: spacing),
+        child: _buildStatusIcon(context, localizations, theme),
+      );
+    } else {
+      // Otherwise, show collapsible
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: padding),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: spacing),
+          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+          collapsedBackgroundColor: theme.colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
           ),
-          const SizedBox(height: spacing / 2),
-          _buildUploadDetails(),
-        ],
-      ),
-    );
+          title: _buildStatusIcon(context, localizations, theme),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: spacing),
+              child: _buildUploadDetails(),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
-  Widget _buildStatusIcon(BuildContext context, AppLocalizations localizations, ThemeData theme) {
+  Widget _buildStatusIcon(
+      BuildContext context, AppLocalizations localizations, ThemeData theme) {
     final statusColor = _getStatusColor(theme);
     final statusIcon = _getStatusIcon();
     final statusText = _getStatusText(localizations);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: spacing / 2, vertical: padding / 2),
-      decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(borderRadiusSmall),
-        border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            statusIcon,
-            size: iconSizeLarge,
-            color: statusColor,
-          ),
-          const SizedBox(width: spacing / 2),
-          Text(
-            statusText,
-            style: theme.textTheme.bodySmall?.copyWith(
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: spacing / 2, vertical: padding / 2),
+        decoration: BoxDecoration(
+          color: statusColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(borderRadiusSmall),
+        ),
+        constraints: const BoxConstraints(
+          minWidth: 0,
+          maxWidth: double.infinity,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              statusIcon,
+              size: iconSizeLarge,
               color: statusColor,
-              fontWeight: FontWeight.w500,
             ),
-          ),
-        ],
+            const SizedBox(width: spacing / 2),
+            Text(
+              statusText,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: statusColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -164,7 +166,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   String _getStatusText(AppLocalizations localizations) {
     if (widget.track.uploaded) {
-      return localizations.trackStatusUploaded;
+      return localizations.trackStatusUploadedAt(DateFormat('dd.MM.yyyy HH:mm')
+          .format(widget.track.lastUploadAttempt ?? DateTime.now()));
     } else if (widget.track.uploadAttempts > 0) {
       return localizations.trackStatusUploadFailed;
     } else {
@@ -175,7 +178,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   Widget _buildUploadDetails() {
     final localizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -192,7 +195,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           _buildDetailRow(
             icon: Icons.schedule,
             label: 'Last attempt',
-            value: DateFormat('dd.MM.yyyy HH:mm').format(widget.track.lastUploadAttempt!),
+            value: DateFormat('dd.MM.yyyy HH:mm')
+                .format(widget.track.lastUploadAttempt!),
             theme: theme,
           ),
           const SizedBox(height: spacing / 4),
@@ -358,8 +362,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       final String csvFilePath;
 
       if (isOpenSourceMapCompatible) {
-        csvFilePath =
-            await isarService
+        csvFilePath = await isarService
             .exportTrackToCsvInOpenSenseMapFormat(widget.track.id);
       } else {
         csvFilePath = await isarService.exportTrackToCsv(widget.track.id);
@@ -377,14 +380,14 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       ErrorService.handleError('Error exporting CSV: $e', StackTrace.current);
     } finally {
       setState(() {
-        _isDownloading = false; 
+        _isDownloading = false;
       });
     }
   }
 
   Future<void> _startUpload() async {
     final localizations = AppLocalizations.of(context)!;
-    
+
     // Check if user is authenticated
     if (!openSenseMapBloc.isAuthenticated) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -559,7 +562,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             GestureDetector(
               onTap: _isUploading ? null : _startUpload,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 child: _isUploading
                     ? const SizedBox(
                         width: 20,
@@ -618,6 +622,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         minimum: const EdgeInsets.only(bottom: 8),
         child: Column(
           children: [
+            // Upload status section
+            _buildUploadStatusSection(),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -629,8 +635,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 ),
               ),
             ),
-            // Upload status section
-            _buildUploadStatusSection(),
             Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Column(children: [

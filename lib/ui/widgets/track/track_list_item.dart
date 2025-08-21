@@ -216,7 +216,6 @@ class TrackListItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: statusColor.withOpacity(0.1),
           borderRadius: BorderRadius.circular(borderRadiusSmall),
-          border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
         ),
         child: Icon(
           statusIcon,

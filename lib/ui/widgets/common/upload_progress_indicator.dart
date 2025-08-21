@@ -5,7 +5,7 @@ import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/theme.dart';
 
 /// A widget that displays upload progress with status text, progress bar, and action buttons.
-/// 
+///
 /// This widget integrates with BatchUploadService progress stream to show real-time
 /// upload status including:
 /// - Progress bar for upload completion
@@ -17,7 +17,7 @@ import 'package:sensebox_bike/theme.dart';
 class UploadProgressIndicator extends StatelessWidget {
   /// Current upload progress state
   final UploadProgress progress;
-  
+
   /// Whether to show the progress indicator in a compact form
   final bool compact;
 
@@ -31,7 +31,7 @@ class UploadProgressIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    
+
     if (compact) {
       return _buildCompactIndicator(context, localizations, theme);
     } else {
@@ -40,7 +40,8 @@ class UploadProgressIndicator extends StatelessWidget {
   }
 
   /// Builds a compact version of the progress indicator for use in lists or small spaces
-  Widget _buildCompactIndicator(BuildContext context, AppLocalizations localizations, ThemeData theme) {
+  Widget _buildCompactIndicator(
+      BuildContext context, AppLocalizations localizations, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(padding),
       decoration: BoxDecoration(
@@ -86,7 +87,8 @@ class UploadProgressIndicator extends StatelessWidget {
   }
 
   /// Builds the full version of the progress indicator with detailed information
-  Widget _buildFullIndicator(BuildContext context, AppLocalizations localizations, ThemeData theme) {
+  Widget _buildFullIndicator(
+      BuildContext context, AppLocalizations localizations, ThemeData theme) {
     return Card(
       margin: const EdgeInsets.all(spacing),
       child: Padding(
@@ -110,11 +112,11 @@ class UploadProgressIndicator extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             // Progress information and bar
             if (progress.totalChunks > 0) ...[
               const SizedBox(height: spacing),
-              
+
               // Progress text
               Text(
                 localizations.uploadProgressChunks(
@@ -125,9 +127,9 @@ class UploadProgressIndicator extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              
+
               const SizedBox(height: spacing / 2),
-              
+
               // Progress bar
               LinearProgressIndicator(
                 value: progress.progressPercentage,
@@ -136,18 +138,19 @@ class UploadProgressIndicator extends StatelessWidget {
                   _getProgressColor(theme),
                 ),
               ),
-              
+
               const SizedBox(height: spacing / 2),
-              
+
               // Percentage text
               Text(
-                localizations.uploadProgressPercentage(progress.progressPercentageInt),
+                localizations
+                    .uploadProgressPercentage(progress.progressPercentageInt),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
-            
+
             // Error message
             if (progress.hasFailed && progress.errorMessage != null) ...[
               const SizedBox(height: spacing),
@@ -199,7 +202,7 @@ class UploadProgressIndicator extends StatelessWidget {
       case UploadStatus.completed:
         return Icon(
           Icons.check_circle,
-          color: theme.colorScheme.tertiary,
+          color: theme.colorScheme.primary,
           size: circleSize,
         );
       case UploadStatus.failed:
@@ -236,7 +239,8 @@ class UploadProgressIndicator extends StatelessWidget {
     if (errorMessage.contains('Authentication failed') ||
         errorMessage.contains('user needs to re-login')) {
       return localizations.uploadProgressAuthenticationError;
-    } else if (errorMessage.contains('network') || errorMessage.contains('connection')) {
+    } else if (errorMessage.contains('network') ||
+        errorMessage.contains('connection')) {
       return localizations.uploadProgressNetworkError;
     } else {
       return localizations.uploadProgressGenericError;
@@ -249,9 +253,8 @@ class UploadProgressIndicator extends StatelessWidget {
       case UploadStatus.preparing:
       case UploadStatus.uploading:
       case UploadStatus.retrying:
-        return theme.colorScheme.onSurface;
       case UploadStatus.completed:
-        return theme.colorScheme.tertiary;
+        return theme.colorScheme.onSurface;
       case UploadStatus.failed:
         return theme.colorScheme.error;
     }
@@ -263,9 +266,8 @@ class UploadProgressIndicator extends StatelessWidget {
       case UploadStatus.preparing:
       case UploadStatus.uploading:
       case UploadStatus.retrying:
-        return theme.colorScheme.surfaceContainerLow;
       case UploadStatus.completed:
-        return theme.colorScheme.tertiaryContainer;
+        return theme.colorScheme.surfaceContainerLow;
       case UploadStatus.failed:
         return theme.colorScheme.errorContainer;
     }
@@ -290,11 +292,10 @@ class UploadProgressIndicator extends StatelessWidget {
     switch (progress.status) {
       case UploadStatus.preparing:
       case UploadStatus.uploading:
+      case UploadStatus.completed:
         return theme.colorScheme.primary;
       case UploadStatus.retrying:
         return theme.colorScheme.secondary;
-      case UploadStatus.completed:
-        return theme.colorScheme.tertiary;
       case UploadStatus.failed:
         return theme.colorScheme.error;
     }

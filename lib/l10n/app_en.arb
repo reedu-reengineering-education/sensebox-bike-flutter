@@ -234,6 +234,14 @@
     "uploadProgressNetworkError": "Network connection failed. Please check your internet connection and try again.",
     "uploadProgressGenericError": "Upload failed. Please try again.",
     "trackStatusUploaded": "Uploaded",
+    "trackStatusUploadedAt": "Uploaded on {date}",
+    "@trackStatusUploadedAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
     "trackStatusNotUploaded": "Not uploaded",
     "trackStatusUploadFailed": "Upload failed",
     "trackFilterAll": "All",

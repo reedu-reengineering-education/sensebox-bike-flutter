@@ -6,7 +6,7 @@ import 'package:sensebox_bike/ui/widgets/common/upload_progress_indicator.dart';
 import 'package:sensebox_bike/theme.dart';
 
 /// A modal bottom sheet that displays upload progress in real-time.
-/// 
+///
 /// This modal slides up from the bottom when an upload starts and shows:
 /// - Real-time progress updates from BatchUploadService
 /// - Progress bar and percentage
@@ -17,13 +17,13 @@ import 'package:sensebox_bike/theme.dart';
 class UploadProgressModal extends StatefulWidget {
   /// The batch upload service to monitor for progress
   final BatchUploadService batchUploadService;
-  
+
   /// Callback when upload completes successfully
   final VoidCallback? onUploadComplete;
-  
+
   /// Callback when upload fails permanently
   final VoidCallback? onUploadFailed;
-  
+
   /// Callback when user requests retry
   final VoidCallback? onRetryRequested;
 
@@ -48,7 +48,8 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
     super.initState();
 
     // Listen to upload progress
-    _progressSubscription = widget.batchUploadService.uploadProgressStream.listen(
+    _progressSubscription =
+        widget.batchUploadService.uploadProgressStream.listen(
       _onProgressUpdate,
       onError: (error) {
         debugPrint('[UploadProgressModal] Stream error: $error');
@@ -84,12 +85,12 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
     setState(() {
       _currentProgress = progress;
     });
-    
+
     // Handle completion
     if (progress.isCompleted) {
       _handleUploadComplete();
     }
-    
+
     // Handle permanent failure
     if (progress.hasFailed && !progress.canRetry) {
       _handleUploadFailed();
@@ -156,10 +157,6 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
         return [
           FilledButton(
             onPressed: _handleDismiss,
-            style: FilledButton.styleFrom(
-              backgroundColor: theme.colorScheme.tertiary,
-              foregroundColor: theme.colorScheme.onTertiaryContainer,
-            ),
             child: const Text('Done'),
           ),
         ];
@@ -195,12 +192,12 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
 }
 
 /// Shows the upload progress modal as a dialog
-/// 
+///
 /// This function shows a dialog that displays the upload progress
 /// and manages its lifecycle automatically.
 class UploadProgressOverlay {
   static bool _isShown = false;
-  
+
   /// Shows the upload progress modal
   static void show(
     BuildContext context, {
@@ -210,9 +207,9 @@ class UploadProgressOverlay {
     VoidCallback? onRetryRequested,
   }) {
     if (_isShown) return;
-    
+
     _isShown = true;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -227,12 +224,12 @@ class UploadProgressOverlay {
       ),
     );
   }
-  
+
   /// Hides the upload progress modal
   static void hide() {
     _isShown = false;
   }
-  
+
   /// Whether the modal is currently shown
   static bool get isShown => _isShown;
 }

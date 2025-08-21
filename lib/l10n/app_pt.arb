@@ -234,6 +234,14 @@
     "uploadProgressNetworkError": "Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.",
     "uploadProgressGenericError": "Upload falhou. Tente novamente.",
     "trackStatusUploaded": "Enviado",
+    "trackStatusUploadedAt": "Enviado em {date}",
+    "@trackStatusUploadedAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
     "trackStatusNotUploaded": "Não enviado",
     "trackStatusUploadFailed": "Envio falhou",
     "trackFilterAll": "Todos",
