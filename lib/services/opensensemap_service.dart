@@ -61,21 +61,34 @@ class OpenSenseMapService {
 
   DateTime? get tokenExpiration => _tokenExpiration;
 
-  Future<void> setTokens(http.Response response) async {
-    final prefs = await _prefs;
-    final responseData = jsonDecode(response.body);
-    
+  /// Validates and extracts tokens from response data
+  /// Throws Exception if tokens are missing or empty
+  Map<String, String> _validateAndExtractTokens(Map<String, dynamic> responseData) {
     if (!responseData.containsKey('token') ||
         !responseData.containsKey('refreshToken')) {
       throw Exception('Invalid response format: missing token or refreshToken');
     }
     
-    final String accessToken = responseData['token'];
-    final String refreshToken = responseData['refreshToken'];
+    final String accessToken = responseData['token'] as String;
+    final String refreshToken = responseData['refreshToken'] as String;
     
     if (accessToken.isEmpty || refreshToken.isEmpty) {
       throw Exception('Invalid response format: empty token or refreshToken');
     }
+    
+    return {
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
+    };
+  }
+
+  Future<void> setTokens(http.Response response) async {
+    final prefs = await _prefs;
+    final responseData = jsonDecode(response.body);
+    
+    final tokens = _validateAndExtractTokens(responseData);
+    final accessToken = tokens['accessToken']!;
+    final refreshToken = tokens['refreshToken']!;
 
     await prefs.setString('accessToken', accessToken);
     await prefs.setString('refreshToken', refreshToken);
@@ -315,16 +328,14 @@ class OpenSenseMapService {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        final String accessToken = responseData['token'];
-        final String newRefreshToken = responseData['refreshToken'];
+        final tokens = _validateAndExtractTokens(responseData);
 
         // Save tokens to SharedPreferences
         await setTokens(response);
 
-
         return {
-          'accessToken': accessToken,
-          'refreshToken': newRefreshToken,
+          'accessToken': tokens['accessToken']!,
+          'refreshToken': tokens['refreshToken']!,
         };
       } else {
         throw Exception('Token refresh failed: ${response.statusCode}');
