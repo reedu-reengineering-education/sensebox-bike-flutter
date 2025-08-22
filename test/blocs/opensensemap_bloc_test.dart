@@ -4,18 +4,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   
   group('OpenSenseMapBloc', () {
     late OpenSenseMapBloc bloc;
+    late MockOpenSenseMapService mockService;
 
     setUp(() {
       SharedPreferences.setMockInitialValues({});
       
       bloc = OpenSenseMapBloc();
+      mockService = MockOpenSenseMapService();
     });
+
     group('Initialization', () {
       test('should initialize with correct initial state', () {
         expect(bloc.isAuthenticated, false);
@@ -23,10 +29,12 @@ void main() {
         expect(bloc.selectedSenseBox, isNull);
         expect(bloc.senseBoxes, isEmpty);
       });
+
       test('should register as lifecycle observer', () {
         expect(bloc, isA<WidgetsBindingObserver>());
       });
     });
+
     group('SenseBox Management', () {
       test('should set selected sensebox correctly', () async {
         final testBox = SenseBox(

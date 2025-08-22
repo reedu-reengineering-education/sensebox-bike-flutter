@@ -279,6 +279,70 @@ void main() {
 
         await expectLater(service.getSenseBoxes(), throwsException);
       });
+
+      test('refreshes token and retries on 401 error', () async {
+        await setValidTokens();
+
+        int callCount = 0;
+        when(() => mockHttpClient.get(
+              any(),
+              headers: any(named: 'headers'),
+            )).thenAnswer((_) async {
+          callCount++;
+          if (callCount == 1) {
+            return http.Response('Unauthorized', 401);
+          } else {
+            return http.Response(
+                '{"data": {"boxes": [{"id": "box1"}]}}', 200);
+          }
+        });
+
+        mockHTTPPOSTResponse(
+            '{"token": "$accessToken", "refreshToken": "new_refresh"}', 200);
+
+        final boxes = await service.getSenseBoxes();
+
+        expect(boxes, [{"id": "box1"}]);
+        expect(callCount, 2);
+      });
+
+      test('refreshes token and retries on 403 error', () async {
+        await setValidTokens();
+
+        int callCount = 0;
+        when(() => mockHttpClient.get(
+              any(),
+              headers: any(named: 'headers'),
+            )).thenAnswer((_) async {
+          callCount++;
+          if (callCount == 1) {
+            return http.Response('Forbidden', 403);
+          } else {
+            return http.Response(
+                '{"data": {"boxes": [{"id": "box1"}]}}', 200);
+          }
+        });
+
+        mockHTTPPOSTResponse(
+            '{"token": "$accessToken", "refreshToken": "new_refresh"}', 200);
+
+        final boxes = await service.getSenseBoxes();
+
+        expect(boxes, [{"id": "box1"}]);
+        expect(callCount, 2);
+      });
+
+      test('throws exception when token refresh fails on 401 error', () async {
+        await setValidTokens();
+        when(() => mockHttpClient.get(
+              any(),
+              headers: any(named: 'headers'),
+            )).thenAnswer((_) async => http.Response('Unauthorized', 401));
+
+        mockHTTPPOSTResponse('{"error": "Invalid refresh token"}', 400);
+
+        await expectLater(service.getSenseBoxes(), throwsException);
+      });
     });
 
     group('uploadData()', () {
@@ -368,9 +432,38 @@ void main() {
 
         expect(userData, isNotNull);
         expect(userData!['data']['me']['name'], 'Test User');
+        expect(callCount, 2);
       });
 
-      test('returns null when token refresh fails', () async {
+      test('refreshes token and retries on 403 error', () async {
+        await setValidTokens();
+
+        int callCount = 0;
+        when(() => mockHttpClient.get(
+              any(),
+              headers: any(named: 'headers'),
+            )).thenAnswer((_) async {
+          callCount++;
+          if (callCount == 1) {
+            return http.Response('Forbidden', 403);
+          } else {
+            return http.Response(
+                '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
+                200);
+          }
+        });
+
+        mockHTTPPOSTResponse(
+            '{"token": "$accessToken", "refreshToken": "new_refresh"}', 200);
+
+        final userData = await service.getUserData();
+
+        expect(userData, isNotNull);
+        expect(userData!['data']['me']['name'], 'Test User');
+        expect(callCount, 2);
+      });
+
+      test('returns null when token refresh fails on 401 error', () async {
         await setValidTokens();
         when(() => mockHttpClient.get(
               any(),
@@ -497,6 +590,22 @@ void main() {
       test('resetPermanentDisable resets disabled state', () {
         service.resetPermanentDisable();
         expect(service.isPermanentlyDisabled, false);
+      });
+
+      test('resetPermanentDisable can be called multiple times safely', () {
+        service.resetPermanentDisable();
+        service.resetPermanentDisable();
+        expect(service.isPermanentlyDisabled, false);
+      });
+
+      test('resetPermanentDisable maintains other service state', () {
+        final initialAcceptingRequests = service.isAcceptingRequests;
+        final initialRateLimitTime = service.remainingRateLimitTime;
+        
+        service.resetPermanentDisable();
+        
+        expect(service.isAcceptingRequests, initialAcceptingRequests);
+        expect(service.remainingRateLimitTime, initialRateLimitTime);
       });
     });
   });
