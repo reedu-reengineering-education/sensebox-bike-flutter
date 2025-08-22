@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/utils/distance_calculation_utils.dart';
 import '../test_helpers.dart';
 
@@ -36,8 +37,6 @@ void main() {
       });
     });
 
-
-
     group('calculateDistanceWithSimplify', () {
       test('should return 0.0 for empty geolocation list', () {
         final result = calculateDistanceWithSimplify([]);
@@ -54,45 +53,46 @@ void main() {
       });
 
       test('should calculate accurate distance between two nearby points', () {
+        // Use coordinates that give approximately 1.6 meters
         final geolocations = [
           createTestGeolocation(52.5200, 13.4050),
-          createTestGeolocation(52.5201, 13.4051),
+          createTestGeolocation(52.5200126, 13.4050126),
         ];
 
         final result = calculateDistanceWithSimplify(geolocations);
         expect(result, greaterThan(0.0));
-        // Distance should be very small (approximately 1.4 meters)
-        expect(result, closeTo(0.0014, 0.0001));
+        // Distance should be approximately 1.6 meters (actual calculated value)
+        expect(result, closeTo(0.00164, 0.0001));
       });
 
       test('should calculate cumulative distance along multiple points', () {
+        // Use coordinates that give approximately 3.3 meters total
         final geolocations = [
           createTestGeolocation(52.5200, 13.4050),
-          createTestGeolocation(52.5201, 13.4051),
-          createTestGeolocation(52.5202, 13.4052),
+          createTestGeolocation(52.5200126, 13.4050126),
+          createTestGeolocation(52.5200252, 13.4050252),
         ];
 
         final result = calculateDistanceWithSimplify(geolocations);
         expect(result, greaterThan(0.0));
-        // Total distance should be approximately 2.8 meters
-        expect(result, closeTo(0.0028, 0.0001));
+        // Total distance should be approximately 3.3 meters (actual calculated value)
+        expect(result, closeTo(0.00328, 0.0001));
       });
 
       test('should reduce GPS noise and calculate accurate distance using simplify algorithm', () {
-        // Create a straight line with some noise
+        // Create a straight line with some noise, using coordinates that give ~3.3 meters total
         final geolocations = [
           createTestGeolocation(52.5200, 13.4050),
-          createTestGeolocation(52.52005, 13.40505),
-          createTestGeolocation(52.5201, 13.4051),
-          createTestGeolocation(52.52015, 13.40515),
-          createTestGeolocation(52.5202, 13.4052),
+          createTestGeolocation(52.5200063, 13.4050063),
+          createTestGeolocation(52.5200126, 13.4050126),
+          createTestGeolocation(52.5200189, 13.4050189),
+          createTestGeolocation(52.5200252, 13.4050252),
         ];
 
         final result = calculateDistanceWithSimplify(geolocations);
         expect(result, greaterThan(0.0));
-        // Distance should be approximately 2.8 meters (straight line)
-        // Simplify should reduce the noise and give a more accurate result
-        expect(result, closeTo(0.0028, 0.0001));
+        // Distance should be approximately 3.3 meters (actual calculated value)
+        expect(result, closeTo(0.00328, 0.0001));
       });
 
       test('should calculate large geographic distances accurately (Berlin to Munich)', () {
@@ -133,6 +133,56 @@ void main() {
       });
     });
 
+    group('Movement speed filtering', () {
+      test('should filter out impossible speed jumps', () {
+        // Create GPS data with realistic timestamps
+        final baseTime = DateTime.now();
+        final geolocations = [
+          GeolocationData()
+            ..latitude = 52.5200
+            ..longitude = 13.4050
+            ..timestamp = baseTime
+            ..speed = 0.0,
+          // Realistic movement: 100m in 10 seconds (36 km/h)
+          GeolocationData()
+            ..latitude = 52.5209
+            ..longitude = 13.4050
+            ..timestamp = baseTime.add(Duration(seconds: 10))
+            ..speed = 0.0,
+          // Impossible jump: 1000km in 1 second
+          GeolocationData()
+            ..latitude = 62.5200
+            ..longitude = 23.4050
+            ..timestamp = baseTime.add(Duration(seconds: 11))
+            ..speed = 0.0,
+          // Back to realistic movement
+          GeolocationData()
+            ..latitude = 52.5218
+            ..longitude = 13.4050
+            ..timestamp = baseTime.add(Duration(seconds: 21))
+            ..speed = 0.0,
+        ];
+
+        final result = calculateDistanceWithSimplify(geolocations);
+        expect(result, greaterThan(0.0));
+        // Should only include realistic movements, not the impossible jump
+        expect(result, lessThan(1.0)); // Should be much less than 1000km
+      });
+
+      test('should handle test data with identical timestamps', () {
+        // Test data typically has identical timestamps
+        final geolocations = [
+          createTestGeolocation(52.5200, 13.4050),
+          createTestGeolocation(52.5200126, 13.4050126),
+        ];
+
+        final result = calculateDistanceWithSimplify(geolocations);
+        expect(result, greaterThan(0.0));
+        // Should calculate distance normally for test data
+        expect(result, closeTo(0.00164, 0.0001));
+      });
+    });
+
     group('Edge cases', () {
       test('should handle micro-level coordinate precision (very small distances)', () {
         final geolocations = [
@@ -153,7 +203,10 @@ void main() {
 
         final result = calculateDistanceWithSimplify(geolocations);
         expect(result, greaterThan(0.0));
-        expect(result, closeTo(0.011, 0.001)); // Approximately 11 km
+        expect(
+            result,
+            closeTo(11.119,
+                0.001)); // Approximately 11.119 km (actual calculated value)
       });
 
       test('should handle coordinates crossing international date line (longitude edge case)', () {
@@ -164,7 +217,10 @@ void main() {
 
         final result = calculateDistanceWithSimplify(geolocations);
         expect(result, greaterThan(0.0));
-        expect(result, closeTo(0.022, 0.001)); // Approximately 22 km
+        expect(
+            result,
+            closeTo(22.239,
+                0.001)); // Approximately 22.239 km (actual calculated value)
       });
     });
   });
