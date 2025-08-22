@@ -44,10 +44,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       return await _service.getUserData();
     } catch (e) {
-      if (e.toString().contains('Not authenticated')) {
-        _isAuthenticated = false;
-        notifyListeners();
-      }
+      _handleAuthenticationError(e);
       return null;
     }
   }
@@ -150,12 +147,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
         await _performAuthentication();
       } catch (e) {
-        if (e.toString().contains('Not authenticated') ||
-            e.toString().contains('Authentication failed') ||
-            e.toString().contains('No refresh token found') ||
-            e.toString().contains('Refresh token is expired')) {
-          _isAuthenticated = false;
-        }
+        _handleAuthenticationError(e);
       } finally {
         notifyListeners();
       }
@@ -220,10 +212,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       await _service.createSenseBoxBike(
           name, latitude, longitude, model, selectedTag);
     } catch (e, stack) {
-      if (e.toString().contains('Not authenticated')) {
-        _isAuthenticated = false;
-        notifyListeners();
-      } else {
+      if (!_handleAuthenticationError(e)) {
         ErrorService.handleError(e, stack);
       }
     }
@@ -253,12 +242,25 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       return myBoxes;
     } catch (e) {
       // Handle authentication exceptions gracefully
-      if (e.toString().contains('Not authenticated')) {
-        _isAuthenticated = false;
-        notifyListeners();
-      }
+      _handleAuthenticationError(e);
       return [];
     }
+  }
+
+  /// Helper method to check if an error is authentication-related and handle it
+  bool _handleAuthenticationError(dynamic error) {
+    final errorString = error.toString();
+    final isAuthError = errorString.contains('Not authenticated') ||
+        errorString.contains('Authentication failed') ||
+        errorString.contains('No refresh token found') ||
+        errorString.contains('Refresh token is expired');
+
+    if (isAuthError) {
+      _isAuthenticated = false;
+      notifyListeners();
+      return true;
+    }
+    return false;
   }
 
   Future<void> setSelectedSenseBox(SenseBox? senseBox) async {
@@ -277,6 +279,29 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     _senseBoxController.add(senseBox); // Push selected senseBox to the stream
     _selectedSenseBox = senseBox;
     notifyListeners();
+  }
+
+  Future<void> uploadData(String senseBoxId, Map<String, dynamic> data) async {
+    try {
+      // Check if we need to refresh tokens before upload
+      if (!_isAuthenticated) {
+        final refreshSuccess = await _attemptTokenRefresh();
+        if (!refreshSuccess) {
+          throw Exception('Not authenticated');
+        }
+      }
+
+      // Perform the upload through the service
+      await _service.uploadData(senseBoxId, data);
+
+      // If we get here, upload was successful and we're authenticated
+      _isAuthenticated = true;
+      notifyListeners();
+    } catch (e) {
+      // Handle authentication failures
+      _handleAuthenticationError(e);
+      rethrow;
+    }
   }
 
   @override

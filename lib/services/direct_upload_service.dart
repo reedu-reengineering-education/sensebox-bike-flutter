@@ -338,15 +338,7 @@ class DirectUploadService {
       return;
     }
 
-    // NEW: Check if we're actually authenticated before attempting upload
-    if (!openSenseMapBloc.isAuthenticated) {
-      // This is a critical authentication error - disable the service permanently
-      if (!_isPermanentlyDisabled) {
-        await _handlePermanentAuthenticationError(
-            Exception('User not authenticated'), StackTrace.current);
-      }
-      return;
-    }
+
 
     // Prevent concurrent uploads
     if (_isDirectUploading) {
@@ -372,7 +364,7 @@ class DirectUploadService {
         return;
       }
 
-      await openSenseMapService.uploadData(senseBox.id, data);
+      await openSenseMapBloc.uploadData(senseBox.id, data);
       
       _directUploadBuffer.clear();
       _onUploadSuccess?.call(allGpsPoints);
@@ -447,32 +439,41 @@ class DirectUploadService {
 
 
   Future<void> _handleUploadError(dynamic e, StackTrace st) async {
-    final errorType = UploadErrorClassifier.classifyError(e);
+    final errorString = e.toString();
+
+    if (errorString.contains('Token refreshed')) {
+      return;
+    }
+
+    // Since the bloc now handles authentication, we only need to handle
+    // non-authentication errors here
+    if (errorString.contains('Not authenticated') ||
+        errorString.contains('Authentication failed') ||
+        errorString.contains('No refresh token found') ||
+        errorString.contains('Refresh token is expired')) {
+      // Authentication errors are handled by the bloc, just log them
+      ErrorService.handleError(
+          'Direct upload authentication error at ${DateTime.now()}: $e. Handled by bloc.',
+          st,
+          sendToSentry: false);
+      return;
+    }
     
-    switch (errorType) {
-      case UploadErrorType.permanentAuth:
-        await _handlePermanentAuthenticationError(e, st);
-        break;
-      case UploadErrorType.permanentClient:
-        await _handlePermanentClientError(e, st);
-        break;
-      case UploadErrorType.temporary:
-        // For all temporary errors (429, 5xx, timeouts), preserve data and let OpenSenseMapService handle retries
-        ErrorService.handleError(
-            'Direct upload temporary error at ${DateTime.now()}: $e. Data preserved for retry.',
-            st,
-            sendToSentry: false);
-        // Don't clear buffers - data will be retried
-        break;
+    // Handle other types of errors
+    if (errorString.contains('Client error') && !errorString.contains('429')) {
+      await _handlePermanentClientError(e, st);
+    } else {
+      // Treat as temporary error
+      ErrorService.handleError(
+          'Direct upload temporary error at ${DateTime.now()}: $e. Data preserved for retry.',
+          st,
+          sendToSentry: false);
     }
   }
 
-  Future<void> _handlePermanentAuthenticationError(
-      dynamic e, StackTrace st) async {
-    _permanentlyDisableService();
-    await openSenseMapBloc.markAuthenticationFailed();
-    throw PermanentAuthenticationError(e.toString());
-  }
+
+
+
 
   void _permanentlyDisableService() {
     _isEnabled = false;
@@ -482,11 +483,7 @@ class DirectUploadService {
     _uploadTimer = null;
     _restartTimer?.cancel();
     _restartTimer = null;
-
-    
     permanentUploadLossNotifier.value = true;
-
-    // Notify sensors that uploads are disabled, but don't clear their buffers
     _onPermanentDisable?.call();
   }
 
@@ -501,12 +498,10 @@ class DirectUploadService {
   }
 
   void _attemptRestart() {
-    // Check if service is already enabled (prevent race condition)
     if (_isEnabled && !_isPermanentlyDisabled) {
       return;
     }
 
-    // Try to upload any remaining data before restarting
     if (_directUploadBuffer.isNotEmpty) {
       _uploadDirectBuffer().then((_) {
         // Success - data uploaded, now restart
@@ -540,14 +535,6 @@ class DirectUploadService {
       return;
     }
 
-    if (!openSenseMapBloc.isAuthenticated) {
-      if (!_isPermanentlyDisabled) {
-        await _handlePermanentAuthenticationError(
-            Exception('User not authenticated'), StackTrace.current);
-      }
-      return;
-    }
-
     // Prevent concurrent uploads
     if (_isDirectUploading) return;
     _isDirectUploading = true;
@@ -561,7 +548,7 @@ class DirectUploadService {
 
       if (data.isEmpty) return;
 
-      await openSenseMapService.uploadData(senseBox.id, data);
+      await openSenseMapBloc.uploadData(senseBox.id, data);
 
       _directUploadBuffer.clear();
 
@@ -580,20 +567,9 @@ class DirectUploadService {
   // Add periodic upload check for rate-limited data
   void _startPeriodicUploadCheck() {
     _uploadTimer?.cancel();
-    _uploadTimer = Timer.periodic(Duration(seconds: 30), (_) {
+    _uploadTimer = Timer.periodic(Duration(seconds: 10), (_) async {
       // Don't run periodic checks if service is permanently disabled
       if (_isPermanentlyDisabled) {
-        return;
-      }
-      
-      // NEW: Check if we're actually authenticated before attempting upload
-      if (!openSenseMapBloc.isAuthenticated) {
-        // This is a critical authentication error - disable the service permanently
-        if (!_isPermanentlyDisabled) {
-          _handlePermanentAuthenticationError(
-                  Exception('User not authenticated'), StackTrace.current)
-              .catchError((e) {});
-        }
         return;
       }
       
@@ -608,31 +584,6 @@ class DirectUploadService {
       }
     });
   }
-
-  // Add method to log buffer status for debugging
-  // void _logBufferStatus() {
-  //   debugPrint('[DirectUploadService] Buffer Status:');
-  //   debugPrint(
-  //       '  - Accumulated Sensor Data: ${_accumulatedSensorData.length} GPS points');
-  //   debugPrint('  - Direct Upload Buffer: ${_directUploadBuffer.length} items');
-  //   debugPrint('  - Can Upload: ${openSenseMapService.isAcceptingRequests}');
-  //   debugPrint('  - Service Enabled: $_isEnabled');
-  //   debugPrint('  - Permanently Disabled: $_isPermanentlyDisabled');
-  //   debugPrint('  - Pending Restart Timer: ${_restartTimer != null}');
-  //   debugPrint('  - Restart Attempts: $_restartAttempts');
-  //   debugPrint(
-  //       '  - OpenSenseMap Permanently Disabled: ${openSenseMapService.isPermanentlyDisabled}');
-
-  //   if (!openSenseMapService.isAcceptingRequests) {
-  //     if (openSenseMapService.isPermanentlyDisabled) {
-  //       debugPrint('  - Status: Permanently disabled - user needs to re-login');
-  //     } else {
-  //       final remaining = openSenseMapService.remainingRateLimitTime;
-  //       debugPrint(
-  //           '  - Rate Limited: ${remaining?.inSeconds ?? 0} seconds remaining');
-  //     }
-  //   }
-  // }
 
   void dispose() {
     _isDirectUploading = false;
