@@ -5,6 +5,7 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
+import 'package:sensebox_bike/ui/widgets/common/empty_state_message.dart';
 
 void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
   Object? scanError;
@@ -98,8 +99,9 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                                 color: colorScheme.primaryFixedDim));
                       } else {
                         // Not scanning, and no devices found.
-                        return Center(
-                          child: Text(localizations.noBleDevicesFound),
+                        return EmptyStateMessage(
+                          icon: Icons.sensors_off_outlined,
+                          message: localizations.noBleDevicesFound,
                         );
                       }
                     },

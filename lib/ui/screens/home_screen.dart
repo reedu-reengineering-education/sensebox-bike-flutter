@@ -8,7 +8,7 @@ import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:sensebox_bike/ui/utils/common.dart';
+
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
@@ -26,33 +26,7 @@ class HomeScreen extends StatelessWidget {
     final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.connectionErrorNotifier,
-      builder: (context, error, child) {
-        if (error == true && context.mounted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).clearMaterialBanners();
-            ScaffoldMessenger.of(context).showMaterialBanner(
-              MaterialBanner(
-                content: Text(
-                    AppLocalizations.of(context)!.errorBleConnectionFailed),
-                backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      bleBloc.resetConnectionError();
-                      ScaffoldMessenger.of(context).clearMaterialBanners();
-                    },
-                    child: Text(
-                        MaterialLocalizations.of(context).closeButtonLabel),
-                  ),
-                ],
-              ),
-            );
-          });
-        }
-
-        return Scaffold(
+    return Scaffold(
           body: CustomScrollView(
             clipBehavior: Clip.none,
             slivers: [
@@ -98,15 +72,21 @@ class HomeScreen extends StatelessWidget {
                       // Not connected: show nothing
                       return SliverToBoxAdapter(child: SizedBox.shrink());
                     }
-                    // Connected: show sensor grid
+                    
+                    // Check if there are actually any sensor widgets available
+                    final widgets = sensorBloc.getSensorWidgets();
+                    if (widgets.isEmpty) {
+                      // Connected but no sensor data available: show nothing
+                      return SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+
+                    // Connected and has sensor data: show sensor grid
                     return _SensorGrid(sensorBloc: sensorBloc);
                   },
                 ),
               ),
             ],
           ),
-        );
-      },
     );
   }
 }
@@ -265,10 +245,11 @@ class _FloatingButtons extends StatelessWidget {
                     spacing: 12,
                     children: [
                       Expanded(
-                        child: _StartStopButton(recordingBloc: recordingBloc),
+                        child: _StartStopButton(
+                            recordingBloc: recordingBloc, isReconnecting: isReconnecting),
                       ),
                       Expanded(
-                        child: _DisconnectButton(bleBloc: bleBloc),
+                        child: _DisconnectButton(bleBloc: bleBloc, recordingBloc: recordingBloc),
                       ),
                     ],
                   ),
@@ -376,7 +357,8 @@ class _ConnectButton extends StatelessWidget {
 // Start/Stop button
 class _StartStopButton extends StatelessWidget {
   final RecordingBloc recordingBloc;
-  const _StartStopButton({required this.recordingBloc});
+  final bool isReconnecting;
+  const _StartStopButton({required this.recordingBloc, required this.isReconnecting});
 
   @override
   Widget build(BuildContext context) {
@@ -389,15 +371,18 @@ class _StartStopButton extends StatelessWidget {
       label: Text(recordingBloc.isRecording
           ? AppLocalizations.of(context)!.connectionButtonStop
           : AppLocalizations.of(context)!.connectionButtonStart),
-      icon: Icon(
-          recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
-      onPressed: () async {
-        if (recordingBloc.isRecording) {
-          await recordingBloc.stopRecording();
-        } else {
-          await recordingBloc.startRecording();
-        }
-      },
+      icon: Icon(recordingBloc.isRecording
+          ? Icons.stop
+          : Icons.fiber_manual_record),
+      onPressed: isReconnecting
+          ? null
+          : () async {
+              if (recordingBloc.isRecording) {
+                await recordingBloc.stopRecording();
+              } else {
+                await recordingBloc.startRecording();
+              }
+            },
     );
   }
 }
@@ -405,7 +390,8 @@ class _StartStopButton extends StatelessWidget {
 // Disconnect button
 class _DisconnectButton extends StatelessWidget {
   final BleBloc bleBloc;
-  const _DisconnectButton({required this.bleBloc});
+  final RecordingBloc recordingBloc;
+  const _DisconnectButton({required this.bleBloc, required this.recordingBloc});
 
   @override
   Widget build(BuildContext context) {
@@ -423,7 +409,13 @@ class _DisconnectButton extends StatelessWidget {
           label: isReconnecting
               ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
               : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
-          onPressed: isReconnecting ? null : bleBloc.disconnectDevice,
+          onPressed: isReconnecting ? null : () async {
+            // Stop recording if active before disconnecting
+            if (recordingBloc.isRecording) {
+              await recordingBloc.stopRecording();
+            }
+            bleBloc.disconnectDevice();
+          },
         );
       },
     );
