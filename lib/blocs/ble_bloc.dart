@@ -200,16 +200,28 @@ class BleBloc with ChangeNotifier {
         debugPrint(
             '[BleBloc] Setting up connection state listener after successful connection');
         _handleDeviceReconnection(device, context);
+        
+        // Only set selectedDevice when connection is successful
+        selectedDevice = device;
+        selectedDeviceNotifier.value = selectedDevice;
       } else {
         debugPrint(
             '[BleBloc] Initial connection failed, not setting up reconnection listener');
+        
+        // Clear selectedDevice when connection fails
+        selectedDevice = null;
+        selectedDeviceNotifier.value = null;
       }
 
-      selectedDevice = device;
-      selectedDeviceNotifier.value = selectedDevice;
       notifyListeners();
     } catch (e) {
+      debugPrint('[BleBloc] Error during connectToDevice: $e');
       ErrorService.handleError(e, StackTrace.current);
+      
+      // Clear selectedDevice on any error
+      selectedDevice = null;
+      selectedDeviceNotifier.value = null;
+      _isConnected = false;
     } finally {
       isConnectingNotifier.value = false;
     }
@@ -340,8 +352,10 @@ class BleBloc with ChangeNotifier {
 
       // Set up listener
       await firstCharacteristic.setNotifyValue(true);
+      Uint8List? receivedData;
       final subscription = firstCharacteristic.onValueReceived.listen((value) {
         if (!dataReceivedCompleter.isCompleted) {
+          receivedData = Uint8List.fromList(value);
           dataReceived = true;
           dataReceivedCompleter.complete(true);
         }
@@ -358,32 +372,44 @@ class BleBloc with ChangeNotifier {
         await firstCharacteristic.setNotifyValue(false);
       }
 
-      // Check if data was received
-      if (dataReceived) {
-        debugPrint('[BleBloc] Data received! Connection successful.');
+      // Check if data was received and validate it's meaningful
+      if (dataReceived && receivedData != null) {
+        // Validate that the data is meaningful (not just zeros or empty)
+        bool isDataMeaningful = _validateReceivedData(receivedData!);
+        
+        if (isDataMeaningful) {
+          debugPrint('[BleBloc] Meaningful data received! Connection successful.');
+          debugPrint('[BleBloc] Data length: ${receivedData!.length}, Data: ${receivedData!.take(8).toList()}');
 
-        // Set up all characteristics for normal operation
-        for (var characteristic in senseBoxService.characteristics) {
-          await _listenToCharacteristic(characteristic);
-        }
-        
-        availableCharacteristics.value = senseBoxService.characteristics;
-        characteristicStreamsVersion.value++;
-        
-        // Set connection state to true when verification succeeds (only if requested)
-        if (updateConnectionState) {
-          _isConnected = true;
-          _userInitiatedDisconnect = false;
-          debugPrint('[BleBloc] Connection state set to: $_isConnected');
-          debugPrint('[BleBloc] Device connected: ${device.remoteId}');
+          // Set up all characteristics for normal operation
+          for (var characteristic in senseBoxService.characteristics) {
+            await _listenToCharacteristic(characteristic);
+          }
           
-          notifyListeners();
-        } else {
-          debugPrint(
-              '[BleBloc] Connection verification successful but not updating main state (reconnection in progress)');
-        }
+          availableCharacteristics.value = senseBoxService.characteristics;
+          characteristicStreamsVersion.value++;
+          
+          // Set connection state to true when verification succeeds (only if requested)
+          if (updateConnectionState) {
+            _isConnected = true;
+            _userInitiatedDisconnect = false;
+            debugPrint('[BleBloc] Connection state set to: $_isConnected');
+            debugPrint('[BleBloc] Device connected: ${device.remoteId}');
+            
+            notifyListeners();
+          } else {
+            debugPrint(
+                '[BleBloc] Connection verification successful but not updating main state (reconnection in progress)');
+          }
 
-        return true;
+          return true;
+        } else {
+          debugPrint('[BleBloc] Data received but not meaningful (all zeros or invalid). Connection failed.');
+          return false;
+        }
+      } else if (dataReceived && receivedData == null) {
+        debugPrint('[BleBloc] Data received but data is null. Connection failed.');
+        return false;
       } else {
         debugPrint(
             '[BleBloc] No data received within ${dataListeningTimeout.inSeconds} seconds');
@@ -686,6 +712,30 @@ class BleBloc with ChangeNotifier {
     _hasVibrated = false;
     isReconnectingNotifier.value = false;
     notifyListeners();
+  }
+
+  /// Validates that received data is meaningful (not null, not empty, not all zeros)
+  bool _validateReceivedData(Uint8List data) {
+    if (data.isEmpty) {
+      debugPrint('[BleBloc] Data validation failed: data is empty');
+      return false;
+    }
+    
+    // Check if all bytes are zero (which would indicate no real sensor data)
+    bool allZeros = data.every((byte) => byte == 0);
+    if (allZeros) {
+      debugPrint('[BleBloc] Data validation failed: all bytes are zero');
+      return false;
+    }
+    
+    // Check if data has reasonable length (should be at least a few bytes for sensor data)
+    if (data.length < 4) {
+      debugPrint('[BleBloc] Data validation failed: data too short (${data.length} bytes)');
+      return false;
+    }
+    
+    debugPrint('[BleBloc] Data validation passed: meaningful data received');
+    return true;
   }
 
   Future<void> _listenToCharacteristic(
