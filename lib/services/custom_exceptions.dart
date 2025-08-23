@@ -62,3 +62,23 @@ class PermanentAuthenticationError implements Exception {
       ? 'Authentication failed permanently: $details. Data upload is stopped but all data is stored locally.'
       : 'Authentication failed permanently. Data upload is stopped but all data is stored locally. Please log in again to continue uploading data.';
 }
+
+class PermanentBleConnectionError implements Exception {
+  final String? deviceId;
+  final String? details;
+
+  PermanentBleConnectionError([this.deviceId, this.details]);
+
+  @override
+  String toString() {
+    if (deviceId != null && details != null) {
+      return 'Permanent BLE connection loss to device $deviceId: $details';
+    } else if (deviceId != null) {
+      return 'Permanent BLE connection loss to device $deviceId';
+    } else if (details != null) {
+      return 'Permanent BLE connection loss: $details';
+    } else {
+      return 'Permanent BLE connection loss';
+    }
+  }
+}

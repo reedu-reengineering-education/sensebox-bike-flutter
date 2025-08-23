@@ -12,7 +12,7 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 1);
-const deviceConnectTimeout = Duration(seconds: 3);
+const deviceConnectTimeout = Duration(seconds: 5);
 const configurableReconnectionDelay =
     Duration(seconds: 1); // Can be adjusted for different use cases
 const dataListeningTimeout =
@@ -32,8 +32,6 @@ class BleBloc with ChangeNotifier {
       ValueNotifier([]);
   final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
-  final ValueNotifier<bool> permanentConnectionLossNotifier =
-      ValueNotifier(false);
 
   final List<BluetoothDevice> devicesList = [];
   final StreamController<List<BluetoothDevice>> _devicesListController =
@@ -224,6 +222,7 @@ class BleBloc with ChangeNotifier {
       _isConnected = false;
     } finally {
       isConnectingNotifier.value = false;
+      _isInRetryMode = false; // Reset retry mode flag in case of early exit
     }
     notifyListeners();
   }
@@ -681,17 +680,35 @@ class BleBloc with ChangeNotifier {
       _userInitiatedDisconnect = false;
       isReconnectingNotifier.value = false;
       _isReconnecting = false;
+      isConnectingNotifier.value =
+          false; // Reset connecting state so UI shows connect button
+      _isInRetryMode = false; // Reset retry mode flag
+      _reconnectionAttempts = 0; // Reset reconnection attempts counter
+      _hasVibrated = false; // Reset vibration flag
+      connectionErrorNotifier.value = false; // Reset connection error state
     } else {
       debugPrint(
           '[BleBloc] Permanent connection error during normal operation');
+
+      // Create custom exception for permanent BLE connection loss
+      final deviceId = selectedDevice?.remoteId.toString();
+      final exception = PermanentBleConnectionError(
+          deviceId, 'Max reconnection attempts reached');
+
+      // Use ErrorService to display error to user and send to Sentry
+      ErrorService.handleError(exception, StackTrace.current);
+
+      // Reset state and notify connection error
       selectedDeviceNotifier.value = null;
+      _isConnected = false;
       connectionErrorNotifier.value = true;
-      permanentConnectionLossNotifier.value = true;
       isReconnectingNotifier.value = false;
       _isReconnecting = false;
-
-      ErrorService.reportToSentry(
-          "Permanent connection error with senseBox", StackTrace.current);
+      isConnectingNotifier.value =
+          false; // Reset connecting state so UI shows connect button
+      _isInRetryMode = false; // Reset retry mode flag
+      _reconnectionAttempts = 0; // Reset reconnection attempts counter
+      _hasVibrated = false; // Reset vibration flag
     }
 
     notifyListeners();
@@ -699,7 +716,6 @@ class BleBloc with ChangeNotifier {
 
   void resetConnectionError() {
     connectionErrorNotifier.value = false;
-    permanentConnectionLossNotifier.value = false;
     notifyListeners();
   }
 

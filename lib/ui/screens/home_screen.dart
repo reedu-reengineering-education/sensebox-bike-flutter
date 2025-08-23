@@ -8,7 +8,7 @@ import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:sensebox_bike/ui/utils/common.dart';
+
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
@@ -26,33 +26,7 @@ class HomeScreen extends StatelessWidget {
     final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.connectionErrorNotifier,
-      builder: (context, error, child) {
-        if (error == true && context.mounted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).clearMaterialBanners();
-            ScaffoldMessenger.of(context).showMaterialBanner(
-              MaterialBanner(
-                content: Text(
-                    AppLocalizations.of(context)!.errorBleConnectionFailed),
-                backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      bleBloc.resetConnectionError();
-                      ScaffoldMessenger.of(context).clearMaterialBanners();
-                    },
-                    child: Text(
-                        MaterialLocalizations.of(context).closeButtonLabel),
-                  ),
-                ],
-              ),
-            );
-          });
-        }
-
-        return Scaffold(
+    return Scaffold(
           body: CustomScrollView(
             clipBehavior: Clip.none,
             slivers: [
@@ -113,8 +87,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
           ),
-        );
-      },
     );
   }
 }

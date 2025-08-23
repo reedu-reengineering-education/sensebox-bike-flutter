@@ -33,11 +33,7 @@ class MockTrackService extends Mock implements TrackService {}
 class MockGeolocationService extends Mock implements GeolocationService {}
 class MockSensorService extends Mock implements SensorService {}
 
-class MockBleBloc extends Mock implements BleBloc {
-  @override
-  ValueNotifier<bool> get permanentConnectionLossNotifier =>
-      ValueNotifier<bool>(false);
-}
+class MockBleBloc extends Mock implements BleBloc {}
 
 class MockTrackBloc extends Mock with ChangeNotifier implements TrackBloc {}
 
