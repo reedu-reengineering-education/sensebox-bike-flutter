@@ -249,7 +249,7 @@ class _FloatingButtons extends StatelessWidget {
                             recordingBloc: recordingBloc, isReconnecting: isReconnecting),
                       ),
                       Expanded(
-                        child: _DisconnectButton(bleBloc: bleBloc),
+                        child: _DisconnectButton(bleBloc: bleBloc, recordingBloc: recordingBloc),
                       ),
                     ],
                   ),
@@ -390,7 +390,8 @@ class _StartStopButton extends StatelessWidget {
 // Disconnect button
 class _DisconnectButton extends StatelessWidget {
   final BleBloc bleBloc;
-  const _DisconnectButton({required this.bleBloc});
+  final RecordingBloc recordingBloc;
+  const _DisconnectButton({required this.bleBloc, required this.recordingBloc});
 
   @override
   Widget build(BuildContext context) {
@@ -408,7 +409,13 @@ class _DisconnectButton extends StatelessWidget {
           label: isReconnecting
               ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
               : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
-          onPressed: isReconnecting ? null : bleBloc.disconnectDevice,
+          onPressed: isReconnecting ? null : () async {
+            // Stop recording if active before disconnecting
+            if (recordingBloc.isRecording) {
+              await recordingBloc.stopRecording();
+            }
+            bleBloc.disconnectDevice();
+          },
         );
       },
     );
