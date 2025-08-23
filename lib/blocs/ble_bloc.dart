@@ -220,6 +220,9 @@ class BleBloc with ChangeNotifier {
       selectedDevice = null;
       selectedDeviceNotifier.value = null;
       _isConnected = false;
+      
+      // Handle connection error to trigger reconnection logic if appropriate
+      _handleConnectionError(context: context, isInitialConnection: true);
     } finally {
       isConnectingNotifier.value = false;
       _isInRetryMode = false; // Reset retry mode flag in case of early exit
