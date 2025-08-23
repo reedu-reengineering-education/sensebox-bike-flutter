@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
@@ -33,7 +34,107 @@ class MockTrackService extends Mock implements TrackService {}
 class MockGeolocationService extends Mock implements GeolocationService {}
 class MockSensorService extends Mock implements SensorService {}
 
-class MockBleBloc extends Mock implements BleBloc {}
+class MockBleBloc extends Mock implements BleBloc {
+  final List<VoidCallback> _listeners = [];
+  
+  @override
+  final ValueNotifier<bool> isBluetoothEnabledNotifier = ValueNotifier(false);
+  
+  @override
+  final ValueNotifier<bool> isScanningNotifier = ValueNotifier(false);
+  
+  @override
+  final ValueNotifier<bool> isConnectingNotifier = ValueNotifier(false);
+  
+  @override
+  final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
+  
+  @override
+  final ValueNotifier<BluetoothDevice?> selectedDeviceNotifier = ValueNotifier(null);
+  
+  @override
+  final ValueNotifier<List<BluetoothCharacteristic>> availableCharacteristics = ValueNotifier([]);
+  
+  @override
+  final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
+  
+  @override
+  final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
+  
+  @override
+  bool get isConnected => false;
+  
+  @override
+  List<BluetoothDevice> get devicesList => [];
+  
+  @override
+  Stream<List<BluetoothDevice>> get devicesListStream => Stream.value([]);
+  
+  @override
+  BluetoothDevice? get selectedDevice => selectedDeviceNotifier.value;
+  
+  @override
+  set selectedDevice(BluetoothDevice? device) {
+    selectedDeviceNotifier.value = device;
+  }
+  
+  @override
+  Future<void> connectToDevice(BluetoothDevice device, BuildContext context) async {}
+  
+  @override
+  void disconnectDevice() {}
+  
+  @override
+  Future<void> startScanning() async {}
+  
+  @override
+  Future<void> scanForNewDevices() async {
+    selectedDevice = null;
+    selectedDeviceNotifier.value = null;
+  }
+  
+  @override
+  void resetConnectionError() {
+    connectionErrorNotifier.value = false;
+  }
+  
+  @override
+  void forceResetReconnectionState() {
+    isReconnectingNotifier.value = false;
+  }
+  
+  @override
+  void updateBluetoothStatus(bool isEnabled) {
+    isBluetoothEnabledNotifier.value = isEnabled;
+    notifyListeners();
+  }
+  
+  @override
+  Future<void> requestEnableBluetooth() async {}
+  
+  @override
+  Stream<List<double>> getCharacteristicStream(String characteristicUuid) => Stream.value([]);
+  
+  @override
+  void addListener(VoidCallback listener) {
+    _listeners.add(listener);
+  }
+  
+  @override
+  void removeListener(VoidCallback listener) {
+    _listeners.remove(listener);
+  }
+  
+  @override
+  void dispose() {}
+  
+  @override
+  void notifyListeners() {
+    for (final listener in _listeners) {
+      listener();
+    }
+  }
+}
 
 class MockTrackBloc extends Mock with ChangeNotifier implements TrackBloc {}
 

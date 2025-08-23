@@ -47,9 +47,9 @@ class BleBloc with ChangeNotifier {
       false; // Flag to prevent listener interference during retries
 
   // ✅ FIX: Make reconnection state variables class-level to avoid scope issues
-  bool _hasVibrated = false;
   int _reconnectionAttempts = 0;
-  static const int _maxReconnectionAttempts = 10; // Increased from 5 to 10
+  bool _hasVibrated = false;
+  static const int _maxReconnectionAttempts = 10;
   
   // Track reconnection listeners to prevent multiple active listeners
   StreamSubscription<BluetoothConnectionState>? _reconnectionListener;
