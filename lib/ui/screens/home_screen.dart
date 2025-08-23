@@ -245,7 +245,8 @@ class _FloatingButtons extends StatelessWidget {
                     spacing: 12,
                     children: [
                       Expanded(
-                        child: _StartStopButton(recordingBloc: recordingBloc),
+                        child: _StartStopButton(
+                            recordingBloc: recordingBloc, isReconnecting: isReconnecting),
                       ),
                       Expanded(
                         child: _DisconnectButton(bleBloc: bleBloc),
@@ -356,7 +357,8 @@ class _ConnectButton extends StatelessWidget {
 // Start/Stop button
 class _StartStopButton extends StatelessWidget {
   final RecordingBloc recordingBloc;
-  const _StartStopButton({required this.recordingBloc});
+  final bool isReconnecting;
+  const _StartStopButton({required this.recordingBloc, required this.isReconnecting});
 
   @override
   Widget build(BuildContext context) {
@@ -369,15 +371,18 @@ class _StartStopButton extends StatelessWidget {
       label: Text(recordingBloc.isRecording
           ? AppLocalizations.of(context)!.connectionButtonStop
           : AppLocalizations.of(context)!.connectionButtonStart),
-      icon: Icon(
-          recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
-      onPressed: () async {
-        if (recordingBloc.isRecording) {
-          await recordingBloc.stopRecording();
-        } else {
-          await recordingBloc.startRecording();
-        }
-      },
+      icon: Icon(recordingBloc.isRecording
+          ? Icons.stop
+          : Icons.fiber_manual_record),
+      onPressed: isReconnecting
+          ? null
+          : () async {
+              if (recordingBloc.isRecording) {
+                await recordingBloc.stopRecording();
+              } else {
+                await recordingBloc.startRecording();
+              }
+            },
     );
   }
 }
