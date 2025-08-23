@@ -41,22 +41,16 @@ class BleBloc with ChangeNotifier {
 
   BluetoothDevice? selectedDevice;
   bool _isConnected = false;
-  bool _isReconnecting = false; // ✅ Class-level variable
+  bool _isReconnecting = false;
   bool _userInitiatedDisconnect = false;
-  bool _isInRetryMode =
-      false; // Flag to prevent listener interference during retries
-
-  // ✅ FIX: Make reconnection state variables class-level to avoid scope issues
+  bool _isInRetryMode = false;
   int _reconnectionAttempts = 0;
   bool _hasVibrated = false;
   static const int _maxReconnectionAttempts = 10;
   
-  // Track reconnection listeners to prevent multiple active listeners
   StreamSubscription<BluetoothConnectionState>? _reconnectionListener;
 
   final Map<String, StreamController<List<double>>> _characteristicStreams = {};
-  final Map<String, StreamController<List<String>>>
-      _characteristicStringStreams = {};
 
   bool get isConnected => _isConnected;
 
@@ -76,13 +70,14 @@ class BleBloc with ChangeNotifier {
   }
 
   void updateBluetoothStatus(bool isEnabled) {
-    isBluetoothEnabledNotifier.value = isEnabled;
-    notifyListeners();
+    // Only update if the state has actually changed
+    if (isBluetoothEnabledNotifier.value != isEnabled) {
+      isBluetoothEnabledNotifier.value = isEnabled;
+      notifyListeners();
+    }
   }
 
   Future<void> startScanning() async {
-    // Don't disconnect existing device when just scanning for new devices
-    // This allows users to browse available devices without losing current connection
     isScanningNotifier.value = true;
 
     try {
@@ -113,8 +108,6 @@ class BleBloc with ChangeNotifier {
     isScanningNotifier.value = false;
   }
 
-  /// Scan for new devices while disconnecting from current device
-  /// Use this when user explicitly wants to disconnect and find new devices
   Future<void> scanForNewDevices() async {
     disconnectDevice();
     isScanningNotifier.value = true;
@@ -143,10 +136,8 @@ class BleBloc with ChangeNotifier {
   }
 
   void disconnectDevice() {
-    debugPrint('[BleBloc] Manual disconnect initiated');
-    
     _userInitiatedDisconnect = true;
-    _isInRetryMode = false; // Reset retry mode on manual disconnect
+    _isInRetryMode = false;
     selectedDevice?.disconnect();
     _isConnected = false;
     selectedDevice = null;
@@ -188,7 +179,6 @@ class BleBloc with ChangeNotifier {
       }
 
       await device.connect();
-      debugPrint('[BleBloc] Device connected at BLE level: ${device.remoteId}');
 
       final success =
           await _attemptConnectionWithRetries(device, context: context);
@@ -203,9 +193,6 @@ class BleBloc with ChangeNotifier {
         selectedDevice = device;
         selectedDeviceNotifier.value = selectedDevice;
       } else {
-        debugPrint(
-            '[BleBloc] Initial connection failed, not setting up reconnection listener');
-        
         // Clear selectedDevice when connection fails
         selectedDevice = null;
         selectedDeviceNotifier.value = null;
@@ -213,146 +200,129 @@ class BleBloc with ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      debugPrint('[BleBloc] Error during connectToDevice: $e');
       ErrorService.handleError(e, StackTrace.current);
       
-      // Clear selectedDevice on any error
       selectedDevice = null;
       selectedDeviceNotifier.value = null;
       _isConnected = false;
       
-      // Handle connection error to trigger reconnection logic if appropriate
       _handleConnectionError(context: context, isInitialConnection: true);
     } finally {
       isConnectingNotifier.value = false;
-      _isInRetryMode = false; // Reset retry mode flag in case of early exit
+      _isInRetryMode = false;
     }
     notifyListeners();
   }
 
-  /// Attempts to establish a connection with retry logic
-  /// This method handles the entire connection process including retries
-  Future<bool> _attemptConnectionWithRetries(
-    BluetoothDevice device, {
-    BuildContext? context,
-    int maxAttempts = 5, // Reduced from 10 to 5 for initial connection
-    bool isReconnection = false,
+  Future<bool> _executeConnectionAttempts(
+    BluetoothDevice device,
+    BuildContext? context, {
+    required int maxAttempts,
+    required bool isReconnection,
+    required Future<bool> Function(BluetoothDevice, BuildContext?)
+        attemptConnection,
+    required Future<void> Function(BluetoothDevice) prepareForRetry,
+    required void Function(
+            {required BuildContext context, bool isInitialConnection})
+        handleError,
   }) async {
-    debugPrint(
-        '[BleBloc] Starting connection attempt with max attempts: $maxAttempts');
-
-    _isInRetryMode =
-        true; // Prevent connection listener interference during retries
+    _isInRetryMode = true;
 
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      debugPrint('[BleBloc] Connection attempt ${attempt + 1}/$maxAttempts');
-
-      // Reset connection state for retry attempts
       if (attempt > 0) {
         _isConnected = false;
-        debugPrint('[BleBloc] Connection state reset for retry attempt');
       }
 
       try {
-        // Attempt connection
         bool success = false;
         try {
-          success = await _attemptSingleConnection(device, context,
-              updateConnectionState: true);
+          success = await attemptConnection(device, context);
         } catch (e) {
-          debugPrint(
-              '[BleBloc] Error in _attemptSingleConnection during initial connection: $e');
-          success = false; // Ensure success is false on any exception
+          success = false;
         }
 
         if (success) {
-          debugPrint(
-              '[BleBloc] Connection successful on attempt ${attempt + 1}');
-          _isInRetryMode = false; // Reset retry mode flag on success
+          _isInRetryMode = false;
           return true;
         }
 
-        // Connection failed, prepare for retry
         if (attempt < maxAttempts - 1) {
-          debugPrint('[BleBloc] Connection failed, preparing retry...');
           try {
-            await _prepareForRetry(device);
+            await prepareForRetry(device);
           } catch (e) {
-            debugPrint(
-                '[BleBloc] Error in _prepareForRetry during initial connection: $e');
             // Continue with next attempt anyway
           }
         }
       } catch (e) {
-        debugPrint(
-            '[BleBloc] Unexpected error during connection attempt ${attempt + 1}: $e');
-
-        // Prepare for retry if we have attempts left
         if (attempt < maxAttempts - 1) {
           try {
-            await _prepareForRetry(device);
+            await prepareForRetry(device);
           } catch (e) {
-            debugPrint(
-                '[BleBloc] Error in _prepareForRetry after unexpected error: $e');
             // Continue with next attempt anyway
           }
         }
       }
     }
 
-    // All attempts failed
-    debugPrint('[BleBloc] All $maxAttempts connection attempts failed');
-    _isInRetryMode = false; // Reset retry mode flag
+    _isInRetryMode = false;
 
     if (context != null) {
-      _handleConnectionError(
-          context: context, isInitialConnection: !isReconnection);
+      handleError(context: context, isInitialConnection: !isReconnection);
     }
     return false;
+  }
+
+  Future<bool> _attemptConnectionWithRetries(
+    BluetoothDevice device, {
+    BuildContext? context,
+    int maxAttempts = 5,
+    bool isReconnection = false,
+  }) async {
+    return _executeConnectionAttempts(
+      device,
+      context,
+      maxAttempts: maxAttempts,
+      isReconnection: isReconnection,
+      attemptConnection: (device, context) => _attemptSingleConnection(
+        device,
+        context,
+        updateConnectionState: true,
+      ),
+      prepareForRetry: _prepareForRetry,
+      handleError: _handleConnectionError,
+    );
   }
 
   /// Attempts a single connection without retries
   Future<bool> _attemptSingleConnection(
     BluetoothDevice device,
     BuildContext? context, {
-    bool updateConnectionState =
-        true, // Control whether to update main connection state
+    bool updateConnectionState = true,
   }) async {
     try {
-      // Clear any existing streams
       _clearCharacteristicStreams();
 
-      // Discover services
       final services = await device.discoverServices();
       if (services.isEmpty) {
-        debugPrint('[BleBloc] No services found');
         return false;
       }
 
-      // Find senseBox service
       BluetoothService? senseBoxService;
       try {
         senseBoxService = _findSenseBoxService(services);
       } catch (e) {
-        debugPrint('[BleBloc] SenseBox service not found');
         return false;
       }
 
       if (senseBoxService.characteristics.isEmpty) {
-        debugPrint('[BleBloc] No characteristics found');
         return false;
       }
 
-      // Open first available characteristic stream
       final firstCharacteristic = senseBoxService.characteristics.first;
-      debugPrint(
-          '[BleBloc] Opening characteristic: ${firstCharacteristic.uuid}');
 
-      // Listen for data with configurable timeout
       bool dataReceived = false;
       final dataReceivedCompleter = Completer<bool>();
 
-      // Set up listener
       await firstCharacteristic.setNotifyValue(true);
       Uint8List? receivedData;
       final subscription = firstCharacteristic.onValueReceived.listen((value) {
@@ -363,7 +333,6 @@ class BleBloc with ChangeNotifier {
         }
       });
 
-      // Wait for configurable timeout or data
       try {
         await Future.any([
           dataReceivedCompleter.future,
@@ -374,67 +343,45 @@ class BleBloc with ChangeNotifier {
         await firstCharacteristic.setNotifyValue(false);
       }
 
-      // Check if data was received and validate it's meaningful
       if (dataReceived && receivedData != null) {
-        // Validate that the data is meaningful (not just zeros or empty)
         bool isDataMeaningful = _validateReceivedData(receivedData!);
-        
-        if (isDataMeaningful) {
-          debugPrint('[BleBloc] Meaningful data received! Connection successful.');
-          debugPrint('[BleBloc] Data length: ${receivedData!.length}, Data: ${receivedData!.take(8).toList()}');
 
-          // Set up all characteristics for normal operation
+        if (isDataMeaningful) {
           for (var characteristic in senseBoxService.characteristics) {
             await _listenToCharacteristic(characteristic);
           }
-          
+
           availableCharacteristics.value = senseBoxService.characteristics;
           characteristicStreamsVersion.value++;
-          
-          // Set connection state to true when verification succeeds (only if requested)
+
           if (updateConnectionState) {
             _isConnected = true;
             _userInitiatedDisconnect = false;
-            debugPrint('[BleBloc] Connection state set to: $_isConnected');
-            debugPrint('[BleBloc] Device connected: ${device.remoteId}');
-            
+              
             notifyListeners();
-          } else {
-            debugPrint(
-                '[BleBloc] Connection verification successful but not updating main state (reconnection in progress)');
           }
 
           return true;
         } else {
-          debugPrint('[BleBloc] Data received but not meaningful (all zeros or invalid). Connection failed.');
           return false;
         }
       } else if (dataReceived && receivedData == null) {
-        debugPrint('[BleBloc] Data received but data is null. Connection failed.');
         return false;
       } else {
-        debugPrint(
-            '[BleBloc] No data received within ${dataListeningTimeout.inSeconds} seconds');
         return false;
       }
     } catch (e) {
-      debugPrint('[BleBloc] Error during connection attempt: $e');
-      // Don't crash on connection errors, just return false to trigger retry
       return false;
     }
   }
 
   /// Prepares device for retry by disconnecting and reconnecting
   Future<void> _prepareForRetry(BluetoothDevice device) async {
-    debugPrint('[BleBloc] Preparing device for retry...');
-
     try {
       // Disconnect device (catch any disconnect exceptions)
       try {
         await device.disconnect();
-        debugPrint('[BleBloc] Device disconnected for retry');
       } catch (e) {
-        debugPrint('[BleBloc] Error during disconnect for retry: $e');
         // Continue anyway, device might already be disconnected
       }
 
@@ -444,19 +391,14 @@ class BleBloc with ChangeNotifier {
       // Reconnect device (catch any connect exceptions)
       try {
         await device.connect(timeout: deviceConnectTimeout);
-        debugPrint('[BleBloc] Device reconnected for retry');
       } catch (e) {
-        debugPrint('[BleBloc] Error during connect for retry: $e');
         // Don't throw - let the retry continue, next attempt might work
         return;
       }
 
       // Wait for connection to stabilize
       await Future.delayed(configurableReconnectionDelay);
-
-      debugPrint('[BleBloc] Device ready for retry');
     } catch (e) {
-      debugPrint('[BleBloc] Unexpected error preparing device for retry: $e');
       // Don't throw - let reconnection continue with next attempt
     }
   }
@@ -475,10 +417,6 @@ class BleBloc with ChangeNotifier {
       controller.close();
     }
     _characteristicStreams.clear();
-    for (var controller in _characteristicStringStreams.values) {
-      controller.close();
-    }
-    _characteristicStringStreams.clear();
   }
 
   BluetoothService _findSenseBoxService(List<BluetoothService> services) {
@@ -491,8 +429,6 @@ class BleBloc with ChangeNotifier {
 
 
   void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
-    debugPrint(
-        '[BleBloc] Setting up automatic reconnection listener for device: ${device.remoteId}');
     _reconnectionListener?.cancel();
     
     _userInitiatedDisconnect = false;
@@ -501,47 +437,34 @@ class BleBloc with ChangeNotifier {
 
     _reconnectionListener = device.connectionState.listen((state) async {
       try {
-        debugPrint('[BleBloc] Connection state changed to: $state');
-        
         if (state == BluetoothConnectionState.disconnected &&
             !_userInitiatedDisconnect &&
             !_isInRetryMode) {
           if (!_isReconnecting) {
-            debugPrint(
-                '[BleBloc] Automatic disconnection detected, starting reconnection process');
-
             _isConnected = false;
             isReconnectingNotifier.value = true;
-          
+
             // Start the actual reconnection process
             try {
               _startReconnectionProcess(device, context);
             } catch (e) {
-              debugPrint('[BleBloc] Error starting reconnection process: $e');
               // Reset state if reconnection process fails to start
               _isReconnecting = false;
               isReconnectingNotifier.value = false;
             }
-          } else {
-            debugPrint(
-                '[BleBloc] Additional disconnection detected during reconnection');
           }
         } else if (state == BluetoothConnectionState.connected) {
           if (_isReconnecting) {
-            debugPrint(
-                '[BleBloc] Device BLE connection detected during reconnection, but not resetting state until verification completes');
             // Don't reset reconnection state here - let the reconnection process handle it
             // The reconnection process will reset the state only after successful data verification
           }
         }
       } catch (e) {
-        debugPrint('[BleBloc] Error in connection state listener: $e');
         // Don't crash the app - just log the error
       }
     });
 
     _reconnectionListener?.onError((error) {
-      debugPrint('[BleBloc] Connection state listener error: $error');
       _handleConnectionError(context: context, isInitialConnection: false);
     });
   }
@@ -553,28 +476,19 @@ class BleBloc with ChangeNotifier {
   ) async {
     // Check if reconnection is already in progress
     if (_isReconnecting) {
-      debugPrint(
-          '[BleBloc] Reconnection already in progress, checking if stuck...');
-      debugPrint(
-          '[BleBloc] Current reconnection state: attempts=$_reconnectionAttempts, max=$_maxReconnectionAttempts');
-
       // If we've been trying for too long, reset and start fresh
       if (_reconnectionAttempts >= _maxReconnectionAttempts) {
-        debugPrint(
-            '[BleBloc] Reconnection appears stuck, resetting state and starting fresh');
         _isReconnecting = false;
         _reconnectionAttempts = 0;
         _hasVibrated = false;
         isReconnectingNotifier.value = false;
       } else {
-        debugPrint('[BleBloc] Reconnection in progress, skipping');
         return;
       }
     }
 
     // Set reconnection state now that we're actually starting
     _isReconnecting = true;
-    debugPrint('[BleBloc] Reconnection state set to: $_isReconnecting');
 
     // Set retry mode to prevent connection listener interference during reconnection
     _isInRetryMode = true;
@@ -587,85 +501,46 @@ class BleBloc with ChangeNotifier {
     final reconnectionStartTime = DateTime.now();
     final maxReconnectionDuration = Duration(minutes: 2); // 2 minute timeout
 
-    while (_reconnectionAttempts < _maxReconnectionAttempts && !_isConnected) {
-      // Check if we've been trying too long
-      if (DateTime.now().difference(reconnectionStartTime) >
-          maxReconnectionDuration) {
-        debugPrint(
-            '[BleBloc] Reconnection timeout reached, stopping reconnection attempts');
-        break;
-      }
-
-      try {
+    // Use the generic connection attempt method for reconnection
+    final success = await _executeConnectionAttempts(
+      device,
+      context,
+      maxAttempts: _maxReconnectionAttempts,
+      isReconnection: true,
+      attemptConnection: (device, context) async {
         _reconnectionAttempts++;
-        debugPrint(
-            '[BleBloc] Reconnection attempt $_reconnectionAttempts/$_maxReconnectionAttempts');
+        return _attemptSingleConnection(
+          device,
+          context,
+          updateConnectionState: false,
+        );
+      },
+      prepareForRetry: _prepareForRetry,
+      handleError: _handleConnectionError,
+    );
 
-        // Prepare device for reconnection attempt (except for first attempt)
-        if (_reconnectionAttempts > 1) {
-          try {
-            await _prepareForRetry(device);
-          } catch (e) {
-            debugPrint(
-                '[BleBloc] Error in _prepareForRetry during reconnection: $e');
-            // Continue with the attempt anyway
-          }
-        }
+    if (success) {
+      // Reconnection successful - now update the main connection state
+      _isConnected = true;
+      _userInitiatedDisconnect = false;
 
-        // Attempt the actual connection
-        bool success = false;
-        try {
-          success = await _attemptSingleConnection(device, context,
-              updateConnectionState: false);
-        } catch (e) {
-          debugPrint(
-              '[BleBloc] Error in _attemptSingleConnection during reconnection: $e');
-          success = false; // Ensure success is false on any exception
-        }
+      _hasVibrated = false;
+      _reconnectionAttempts = 0;
+      isReconnectingNotifier.value = false;
+      _isReconnecting = false;
+      _isInRetryMode = false; // Reset retry mode flag
 
-        if (success) {
-          // Reconnection successful - now update the main connection state
-          _isConnected = true;
-          _userInitiatedDisconnect = false;
-          debugPrint(
-              '[BleBloc] Reconnection successful, updating main connection state');
-
-          _hasVibrated = false;
-          _reconnectionAttempts = 0;
-          isReconnectingNotifier.value = false;
-          _isReconnecting = false;
-          _isInRetryMode = false; // Reset retry mode flag
-          debugPrint('[BleBloc] Reconnection successful, all state reset');
-
-          // Notify listeners that connection is restored
-          notifyListeners();
-          break;
-        } else {
-          debugPrint(
-              '[BleBloc] Reconnection attempt $_reconnectionAttempts failed, continuing to next attempt');
-        }
-      } catch (e) {
-        debugPrint(
-            '[BleBloc] Unexpected error during reconnection attempt $_reconnectionAttempts: $e');
-        // Log the error but continue with next attempt
-      }
-      await Future.delayed(reconnectionDelay);
+      // Notify listeners that connection is restored
+      notifyListeners();
     }
 
     // Always reset reconnection state when the loop exits (success, failure, or timeout)
     if (!_isConnected) {
-      debugPrint(
-          '[BleBloc] Reconnection loop exited without success, resetting state');
-
       if (_reconnectionAttempts >= _maxReconnectionAttempts) {
-        debugPrint(
-            '[BleBloc] Max reconnection attempts reached, reconnection failed');
         _handleConnectionError(context: context, isInitialConnection: false);
       }
       
       // Reset all reconnection state regardless of exit reason
-      debugPrint(
-          '[BleBloc] Resetting reconnection state: _isReconnecting=false, _reconnectionAttempts=0');
       isReconnectingNotifier.value = false;
       _isReconnecting = false;
       _isInRetryMode = false;
@@ -677,22 +552,14 @@ class BleBloc with ChangeNotifier {
   void _handleConnectionError(
       {required BuildContext context, bool isInitialConnection = false}) {
     if (isInitialConnection) {
-      debugPrint('[BleBloc] Initial connection failed, resetting state');
       selectedDeviceNotifier.value = null;
       _isConnected = false;
       _userInitiatedDisconnect = false;
-      isReconnectingNotifier.value = false;
-      _isReconnecting = false;
+      _resetReconnectionState();
       isConnectingNotifier.value =
           false; // Reset connecting state so UI shows connect button
-      _isInRetryMode = false; // Reset retry mode flag
-      _reconnectionAttempts = 0; // Reset reconnection attempts counter
-      _hasVibrated = false; // Reset vibration flag
       connectionErrorNotifier.value = false; // Reset connection error state
     } else {
-      debugPrint(
-          '[BleBloc] Permanent connection error during normal operation');
-
       // Create custom exception for permanent BLE connection loss
       final deviceId = selectedDevice?.remoteId.toString();
       final exception = PermanentBleConnectionError(
@@ -705,13 +572,9 @@ class BleBloc with ChangeNotifier {
       selectedDeviceNotifier.value = null;
       _isConnected = false;
       connectionErrorNotifier.value = true;
-      isReconnectingNotifier.value = false;
-      _isReconnecting = false;
+      _resetReconnectionState();
       isConnectingNotifier.value =
           false; // Reset connecting state so UI shows connect button
-      _isInRetryMode = false; // Reset retry mode flag
-      _reconnectionAttempts = 0; // Reset reconnection attempts counter
-      _hasVibrated = false; // Reset vibration flag
     }
 
     notifyListeners();
@@ -722,38 +585,38 @@ class BleBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Force reset reconnection state - useful for debugging stuck reconnections
-  void forceResetReconnectionState() {
-    debugPrint('[BleBloc] Force resetting reconnection state');
+  /// Resets all reconnection-related state variables
+  void _resetReconnectionState() {
     _isReconnecting = false;
     _isInRetryMode = false;
     _reconnectionAttempts = 0;
     _hasVibrated = false;
     isReconnectingNotifier.value = false;
+  }
+
+  /// Force reset reconnection state - useful for debugging stuck reconnections
+  void forceResetReconnectionState() {
+    _resetReconnectionState();
     notifyListeners();
   }
 
   /// Validates that received data is meaningful (not null, not empty, not all zeros)
   bool _validateReceivedData(Uint8List data) {
     if (data.isEmpty) {
-      debugPrint('[BleBloc] Data validation failed: data is empty');
       return false;
     }
     
     // Check if all bytes are zero (which would indicate no real sensor data)
     bool allZeros = data.every((byte) => byte == 0);
     if (allZeros) {
-      debugPrint('[BleBloc] Data validation failed: all bytes are zero');
       return false;
     }
     
     // Check if data has reasonable length (should be at least a few bytes for sensor data)
     if (data.length < 4) {
-      debugPrint('[BleBloc] Data validation failed: data too short (${data.length} bytes)');
       return false;
     }
     
-    debugPrint('[BleBloc] Data validation passed: meaningful data received');
     return true;
   }
 
@@ -779,19 +642,7 @@ class BleBloc with ChangeNotifier {
     });
   }
 
-  // Future<void> _listenToDeviceInfoCharacteristic(
-  //     BluetoothCharacteristic characteristic) async {
-  //   final controller = StreamController<List<String>>();
-  //   _characteristicStringStreams[characteristic.uuid.toString()] = controller;
 
-  //   await characteristic.setNotifyValue(true);
-  //   characteristic.onValueReceived.listen((value) {
-  //     print('Received value: $value');
-  //     print('Decoded value: ${utf8.decode(value)}');
-  //     List<String> parsedData = [utf8.decode(value)];
-  //     controller.add(parsedData);
-  //   });
-  // }
 
   Stream<List<double>> getCharacteristicStream(String characteristicUuid) {
     if (!_characteristicStreams.containsKey(characteristicUuid)) {
