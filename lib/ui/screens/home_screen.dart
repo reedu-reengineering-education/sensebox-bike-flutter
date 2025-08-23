@@ -98,7 +98,15 @@ class HomeScreen extends StatelessWidget {
                       // Not connected: show nothing
                       return SliverToBoxAdapter(child: SizedBox.shrink());
                     }
-                    // Connected: show sensor grid
+                    
+                    // Check if there are actually any sensor widgets available
+                    final widgets = sensorBloc.getSensorWidgets();
+                    if (widgets.isEmpty) {
+                      // Connected but no sensor data available: show nothing
+                      return SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+
+                    // Connected and has sensor data: show sensor grid
                     return _SensorGrid(sensorBloc: sensorBloc);
                   },
                 ),
