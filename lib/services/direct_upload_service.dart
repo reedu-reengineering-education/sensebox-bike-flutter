@@ -11,7 +11,6 @@ import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 
 class UploadErrorClassifier {
-  // Error patterns for permanent authentication failures
   static const List<String> _permanentAuthErrorPatterns = [
     'Authentication failed - user needs to re-login',
     'No refresh token found',
@@ -19,78 +18,63 @@ class UploadErrorClassifier {
     'Not authenticated',
   ];
 
-  // Error patterns for temporary (retryable) errors
   static const List<String> _temporaryErrorPatterns = [
     'Server error',
     'Token refreshed',
   ];
 
-  // Exception types that are always temporary
   static const List<Type> _temporaryExceptionTypes = [
     TooManyRequestsException,
     TimeoutException,
   ];
 
-  // Exception types that are always permanent authentication errors
   static const List<Type> _permanentAuthExceptionTypes = [
     PermanentAuthenticationError,
   ];
 
-  /// Classifies an error and returns the appropriate error type
   static UploadErrorType classifyError(dynamic error) {
-    // Check for permanent authentication exception types first
     if (_isPermanentAuthExceptionType(error)) {
       return UploadErrorType.permanentAuth;
     }
 
     final errorString = error.toString();
 
-    // Check for permanent authentication errors by string pattern
     if (_isPermanentAuthError(errorString)) {
       return UploadErrorType.permanentAuth;
     }
 
-    // Check for temporary errors
     if (_isTemporaryError(error, errorString)) {
       return UploadErrorType.temporary;
     }
 
-    // Check for permanent client errors (4xx, excluding 429)
     if (_isPermanentClientError(errorString)) {
       return UploadErrorType.permanentClient;
     }
 
-    // Default to temporary for unknown errors
     return UploadErrorType.temporary;
   }
 
-  /// Checks if the error is a permanent authentication error
   static bool _isPermanentAuthError(String errorString) {
     return _permanentAuthErrorPatterns.any(
       (pattern) => errorString.contains(pattern),
     );
   }
 
-  /// Checks if the error is a permanent authentication exception type
   static bool _isPermanentAuthExceptionType(dynamic error) {
     return _permanentAuthExceptionTypes
         .any((type) => error.runtimeType == type);
   }
 
-  /// Checks if the error is a temporary (retryable) error
   static bool _isTemporaryError(dynamic error, String errorString) {
-    // Check exception types
     if (_temporaryExceptionTypes.any((type) => error.runtimeType == type)) {
       return true;
     }
 
-    // Check error string patterns
     return _temporaryErrorPatterns.any(
       (pattern) => errorString.contains(pattern),
     );
   }
 
-  /// Checks if the error is a permanent client error (4xx, excluding 429)
   static bool _isPermanentClientError(String errorString) {
     return errorString.contains('Client error') && !errorString.contains('429');
   }
@@ -125,6 +109,12 @@ class DirectUploadService {
   final List<Map<String, dynamic>> _directUploadBuffer = [];
   final Map<GeolocationData, Map<String, List<double>>> _accumulatedSensorData =
       {};
+  
+  // Deferred data buffer for GPS-unavailable scenarios
+  final Map<DateTime, Map<String, List<double>>> _deferredSensorData = {};
+  final List<DateTime> _deferredDataTimestamps = [];
+  static const int maxDeferredDataAge = 1; // hours - prevent indefinite storage
+  
   bool _isEnabled = false;
   bool _isPermanentlyDisabled = false;
   bool _isUploadDisabled = false; // New flag for upload-only disabling
@@ -190,7 +180,6 @@ class DirectUploadService {
   bool addGroupedDataForUpload(
       Map<GeolocationData, Map<String, List<double>>> groupedData,
       List<GeolocationData> gpsBuffer) {
-    // Accept data for local storage even if uploads are disabled
     if (!_isEnabled) {
       return false;
     }
@@ -209,7 +198,7 @@ class DirectUploadService {
       _prepareAndUploadData(gpsBuffer);
     }
     
-    return true; // Data was successfully added to buffer
+    return true;
   }
 
   void _prepareAndUploadData(List<GeolocationData> gpsBuffer) {
@@ -217,12 +206,10 @@ class DirectUploadService {
       return;
     }
 
-    // Don't prepare data if service is permanently disabled
     if (_isPermanentlyDisabled) {
       return;
     }
 
-    // Create a snapshot of current data to ensure atomic operation
     final Map<GeolocationData, Map<String, List<double>>> dataSnapshot =
         Map.from(_accumulatedSensorData);
     final List<GeolocationData> gpsPointsBeingUploaded =
@@ -236,20 +223,13 @@ class DirectUploadService {
     };
 
     _directUploadBuffer.add(uploadDataWithGps);
-    
-    // Only clear the exact data that was prepared for upload
-    for (final gpsPoint in gpsPointsBeingUploaded) {
-      _accumulatedSensorData.remove(gpsPoint);
-    }
 
-    if (_directUploadBuffer.length >= 6) {
-      // Balanced threshold for efficient uploads
+    if (_directUploadBuffer.length >= 3) {
       _uploadDirectBuffer().catchError((e) {
         ErrorService.handleError(
             'Direct upload failed at ${DateTime.now()}: ${e.toString()}',
             StackTrace.current,
             sendToSentry: true);
-        // Don't clear data on upload failure - it will be retried
       });
     }
   }
@@ -259,12 +239,10 @@ class DirectUploadService {
       return;
     }
 
-    // Don't prepare data if service is permanently disabled
     if (_isPermanentlyDisabled) {
       return;
     }
 
-    // Create a snapshot of current data to ensure atomic operation
     final Map<GeolocationData, Map<String, List<double>>> dataSnapshot =
         Map.from(_accumulatedSensorData);
     final List<GeolocationData> gpsPointsBeingUploaded =
@@ -279,14 +257,12 @@ class DirectUploadService {
 
     _directUploadBuffer.add(uploadDataWithGps);
     
-    // Only clear the exact data that was prepared for upload
     for (final gpsPoint in gpsPointsBeingUploaded) {
       _accumulatedSensorData.remove(gpsPoint);
     }
   }
 
   Future<void> uploadRemainingBufferedData() async {
-    // Always clear accumulated sensor data first to prevent memory leaks
     if (_accumulatedSensorData.isNotEmpty) {
       final gpsBuffer = _accumulatedSensorData.keys.toList();
       _prepareAndUploadDataSync(gpsBuffer);
@@ -296,12 +272,10 @@ class DirectUploadService {
       try {
         await _uploadDirectBufferSync();
         
-        // Clear buffers after successful upload
         _accumulatedSensorData.clear();
         _directUploadBuffer.clear();
         
       } catch (e, st) {
-        // Check if it's a non-critical error that should preserve data
         final isNonCriticalError = e is TooManyRequestsException ||
             e.toString().contains('Server error') ||
             e.toString().contains('Token refreshed') ||
@@ -312,14 +286,10 @@ class DirectUploadService {
               'Direct upload failed during recording stop at ${DateTime.now()}: $e. Data cleared due to permanent error.',
               st,
               sendToSentry: true);
-          // Clear buffers on permanent errors
           _accumulatedSensorData.clear();
           _directUploadBuffer.clear();
         }
       }
-    } else {
-      // No direct upload buffer data, but accumulated sensor data was already cleared above
-      // This prevents the memory leak where accumulated data wasn't cleared
     }
   }
 
@@ -328,19 +298,15 @@ class DirectUploadService {
       return;
     }
 
-    // Don't attempt uploads if service is permanently disabled
     if (_isPermanentlyDisabled) {
       return;
     }
 
-    // Check if service is rate limited or permanently disabled
     if (!openSenseMapService.isAcceptingRequests) {
       return;
     }
 
-    // NEW: Check if we're actually authenticated before attempting upload
     if (!openSenseMapBloc.isAuthenticated) {
-      // This is a critical authentication error - disable the service permanently
       if (!_isPermanentlyDisabled) {
         await _handlePermanentAuthenticationError(
             Exception('User not authenticated'), StackTrace.current);
@@ -348,7 +314,6 @@ class DirectUploadService {
       return;
     }
 
-    // Prevent concurrent uploads
     if (_isDirectUploading) {
       return;
     }
@@ -374,7 +339,14 @@ class DirectUploadService {
 
       await openSenseMapService.uploadData(senseBox.id, data);
       
+      // SUCCESS: Now clear both the upload buffer AND the corresponding accumulated data
       _directUploadBuffer.clear();
+      
+      // Clear the accumulated data that was successfully uploaded
+      for (final gpsPoint in allGpsPoints) {
+        _accumulatedSensorData.remove(gpsPoint);
+      }
+      
       _onUploadSuccess?.call(allGpsPoints);
     } catch (e, st) {
       final isNonCriticalError = e is TooManyRequestsException ||
@@ -383,7 +355,6 @@ class DirectUploadService {
           e is TimeoutException;
 
       if (!isNonCriticalError) {
-        // Handle other errors
         ErrorService.handleError(
             'Direct upload failed at ${DateTime.now()}: ${e.toString()}',
             StackTrace.current,
@@ -398,32 +369,109 @@ class DirectUploadService {
   void _clearAllBuffers() {
     _accumulatedSensorData.clear();
     _directUploadBuffer.clear();
+    _deferredSensorData.clear();
+    _deferredDataTimestamps.clear();
   }
 
   void _clearAllBuffersForNewRecording() {
     _clearAllBuffers();
   }
 
+  /// Stores sensor data when GPS is unavailable to prevent data loss
+  void addDeferredSensorData(String sensorTitle, List<double> values) {
+    final timestamp = DateTime.now();
+    
+    // Clean up old deferred data to prevent memory issues
+    _cleanupOldDeferredData();
+    
+    if (!_deferredSensorData.containsKey(timestamp)) {
+      _deferredSensorData[timestamp] = {};
+      _deferredDataTimestamps.add(timestamp);
+    }
+    
+    _deferredSensorData[timestamp]![sensorTitle] = values;
+    
+    debugPrint('[DirectUploadService] Deferred sensor data: $sensorTitle at $timestamp (GPS unavailable)');
+  }
+
+  /// Cleans up deferred data older than maxDeferredDataAge hours
+  void _cleanupOldDeferredData() {
+    final cutoffTime = DateTime.now().subtract(Duration(hours: maxDeferredDataAge));
+    
+    _deferredDataTimestamps.removeWhere((timestamp) {
+      if (timestamp.isBefore(cutoffTime)) {
+        _deferredSensorData.remove(timestamp);
+        return true;
+      }
+      return false;
+    });
+  }
+
   void _disableAndClearBuffers() {
     _isEnabled = false;
     _isPermanentlyDisabled = true;
-    _isUploadDisabled = true; // New flag
+    _isUploadDisabled = true;
     _uploadTimer?.cancel();
     _uploadTimer = null;
     _clearAllBuffers();
     permanentUploadLossNotifier.value = true;
   }
 
+  /// Processes deferred sensor data when GPS becomes available again
+  void processDeferredDataWithGps(GeolocationData gpsPoint) {
+    if (_deferredSensorData.isEmpty) {
+      return;
+    }
+
+    debugPrint('[DirectUploadService] Processing ${_deferredSensorData.length} deferred data entries with new GPS point');
+    
+    // Find the closest timestamp to associate with the GPS point
+    final gpsTimestamp = gpsPoint.timestamp;
+    DateTime? closestTimestamp;
+    Duration? smallestDifference;
+    
+    for (final timestamp in _deferredDataTimestamps) {
+      final difference = (timestamp.difference(gpsTimestamp)).abs();
+      if (smallestDifference == null || difference < smallestDifference) {
+        smallestDifference = difference;
+        closestTimestamp = timestamp;
+      }
+    }
+    
+    if (closestTimestamp != null && smallestDifference != null) {
+      // Only associate if the difference is reasonable (within 5 minutes)
+      if (smallestDifference.inMinutes <= 5) {
+        final deferredData = _deferredSensorData[closestTimestamp]!;
+        
+        // Create a map entry for the GPS point with deferred data
+        final Map<String, List<double>> combinedData = {};
+        combinedData.addAll(deferredData);
+        
+        // Add to accumulated sensor data for upload
+        _accumulatedSensorData[gpsPoint] = combinedData;
+        
+        // Remove the processed deferred data
+        _deferredSensorData.remove(closestTimestamp);
+        _deferredDataTimestamps.remove(closestTimestamp);
+        
+        debugPrint('[DirectUploadService] Associated deferred data with GPS point at ${gpsPoint.timestamp}');
+      } else {
+        debugPrint('[DirectUploadService] Deferred data too old (${smallestDifference.inMinutes} min) - discarding');
+        // Clean up old deferred data
+        _deferredSensorData.remove(closestTimestamp);
+        _deferredDataTimestamps.remove(closestTimestamp);
+      }
+    }
+  }
+
   void _scheduleRestart() {
-    // Don't schedule restart if service is already enabled
     if (_isEnabled && !_isPermanentlyDisabled) {
       return;
     }
     
     if (_restartAttempts >= maxRestartAttempts) {
-      _isUploadDisabled = true; // Set upload flag when max attempts reached
+      _isUploadDisabled = true;
 
-      // Notify sensors to clear their buffers since service is permanently disabled
       _onPermanentDisable?.call();
       
       return;
@@ -438,11 +486,28 @@ class DirectUploadService {
     });
   }
 
+  // Getters for deferred data status
+  bool get hasDeferredData => _deferredSensorData.isNotEmpty;
+  int get deferredDataCount => _deferredSensorData.length;
+  Duration? get oldestDeferredDataAge {
+    if (_deferredDataTimestamps.isEmpty) return null;
+    final oldest = _deferredDataTimestamps.reduce((a, b) => a.isBefore(b) ? a : b);
+    return DateTime.now().difference(oldest);
+  }
+
+  /// Call this method when GPS becomes available to process deferred data
+  void onGpsAvailable(GeolocationData gpsPoint) {
+    if (hasDeferredData) {
+      processDeferredDataWithGps(gpsPoint);
+      debugPrint('[DirectUploadService] GPS available - processed deferred data');
+    }
+  }
+
   void _resetRestartAttempts() {
     _restartAttempts = 0;
     _restartTimer?.cancel();
     _restartTimer = null;
-    _isUploadDisabled = false; // Reset upload flag
+    _isUploadDisabled = false;
   }
 
 
@@ -457,12 +522,10 @@ class DirectUploadService {
         await _handlePermanentClientError(e, st);
         break;
       case UploadErrorType.temporary:
-        // For all temporary errors (429, 5xx, timeouts), preserve data and let OpenSenseMapService handle retries
         ErrorService.handleError(
             'Direct upload temporary error at ${DateTime.now()}: $e. Data preserved for retry.',
             st,
             sendToSentry: false);
-        // Don't clear buffers - data will be retried
         break;
     }
   }
@@ -477,7 +540,7 @@ class DirectUploadService {
   void _permanentlyDisableService() {
     _isEnabled = false;
     _isPermanentlyDisabled = true;
-    _isUploadDisabled = true; // New flag
+    _isUploadDisabled = true;
     _uploadTimer?.cancel();
     _uploadTimer = null;
     _restartTimer?.cancel();
@@ -486,7 +549,6 @@ class DirectUploadService {
     
     permanentUploadLossNotifier.value = true;
 
-    // Notify sensors that uploads are disabled, but don't clear their buffers
     _onPermanentDisable?.call();
   }
 
@@ -501,33 +563,28 @@ class DirectUploadService {
   }
 
   void _attemptRestart() {
-    // Check if service is already enabled (prevent race condition)
     if (_isEnabled && !_isPermanentlyDisabled) {
       return;
     }
 
-    // Try to upload any remaining data before restarting
     if (_directUploadBuffer.isNotEmpty) {
       _uploadDirectBuffer().then((_) {
-        // Success - data uploaded, now restart
         _clearAllBuffers();
         _isEnabled = true;
         _isPermanentlyDisabled = false;
-        _isUploadDisabled = false; // Reset upload flag
+        _isUploadDisabled = false;
         permanentUploadLossNotifier.value = false;
       }).catchError((e) {
-        // Don't clear buffers - preserve data for next attempt
         _isEnabled = true;
         _isPermanentlyDisabled = false;
-        _isUploadDisabled = false; // Reset upload flag
+        _isUploadDisabled = false;
         permanentUploadLossNotifier.value = false;
       });
     } else {
-      // No data to upload, restart immediately
       _clearAllBuffers();
       _isEnabled = true;
       _isPermanentlyDisabled = false;
-      _isUploadDisabled = false; // Reset upload flag
+      _isUploadDisabled = false;
       permanentUploadLossNotifier.value = false;
     }
   }
@@ -535,7 +592,6 @@ class DirectUploadService {
   Future<void> _uploadDirectBufferSync() async {
     if (_directUploadBuffer.isEmpty) return;
 
-    // Don't attempt uploads if service is permanently disabled
     if (_isPermanentlyDisabled) {
       return;
     }
@@ -548,15 +604,19 @@ class DirectUploadService {
       return;
     }
 
-    // Prevent concurrent uploads
     if (_isDirectUploading) return;
     _isDirectUploading = true;
 
     try {
       final Map<String, dynamic> data = {};
+      final List<GeolocationData> allGpsPoints = [];
+      
       for (final uploadDataWithGps in _directUploadBuffer) {
         final uploadData = uploadDataWithGps['data'] as Map<String, dynamic>;
+        final gpsPoints = uploadDataWithGps['gpsPoints'] as List<GeolocationData>;
+        
         data.addAll(uploadData);
+        allGpsPoints.addAll(gpsPoints);
       }
 
       if (data.isEmpty) return;
@@ -564,6 +624,10 @@ class DirectUploadService {
       await openSenseMapService.uploadData(senseBox.id, data);
 
       _directUploadBuffer.clear();
+      
+      for (final gpsPoint in allGpsPoints) {
+        _accumulatedSensorData.remove(gpsPoint);
+      }
 
     } catch (e, st) {
       ErrorService.handleError(
@@ -577,18 +641,14 @@ class DirectUploadService {
     }
   }
 
-  // Add periodic upload check for rate-limited data
   void _startPeriodicUploadCheck() {
     _uploadTimer?.cancel();
     _uploadTimer = Timer.periodic(Duration(seconds: 30), (_) {
-      // Don't run periodic checks if service is permanently disabled
       if (_isPermanentlyDisabled) {
         return;
       }
       
-      // NEW: Check if we're actually authenticated before attempting upload
       if (!openSenseMapBloc.isAuthenticated) {
-        // This is a critical authentication error - disable the service permanently
         if (!_isPermanentlyDisabled) {
           _handlePermanentAuthenticationError(
                   Exception('User not authenticated'), StackTrace.current)
@@ -597,10 +657,8 @@ class DirectUploadService {
         return;
       }
       
-      // Try to upload any buffered data if service is accepting requests
       if (_directUploadBuffer.isNotEmpty &&
           openSenseMapService.isAcceptingRequests) {
-        // _logBufferStatus();
         _uploadDirectBuffer().catchError((e) {
         });
       } else if (_directUploadBuffer.isNotEmpty &&
@@ -642,6 +700,8 @@ class DirectUploadService {
     _restartTimer = null;
     _directUploadBuffer.clear();
     _accumulatedSensorData.clear();
+    _deferredSensorData.clear();
+    _deferredDataTimestamps.clear();
   }
 
   bool _isDirectUploading = false;
