@@ -98,10 +98,7 @@ class MockBleBloc extends Mock implements BleBloc {
     connectionErrorNotifier.value = false;
   }
   
-  @override
-  void forceResetReconnectionState() {
-    isReconnectingNotifier.value = false;
-  }
+
   
   @override
   void updateBluetoothStatus(bool isEnabled) {
