@@ -15,6 +15,7 @@ import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection_modal.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/common/error_banner.dart';
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
@@ -118,76 +119,19 @@ class HomeScreen extends StatelessWidget {
 // Connection error banner widget
 class _ConnectionErrorBanner extends StatelessWidget {
   final BleBloc bleBloc;
-
+ 
   const _ConnectionErrorBanner({required this.bleBloc});
 
   @override
   Widget build(BuildContext context) {
-    return _ErrorBanner(
+    return ErrorBanner(
       errorText: AppLocalizations.of(context)!.errorBleConnectionFailed,
       onDismiss: () => bleBloc.resetConnectionError(),
     );
   }
 }
 
-// Generic error banner widget
-class _ErrorBanner extends StatelessWidget {
-  final String errorText;
-  final VoidCallback onDismiss;
 
-  const _ErrorBanner({
-    required this.errorText,
-    required this.onDismiss,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-          width: 1.0,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(
-              Icons.error_outline,
-              color: Theme.of(context).colorScheme.onErrorContainer,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                errorText,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onErrorContainer,
-                    ),
-              ),
-            ),
-            IconButton(
-              onPressed: onDismiss,
-              icon: Icon(
-                Icons.close,
-                color: Theme.of(context).colorScheme.onErrorContainer,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 40,
-                minHeight: 40,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // Widget for senseBox selection as a badge-like button
 class _SenseBoxSelectionButton extends StatelessWidget {
