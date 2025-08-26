@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_dialog.dart';
+import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart';
 
 import '../../../mocks.dart';
 import '../../../test_helpers.dart';
 
 void main() {
-  group('CreateBikeBoxDialog - Location Selection', () {
+  group('CreateBikeBoxModal - Location Selection', () {
     late MockTagService mockTagService;
     final mockTags = [
       {'label': 'Wiesbaden', 'value': 'wiesbaden'},
@@ -20,15 +20,19 @@ void main() {
       when(() => mockTagService.loadTags()).thenAnswer((_) async => mockTags);
     });
 
-    testWidgets('should populate dropdown with tags and select the first tag by default', (WidgetTester tester) async {
+    testWidgets(
+        'should populate dropdown with tags and select the first tag by default',
+        (WidgetTester tester) async {
       // Act
-      await tester.pumpWidget(
-        createLocalizedTestApp(
-          locale: Locale('en'),
-          child: Scaffold(body: CreateBikeBoxDialog(tagService: mockTagService,)),
+      await tester.pumpWidget(createLocalizedTestApp(
+        locale: Locale('en'),
+        child: Scaffold(
+            body: CreateBikeBoxModal(
+          tagService: mockTagService,
+        )),
       ));
       await tester.pumpAndSettle();
-      
+
       // Expand the dropdown
       final dropdownFinder = find.byType(DropdownButtonFormField<String>);
       expect(dropdownFinder, findsOneWidget); // Ensure the dropdown exists
@@ -37,16 +41,19 @@ void main() {
 
       // Assert
       expect(find.text('Wiesbaden'), findsOneWidget);
-      expect(find.text('Münster'), findsOneWidget); 
+      expect(find.text('Münster'), findsOneWidget);
       expect(find.text('Arnsberg'), findsOneWidget);
     });
 
-    testWidgets('should update selectedTag when a new tag is selected', (WidgetTester tester) async {
+    testWidgets('should update selectedTag when a new tag is selected',
+        (WidgetTester tester) async {
       // Act
-      await tester.pumpWidget(
-        createLocalizedTestApp(
-          locale: Locale('en'),
-          child: Scaffold(body: CreateBikeBoxDialog(tagService: mockTagService,)),
+      await tester.pumpWidget(createLocalizedTestApp(
+        locale: Locale('en'),
+        child: Scaffold(
+            body: CreateBikeBoxModal(
+          tagService: mockTagService,
+        )),
       ));
       await tester.pumpAndSettle();
 
@@ -62,13 +69,17 @@ void main() {
       // Verify the selected tag by checking the displayed text
       expect(find.text('Münster'), findsOneWidget); // Verify the selected tag
     });
-  
-    testWidgets('should display data in german, when corresponding locale is selected', (WidgetTester tester) async {
+
+    testWidgets(
+        'should display data in german, when corresponding locale is selected',
+        (WidgetTester tester) async {
       // Act
-      await tester.pumpWidget(
-        createLocalizedTestApp(
-          locale: Locale('de'),
-          child: Scaffold(body: CreateBikeBoxDialog(tagService: mockTagService,)),
+      await tester.pumpWidget(createLocalizedTestApp(
+        locale: Locale('de'),
+        child: Scaffold(
+            body: CreateBikeBoxModal(
+          tagService: mockTagService,
+        )),
       ));
       await tester.pumpAndSettle();
       // Verify the selected tag by checking the displayed text
@@ -76,18 +87,21 @@ void main() {
           findsOneWidget); // Verify the selected tag
     });
 
-    testWidgets('should display data in portugese, when corresponding locale is selected', (WidgetTester tester) async {
+    testWidgets(
+        'should display data in portugese, when corresponding locale is selected',
+        (WidgetTester tester) async {
       // Act
-      await tester.pumpWidget(
-        createLocalizedTestApp(
-          locale: Locale('pt'),
-          child: Scaffold(body: CreateBikeBoxDialog(tagService: mockTagService,)),
+      await tester.pumpWidget(createLocalizedTestApp(
+        locale: Locale('pt'),
+        child: Scaffold(
+            body: CreateBikeBoxModal(
+          tagService: mockTagService,
+        )),
       ));
       await tester.pumpAndSettle();
       // Verify the selected tag by checking the displayed text
       expect(find.text('Selecionar campanha'),
           findsOneWidget); // Verify the selected tag
     });
-    
   });
 }
