@@ -78,7 +78,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     _mapboxDrawController = MapboxDrawController();
 
     _isInitialized = true;
-    print('Blocs initialized successfully');
+    debugPrint('Blocs initialized successfully');
   }
 
   @override
