@@ -105,7 +105,11 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> scanForNewDevices() async {
+    // Clear all existing state before scanning
     disconnectDevice();
+    
+
+    
     isScanningNotifier.value = true;
 
     try {
@@ -143,6 +147,11 @@ class BleBloc with ChangeNotifier {
     _reconnectionListener = null;
     resetConnectionError();
     
+    // Ensure reconnection state is fully reset
+    _resetReconnectionState();
+
+
+    
     notifyListeners();
   }
 
@@ -164,6 +173,7 @@ class BleBloc with ChangeNotifier {
       BluetoothDevice device, BuildContext context) async {
     try {
       resetConnectionError();
+
       isConnectingNotifier.value = true;
       notifyListeners();
 
@@ -444,6 +454,8 @@ class BleBloc with ChangeNotifier {
     BluetoothDevice device,
     BuildContext context,
   ) async {
+
+    
     // Check if reconnection is already in progress
     if (_isReconnecting) {
       // If we've been trying for too long, reset and start fresh
@@ -494,14 +506,9 @@ class BleBloc with ChangeNotifier {
       notifyListeners();
     }
 
-    // Always reset reconnection state when the loop exits (success, failure, or timeout)
-    if (!_isConnected) {
-      if (_reconnectionAttempts >= _maxReconnectionAttempts) {
-        _handleConnectionError(context: context, isInitialConnection: false);
-      }
-      
-      // Reset all reconnection state regardless of exit reason
-      _resetReconnectionState();
+    // Only handle permanent connection failure if max attempts reached
+    if (!_isConnected && _reconnectionAttempts >= _maxReconnectionAttempts) {
+      _handleConnectionError(context: context, isInitialConnection: false);
     }
   }
 
@@ -515,19 +522,27 @@ class BleBloc with ChangeNotifier {
       isConnectingNotifier.value = false; 
       connectionErrorNotifier.value = false; // Reset connection error state
     } else {
-      final deviceId = selectedDevice?.remoteId.toString();
-      final exception = PermanentBleConnectionError(
-          deviceId, 'Max reconnection attempts reached');
-
-      ErrorService.handleError(exception, StackTrace.current,
-          sendToSentry: true);
-
+      // Max reconnection attempts reached - handle as permanent connection failure
       // Reset state and notify connection error
+      selectedDevice = null;
       selectedDeviceNotifier.value = null;
       _isConnected = false;
       connectionErrorNotifier.value = true;
-      _resetReconnectionState();
-      isConnectingNotifier.value = false; 
+      
+      // Cancel any ongoing reconnection listener
+      _reconnectionListener?.cancel();
+      _reconnectionListener = null;
+
+      // Clear characteristic streams
+      _clearCharacteristicStreams();
+
+      // Reset reconnection state
+      _isReconnecting = false;
+      _isInRetryMode = false;
+      _reconnectionAttempts = 0;
+      _hasVibrated = false;
+      isReconnectingNotifier.value = false;
+      isConnectingNotifier.value = false;
     }
 
     notifyListeners();
@@ -535,6 +550,18 @@ class BleBloc with ChangeNotifier {
 
   void resetConnectionError() {
     connectionErrorNotifier.value = false;
+    
+    // Cancel any ongoing reconnection listener
+    _reconnectionListener?.cancel();
+    _reconnectionListener = null;
+
+    // Reset reconnection state
+    _isReconnecting = false;
+    _isInRetryMode = false;
+    _reconnectionAttempts = 0;
+    _hasVibrated = false;
+    isReconnectingNotifier.value = false;
+    
     notifyListeners();
   }
 
@@ -543,6 +570,7 @@ class BleBloc with ChangeNotifier {
     _isInRetryMode = false;
     _reconnectionAttempts = 0;
     _hasVibrated = false;
+
     isReconnectingNotifier.value = false;
     notifyListeners();
   }

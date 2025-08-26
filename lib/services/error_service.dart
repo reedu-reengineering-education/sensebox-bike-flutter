@@ -29,8 +29,7 @@ class ErrorService {
           error is NoSenseBoxSelected ||
           error is ExportDirectoryAccessError ||
           error is UploadFailureError ||
-          error is PermanentAuthenticationError ||
-          error is PermanentBleConnectionError) {
+          error is PermanentAuthenticationError) {
         showUserFeedback(error);
       } else {
         logToConsole(error, stack);
@@ -77,9 +76,6 @@ class ErrorService {
     } else if (error is PermanentAuthenticationError) {
       return localizations?.errorPermanentAuthentication ??
           'Authentication failed permanently. Please log in again to continue uploading data.';
-    } else if (error is PermanentBleConnectionError) {
-      return localizations?.errorBleConnectionFailed ??
-          'Connect to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
     } else if (error is LoginError) {
       return '${localizations?.errorLoginFailed} ${error.toString()}';
     } else if (error is RegistrationError) {
