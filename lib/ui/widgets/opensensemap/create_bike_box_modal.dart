@@ -17,6 +17,8 @@ class CreateBikeBoxModal extends StatefulWidget {
 }
 
 class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
+  bool _customTagExpanded = false;
+  final _customTagController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   List<Map<String, String>> availableTags = [];
@@ -58,8 +60,17 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
 
         final position = await geolocationBloc.getCurrentLocation();
 
-        await opensensemapBloc.createSenseBoxBike(_nameController.text,
-            position.latitude, position.longitude, _selectedModel, selectedTag);
+        await opensensemapBloc.createSenseBoxBike(
+            _nameController.text,
+            position.latitude,
+            position.longitude,
+            _selectedModel,
+            selectedTag,
+            _customTagController.text
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList());
 
         await opensensemapBloc.fetchSenseBoxes();
 
@@ -168,6 +179,38 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                     disabledHint:
                         Text(AppLocalizations.of(context)!.selectCampaign),
                   ),
+                  const SizedBox(height: 4),
+                  ExpansionTile(
+                    title: Text(
+                        AppLocalizations.of(context)!.createBoxAddCustomTag),
+                    initiallyExpanded: _customTagExpanded,
+                    onExpansionChanged: (expanded) {
+                      setState(() {
+                        _customTagExpanded = expanded;
+                      });
+                    },
+                    shape: Border.all(color: Colors.transparent),
+                    collapsedShape: Border.all(color: Colors.transparent),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextFormField(
+                              controller: _customTagController,
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(context)!
+                                    .createBoxCustomTag,
+                              ),
+                            ),
+                            Text(AppLocalizations.of(context)!
+                                .createBoxCustomTagHelper)
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -179,7 +222,7 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -205,11 +248,3 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
         ));
   }
 }
-
-// To show the modal, use this from your parent widget:
-// showModalBottomSheet(
-//   context: context,
-//   isScrollControlled: true,
-//   backgroundColor: Colors.transparent,
-//   builder: (context) => CreateBikeBoxModal(tagService: yourTagService),
-// );
