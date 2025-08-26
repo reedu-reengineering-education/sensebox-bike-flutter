@@ -97,7 +97,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
         debugPrint('Received uri: $uri');
         String action = uri.host;
         if (action == "start") {
-          print('Connecting to device and starting recording');
+          debugPrint('Connecting to device and starting recording');
           final id = uri.queryParameters['id'];
           if (id == null) {
             print('No id provided');
