@@ -109,9 +109,6 @@ void main() {
           child: Scaffold(
             body: UploadProgressModal(
               batchUploadService: mockBatchUploadService,
-              onRetryRequested: () {
-                retryPressed = true;
-              },
             ),
           ),
           locale: const Locale('en'),
@@ -133,13 +130,10 @@ void main() {
 
       // Assert
       expect(find.text('Upload failed'), findsOneWidget);
-      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
       
-      // Test retry button
-      await tester.tap(find.text('Retry'));
-      await tester.pump();
-      
-      expect(retryPressed, isTrue);
+      // No retry button should be shown
+      expect(retryPressed, isFalse);
     });
 
     testWidgets('should hide modal after completion', (WidgetTester tester) async {

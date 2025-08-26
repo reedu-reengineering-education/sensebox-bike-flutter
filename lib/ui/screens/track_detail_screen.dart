@@ -437,10 +437,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             );
           }
         },
-        onRetryRequested: () {
-          // User requested retry - restart upload with fresh service
-          _retryUpload();
-        },
+
       );
 
       // Start the upload
@@ -460,87 +457,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
-  Future<void> _retryUpload() async {
-    final localizations = AppLocalizations.of(context)!;
 
-    // Check if user is authenticated
-    if (!openSenseMapBloc.isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(localizations.uploadProgressAuthenticationError),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
 
-    // Check if senseBox is selected
-    if (openSenseMapBloc.selectedSenseBox == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(localizations.errorNoSenseBoxSelected),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isUploading = true);
-
-    try {
-      // Reset the batch upload service to start fresh
-      batchUploadService.dispose();
-      batchUploadService = BatchUploadService(
-        openSenseMapService: openSenseMapBloc.openSenseMapService,
-        trackService: isarService.trackService,
-        openSenseMapBloc: openSenseMapBloc,
-      );
-
-      // Show upload progress modal with fresh service
-      UploadProgressOverlay.show(
-        context,
-        batchUploadService: batchUploadService,
-        onUploadComplete: () {
-          // Upload completed successfully
-          setState(() => _isUploading = false);
-          if (mounted) {
-            setState(() {});
-          }
-        },
-        onUploadFailed: () {
-          // Upload failed permanently
-          setState(() => _isUploading = false);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(localizations.trackUploadRetryFailed),
-                backgroundColor: Theme.of(context).colorScheme.error,
-              ),
-            );
-          }
-        },
-        onRetryRequested: () {
-          // User requested retry again
-          _retryUpload();
-        },
-      );
-
-      // Start the upload with fresh service
-      await batchUploadService.uploadTrack(
-          widget.track, openSenseMapBloc.selectedSenseBox!);
-    } catch (e) {
-      setState(() => _isUploading = false);
-      // Show error message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.trackUploadRetryFailed),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
 
   Widget _buildAppBarTitle(TrackData track) {
     String errorMessage = AppLocalizations.of(context)!.trackDetailsNoData;

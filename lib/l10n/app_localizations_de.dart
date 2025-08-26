@@ -20,9 +20,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get generalRetry => 'Erneut versuchen';
-
-  @override
   String get generalCancel => 'Abbrechen';
 
   @override
@@ -507,7 +504,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get uploadProgressUploading => 'Track wird hochgeladen...';
 
   @override
-  String get uploadProgressInfo => 'Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.';
+  String get uploadProgressInfo => 'Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.\n\nFalls Sie Ihre Track-Daten später hochladen möchten, können Sie das über den Track-Überbildschirm tun.';
 
   @override
   String get uploadProgressRetrying => 'Upload wird wiederholt...';

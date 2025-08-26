@@ -4,7 +4,7 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_indicator.dart';
-import 'package:sensebox_bike/theme.dart';
+
 
 /// A modal bottom sheet that displays upload progress in real-time.
 ///
@@ -25,15 +25,13 @@ class UploadProgressModal extends StatefulWidget {
   /// Callback when upload fails permanently
   final VoidCallback? onUploadFailed;
 
-  /// Callback when user requests retry
-  final VoidCallback? onRetryRequested;
+
 
   const UploadProgressModal({
     super.key,
     required this.batchUploadService,
     this.onUploadComplete,
     this.onUploadFailed,
-    this.onRetryRequested,
   });
 
   @override
@@ -112,9 +110,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
     widget.onUploadFailed?.call();
   }
 
-  void _handleRetry() {
-    widget.onRetryRequested?.call();
-  }
+
 
   void _handleDismiss() {
     UploadProgressOverlay.hide();
@@ -144,7 +140,6 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
   }
 
   List<Widget> _buildActions(BuildContext context, UploadProgress progress) {
-    final theme = Theme.of(context);
 
     switch (progress.status) {
       case UploadStatus.preparing:
@@ -163,31 +158,13 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
         ];
 
       case UploadStatus.failed:
-        if (progress.canRetry) {
-          // Retry button
-          return [
-            FilledButton(
-              onPressed: _handleRetry,
-              style: FilledButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-              ),
-              child: Text(AppLocalizations.of(context)!.generalRetry),
-            ),
-            TextButton(
-              onPressed: _handleDismiss,
-              child: Text(AppLocalizations.of(context)!.generalCancel),
-            ),
-          ];
-        } else {
-          // Close button for permanent failure
-          return [
-            TextButton(
-              onPressed: _handleDismiss,
-              child: Text(AppLocalizations.of(context)!.generalClose),
-            ),
-          ];
-        }
+        // Close button for failed uploads
+        return [
+          TextButton(
+            onPressed: _handleDismiss,
+            child: Text(AppLocalizations.of(context)!.generalClose),
+          ),
+        ];
     }
   }
 }
@@ -205,7 +182,6 @@ class UploadProgressOverlay {
     required BatchUploadService batchUploadService,
     VoidCallback? onUploadComplete,
     VoidCallback? onUploadFailed,
-    VoidCallback? onRetryRequested,
   }) {
     if (_isShown) return;
 
@@ -221,7 +197,6 @@ class UploadProgressOverlay {
           onUploadComplete?.call();
         },
         onUploadFailed: onUploadFailed,
-        onRetryRequested: onRetryRequested,
       ),
     );
   }

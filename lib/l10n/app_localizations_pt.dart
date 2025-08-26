@@ -20,9 +20,6 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get generalRetry => 'Tentar de novo';
-
-  @override
   String get generalCancel => 'Cancelar';
 
   @override
@@ -507,7 +504,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get uploadProgressUploading => 'Enviando dados do trajeto...';
 
   @override
-  String get uploadProgressInfo => 'Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.';
+  String get uploadProgressInfo => 'Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser enviar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.';
 
   @override
   String get uploadProgressRetrying => 'Tentando upload novamente...';

@@ -190,12 +190,8 @@ class RecordingBloc with ChangeNotifier {
           debugPrint('[RecordingBloc] Batch upload completed successfully');
         },
         onUploadFailed: () {
-          // Upload failed permanently - keep service for potential retry
+          // Upload failed permanently
           debugPrint('[RecordingBloc] Batch upload failed permanently');
-        },
-        onRetryRequested: () {
-          // User requested retry
-          _retryBatchUpload(track, senseBox);
         },
       );
 
@@ -226,29 +222,7 @@ class RecordingBloc with ChangeNotifier {
     }
   }
 
-  /// Retries the batch upload
-  void _retryBatchUpload(TrackData track, SenseBox senseBox) async {
-    if (_batchUploadService == null) return;
 
-    try {
-      // Check if track has geolocations before attempting retry
-      await track.geolocations.load();
-      final geolocations = track.geolocations.toList();
-
-      if (geolocations.isEmpty) {
-        throw TrackHasNoGeolocationsException(track.id);
-      }
-
-      await _batchUploadService!.uploadTrack(track, senseBox);
-    } catch (e, stack) {
-      // Log error - the modal will handle showing the error state
-      ErrorService.handleError(
-        'Batch upload retry failed: $e',
-        stack,
-        sendToSentry: true,
-      );
-    }
-  }
 
   /// Cleans up the batch upload service
   void _cleanupBatchUploadService() {

@@ -115,12 +115,6 @@ abstract class AppLocalizations {
   /// **'Error: {error}'**
   String generalErrorWithDescription(String error);
 
-  /// No description provided for @generalRetry.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry'**
-  String get generalRetry;
-
   /// No description provided for @generalCancel.
   ///
   /// In en, this message translates to:
@@ -1054,7 +1048,7 @@ abstract class AppLocalizations {
   /// No description provided for @uploadProgressInfo.
   ///
   /// In en, this message translates to:
-  /// **'Do not close the app while uploading. It can take some time depending on your track length.'**
+  /// **'Do not close the app while uploading. It can take some time depending on your track length.\n\nIf you would like to upload your track data later, you can do that from track overview screen.'**
   String get uploadProgressInfo;
 
   /// No description provided for @uploadProgressRetrying.
