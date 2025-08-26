@@ -122,11 +122,11 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                     items: [
                       DropdownMenuItem(
                         value: SenseBoxBikeModel.atrai,
-                        child: Text('ATRAI'),
+                        child: Text('2025'),
                       ),
                       DropdownMenuItem(
                         value: SenseBoxBikeModel.classic,
-                        child: Text('Classic'),
+                        child: Text('2022'),
                       ),
                     ],
                     onChanged: (value) {
