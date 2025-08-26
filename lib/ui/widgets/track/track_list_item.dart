@@ -101,19 +101,13 @@ class TrackListItem extends StatelessWidget {
 
   Widget _buildNoGeolocationsContent(
       BuildContext context, AppLocalizations localizations, ThemeData theme) {
-    return Row(
-      children: [
-        Expanded(
-          child: Center(
-            child: Text(
-              localizations.trackNoGeolocations,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.error),
-            ),
-          ),
-        ),
-        // Don't show upload status icon when there are no geolocations
-      ],
+    return Container(
+      width: double.infinity,
+      child: Text(
+        localizations.trackNoGeolocations,
+        style: theme.textTheme.bodyMedium
+            ?.copyWith(color: theme.colorScheme.error),
+      ),
     );
   }
 
