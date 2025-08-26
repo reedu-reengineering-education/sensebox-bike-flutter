@@ -94,7 +94,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     if (_appLinksSubscription == null) {
       final appLinks = AppLinks();
       _appLinksSubscription = appLinks.uriLinkStream.listen((uri) async {
-        print('Received uri: $uri');
+        debugPrint('Received uri: $uri');
         String action = uri.host;
         if (action == "start") {
           print('Connecting to device and starting recording');
