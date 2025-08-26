@@ -395,20 +395,20 @@ class OpenSenseMapService {
     }
   }
 
-  Future<void> createSenseBoxBike(
-      String name,
-      double latitude,
-      double longitude,
-      SenseBoxBikeModel model,
-      String? selectedTag,
-      List<String?> additionalTags) async {
+  Future<void> createSenseBoxBike(String name, double latitude,
+      double longitude, SenseBoxBikeModel model, String? selectedTag,
+      [List<String?>? additionalTags]) async {
     return _makeAuthenticatedRequest<void>(
       requestFn: (accessToken) => client.post(
         Uri.parse('$_baseUrl/boxes'),
-        body: jsonEncode(createSenseBoxBikeModel(name, latitude, longitude,
-            model: model,
-            selectedTag: selectedTag,
-            additionalTags: additionalTags)),
+        body: jsonEncode(createSenseBoxBikeModel(
+          name,
+          latitude,
+          longitude,
+          model: model,
+          selectedTag: selectedTag,
+          additionalTags: additionalTags,
+        )),
         headers: {
           'Authorization': 'Bearer $accessToken',
           'Content-Type': 'application/json',
@@ -565,7 +565,7 @@ class OpenSenseMapService {
     List<String>? grouptags,
     SenseBoxBikeModel model = SenseBoxBikeModel.classic,
     String? selectedTag,
-    List<String?> additionalTags = const [],
+    List<String?>? additionalTags = const [],
   }) {
     // Initialize the base grouptags
     final List<String> baseGroupTags = grouptags ??
@@ -577,7 +577,7 @@ class OpenSenseMapService {
 
     final List<String> allTags = {
       ...baseGroupTags,
-      ...additionalTags.whereType<String>(),
+      ...?additionalTags?.whereType<String>(),
     }.toList();
 
     final baseProperties = {

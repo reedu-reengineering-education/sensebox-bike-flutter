@@ -177,8 +177,11 @@ void main() {
       ));
       await tester.pumpAndSettle();
       // Verify the selected tag by checking the displayed text
-      expect(find.text('Kampagne auswählen'),
-          findsOneWidget); // Verify the selected tag
+      // Find the DropdownMenuItem with the translated text
+      final dropdownItemFinder =
+          find.widgetWithText(DropdownMenuItem<String>, 'Kampagne auswählen');
+      expect(dropdownItemFinder,
+          findsOneWidget); // Verify the translated dropdown item exists
     });
 
     testWidgets(
@@ -194,8 +197,10 @@ void main() {
       ));
       await tester.pumpAndSettle();
       // Verify the selected tag by checking the displayed text
-      expect(find.text('Selecionar campanha'),
-          findsOneWidget); // Verify the selected tag
+      final dropdownItemFinder =
+          find.widgetWithText(DropdownMenuItem<String>, 'Selecionar campanha');
+      expect(dropdownItemFinder,
+          findsOneWidget); // Verify the translated dropdown item exists
     });
   });
 }
