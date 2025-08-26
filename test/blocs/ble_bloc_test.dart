@@ -60,11 +60,7 @@ void main() {
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
       });
 
-      test('forceResetReconnectionState resets all reconnection variables', () {
-        bleBloc.isReconnectingNotifier.value = true;
-        bleBloc.forceResetReconnectionState();
-        expect(bleBloc.isReconnectingNotifier.value, isFalse);
-      });
+
     });
 
     group('Error Handling', () {

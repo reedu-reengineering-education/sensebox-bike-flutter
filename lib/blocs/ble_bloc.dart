@@ -13,11 +13,8 @@ import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 1);
 const deviceConnectTimeout = Duration(seconds: 5);
-const configurableReconnectionDelay =
-    Duration(seconds: 1); // Can be adjusted for different use cases
-const dataListeningTimeout =
-    Duration(seconds: 3); // Timeout for listening to characteristic data
-
+const configurableReconnectionDelay = Duration(seconds: 1);
+const dataListeningTimeout = Duration(seconds: 3); 
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
@@ -70,7 +67,6 @@ class BleBloc with ChangeNotifier {
   }
 
   void updateBluetoothStatus(bool isEnabled) {
-    // Only update if the state has actually changed
     if (isBluetoothEnabledNotifier.value != isEnabled) {
       isBluetoothEnabledNotifier.value = isEnabled;
       notifyListeners();
@@ -143,10 +139,8 @@ class BleBloc with ChangeNotifier {
     selectedDevice = null;
     selectedDeviceNotifier.value = null;
     availableCharacteristics.value = [];
-    
     _reconnectionListener?.cancel();
     _reconnectionListener = null;
-
     resetConnectionError();
     
     notifyListeners();
@@ -170,7 +164,6 @@ class BleBloc with ChangeNotifier {
       BluetoothDevice device, BuildContext context) async {
     try {
       resetConnectionError();
-      
       isConnectingNotifier.value = true;
       notifyListeners();
 
@@ -185,20 +178,14 @@ class BleBloc with ChangeNotifier {
       _isConnected = success;
 
       if (_isConnected) {
-        debugPrint(
-            '[BleBloc] Setting up connection state listener after successful connection');
         _handleDeviceReconnection(device, context);
         
-        // Only set selectedDevice when connection is successful
         selectedDevice = device;
         selectedDeviceNotifier.value = selectedDevice;
       } else {
-        // Clear selectedDevice when connection fails
         selectedDevice = null;
         selectedDeviceNotifier.value = null;
       }
-
-      notifyListeners();
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);
       
@@ -210,8 +197,9 @@ class BleBloc with ChangeNotifier {
     } finally {
       isConnectingNotifier.value = false;
       _isInRetryMode = false;
+      notifyListeners();
     }
-    notifyListeners();
+    
   }
 
   Future<bool> _executeConnectionAttempts(
@@ -385,10 +373,8 @@ class BleBloc with ChangeNotifier {
         // Continue anyway, device might already be disconnected
       }
 
-      // Wait for disconnect to complete
       await Future.delayed(configurableReconnectionDelay);
-
-      // Reconnect device (catch any connect exceptions)
+      
       try {
         await device.connect(timeout: deviceConnectTimeout);
       } catch (e) {
@@ -396,21 +382,11 @@ class BleBloc with ChangeNotifier {
         return;
       }
 
-      // Wait for connection to stabilize
       await Future.delayed(configurableReconnectionDelay);
     } catch (e) {
       // Don't throw - let reconnection continue with next attempt
     }
   }
-
-
-
-
-
-
-
-
-
 
   void _clearCharacteristicStreams() {
     for (var controller in _characteristicStreams.values) {
@@ -453,14 +429,9 @@ class BleBloc with ChangeNotifier {
               isReconnectingNotifier.value = false;
             }
           }
-        } else if (state == BluetoothConnectionState.connected) {
-          if (_isReconnecting) {
-            // Don't reset reconnection state here - let the reconnection process handle it
-            // The reconnection process will reset the state only after successful data verification
-          }
         }
       } catch (e) {
-        // Don't crash the app - just log the error
+        // Don't throw - let the reconnection process handle it
       }
     });
 
@@ -469,7 +440,6 @@ class BleBloc with ChangeNotifier {
     });
   }
 
-  /// Starts the reconnection process when a device disconnects
   void _startReconnectionProcess(
     BluetoothDevice device,
     BuildContext context,
@@ -487,10 +457,7 @@ class BleBloc with ChangeNotifier {
       }
     }
 
-    // Set reconnection state now that we're actually starting
     _isReconnecting = true;
-
-    // Set retry mode to prevent connection listener interference during reconnection
     _isInRetryMode = true;
 
     if (!_hasVibrated && settingsBloc.vibrateOnDisconnect) {
@@ -498,10 +465,6 @@ class BleBloc with ChangeNotifier {
       _hasVibrated = true;
     }
 
-    final reconnectionStartTime = DateTime.now();
-    final maxReconnectionDuration = Duration(minutes: 2); // 2 minute timeout
-
-    // Use the generic connection attempt method for reconnection
     final success = await _executeConnectionAttempts(
       device,
       context,
@@ -520,17 +483,14 @@ class BleBloc with ChangeNotifier {
     );
 
     if (success) {
-      // Reconnection successful - now update the main connection state
       _isConnected = true;
       _userInitiatedDisconnect = false;
-
       _hasVibrated = false;
       _reconnectionAttempts = 0;
       isReconnectingNotifier.value = false;
       _isReconnecting = false;
-      _isInRetryMode = false; // Reset retry mode flag
+      _isInRetryMode = false; 
 
-      // Notify listeners that connection is restored
       notifyListeners();
     }
 
@@ -541,11 +501,7 @@ class BleBloc with ChangeNotifier {
       }
       
       // Reset all reconnection state regardless of exit reason
-      isReconnectingNotifier.value = false;
-      _isReconnecting = false;
-      _isInRetryMode = false;
-      _reconnectionAttempts = 0;
-      _hasVibrated = false;
+      _resetReconnectionState();
     }
   }
 
@@ -556,25 +512,22 @@ class BleBloc with ChangeNotifier {
       _isConnected = false;
       _userInitiatedDisconnect = false;
       _resetReconnectionState();
-      isConnectingNotifier.value =
-          false; // Reset connecting state so UI shows connect button
+      isConnectingNotifier.value = false; 
       connectionErrorNotifier.value = false; // Reset connection error state
     } else {
-      // Create custom exception for permanent BLE connection loss
       final deviceId = selectedDevice?.remoteId.toString();
       final exception = PermanentBleConnectionError(
           deviceId, 'Max reconnection attempts reached');
 
-      // Use ErrorService to display error to user and send to Sentry
-      ErrorService.handleError(exception, StackTrace.current);
+      ErrorService.handleError(exception, StackTrace.current,
+          sendToSentry: true);
 
       // Reset state and notify connection error
       selectedDeviceNotifier.value = null;
       _isConnected = false;
       connectionErrorNotifier.value = true;
       _resetReconnectionState();
-      isConnectingNotifier.value =
-          false; // Reset connecting state so UI shows connect button
+      isConnectingNotifier.value = false; 
     }
 
     notifyListeners();
@@ -585,34 +538,27 @@ class BleBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Resets all reconnection-related state variables
   void _resetReconnectionState() {
     _isReconnecting = false;
     _isInRetryMode = false;
     _reconnectionAttempts = 0;
     _hasVibrated = false;
     isReconnectingNotifier.value = false;
-  }
-
-  /// Force reset reconnection state - useful for debugging stuck reconnections
-  void forceResetReconnectionState() {
-    _resetReconnectionState();
     notifyListeners();
   }
 
-  /// Validates that received data is meaningful (not null, not empty, not all zeros)
+
+
   bool _validateReceivedData(Uint8List data) {
     if (data.isEmpty) {
       return false;
     }
     
-    // Check if all bytes are zero (which would indicate no real sensor data)
     bool allZeros = data.every((byte) => byte == 0);
     if (allZeros) {
       return false;
     }
     
-    // Check if data has reasonable length (should be at least a few bytes for sensor data)
     if (data.length < 4) {
       return false;
     }
@@ -624,7 +570,7 @@ class BleBloc with ChangeNotifier {
       BluetoothCharacteristic characteristic) async {
     final uuid = characteristic.uuid.toString();
 
-    // If a controller exists for this characteristic, close and remove it first
+    // If a controller exists for this characteristic, close and remove it firs
     if (_characteristicStreams.containsKey(uuid)) {
       await _characteristicStreams[uuid]?.close();
       _characteristicStreams.remove(uuid);
