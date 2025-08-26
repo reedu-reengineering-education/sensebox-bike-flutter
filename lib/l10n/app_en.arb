@@ -207,7 +207,7 @@
     "uploadProgressTitle": "Upload Progress",
     "uploadProgressPreparing": "Preparing upload...",
     "uploadProgressUploading": "Uploading track data...",
-    "uploadProgressInfo": "Do not close the app while uploading. It can take some time depending on your track length.",
+    "uploadProgressInfo": "Do not close the app while uploading. It can take some time depending on your track length.\n\nIf you would like to upload your track data later, you can do that from track overview screen.",
     "uploadProgressRetrying": "Retrying upload...",
     "uploadProgressCompleted": "Upload completed successfully",
     "uploadProgressFailed": "Upload failed",

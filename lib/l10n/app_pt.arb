@@ -207,7 +207,7 @@
     "uploadProgressTitle": "Progresso do Upload",
     "uploadProgressPreparing": "Preparando upload...",
     "uploadProgressUploading": "Enviando dados do trajeto...",
-    "uploadProgressInfo": "Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.",
+    "uploadProgressInfo": "Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser enviar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.",
     "uploadProgressRetrying": "Tentando upload novamente...",
     "uploadProgressCompleted": "Upload concluído com sucesso",
     "uploadProgressFailed": "Upload falhou",
