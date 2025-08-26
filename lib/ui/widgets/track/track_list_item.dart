@@ -112,7 +112,7 @@ class TrackListItem extends StatelessWidget {
             ),
           ),
         ),
-        _buildStatusIcon(context, localizations, theme),
+        // Don't show upload status icon when there are no geolocations
       ],
     );
   }
