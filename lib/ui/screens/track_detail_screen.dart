@@ -27,8 +27,13 @@ import 'package:intl/intl.dart';
 
 class TrackDetailScreen extends StatefulWidget {
   final TrackData track;
+  final VoidCallback? onTrackUploaded; // Add callback for track upload
 
-  const TrackDetailScreen({super.key, required this.track});
+  const TrackDetailScreen({
+    super.key,
+    required this.track,
+    this.onTrackUploaded, // Add parameter
+  });
 
   @override
   State<TrackDetailScreen> createState() => _TrackDetailScreenState();
@@ -438,6 +443,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           if (mounted) {
             // Refresh the track data to show updated status
             _loadTrackData();
+            widget.onTrackUploaded?.call(); // Call the callback
           }
         },
         onUploadFailed: () {

@@ -14,10 +14,12 @@ const double kMapPreviewHeight = 140;
 class TrackListItem extends StatelessWidget {
   final TrackData track;
   final Function onDismissed;
+  final VoidCallback? onTrackUpdated; // Add callback for track updates
 
   const TrackListItem({
     required this.track,
     required this.onDismissed,
+    this.onTrackUpdated, // Add parameter
     super.key,
   });
 
@@ -51,12 +53,19 @@ class TrackListItem extends StatelessWidget {
             onDismissed: (direction) => onDismissed(),
             child: hasGeolocations
                 ? ClickableTile(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TrackDetailScreen(track: track),
-                      ),
-                    ),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TrackDetailScreen(
+                            track: track,
+                            onTrackUploaded: onTrackUpdated, // Pass callback
+                          ),
+                        ),
+                      );
+                      // Refresh tracks when returning from track detail
+                      onTrackUpdated?.call();
+                    },
                     child: _buildTrackContent(
                         context, localizations, theme, track),
                   )
