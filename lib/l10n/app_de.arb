@@ -1,4 +1,7 @@
 {
+    "createBoxAddCustomTag": "Eigene Gruppentags hinzufügen",
+    "createBoxCustomTag": "Eigener Gruppentag",
+    "createBoxCustomTagHelper": "Du kannst Tags mit Kommas trennen",
     "@@locale": "de",
     "generalLoading": "Lädt...",
     "generalError": "Fehler",

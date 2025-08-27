@@ -1,4 +1,7 @@
 {
+    "createBoxAddCustomTag": "Add custom group tag",
+    "createBoxCustomTag": "Custom group tag",
+    "createBoxCustomTagHelper": "You can separate tags with commas",
     "@@locale": "en",
     "generalLoading": "Loading...",
     "generalError": "Error",

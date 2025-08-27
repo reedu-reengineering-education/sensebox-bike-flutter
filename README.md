@@ -98,4 +98,4 @@ If you run into issues while running the app, you can take the following trouble
 ## Add/remove campaign
 
 - Update the `/data/campaigns.json` file and ensure it is available on the main branch.
-- Check that you can see the new campaign when you create a new box. The new campaign should appear the next time you open the CreateBikeBoxDialog. If the new entry is not available, try restarting the application.
+- Check that you can see the new campaign when you create a new box. The new campaign should appear the next time you open the CreateBikeBoxModal. If the new entry is not available, try restarting the application.

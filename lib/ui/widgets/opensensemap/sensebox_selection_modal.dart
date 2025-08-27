@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/services/tag_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
-import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_dialog.dart';
+import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection.dart';
 
 void showSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
@@ -48,7 +48,7 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
             onPressed: () async {
               await _showCreateSenseBoxDialog(context, bloc);
             },
-            shape: const CircleBorder(), 
+            shape: const CircleBorder(),
             child: const Icon(Icons.add),
           ),
         ),
@@ -59,11 +59,13 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
 
 Future<void> _showCreateSenseBoxDialog(
     BuildContext context, OpenSenseMapBloc bloc) {
-  return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return CreateBikeBoxDialog(
-          tagService: TagService(),
-        );
-      });
+  return showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    enableDrag: false,
+    isDismissible: false,
+    builder: (context) {
+      return CreateBikeBoxModal(tagService: TagService());
+    },
+  );
 }

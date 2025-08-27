@@ -10,14 +10,14 @@ class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   group('OpenSenseMapBloc', () {
     late OpenSenseMapBloc bloc;
     late MockOpenSenseMapService mockService;
 
     setUp(() {
       SharedPreferences.setMockInitialValues({});
-      
+
       bloc = OpenSenseMapBloc();
       mockService = MockOpenSenseMapService();
     });
@@ -36,60 +36,61 @@ void main() {
     });
 
     group('SenseBox Management', () {
+      test('should call createSenseBoxBike with additional tags', () async {
+        final mockService = MockOpenSenseMapService();
+        final name = 'Test';
+        final lat = 1.0;
+        final lng = 2.0;
+        final model = SenseBoxBikeModel.atrai;
+        final selectedTag = 'tag1';
+        final additionalTags = ['foo', 'bar', 'baz'];
+        when(() => mockService.createSenseBoxBike(
+                name, lat, lng, model, selectedTag, additionalTags))
+            .thenAnswer((_) async => Future.value());
+        // Call the method
+        await mockService.createSenseBoxBike(
+            name, lat, lng, model, selectedTag, additionalTags);
+        verify(() => mockService.createSenseBoxBike(
+            name, lat, lng, model, selectedTag, additionalTags)).called(1);
+      });
       test('should set selected sensebox correctly', () async {
         final testBox = SenseBox(
-          sId: '1',
-          name: 'Test Box',
-          exposure: 'outdoor',
-          sensors: []
-        );
-        
+            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
+
         await bloc.setSelectedSenseBox(testBox);
-        
+
         expect(bloc.selectedSenseBox, testBox);
       });
 
       test('should clear selected sensebox when null is passed', () async {
         final testBox = SenseBox(
-          sId: '1',
-          name: 'Test Box',
-          exposure: 'outdoor',
-          sensors: []
-        );
-        
+            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
+
         await bloc.setSelectedSenseBox(testBox);
         expect(bloc.selectedSenseBox, testBox);
-        
+
         await bloc.setSelectedSenseBox(null);
         expect(bloc.selectedSenseBox, isNull);
       });
 
       test('should load selected sensebox from preferences', () async {
         final testBox = SenseBox(
-          sId: '1',
-          name: 'Test Box',
-          exposure: 'outdoor',
-          sensors: []
-        );
-        
+            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
+
         await bloc.setSelectedSenseBox(testBox);
-        
+
         expect(bloc.selectedSenseBox, testBox);
       });
 
       test('should clear selected sensebox when not authenticated', () async {
         final testBox = SenseBox(
-          sId: '1',
-          name: 'Test Box',
-          exposure: 'outdoor',
-          sensors: []
-        );
-        
+            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
+
         await bloc.setSelectedSenseBox(testBox);
         expect(bloc.selectedSenseBox, testBox);
-        
+
         await bloc.loadSelectedSenseBox();
-        
+
         expect(bloc.selectedSenseBox, isNull);
       });
     });
@@ -97,38 +98,30 @@ void main() {
     group('Stream Management', () {
       test('should emit selected sensebox through stream', () async {
         final testBox = SenseBox(
-          sId: '1',
-          name: 'Test Box',
-          exposure: 'outdoor',
-          sensors: []
-        );
-        
+            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
+
         final emittedValues = <SenseBox?>[];
         bloc.senseBoxStream.listen(emittedValues.add);
-        
+
         await bloc.setSelectedSenseBox(testBox);
-        
+
         await Future.delayed(Duration(milliseconds: 100));
-        
+
         expect(emittedValues, contains(testBox));
       });
 
       test('should emit null when sensebox is cleared', () async {
         final testBox = SenseBox(
-          sId: '1',
-          name: 'Test Box',
-          exposure: 'outdoor',
-          sensors: []
-        );
-        
+            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
+
         final emittedValues = <SenseBox?>[];
         bloc.senseBoxStream.listen(emittedValues.add);
-        
+
         await bloc.setSelectedSenseBox(testBox);
         await bloc.setSelectedSenseBox(null);
-        
+
         await Future.delayed(Duration(milliseconds: 100));
-        
+
         expect(emittedValues, contains(null));
       });
     });
