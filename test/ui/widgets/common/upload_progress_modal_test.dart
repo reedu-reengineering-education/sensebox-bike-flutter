@@ -99,10 +99,11 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300)); // Animation duration
 
-      // Assert - should now show progress
+      // Assert - should now show progress dialog (not confirmation dialog)
       expect(find.text('Upload Progress'), findsOneWidget);
       expect(find.text('Preparing upload...'), findsOneWidget);
-      expect(find.byType(UploadInfoWidget), findsOneWidget);
+      // UploadInfoWidget should NOT be shown in progress dialog, only in confirmation dialog
+      expect(find.byType(UploadInfoWidget), findsNothing);
     });
 
     testWidgets('should show progress updates', (WidgetTester tester) async {
