@@ -454,12 +454,33 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             );
           }
         },
-
+        onStartUpload: () async {
+          // Start the upload when user confirms
+          try {
+            await batchUploadService.uploadTrack(
+                _track, openSenseMapBloc.selectedSenseBox!);
+          } catch (e) {
+            setState(() => _isUploading = false);
+            // Show error message and refresh track data
+            if (mounted) {
+              // Refresh the track data to show any status changes
+              _loadTrackData();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(localizations.trackUploadRetryFailed),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+              );
+            }
+          }
+        },
+        onDismiss: () {
+          // User canceled the upload modal
+          setState(() => _isUploading = false);
+        },
       );
 
-      // Start the upload
-      await batchUploadService.uploadTrack(
-          _track, openSenseMapBloc.selectedSenseBox!);
+      // Don't start upload immediately - wait for user confirmation
     } catch (e) {
       setState(() => _isUploading = false);
       // Show error message and refresh track data
@@ -496,18 +517,24 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           GestureDetector(
             onTap: _isUploading ? null : _startUpload,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: _isUploading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(
-                      Icons.cloud_upload,
-                      size: 20,
-                      color: theme.colorScheme.onSurface,
-                    ),
+              constraints: const BoxConstraints(
+                minWidth: 48,
+                minHeight: 48,
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Center(
+                child: _isUploading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        Icons.cloud_upload,
+                        size: 24,
+                        color: theme.colorScheme.onSurface,
+                      ),
+              ),
             ),
           ),
         ExportButton(

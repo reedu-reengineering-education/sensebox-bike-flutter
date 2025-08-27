@@ -4,12 +4,13 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_indicator.dart';
-
+import 'package:sensebox_bike/ui/widgets/common/upload_info_widget.dart';
 
 /// A modal bottom sheet that displays upload progress in real-time.
 ///
 /// This modal slides up from the bottom when an upload starts and shows:
-/// - Real-time progress updates from BatchUploadService
+/// - First: Confirmation dialog asking if user wants to upload
+/// - Then: Real-time progress updates from BatchUploadService
 /// - Progress bar and percentage
 /// - Status messages (preparing, uploading, retrying, completed, failed)
 /// - Retry button for failed uploads
@@ -25,13 +26,19 @@ class UploadProgressModal extends StatefulWidget {
   /// Callback when upload fails permanently
   final VoidCallback? onUploadFailed;
 
+  /// Callback to start the upload (called when user confirms)
+  final VoidCallback? onStartUpload;
 
+  /// Callback when modal is dismissed (e.g., user cancels)
+  final VoidCallback? onDismiss;
 
   const UploadProgressModal({
     super.key,
     required this.batchUploadService,
     this.onUploadComplete,
     this.onUploadFailed,
+    this.onStartUpload,
+    this.onDismiss,
   });
 
   @override
@@ -41,6 +48,7 @@ class UploadProgressModal extends StatefulWidget {
 class _UploadProgressModalState extends State<UploadProgressModal> {
   late StreamSubscription<UploadProgress> _progressSubscription;
   UploadProgress? _currentProgress;
+  bool _hasStartedUpload = false;
 
   @override
   void initState() {
@@ -70,6 +78,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
     final currentProgress = widget.batchUploadService.currentProgress;
     if (currentProgress != null) {
       _onProgressUpdate(currentProgress);
+      _hasStartedUpload = true;
     }
   }
 
@@ -110,37 +119,94 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
     widget.onUploadFailed?.call();
   }
 
-
-
   void _handleDismiss() {
-    UploadProgressOverlay.hide();
+    widget.onDismiss?.call();
     Navigator.of(context).pop();
+    // Note: UploadProgressOverlay.hide() will be called automatically when the dialog is closed
+  }
+
+  void _handleStartUpload() {
+    setState(() {
+      _hasStartedUpload = true;
+    });
+    widget.onStartUpload?.call();
   }
 
   @override
   Widget build(BuildContext context) {
+    // If upload hasn't started yet, show confirmation dialog
+    if (!_hasStartedUpload) {
+      return WillPopScope(
+        onWillPop: () async {
+          // Call onDismiss when modal is closed through back button
+          widget.onDismiss?.call();
+          return true;
+        },
+        child: _buildConfirmationDialog(context),
+      );
+    }
+
+    // If upload has started, show progress
     final progress = _currentProgress;
     if (progress == null) {
       return const SizedBox.shrink();
     }
 
-    return _buildModalContent(context, progress);
+    return WillPopScope(
+      onWillPop: () async {
+        // Call onDismiss when modal is closed through back button
+        widget.onDismiss?.call();
+        return true;
+      },
+      child: _buildProgressDialog(context, progress),
+    );
   }
 
-  Widget _buildModalContent(BuildContext context, UploadProgress progress) {
+  Widget _buildConfirmationDialog(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    
+    return AlertDialog(
+      title: Text(AppLocalizations.of(context)!.uploadProgressTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(localizations.uploadConfirmMessage),
+          const SizedBox(height: 16),
+          const UploadInfoWidget(),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _handleDismiss,
+          child: Text(localizations.generalCancel),
+        ),
+        FilledButton(
+          onPressed: _handleStartUpload,
+          child: Text(localizations.generalUpload),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressDialog(BuildContext context, UploadProgress progress) {
     return AlertDialog(
       title: Text(AppLocalizations.of(context)!.uploadProgressTitle),
       contentPadding: EdgeInsets.zero,
-      content: UploadProgressIndicator(
-        progress: progress,
-        compact: false,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          UploadProgressIndicator(
+            progress: progress,
+            compact: false,
+          ),
+        ],
       ),
       actions: _buildActions(context, progress),
     );
   }
 
   List<Widget> _buildActions(BuildContext context, UploadProgress progress) {
-
     switch (progress.status) {
       case UploadStatus.preparing:
       case UploadStatus.uploading:
@@ -182,6 +248,8 @@ class UploadProgressOverlay {
     required BatchUploadService batchUploadService,
     VoidCallback? onUploadComplete,
     VoidCallback? onUploadFailed,
+    VoidCallback? onStartUpload,
+    VoidCallback? onDismiss,
   }) {
     if (_isShown) return;
 
@@ -197,6 +265,8 @@ class UploadProgressOverlay {
           onUploadComplete?.call();
         },
         onUploadFailed: onUploadFailed,
+        onStartUpload: onStartUpload,
+        onDismiss: onDismiss,
       ),
     );
   }

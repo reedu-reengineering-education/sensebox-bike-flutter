@@ -44,6 +44,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalClose => 'Schließen';
 
   @override
+  String get generalUpload => 'Hochladen';
+
+  @override
   String get generalPrivacyZones => 'Privatzonen';
 
   @override
@@ -540,6 +543,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get uploadProgressGenericError => 'Upload fehlgeschlagen. Bitte versuchen Sie es erneut.';
+
+  @override
+  String get uploadConfirmTitle => 'Track-Daten hochladen';
+
+  @override
+  String get uploadConfirmMessage => 'Möchten Sie Ihre Track-Daten jetzt oder später hochladen?';
+
+  @override
+  String get uploadConfirmUploadNow => 'Jetzt hochladen';
 
   @override
   String get trackStatusUploaded => 'Hochgeladen';

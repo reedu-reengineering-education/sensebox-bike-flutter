@@ -19,6 +19,7 @@
     "generalEdit": "Editar",
     "generalAdd": "Adicionar",
     "generalClose": "Fechar",
+    "generalUpload": "Enviar",
     "generalPrivacyZones": "Áreas de Privacidade",
     "generalSettings": "Configurações",
     "generalShare": "Compartilhar",
@@ -234,6 +235,9 @@
     "uploadProgressAuthenticationError": "Por favor, faça login para enviar dados.",
     "uploadProgressNetworkError": "Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.",
     "uploadProgressGenericError": "Upload falhou. Tente novamente.",
+    "uploadConfirmTitle": "Enviar Dados do Trajeto",
+    "uploadConfirmMessage": "Gostaria de enviar os dados do seu trajeto agora ou mais tarde?",
+    "uploadConfirmUploadNow": "Enviar agora",
     "trackStatusUploaded": "Enviado",
     "trackStatusUploadedAt": "Enviado em {date}",
     "@trackStatusUploadedAt": {

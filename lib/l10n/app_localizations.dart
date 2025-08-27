@@ -163,6 +163,12 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get generalClose;
 
+  /// No description provided for @generalUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get generalUpload;
+
   /// No description provided for @generalPrivacyZones.
   ///
   /// In en, this message translates to:
@@ -1098,6 +1104,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upload failed. Please try again.'**
   String get uploadProgressGenericError;
+
+  /// No description provided for @uploadConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Track Data'**
+  String get uploadConfirmTitle;
+
+  /// No description provided for @uploadConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Would you like to upload your track data now?'**
+  String get uploadConfirmMessage;
+
+  /// No description provided for @uploadConfirmUploadNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get uploadConfirmUploadNow;
 
   /// No description provided for @trackStatusUploaded.
   ///

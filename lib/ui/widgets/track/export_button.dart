@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_options_dialog.dart';
-import 'package:sensebox_bike/theme.dart';
 
 class ExportButton extends StatelessWidget {
   final bool isDownloading;
@@ -31,16 +30,22 @@ class ExportButton extends StatelessWidget {
               );
             },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: isDownloading
-            ? Loader(light: true)
-            : Icon(
-                Icons.file_download,
-                size: 20,
-                color: isDisabled
-                    ? theme.colorScheme.onSurface.withOpacity(0.38)
-                    : theme.colorScheme.onSurface,
-              ),
+        constraints: const BoxConstraints(
+          minWidth: 48,
+          minHeight: 48,
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Center(
+          child: isDownloading
+              ? Loader(light: true)
+              : Icon(
+                  Icons.file_download,
+                  size: 24,
+                  color: isDisabled
+                      ? theme.colorScheme.onSurface.withOpacity(0.38)
+                      : theme.colorScheme.onSurface,
+                ),
+        ),
       ),
     );
   }

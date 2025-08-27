@@ -44,6 +44,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generalClose => 'Fechar';
 
   @override
+  String get generalUpload => 'Enviar';
+
+  @override
   String get generalPrivacyZones => 'Áreas de Privacidade';
 
   @override
@@ -540,6 +543,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get uploadProgressGenericError => 'Upload falhou. Tente novamente.';
+
+  @override
+  String get uploadConfirmTitle => 'Enviar Dados do Trajeto';
+
+  @override
+  String get uploadConfirmMessage => 'Gostaria de enviar os dados do seu trajeto agora ou mais tarde?';
+
+  @override
+  String get uploadConfirmUploadNow => 'Enviar agora';
 
   @override
   String get trackStatusUploaded => 'Enviado';

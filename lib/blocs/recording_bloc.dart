@@ -158,6 +158,8 @@ class RecordingBloc with ChangeNotifier {
         _context != null) {
       // Show upload progress modal
       _showUploadProgressModal(trackToUpload, senseBoxForUpload);
+
+      // Don't start upload immediately - wait for user confirmation
     } else {
       // Clean up BatchUploadService if not uploading
       _batchUploadService?.dispose();
@@ -193,10 +195,13 @@ class RecordingBloc with ChangeNotifier {
           // Upload failed permanently
           debugPrint('[RecordingBloc] Batch upload failed permanently');
         },
+        onStartUpload: () {
+          // Start the upload when user confirms
+          _startBatchUpload(track, senseBox);
+        },
       );
 
-      // Start the upload
-      _startBatchUpload(track, senseBox);
+      // Don't start upload immediately - wait for user confirmation
     } catch (e, stack) {
       debugPrint('[RecordingBloc] Error showing upload modal: $e');
       ErrorService.handleError(e, stack);

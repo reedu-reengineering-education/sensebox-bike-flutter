@@ -19,6 +19,7 @@
     "generalEdit": "Edit",
     "generalAdd": "Add",
     "generalClose": "Close",
+    "generalUpload": "Upload",
     "generalPrivacyZones": "Privacy Zones",
     "generalSettings": "Settings",
     "generalShare": "Share",
@@ -234,6 +235,9 @@
     "uploadProgressAuthenticationError": "Please log in to upload data.",
     "uploadProgressNetworkError": "Network connection failed. Please check your internet connection and try again.",
     "uploadProgressGenericError": "Upload failed. Please try again.",
+    "uploadConfirmTitle": "Upload Track Data",
+    "uploadConfirmMessage": "Would you like to upload your track data now?",
+    "uploadConfirmUploadNow": "Upload",
     "trackStatusUploaded": "Uploaded",
     "trackStatusUploadedAt": "Uploaded on {date}",
     "@trackStatusUploadedAt": {

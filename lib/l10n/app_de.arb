@@ -19,6 +19,7 @@
     "generalEdit": "Bearbeiten",
     "generalAdd": "Hinzufügen",
     "generalClose": "Schließen",
+    "generalUpload": "Hochladen",
     "generalPrivacyZones": "Privatzonen",
     "generalSettings": "Einstellungen",
     "generalShare": "Teilen",
@@ -234,6 +235,9 @@
     "uploadProgressAuthenticationError": "Bitte melden Sie sich an, um Daten hochzuladen.",
     "uploadProgressNetworkError": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
     "uploadProgressGenericError": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "uploadConfirmTitle": "Track-Daten hochladen",
+    "uploadConfirmMessage": "Möchten Sie Ihre Track-Daten jetzt oder später hochladen?",
+    "uploadConfirmUploadNow": "Jetzt hochladen",
     "trackStatusUploaded": "Hochgeladen",
     "trackStatusUploadedAt": "Hochgeladen am {date}",
     "@trackStatusUploadedAt": {

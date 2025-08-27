@@ -44,6 +44,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalClose => 'Close';
 
   @override
+  String get generalUpload => 'Upload';
+
+  @override
   String get generalPrivacyZones => 'Privacy Zones';
 
   @override
@@ -540,6 +543,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uploadProgressGenericError => 'Upload failed. Please try again.';
+
+  @override
+  String get uploadConfirmTitle => 'Upload Track Data';
+
+  @override
+  String get uploadConfirmMessage => 'Would you like to upload your track data now?';
+
+  @override
+  String get uploadConfirmUploadNow => 'Upload';
 
   @override
   String get trackStatusUploaded => 'Uploaded';
