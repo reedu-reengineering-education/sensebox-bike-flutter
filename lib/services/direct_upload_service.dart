@@ -145,16 +145,13 @@ class DirectUploadService {
     
     _isEnabled = true;
     _isPermanentlyDisabled = false;
+    _isUploadDisabled = false; // Reset upload flag
     
     _resetRestartAttempts();
     _clearAllBuffersForNewRecording();
-    
-    // DirectUploadService is only created when direct upload mode is enabled
-    // so we can always enable uploads here
-    _isUploadDisabled = false;
     _startPeriodicUploadCheck();
 
-    debugPrint('[DirectUploadService] Service enabled for direct upload mode');
+    debugPrint('[DirectUploadService] Service enabled, restart attempts reset');
   }
 
   void disable() {
@@ -182,7 +179,6 @@ class DirectUploadService {
   bool get hasPreservedData => _accumulatedSensorData.isNotEmpty;
   bool get hasPendingRestartTimer => _restartTimer != null;
 
-
   void setUploadSuccessCallback(Function(List<GeolocationData>) callback) {
     _onUploadSuccess = callback;
   }
@@ -209,8 +205,7 @@ class DirectUploadService {
 
     final bool shouldUpload = _accumulatedSensorData.length >= 6; 
 
-    // Only attempt upload if service is enabled and not disabled
-    if (shouldUpload && !_isUploadDisabled) {
+    if (shouldUpload) {
       _prepareAndUploadData(gpsBuffer);
     }
     
@@ -224,11 +219,6 @@ class DirectUploadService {
 
     // Don't prepare data if service is permanently disabled
     if (_isPermanentlyDisabled) {
-      return;
-    }
-
-    // Don't prepare data for upload if service is disabled
-    if (_isUploadDisabled) {
       return;
     }
 
@@ -340,11 +330,6 @@ class DirectUploadService {
 
     // Don't attempt uploads if service is permanently disabled
     if (_isPermanentlyDisabled) {
-      return;
-    }
-
-    // Don't attempt uploads if service is disabled
-    if (_isUploadDisabled) {
       return;
     }
 
@@ -585,21 +570,6 @@ class DirectUploadService {
     _uploadTimer = Timer.periodic(Duration(seconds: 10), (_) async {
       // Don't run periodic checks if service is permanently disabled
       if (_isPermanentlyDisabled) {
-        return;
-      }
-      // Don't run periodic checks if service is disabled
-      if (_isUploadDisabled) {
-        return;
-      }
-      
-      // NEW: Check if we're actually authenticated before attempting upload
-      if (!openSenseMapBloc.isAuthenticated) {
-        // This is a critical authentication error - disable the service permanently
-        if (!_isPermanentlyDisabled) {
-          _handlePermanentAuthenticationError(
-                  Exception('User not authenticated'), StackTrace.current)
-              .catchError((e) {});
-        }
         return;
       }
       
