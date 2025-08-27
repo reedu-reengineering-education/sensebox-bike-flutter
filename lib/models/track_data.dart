@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:isar/isar.dart';
+import 'package:sensebox_bike/utils/distance_calculation_utils.dart';
 import 'package:sensebox_bike/utils/geo_utils.dart';
 import 'package:simplify/simplify.dart';
 
@@ -43,11 +44,8 @@ class TrackData {
 
   @ignore
   String get encodedPolyline {
-    // Convert geolocations to a list of Point<double>
-    final List<Point<double>> coordinates = geolocations
-        .map(
-            (geolocation) => Point(geolocation.latitude, geolocation.longitude))
-        .toList();
+    final List<Point<double>> coordinates =
+        convertToSimplifyPoints(geolocations.toList());
 
     if (coordinates.isEmpty) {
       return "";
