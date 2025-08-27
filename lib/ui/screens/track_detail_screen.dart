@@ -44,6 +44,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   List<GeolocationData> _geolocations = [];
   List<SensorData> _sensorData = [];
   bool _isLoading = true;
+  // Local track data that can be updated
+  late TrackData _track;
 
   _TrackDetailScreenState();
 
@@ -52,6 +54,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     super.initState();
     isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
     openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+
+    // Initialize local track data
+    _track = widget.track;
 
     // Initialize batch upload service
     batchUploadService = BatchUploadService(
@@ -73,7 +78,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     final localizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    if (widget.track.uploaded || widget.track.uploadAttempts == 0) {
+    if (_track.uploaded || _track.uploadAttempts == 0) {
       // If uploaded, show only status icon (not collapsible)
       return Padding(
         padding:
@@ -145,9 +150,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   Color _getStatusColor(ThemeData theme) {
-    if (widget.track.uploaded) {
+    if (_track.uploaded) {
       return theme.colorScheme.success;
-    } else if (widget.track.uploadAttempts > 0) {
+    } else if (_track.uploadAttempts > 0) {
       return theme.colorScheme.error;
     } else {
       return theme.colorScheme.outline;
@@ -155,9 +160,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   IconData _getStatusIcon() {
-    if (widget.track.uploaded) {
+    if (_track.uploaded) {
       return Icons.cloud_done;
-    } else if (widget.track.uploadAttempts > 0) {
+    } else if (_track.uploadAttempts > 0) {
       return Icons.cloud_off;
     } else {
       return Icons.cloud_upload;
@@ -165,10 +170,10 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   String _getStatusText(AppLocalizations localizations) {
-    if (widget.track.uploaded) {
+    if (_track.uploaded) {
       return localizations.trackStatusUploadedAt(DateFormat('dd.MM.yyyy HH:mm')
-          .format(widget.track.lastUploadAttempt ?? DateTime.now()));
-    } else if (widget.track.uploadAttempts > 0) {
+          .format(_track.lastUploadAttempt ?? DateTime.now()));
+    } else if (_track.uploadAttempts > 0) {
       return localizations.trackStatusUploadFailed;
     } else {
       return localizations.trackStatusNotUploaded;
@@ -182,26 +187,26 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (widget.track.uploadAttempts > 0) ...[
+        if (_track.uploadAttempts > 0) ...[
           _buildDetailRow(
             icon: Icons.refresh,
             label: 'Upload attempts',
-            value: widget.track.uploadAttempts.toString(),
+            value: _track.uploadAttempts.toString(),
             theme: theme,
           ),
           const SizedBox(height: spacing / 4),
         ],
-        if (widget.track.lastUploadAttempt != null) ...[
+        if (_track.lastUploadAttempt != null) ...[
           _buildDetailRow(
             icon: Icons.schedule,
             label: 'Last attempt',
             value: DateFormat('dd.MM.yyyy HH:mm')
-                .format(widget.track.lastUploadAttempt!),
+                .format(_track.lastUploadAttempt!),
             theme: theme,
           ),
           const SizedBox(height: spacing / 4),
         ],
-        if (widget.track.uploaded) ...[
+        if (_track.uploaded) ...[
           _buildDetailRow(
             icon: Icons.check_circle,
             label: 'Status',
@@ -209,7 +214,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             theme: theme,
             valueColor: theme.colorScheme.success,
           ),
-        ] else if (widget.track.uploadAttempts > 0) ...[
+        ] else if (_track.uploadAttempts > 0) ...[
           _buildDetailRow(
             icon: Icons.error,
             label: 'Status',
@@ -265,8 +270,18 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   Future<void> _loadTrackData() async {
     try {
+      // Refresh track metadata from database to get updated upload status
+      final refreshedTrack =
+          await isarService.trackService.getTrackById(_track.id);
+      if (refreshedTrack != null) {
+        // Update the local _track with fresh data
+        _track.uploaded = refreshedTrack.uploaded;
+        _track.uploadAttempts = refreshedTrack.uploadAttempts;
+        _track.lastUploadAttempt = refreshedTrack.lastUploadAttempt;
+      }
+
       final geolocations = await isarService.geolocationService
-          .getGeolocationDataWithPreloadedSensors(widget.track.id);
+          .getGeolocationDataWithPreloadedSensors(_track.id);
       setState(() {
         _geolocations = geolocations;
         _sensorData = getAllUniqueSensorData(geolocations);
@@ -363,9 +378,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
       if (isOpenSourceMapCompatible) {
         csvFilePath = await isarService
-            .exportTrackToCsvInOpenSenseMapFormat(widget.track.id);
+            .exportTrackToCsvInOpenSenseMapFormat(_track.id);
       } else {
-        csvFilePath = await isarService.exportTrackToCsv(widget.track.id);
+        csvFilePath = await isarService.exportTrackToCsv(_track.id);
       }
 
       // if android, save to external storage
@@ -422,13 +437,15 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           setState(() => _isUploading = false);
           if (mounted) {
             // Refresh the track data to show updated status
-            setState(() {});
+            _loadTrackData();
           }
         },
         onUploadFailed: () {
           // Upload failed permanently
           setState(() => _isUploading = false);
           if (mounted) {
+            // Refresh the track data to show updated error status and upload attempts
+            _loadTrackData();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(localizations.trackUploadRetryFailed),
@@ -442,11 +459,13 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
       // Start the upload
       await batchUploadService.uploadTrack(
-          widget.track, openSenseMapBloc.selectedSenseBox!);
+          _track, openSenseMapBloc.selectedSenseBox!);
     } catch (e) {
       setState(() => _isUploading = false);
-      // Show error message
+      // Show error message and refresh track data
       if (mounted) {
+        // Refresh the track data to show any status changes
+        _loadTrackData();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(localizations.trackUploadRetryFailed),
@@ -510,7 +529,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: _buildAppBarTitle(widget.track)),
+        appBar: AppBar(title: _buildAppBarTitle(_track)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -518,7 +537,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
 
     return Scaffold(
-      appBar: AppBar(title: _buildAppBarTitle(widget.track)),
+      appBar: AppBar(title: _buildAppBarTitle(_track)),
       body: SafeArea(
         minimum: const EdgeInsets.only(bottom: 8),
         child: Column(
