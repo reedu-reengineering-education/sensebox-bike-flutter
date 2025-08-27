@@ -461,52 +461,47 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
 
   Widget _buildAppBarTitle(TrackData track) {
-    String errorMessage = AppLocalizations.of(context)!.trackDetailsNoData;
     final theme = Theme.of(context);
 
     return Row(
       children: [
         Text(
-          trackName(track, errorMessage: errorMessage),
+          trackName(track),
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
           ),
         ),
         const Spacer(),
-        // Only show buttons if track has geolocations
-        if (_geolocations.isNotEmpty) ...[
-          // Upload button - only show if track hasn't been uploaded
-          if (!track.uploaded)
-            GestureDetector(
-              onTap: _isUploading ? null : _startUpload,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                child: _isUploading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Icon(
-                        Icons.cloud_upload,
-                        size: 20,
-                        color: theme.colorScheme.onSurface,
-                      ),
-              ),
+        // Upload button - only show if track hasn't been uploaded
+        if (!track.uploaded)
+          GestureDetector(
+            onTap: _isUploading ? null : _startUpload,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: _isUploading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      Icons.cloud_upload,
+                      size: 20,
+                      color: theme.colorScheme.onSurface,
+                    ),
             ),
-          ExportButton(
-            isDisabled: false,
-            isDownloading: _isDownloading,
-            onExport: (selectedFormat) async {
-              if (selectedFormat == 'regular') {
-                await _exportTrackToCsv();
-              } else if (selectedFormat == 'openSenseMap') {
-                await _exportTrackToCsv(isOpenSourceMapCompatible: true);
-              }
-            },
           ),
-        ],
+        ExportButton(
+          isDisabled: false,
+          isDownloading: _isDownloading,
+          onExport: (selectedFormat) async {
+            if (selectedFormat == 'regular') {
+              await _exportTrackToCsv();
+            } else if (selectedFormat == 'openSenseMap') {
+              await _exportTrackToCsv(isOpenSourceMapCompatible: true);
+            }
+          },
+        ),
       ],
     );
   }
@@ -520,19 +515,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       );
     }
 
-    if (_geolocations.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: _buildAppBarTitle(widget.track)),
-        body: Center(
-          child: Text(AppLocalizations.of(context)!.trackDetailsNoData),
-        ),
-      );
-    }
 
-    final minSensorValue =
-        getMinSensorValue(_geolocations, _sensorType).toStringAsFixed(1);
-    final maxSensorValue =
-        getMaxSensorValue(_geolocations, _sensorType).toStringAsFixed(1);
 
     return Scaffold(
       appBar: AppBar(title: _buildAppBarTitle(widget.track)),
@@ -573,9 +556,11 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                             tileMode: TileMode.mirror,
                           ))),
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Text(minSensorValue),
+                    Text(getMinSensorValue(_geolocations, _sensorType)
+                        .toStringAsFixed(1)),
                     const Spacer(),
-                    Text(maxSensorValue)
+                    Text(getMaxSensorValue(_geolocations, _sensorType)
+                        .toStringAsFixed(1))
                   ])
                 ])),
             SensorTileList(
@@ -586,7 +571,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                   _sensorType = type;
                 });
               },
-            )
+            ),
           ],
         ),
       ),

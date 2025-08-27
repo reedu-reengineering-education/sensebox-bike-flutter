@@ -133,7 +133,7 @@
     "trackDetailsPermissionsError": "Permissão negada para salvar o arquivo no armazenamento externo.",
     "trackDetailsFileSaved": "Arquivo CSV salvo na pasta Downloads.",
     "trackDetailsExport": "Exportação de dados do trajeto em CSV.",
-    "trackDetailsNoData": "Nenhum dado disponível.",
+  
     "trackDetailsLoadingError": "Erro ao carregar o trajeto.",
     "trackDetailsNoTrackData": "Nenhum trajeto disponível.",
     "trackDelete": "Excluir Trajeto",

@@ -282,9 +282,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackDetailsExport => 'Exportação de dados do trajeto em CSV.';
 
   @override
-  String get trackDetailsNoData => 'Nenhum dado disponível.';
-
-  @override
   String get trackDetailsLoadingError => 'Erro ao carregar o trajeto.';
 
   @override

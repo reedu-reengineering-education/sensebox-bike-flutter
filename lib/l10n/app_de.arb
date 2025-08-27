@@ -133,7 +133,7 @@
     "trackDetailsPermissionsError": "Keine Berechtigung zum Speichern der Datei auf externem Speicher.",
     "trackDetailsFileSaved": "Die CSV-Datei wird im Ordner Downloads gespeichert.",
     "trackDetailsExport": "CSV-Export von Trackdaten.",
-    "trackDetailsNoData": "Daten nicht verfügbar.",
+  
     "trackDetailsLoadingError": "Fehler beim Laden des Tracks.",
     "trackDetailsNoTrackData": "Kein Track verfügbar.",
     "trackDelete": "Track löschen",

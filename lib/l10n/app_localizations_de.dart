@@ -282,9 +282,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackDetailsExport => 'CSV-Export von Trackdaten.';
 
   @override
-  String get trackDetailsNoData => 'Daten nicht verfügbar.';
-
-  @override
   String get trackDetailsLoadingError => 'Fehler beim Laden des Tracks.';
 
   @override

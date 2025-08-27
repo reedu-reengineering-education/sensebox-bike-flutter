@@ -601,12 +601,6 @@ abstract class AppLocalizations {
   /// **'Track data CSV export.'**
   String get trackDetailsExport;
 
-  /// No description provided for @trackDetailsNoData.
-  ///
-  /// In en, this message translates to:
-  /// **'No data available.'**
-  String get trackDetailsNoData;
-
   /// No description provided for @trackDetailsLoadingError.
   ///
   /// In en, this message translates to:

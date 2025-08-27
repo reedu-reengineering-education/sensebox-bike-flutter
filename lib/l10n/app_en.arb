@@ -133,7 +133,7 @@
     "trackDetailsPermissionsError": "Permission denied to save file to external storage.",
     "trackDetailsFileSaved": "CSV file saved to Downloads folder.",
     "trackDetailsExport": "Track data CSV export.",
-    "trackDetailsNoData": "No data available.",
+  
     "trackDetailsLoadingError": "Error loading track.",
     "trackDetailsNoTrackData": "No track available.",
     "trackDelete": "Delete Track",

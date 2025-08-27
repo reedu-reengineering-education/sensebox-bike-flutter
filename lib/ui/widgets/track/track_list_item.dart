@@ -49,17 +49,27 @@ class TrackListItem extends StatelessWidget {
             confirmDismiss: (direction) =>
                 _confirmDismiss(context, localizations, theme),
             onDismissed: (direction) => onDismissed(),
-            child: ClickableTile(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TrackDetailScreen(track: track),
-                ),
-              ),
-              child: hasGeolocations
-                  ? _buildTrackContent(context, localizations, theme, track)
-                  : _buildNoGeolocationsContent(context, localizations, theme),
-            )));
+            child: hasGeolocations
+                ? ClickableTile(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TrackDetailScreen(track: track),
+                      ),
+                    ),
+                    child: _buildTrackContent(
+                        context, localizations, theme, track),
+                  )
+                : Container(
+                    padding: const EdgeInsets.all(spacing * 2),
+                    child: Row(
+                      children: [
+                        Expanded(
+                            child: _buildNoGeolocationsContent(
+                                context, localizations, theme))
+                      ],
+                    ),
+                  )));
   }
 
   Widget _buildDismissBackground(ThemeData theme) {
