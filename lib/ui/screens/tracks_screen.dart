@@ -22,7 +22,7 @@ class TracksScreen extends StatefulWidget {
   State<TracksScreen> createState() => TracksScreenState();
 }
 
-class TracksScreenState extends State<TracksScreen> {
+class TracksScreenState extends State<TracksScreen> with RouteAware {
   late IsarService _isarService;
   late RecordingBloc _recordingBloc;
   late OpenSenseMapBloc _openSenseMapBloc;
@@ -61,6 +61,14 @@ class TracksScreenState extends State<TracksScreen> {
     _recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
 
     _fetchInitialTracks();
+  }
+
+  @override
+  void didPopNext() {
+    // Refresh tracks when returning from another screen (e.g., track detail)
+    if (mounted) {
+      _handleRefresh();
+    }
   }
 
   @override
