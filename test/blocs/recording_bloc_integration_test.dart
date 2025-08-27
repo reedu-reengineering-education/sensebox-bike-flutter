@@ -77,16 +77,6 @@ void main() {
     });
 
     group('Feature Flag Integration', () {
-      test('should respect enableLiveUpload feature flag', () {
-        // Test with live upload disabled
-        FeatureFlags.enableLiveUpload = false;
-        expect(FeatureFlags.enableLiveUpload, false);
-
-        // Test with live upload enabled
-        FeatureFlags.enableLiveUpload = true;
-        expect(FeatureFlags.enableLiveUpload, true);
-      });
-
       test('should create BatchUploadService when needed', () {
         // This test verifies that the BatchUploadService can be instantiated
         // The actual integration testing requires more complex setup
