@@ -116,6 +116,10 @@
             }
         }
     },
+    "settingsUploadModePostRideTitle": "Daten nach Beendigung der Aufzeichnung hochladen",
+    "settingsUploadModePostRideDescription": "• Daten werden lokal während der Aufzeichnung gespeichert\n• Upload erfolgt auf einmal beim Beenden\n• Zuverlässiger und stabiler\n• Verbraucht weniger Akku während der Aufzeichnung",
+    "settingsUploadModeDirectTitle": "Daten in Echtzeit während der Aufzeichnung hochladen (experimentell)",
+    "settingsUploadModeDirectDescription": "• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen",
     "settingsAbout": "Über die App",
     "settingsPrivacyPolicy": "Datenschutz",
     "settingsVersion": "Version: {versionNumber}",

@@ -116,6 +116,10 @@
             }
         }
     },
+    "settingsUploadModePostRideTitle": "Enviar dados após o término da gravação",
+    "settingsUploadModePostRideDescription": "• Os dados são armazenados localmente durante a gravação\n• O envio acontece de uma vez quando você terminar\n• Mais confiável e estável\n• Consome menos bateria durante a gravação",
+    "settingsUploadModeDirectTitle": "Enviar dados em tempo real durante a gravação (experimental)",
+    "settingsUploadModeDirectDescription": "• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação",
     "settingsAbout": "Sobre",
     "settingsPrivacyPolicy": "Política de Privacidade",
     "settingsVersion": "Versão: {versionNumber}",

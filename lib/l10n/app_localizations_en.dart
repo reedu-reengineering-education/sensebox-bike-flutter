@@ -250,6 +250,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsUploadModePostRideTitle => 'Upload data after recording stops';
+
+  @override
+  String get settingsUploadModePostRideDescription => '• Data is stored locally during recording\n• Upload happens all at once when you finish\n• More reliable and stable\n• Uses less battery during recording';
+
+  @override
+  String get settingsUploadModeDirectTitle => 'Upload data in real-time during recording (experimental)';
+
+  @override
+  String get settingsUploadModeDirectDescription => '• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording';
+
+  @override
   String get settingsAbout => 'About';
 
   @override

@@ -250,6 +250,18 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get settingsUploadModePostRideTitle => 'Enviar dados após o término da gravação';
+
+  @override
+  String get settingsUploadModePostRideDescription => '• Os dados são armazenados localmente durante a gravação\n• O envio acontece de uma vez quando você terminar\n• Mais confiável e estável\n• Consome menos bateria durante a gravação';
+
+  @override
+  String get settingsUploadModeDirectTitle => 'Enviar dados em tempo real durante a gravação (experimental)';
+
+  @override
+  String get settingsUploadModeDirectDescription => '• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação';
+
+  @override
   String get settingsAbout => 'Sobre';
 
   @override

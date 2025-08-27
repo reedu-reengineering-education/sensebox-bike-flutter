@@ -250,6 +250,18 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get settingsUploadModePostRideTitle => 'Daten nach Beendigung der Aufzeichnung hochladen';
+
+  @override
+  String get settingsUploadModePostRideDescription => '• Daten werden lokal während der Aufzeichnung gespeichert\n• Upload erfolgt auf einmal beim Beenden\n• Zuverlässiger und stabiler\n• Verbraucht weniger Akku während der Aufzeichnung';
+
+  @override
+  String get settingsUploadModeDirectTitle => 'Daten in Echtzeit während der Aufzeichnung hochladen (experimentell)';
+
+  @override
+  String get settingsUploadModeDirectDescription => '• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen';
+
+  @override
   String get settingsAbout => 'Über die App';
 
   @override

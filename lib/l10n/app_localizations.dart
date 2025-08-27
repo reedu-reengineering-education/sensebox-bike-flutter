@@ -541,6 +541,30 @@ abstract class AppLocalizations {
   /// **'Current: {mode}'**
   String settingsUploadModeCurrent(String mode);
 
+  /// No description provided for @settingsUploadModePostRideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload data after recording stops'**
+  String get settingsUploadModePostRideTitle;
+
+  /// No description provided for @settingsUploadModePostRideDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'• Data is stored locally during recording\n• Upload happens all at once when you finish\n• More reliable and stable\n• Uses less battery during recording'**
+  String get settingsUploadModePostRideDescription;
+
+  /// No description provided for @settingsUploadModeDirectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload data in real-time during recording (experimental)'**
+  String get settingsUploadModeDirectTitle;
+
+  /// No description provided for @settingsUploadModeDirectDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording'**
+  String get settingsUploadModeDirectDescription;
+
   /// No description provided for @settingsAbout.
   ///
   /// In en, this message translates to:
