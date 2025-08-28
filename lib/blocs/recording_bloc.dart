@@ -98,7 +98,7 @@ class RecordingBloc with ChangeNotifier {
 
     _isRecording = true;
     _isRecordingNotifier.value = true;
-    await trackBloc.startNewTrack();
+    await trackBloc.startNewTrack(isDirectUpload: settingsBloc.directUploadMode);
 
     _currentTrack = trackBloc.currentTrack;
 

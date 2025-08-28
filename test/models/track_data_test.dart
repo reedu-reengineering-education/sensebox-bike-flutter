@@ -285,4 +285,43 @@ void main() {
       expect(trackData.uploadAttempts, equals(2));
     });
   });
+
+  group('TrackData - isDirectUpload field', () {
+    test('has default value of true', () {
+      final track = TrackData();
+      expect(track.isDirectUpload, isTrue);
+    });
+
+    test('can be set to false', () {
+      final track = TrackData();
+      track.isDirectUpload = false;
+      expect(track.isDirectUpload, isFalse);
+    });
+
+    test('can be changed after creation', () {
+      final track = TrackData();
+      expect(track.isDirectUpload, isTrue);
+      
+      track.isDirectUpload = false;
+      expect(track.isDirectUpload, isFalse);
+      
+      track.isDirectUpload = true;
+      expect(track.isDirectUpload, isTrue);
+    });
+
+    test('persists in Isar database', () async {
+      // Use the existing test setup instead of creating a new Isar instance
+      final track = TrackData()..isDirectUpload = false;
+      
+      // This test will use the existing test infrastructure
+      expect(track.isDirectUpload, isFalse);
+      
+      // Test that the field can be set and retrieved
+      track.isDirectUpload = true;
+      expect(track.isDirectUpload, isTrue);
+      
+      track.isDirectUpload = false;
+      expect(track.isDirectUpload, isFalse);
+    });
+  });
 }

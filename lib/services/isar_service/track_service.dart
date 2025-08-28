@@ -93,7 +93,9 @@ class TrackService {
         // If the last track is unuploaded, we need to skip it
         // Get all tracks, filter unuploaded ones, then apply pagination
         final allTracks = await isar.trackDatas.where().findAll();
-        final unuploadedTracks = allTracks.where((track) => !track.uploaded).toList();
+        final unuploadedTracks = allTracks
+            .where((track) => !track.uploaded && !track.isDirectUpload)
+            .toList();
         
         // Sort by ID in descending order (newest first)
         unuploadedTracks.sort((a, b) => b.id.compareTo(a.id));
@@ -107,7 +109,9 @@ class TrackService {
       } else {
         // Last track is uploaded or doesn't exist, no need to skip
         final allTracks = await isar.trackDatas.where().findAll();
-        final unuploadedTracks = allTracks.where((track) => !track.uploaded).toList();
+        final unuploadedTracks = allTracks
+            .where((track) => !track.uploaded && !track.isDirectUpload)
+            .toList();
         
         // Sort by ID in descending order (newest first)
         unuploadedTracks.sort((a, b) => b.id.compareTo(a.id));
@@ -119,7 +123,9 @@ class TrackService {
     } else {
       // No need to skip last track
       final allTracks = await isar.trackDatas.where().findAll();
-      final unuploadedTracks = allTracks.where((track) => !track.uploaded).toList();
+      final unuploadedTracks = allTracks
+          .where((track) => !track.uploaded && !track.isDirectUpload)
+          .toList();
       
       // Sort by ID in descending order (newest first)
       unuploadedTracks.sort((a, b) => b.id.compareTo(a.id));

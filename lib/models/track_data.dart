@@ -21,6 +21,10 @@ class TrackData {
   int uploadAttempts = 0;
   DateTime? lastUploadAttempt;
 
+  // Direct upload tracking
+  @Index()
+  bool isDirectUpload = true;
+
   @ignore
   Duration get duration => Duration(
       milliseconds: geolocations.isNotEmpty
