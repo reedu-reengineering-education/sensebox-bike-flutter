@@ -8,6 +8,7 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/services/isar_service/track_service.dart';
 
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 class MockSettingsBloc extends Mock implements SettingsBloc {}
@@ -19,6 +20,7 @@ class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {
     );
   }
 }
+class MockTrackService extends Mock implements TrackService {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -121,12 +123,14 @@ void main() {
     late MockOpenSenseMapService mockOpenSenseMapService;
     late MockSettingsBloc mockSettingsBloc;
     late MockOpenSenseMapBloc mockOpenSenseMapBloc;
+    late MockTrackService mockTrackService;
     late SenseBox mockSenseBox;
 
     setUp(() {
       mockOpenSenseMapService = MockOpenSenseMapService();
       mockSettingsBloc = MockSettingsBloc();
       mockOpenSenseMapBloc = MockOpenSenseMapBloc();
+      mockTrackService = MockTrackService();
       mockSenseBox = SenseBox()
         ..sId = 'test-sensebox-id'
         ..name = 'Test SenseBox'
@@ -142,17 +146,82 @@ void main() {
       // Setup default mock behavior
       when(() => mockOpenSenseMapBloc.markAuthenticationFailed())
           .thenAnswer((_) async {});
+      when(() => mockTrackService.markTrackAsUploaded(any()))
+          .thenAnswer((_) async => Future.value(true)); // Mock success for now
 
       directUploadService = DirectUploadService(
         openSenseMapService: mockOpenSenseMapService,
         settingsBloc: mockSettingsBloc,
         senseBox: mockSenseBox,
         openSenseMapBloc: mockOpenSenseMapBloc,
+        trackService: mockTrackService,
+        trackId: 1,
       );
     });
 
     tearDown(() {
       directUploadService.dispose();
+    });
+
+    group('Track Upload Status Behavior', () {
+      test('should NOT mark track as uploaded after successful direct upload',
+          () async {
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        await directUploadService.uploadRemainingBufferedData();
+
+        // Verify that markTrackAsUploaded was NOT called
+        verifyNever(() => mockTrackService.markTrackAsUploaded(any()));
+
+        expect(directUploadService.isEnabled, true);
+        expect(directUploadService.hasPreservedData, false);
+      });
+
+      test('should NOT mark track as uploaded after successful sync upload',
+          () async {
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+
+        // Trigger upload which should not mark track as uploaded
+        await directUploadService.uploadRemainingBufferedData();
+
+        // Verify that markTrackAsUploaded was NOT called
+        verifyNever(() => mockTrackService.markTrackAsUploaded(any()));
+
+        expect(directUploadService.isEnabled, true);
+      });
     });
 
     // Core functionality tests that actually work

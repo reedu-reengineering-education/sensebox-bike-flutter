@@ -373,16 +373,6 @@ class DirectUploadService {
       
       _directUploadBuffer.clear();
       
-      // Mark the track as uploaded since live upload succeeded
-      try {
-        await trackService.markTrackAsUploaded(trackId);
-        debugPrint('[DirectUploadService] Track $trackId marked as uploaded');
-      } catch (e) {
-        debugPrint(
-            '[DirectUploadService] Failed to mark track $trackId as uploaded: $e');
-        // Don't fail the upload if marking as uploaded fails
-      }
-      
       _onUploadSuccess?.call(allGpsPoints);
     } catch (e, st) {
       final isNonCriticalError = e is TooManyRequestsException ||
@@ -568,17 +558,6 @@ class DirectUploadService {
 
       _directUploadBuffer.clear();
       
-      // Mark the track as uploaded since live upload succeeded
-      try {
-        await trackService.markTrackAsUploaded(trackId);
-        debugPrint(
-            '[DirectUploadService] Track $trackId marked as uploaded (sync)');
-      } catch (e) {
-        debugPrint(
-            '[DirectUploadService] Failed to mark track $trackId as uploaded (sync): $e');
-        // Don't fail the upload if marking as uploaded fails
-      }
-
     } catch (e, st) {
       ErrorService.handleError(
           'Direct upload failed at ${DateTime.now()}: ${e.toString()}',

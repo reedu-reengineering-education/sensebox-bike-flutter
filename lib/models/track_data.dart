@@ -16,7 +16,7 @@ class TrackData {
   @Backlink(to: "track")
   final geolocations = IsarLinks<GeolocationData>();
 
-  // Upload tracking properties
+  // Batch Upload tracking properties
   bool uploaded = false;
   int uploadAttempts = 0;
   DateTime? lastUploadAttempt;
