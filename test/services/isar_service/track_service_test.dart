@@ -102,15 +102,91 @@ group('TrackService', () {
 
     group('getAllTracks', () {
       test('retrieves all tracks from the database', () async {
-        final tracks = await trackService.getAllTracks();
-        expect(tracks.length, equals(1));
+        final trackData2 = TrackData();
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(trackData2);
+        });
+
+        final allTracks = await trackService.getAllTracks();
+        expect(allTracks.length, equals(2));
       });
 
-      test('returns an empty list when no tracks exist', () async {
+      test('returns empty list when no tracks exist', () async {
         await trackService.deleteAllTracks();
 
-        final tracks = await trackService.getAllTracks();
-        expect(tracks.isEmpty, isTrue);
+        final allTracks = await trackService.getAllTracks();
+        expect(allTracks.isEmpty, isTrue);
+      });
+    });
+
+    group('markTrackAsUploaded', () {
+      test('successfully marks a track as uploaded', () async {
+        // Verify track starts as not uploaded
+        expect(trackData.uploaded, isFalse);
+
+        // Mark track as uploaded
+        await trackService.markTrackAsUploaded(trackData.id);
+
+        // Verify track is now marked as uploaded in database
+        final updatedTrack = await isar.trackDatas.get(trackData.id);
+        expect(updatedTrack, isNotNull);
+        expect(updatedTrack!.uploaded, isTrue);
+      });
+
+      test('handles non-existent track ID gracefully', () async {
+        // Should not throw an exception for non-existent track
+        await expectLater(
+          trackService.markTrackAsUploaded(-1),
+          completes,
+        );
+      });
+
+      test('preserves other track properties when marking as uploaded', () async {
+        // Set some other properties to verify they're preserved
+        await isar.writeTxn(() async {
+          trackData.uploadAttempts = 5;
+          trackData.lastUploadAttempt = DateTime.now();
+          await isar.trackDatas.put(trackData);
+        });
+
+        // Mark track as uploaded
+        await trackService.markTrackAsUploaded(trackData.id);
+
+        // Verify track is uploaded and other properties are preserved
+        final updatedTrack = await isar.trackDatas.get(trackData.id);
+        expect(updatedTrack, isNotNull);
+        expect(updatedTrack!.uploaded, isTrue);
+        expect(updatedTrack.uploadAttempts, equals(5));
+        expect(updatedTrack.lastUploadAttempt, isNotNull);
+      });
+
+      test('can mark multiple tracks as uploaded', () async {
+        // Create additional tracks
+        final trackData2 = TrackData();
+        final trackData3 = TrackData();
+        
+        await isar.writeTxn(() async {
+          await isar.trackDatas.putAll([trackData2, trackData3]);
+        });
+
+        // Verify all tracks start as not uploaded
+        expect(trackData.uploaded, isFalse);
+        expect(trackData2.uploaded, isFalse);
+        expect(trackData3.uploaded, isFalse);
+
+        // Mark all tracks as uploaded
+        await trackService.markTrackAsUploaded(trackData.id);
+        await trackService.markTrackAsUploaded(trackData2.id);
+        await trackService.markTrackAsUploaded(trackData3.id);
+
+        // Verify all tracks are now marked as uploaded
+        final updatedTrack1 = await isar.trackDatas.get(trackData.id);
+        final updatedTrack2 = await isar.trackDatas.get(trackData2.id);
+        final updatedTrack3 = await isar.trackDatas.get(trackData3.id);
+
+        expect(updatedTrack1!.uploaded, isTrue);
+        expect(updatedTrack2!.uploaded, isTrue);
+        expect(updatedTrack3!.uploaded, isTrue);
       });
     });
 

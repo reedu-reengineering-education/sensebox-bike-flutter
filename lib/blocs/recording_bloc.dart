@@ -117,7 +117,9 @@ class RecordingBloc with ChangeNotifier {
             openSenseMapService: OpenSenseMapService(),
             settingsBloc: settingsBloc,
             senseBox: _selectedSenseBox!,
-            openSenseMapBloc: openSenseMapBloc);
+            openSenseMapBloc: openSenseMapBloc,
+            trackService: isarService.trackService,
+            trackId: _currentTrack!.id);
       } else {
         // Post-ride upload mode: only create BatchUploadService
         _batchUploadService = BatchUploadService(

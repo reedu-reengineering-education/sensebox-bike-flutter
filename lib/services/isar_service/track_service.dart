@@ -40,6 +40,18 @@ class TrackService {
     });
   }
 
+  /// Marks a track as uploaded
+  Future<void> markTrackAsUploaded(int trackId) async {
+    final isar = await isarProvider.getDatabase();
+    await isar.writeTxn(() async {
+      final track = await isar.trackDatas.get(trackId);
+      if (track != null) {
+        track.uploaded = true;
+        await isar.trackDatas.put(track);
+      }
+    });
+  }
+
   Future<List<TrackData>> getTracksPaginated(
       {required int offset,
       required int limit,

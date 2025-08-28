@@ -9,6 +9,7 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/services/isar_service/track_service.dart';
 
 class UploadErrorClassifier {
   // Error patterns for permanent authentication failures
@@ -109,6 +110,8 @@ class DirectUploadService {
   final SettingsBloc settingsBloc;
   final SenseBox senseBox;
   final OpenSenseMapBloc openSenseMapBloc;
+  final TrackService trackService;
+  final int trackId;
   final UploadDataPreparer _dataPreparer;
   
   Function(List<GeolocationData>)? _onUploadSuccess;
@@ -135,6 +138,8 @@ class DirectUploadService {
     required this.settingsBloc,
     required this.senseBox,
     required this.openSenseMapBloc,
+    required this.trackService,
+    required this.trackId,
   }) : _dataPreparer = UploadDataPreparer(senseBox: senseBox);
 
   void enable() {
@@ -367,6 +372,17 @@ class DirectUploadService {
       await openSenseMapBloc.uploadData(senseBox.id, data);
       
       _directUploadBuffer.clear();
+      
+      // Mark the track as uploaded since live upload succeeded
+      try {
+        await trackService.markTrackAsUploaded(trackId);
+        debugPrint('[DirectUploadService] Track $trackId marked as uploaded');
+      } catch (e) {
+        debugPrint(
+            '[DirectUploadService] Failed to mark track $trackId as uploaded: $e');
+        // Don't fail the upload if marking as uploaded fails
+      }
+      
       _onUploadSuccess?.call(allGpsPoints);
     } catch (e, st) {
       final isNonCriticalError = e is TooManyRequestsException ||
@@ -551,6 +567,17 @@ class DirectUploadService {
       await openSenseMapBloc.uploadData(senseBox.id, data);
 
       _directUploadBuffer.clear();
+      
+      // Mark the track as uploaded since live upload succeeded
+      try {
+        await trackService.markTrackAsUploaded(trackId);
+        debugPrint(
+            '[DirectUploadService] Track $trackId marked as uploaded (sync)');
+      } catch (e) {
+        debugPrint(
+            '[DirectUploadService] Failed to mark track $trackId as uploaded (sync): $e');
+        // Don't fail the upload if marking as uploaded fails
+      }
 
     } catch (e, st) {
       ErrorService.handleError(
