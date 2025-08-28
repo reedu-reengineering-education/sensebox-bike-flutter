@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +16,7 @@ import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/migrations.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -28,6 +29,8 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env", mergeWith: Platform.environment);
+
+  runIsarMigrations();
 
   await SentryFlutter.init(
     (options) => options
@@ -145,7 +148,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
   @override
   Widget build(BuildContext context) {
     _initErrorHandlers();
-    
+
     // Manipulations below are to make sure default Android status bar is visible
     final isDarkMode =
         MediaQuery.of(context).platformBrightness == Brightness.dark;

@@ -3,9 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
+import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -17,6 +19,10 @@ class MockTrackService extends Mock implements TrackService {}
 class MockTrackBloc extends Mock implements TrackBloc {}
 
 class MockRecordingBloc extends Mock implements RecordingBloc {}
+
+class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {}
+
+class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 
 void main() {
   late MockIsarService mockIsarService;
@@ -46,6 +52,11 @@ void main() {
           skipLastTrack: any(named: 'skipLastTrack'),
         )).thenAnswer((_) async => <TrackData>[]);
 
+    // Mock OpenSenseMapBloc dependencies
+    final mockOpenSenseMapBloc = MockOpenSenseMapBloc();
+    when(() => mockOpenSenseMapBloc.openSenseMapService)
+        .thenReturn(MockOpenSenseMapService());
+
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -58,6 +69,9 @@ void main() {
             ),
             ChangeNotifierProvider<RecordingBloc>.value(
               value: mockRecordingBloc,
+            ),
+            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+              value: mockOpenSenseMapBloc,
             ),
           ],
           child: const TracksScreen(),
