@@ -62,3 +62,5 @@ class PermanentAuthenticationError implements Exception {
       ? 'Authentication failed permanently: $details. Data upload is stopped but all data is stored locally.'
       : 'Authentication failed permanently. Data upload is stopped but all data is stored locally. Please log in again to continue uploading data.';
 }
+
+
