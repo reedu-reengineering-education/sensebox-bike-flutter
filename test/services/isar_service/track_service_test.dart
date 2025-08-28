@@ -141,7 +141,8 @@ group('TrackService', () {
         );
       });
 
-      test('preserves other track properties when marking as uploaded', () async {
+      test('preserves other track properties when marking as uploaded',
+          () async {
         // Set some other properties to verify they're preserved
         await isar.writeTxn(() async {
           trackData.uploadAttempts = 5;
@@ -164,7 +165,7 @@ group('TrackService', () {
         // Create additional tracks
         final trackData2 = TrackData();
         final trackData3 = TrackData();
-        
+
         await isar.writeTxn(() async {
           await isar.trackDatas.putAll([trackData2, trackData3]);
         });
