@@ -400,6 +400,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorNoSenseBoxSelected => 'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.';
 
   @override
+  String get loginRequiredMessage => 'Please log in to upload your sensor data to openSenseMap';
+
+  @override
   String get errorExportDirectoryAccess => 'Error accessing export directory. Please make sure the app has permission to access the storage.';
 
   @override

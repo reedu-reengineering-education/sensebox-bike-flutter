@@ -2,10 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -37,6 +39,10 @@ class MockBleBloc extends Mock implements BleBloc {
   @override
   ValueNotifier<bool> get permanentConnectionLossNotifier =>
       ValueNotifier<bool>(false);
+      
+  @override
+  ValueNotifier<BluetoothDevice?> get selectedDeviceNotifier =>
+      ValueNotifier<BluetoothDevice?>(null);
 }
 
 class MockTrackBloc extends Mock with ChangeNotifier implements TrackBloc {}
@@ -100,6 +106,11 @@ class MockRecordingBloc extends Mock implements RecordingBloc {
 
   @override
   ValueNotifier<bool> get isRecordingNotifier => ValueNotifier<bool>(false);
+}
+
+class MockSensorBloc extends Mock implements SensorBloc {
+  @override
+  Map<String, List<SensorData>> get sensorData => {};
 }
 
 class MockSensor extends Mock implements sensors.Sensor {}

@@ -397,7 +397,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorNoScanAccess => 'Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.';
 
   @override
-  String get errorNoSenseBoxSelected => 'Um den Upload von Sensordaten in die Cloud zu erlauben, melden Sie sich bitte bei Ihrem openSenseMap-Konto an und aktivieren Sie das Kästchen.';
+  String get errorNoSenseBoxSelected => 'Um den Upload von Sensordaten in die Cloud zu ermöglichen, melden Sie sich bitte in Ihrem openSenseMap-Konto an und wählen Sie die Box aus.';
+
+  @override
+  String get loginRequiredMessage => 'Bitte melden Sie sich an, um Ihre Sensordaten auf openSenseMap hochzuladen';
 
   @override
   String get errorExportDirectoryAccess => 'Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.';

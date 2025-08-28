@@ -397,7 +397,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get errorNoScanAccess => 'Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.';
 
   @override
-  String get errorNoSenseBoxSelected => 'Para permitir o envio de dados do sensor para a nuvem, inicie sessão na sua conta do openSenseMap e selecione a caixa.';
+  String get errorNoSenseBoxSelected => 'Para permitir o upload de dados do sensor para a nuvem, faça login na sua conta openSenseMap e selecione a caixa.';
+
+  @override
+  String get loginRequiredMessage => 'Por favor, faça login para enviar seus dados do sensor para o openSenseMap';
 
   @override
   String get errorExportDirectoryAccess => 'Erro ao acessar o diretório de exportação. Por favor, verifique se o aplicativo tem permissão para acessar o armazenamento.';
