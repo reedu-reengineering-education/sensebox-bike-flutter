@@ -1,12 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:intl/intl.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
+import 'package:sensebox_bike/blocs/track_bloc.dart';
 
 const double kMapPreviewWidth = 140;
 const double kMapPreviewHeight = 140;
@@ -14,27 +14,22 @@ const double kMapPreviewHeight = 140;
 class TrackListItem extends StatelessWidget {
   final TrackData track;
   final Function onDismissed;
-  final VoidCallback? onTrackUpdated; // Add callback for track updates
+  final VoidCallback? onTrackUpdated;
+  final TrackBloc trackBloc;
 
   const TrackListItem({
     required this.track,
     required this.onDismissed,
-    this.onTrackUpdated, // Add parameter
+    required this.trackBloc,
+    this.onTrackUpdated,
     super.key,
   });
 
   String buildStaticMapboxUrl(BuildContext context) {
-    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    String style = isDarkMode ? 'dark-v11' : 'light-v11';
-    String lineColor = isDarkMode ? 'fff' : '111';
-    String polyline = Uri.encodeComponent(track.encodedPolyline);
-
-    if (polyline.isEmpty) {
-      return '';
-    }
-
-    return 'https://api.mapbox.com/styles/v1/mapbox/$style/static/path-1+$lineColor-0.8($polyline)/auto/${kMapPreviewWidth.toInt()}x${kMapPreviewHeight.toInt()}?access_token=$mapboxAccessToken';
+    String baseUrl =
+        trackBloc.buildStaticMapboxUrl(context, track.encodedPolyline);
+    if (baseUrl.isEmpty) return '';
+    return '$baseUrl?access_token=$mapboxAccessToken';
   }
 
   @override
@@ -59,11 +54,10 @@ class TrackListItem extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (context) => TrackDetailScreen(
                             track: track,
-                            onTrackUploaded: onTrackUpdated, // Pass callback
+                            onTrackUploaded: onTrackUpdated,
                           ),
                         ),
                       );
-                      // Refresh tracks when returning from track detail
                       onTrackUpdated?.call();
                     },
                     child: _buildTrackContent(
@@ -132,24 +126,20 @@ class TrackListItem extends StatelessWidget {
 
   Widget _buildTrackContent(BuildContext context,
       AppLocalizations localizations, ThemeData theme, TrackData track) {
-    final date =
-        DateFormat('dd.MM.yyyy').format(track.geolocations.first.timestamp);
-    final trackStart =
-        DateFormat('HH:mm').format(track.geolocations.first.timestamp);
-    final trackEnd =
-        DateFormat('HH:mm').format(track.geolocations.last.timestamp);
-    final times = '$trackStart - $trackEnd';
-    final duration = localizations.generalTrackDurationShort(
-        track.duration.inHours.toString(),
-        track.duration.inMinutes.remainder(60).toString().padLeft(2, '0'));
+    final date = trackBloc.formatTrackDate(track.geolocations.first.timestamp);
+    final times = trackBloc.formatTrackTimeRange(
+      track.geolocations.first.timestamp,
+      track.geolocations.last.timestamp,
+    );
+    final duration =
+        trackBloc.formatTrackDuration(track.duration, localizations);
     final distance =
-        localizations.generalTrackDistance(track.distance.toStringAsFixed(2));
+        trackBloc.formatTrackDistance(track.distance, localizations);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // Map Section
         SizedBox(
             width: kMapPreviewWidth,
             height: kMapPreviewHeight,
@@ -166,7 +156,6 @@ class TrackListItem extends StatelessWidget {
                       color: colorScheme.errorContainer,
                       child: Icon(Icons.error_outline, size: iconSizeLarge),
                     ))),
-        // Track Info Section
         const SizedBox(width: spacing),
         Expanded(
           child: SizedBox(
@@ -218,54 +207,23 @@ class TrackListItem extends StatelessWidget {
 
   Widget _buildStatusIcon(
       BuildContext context, AppLocalizations localizations, ThemeData theme) {
-    final statusColor = _getStatusColor(theme);
-    final statusIcon = _getStatusIcon();
-    final statusText = _getStatusText(localizations);
+    final statusInfo =
+        trackBloc.getTrackStatusInfo(track, theme, localizations);
 
     return Tooltip(
-      message: statusText,
+      message: statusInfo.text,
       child: Container(
         padding: const EdgeInsets.all(padding),
         decoration: BoxDecoration(
-          color: statusColor.withOpacity(0.1),
+          color: statusInfo.color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(borderRadiusSmall),
         ),
         child: Icon(
-          statusIcon,
+          statusInfo.icon,
           size: iconSizeLarge,
-          color: statusColor,
+          color: statusInfo.color,
         ),
       ),
     );
-  }
-
-  Color _getStatusColor(ThemeData theme) {
-    if (track.uploaded) {
-      return theme.colorScheme.success;
-    } else if (track.uploadAttempts > 0) {
-      return theme.colorScheme.error;
-    } else {
-      return theme.colorScheme.outline;
-    }
-  }
-
-  IconData _getStatusIcon() {
-    if (track.uploaded) {
-      return Icons.cloud_done;
-    } else if (track.uploadAttempts > 0) {
-      return Icons.cloud_off;
-    } else {
-      return Icons.cloud_upload;
-    }
-  }
-
-  String _getStatusText(AppLocalizations localizations) {
-    if (track.uploaded) {
-      return localizations.trackStatusUploaded;
-    } else if (track.uploadAttempts > 0) {
-      return localizations.trackStatusUploadFailed;
-    } else {
-      return localizations.trackStatusNotUploaded;
-    }
   }
 }

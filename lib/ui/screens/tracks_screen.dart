@@ -26,6 +26,7 @@ class TracksScreenState extends State<TracksScreen> {
   late IsarService _isarService;
   late RecordingBloc _recordingBloc;
   late OpenSenseMapBloc _openSenseMapBloc;
+  late TrackBloc _trackBloc;
   late BatchUploadService _batchUploadService;
   final ScrollController _scrollController = ScrollController();
   List<TrackData> _displayedTracks = [];
@@ -44,6 +45,7 @@ class TracksScreenState extends State<TracksScreen> {
     _isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
     _recordingBloc = Provider.of<RecordingBloc>(context, listen: false);
     _openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    _trackBloc = Provider.of<TrackBloc>(context, listen: false);
 
     // Initialize batch upload service
     _batchUploadService = BatchUploadService(
@@ -214,6 +216,7 @@ class TracksScreenState extends State<TracksScreen> {
                                   TrackData track = _displayedTracks[index];
                                   return TrackListItem(
                                     track: track,
+                                    trackBloc: _trackBloc,
                                     onDismissed: () async {
                                       await _isarService.trackService
                                           .deleteTrack(track.id);
