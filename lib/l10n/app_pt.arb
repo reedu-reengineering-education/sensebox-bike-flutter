@@ -251,6 +251,7 @@
             }
         }
     },
+    "trackDirectUploadInfo": "Estes dados do trajeto foram enviados em tempo real durante o seu passeio. Se quiser reenviá-los, pode usar o botão de upload acima.",
     "trackStatusNotUploaded": "Não enviado",
     "trackStatusUploadFailed": "Envio falhou",
     "trackFilterAll": "Todos",

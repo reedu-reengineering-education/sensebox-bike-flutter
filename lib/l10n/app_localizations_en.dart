@@ -580,6 +580,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackStatusUploadFailed => 'Upload failed';
 
   @override
+  String trackStatusUploadFailedAt(Object date) {
+    return 'Upload failed on $date';
+  }
+
+  @override
+  String get trackDirectUploadInfo => 'This track data was uploaded in real time during your ride. If you\'d like to re-upload it, you can use the upload button above.';
+
+  @override
   String get trackFilterAll => 'All';
 
   @override

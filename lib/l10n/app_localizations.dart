@@ -1171,6 +1171,18 @@ abstract class AppLocalizations {
   /// **'Upload failed'**
   String get trackStatusUploadFailed;
 
+  /// No description provided for @trackStatusUploadFailedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed on {date}'**
+  String trackStatusUploadFailedAt(Object date);
+
+  /// No description provided for @trackDirectUploadInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'This track data was uploaded in real time during your ride. If you\'d like to re-upload it, you can use the upload button above.'**
+  String get trackDirectUploadInfo;
+
   /// No description provided for @trackFilterAll.
   ///
   /// In en, this message translates to:

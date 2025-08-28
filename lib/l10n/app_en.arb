@@ -253,6 +253,8 @@
     },
     "trackStatusNotUploaded": "Not uploaded",
     "trackStatusUploadFailed": "Upload failed",
+    "trackStatusUploadFailedAt": "Upload failed on {date}",
+    "trackDirectUploadInfo": "This track data was uploaded in real time during your ride. If you'd like to re-upload it, you can use the upload button above.",
     "trackFilterAll": "All",
     "trackFilterUnuploaded": "Not uploaded",
     "trackUploadRetryFailed": "Upload retry failed. Please try again.",

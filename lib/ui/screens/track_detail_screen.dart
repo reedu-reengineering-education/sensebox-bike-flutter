@@ -83,7 +83,14 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     final localizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    if (_track.uploaded || _track.uploadAttempts == 0) {
+    if (_track.isDirectUpload) {
+      // For direct upload tracks, show only the info message
+      return Padding(
+        padding:
+            const EdgeInsets.symmetric(vertical: padding, horizontal: spacing),
+        child: _buildDirectUploadInfoMessage(localizations, theme),
+      );
+    } else if (_track.uploaded || _track.uploadAttempts == 0) {
       // If uploaded, show only status icon (not collapsible)
       return Padding(
         padding:
@@ -300,6 +307,41 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Widget _buildDirectUploadInfoMessage(
+      AppLocalizations localizations, ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(spacing),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(borderRadiusSmall),
+        border: Border.all(
+          color: Colors.blue.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: iconSize,
+            color: Colors.blue,
+          ),
+          const SizedBox(width: spacing / 2),
+          Expanded(
+            child: Text(
+              localizations.trackDirectUploadInfo,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.blue,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _shareFile(String filePath) async {

@@ -580,6 +580,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackStatusUploadFailed => 'Envio falhou';
 
   @override
+  String trackStatusUploadFailedAt(Object date) {
+    return 'Upload failed on $date';
+  }
+
+  @override
+  String get trackDirectUploadInfo => 'Estes dados do trajeto foram enviados em tempo real durante o seu passeio. Se quiser reenviá-los, pode usar o botão de upload acima.';
+
+  @override
   String get trackFilterAll => 'Todos';
 
   @override
