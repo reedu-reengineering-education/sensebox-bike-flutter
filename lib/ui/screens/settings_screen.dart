@@ -498,20 +498,33 @@ class SettingsScreen extends StatelessWidget {
   void _showUploadModeDialog(BuildContext context, SettingsBloc settingsBloc) {
     final currentMode = settingsBloc.directUploadMode;
     final localizations = AppLocalizations.of(context)!;
+    final screenSize = MediaQuery.of(context).size;
+    final isLargeScreen = screenSize.width > 375; // iPhone mini width is 375px
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(localizations.settingsUploadMode),
+          titlePadding: isLargeScreen
+              ? const EdgeInsets.fromLTRB(
+                  24, 24, 24, 24) // Extra padding on larger screens
+              : const EdgeInsets.fromLTRB(
+                  12, 12, 12, 12), // Standard padding on small screens
           contentPadding: EdgeInsets.zero,
           content: SizedBox(
             width: double.maxFinite,
-            height: MediaQuery.of(context).size.height * 0.6,
+            height: isLargeScreen
+                ? null
+                : MediaQuery.of(context).size.height *
+                    0.6, // Fixed height only on small screens
             child: Scrollbar(
               thumbVisibility: true,
               child: SingleChildScrollView(
-                padding: EdgeInsets.zero,
+                padding: EdgeInsets.only(
+                    bottom: isLargeScreen
+                        ? 24.0
+                        : 0.0), // Add bottom padding on larger screens
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
