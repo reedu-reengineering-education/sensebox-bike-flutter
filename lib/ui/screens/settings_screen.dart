@@ -51,6 +51,7 @@ class SettingsScreen extends StatelessWidget {
 
     return _buildSettingsContainer(
       context,
+      isAuthenticated,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -64,12 +65,14 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsContainer(BuildContext context,
+  Widget _buildSettingsContainer(BuildContext context, bool isAuthenticated,
       {required Widget child}) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadiusSmall),
-        color: Theme.of(context).colorScheme.tertiary,
+        color: isAuthenticated
+            ? Theme.of(context).colorScheme.tertiary
+            : loginRequiredColor,
       ),
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.all(16),
@@ -77,7 +80,9 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildUserInfoRow(BuildContext context, bool isAuthenticated,
+  Widget _buildUserInfoRow(
+      BuildContext context,
+      bool isAuthenticated,
       Future<Map<String, dynamic>?> userData,
       OpenSenseMapBloc openSenseMapBloc) {
     return Row(
@@ -115,7 +120,7 @@ class SettingsScreen extends StatelessWidget {
     if (openSenseMapBloc.isAuthenticating) {
       return const CircularProgressIndicator();
     }
-    
+
     return FutureBuilder(
       future: userData,
       builder: (context, snapshot) {
@@ -134,8 +139,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildUserDataDisplay(
-      BuildContext context,
+  Widget _buildUserDataDisplay(BuildContext context,
       Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
     final user = userData?['data']?['me'];
     final email = user?['email'] ?? "No email";
@@ -247,7 +251,7 @@ class SettingsScreen extends StatelessWidget {
     return StatefulBuilder(
       builder: (context, setState) {
         bool isDeleting = false;
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
