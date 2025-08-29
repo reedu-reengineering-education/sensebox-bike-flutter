@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+// Custom colors for specific use cases
+const Color loginRequiredColor =
+    Color.fromARGB(255, 58, 2, 88); // Dark red for login requirement
+const Color loginRequiredTextColor =
+    Colors.white; // White text for login requirement
+
 final lightTheme = ThemeData(
   inputDecorationTheme: InputDecorationTheme(
     filled: true,
