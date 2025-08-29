@@ -165,7 +165,7 @@
     "errorNoLocationAccess": "Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie bitte die Standortdienste und erlauben Sie der App in den Telefoneinstellungen den Zugriff auf Ihren Standort.",
     "errorNoScanAccess": "Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.",
     "errorNoSenseBoxSelected": "Um den Upload von Sensordaten in die Cloud zu ermöglichen, melden Sie sich bitte in Ihrem openSenseMap-Konto an und wählen Sie die Box aus.",
-    "loginRequiredMessage": "Bitte melden Sie sich an, um Ihre Sensordaten auf openSenseMap hochzuladen",
+    "loginRequiredMessage": "Anmelden um Sensordaten zu teilen",
     "errorExportDirectoryAccess": "Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.",
     "errorLoginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
     "errorRegistrationFailed": "Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",

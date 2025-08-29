@@ -165,7 +165,7 @@
     "errorNoLocationAccess": "Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.",
     "errorNoScanAccess": "To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.",
     "errorNoSenseBoxSelected": "To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.",
-    "loginRequiredMessage": "Please log in to upload your sensor data to openSenseMap",
+    "loginRequiredMessage": "Please log in to share sensor data",
     "errorExportDirectoryAccess": "Error accessing export directory. Please make sure the app has permission to access the storage.",
     "errorLoginFailed": "Login failed. Please check your credentials.",
     "errorRegistrationFailed": "Registration failed. Please check your credentials.",
