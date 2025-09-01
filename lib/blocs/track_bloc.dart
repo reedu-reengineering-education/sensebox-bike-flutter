@@ -50,7 +50,28 @@ class TrackBloc with ChangeNotifier {
     notifyListeners();
   }
 
+  TrackStatusInfo getTrackStatusInfo(
+      TrackData track, ThemeData theme, AppLocalizations localizations) {
+    final status = _calculateTrackStatus(track);
+    return TrackStatusInfo(
+      status: status,
+      color: _getStatusColor(status, theme),
+      icon: _getStatusIcon(status),
+      text: _getStatusText(status, localizations),
+    );
+  }
 
+  TrackStatus _calculateTrackStatus(TrackData track) {
+    if (track.isDirectUpload) {
+      return TrackStatus.directUpload;
+    } else if (track.uploaded) {
+      return TrackStatus.uploaded;
+    } else if (track.uploadAttempts > 0) {
+      return TrackStatus.uploadFailed;
+    } else {
+      return TrackStatus.notUploaded;
+    }
+  }
 
   Color _getStatusColor(TrackStatus status, ThemeData theme) {
     switch (status) {
@@ -129,60 +150,6 @@ class TrackBloc with ChangeNotifier {
 
   String formatTrackDistance(double distance, AppLocalizations localizations) {
     return localizations.generalTrackDistance(distance.toStringAsFixed(2));
-  }
-
-  bool estimateIsDirectUpload(TrackData track) {
-    if (track.uploadAttempts < 0) {
-      return true;
-    }
-
-    return track.isDirectUpload;
-  }
-
-  bool estimateUploaded(TrackData track) {
-    if (track.uploadAttempts < 0) {
-      return false;
-    }
-
-    return track.uploaded;
-  }
-
-  int estimateUploadAttempts(TrackData track) {
-    if (track.uploadAttempts < 0) {
-      return 0;
-    }
-
-    return track.uploadAttempts;
-  }
-
-  TrackStatusInfo getEstimatedTrackStatusInfo(
-      TrackData track, ThemeData theme, AppLocalizations localizations) {
-    final estimatedIsDirectUpload = estimateIsDirectUpload(track);
-    final estimatedUploaded = estimateUploaded(track);
-    final estimatedUploadAttempts = estimateUploadAttempts(track);
-
-    final status = calculateTrackStatusFromValues(
-        estimatedIsDirectUpload, estimatedUploaded, estimatedUploadAttempts);
-
-    return TrackStatusInfo(
-      status: status,
-      color: _getStatusColor(status, theme),
-      icon: _getStatusIcon(status),
-      text: _getStatusText(status, localizations),
-    );
-  }
-
-  TrackStatus calculateTrackStatusFromValues(
-      bool isDirectUpload, bool uploaded, int uploadAttempts) {
-    if (isDirectUpload) {
-      return TrackStatus.directUpload;
-    } else if (uploaded) {
-      return TrackStatus.uploaded;
-    } else if (uploadAttempts > 0) {
-      return TrackStatus.uploadFailed;
-    } else {
-      return TrackStatus.notUploaded;
-    }
   }
 
   // Dispose the StreamController when no longer needed
