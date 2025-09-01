@@ -110,7 +110,7 @@ void main() {
       
       await tester.pumpWidget(createTestWidget(testTrack));
 
-      final statusInfo = trackBloc.getTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
         testTrack, 
         ThemeData.light(), 
         mockLocalizations
@@ -128,7 +128,7 @@ void main() {
       
       await tester.pumpWidget(createTestWidget(testTrack));
 
-      final statusInfo = trackBloc.getTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
         testTrack, 
         ThemeData.light(), 
         mockLocalizations
@@ -147,7 +147,7 @@ void main() {
       
       await tester.pumpWidget(createTestWidget(testTrack));
 
-      final statusInfo = trackBloc.getTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
         testTrack, 
         ThemeData.light(), 
         mockLocalizations
@@ -166,7 +166,7 @@ void main() {
       
       await tester.pumpWidget(createTestWidget(testTrack));
 
-      final statusInfo = trackBloc.getTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
         testTrack, 
         ThemeData.light(), 
         mockLocalizations
