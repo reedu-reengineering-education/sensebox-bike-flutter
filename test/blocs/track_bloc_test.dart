@@ -59,7 +59,7 @@ void main() {
 
       expect(trackId, equals(1));
       expect(trackBloc.currentTrack, isNotNull);
-      expect(trackBloc.currentTrack!.isDirectUpload, isTrue);
+      expect(trackBloc.currentTrack!.isDirectUpload, equals(1));
     });
 
     test('startNewTrack with isDirectUpload = true sets isDirectUpload to true', () async {
@@ -70,7 +70,7 @@ void main() {
 
       expect(trackId, equals(1));
       expect(trackBloc.currentTrack, isNotNull);
-      expect(trackBloc.currentTrack!.isDirectUpload, isTrue);
+      expect(trackBloc.currentTrack!.isDirectUpload, equals(1));
     });
 
     test('startNewTrack with isDirectUpload = false sets isDirectUpload to false', () async {
@@ -81,7 +81,7 @@ void main() {
 
       expect(trackId, equals(1));
       expect(trackBloc.currentTrack, isNotNull);
-      expect(trackBloc.currentTrack!.isDirectUpload, isFalse);
+      expect(trackBloc.currentTrack!.isDirectUpload, equals(0));
     });
 
     test('endTrack clears currentTrack', () {
@@ -91,11 +91,14 @@ void main() {
   });
 
   group('TrackBloc - Status Calculation', () {
-    test('getTrackStatusInfo returns correct info for direct upload track', () {
-      final track = TrackData()..isDirectUpload = true;
+    test(
+        'getEstimatedTrackStatusInfo returns correct info for direct upload track',
+        () {
+      final track = TrackData()..isDirectUpload = 1;
 
       final statusInfo =
-          trackBloc.getTrackStatusInfo(track, testTheme, mockLocalizations);
+          trackBloc.getEstimatedTrackStatusInfo(
+          track, testTheme, mockLocalizations);
 
       expect(statusInfo.status, equals(TrackStatus.directUpload));
       expect(statusInfo.color, equals(Colors.blue));
@@ -103,13 +106,15 @@ void main() {
       expect(statusInfo.text, equals('Direct Upload (Beta)'));
     });
 
-    test('getTrackStatusInfo returns correct info for uploaded track', () {
+    test('getEstimatedTrackStatusInfo returns correct info for uploaded track',
+        () {
       final track = TrackData()
-        ..isDirectUpload = false
-        ..uploaded = true;
+        ..isDirectUpload = 0
+        ..uploaded = 1;
 
       final statusInfo =
-          trackBloc.getTrackStatusInfo(track, testTheme, mockLocalizations);
+          trackBloc.getEstimatedTrackStatusInfo(
+          track, testTheme, mockLocalizations);
 
       expect(statusInfo.status, equals(TrackStatus.uploaded));
       expect(statusInfo.color, equals(Colors.green));
@@ -117,14 +122,17 @@ void main() {
       expect(statusInfo.text, equals('Uploaded'));
     });
 
-    test('getTrackStatusInfo returns correct info for failed upload track', () {
+    test(
+        'getEstimatedTrackStatusInfo returns correct info for failed upload track',
+        () {
       final track = TrackData()
-        ..isDirectUpload = false
-        ..uploaded = false
+        ..isDirectUpload = 0
+        ..uploaded = 0
         ..uploadAttempts = 1;
 
       final statusInfo =
-          trackBloc.getTrackStatusInfo(track, testTheme, mockLocalizations);
+          trackBloc.getEstimatedTrackStatusInfo(
+          track, testTheme, mockLocalizations);
 
       expect(statusInfo.status, equals(TrackStatus.uploadFailed));
       expect(statusInfo.color, equals(testTheme.colorScheme.error));
@@ -132,14 +140,17 @@ void main() {
       expect(statusInfo.text, equals('Upload failed'));
     });
 
-    test('getTrackStatusInfo returns correct info for not uploaded track', () {
+    test(
+        'getEstimatedTrackStatusInfo returns correct info for not uploaded track',
+        () {
       final track = TrackData()
-        ..isDirectUpload = false
-        ..uploaded = false
+        ..isDirectUpload = 0
+        ..uploaded = 0
         ..uploadAttempts = 0;
 
       final statusInfo =
-          trackBloc.getTrackStatusInfo(track, testTheme, mockLocalizations);
+          trackBloc.getEstimatedTrackStatusInfo(
+          track, testTheme, mockLocalizations);
 
       expect(statusInfo.status, equals(TrackStatus.notUploaded));
       expect(statusInfo.color, equals(testTheme.colorScheme.outline));

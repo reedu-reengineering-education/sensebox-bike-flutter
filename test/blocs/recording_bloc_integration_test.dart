@@ -18,11 +18,12 @@ class TestTrackService {
   bool saveTrackCalled = false;
   Exception? saveTrackException;
   
-  Future<void> saveTrack(TrackData track) async {
+  Future<int> saveTrack(TrackData track) async {
     saveTrackCalled = true;
     if (saveTrackException != null) {
       throw saveTrackException!;
     }
+    return track.id ?? 1; // Return track ID or default to 1
   }
 }
 
@@ -30,7 +31,9 @@ class TestTrackBloc with ChangeNotifier {
   TrackData? currentTrack;
   
   Future<void> startNewTrack() async {
-    currentTrack = TrackData()..id = 1..uploaded = false;
+    currentTrack = TrackData()
+      ..id = 1
+      ..uploaded = 0;
   }
 }
 
@@ -94,7 +97,8 @@ void main() {
             Exception('Authentication failed - user needs to re-login');
         
         try {
-          await testIsarService.trackService.saveTrack(TrackData()..id = 1);
+          final track = TrackData()..id = 1;
+          await testIsarService.trackService.saveTrack(track);
           fail('Should have thrown authentication error');
         } catch (e) {
           expect(e.toString(), contains('Authentication failed'));
@@ -107,7 +111,8 @@ void main() {
             Exception('Network error');
         
         try {
-          await testIsarService.trackService.saveTrack(TrackData()..id = 1);
+          final track = TrackData()..id = 1;
+          await testIsarService.trackService.saveTrack(track);
           fail('Should have thrown network error');
         } catch (e) {
           expect(e.toString(), contains('Network error'));
@@ -116,7 +121,9 @@ void main() {
 
       test('should track upload attempts', () async {
         // Test that upload attempts are tracked
-        final track = TrackData()..id = 1..uploaded = false;
+        final track = TrackData()
+          ..id = 1
+          ..uploaded = 0;
         
         // Simulate successful upload
         await testIsarService.trackService.saveTrack(track);

@@ -8,48 +8,47 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
-  // TODO: Fix tests
-  // group('TrackListItem Upload Status', () {
-  //   late TrackData testTrack;
+  group('TrackListItem Upload Status', () {
+    late TrackData testTrack;
 
-  //   setUp(() {
-  //     testTrack = TrackData();
+    setUp(() {
+      testTrack = TrackData();
       
-  //     // Add some test geolocations
-  //     final geolocation1 = GeolocationData()
-  //       ..latitude = 51.9607
-  //       ..longitude = 7.6261
-  //       ..timestamp = DateTime.now().subtract(const Duration(hours: 1));
+      // Add some test geolocations
+      final geolocation1 = GeolocationData()
+        ..latitude = 51.9607
+        ..longitude = 7.6261
+        ..timestamp = DateTime.now().subtract(const Duration(hours: 1));
 
-  //     final geolocation2 = GeolocationData()
-  //       ..latitude = 51.9617
-  //       ..longitude = 7.6271
-  //       ..timestamp = DateTime.now();
+      final geolocation2 = GeolocationData()
+        ..latitude = 51.9617
+        ..longitude = 7.6271
+        ..timestamp = DateTime.now();
 
-  //     testTrack.geolocations.addAll([geolocation1, geolocation2]);
-  //   });
+      testTrack.geolocations.addAll([geolocation1, geolocation2]);
+    });
 
-  //   Widget createTestWidget(TrackData track) {
-  //     return MaterialApp(
-  //       localizationsDelegates: const [
-  //         AppLocalizations.delegate,
-  //         GlobalMaterialLocalizations.delegate,
-  //         GlobalWidgetsLocalizations.delegate,
-  //         GlobalCupertinoLocalizations.delegate,
-  //       ],
-  //       supportedLocales: const [
-  //         Locale('en'),
-  //         Locale('de'),
-  //         Locale('pt'),
-  //       ],
-  //       home: Scaffold(
-  //         body: TrackListItem(
-  //           track: track,
-  //           onDismissed: () {},
-  //         ),
-  //       ),
-  //     );
-  //   }
+    Widget createTestWidget(TrackData track) {
+      return MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'),
+          Locale('de'),
+          Locale('pt'),
+        ],
+        home: Scaffold(
+          body: TrackListItem(
+            track: track,
+            onDismissed: () {},
+          ),
+        ),
+      );
+    }
 
   //   testWidgets('displays upload status icon', (WidgetTester tester) async {
   //     // Debug: print track properties
