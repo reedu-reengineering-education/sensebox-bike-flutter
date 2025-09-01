@@ -142,9 +142,9 @@ class _SenseBoxSelectionButton extends StatelessWidget {
 
             if (isAuthenticating) {
               // Loading state - disabled button with loading indicator
-              backgroundColor = colorScheme.surface.withOpacity(0.5);
-              textColor = colorScheme.onSurface.withOpacity(0.6);
-              borderColor = colorScheme.outline.withOpacity(0.3);
+              backgroundColor = colorScheme.surface.withValues(alpha: 0.5);
+              textColor = colorScheme.onSurface.withValues(alpha: 0.6);
+              borderColor = colorScheme.outline.withValues(alpha: 0.3);
               icon = Icons.hourglass_empty;
               label = AppLocalizations.of(context)!.generalLoading;
               onTap = null; // Disable button
