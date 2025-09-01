@@ -122,6 +122,7 @@ class _SenseBoxSelectionButton extends StatelessWidget {
 
         // Always show the button, but with different styling based on authentication
         final bool isAuthenticated = osemBloc.isAuthenticated && !osemBloc.isAuthenticating;
+        final bool isAuthenticating = osemBloc.isAuthenticating;
 
         return StreamBuilder<SenseBox?>(
           stream: osemBloc.senseBoxStream,
@@ -139,7 +140,15 @@ class _SenseBoxSelectionButton extends StatelessWidget {
             String label;
             VoidCallback? onTap;
 
-            if (!isAuthenticated) {
+            if (isAuthenticating) {
+              // Loading state - disabled button with loading indicator
+              backgroundColor = colorScheme.surface.withOpacity(0.5);
+              textColor = colorScheme.onSurface.withOpacity(0.6);
+              borderColor = colorScheme.outline.withOpacity(0.3);
+              icon = Icons.hourglass_empty;
+              label = AppLocalizations.of(context)!.generalLoading;
+              onTap = null; // Disable button
+            } else if (!isAuthenticated) {
               // Unauthenticated state - use theme-defined dark red with white text
               backgroundColor = loginRequiredColor;
               textColor = loginRequiredTextColor;
@@ -206,11 +215,13 @@ class _SenseBoxSelectionButton extends StatelessWidget {
                       height: 24,
                       width: 24,
                       child: Center(
-                        child: Icon(
-                          icon,
-                          color: textColor,
-                          size: 20,
-                        ),
+                        child: isAuthenticating
+                            ? Loader(light: true)
+                            : Icon(
+                                icon,
+                                color: textColor,
+                                size: 20,
+                              ),
                       ),
                     ),
                     const SizedBox(width: 12),
