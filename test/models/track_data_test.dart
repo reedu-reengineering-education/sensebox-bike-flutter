@@ -104,7 +104,7 @@ void main() {
     test('new TrackData has default upload tracking values', () {
       final newTrack = TrackData();
       
-      expect(newTrack.isUploaded, isFalse);
+      expect(newTrack.uploaded, isFalse);
       expect(newTrack.uploadAttempts, equals(0));
       expect(newTrack.lastUploadAttempt, isNull);
     });

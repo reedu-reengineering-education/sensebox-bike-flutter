@@ -131,14 +131,38 @@ class TrackBloc with ChangeNotifier {
     return localizations.generalTrackDistance(distance.toStringAsFixed(2));
   }
 
+  bool estimateIsDirectUpload(TrackData track) {
+    if (track.uploadAttempts < 0) {
+      return true;
+    }
+
+    return track.isDirectUpload;
+  }
+
+  bool estimateUploaded(TrackData track) {
+    if (track.uploadAttempts < 0) {
+      return false;
+    }
+
+    return track.uploaded;
+  }
+
+  int estimateUploadAttempts(TrackData track) {
+    if (track.uploadAttempts < 0) {
+      return 0;
+    }
+
+    return track.uploadAttempts;
+  }
+
   TrackStatusInfo getEstimatedTrackStatusInfo(
       TrackData track, ThemeData theme, AppLocalizations localizations) {
-    final isDirectUpload = track.isDirectUploadTrack;
-    final uploaded = track.isUploaded;
-    final uploadAttempts = track.uploadAttemptsCount;
+    final estimatedIsDirectUpload = estimateIsDirectUpload(track);
+    final estimatedUploaded = estimateUploaded(track);
+    final estimatedUploadAttempts = estimateUploadAttempts(track);
 
     final status = calculateTrackStatusFromValues(
-        isDirectUpload, uploaded, uploadAttempts);
+        estimatedIsDirectUpload, estimatedUploaded, estimatedUploadAttempts);
 
     return TrackStatusInfo(
       status: status,
@@ -150,14 +174,11 @@ class TrackBloc with ChangeNotifier {
 
   TrackStatus calculateTrackStatusFromValues(
       bool isDirectUpload, bool uploaded, int uploadAttempts) {
-    // Handle corrupted negative uploadAttempts values by treating them as 0
-    final normalizedUploadAttempts = uploadAttempts < 0 ? 0 : uploadAttempts;
-    
     if (isDirectUpload) {
       return TrackStatus.directUpload;
     } else if (uploaded) {
       return TrackStatus.uploaded;
-    } else if (normalizedUploadAttempts > 0) {
+    } else if (uploadAttempts > 0) {
       return TrackStatus.uploadFailed;
     } else {
       return TrackStatus.notUploaded;

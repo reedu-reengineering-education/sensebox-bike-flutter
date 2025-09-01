@@ -409,7 +409,7 @@ group('TrackService', () {
 
         expect(tracks.length, equals(2));
         // Should only return unuploaded tracks
-        expect(tracks.every((track) => !track.isUploaded), isTrue);
+        expect(tracks.every((track) => !track.uploaded), isTrue);
         // Should return newest tracks first (highest IDs)
         expect(tracks[0].id, greaterThan(tracks[1].id));
       });
@@ -442,7 +442,7 @@ group('TrackService', () {
 
         expect(tracks.length, equals(2));
         // Should only return unuploaded tracks
-        expect(tracks.every((track) => !track.isUploaded), isTrue);
+        expect(tracks.every((track) => !track.uploaded), isTrue);
         // Should skip the newest unuploaded track
         expect(tracks[0].id, lessThan(unuploadedTrack3.id));
       });

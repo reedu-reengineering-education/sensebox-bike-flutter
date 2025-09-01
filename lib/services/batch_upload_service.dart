@@ -117,13 +117,10 @@ class BatchUploadService {
     
     try {
       // Update track upload attempt tracking with data preservation
-      track.uploadAttempts = (track.uploadAttemptsCount) + 1;
+      track.uploadAttempts++;
       track.lastUploadAttempt = DateTime.now();
       await _trackService.saveTrack(track);
-      _logInfo(
-          'Upload attempt tracked',
-          'Attempt ${track.uploadAttemptsCount} for track ${track.id}',
-          track.id);
+      _logInfo('Upload attempt tracked', 'Attempt ${track.uploadAttempts} for track ${track.id}', track.id);
 
       // Emit preparing status
       _updateProgress(UploadProgress(
@@ -406,7 +403,7 @@ class BatchUploadService {
     List<TrackData> failedTracks;
     try {
       final allTracks = await _trackService.getAllTracks();
-      failedTracks = allTracks.where((track) => !track.isUploaded).toList();
+      failedTracks = allTracks.where((track) => !track.uploaded).toList();
     } catch (e, stackTrace) {
       _logError('Track loading failed', 'Failed to load tracks for retry: $e', null);
       ErrorService.handleError(
