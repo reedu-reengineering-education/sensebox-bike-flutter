@@ -208,7 +208,7 @@ class TrackListItem extends StatelessWidget {
   Widget _buildStatusIcon(
       BuildContext context, AppLocalizations localizations, ThemeData theme) {
     final statusInfo =
-        trackBloc.getTrackStatusInfo(track, theme, localizations);
+        trackBloc.getEstimatedTrackStatusInfo(track, theme, localizations);
 
     return Tooltip(
       message: statusInfo.text,

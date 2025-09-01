@@ -20,7 +20,7 @@ const TrackDataSchema = CollectionSchema(
     r'isDirectUpload': PropertySchema(
       id: 0,
       name: r'isDirectUpload',
-      type: IsarType.bool,
+      type: IsarType.long,
     ),
     r'lastUploadAttempt': PropertySchema(
       id: 1,
@@ -35,7 +35,7 @@ const TrackDataSchema = CollectionSchema(
     r'uploaded': PropertySchema(
       id: 3,
       name: r'uploaded',
-      type: IsarType.bool,
+      type: IsarType.long,
     )
   },
   estimateSize: _trackDataEstimateSize,
@@ -89,10 +89,10 @@ void _trackDataSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeBool(offsets[0], object.isDirectUpload);
+  writer.writeLong(offsets[0], object.isDirectUpload);
   writer.writeDateTime(offsets[1], object.lastUploadAttempt);
   writer.writeLong(offsets[2], object.uploadAttempts);
-  writer.writeBool(offsets[3], object.uploaded);
+  writer.writeLong(offsets[3], object.uploaded);
 }
 
 TrackData _trackDataDeserialize(
@@ -103,10 +103,10 @@ TrackData _trackDataDeserialize(
 ) {
   final object = TrackData();
   object.id = id;
-  object.isDirectUpload = reader.readBool(offsets[0]);
+  object.isDirectUpload = reader.readLongOrNull(offsets[0]);
   object.lastUploadAttempt = reader.readDateTimeOrNull(offsets[1]);
-  object.uploadAttempts = reader.readLong(offsets[2]);
-  object.uploaded = reader.readBool(offsets[3]);
+  object.uploadAttempts = reader.readLongOrNull(offsets[2]);
+  object.uploaded = reader.readLongOrNull(offsets[3]);
   return object;
 }
 
@@ -118,13 +118,13 @@ P _trackDataDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 1:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 2:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 3:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -228,8 +228,29 @@ extension TrackDataQueryWhere
     });
   }
 
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause> isDirectUploadIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'isDirectUpload',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause>
+      isDirectUploadIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'isDirectUpload',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
   QueryBuilder<TrackData, TrackData, QAfterWhereClause> isDirectUploadEqualTo(
-      bool isDirectUpload) {
+      int? isDirectUpload) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
         indexName: r'isDirectUpload',
@@ -239,7 +260,7 @@ extension TrackDataQueryWhere
   }
 
   QueryBuilder<TrackData, TrackData, QAfterWhereClause>
-      isDirectUploadNotEqualTo(bool isDirectUpload) {
+      isDirectUploadNotEqualTo(int? isDirectUpload) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -270,6 +291,52 @@ extension TrackDataQueryWhere
               includeUpper: false,
             ));
       }
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause>
+      isDirectUploadGreaterThan(
+    int? isDirectUpload, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'isDirectUpload',
+        lower: [isDirectUpload],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause> isDirectUploadLessThan(
+    int? isDirectUpload, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'isDirectUpload',
+        lower: [],
+        upper: [isDirectUpload],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause> isDirectUploadBetween(
+    int? lowerIsDirectUpload,
+    int? upperIsDirectUpload, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'isDirectUpload',
+        lower: [lowerIsDirectUpload],
+        includeLower: includeLower,
+        upper: [upperIsDirectUpload],
+        includeUpper: includeUpper,
+      ));
     });
   }
 }
@@ -330,11 +397,75 @@ extension TrackDataQueryFilter
   }
 
   QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
-      isDirectUploadEqualTo(bool value) {
+      isDirectUploadIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'isDirectUpload',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      isDirectUploadIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'isDirectUpload',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      isDirectUploadEqualTo(int? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isDirectUpload',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      isDirectUploadGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'isDirectUpload',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      isDirectUploadLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'isDirectUpload',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      isDirectUploadBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'isDirectUpload',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -414,7 +545,25 @@ extension TrackDataQueryFilter
   }
 
   QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
-      uploadAttemptsEqualTo(int value) {
+      uploadAttemptsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'uploadAttempts',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      uploadAttemptsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'uploadAttempts',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      uploadAttemptsEqualTo(int? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'uploadAttempts',
@@ -425,7 +574,7 @@ extension TrackDataQueryFilter
 
   QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
       uploadAttemptsGreaterThan(
-    int value, {
+    int? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -439,7 +588,7 @@ extension TrackDataQueryFilter
 
   QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
       uploadAttemptsLessThan(
-    int value, {
+    int? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -453,8 +602,8 @@ extension TrackDataQueryFilter
 
   QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
       uploadAttemptsBetween(
-    int lower,
-    int upper, {
+    int? lower,
+    int? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
@@ -469,12 +618,72 @@ extension TrackDataQueryFilter
     });
   }
 
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition> uploadedIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'uploaded',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      uploadedIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'uploaded',
+      ));
+    });
+  }
+
   QueryBuilder<TrackData, TrackData, QAfterFilterCondition> uploadedEqualTo(
-      bool value) {
+      int? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'uploaded',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition> uploadedGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'uploaded',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition> uploadedLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'uploaded',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition> uploadedBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'uploaded',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -697,7 +906,7 @@ extension TrackDataQueryProperty
     });
   }
 
-  QueryBuilder<TrackData, bool, QQueryOperations> isDirectUploadProperty() {
+  QueryBuilder<TrackData, int?, QQueryOperations> isDirectUploadProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isDirectUpload');
     });
@@ -710,13 +919,13 @@ extension TrackDataQueryProperty
     });
   }
 
-  QueryBuilder<TrackData, int, QQueryOperations> uploadAttemptsProperty() {
+  QueryBuilder<TrackData, int?, QQueryOperations> uploadAttemptsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'uploadAttempts');
     });
   }
 
-  QueryBuilder<TrackData, bool, QQueryOperations> uploadedProperty() {
+  QueryBuilder<TrackData, int?, QQueryOperations> uploadedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'uploaded');
     });

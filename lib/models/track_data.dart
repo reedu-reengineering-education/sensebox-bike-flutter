@@ -16,14 +16,31 @@ class TrackData {
   @Backlink(to: "track")
   final geolocations = IsarLinks<GeolocationData>();
 
-  // Batch Upload tracking properties
-  bool uploaded = false;
-  int uploadAttempts = 0;
+  // Batch Upload tracking properties - use integers that Isar handles better
+  // (int? is used instead of bool? to avoid Isar's nullable boolean bug)
+  int? uploaded; // 0 = false, 1 = true, null = null
+  int? uploadAttempts; // null = 0 attempts
   DateTime? lastUploadAttempt;
 
-  // Direct upload tracking
+  // Direct upload tracking - use integer that Isar handles better
+  // (int? is used instead of bool? to avoid Isar's nullable boolean bug)
   @Index()
-  bool isDirectUpload = true;
+  int? isDirectUpload; // 0 = false, 1 = true, null = null
+
+  // Computed getters that provide boolean behavior
+  @ignore
+  bool get isUploaded => uploaded == 1;
+
+  @ignore
+  bool get isDirectUploadTrack =>
+      isDirectUpload != 0; // null = true, 1 = true, 0 = false
+
+  @ignore
+  int get uploadAttemptsCount {
+    final attempts = uploadAttempts ?? 0;
+    // Handle corrupted negative values by treating them as 0
+    return attempts < 0 ? 0 : attempts;
+  }
 
   @ignore
   Duration get duration => Duration(

@@ -83,14 +83,14 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     final localizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    if (_track.isDirectUpload) {
+    if (_track.isDirectUploadTrack) {
       // For direct upload tracks, show only the info message
       return Padding(
         padding:
             const EdgeInsets.symmetric(vertical: padding, horizontal: spacing),
         child: _buildDirectUploadInfoMessage(localizations, theme),
       );
-    } else if (_track.uploaded || _track.uploadAttempts == 0) {
+    } else if (_track.isUploaded || _track.uploadAttemptsCount == 0) {
       // If uploaded, show only status icon (not collapsible)
       return Padding(
         padding:
@@ -162,9 +162,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   Color _getStatusColor(ThemeData theme) {
-    if (_track.uploaded) {
+    if (_track.isUploaded) {
       return theme.colorScheme.success;
-    } else if (_track.uploadAttempts > 0) {
+    } else if (_track.uploadAttemptsCount > 0) {
       return theme.colorScheme.error;
     } else {
       return theme.colorScheme.outline;
@@ -172,9 +172,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   IconData _getStatusIcon() {
-    if (_track.uploaded) {
+    if (_track.isUploaded) {
       return Icons.cloud_done;
-    } else if (_track.uploadAttempts > 0) {
+    } else if (_track.uploadAttemptsCount > 0) {
       return Icons.cloud_off;
     } else {
       return Icons.cloud_upload;
@@ -182,10 +182,10 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   String _getStatusText(AppLocalizations localizations) {
-    if (_track.uploaded) {
+    if (_track.isUploaded) {
       return localizations.trackStatusUploadedAt(DateFormat('dd.MM.yyyy HH:mm')
           .format(_track.lastUploadAttempt ?? DateTime.now()));
-    } else if (_track.uploadAttempts > 0) {
+    } else if (_track.uploadAttemptsCount > 0) {
       return localizations.trackStatusUploadFailed;
     } else {
       return localizations.trackStatusNotUploaded;
@@ -199,11 +199,11 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_track.uploadAttempts > 0) ...[
+        if (_track.uploadAttemptsCount > 0) ...[
           _buildDetailRow(
             icon: Icons.refresh,
             label: 'Upload attempts',
-            value: _track.uploadAttempts.toString(),
+            value: _track.uploadAttemptsCount.toString(),
             theme: theme,
           ),
           const SizedBox(height: spacing / 4),
@@ -218,7 +218,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           ),
           const SizedBox(height: spacing / 4),
         ],
-        if (_track.uploaded) ...[
+        if (_track.isUploaded) ...[
           _buildDetailRow(
             icon: Icons.check_circle,
             label: 'Status',
@@ -226,7 +226,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             theme: theme,
             valueColor: theme.colorScheme.success,
           ),
-        ] else if (_track.uploadAttempts > 0) ...[
+        ] else if (_track.uploadAttemptsCount > 0) ...[
           _buildDetailRow(
             icon: Icons.error,
             label: 'Status',
@@ -561,7 +561,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         ),
         const Spacer(),
         // Upload button - only show if track hasn't been uploaded
-        if (!track.uploaded)
+        if (!_track.isUploaded)
           GestureDetector(
             onTap: _isUploading ? null : _startUpload,
             child: Container(
