@@ -38,6 +38,52 @@ class TrackListItem extends StatelessWidget {
     final localizations = AppLocalizations.of(context)!;
     final hasGeolocations = track.geolocations.isNotEmpty;
 
+    // Debug: Print track data
+    debugPrint('=== TrackListItem Debug Info ===');
+    debugPrint('Track ID: ${track.id}');
+    debugPrint(
+        'Uploaded (raw): ${track.uploaded} (type: ${track.uploaded.runtimeType})');
+    debugPrint(
+        'Uploaded (computed): ${track.isUploaded} (type: ${track.isUploaded.runtimeType})');
+    debugPrint(
+        'Upload Attempts (raw): ${track.uploadAttempts} (type: ${track.uploadAttempts.runtimeType})');
+    debugPrint(
+        'Upload Attempts (computed): ${track.uploadAttemptsCount} (type: ${track.uploadAttemptsCount.runtimeType})');
+    debugPrint(
+        'Is Direct Upload (raw): ${track.isDirectUpload} (type: ${track.isDirectUpload.runtimeType})');
+    debugPrint(
+        'Is Direct Upload (computed): ${track.isDirectUploadTrack} (type: ${track.isDirectUploadTrack.runtimeType})');
+    debugPrint(
+        'Last Upload Attempt (raw): ${track.lastUploadAttempt} (type: ${track.lastUploadAttempt.runtimeType})');
+    debugPrint('Has Geolocations: $hasGeolocations');
+    if (hasGeolocations) {
+      debugPrint('First Timestamp: ${track.geolocations.first.timestamp}');
+      debugPrint('Last Timestamp: ${track.geolocations.last.timestamp}');
+      debugPrint('Duration: ${track.duration}');
+      debugPrint('Distance: ${track.distance}');
+    }
+    
+    // Additional debugging for track status
+    debugPrint('--- Track Status Analysis ---');
+    debugPrint('Raw uploaded field: ${track.uploaded}');
+    debugPrint('Raw isDirectUpload field: ${track.isDirectUpload}');
+    debugPrint('Raw uploadAttempts field: ${track.uploadAttempts}');
+    debugPrint('Raw lastUploadAttempt field: ${track.lastUploadAttempt}');
+    debugPrint('Computed isUploaded: ${track.isUploaded}');
+    debugPrint('Computed isDirectUploadTrack: ${track.isDirectUploadTrack}');
+    debugPrint('Computed uploadAttemptsCount: ${track.uploadAttemptsCount}');
+
+    // Show what the status icon should display
+    final statusInfo =
+        trackBloc.getEstimatedTrackStatusInfo(track, theme, localizations);
+    debugPrint('TrackBloc status info:');
+    debugPrint('  Status: ${statusInfo.status}');
+    debugPrint('  Text: ${statusInfo.text}');
+    debugPrint('  Color: ${statusInfo.color}');
+    debugPrint('  Icon: ${statusInfo.icon}');
+    
+    debugPrint('================================');
+
     return Padding(
         padding: EdgeInsets.only(bottom: spacing, top: spacing),
         child: Dismissible(

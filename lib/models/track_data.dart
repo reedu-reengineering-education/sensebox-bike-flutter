@@ -17,13 +17,27 @@ class TrackData {
   final geolocations = IsarLinks<GeolocationData>();
 
   // Batch Upload tracking properties
-  late bool uploaded = false;
-  late int uploadAttempts = 0;
+  bool? uploaded;
+  int? uploadAttempts;
   DateTime? lastUploadAttempt;
 
   // Direct upload tracking
   @Index()
-  late bool isDirectUpload = true;
+  bool? isDirectUpload;
+
+  // Computed getters that provide default values when fields are null
+  @ignore
+  bool get isUploaded => uploaded ?? false;
+  
+  @ignore
+  bool get isDirectUploadTrack => isDirectUpload ?? true;
+  
+  @ignore
+  int get uploadAttemptsCount {
+    final attempts = uploadAttempts ?? 0;
+    // Handle corrupted negative values by treating them as 0
+    return attempts < 0 ? 0 : attempts;
+  }
 
   @ignore
   Duration get duration => Duration(
