@@ -25,7 +25,15 @@ class TrackData {
   // Direct upload tracking - use integer that Isar handles better
   // (int? is used instead of bool? to avoid Isar's nullable boolean bug)
   @Index()
-  int? isDirectUpload; // 0 = false, 1 = true, null = null
+  int? _isDirectUpload; // 0 = false, 1 = true, null = null
+
+  // Getter that returns the raw integer value (for Isar compatibility)
+  int? get isDirectUpload => _isDirectUpload;
+
+  // Convenience setter that accepts boolean and converts to integer
+  set isDirectUploadBool(bool? value) {
+    _isDirectUpload = value == null ? null : (value ? 1 : 0);
+  }
 
   // Computed getters that provide boolean behavior
   @ignore
