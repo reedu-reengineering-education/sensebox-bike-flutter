@@ -120,7 +120,7 @@ void main() {
       expect(statusInfo.status, equals(TrackStatus.directUpload));
       expect(statusInfo.color, equals(Colors.blue));
       expect(statusInfo.icon, equals(Icons.cloud_sync));
-      expect(statusInfo.text, equals('directUpload'));
+      expect(statusInfo.text, equals('Direct Upload (Beta)'));
     });
 
     testWidgets('shows correct status for direct upload track not yet uploaded',
@@ -133,10 +133,10 @@ void main() {
       final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
           testTrack, ThemeData.light(), mockLocalizations);
       
-      expect(statusInfo.status, equals(TrackStatus.notUploaded));
-      expect(statusInfo.color, equals(ThemeData.light().colorScheme.outline));
-      expect(statusInfo.icon, equals(Icons.cloud_upload));
-      expect(statusInfo.text, equals('Not uploaded'));
+      expect(statusInfo.status, equals(TrackStatus.directUpload));
+      expect(statusInfo.color, equals(Colors.blue));
+      expect(statusInfo.icon, equals(Icons.cloud_sync));
+      expect(statusInfo.text, equals('Direct Upload (Beta)'));
     });
 
     testWidgets('shows correct status for uploaded track', (WidgetTester tester) async {

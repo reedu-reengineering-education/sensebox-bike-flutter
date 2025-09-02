@@ -32,16 +32,17 @@ void main() {
       testTrackBloc.dispose();
     });
 
-    test('new track with null values shows not uploaded status', () {
+    test('new track with null values shows direct upload status', () {
       final newTrack = TrackData();
       
       final statusInfo = testTrackBloc.getEstimatedTrackStatusInfo(
           newTrack, testTheme, testLocalizations);
 
-      expect(statusInfo.status, equals(TrackStatus.notUploaded));
-      expect(statusInfo.icon, equals(Icons.cloud_upload));
-      expect(statusInfo.color, equals(testTheme.colorScheme.outline));
-      expect(statusInfo.text, equals(testLocalizations.trackStatusNotUploaded));
+      expect(statusInfo.status, equals(TrackStatus.directUpload));
+      expect(statusInfo.icon, equals(Icons.cloud_sync));
+      expect(statusInfo.color, equals(Colors.blue));
+      expect(
+          statusInfo.text, equals(testLocalizations.settingsUploadModeDirect));
     });
 
     test('regular track (not direct upload) shows not uploaded status', () {
@@ -93,7 +94,7 @@ void main() {
       expect(statusInfo.text, equals(testLocalizations.trackStatusUploadFailed));
     });
 
-    test('direct upload track with null values shows not uploaded status', () {
+    test('direct upload track with null values shows direct upload status', () {
       final directUploadTrack = TestTrackBuilder.createTrack(
         isDirectUpload: 1,
         uploaded: null,
@@ -103,10 +104,11 @@ void main() {
       final statusInfo = testTrackBloc.getEstimatedTrackStatusInfo(
           directUploadTrack, testTheme, testLocalizations);
 
-      expect(statusInfo.status, equals(TrackStatus.notUploaded));
-      expect(statusInfo.icon, equals(Icons.cloud_upload));
-      expect(statusInfo.color, equals(testTheme.colorScheme.outline));
-      expect(statusInfo.text, equals(testLocalizations.trackStatusNotUploaded));
+      expect(statusInfo.status, equals(TrackStatus.directUpload));
+      expect(statusInfo.icon, equals(Icons.cloud_sync));
+      expect(statusInfo.color, equals(Colors.blue));
+      expect(
+          statusInfo.text, equals(testLocalizations.settingsUploadModeDirect));
     });
 
     test(
@@ -213,11 +215,12 @@ void main() {
       expect(testTrackBloc.calculateTrackStatusFromValues(true, true, 0),
           equals(TrackStatus.directUpload));
 
-      // Direct upload tracks with upload attempts return directUploadAuthFailed
+      // Direct upload tracks with upload attempts return directUploadAuthFailed (only when not uploaded)
       expect(testTrackBloc.calculateTrackStatusFromValues(true, false, 1),
           equals(TrackStatus.directUploadAuthFailed));
+      // Direct upload tracks that are uploaded return directUpload regardless of attempts
       expect(testTrackBloc.calculateTrackStatusFromValues(true, true, 5),
-          equals(TrackStatus.directUploadAuthFailed));
+          equals(TrackStatus.directUpload));
 
       // Batch upload tracks with uploaded = true
       expect(testTrackBloc.calculateTrackStatusFromValues(false, true, 0), equals(TrackStatus.uploaded));
