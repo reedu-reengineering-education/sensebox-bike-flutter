@@ -52,6 +52,14 @@ class TrackService {
     });
   }
 
+  /// Updates a track with new data
+  Future<void> updateTrack(TrackData track) async {
+    final isar = await isarProvider.getDatabase();
+    await isar.writeTxn(() async {
+      await isar.trackDatas.put(track);
+    });
+  }
+
   Future<List<TrackData>> getTracksPaginated(
       {required int offset,
       required int limit,

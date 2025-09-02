@@ -429,12 +429,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get errorExportDirectoryAccess => 'Erro ao acessar o diretório de exportação. Por favor, verifique se o aplicativo tem permissão para acessar o armazenamento.';
 
   @override
-  String get errorLoginFailed =>
-      'Falha no login. Por favor, verifique suas credenciais e tente novamente.';
+  String get errorLoginFailed => 'Falha no login. Por favor, verifique suas credenciais e tente novamente.';
 
   @override
-  String get errorRegistrationFailed =>
-      'Falha no registro. Por favor, verifique suas credenciais e tente novamente.';
+  String get errorRegistrationFailed => 'Falha no registro. Por favor, verifique suas credenciais e tente novamente.';
 
   @override
   String get errorBleConnectionFailed => 'A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.';
@@ -587,8 +585,10 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get trackDirectUploadInfo =>
-      'Este trajeto foi enviado em tempo real durante o seu passeio (se estiver logado). Quer enviá-lo novamente? Use o botão acima!';
+  String get trackDirectUploadInfo => 'Este trajeto foi enviado em tempo real durante o seu passeio (se estiver logado). Quer enviá-lo novamente? Use o botão acima!';
+
+  @override
+  String get trackDirectUploadAuthFailed => 'Este trajeto falhou ao ser enviado em tempo real porque você não estava logado. Por favor, faça login e tente enviar novamente.';
 
   @override
   String get trackFilterAll => 'Todos';

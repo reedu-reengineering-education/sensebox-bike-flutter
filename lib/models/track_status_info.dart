@@ -5,6 +5,7 @@ enum TrackStatus {
   uploaded,
   uploadFailed,
   notUploaded,
+  directUploadAuthFailed,
 }
 
 class TrackStatusInfo {

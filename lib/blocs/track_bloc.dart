@@ -61,6 +61,8 @@ class TrackBloc with ChangeNotifier {
         return theme.colorScheme.error;
       case TrackStatus.notUploaded:
         return theme.colorScheme.outline;
+      case TrackStatus.directUploadAuthFailed:
+        return theme.colorScheme.error;
     }
   }
 
@@ -74,6 +76,8 @@ class TrackBloc with ChangeNotifier {
         return Icons.cloud_off;
       case TrackStatus.notUploaded:
         return Icons.cloud_upload;
+      case TrackStatus.directUploadAuthFailed:
+        return Icons.cloud_off;
     }
   }
 
@@ -87,6 +91,8 @@ class TrackBloc with ChangeNotifier {
         return localizations.trackStatusUploadFailed;
       case TrackStatus.notUploaded:
         return localizations.trackStatusNotUploaded;
+      case TrackStatus.directUploadAuthFailed:
+        return localizations.trackDirectUploadAuthFailed;
     }
   }
 
@@ -146,6 +152,10 @@ class TrackBloc with ChangeNotifier {
   TrackStatus calculateTrackStatusFromValues(
       bool isDirectUpload, bool uploaded, int uploadAttempts) {
     if (isDirectUpload) {
+      // Check if direct upload failed due to authentication
+      if (uploadAttempts > 0) {
+        return TrackStatus.directUploadAuthFailed;
+      }
       return TrackStatus.directUpload;
     } else if (uploaded) {
       return TrackStatus.uploaded;
@@ -154,6 +164,16 @@ class TrackBloc with ChangeNotifier {
     } else {
       return TrackStatus.notUploaded;
     }
+  }
+
+  /// Updates track status when direct upload fails due to authentication
+  Future<void> updateDirectUploadAuthFailure(TrackData track) async {
+    track.uploadAttempts = 1;
+    track.uploaded = 0;
+    track.lastUploadAttempt = DateTime.now();
+
+    await isarService.trackService.updateTrack(track);
+    notifyListeners();
   }
 
   // Dispose the StreamController when no longer needed

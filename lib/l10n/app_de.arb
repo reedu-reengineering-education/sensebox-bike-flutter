@@ -252,6 +252,7 @@
         }
     },
     "trackDirectUploadInfo": "Dieser Track wurde in Echtzeit während deiner Fahrt hochgeladen (falls du angemeldet warst). Möchtest du ihn erneut hochladen? Verwende den Button oben!",
+    "trackDirectUploadAuthFailed": "Dieser Track konnte nicht in Echtzeit hochgeladen werden, da du nicht angemeldet warst. Bitte melde dich an und versuche den Upload erneut.",
     "trackStatusNotUploaded": "Nicht hochgeladen",
     "trackStatusUploadFailed": "Upload fehlgeschlagen",
     "trackFilterAll": "Alle",

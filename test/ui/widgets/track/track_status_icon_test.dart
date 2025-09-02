@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/track_status_info.dart';
@@ -13,8 +14,15 @@ void main() {
     late ThemeData testTheme;
     late AppLocalizations testLocalizations;
 
+    setUpAll(() {
+      registerFallbackValue(TrackData());
+    });
+
     setUp(() async {
       final mockIsarService = MockIsarService();
+      // Set up the mock to return a Future<void> for updateTrack
+      when(() => mockIsarService.trackService.updateTrack(any()))
+          .thenAnswer((_) async {});
       testTrackBloc = TrackBloc(mockIsarService);
       testTheme = ThemeData();
       testLocalizations = await AppLocalizations.delegate.load(const Locale('en'));
@@ -101,6 +109,26 @@ void main() {
       expect(statusInfo.text, equals(testLocalizations.settingsUploadModeDirect));
     });
 
+    test(
+        'direct upload track with authentication failure shows auth failed status',
+        () {
+      final authFailedTrack = TestTrackBuilder.createTrack(
+        isDirectUpload: 1,
+        uploaded: 0,
+        uploadAttempts: 1, // Has upload attempts, indicating failure
+        lastUploadAttempt: DateTime.now(),
+      );
+
+      final statusInfo = testTrackBloc.getEstimatedTrackStatusInfo(
+          authFailedTrack, testTheme, testLocalizations);
+
+      expect(statusInfo.status, equals(TrackStatus.directUploadAuthFailed));
+      expect(statusInfo.icon, equals(Icons.cloud_off));
+      expect(statusInfo.color, equals(testTheme.colorScheme.error));
+      expect(statusInfo.text,
+          equals(testLocalizations.trackDirectUploadAuthFailed));
+    });
+
     test('direct upload track that was uploaded still shows direct upload status', () {
       final uploadedDirectTrack = TestTrackBuilder.createTrack(
         isDirectUpload: 1,
@@ -118,7 +146,8 @@ void main() {
       expect(statusInfo.text, equals(testLocalizations.settingsUploadModeDirect));
     });
 
-    test('direct upload track with failed uploads still shows direct upload status', () {
+    test('direct upload track with failed uploads shows auth failed status',
+        () {
       // Create a direct upload track with failed uploads
       final failedDirectTrack = TestTrackBuilder.createTrack(
         isDirectUpload: 1,
@@ -130,11 +159,12 @@ void main() {
       final statusInfo = testTrackBloc.getEstimatedTrackStatusInfo(
           failedDirectTrack, testTheme, testLocalizations);
 
-      // Direct upload tracks always show direct upload status, regardless of upload state
-      expect(statusInfo.status, equals(TrackStatus.directUpload));
-      expect(statusInfo.icon, equals(Icons.cloud_sync));
-      expect(statusInfo.color, equals(Colors.blue));
-      expect(statusInfo.text, equals(testLocalizations.settingsUploadModeDirect));
+      // Direct upload tracks with upload attempts show auth failed status
+      expect(statusInfo.status, equals(TrackStatus.directUploadAuthFailed));
+      expect(statusInfo.icon, equals(Icons.cloud_off));
+      expect(statusInfo.color, equals(testTheme.colorScheme.error));
+      expect(statusInfo.text,
+          equals(testLocalizations.trackDirectUploadAuthFailed));
     });
 
     test('computed getters work correctly with null values', () {
@@ -177,21 +207,54 @@ void main() {
 
     test('calculateTrackStatusFromValues method works correctly', () {
       // Test the actual calculateTrackStatusFromValues method directly
-      
-      // Direct upload tracks always return directUpload
+
+      // Direct upload tracks with no upload attempts return directUpload
       expect(testTrackBloc.calculateTrackStatusFromValues(true, false, 0), equals(TrackStatus.directUpload));
-      expect(testTrackBloc.calculateTrackStatusFromValues(true, true, 5), equals(TrackStatus.directUpload));
-      
+      expect(testTrackBloc.calculateTrackStatusFromValues(true, true, 0),
+          equals(TrackStatus.directUpload));
+
+      // Direct upload tracks with upload attempts return directUploadAuthFailed
+      expect(testTrackBloc.calculateTrackStatusFromValues(true, false, 1),
+          equals(TrackStatus.directUploadAuthFailed));
+      expect(testTrackBloc.calculateTrackStatusFromValues(true, true, 5),
+          equals(TrackStatus.directUploadAuthFailed));
+
       // Batch upload tracks with uploaded = true
       expect(testTrackBloc.calculateTrackStatusFromValues(false, true, 0), equals(TrackStatus.uploaded));
       expect(testTrackBloc.calculateTrackStatusFromValues(false, true, 3), equals(TrackStatus.uploaded));
-      
+
       // Batch upload tracks with uploadAttempts > 0
       expect(testTrackBloc.calculateTrackStatusFromValues(false, false, 1), equals(TrackStatus.uploadFailed));
       expect(testTrackBloc.calculateTrackStatusFromValues(false, false, 5), equals(TrackStatus.uploadFailed));
-      
+
       // Batch upload tracks with no upload attempts
       expect(testTrackBloc.calculateTrackStatusFromValues(false, false, 0), equals(TrackStatus.notUploaded));
+    });
+
+    test('updateDirectUploadAuthFailure method updates track correctly',
+        () async {
+      final track = TrackData()
+        ..isDirectUpload = 1
+        ..uploaded = null
+        ..uploadAttempts = null
+        ..lastUploadAttempt = null;
+
+      // Verify initial state
+      expect(track.uploadAttempts, isNull);
+      expect(track.uploaded, isNull);
+      expect(track.lastUploadAttempt, isNull);
+
+      // Call the method
+      await testTrackBloc.updateDirectUploadAuthFailure(track);
+
+      // Verify the track was updated correctly
+      expect(track.uploadAttempts, equals(0));
+      expect(track.uploaded, equals(0));
+      expect(track.lastUploadAttempt, isNotNull);
+      expect(
+          track.lastUploadAttempt!
+              .isAfter(DateTime.now().subtract(const Duration(seconds: 1))),
+          isTrue);
     });
   });
 }

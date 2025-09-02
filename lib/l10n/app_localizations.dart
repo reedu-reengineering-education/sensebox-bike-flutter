@@ -898,13 +898,13 @@ abstract class AppLocalizations {
   /// No description provided for @errorLoginFailed.
   ///
   /// In en, this message translates to:
-  /// **'Login failed. Please check your credentials.'**
+  /// **'Login failed. Please check your credentials and try once again.'**
   String get errorLoginFailed;
 
   /// No description provided for @errorRegistrationFailed.
   ///
   /// In en, this message translates to:
-  /// **'Registration failed. Please check your credentials.'**
+  /// **'Registration failed. Please check your credentials and try once again.'**
   String get errorRegistrationFailed;
 
   /// No description provided for @errorBleConnectionFailed.
@@ -1180,8 +1180,14 @@ abstract class AppLocalizations {
   /// No description provided for @trackDirectUploadInfo.
   ///
   /// In en, this message translates to:
-  /// **'This track data was uploaded in real time during your ride. If you\'d like to re-upload it, you can use the upload button above.'**
+  /// **'This track was uploaded in real-time during your ride (if you were logged in). Want to upload it again? Use the button above!'**
   String get trackDirectUploadInfo;
+
+  /// No description provided for @trackDirectUploadAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This track failed to upload in real-time because you weren\'t logged in. Please log in and try uploading again.'**
+  String get trackDirectUploadAuthFailed;
 
   /// No description provided for @trackFilterAll.
   ///

@@ -429,12 +429,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorExportDirectoryAccess => 'Error accessing export directory. Please make sure the app has permission to access the storage.';
 
   @override
-  String get errorLoginFailed =>
-      'Login failed. Please check your credentials and try once again.';
+  String get errorLoginFailed => 'Login failed. Please check your credentials and try once again.';
 
   @override
-  String get errorRegistrationFailed =>
-      'Registration failed. Please check your credentials and try once again.';
+  String get errorRegistrationFailed => 'Registration failed. Please check your credentials and try once again.';
 
   @override
   String get errorBleConnectionFailed => 'Connect to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
@@ -587,8 +585,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get trackDirectUploadInfo =>
-      'This track was uploaded in real-time during your ride (if you were logged in). Want to upload it again? Use the button above!';
+  String get trackDirectUploadInfo => 'This track was uploaded in real-time during your ride (if you were logged in). Want to upload it again? Use the button above!';
+
+  @override
+  String get trackDirectUploadAuthFailed => 'This track failed to upload in real-time because you weren\'t logged in. Please log in and try uploading again.';
 
   @override
   String get trackFilterAll => 'All';

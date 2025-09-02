@@ -83,8 +83,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     final localizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    if (_track.isDirectUploadTrack) {
-      // For direct upload tracks, show only the info message
+    if (_track.isDirectUploadTrack && _track.lastUploadAttempt == null) {
+      // For direct upload tracks
       return Padding(
         padding:
             const EdgeInsets.symmetric(vertical: padding, horizontal: spacing),

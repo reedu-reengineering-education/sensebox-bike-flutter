@@ -104,6 +104,7 @@ class RecordingBloc with ChangeNotifier {
 
     try {
       if (_selectedSenseBox == null && settingsBloc.directUploadMode) {
+        await trackBloc.updateDirectUploadAuthFailure(_currentTrack!);
         ErrorService.handleError(NoSenseBoxSelected(), StackTrace.current,
             sendToSentry: false);
         notifyListeners();

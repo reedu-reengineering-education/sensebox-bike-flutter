@@ -255,6 +255,7 @@
     "trackStatusUploadFailed": "Upload failed",
     "trackStatusUploadFailedAt": "Upload failed on {date}",
     "trackDirectUploadInfo": "This track was uploaded in real-time during your ride (if you were logged in). Want to upload it again? Use the button above!",
+    "trackDirectUploadAuthFailed": "This track failed to upload in real-time because you weren't logged in. Please log in and try uploading again.",
     "trackFilterAll": "All",
     "trackFilterUnuploaded": "Not uploaded",
     "trackUploadRetryFailed": "Upload retry failed. Please try again.",
