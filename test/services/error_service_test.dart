@@ -107,7 +107,8 @@ void main() {
 
         expect(
           message,
-          contains('Login failed. Please check your credentials.'),
+          contains(
+              'Login failed. Please check your credentials and try once again.'),
         );
       });
 
@@ -122,7 +123,8 @@ void main() {
 
         expect(
           message,
-          contains('Registration failed. Please check your credentials.'),
+          contains(
+              'Registration failed. Please check your credentials and try once again.'),
         );
       });
     });

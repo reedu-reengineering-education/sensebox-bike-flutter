@@ -8,10 +8,19 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/services/isar_service/track_service.dart';
 
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 class MockSettingsBloc extends Mock implements SettingsBloc {}
-class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {}
+class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {
+  @override
+  Future<void> uploadData(String senseBoxId, Map<String, dynamic> data) async {
+    return super.noSuchMethod(
+      Invocation.method(#uploadData, [senseBoxId, data]),
+    );
+  }
+}
+class MockTrackService extends Mock implements TrackService {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -114,12 +123,14 @@ void main() {
     late MockOpenSenseMapService mockOpenSenseMapService;
     late MockSettingsBloc mockSettingsBloc;
     late MockOpenSenseMapBloc mockOpenSenseMapBloc;
+    late MockTrackService mockTrackService;
     late SenseBox mockSenseBox;
 
     setUp(() {
       mockOpenSenseMapService = MockOpenSenseMapService();
       mockSettingsBloc = MockSettingsBloc();
       mockOpenSenseMapBloc = MockOpenSenseMapBloc();
+      mockTrackService = MockTrackService();
       mockSenseBox = SenseBox()
         ..sId = 'test-sensebox-id'
         ..name = 'Test SenseBox'
@@ -132,16 +143,85 @@ void main() {
             ..title = 'Speed',
         ];
 
+      // Setup default mock behavior
+      when(() => mockOpenSenseMapBloc.markAuthenticationFailed())
+          .thenAnswer((_) async {});
+      when(() => mockTrackService.markTrackAsUploaded(any()))
+          .thenAnswer((_) async => Future.value(true)); // Mock success for now
+
       directUploadService = DirectUploadService(
         openSenseMapService: mockOpenSenseMapService,
         settingsBloc: mockSettingsBloc,
         senseBox: mockSenseBox,
         openSenseMapBloc: mockOpenSenseMapBloc,
+        trackService: mockTrackService,
+        trackId: 1,
       );
     });
 
     tearDown(() {
       directUploadService.dispose();
+    });
+
+    group('Track Upload Status Behavior', () {
+      test('should NOT mark track as uploaded after successful direct upload',
+          () async {
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        await directUploadService.uploadRemainingBufferedData();
+
+        // Verify that markTrackAsUploaded was NOT called
+        verifyNever(() => mockTrackService.markTrackAsUploaded(any()));
+
+        expect(directUploadService.isEnabled, true);
+        expect(directUploadService.hasPreservedData, false);
+      });
+
+      test('should NOT mark track as uploaded after successful sync upload',
+          () async {
+        directUploadService.enable();
+        expect(directUploadService.isEnabled, true);
+
+        final gpsBuffer = [
+          GeolocationData()
+            ..latitude = 10.0
+            ..longitude = 20.0
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+        ];
+
+        final groupedData = {
+          gpsBuffer[0]: {
+            'temperature': [22.5],
+          },
+        };
+
+        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+
+        // Trigger upload which should not mark track as uploaded
+        await directUploadService.uploadRemainingBufferedData();
+
+        // Verify that markTrackAsUploaded was NOT called
+        verifyNever(() => mockTrackService.markTrackAsUploaded(any()));
+
+        expect(directUploadService.isEnabled, true);
+      });
     });
 
     // Core functionality tests that actually work
@@ -233,7 +313,7 @@ void main() {
       expect(directUploadService.hasPreservedData, true);
 
       // Setup mock to throw network error - should be handled by OpenSenseMapService
-      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
           .thenThrow(Exception('Network timeout'));
 
       await directUploadService.uploadRemainingBufferedData();
@@ -254,7 +334,7 @@ void main() {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
       // Setup mock to throw temporary authentication error
-      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
           .thenThrow(Exception('Token refreshed, retrying'));
 
       final gpsBuffer = [
@@ -279,7 +359,7 @@ void main() {
     });
 
     test(
-        'disables service for permanent authentication failures - no refresh token',
+        'remains enabled for authentication failures - bloc handles auth',
         () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
@@ -288,7 +368,7 @@ void main() {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
       // Test with "No refresh token found" error
-      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
           .thenThrow(Exception('No refresh token found'));
 
       final gpsBuffer = [
@@ -308,12 +388,12 @@ void main() {
       directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
       await directUploadService.uploadRemainingBufferedData();
       
-      // Service should be disabled for permanent authentication failures
-      expect(directUploadService.isEnabled, false);
+      // Service should remain enabled since bloc handles authentication
+      expect(directUploadService.isEnabled, true);
     });
 
     test(
-        'disables service for permanent authentication failures - user needs re-login',
+        'remains enabled for authentication failures - user needs re-login',
         () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
@@ -322,7 +402,7 @@ void main() {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
       // Test with "Authentication failed - user needs to re-login" error
-      when(() => mockOpenSenseMapService.uploadData(any(), any())).thenThrow(
+      when(() => mockOpenSenseMapBloc.uploadData(any(), any())).thenThrow(
           Exception('Authentication failed - user needs to re-login'));
 
       final gpsBuffer = [
@@ -342,8 +422,8 @@ void main() {
       directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
       await directUploadService.uploadRemainingBufferedData();
 
-      // Service should be disabled for permanent authentication failures
-      expect(directUploadService.isEnabled, false);
+      // Service should remain enabled since bloc handles authentication
+      expect(directUploadService.isEnabled, true);
     });
 
     test(
@@ -356,7 +436,7 @@ void main() {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
       // Test with "403 Forbidden" error - should be treated as client error
-      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
           .thenThrow(Exception('Client error 403: Forbidden'));
 
       final gpsBuffer = [
@@ -381,7 +461,7 @@ void main() {
     });
 
     test(
-        'disables service for permanent authentication failures - failed token refresh',
+        'remains enabled for authentication failures - failed token refresh',
         () async {
       directUploadService.enable();
       expect(directUploadService.isEnabled, true);
@@ -390,7 +470,7 @@ void main() {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
       // Test with "Failed to refresh token" error
-      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
           .thenThrow(Exception('Failed to refresh token: Network error'));
 
       final gpsBuffer = [
@@ -410,8 +490,8 @@ void main() {
       directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
       await directUploadService.uploadRemainingBufferedData();
 
-      // Service should be disabled for permanent authentication failures
-      expect(directUploadService.isEnabled, false);
+      // Service should remain enabled since bloc handles authentication
+      expect(directUploadService.isEnabled, true);
     });
 
     test('remains enabled after temporary server errors', () async {
@@ -422,7 +502,7 @@ void main() {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
       // Setup mock to throw temporary server error
-      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
           .thenThrow(Exception('Server error 503 - retrying'));
 
       final gpsBuffer = [
@@ -454,7 +534,7 @@ void main() {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
       // Setup mock to throw rate limiting error
-      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
           .thenThrow(TooManyRequestsException(30));
 
       final gpsBuffer = [
@@ -486,7 +566,7 @@ void main() {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
       // Setup mock to succeed
-      when(() => mockOpenSenseMapService.uploadData(any(), any()))
+      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
           .thenAnswer((_) async {});
 
       final gpsBuffer = [
@@ -520,7 +600,7 @@ void main() {
         when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
         // Setup mock to throw 429 rate limiting error
-        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
             .thenThrow(TooManyRequestsException(30));
 
         final gpsBuffer = [
@@ -554,7 +634,7 @@ void main() {
         when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
         // Setup mock to throw 502 server error
-        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
             .thenThrow(Exception('Server error 502 - retrying'));
 
         final gpsBuffer = [
@@ -581,7 +661,7 @@ void main() {
       });
 
       test(
-          'handles permanent authentication error correctly - no restart scheduled',
+          'handles authentication error correctly - service remains enabled',
           () async {
         directUploadService.enable();
         expect(directUploadService.isEnabled, true);
@@ -589,8 +669,8 @@ void main() {
         // Setup mock to be authenticated initially
         when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
-        // Setup mock to throw permanent authentication error
-        when(() => mockOpenSenseMapService.uploadData(any(), any())).thenThrow(
+        // Setup mock to throw authentication error
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any())).thenThrow(
             Exception('Authentication failed - user needs to re-login'));
 
         final gpsBuffer = [
@@ -610,11 +690,11 @@ void main() {
         directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
         await directUploadService.uploadRemainingBufferedData();
 
-        // Service should be permanently disabled for authentication failures
-        expect(directUploadService.isEnabled, false);
+        // Service should remain enabled since bloc handles authentication
+        expect(directUploadService.isEnabled, true);
         // No restart timer should be scheduled for auth errors
         expect(directUploadService.hasPendingRestartTimer, false);
-        // Data should be cleared
+        // Data should be cleared after upload attempt (even on auth errors)
         expect(directUploadService.hasPreservedData, false);
       });
 
@@ -626,7 +706,7 @@ void main() {
         when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
         // Setup mock to throw token refresh error
-        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
             .thenThrow(Exception('Token refreshed, retrying'));
 
         final gpsBuffer = [
@@ -652,7 +732,8 @@ void main() {
         expect(directUploadService.hasPreservedData, false);
       });
 
-      test('handles "Not authenticated" error correctly - permanent auth error',
+      test(
+          'handles "Not authenticated" error correctly - service remains enabled',
           () async {
         directUploadService.enable();
         expect(directUploadService.isEnabled, true);
@@ -661,7 +742,7 @@ void main() {
         when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
         // Setup mock to throw "Not authenticated" error
-        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
             .thenThrow(Exception('Not authenticated'));
 
         final gpsBuffer = [
@@ -681,11 +762,11 @@ void main() {
         directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
         await directUploadService.uploadRemainingBufferedData();
 
-        // Service should be permanently disabled for "Not authenticated" errors (treated as permanent auth error)
-        expect(directUploadService.isEnabled, false);
+        // Service should remain enabled since bloc handles authentication
+        expect(directUploadService.isEnabled, true);
         // No restart timer should be scheduled for auth errors
         expect(directUploadService.hasPendingRestartTimer, false);
-        // Data should be cleared
+        // Data should be cleared after upload attempt (even on auth errors)
         expect(directUploadService.hasPreservedData, false);
       });
 
@@ -697,7 +778,7 @@ void main() {
         when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
         // Setup mock to throw timeout error
-        when(() => mockOpenSenseMapService.uploadData(any(), any())).thenThrow(
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any())).thenThrow(
             TimeoutException('Upload timeout', const Duration(seconds: 30)));
 
         final gpsBuffer = [
@@ -720,6 +801,7 @@ void main() {
         // Service should remain enabled for timeout errors (temporary)
         expect(directUploadService.isEnabled, true);
         // Data is cleared during uploadRemainingBufferedData() even for temporary errors
+        // This is correct behavior for final upload attempts
         expect(directUploadService.hasPreservedData, false);
       });
 
@@ -731,7 +813,7 @@ void main() {
         when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
         // Setup mock to throw 404 client error
-        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
             .thenThrow(Exception('Client error 404: Not Found'));
 
         final gpsBuffer = [
@@ -755,7 +837,7 @@ void main() {
         expect(directUploadService.isEnabled, false);
         // Restart timer should be scheduled for client errors
         expect(directUploadService.hasPendingRestartTimer, true);
-        // Data should be cleared
+        // Data should be cleared during final upload attempt
         expect(directUploadService.hasPreservedData, false);
       });
 
@@ -776,7 +858,7 @@ void main() {
           // Setup mock to be authenticated
           when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
-          when(() => mockOpenSenseMapService.uploadData(any(), any()))
+          when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
               .thenThrow(
                   error == 'TooManyRequestsException: Retry after 30 seconds.'
                       ? TooManyRequestsException(30)
@@ -804,6 +886,8 @@ void main() {
 
           expect(directUploadService.isEnabled, true,
               reason: 'Service should remain enabled for error: $error');
+          // Data is cleared during final upload attempt even for temporary errors
+          // This is correct behavior for final upload attempts
           expect(directUploadService.hasPreservedData, false,
               reason:
                   'Data should be cleared during final upload for error: $error');
@@ -811,22 +895,22 @@ void main() {
           directUploadService.dispose();
         }
 
-        // Test that permanent authentication errors disable service without restart
-        final permanentAuthErrors = [
+        // Test that authentication errors are handled by bloc and don't disable service
+        final authErrors = [
           'Authentication failed - user needs to re-login',
           'No refresh token found',
           'Failed to refresh token: Network error',
           'Not authenticated',
         ];
 
-        for (final error in permanentAuthErrors) {
+        for (final error in authErrors) {
           directUploadService.enable();
           expect(directUploadService.isEnabled, true);
 
           // Setup mock to be authenticated initially
           when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
 
-          when(() => mockOpenSenseMapService.uploadData(any(), any()))
+          when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
               .thenThrow(Exception(error));
 
           final gpsBuffer = [
@@ -846,16 +930,21 @@ void main() {
           directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
           await directUploadService.uploadRemainingBufferedData();
 
-          expect(directUploadService.isEnabled, false,
-              reason: 'Service should be disabled for auth error: $error');
+          expect(directUploadService.isEnabled, true,
+              reason: 'Service should remain enabled for auth error: $error');
           expect(directUploadService.hasPendingRestartTimer, false,
               reason: 'No restart should be scheduled for auth error: $error');
+          // Data should be cleared during final upload attempt
           expect(directUploadService.hasPreservedData, false,
-              reason: 'Data should be cleared for auth error: $error');
+              reason:
+                  'Data should be cleared after upload attempt for auth error: $error');
 
           directUploadService.dispose();
         }
       });
     });
+
+
+
   });
 } 

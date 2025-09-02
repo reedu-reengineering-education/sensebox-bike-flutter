@@ -20,9 +20,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get generalRetry => 'Retry';
-
-  @override
   String get generalCancel => 'Cancel';
 
   @override
@@ -45,6 +42,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generalClose => 'Close';
+
+  @override
+  String get generalUpload => 'Upload';
 
   @override
   String get generalPrivacyZones => 'Privacy Zones';
@@ -233,6 +233,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsVibrateOnDisconnect => 'Vibrate on disconnect';
 
   @override
+  String get settingsUploadMode => 'Upload Mode';
+
+  @override
+  String get settingsUploadModeDirect => 'Direct Upload (Beta)';
+
+  @override
+  String get settingsUploadModePostRide => 'Post-Ride Upload';
+
+  @override
+  String get settingsUploadModeDescription => 'Choose when to upload your data during recording';
+
+  @override
+  String settingsUploadModeCurrent(String mode) {
+    return 'Current: $mode';
+  }
+
+  @override
+  String get settingsUploadModePostRideTitle => 'Upload data after recording stops';
+
+  @override
+  String get settingsUploadModePostRideDescription => '• Data is stored locally during recording\n• Upload happens all at once when you finish\n• More reliable and stable\n• Uses less battery during recording';
+
+  @override
+  String get settingsUploadModeDirectTitle => 'Upload data in real-time during recording (experimental)';
+
+  @override
+  String get settingsUploadModeDirectDescription => '• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording';
+
+  @override
   String get settingsAbout => 'About';
 
   @override
@@ -266,9 +295,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trackDetailsExport => 'Track data CSV export.';
-
-  @override
-  String get trackDetailsNoData => 'No data available.';
 
   @override
   String get trackDetailsLoadingError => 'Error loading track.';
@@ -403,10 +429,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorExportDirectoryAccess => 'Error accessing export directory. Please make sure the app has permission to access the storage.';
 
   @override
-  String get errorLoginFailed => 'Login failed. Please check your credentials.';
+  String get errorLoginFailed => 'Login failed. Please check your credentials and try once again.';
 
   @override
-  String get errorRegistrationFailed => 'Registration failed. Please check your credentials.';
+  String get errorRegistrationFailed => 'Registration failed. Please check your credentials and try once again.';
 
   @override
   String get errorBleConnectionFailed => 'Connect to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
@@ -415,7 +441,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorUploadFailed => 'Data upload failed. Please check your internet connection and try again.';
 
   @override
-  String get errorPermanentAuthentication => 'Authentication failed permanently. Please log in again to continue uploading data.';
+  String get errorPermanentAuthentication => 'Authentication failed permanently. Please log in to upload data.';
 
   @override
   String get selectCsvFormat => 'Select CSV format';
@@ -479,4 +505,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trackStatistics => 'Track Statistics';
+
+  @override
+  String get uploadProgressTitle => 'Upload Progress';
+
+  @override
+  String get uploadProgressPreparing => 'Preparing upload...';
+
+  @override
+  String get uploadProgressUploading => 'Uploading track data...';
+
+  @override
+  String get uploadProgressInfo => 'Do not close the app while uploading. It can take some time depending on your track length.\n\nIf you would like to upload your track data later, you can do that from track overview screen.';
+
+  @override
+  String get uploadProgressRetrying => 'Retrying upload...';
+
+  @override
+  String get uploadProgressCompleted => 'Upload completed successfully';
+
+  @override
+  String get uploadProgressFailed => 'Upload failed';
+
+  @override
+  String get uploadProgressAuthenticationFailed => 'Authentication required';
+
+  @override
+  String uploadProgressChunks(int completed, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total chunks',
+      one: '1 chunk',
+      zero: '0 chunks',
+    );
+    return '$completed of $_temp0 uploaded';
+  }
+
+  @override
+  String uploadProgressPercentage(int percentage) {
+    return '$percentage% complete';
+  }
+
+  @override
+  String get uploadProgressAuthenticationError => 'Please log in to upload data.';
+
+  @override
+  String get uploadProgressNetworkError => 'Network connection failed. Please check your internet connection and try again.';
+
+  @override
+  String get uploadProgressGenericError => 'Upload failed. Please try again.';
+
+  @override
+  String get uploadConfirmTitle => 'Upload Track Data';
+
+  @override
+  String get uploadConfirmMessage => 'Would you like to upload your track data now?';
+
+  @override
+  String get uploadConfirmUploadNow => 'Upload';
+
+  @override
+  String get trackStatusUploaded => 'Uploaded';
+
+  @override
+  String trackStatusUploadedAt(String date) {
+    return 'Uploaded on $date';
+  }
+
+  @override
+  String get trackStatusNotUploaded => 'Not uploaded';
+
+  @override
+  String get trackStatusUploadFailed => 'Upload failed';
+
+  @override
+  String trackStatusUploadFailedAt(Object date) {
+    return 'Upload failed on $date';
+  }
+
+  @override
+  String get trackDirectUploadInfo => 'This track data was uploaded in real time during your ride. If you\'d like to re-upload it, you can use the upload button above.';
+
+  @override
+  String get trackUploadAttempts => 'Upload attempts';
+
+  @override
+  String get trackLastAttempt => 'Last attempt';
+
+  @override
+  String get trackStatus => 'Status';
+
+  @override
+  String get trackDirectUploadAuthFailed => 'This track failed to upload in real-time because you weren\'t logged in. Please log in and try uploading again.';
+
+  @override
+  String get trackFilterAll => 'All';
+
+  @override
+  String get trackFilterUnuploaded => 'Not uploaded';
+
+  @override
+  String get trackUploadRetryFailed => 'Upload retry failed. Please try again.';
+
+  @override
+  String get errorTrackNoGeolocations => 'Track has no geolocation data and cannot be uploaded.';
 }

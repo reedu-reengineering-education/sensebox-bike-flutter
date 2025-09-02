@@ -63,4 +63,11 @@ class PermanentAuthenticationError implements Exception {
       : 'Authentication failed permanently. Data upload is stopped but all data is stored locally. Please log in again to continue uploading data.';
 }
 
+class TrackHasNoGeolocationsException implements Exception {
+  final int? trackId;
 
+  TrackHasNoGeolocationsException([this.trackId]);
+
+  @override
+  String toString() => 'Track has no geolocation data and cannot be uploaded.';
+}

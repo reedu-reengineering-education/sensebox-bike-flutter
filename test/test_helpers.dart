@@ -134,6 +134,15 @@ GeolocationData createMockGeolocationData(TrackData trackData) {
     ..track.value = trackData;
 }
 
+/// Creates a simple GeolocationData for coordinate testing
+GeolocationData createTestGeolocation(double latitude, double longitude) {
+  return GeolocationData()
+    ..latitude = latitude
+    ..longitude = longitude
+    ..timestamp = DateTime.now()
+    ..speed = 0.0;
+}
+
 SensorData createMockSensorData(GeolocationData geolocationData) {
   return SensorData()
     ..id = Isar.autoIncrement

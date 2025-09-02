@@ -19,6 +19,8 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
+import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/models/geolocation_data.dart';
 
 class MockIsarProvider extends Mock implements IsarProvider {}
 
@@ -198,6 +200,46 @@ class MockRecordingBloc extends Mock implements RecordingBloc {
 
 class MockSensor extends Mock implements sensors.Sensor {}
 class FakeSensorData extends Fake implements SensorData {}
+
+// Track creation helpers for tests
+class TestTrackBuilder {
+  static TrackData createTrack({
+    int? id,
+    int? isDirectUpload,
+    int? uploaded,
+    int? uploadAttempts,
+    DateTime? lastUploadAttempt,
+    List<GeolocationData>? geolocations,
+  }) {
+    final track = TrackData()
+      ..id = id ?? 1
+      ..isDirectUpload = isDirectUpload ?? 1
+      ..uploaded = uploaded ?? 0
+      ..uploadAttempts = uploadAttempts ?? 0
+      ..lastUploadAttempt = lastUploadAttempt;
+
+    if (geolocations != null) {
+      track.geolocations.addAll(geolocations);
+    }
+
+    return track;
+  }
+
+  static GeolocationData createGeolocation({
+    int? id,
+    double? latitude,
+    double? longitude,
+    DateTime? timestamp,
+    double? speed,
+  }) {
+    return GeolocationData()
+      ..id = id ?? 1
+      ..latitude = latitude ?? 52.5200
+      ..longitude = longitude ?? 13.4050
+      ..timestamp = timestamp ?? DateTime.now()
+      ..speed = speed ?? 0.0;
+  }
+}
 
 // Mocks for webview_flutter
 
