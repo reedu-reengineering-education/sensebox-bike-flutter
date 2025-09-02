@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -161,7 +161,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
             : Brightness.light, // For iOS compatibility
       ),
     );
-
+    
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: _settingsBloc!),

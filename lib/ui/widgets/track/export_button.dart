@@ -16,11 +16,10 @@ class ExportButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: isDownloading
-          ? Loader(light: true)
-          : const Icon(Icons.file_download),
-      onPressed: isDisabled
+    final theme = Theme.of(context);
+
+    return GestureDetector(
+      onTap: isDisabled
           ? null
           : () async {
               await showDialog(
@@ -30,6 +29,24 @@ class ExportButton extends StatelessWidget {
                 ),
               );
             },
+      child: Container(
+        constraints: const BoxConstraints(
+          minWidth: 48,
+          minHeight: 48,
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Center(
+          child: isDownloading
+              ? Loader(light: true)
+              : Icon(
+                  Icons.file_download,
+                  size: 24,
+                  color: isDisabled
+                      ? theme.colorScheme.onSurface.withOpacity(0.38)
+                      : theme.colorScheme.onSurface,
+                ),
+        ),
+      ),
     );
   }
 }

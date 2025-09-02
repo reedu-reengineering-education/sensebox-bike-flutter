@@ -20,9 +20,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get generalRetry => 'Erneut versuchen';
-
-  @override
   String get generalCancel => 'Abbrechen';
 
   @override
@@ -45,6 +42,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get generalClose => 'Schließen';
+
+  @override
+  String get generalUpload => 'Hochladen';
 
   @override
   String get generalPrivacyZones => 'Privatzonen';
@@ -233,6 +233,35 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsVibrateOnDisconnect => 'Vibration bei Verbindungsabbruch';
 
   @override
+  String get settingsUploadMode => 'Upload-Modus';
+
+  @override
+  String get settingsUploadModeDirect => 'Direkter Upload (Beta)';
+
+  @override
+  String get settingsUploadModePostRide => 'Upload nach der Fahrt';
+
+  @override
+  String get settingsUploadModeDescription => 'Wählen Sie, wann Ihre Daten während der Aufzeichnung hochgeladen werden sollen';
+
+  @override
+  String settingsUploadModeCurrent(String mode) {
+    return 'Aktuell: $mode';
+  }
+
+  @override
+  String get settingsUploadModePostRideTitle => 'Daten nach Beendigung der Aufzeichnung hochladen';
+
+  @override
+  String get settingsUploadModePostRideDescription => '• Daten werden lokal während der Aufzeichnung gespeichert\n• Upload erfolgt auf einmal beim Beenden\n• Zuverlässiger und stabiler\n• Verbraucht weniger Akku während der Aufzeichnung';
+
+  @override
+  String get settingsUploadModeDirectTitle => 'Daten in Echtzeit während der Aufzeichnung hochladen (experimentell)';
+
+  @override
+  String get settingsUploadModeDirectDescription => '• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen';
+
+  @override
   String get settingsAbout => 'Über die App';
 
   @override
@@ -266,9 +295,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trackDetailsExport => 'CSV-Export von Trackdaten.';
-
-  @override
-  String get trackDetailsNoData => 'Daten nicht verfügbar.';
 
   @override
   String get trackDetailsLoadingError => 'Fehler beim Laden des Tracks.';
@@ -403,10 +429,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorExportDirectoryAccess => 'Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.';
 
   @override
-  String get errorLoginFailed => 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
+  String get errorLoginFailed => 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.';
 
   @override
-  String get errorRegistrationFailed => 'Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
+  String get errorRegistrationFailed => 'Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.';
 
   @override
   String get errorBleConnectionFailed => 'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
@@ -415,7 +441,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorUploadFailed => 'Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
 
   @override
-  String get errorPermanentAuthentication => 'Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich erneut an, um den Upload fortzusetzen.';
+  String get errorPermanentAuthentication => 'Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich an, um Daten hochzuladen.';
 
   @override
   String get selectCsvFormat => 'CSV-Format auswählen';
@@ -479,4 +505,109 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trackStatistics => 'Track-Statistiken';
+
+  @override
+  String get uploadProgressTitle => 'Track Upload';
+
+  @override
+  String get uploadProgressPreparing => 'Upload wird vorbereitet...';
+
+  @override
+  String get uploadProgressUploading => 'Track wird hochgeladen...';
+
+  @override
+  String get uploadProgressInfo => 'Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.\n\nFalls Sie Ihre Track-Daten später hochladen möchten, können Sie das in der Trackübersicht tun.';
+
+  @override
+  String get uploadProgressRetrying => 'Upload wird wiederholt...';
+
+  @override
+  String get uploadProgressCompleted => 'Upload erfolgreich';
+
+  @override
+  String get uploadProgressFailed => 'Upload fehlgeschlagen';
+
+  @override
+  String get uploadProgressAuthenticationFailed => 'Authentifizierung erforderlich';
+
+  @override
+  String uploadProgressChunks(int completed, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total Blöcken',
+      one: '1 Block',
+      zero: '0 Blöcken',
+    );
+    return '$completed von $_temp0 hochgeladen';
+  }
+
+  @override
+  String uploadProgressPercentage(int percentage) {
+    return '$percentage% abgeschlossen';
+  }
+
+  @override
+  String get uploadProgressAuthenticationError => 'Bitte melden Sie sich an, um Daten hochzuladen.';
+
+  @override
+  String get uploadProgressNetworkError => 'Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+
+  @override
+  String get uploadProgressGenericError => 'Upload fehlgeschlagen. Bitte versuchen Sie es erneut.';
+
+  @override
+  String get uploadConfirmTitle => 'Track-Daten hochladen';
+
+  @override
+  String get uploadConfirmMessage => 'Möchten Sie Ihre Track-Daten jetzt oder später hochladen?';
+
+  @override
+  String get uploadConfirmUploadNow => 'Jetzt hochladen';
+
+  @override
+  String get trackStatusUploaded => 'Hochgeladen';
+
+  @override
+  String trackStatusUploadedAt(String date) {
+    return 'Hochgeladen am $date';
+  }
+
+  @override
+  String get trackStatusNotUploaded => 'Nicht hochgeladen';
+
+  @override
+  String get trackStatusUploadFailed => 'Upload fehlgeschlagen';
+
+  @override
+  String trackStatusUploadFailedAt(Object date) {
+    return 'Upload failed on $date';
+  }
+
+  @override
+  String get trackDirectUploadInfo => 'Diese Track-Daten wurden in Echtzeit während deiner Fahrt hochgeladen. Falls du sie erneut hochladen möchtest, kannst du den Upload-Button oben verwenden.';
+
+  @override
+  String get trackUploadAttempts => 'Upload-Versuche';
+
+  @override
+  String get trackLastAttempt => 'Letzter Versuch';
+
+  @override
+  String get trackStatus => 'Status';
+
+  @override
+  String get trackDirectUploadAuthFailed => 'Dieser Track konnte nicht in Echtzeit hochgeladen werden, da du nicht angemeldet warst. Bitte melde dich an und versuche den Upload erneut.';
+
+  @override
+  String get trackFilterAll => 'Alle';
+
+  @override
+  String get trackFilterUnuploaded => 'Nicht hochgeladen';
+
+  @override
+  String get trackUploadRetryFailed => 'Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut.';
+
+  @override
+  String get errorTrackNoGeolocations => 'Track hat keine Geolokationsdaten und kann nicht hochgeladen werden.';
 }

@@ -10,7 +10,7 @@
             }
         }
     },
-    "generalRetry": "Tentar de novo",
+
     "generalCancel": "Cancelar",
     "generalCreate": "Criar",
     "generalOk": "Ok",
@@ -19,6 +19,7 @@
     "generalEdit": "Editar",
     "generalAdd": "Adicionar",
     "generalClose": "Fechar",
+    "generalUpload": "Enviar",
     "generalPrivacyZones": "Áreas de Privacidade",
     "generalSettings": "Configurações",
     "generalShare": "Compartilhar",
@@ -103,6 +104,22 @@
     "settingsGeneral": "Geral",
     "settingsOther": "Outros",
     "settingsVibrateOnDisconnect": "Vibrar ao desconectar",
+    "settingsUploadMode": "Modo de Upload",
+    "settingsUploadModeDirect": "Upload Direto (Beta)",
+    "settingsUploadModePostRide": "Upload Pós-Corrida",
+    "settingsUploadModeDescription": "Escolha quando enviar seus dados durante a gravação",
+    "settingsUploadModeCurrent": "Atual: {mode}",
+    "@settingsUploadModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsUploadModePostRideTitle": "Enviar dados após o término da gravação",
+    "settingsUploadModePostRideDescription": "• Os dados são armazenados localmente durante a gravação\n• O envio acontece de uma vez quando você terminar\n• Mais confiável e estável\n• Consome menos bateria durante a gravação",
+    "settingsUploadModeDirectTitle": "Enviar dados em tempo real durante a gravação (experimental)",
+    "settingsUploadModeDirectDescription": "• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação",
     "settingsAbout": "Sobre",
     "settingsPrivacyPolicy": "Política de Privacidade",
     "settingsVersion": "Versão: {versionNumber}",
@@ -121,7 +138,7 @@
     "trackDetailsPermissionsError": "Permissão negada para salvar o arquivo no armazenamento externo.",
     "trackDetailsFileSaved": "Arquivo CSV salvo na pasta Downloads.",
     "trackDetailsExport": "Exportação de dados do trajeto em CSV.",
-    "trackDetailsNoData": "Nenhum dado disponível.",
+  
     "trackDetailsLoadingError": "Erro ao carregar o trajeto.",
     "trackDetailsNoTrackData": "Nenhum trajeto disponível.",
     "trackDelete": "Excluir Trajeto",
@@ -166,11 +183,11 @@
     "errorNoScanAccess": "Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.",
     "errorNoSenseBoxSelected": "Para permitir o envio de dados do sensor para a nuvem, inicie sessão na sua conta do openSenseMap e selecione a caixa.",
     "errorExportDirectoryAccess": "Erro ao acessar o diretório de exportação. Por favor, verifique se o aplicativo tem permissão para acessar o armazenamento.",
-    "errorLoginFailed": "Falha no login. Por favor, verifique suas credenciais.",
-    "errorRegistrationFailed": "Falha no registro. Por favor, verifique suas credenciais.",
+    "errorLoginFailed": "Falha no login. Por favor, verifique suas credenciais e tente novamente.",
+    "errorRegistrationFailed": "Falha no registro. Por favor, verifique suas credenciais e tente novamente.",
     "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.",
     "errorUploadFailed": "Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.",
-    "errorPermanentAuthentication": "Falha permanente na autenticação. Por favor, faça login novamente para continuar fazendo upload.",
+    "errorPermanentAuthentication": "Falha permanente na autenticação. Por favor, faça login para enviar dados.",
     "selectCsvFormat": "Selecionar formato CSV",
     "regularCsv": "CSV padrão",
     "openSenseMapCsv": "CSV openSenseMap",
@@ -191,5 +208,58 @@
     "tracksStatisticsRidesInfo": "viagens concluídas",
     "tracksStatisticsDistanceInfo": "distância percorrida",
     "tracksStatisticsTimeInfo": "tempo gasto na estrada",
-    "trackStatistics": "Estatísticas do Trajeto"
+    "trackStatistics": "Estatísticas do Trajeto",
+    "uploadProgressTitle": "Progresso do Upload",
+    "uploadProgressPreparing": "Preparando upload...",
+    "uploadProgressUploading": "Enviando dados do trajeto...",
+    "uploadProgressInfo": "Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser enviar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.",
+    "uploadProgressRetrying": "Tentando upload novamente...",
+    "uploadProgressCompleted": "Upload concluído com sucesso",
+    "uploadProgressFailed": "Upload falhou",
+    "uploadProgressAuthenticationFailed": "Autenticação necessária",
+    "uploadProgressChunks": "{completed} de {total, plural, =0{0 blocos} =1{1 bloco} other{{total} blocos}} enviados",
+    "@uploadProgressChunks": {
+        "placeholders": {
+            "completed": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressPercentage": "{percentage}% concluído",
+    "@uploadProgressPercentage": {
+        "placeholders": {
+            "percentage": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressAuthenticationError": "Por favor, faça login para enviar dados.",
+    "uploadProgressNetworkError": "Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.",
+    "uploadProgressGenericError": "Upload falhou. Tente novamente.",
+    "uploadConfirmTitle": "Enviar Dados do Trajeto",
+    "uploadConfirmMessage": "Gostaria de enviar os dados do seu trajeto agora ou mais tarde?",
+    "uploadConfirmUploadNow": "Enviar agora",
+    "trackStatusUploaded": "Enviado",
+    "trackStatusUploadedAt": "Enviado em {date}",
+    "@trackStatusUploadedAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+      "trackDirectUploadInfo": "Estes dados do trajeto foram enviados em tempo real durante o seu passeio. Se quiser reenviá-los, pode usar o botão de upload acima.",
+  "trackUploadAttempts": "Tentativas de envio",
+  "trackLastAttempt": "Última tentativa",
+  "trackStatus": "Status",
+  "trackDirectUploadAuthFailed": "Este trajeto falhou ao ser enviado em tempo real porque você não estava logado. Por favor, faça login e tente enviar novamente.",
+    "trackStatusNotUploaded": "Não enviado",
+    "trackStatusUploadFailed": "Envio falhou",
+    "trackFilterAll": "Todos",
+    "trackFilterUnuploaded": "Não enviados",
+    "trackUploadRetryFailed": "Tentativa de envio falhou. Tente novamente.",
+    "errorTrackNoGeolocations": "Trajeto não possui dados de geolocalização e não pode ser enviado."
 }
