@@ -13,7 +13,7 @@
             }
         }
     },
-    "generalRetry": "Retry",
+
     "generalCancel": "Cancel",
     "generalCreate": "Create",
     "generalOk": "Ok",
@@ -22,6 +22,7 @@
     "generalEdit": "Edit",
     "generalAdd": "Add",
     "generalClose": "Close",
+    "generalUpload": "Upload",
     "generalPrivacyZones": "Privacy Zones",
     "generalSettings": "Settings",
     "generalShare": "Share",
@@ -106,6 +107,22 @@
     "settingsGeneral": "General",
     "settingsOther": "Other",
     "settingsVibrateOnDisconnect": "Vibrate on disconnect",
+    "settingsUploadMode": "Upload Mode",
+    "settingsUploadModeDirect": "Direct Upload (Beta)",
+    "settingsUploadModePostRide": "Post-Ride Upload",
+    "settingsUploadModeDescription": "Choose when to upload your data during recording",
+    "settingsUploadModeCurrent": "Current: {mode}",
+    "@settingsUploadModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsUploadModePostRideTitle": "Upload data after recording stops",
+    "settingsUploadModePostRideDescription": "• Data is stored locally during recording\n• Upload happens all at once when you finish\n• More reliable and stable\n• Uses less battery during recording",
+    "settingsUploadModeDirectTitle": "Upload data in real-time during recording (experimental)",
+    "settingsUploadModeDirectDescription": "• Data is uploaded immediately as it's collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording",
     "settingsAbout": "About",
     "settingsPrivacyPolicy": "Privacy Policy",
     "settingsVersion": "Version: {versionNumber}",
@@ -124,7 +141,7 @@
     "trackDetailsPermissionsError": "Permission denied to save file to external storage.",
     "trackDetailsFileSaved": "CSV file saved to Downloads folder.",
     "trackDetailsExport": "Track data CSV export.",
-    "trackDetailsNoData": "No data available.",
+  
     "trackDetailsLoadingError": "Error loading track.",
     "trackDetailsNoTrackData": "No track available.",
     "trackDelete": "Delete Track",
@@ -169,11 +186,11 @@
     "errorNoScanAccess": "To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.",
     "errorNoSenseBoxSelected": "To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.",
     "errorExportDirectoryAccess": "Error accessing export directory. Please make sure the app has permission to access the storage.",
-    "errorLoginFailed": "Login failed. Please check your credentials.",
-    "errorRegistrationFailed": "Registration failed. Please check your credentials.",
+    "errorLoginFailed": "Login failed. Please check your credentials and try once again.",
+    "errorRegistrationFailed": "Registration failed. Please check your credentials and try once again.",
     "errorBleConnectionFailed": "Connect to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.",
     "errorUploadFailed": "Data upload failed. Please check your internet connection and try again.",
-    "errorPermanentAuthentication": "Authentication failed permanently. Please log in again to continue uploading data.",
+    "errorPermanentAuthentication": "Authentication failed permanently. Please log in to upload data.",
     "selectCsvFormat": "Select CSV format",
     "regularCsv": "Standard CSV",
     "openSenseMapCsv": "openSenseMap CSV",
@@ -194,5 +211,59 @@
     "tracksStatisticsRidesInfo": "rides completed",
     "tracksStatisticsDistanceInfo": "distance traveled",
     "tracksStatisticsTimeInfo": "time spent on the road",
-    "trackStatistics": "Track Statistics"
+    "trackStatistics": "Track Statistics",
+    "uploadProgressTitle": "Upload Progress",
+    "uploadProgressPreparing": "Preparing upload...",
+    "uploadProgressUploading": "Uploading track data...",
+    "uploadProgressInfo": "Do not close the app while uploading. It can take some time depending on your track length.\n\nIf you would like to upload your track data later, you can do that from track overview screen.",
+    "uploadProgressRetrying": "Retrying upload...",
+    "uploadProgressCompleted": "Upload completed successfully",
+    "uploadProgressFailed": "Upload failed",
+    "uploadProgressAuthenticationFailed": "Authentication required",
+    "uploadProgressChunks": "{completed} of {total, plural, =0{0 chunks} =1{1 chunk} other{{total} chunks}} uploaded",
+    "@uploadProgressChunks": {
+        "placeholders": {
+            "completed": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressPercentage": "{percentage}% complete",
+    "@uploadProgressPercentage": {
+        "placeholders": {
+            "percentage": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressAuthenticationError": "Please log in to upload data.",
+    "uploadProgressNetworkError": "Network connection failed. Please check your internet connection and try again.",
+    "uploadProgressGenericError": "Upload failed. Please try again.",
+    "uploadConfirmTitle": "Upload Track Data",
+    "uploadConfirmMessage": "Would you like to upload your track data now?",
+    "uploadConfirmUploadNow": "Upload",
+    "trackStatusUploaded": "Uploaded",
+    "trackStatusUploadedAt": "Uploaded on {date}",
+    "@trackStatusUploadedAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "trackStatusNotUploaded": "Not uploaded",
+    "trackStatusUploadFailed": "Upload failed",
+    "trackStatusUploadFailedAt": "Upload failed on {date}",
+      "trackDirectUploadInfo": "This track data was uploaded in real time during your ride. If you'd like to re-upload it, you can use the upload button above.",
+  "trackUploadAttempts": "Upload attempts",
+  "trackLastAttempt": "Last attempt",
+  "trackStatus": "Status",
+  "trackDirectUploadAuthFailed": "This track failed to upload in real-time because you weren't logged in. Please log in and try uploading again.",
+    "trackFilterAll": "All",
+    "trackFilterUnuploaded": "Not uploaded",
+    "trackUploadRetryFailed": "Upload retry failed. Please try again.",
+    "errorTrackNoGeolocations": "Track has no geolocation data and cannot be uploaded."
 }

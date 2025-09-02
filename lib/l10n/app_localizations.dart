@@ -136,12 +136,6 @@ abstract class AppLocalizations {
   /// **'Error: {error}'**
   String generalErrorWithDescription(String error);
 
-  /// No description provided for @generalRetry.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry'**
-  String get generalRetry;
-
   /// No description provided for @generalCancel.
   ///
   /// In en, this message translates to:
@@ -189,6 +183,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get generalClose;
+
+  /// No description provided for @generalUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get generalUpload;
 
   /// No description provided for @generalPrivacyZones.
   ///
@@ -532,6 +532,60 @@ abstract class AppLocalizations {
   /// **'Vibrate on disconnect'**
   String get settingsVibrateOnDisconnect;
 
+  /// No description provided for @settingsUploadMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Mode'**
+  String get settingsUploadMode;
+
+  /// No description provided for @settingsUploadModeDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct Upload (Beta)'**
+  String get settingsUploadModeDirect;
+
+  /// No description provided for @settingsUploadModePostRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Post-Ride Upload'**
+  String get settingsUploadModePostRide;
+
+  /// No description provided for @settingsUploadModeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose when to upload your data during recording'**
+  String get settingsUploadModeDescription;
+
+  /// No description provided for @settingsUploadModeCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current: {mode}'**
+  String settingsUploadModeCurrent(String mode);
+
+  /// No description provided for @settingsUploadModePostRideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload data after recording stops'**
+  String get settingsUploadModePostRideTitle;
+
+  /// No description provided for @settingsUploadModePostRideDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'• Data is stored locally during recording\n• Upload happens all at once when you finish\n• More reliable and stable\n• Uses less battery during recording'**
+  String get settingsUploadModePostRideDescription;
+
+  /// No description provided for @settingsUploadModeDirectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload data in real-time during recording (experimental)'**
+  String get settingsUploadModeDirectTitle;
+
+  /// No description provided for @settingsUploadModeDirectDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording'**
+  String get settingsUploadModeDirectDescription;
+
   /// No description provided for @settingsAbout.
   ///
   /// In en, this message translates to:
@@ -597,12 +651,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Track data CSV export.'**
   String get trackDetailsExport;
-
-  /// No description provided for @trackDetailsNoData.
-  ///
-  /// In en, this message translates to:
-  /// **'No data available.'**
-  String get trackDetailsNoData;
 
   /// No description provided for @trackDetailsLoadingError.
   ///
@@ -871,13 +919,13 @@ abstract class AppLocalizations {
   /// No description provided for @errorLoginFailed.
   ///
   /// In en, this message translates to:
-  /// **'Login failed. Please check your credentials.'**
+  /// **'Login failed. Please check your credentials and try once again.'**
   String get errorLoginFailed;
 
   /// No description provided for @errorRegistrationFailed.
   ///
   /// In en, this message translates to:
-  /// **'Registration failed. Please check your credentials.'**
+  /// **'Registration failed. Please check your credentials and try once again.'**
   String get errorRegistrationFailed;
 
   /// No description provided for @errorBleConnectionFailed.
@@ -895,7 +943,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorPermanentAuthentication.
   ///
   /// In en, this message translates to:
-  /// **'Authentication failed permanently. Please log in again to continue uploading data.'**
+  /// **'Authentication failed permanently. Please log in to upload data.'**
   String get errorPermanentAuthentication;
 
   /// No description provided for @selectCsvFormat.
@@ -1023,6 +1071,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Track Statistics'**
   String get trackStatistics;
+
+  /// No description provided for @uploadProgressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Progress'**
+  String get uploadProgressTitle;
+
+  /// No description provided for @uploadProgressPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing upload...'**
+  String get uploadProgressPreparing;
+
+  /// No description provided for @uploadProgressUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading track data...'**
+  String get uploadProgressUploading;
+
+  /// No description provided for @uploadProgressInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not close the app while uploading. It can take some time depending on your track length.\n\nIf you would like to upload your track data later, you can do that from track overview screen.'**
+  String get uploadProgressInfo;
+
+  /// No description provided for @uploadProgressRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying upload...'**
+  String get uploadProgressRetrying;
+
+  /// No description provided for @uploadProgressCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload completed successfully'**
+  String get uploadProgressCompleted;
+
+  /// No description provided for @uploadProgressFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed'**
+  String get uploadProgressFailed;
+
+  /// No description provided for @uploadProgressAuthenticationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication required'**
+  String get uploadProgressAuthenticationFailed;
+
+  /// No description provided for @uploadProgressChunks.
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {total, plural, =0{0 chunks} =1{1 chunk} other{{total} chunks}} uploaded'**
+  String uploadProgressChunks(int completed, int total);
+
+  /// No description provided for @uploadProgressPercentage.
+  ///
+  /// In en, this message translates to:
+  /// **'{percentage}% complete'**
+  String uploadProgressPercentage(int percentage);
+
+  /// No description provided for @uploadProgressAuthenticationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to upload data.'**
+  String get uploadProgressAuthenticationError;
+
+  /// No description provided for @uploadProgressNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network connection failed. Please check your internet connection and try again.'**
+  String get uploadProgressNetworkError;
+
+  /// No description provided for @uploadProgressGenericError.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed. Please try again.'**
+  String get uploadProgressGenericError;
+
+  /// No description provided for @uploadConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Track Data'**
+  String get uploadConfirmTitle;
+
+  /// No description provided for @uploadConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Would you like to upload your track data now?'**
+  String get uploadConfirmMessage;
+
+  /// No description provided for @uploadConfirmUploadNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get uploadConfirmUploadNow;
+
+  /// No description provided for @trackStatusUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded'**
+  String get trackStatusUploaded;
+
+  /// No description provided for @trackStatusUploadedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded on {date}'**
+  String trackStatusUploadedAt(String date);
+
+  /// No description provided for @trackStatusNotUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not uploaded'**
+  String get trackStatusNotUploaded;
+
+  /// No description provided for @trackStatusUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed'**
+  String get trackStatusUploadFailed;
+
+  /// No description provided for @trackStatusUploadFailedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed on {date}'**
+  String trackStatusUploadFailedAt(Object date);
+
+  /// No description provided for @trackDirectUploadInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'This track data was uploaded in real time during your ride. If you\'d like to re-upload it, you can use the upload button above.'**
+  String get trackDirectUploadInfo;
+
+  /// No description provided for @trackUploadAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload attempts'**
+  String get trackUploadAttempts;
+
+  /// No description provided for @trackLastAttempt.
+  ///
+  /// In en, this message translates to:
+  /// **'Last attempt'**
+  String get trackLastAttempt;
+
+  /// No description provided for @trackStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get trackStatus;
+
+  /// No description provided for @trackDirectUploadAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This track failed to upload in real-time because you weren\'t logged in. Please log in and try uploading again.'**
+  String get trackDirectUploadAuthFailed;
+
+  /// No description provided for @trackFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get trackFilterAll;
+
+  /// No description provided for @trackFilterUnuploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not uploaded'**
+  String get trackFilterUnuploaded;
+
+  /// No description provided for @trackUploadRetryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload retry failed. Please try again.'**
+  String get trackUploadRetryFailed;
+
+  /// No description provided for @errorTrackNoGeolocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Track has no geolocation data and cannot be uploaded.'**
+  String get errorTrackNoGeolocations;
 }
 
 class _AppLocalizationsDelegate

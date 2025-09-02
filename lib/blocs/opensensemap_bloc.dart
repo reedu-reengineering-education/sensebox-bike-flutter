@@ -25,6 +25,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   bool get isAuthenticated => _isAuthenticated;
 
+  OpenSenseMapService get openSenseMapService => _service;
+  
   Future<void> markAuthenticationFailed() async {
     _isAuthenticated = false;
     _selectedSenseBox = null;
@@ -136,6 +138,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
+      _isAuthenticatingNotifier.value = true;
+      
       try {
         if (_service.isPermanentlyDisabled) {
           final tokens = await _service.refreshToken();
@@ -149,6 +153,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       } catch (e) {
         _handleAuthenticationError(e);
       } finally {
+        _isAuthenticatingNotifier.value = false;
         notifyListeners();
       }
     }

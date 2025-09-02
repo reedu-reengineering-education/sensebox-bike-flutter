@@ -13,7 +13,7 @@
             }
         }
     },
-    "generalRetry": "Erneut versuchen",
+
     "generalCancel": "Abbrechen",
     "generalCreate": "Erstellen",
     "generalOk": "Ok",
@@ -22,6 +22,7 @@
     "generalEdit": "Bearbeiten",
     "generalAdd": "Hinzufügen",
     "generalClose": "Schließen",
+    "generalUpload": "Hochladen",
     "generalPrivacyZones": "Privatzonen",
     "generalSettings": "Einstellungen",
     "generalShare": "Teilen",
@@ -106,6 +107,22 @@
     "settingsGeneral": "Allgemeine",
     "settingsOther": "Andere",
     "settingsVibrateOnDisconnect": "Vibration bei Verbindungsabbruch",
+    "settingsUploadMode": "Upload-Modus",
+    "settingsUploadModeDirect": "Direkter Upload (Beta)",
+    "settingsUploadModePostRide": "Upload nach der Fahrt",
+    "settingsUploadModeDescription": "Wählen Sie, wann Ihre Daten während der Aufzeichnung hochgeladen werden sollen",
+    "settingsUploadModeCurrent": "Aktuell: {mode}",
+    "@settingsUploadModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsUploadModePostRideTitle": "Daten nach Beendigung der Aufzeichnung hochladen",
+    "settingsUploadModePostRideDescription": "• Daten werden lokal während der Aufzeichnung gespeichert\n• Upload erfolgt auf einmal beim Beenden\n• Zuverlässiger und stabiler\n• Verbraucht weniger Akku während der Aufzeichnung",
+    "settingsUploadModeDirectTitle": "Daten in Echtzeit während der Aufzeichnung hochladen (experimentell)",
+    "settingsUploadModeDirectDescription": "• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen",
     "settingsAbout": "Über die App",
     "settingsPrivacyPolicy": "Datenschutz",
     "settingsVersion": "Version: {versionNumber}",
@@ -124,7 +141,7 @@
     "trackDetailsPermissionsError": "Keine Berechtigung zum Speichern der Datei auf externem Speicher.",
     "trackDetailsFileSaved": "Die CSV-Datei wird im Ordner Downloads gespeichert.",
     "trackDetailsExport": "CSV-Export von Trackdaten.",
-    "trackDetailsNoData": "Daten nicht verfügbar.",
+  
     "trackDetailsLoadingError": "Fehler beim Laden des Tracks.",
     "trackDetailsNoTrackData": "Kein Track verfügbar.",
     "trackDelete": "Track löschen",
@@ -169,11 +186,11 @@
     "errorNoScanAccess": "Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.",
     "errorNoSenseBoxSelected": "Um den Upload von Sensordaten in die Cloud zu erlauben, melden Sie sich bitte bei Ihrem openSenseMap-Konto an und aktivieren Sie das Kästchen.",
     "errorExportDirectoryAccess": "Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.",
-    "errorLoginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
-    "errorRegistrationFailed": "Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
+    "errorLoginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.",
+    "errorRegistrationFailed": "Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.",
     "errorBleConnectionFailed": "Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.",
     "errorUploadFailed": "Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
-    "errorPermanentAuthentication": "Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich erneut an, um den Upload fortzusetzen.",
+    "errorPermanentAuthentication": "Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich an, um Daten hochzuladen.",
     "selectCsvFormat": "CSV-Format auswählen",
     "regularCsv": "Standard CSV",
     "openSenseMapCsv": "openSenseMap CSV",
@@ -194,5 +211,58 @@
     "tracksStatisticsRidesInfo": "Abgeschlossene Fahrten",
     "tracksStatisticsDistanceInfo": "zurückgelegte Strecke",
     "tracksStatisticsTimeInfo": "Fahrzeit",
-    "trackStatistics": "Track-Statistiken"
+    "trackStatistics": "Track-Statistiken",
+    "uploadProgressTitle": "Track Upload",
+    "uploadProgressPreparing": "Upload wird vorbereitet...",
+    "uploadProgressUploading": "Track wird hochgeladen...",
+    "uploadProgressInfo": "Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.\n\nFalls Sie Ihre Track-Daten später hochladen möchten, können Sie das in der Trackübersicht tun.",
+    "uploadProgressRetrying": "Upload wird wiederholt...",
+    "uploadProgressCompleted": "Upload erfolgreich",
+    "uploadProgressFailed": "Upload fehlgeschlagen",
+    "uploadProgressAuthenticationFailed": "Authentifizierung erforderlich",
+    "uploadProgressChunks": "{completed} von {total, plural, =0{0 Blöcken} =1{1 Block} other{{total} Blöcken}} hochgeladen",
+    "@uploadProgressChunks": {
+        "placeholders": {
+            "completed": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressPercentage": "{percentage}% abgeschlossen",
+    "@uploadProgressPercentage": {
+        "placeholders": {
+            "percentage": {
+                "type": "int"
+            }
+        }
+    },
+    "uploadProgressAuthenticationError": "Bitte melden Sie sich an, um Daten hochzuladen.",
+    "uploadProgressNetworkError": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+    "uploadProgressGenericError": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "uploadConfirmTitle": "Track-Daten hochladen",
+    "uploadConfirmMessage": "Möchten Sie Ihre Track-Daten jetzt oder später hochladen?",
+    "uploadConfirmUploadNow": "Jetzt hochladen",
+    "trackStatusUploaded": "Hochgeladen",
+    "trackStatusUploadedAt": "Hochgeladen am {date}",
+    "@trackStatusUploadedAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+      "trackDirectUploadInfo": "Diese Track-Daten wurden in Echtzeit während deiner Fahrt hochgeladen. Falls du sie erneut hochladen möchtest, kannst du den Upload-Button oben verwenden.",
+  "trackUploadAttempts": "Upload-Versuche",
+  "trackLastAttempt": "Letzter Versuch",
+  "trackStatus": "Status",
+  "trackDirectUploadAuthFailed": "Dieser Track konnte nicht in Echtzeit hochgeladen werden, da du nicht angemeldet warst. Bitte melde dich an und versuche den Upload erneut.",
+    "trackStatusNotUploaded": "Nicht hochgeladen",
+    "trackStatusUploadFailed": "Upload fehlgeschlagen",
+    "trackFilterAll": "Alle",
+    "trackFilterUnuploaded": "Nicht hochgeladen",
+    "trackUploadRetryFailed": "Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "errorTrackNoGeolocations": "Track hat keine Geolokationsdaten und kann nicht hochgeladen werden."
 }

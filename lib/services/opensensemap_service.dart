@@ -536,9 +536,7 @@ class OpenSenseMapService {
       retryIf: (e) {
         final errorString = e.toString();
         return e is TooManyRequestsException ||
-            errorString.contains('Token refreshed') ||
             errorString.contains('Server error') ||
-            e is TooManyRequestsException ||
             e is SocketException || // Network connectivity issues
             e is HttpException || // HTTP protocol errors
             e is TimeoutException;

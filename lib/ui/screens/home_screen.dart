@@ -380,6 +380,8 @@ class _StartStopButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    recordingBloc.setContext(context);
+    
     return FilledButton.icon(
       style: const ButtonStyle(
         padding: WidgetStatePropertyAll(
