@@ -585,7 +585,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get trackDirectUploadInfo => 'Dieser Track wurde in Echtzeit während deiner Fahrt hochgeladen (falls du angemeldet warst). Möchtest du ihn erneut hochladen? Verwende den Button oben!';
+  String get trackDirectUploadInfo => 'Diese Track-Daten wurden in Echtzeit während deiner Fahrt hochgeladen. Falls du sie erneut hochladen möchtest, kannst du den Upload-Button oben verwenden.';
 
   @override
   String get trackDirectUploadAuthFailed => 'Dieser Track konnte nicht in Echtzeit hochgeladen werden, da du nicht angemeldet warst. Bitte melde dich an und versuche den Upload erneut.';
