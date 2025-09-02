@@ -179,7 +179,7 @@ void main() {
     });
 
     testWidgets('handles track without geolocations', (WidgetTester tester) async {
-      final trackWithoutGeolocations = TestTrackBuilder.createRegularTrack();
+      final trackWithoutGeolocations = TestTrackBuilder.createTrack();
       
       await tester.pumpWidget(createTestWidget(trackWithoutGeolocations));
 

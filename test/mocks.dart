@@ -109,8 +109,9 @@ class FakeSensorData extends Fake implements SensorData {}
 
 // Track creation helpers for tests
 class TestTrackBuilder {
-  static TrackData createDirectUploadTrack({
+  static TrackData createTrack({
     int? id,
+    int? isDirectUpload,
     int? uploaded,
     int? uploadAttempts,
     DateTime? lastUploadAttempt,
@@ -118,28 +119,7 @@ class TestTrackBuilder {
   }) {
     final track = TrackData()
       ..id = id ?? 1
-      ..isDirectUpload = 1
-      ..uploaded = uploaded ?? 0
-      ..uploadAttempts = uploadAttempts ?? 0
-      ..lastUploadAttempt = lastUploadAttempt;
-
-    if (geolocations != null) {
-      track.geolocations.addAll(geolocations);
-    }
-
-    return track;
-  }
-
-  static TrackData createRegularTrack({
-    int? id,
-    int? uploaded,
-    int? uploadAttempts,
-    DateTime? lastUploadAttempt,
-    List<GeolocationData>? geolocations,
-  }) {
-    final track = TrackData()
-      ..id = id ?? 1
-      ..isDirectUpload = 0
+      ..isDirectUpload = isDirectUpload ?? 1
       ..uploaded = uploaded ?? 0
       ..uploadAttempts = uploadAttempts ?? 0
       ..lastUploadAttempt = lastUploadAttempt;
