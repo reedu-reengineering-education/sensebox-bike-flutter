@@ -71,6 +71,12 @@ final darkTheme = ThemeData(
   ),
 );
 
+extension CustomColors on ColorScheme {
+  Color get success =>
+      brightness == Brightness.light ? Colors.green : Colors.green;
+  Color get info => brightness == Brightness.light ? Colors.blue : Colors.blue;
+}
+
 const double circleSize = 16.0;
 const double iconSize = 12.0;
 const double iconSizeLarge = 16.0;

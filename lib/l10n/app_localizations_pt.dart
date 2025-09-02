@@ -9,6 +9,17 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get createBoxAddCustomTag =>
+      'Adicionar etiqueta de grupo personalizada';
+
+  @override
+  String get createBoxCustomTag => 'Etiqueta de grupo personalizada';
+
+  @override
+  String get createBoxCustomTagHelper =>
+      'Você pode separar etiquetas com vírgulas';
+
+  @override
   String get generalLoading => 'Carregando...';
 
   @override
@@ -18,9 +29,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String generalErrorWithDescription(String error) {
     return 'Erro: $error';
   }
-
-  @override
-  String get generalRetry => 'Tentar de novo';
 
   @override
   String get generalCancel => 'Cancelar';
@@ -45,6 +53,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get generalClose => 'Fechar';
+
+  @override
+  String get generalUpload => 'Enviar';
 
   @override
   String get generalPrivacyZones => 'Áreas de Privacidade';
@@ -243,6 +254,40 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsVibrateOnDisconnect => 'Vibrar ao desconectar';
 
   @override
+  String get settingsUploadMode => 'Modo de Upload';
+
+  @override
+  String get settingsUploadModeDirect => 'Upload Direto (Beta)';
+
+  @override
+  String get settingsUploadModePostRide => 'Upload Pós-Corrida';
+
+  @override
+  String get settingsUploadModeDescription =>
+      'Escolha quando enviar seus dados durante a gravação';
+
+  @override
+  String settingsUploadModeCurrent(String mode) {
+    return 'Atual: $mode';
+  }
+
+  @override
+  String get settingsUploadModePostRideTitle =>
+      'Enviar dados após o término da gravação';
+
+  @override
+  String get settingsUploadModePostRideDescription =>
+      '• Os dados são armazenados localmente durante a gravação\n• O envio acontece de uma vez quando você terminar\n• Mais confiável e estável\n• Consome menos bateria durante a gravação';
+
+  @override
+  String get settingsUploadModeDirectTitle =>
+      'Enviar dados em tempo real durante a gravação (experimental)';
+
+  @override
+  String get settingsUploadModeDirectDescription =>
+      '• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação';
+
+  @override
   String get settingsAbout => 'Sobre';
 
   @override
@@ -279,9 +324,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trackDetailsExport => 'Exportação de dados do trajeto em CSV.';
-
-  @override
-  String get trackDetailsNoData => 'Nenhum dado disponível.';
 
   @override
   String get trackDetailsLoadingError => 'Erro ao carregar o trajeto.';
@@ -425,11 +467,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get errorLoginFailed =>
-      'Falha no login. Por favor, verifique suas credenciais.';
+      'Falha no login. Por favor, verifique suas credenciais e tente novamente.';
 
   @override
   String get errorRegistrationFailed =>
-      'Falha no registro. Por favor, verifique suas credenciais.';
+      'Falha no registro. Por favor, verifique suas credenciais e tente novamente.';
 
   @override
   String get errorBleConnectionFailed =>
@@ -441,7 +483,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get errorPermanentAuthentication =>
-      'Falha permanente na autenticação. Por favor, faça login novamente para continuar fazendo upload.';
+      'Falha permanente na autenticação. Por favor, faça login para enviar dados.';
 
   @override
   String get selectCsvFormat => 'Selecionar formato CSV';
@@ -510,4 +552,117 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trackStatistics => 'Estatísticas do Trajeto';
+
+  @override
+  String get uploadProgressTitle => 'Progresso do Upload';
+
+  @override
+  String get uploadProgressPreparing => 'Preparando upload...';
+
+  @override
+  String get uploadProgressUploading => 'Enviando dados do trajeto...';
+
+  @override
+  String get uploadProgressInfo =>
+      'Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser enviar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.';
+
+  @override
+  String get uploadProgressRetrying => 'Tentando upload novamente...';
+
+  @override
+  String get uploadProgressCompleted => 'Upload concluído com sucesso';
+
+  @override
+  String get uploadProgressFailed => 'Upload falhou';
+
+  @override
+  String get uploadProgressAuthenticationFailed => 'Autenticação necessária';
+
+  @override
+  String uploadProgressChunks(int completed, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total blocos',
+      one: '1 bloco',
+      zero: '0 blocos',
+    );
+    return '$completed de $_temp0 enviados';
+  }
+
+  @override
+  String uploadProgressPercentage(int percentage) {
+    return '$percentage% concluído';
+  }
+
+  @override
+  String get uploadProgressAuthenticationError =>
+      'Por favor, faça login para enviar dados.';
+
+  @override
+  String get uploadProgressNetworkError =>
+      'Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.';
+
+  @override
+  String get uploadProgressGenericError => 'Upload falhou. Tente novamente.';
+
+  @override
+  String get uploadConfirmTitle => 'Enviar Dados do Trajeto';
+
+  @override
+  String get uploadConfirmMessage =>
+      'Gostaria de enviar os dados do seu trajeto agora ou mais tarde?';
+
+  @override
+  String get uploadConfirmUploadNow => 'Enviar agora';
+
+  @override
+  String get trackStatusUploaded => 'Enviado';
+
+  @override
+  String trackStatusUploadedAt(String date) {
+    return 'Enviado em $date';
+  }
+
+  @override
+  String get trackStatusNotUploaded => 'Não enviado';
+
+  @override
+  String get trackStatusUploadFailed => 'Envio falhou';
+
+  @override
+  String trackStatusUploadFailedAt(Object date) {
+    return 'Upload failed on $date';
+  }
+
+  @override
+  String get trackDirectUploadInfo =>
+      'Estes dados do trajeto foram enviados em tempo real durante o seu passeio. Se quiser reenviá-los, pode usar o botão de upload acima.';
+
+  @override
+  String get trackUploadAttempts => 'Tentativas de envio';
+
+  @override
+  String get trackLastAttempt => 'Última tentativa';
+
+  @override
+  String get trackStatus => 'Status';
+
+  @override
+  String get trackDirectUploadAuthFailed =>
+      'Este trajeto falhou ao ser enviado em tempo real porque você não estava logado. Por favor, faça login e tente enviar novamente.';
+
+  @override
+  String get trackFilterAll => 'Todos';
+
+  @override
+  String get trackFilterUnuploaded => 'Não enviados';
+
+  @override
+  String get trackUploadRetryFailed =>
+      'Tentativa de envio falhou. Tente novamente.';
+
+  @override
+  String get errorTrackNoGeolocations =>
+      'Trajeto não possui dados de geolocalização e não pode ser enviado.';
 }

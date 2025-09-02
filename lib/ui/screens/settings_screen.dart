@@ -362,6 +362,30 @@ class SettingsScreen extends StatelessWidget {
             );
           },
         ),
+        StreamBuilder<bool>(
+          stream: settingsBloc.directUploadModeStream,
+          initialData: settingsBloc.directUploadMode,
+          builder: (context, snapshot) {
+            final isDirectUpload = snapshot.data ?? false;
+            final uploadModeText = isDirectUpload
+                ? AppLocalizations.of(context)!.settingsUploadModeDirect
+                : AppLocalizations.of(context)!.settingsUploadModePostRide;
+
+            return ListTile(
+              leading: const Icon(Icons.cloud_upload),
+              title: Text(AppLocalizations.of(context)!.settingsUploadMode),
+              subtitle: Text(
+                AppLocalizations.of(context)!
+                    .settingsUploadModeCurrent(uploadModeText),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              onTap: () => _showUploadModeDialog(context, settingsBloc),
+            );
+          },
+        ),
         ListTile(
           leading: const Icon(Icons.admin_panel_settings),
           title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
@@ -471,6 +495,114 @@ class SettingsScreen extends StatelessWidget {
         } catch (error, stack) {
           ErrorService.handleError(error, stack);
         }
+      },
+    );
+  }
+
+  void _showUploadModeDialog(BuildContext context, SettingsBloc settingsBloc) {
+    final currentMode = settingsBloc.directUploadMode;
+    final localizations = AppLocalizations.of(context)!;
+    final screenSize = MediaQuery.of(context).size;
+    final isLargeScreen = screenSize.width > 375; // iPhone mini width is 375px
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(localizations.settingsUploadMode),
+          titlePadding: isLargeScreen
+              ? const EdgeInsets.fromLTRB(
+                  24, 24, 24, 24) // Extra padding on larger screens
+              : const EdgeInsets.fromLTRB(
+                  12, 12, 12, 12), // Standard padding on small screens
+          contentPadding: EdgeInsets.zero,
+          content: SizedBox(
+            width: double.maxFinite,
+            height: isLargeScreen
+                ? null
+                : MediaQuery.of(context).size.height *
+                    0.6, // Fixed height only on small screens
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                    bottom: isLargeScreen
+                        ? 24.0
+                        : 0.0), // Add bottom padding on larger screens
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<bool>(
+                      title: Text(localizations.settingsUploadModePostRide),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(localizations.settingsUploadModePostRideTitle),
+                          const SizedBox(height: 8),
+                          Text(
+                            localizations.settingsUploadModePostRideDescription,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                          ),
+                        ],
+                      ),
+                      value: false,
+                      groupValue: currentMode,
+                      onChanged: (bool? value) {
+                        if (value != null) {
+                          settingsBloc.toggleDirectUploadMode(value);
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      isThreeLine: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16.0),
+                    ),
+                    const SizedBox(height: 16),
+                    RadioListTile<bool>(
+                      title: Text(localizations.settingsUploadModeDirect),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(localizations.settingsUploadModeDirectTitle),
+                          const SizedBox(height: 8),
+                          Text(
+                            localizations.settingsUploadModeDirectDescription,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                          ),
+                        ],
+                      ),
+                      value: true,
+                      groupValue: currentMode,
+                      onChanged: (bool? value) {
+                        if (value != null) {
+                          settingsBloc.toggleDirectUploadMode(value);
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      isThreeLine: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16.0),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(localizations.generalCancel),
+            ),
+          ],
+        );
       },
     );
   }
