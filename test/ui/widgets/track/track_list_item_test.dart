@@ -106,11 +106,11 @@ void main() {
     });
 
     testWidgets('shows correct status for direct upload track', (WidgetTester tester) async {
-      testTrack.isDirectUpload = true;
+      testTrack.isDirectUpload = 1;
       
       await tester.pumpWidget(createTestWidget(testTrack));
 
-      final statusInfo = trackBloc.getTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
         testTrack, 
         ThemeData.light(), 
         mockLocalizations
@@ -123,12 +123,12 @@ void main() {
     });
 
     testWidgets('shows correct status for uploaded track', (WidgetTester tester) async {
-      testTrack.isDirectUpload = false;
-      testTrack.uploaded = true;
+      testTrack.isDirectUpload = 0;
+      testTrack.uploaded = 1;
       
       await tester.pumpWidget(createTestWidget(testTrack));
 
-      final statusInfo = trackBloc.getTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
         testTrack, 
         ThemeData.light(), 
         mockLocalizations
@@ -141,13 +141,13 @@ void main() {
     });
 
     testWidgets('shows correct status for failed upload track', (WidgetTester tester) async {
-      testTrack.isDirectUpload = false;
-      testTrack.uploaded = false;
+      testTrack.isDirectUpload = 0;
+      testTrack.uploaded = 0;
       testTrack.uploadAttempts = 1;
       
       await tester.pumpWidget(createTestWidget(testTrack));
 
-      final statusInfo = trackBloc.getTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
         testTrack, 
         ThemeData.light(), 
         mockLocalizations
@@ -160,13 +160,13 @@ void main() {
     });
 
     testWidgets('shows correct status for not uploaded track', (WidgetTester tester) async {
-      testTrack.isDirectUpload = false;
-      testTrack.uploaded = false;
+      testTrack.isDirectUpload = 0;
+      testTrack.uploaded = 0;
       testTrack.uploadAttempts = 0;
       
       await tester.pumpWidget(createTestWidget(testTrack));
 
-      final statusInfo = trackBloc.getTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
         testTrack, 
         ThemeData.light(), 
         mockLocalizations
@@ -179,7 +179,7 @@ void main() {
     });
 
     testWidgets('handles track without geolocations', (WidgetTester tester) async {
-      final trackWithoutGeolocations = TrackData();
+      final trackWithoutGeolocations = TestTrackBuilder.createRegularTrack();
       
       await tester.pumpWidget(createTestWidget(trackWithoutGeolocations));
 

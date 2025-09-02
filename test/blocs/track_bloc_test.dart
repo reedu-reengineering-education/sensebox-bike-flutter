@@ -62,7 +62,7 @@ void main() {
       expect(trackBloc.currentTrack!.isDirectUpload, equals(1));
     });
 
-    test('startNewTrack with isDirectUpload = true sets isDirectUpload to true', () async {
+    test('startNewTrack with isDirectUpload = 1 sets isDirectUpload to 1', () async {
       when(() => mockIsarService.mockTrackService.saveTrack(any()))
           .thenAnswer((_) async => 1);
 
@@ -73,7 +73,7 @@ void main() {
       expect(trackBloc.currentTrack!.isDirectUpload, equals(1));
     });
 
-    test('startNewTrack with isDirectUpload = false sets isDirectUpload to false', () async {
+    test('startNewTrack with isDirectUpload = 0 sets isDirectUpload to 0', () async {
       when(() => mockIsarService.mockTrackService.saveTrack(any()))
           .thenAnswer((_) async => 1);
 

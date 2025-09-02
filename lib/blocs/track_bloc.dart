@@ -26,8 +26,9 @@ class TrackBloc with ChangeNotifier {
   Future<int> startNewTrack({bool? isDirectUpload}) async {
     _currentTrack = TrackData();
     
-    // Set isDirectUpload using the boolean setter - defaults to true (direct upload)
-    _currentTrack!.isDirectUploadBool = isDirectUpload ?? true;
+    // Set isDirectUpload - direct upload tracks should be marked as 1, regular tracks as 0
+    // Default to true (direct upload) when parameter is not provided
+    _currentTrack!.isDirectUpload = (isDirectUpload ?? true) ? 1 : 0;
 
     int id = await isarService.trackService.saveTrack(_currentTrack!);
 

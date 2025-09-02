@@ -30,7 +30,7 @@ void main() {
     await clearIsarDatabase(isar);
 
     trackData = createMockTrackData();
-    trackData.isDirectUpload = false; // Set to false for batch upload testing
+    trackData.isDirectUpload = 0; // Set to false for batch upload testing
     await isar.writeTxn(() async {
       await isar.trackDatas.put(trackData);
     });
@@ -123,7 +123,7 @@ group('TrackService', () {
     group('markTrackAsUploaded', () {
       test('successfully marks a track as uploaded', () async {
         // Verify track starts as not uploaded
-        expect(trackData.uploaded, isFalse);
+        expect(trackData.isUploaded, isFalse);
 
         // Mark track as uploaded
         await trackService.markTrackAsUploaded(trackData.id);
@@ -131,7 +131,7 @@ group('TrackService', () {
         // Verify track is now marked as uploaded in database
         final updatedTrack = await isar.trackDatas.get(trackData.id);
         expect(updatedTrack, isNotNull);
-        expect(updatedTrack!.uploaded, isTrue);
+        expect(updatedTrack!.isUploaded, isTrue);
       });
 
       test('handles non-existent track ID gracefully', () async {
@@ -157,7 +157,7 @@ group('TrackService', () {
         // Verify track is uploaded and other properties are preserved
         final updatedTrack = await isar.trackDatas.get(trackData.id);
         expect(updatedTrack, isNotNull);
-        expect(updatedTrack!.uploaded, isTrue);
+        expect(updatedTrack!.isUploaded, isTrue);
         expect(updatedTrack.uploadAttempts, equals(5));
         expect(updatedTrack.lastUploadAttempt, isNotNull);
       });
@@ -172,9 +172,9 @@ group('TrackService', () {
         });
 
         // Verify all tracks start as not uploaded
-        expect(trackData.uploaded, isFalse);
-        expect(trackData2.uploaded, isFalse);
-        expect(trackData3.uploaded, isFalse);
+        expect(trackData.isUploaded, isFalse);
+        expect(trackData2.isUploaded, isFalse);
+        expect(trackData3.isUploaded, isFalse);
 
         // Mark all tracks as uploaded
         await trackService.markTrackAsUploaded(trackData.id);
@@ -186,9 +186,9 @@ group('TrackService', () {
         final updatedTrack2 = await isar.trackDatas.get(trackData2.id);
         final updatedTrack3 = await isar.trackDatas.get(trackData3.id);
 
-        expect(updatedTrack1!.uploaded, isTrue);
-        expect(updatedTrack2!.uploaded, isTrue);
-        expect(updatedTrack3!.uploaded, isTrue);
+        expect(updatedTrack1!.isUploaded, isTrue);
+        expect(updatedTrack2!.isUploaded, isTrue);
+        expect(updatedTrack3!.isUploaded, isTrue);
       });
     });
 
@@ -199,16 +199,16 @@ group('TrackService', () {
         
         // Create tracks with different combinations
         final track1 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Batch upload, not uploaded
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Batch upload, not uploaded
         
         final track2 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = true; // Direct upload, not uploaded - should be excluded
+          ..uploaded = 0
+          ..isDirectUpload = 1; // Direct upload, not uploaded - should be excluded
         
         final track3 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Batch upload, not uploaded
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Batch upload, not uploaded
 
         // Save tracks
         await isar.writeTxn(() async {
@@ -238,8 +238,8 @@ group('TrackService', () {
         
         // Create a batch upload track that is not uploaded
         final batchUploadTrack = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false;
+          ..uploaded = 0
+          ..isDirectUpload = 0;
 
         await isar.writeTxn(() async {
           await isar.trackDatas.put(batchUploadTrack);
@@ -261,12 +261,12 @@ group('TrackService', () {
         
         // Create direct upload tracks with different upload statuses
         final directUploadTrack1 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = true; // Not uploaded, direct upload - should be excluded
+          ..uploaded = 0
+          ..isDirectUpload = 1; // Not uploaded, direct upload - should be excluded
         
         final directUploadTrack2 = TrackData()
-          ..uploaded = true
-          ..isDirectUpload = true; // Uploaded, direct upload - should be excluded
+          ..uploaded = 1
+          ..isDirectUpload = 1; // Uploaded, direct upload - should be excluded
 
         await isar.writeTxn(() async {
           await isar.trackDatas.putAll([directUploadTrack1, directUploadTrack2]);
@@ -287,16 +287,16 @@ group('TrackService', () {
         
         // Create tracks with different combinations
         final track1 = TrackData()
-          ..uploaded = true
-          ..isDirectUpload = true; // Uploaded, direct upload - should be excluded
+          ..uploaded = 1
+          ..isDirectUpload = 1; // Uploaded, direct upload - should be excluded
         
         final track2 = TrackData()
-          ..uploaded = true
-          ..isDirectUpload = false; // Uploaded, batch upload - should be excluded
+          ..uploaded = 1
+          ..isDirectUpload = 0; // Uploaded, batch upload - should be excluded
         
         final track3 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Not uploaded, batch upload - should be included
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Not uploaded, batch upload - should be included
 
         await isar.writeTxn(() async {
           await isar.trackDatas.putAll([track1, track2, track3]);
@@ -384,16 +384,16 @@ group('TrackService', () {
     group('getUnuploadedTracksPaginated', () {
       test('retrieves only unuploaded tracks with pagination', () async {
         // Create tracks with different upload statuses
-        final uploadedTrack = TrackData()..uploaded = true;
+        final uploadedTrack = TrackData()..uploaded = 1;
         final unuploadedTrack1 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Explicitly set to false for batch upload
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Explicitly set to false for batch upload
         final unuploadedTrack2 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Explicitly set to false for batch upload
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Explicitly set to false for batch upload
         final unuploadedTrack3 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Explicitly set to false for batch upload
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Explicitly set to false for batch upload
 
         await isar.writeTxn(() async {
           await isar.trackDatas.putAll([
@@ -409,7 +409,7 @@ group('TrackService', () {
 
         expect(tracks.length, equals(2));
         // Should only return unuploaded tracks
-        expect(tracks.every((track) => !track.uploaded), isTrue);
+        expect(tracks.every((track) => !track.isUploaded), isTrue);
         // Should return newest tracks first (highest IDs)
         expect(tracks[0].id, greaterThan(tracks[1].id));
       });
@@ -417,16 +417,16 @@ group('TrackService', () {
       test('retrieves unuploaded tracks with pagination and skips last track',
           () async {
         // Create tracks with different upload statuses
-        final uploadedTrack = TrackData()..uploaded = true;
+        final uploadedTrack = TrackData()..uploaded = 1;
         final unuploadedTrack1 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Explicitly set to false for batch upload
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Explicitly set to false for batch upload
         final unuploadedTrack2 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Explicitly set to false for batch upload
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Explicitly set to false for batch upload
         final unuploadedTrack3 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Explicitly set to false for batch upload
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Explicitly set to false for batch upload
 
         await isar.writeTxn(() async {
           await isar.trackDatas.putAll([
@@ -442,7 +442,7 @@ group('TrackService', () {
 
         expect(tracks.length, equals(2));
         // Should only return unuploaded tracks
-        expect(tracks.every((track) => !track.uploaded), isTrue);
+        expect(tracks.every((track) => !track.isUploaded), isTrue);
         // Should skip the newest unuploaded track
         expect(tracks[0].id, lessThan(unuploadedTrack3.id));
       });
@@ -451,8 +451,8 @@ group('TrackService', () {
         // Clear database first and create only uploaded tracks
         await trackService.deleteAllTracks();
         
-        final uploadedTrack1 = TrackData()..uploaded = true;
-        final uploadedTrack2 = TrackData()..uploaded = true;
+        final uploadedTrack1 = TrackData()..uploaded = 1;
+        final uploadedTrack2 = TrackData()..uploaded = 1;
 
         await isar.writeTxn(() async {
           await isar.trackDatas.putAll([uploadedTrack1, uploadedTrack2]);
@@ -471,8 +471,8 @@ group('TrackService', () {
         // Create exactly 5 unuploaded tracks
         final unuploadedTracks =
             List.generate(5, (index) => TrackData()
-              ..uploaded = false
-              ..isDirectUpload = false); // Explicitly set to false for batch upload
+              ..uploaded = 0
+              ..isDirectUpload = 0); // Explicitly set to false for batch upload
 
         await isar.writeTxn(() async {
           await isar.trackDatas.putAll(unuploadedTracks);
@@ -502,14 +502,14 @@ group('TrackService', () {
       test('maintains correct sorting order for unuploaded tracks', () async {
         // Create unuploaded tracks with specific IDs
         final unuploadedTrack1 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Explicitly set to false for batch upload
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Explicitly set to false for batch upload
         final unuploadedTrack2 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Explicitly set to false for batch upload
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Explicitly set to false for batch upload
         final unuploadedTrack3 = TrackData()
-          ..uploaded = false
-          ..isDirectUpload = false; // Explicitly set to false for batch upload
+          ..uploaded = 0
+          ..isDirectUpload = 0; // Explicitly set to false for batch upload
 
         await isar.writeTxn(() async {
           await isar.trackDatas.put(unuploadedTrack1);
