@@ -8,13 +8,14 @@ import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:sensebox_bike/ui/utils/common.dart';
+
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection_modal.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/common/error_banner.dart';
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
@@ -26,90 +27,111 @@ class HomeScreen extends StatelessWidget {
     final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.connectionErrorNotifier,
-      builder: (context, error, child) {
-        if (error == true && context.mounted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).clearMaterialBanners();
-            ScaffoldMessenger.of(context).showMaterialBanner(
-              MaterialBanner(
-                content: Text(
-                    AppLocalizations.of(context)!.errorBleConnectionFailed),
-                backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      bleBloc.resetConnectionError();
-                      ScaffoldMessenger.of(context).clearMaterialBanners();
-                    },
-                    child: Text(
-                        MaterialLocalizations.of(context).closeButtonLabel),
-                  ),
-                ],
-              ),
-            );
-          });
-        }
-
-        return Scaffold(
-          body: CustomScrollView(
-            clipBehavior: Clip.none,
-            slivers: [
-              // SliverPersistentHeader with the map and floating buttons
-              SliverPersistentHeader(
-                delegate: _SliverAppBarDelegate(
-                  minHeight: MediaQuery.of(context).size.height * 0.33,
-                  maxHeight: MediaQuery.of(context).size.height *
-                      (bleBloc.isConnected ? 0.65 : 0.85),
-                  child: Stack(
-                    children: [
-                      const SizedBox(
-                        width: double.infinity,
-                        child: GeolocationMapWidget(), // The map
-                      ),
-                      const Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: _BottomGradient(),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: _FloatingButtons(
-                              bleBloc: bleBloc, recordingBloc: recordingBloc),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                pinned: true,
-              ),
-              SliverSafeArea(
-                minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                sliver: ValueListenableBuilder<BluetoothDevice?>(
-                  valueListenable: bleBloc.selectedDeviceNotifier,
-                  builder: (context, device, child) {
-                    if (device == null) {
-                      // Not connected: show nothing
-                      return SliverToBoxAdapter(child: SizedBox.shrink());
-                    }
-                    // Connected: show sensor grid
-                    return _SensorGrid(sensorBloc: sensorBloc);
-                  },
-                ),
-              ),
-            ],
+    return Scaffold(
+      body: Column(
+        children: [
+          // Error banner with spacing
+          ValueListenableBuilder<bool>(
+            valueListenable: bleBloc.connectionErrorNotifier,
+            builder: (context, error, child) {
+              if (error == true) {
+                return Column(
+                  children: [
+                    const SizedBox(height: 48),
+                    _ConnectionErrorBanner(bleBloc: bleBloc),
+                    const SizedBox(height: 16),
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            },
           ),
-        );
-      },
+          // Main content
+          Expanded(
+            child: CustomScrollView(
+              clipBehavior: Clip.none,
+              slivers: [
+                // SliverPersistentHeader with the map and floating buttons
+                SliverPersistentHeader(
+                  delegate: _SliverAppBarDelegate(
+                    minHeight: MediaQuery.of(context).size.height * 0.33,
+                    maxHeight: MediaQuery.of(context).size.height *
+                        (bleBloc.isConnected ? 0.65 : 0.85),
+                    child: Stack(
+                      children: [
+                        const SizedBox(
+                          width: double.infinity,
+                          child: GeolocationMapWidget(), // The map
+                        ),
+                        const Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: _BottomGradient(),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: _FloatingButtons(
+                                bleBloc: bleBloc, recordingBloc: recordingBloc),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  pinned: true,
+                ),
+                SliverSafeArea(
+                  minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  sliver: ValueListenableBuilder<BluetoothDevice?>(
+                    valueListenable: bleBloc.selectedDeviceNotifier,
+                    builder: (context, device, child) {
+                      // Only show sensor area if device is connected and not in error state
+                      if (device == null ||
+                          bleBloc.connectionErrorNotifier.value) {
+                        return SliverToBoxAdapter(child: SizedBox.shrink());
+                      }
+
+                      // Check if there are actually any sensor widgets available
+                      final widgets = sensorBloc.getSensorWidgets();
+                      if (widgets.isEmpty) {
+                        // Connected but no sensor data available: show nothing
+                        return SliverToBoxAdapter(child: SizedBox.shrink());
+                      }
+
+                      // Connected and has sensor data: show sensor grid
+                      return _SensorGrid(sensorBloc: sensorBloc);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
+
+// Connection error banner widget
+class _ConnectionErrorBanner extends StatelessWidget {
+  final BleBloc bleBloc;
+ 
+  const _ConnectionErrorBanner({required this.bleBloc});
+
+  @override
+  Widget build(BuildContext context) {
+    return ErrorBanner(
+      errorText: AppLocalizations.of(context)!.errorBleConnectionFailed,
+      onDismiss: () => bleBloc.resetConnectionError(),
+    );
+  }
+}
+
+
 
 // Widget for senseBox selection as a badge-like button
 class _SenseBoxSelectionButton extends StatelessWidget {
@@ -253,7 +275,16 @@ class _FloatingButtons extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _ConnectButton(bleBloc: bleBloc),
-                  _SenseBoxSelectionButton(),
+                  // Only show sensebox selection if authenticated
+                  Consumer<OpenSenseMapBloc>(
+                    builder: (context, osemBloc, child) {
+                      if (osemBloc.isAuthenticated &&
+                          !osemBloc.isAuthenticating) {
+                        return _SenseBoxSelectionButton();
+                      }
+                      return SizedBox.shrink();
+                    },
+                  ),
                 ],
               );
             } else {
@@ -265,14 +296,24 @@ class _FloatingButtons extends StatelessWidget {
                     spacing: 12,
                     children: [
                       Expanded(
-                        child: _StartStopButton(recordingBloc: recordingBloc),
+                        child: _StartStopButton(
+                            recordingBloc: recordingBloc, isReconnecting: isReconnecting),
                       ),
                       Expanded(
-                        child: _DisconnectButton(bleBloc: bleBloc),
+                        child: _DisconnectButton(bleBloc: bleBloc, recordingBloc: recordingBloc),
                       ),
                     ],
                   ),
-                  _SenseBoxSelectionButton(),
+                  // Only show sensebox selection if authenticated
+                  Consumer<OpenSenseMapBloc>(
+                    builder: (context, osemBloc, child) {
+                      if (osemBloc.isAuthenticated &&
+                          !osemBloc.isAuthenticating) {
+                        return _SenseBoxSelectionButton();
+                      }
+                      return SizedBox.shrink();
+                    },
+                  ),
                 ],
               );
             }
@@ -376,7 +417,8 @@ class _ConnectButton extends StatelessWidget {
 // Start/Stop button
 class _StartStopButton extends StatelessWidget {
   final RecordingBloc recordingBloc;
-  const _StartStopButton({required this.recordingBloc});
+  final bool isReconnecting;
+  const _StartStopButton({required this.recordingBloc, required this.isReconnecting});
 
   @override
   Widget build(BuildContext context) {
@@ -391,15 +433,18 @@ class _StartStopButton extends StatelessWidget {
       label: Text(recordingBloc.isRecording
           ? AppLocalizations.of(context)!.connectionButtonStop
           : AppLocalizations.of(context)!.connectionButtonStart),
-      icon: Icon(
-          recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
-      onPressed: () async {
-        if (recordingBloc.isRecording) {
-          await recordingBloc.stopRecording();
-        } else {
-          await recordingBloc.startRecording();
-        }
-      },
+      icon: Icon(recordingBloc.isRecording
+          ? Icons.stop
+          : Icons.fiber_manual_record),
+      onPressed: isReconnecting
+          ? null
+          : () async {
+              if (recordingBloc.isRecording) {
+                await recordingBloc.stopRecording();
+              } else {
+                await recordingBloc.startRecording();
+              }
+            },
     );
   }
 }
@@ -407,7 +452,8 @@ class _StartStopButton extends StatelessWidget {
 // Disconnect button
 class _DisconnectButton extends StatelessWidget {
   final BleBloc bleBloc;
-  const _DisconnectButton({required this.bleBloc});
+  final RecordingBloc recordingBloc;
+  const _DisconnectButton({required this.bleBloc, required this.recordingBloc});
 
   @override
   Widget build(BuildContext context) {
@@ -425,7 +471,13 @@ class _DisconnectButton extends StatelessWidget {
           label: isReconnecting
               ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
               : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
-          onPressed: isReconnecting ? null : bleBloc.disconnectDevice,
+          onPressed: isReconnecting ? null : () async {
+            // Stop recording if active before disconnecting
+            if (recordingBloc.isRecording) {
+              await recordingBloc.stopRecording();
+            }
+            bleBloc.disconnectDevice();
+          },
         );
       },
     );
