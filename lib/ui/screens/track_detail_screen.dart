@@ -202,7 +202,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         if (_track.uploadAttemptsCount > 0) ...[
           _buildDetailRow(
             icon: Icons.refresh,
-            label: 'Upload attempts',
+            label: localizations.trackUploadAttempts,
             value: _track.uploadAttemptsCount.toString(),
             theme: theme,
           ),
@@ -211,7 +211,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         if (_track.lastUploadAttempt != null) ...[
           _buildDetailRow(
             icon: Icons.schedule,
-            label: 'Last attempt',
+            label: localizations.trackLastAttempt,
             value: DateFormat('dd.MM.yyyy HH:mm')
                 .format(_track.lastUploadAttempt!),
             theme: theme,
@@ -221,7 +221,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         if (_track.isUploaded) ...[
           _buildDetailRow(
             icon: Icons.check_circle,
-            label: 'Status',
+            label: localizations.trackStatus,
             value: localizations.trackStatusUploaded,
             theme: theme,
             valueColor: theme.colorScheme.success,
@@ -229,7 +229,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         ] else if (_track.uploadAttemptsCount > 0) ...[
           _buildDetailRow(
             icon: Icons.error,
-            label: 'Status',
+            label: localizations.trackStatus,
             value: localizations.trackStatusUploadFailed,
             theme: theme,
             valueColor: theme.colorScheme.error,
@@ -237,7 +237,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         ] else ...[
           _buildDetailRow(
             icon: Icons.pending,
-            label: 'Status',
+            label: localizations.trackStatus,
             value: localizations.trackStatusNotUploaded,
             theme: theme,
             valueColor: theme.colorScheme.outline,

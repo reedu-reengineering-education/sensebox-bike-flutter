@@ -251,8 +251,11 @@
             }
         }
     },
-    "trackDirectUploadInfo": "Diese Track-Daten wurden in Echtzeit während deiner Fahrt hochgeladen. Falls du sie erneut hochladen möchtest, kannst du den Upload-Button oben verwenden.",
-    "trackDirectUploadAuthFailed": "Dieser Track konnte nicht in Echtzeit hochgeladen werden, da du nicht angemeldet warst. Bitte melde dich an und versuche den Upload erneut.",
+      "trackDirectUploadInfo": "Diese Track-Daten wurden in Echtzeit während deiner Fahrt hochgeladen. Falls du sie erneut hochladen möchtest, kannst du den Upload-Button oben verwenden.",
+  "trackUploadAttempts": "Upload-Versuche",
+  "trackLastAttempt": "Letzter Versuch",
+  "trackStatus": "Status",
+  "trackDirectUploadAuthFailed": "Dieser Track konnte nicht in Echtzeit hochgeladen werden, da du nicht angemeldet warst. Bitte melde dich an und versuche den Upload erneut.",
     "trackStatusNotUploaded": "Nicht hochgeladen",
     "trackStatusUploadFailed": "Upload fehlgeschlagen",
     "trackFilterAll": "Alle",

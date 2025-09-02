@@ -251,8 +251,11 @@
             }
         }
     },
-    "trackDirectUploadInfo": "Estes dados do trajeto foram enviados em tempo real durante o seu passeio. Se quiser reenviá-los, pode usar o botão de upload acima.",
-    "trackDirectUploadAuthFailed": "Este trajeto falhou ao ser enviado em tempo real porque você não estava logado. Por favor, faça login e tente enviar novamente.",
+      "trackDirectUploadInfo": "Estes dados do trajeto foram enviados em tempo real durante o seu passeio. Se quiser reenviá-los, pode usar o botão de upload acima.",
+  "trackUploadAttempts": "Tentativas de envio",
+  "trackLastAttempt": "Última tentativa",
+  "trackStatus": "Status",
+  "trackDirectUploadAuthFailed": "Este trajeto falhou ao ser enviado em tempo real porque você não estava logado. Por favor, faça login e tente enviar novamente.",
     "trackStatusNotUploaded": "Não enviado",
     "trackStatusUploadFailed": "Envio falhou",
     "trackFilterAll": "Todos",

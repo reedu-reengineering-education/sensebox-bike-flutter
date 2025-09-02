@@ -588,6 +588,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackDirectUploadInfo => 'Estes dados do trajeto foram enviados em tempo real durante o seu passeio. Se quiser reenviá-los, pode usar o botão de upload acima.';
 
   @override
+  String get trackUploadAttempts => 'Tentativas de envio';
+
+  @override
+  String get trackLastAttempt => 'Última tentativa';
+
+  @override
+  String get trackStatus => 'Status';
+
+  @override
   String get trackDirectUploadAuthFailed => 'Este trajeto falhou ao ser enviado em tempo real porque você não estava logado. Por favor, faça login e tente enviar novamente.';
 
   @override

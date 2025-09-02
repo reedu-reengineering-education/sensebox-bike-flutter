@@ -588,6 +588,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackDirectUploadInfo => 'This track data was uploaded in real time during your ride. If you\'d like to re-upload it, you can use the upload button above.';
 
   @override
+  String get trackUploadAttempts => 'Upload attempts';
+
+  @override
+  String get trackLastAttempt => 'Last attempt';
+
+  @override
+  String get trackStatus => 'Status';
+
+  @override
   String get trackDirectUploadAuthFailed => 'This track failed to upload in real-time because you weren\'t logged in. Please log in and try uploading again.';
 
   @override

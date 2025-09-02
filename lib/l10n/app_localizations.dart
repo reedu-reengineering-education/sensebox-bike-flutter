@@ -1183,6 +1183,24 @@ abstract class AppLocalizations {
   /// **'This track data was uploaded in real time during your ride. If you\'d like to re-upload it, you can use the upload button above.'**
   String get trackDirectUploadInfo;
 
+  /// No description provided for @trackUploadAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload attempts'**
+  String get trackUploadAttempts;
+
+  /// No description provided for @trackLastAttempt.
+  ///
+  /// In en, this message translates to:
+  /// **'Last attempt'**
+  String get trackLastAttempt;
+
+  /// No description provided for @trackStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get trackStatus;
+
   /// No description provided for @trackDirectUploadAuthFailed.
   ///
   /// In en, this message translates to:
