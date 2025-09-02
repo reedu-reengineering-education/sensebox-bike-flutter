@@ -183,8 +183,8 @@
     "errorNoScanAccess": "Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.",
     "errorNoSenseBoxSelected": "Um den Upload von Sensordaten in die Cloud zu erlauben, melden Sie sich bitte bei Ihrem openSenseMap-Konto an und aktivieren Sie das Kästchen.",
     "errorExportDirectoryAccess": "Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.",
-    "errorLoginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
-    "errorRegistrationFailed": "Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
+    "errorLoginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.",
+    "errorRegistrationFailed": "Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.",
     "errorBleConnectionFailed": "Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.",
     "errorUploadFailed": "Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
     "errorPermanentAuthentication": "Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich an, um Daten hochzuladen.",
@@ -251,7 +251,7 @@
             }
         }
     },
-    "trackDirectUploadInfo": "Diese Track-Daten wurden in Echtzeit während deiner Fahrt hochgeladen. Falls du sie erneut hochladen möchtest, kannst du den Upload-Button oben verwenden.",
+    "trackDirectUploadInfo": "Dieser Track wurde in Echtzeit während deiner Fahrt hochgeladen (falls du angemeldet warst). Möchtest du ihn erneut hochladen? Verwende den Button oben!",
     "trackStatusNotUploaded": "Nicht hochgeladen",
     "trackStatusUploadFailed": "Upload fehlgeschlagen",
     "trackFilterAll": "Alle",

@@ -429,10 +429,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorExportDirectoryAccess => 'Bitte erlaube dieser App in den Telefoneinstellungen den Zugriff auf den externen Speicher.';
 
   @override
-  String get errorLoginFailed => 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
+  String get errorLoginFailed =>
+      'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.';
 
   @override
-  String get errorRegistrationFailed => 'Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
+  String get errorRegistrationFailed =>
+      'Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.';
 
   @override
   String get errorBleConnectionFailed => 'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
@@ -585,7 +587,8 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get trackDirectUploadInfo => 'Diese Track-Daten wurden in Echtzeit während deiner Fahrt hochgeladen. Falls du sie erneut hochladen möchtest, kannst du den Upload-Button oben verwenden.';
+  String get trackDirectUploadInfo =>
+      'Dieser Track wurde in Echtzeit während deiner Fahrt hochgeladen (falls du angemeldet warst). Möchtest du ihn erneut hochladen? Verwende den Button oben!';
 
   @override
   String get trackFilterAll => 'Alle';

@@ -183,8 +183,8 @@
     "errorNoScanAccess": "Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.",
     "errorNoSenseBoxSelected": "Para permitir o envio de dados do sensor para a nuvem, inicie sessão na sua conta do openSenseMap e selecione a caixa.",
     "errorExportDirectoryAccess": "Erro ao acessar o diretório de exportação. Por favor, verifique se o aplicativo tem permissão para acessar o armazenamento.",
-    "errorLoginFailed": "Falha no login. Por favor, verifique suas credenciais.",
-    "errorRegistrationFailed": "Falha no registro. Por favor, verifique suas credenciais.",
+    "errorLoginFailed": "Falha no login. Por favor, verifique suas credenciais e tente novamente.",
+    "errorRegistrationFailed": "Falha no registro. Por favor, verifique suas credenciais e tente novamente.",
     "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.",
     "errorUploadFailed": "Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.",
     "errorPermanentAuthentication": "Falha permanente na autenticação. Por favor, faça login para enviar dados.",
@@ -251,7 +251,7 @@
             }
         }
     },
-    "trackDirectUploadInfo": "Estes dados do trajeto foram enviados em tempo real durante o seu passeio. Se quiser reenviá-los, pode usar o botão de upload acima.",
+    "trackDirectUploadInfo": "Este trajeto foi enviado em tempo real durante o seu passeio (se estiver logado). Quer enviá-lo novamente? Use o botão acima!",
     "trackStatusNotUploaded": "Não enviado",
     "trackStatusUploadFailed": "Envio falhou",
     "trackFilterAll": "Todos",
