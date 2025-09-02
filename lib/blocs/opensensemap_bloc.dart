@@ -24,6 +24,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   SenseBox? _selectedSenseBox;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   bool get isAuthenticated => _isAuthenticated;
+
   OpenSenseMapService get openSenseMapService => _service;
   
   Future<void> markAuthenticationFailed() async {
@@ -38,7 +39,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
     notifyListeners();
   }
-  
+
   List<dynamic> get senseBoxes => _senseBoxes.values.expand((e) => e).toList();
 
   Future<Map<String, dynamic>?> getUserData() async {
@@ -101,7 +102,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   Future<void> _initializeAuth() async {
     _isAuthenticatingNotifier.value = true;
     notifyListeners();
-    
+
     await _performAuthentication();
     _isAuthenticatingNotifier.value = false;
     notifyListeners();
@@ -121,7 +122,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     final selectedSenseBoxJson = prefs.getString('selectedSenseBox');
 
     if (selectedSenseBoxJson == null) {
-      _senseBoxController.add(null); 
+      _senseBoxController.add(null);
       _selectedSenseBox = null;
     } else {
       final newSenseBox = SenseBox.fromJson(jsonDecode(selectedSenseBoxJson));
@@ -201,20 +202,25 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       await _service.logout();
       _isAuthenticated = false;
-      _senseBoxController.add(null); 
+      _senseBoxController.add(null);
       _selectedSenseBox = null;
-      _senseBoxes.clear(); 
+      _senseBoxes.clear();
       notifyListeners();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
   }
 
-  Future<void> createSenseBoxBike(String name, double latitude,
-      double longitude, SenseBoxBikeModel model, String? selectedTag) async {
+  Future<void> createSenseBoxBike(
+      String name,
+      double latitude,
+      double longitude,
+      SenseBoxBikeModel model,
+      String? selectedTag,
+      List<String?> additionalTags) async {
     try {
       await _service.createSenseBoxBike(
-          name, latitude, longitude, model, selectedTag);
+          name, latitude, longitude, model, selectedTag, additionalTags);
     } catch (e, stack) {
       if (!_handleAuthenticationError(e)) {
         ErrorService.handleError(e, stack);
@@ -312,17 +318,17 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   void dispose() {
     // Remove observer first to prevent any further lifecycle callbacks
     WidgetsBinding.instance.removeObserver(this);
-    
+
     // Close stream controller
     _senseBoxController.close();
-    
+
     // Dispose value notifier
     _isAuthenticatingNotifier.dispose();
-    
+
     // Clear all data structures
     _senseBoxes.clear();
     _selectedSenseBox = null;
-    
+
     // Call super dispose last
     super.dispose();
   }

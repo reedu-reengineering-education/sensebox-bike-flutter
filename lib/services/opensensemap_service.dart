@@ -63,19 +63,20 @@ class OpenSenseMapService {
 
   /// Validates and extracts tokens from response data
   /// Throws Exception if tokens are missing or empty
-  Map<String, String> _validateAndExtractTokens(Map<String, dynamic> responseData) {
+  Map<String, String> _validateAndExtractTokens(
+      Map<String, dynamic> responseData) {
     if (!responseData.containsKey('token') ||
         !responseData.containsKey('refreshToken')) {
       throw Exception('Invalid response format: missing token or refreshToken');
     }
-    
+
     final String accessToken = responseData['token'] as String;
     final String refreshToken = responseData['refreshToken'] as String;
-    
+
     if (accessToken.isEmpty || refreshToken.isEmpty) {
       throw Exception('Invalid response format: empty token or refreshToken');
     }
-    
+
     return {
       'accessToken': accessToken,
       'refreshToken': refreshToken,
@@ -85,7 +86,7 @@ class OpenSenseMapService {
   Future<void> setTokens(http.Response response) async {
     final prefs = await _prefs;
     final responseData = jsonDecode(response.body);
-    
+
     final tokens = _validateAndExtractTokens(responseData);
     final accessToken = tokens['accessToken']!;
     final refreshToken = tokens['refreshToken']!;
@@ -206,7 +207,7 @@ class OpenSenseMapService {
 
   Future<Map<String, dynamic>?> getUserData() async {
     final cachedUserData = await _getCachedUserData();
-    
+
     try {
       final userData = await _makeAuthenticatedRequest<Map<String, dynamic>?>(
         requestFn: (accessToken) => client.get(
@@ -221,7 +222,7 @@ class OpenSenseMapService {
         await _saveUserData(userData);
         return userData;
       }
-      
+
       if (cachedUserData != null) {
         await _clearUserData();
       }
@@ -290,7 +291,6 @@ class OpenSenseMapService {
       // Check if refresh token exists
       final refreshToken = await getRefreshTokenFromPreferences();
       if (refreshToken == null) {
-  
         throw Exception('No refresh token found');
       }
 
@@ -300,7 +300,8 @@ class OpenSenseMapService {
             Uri.parse('$_baseUrl/users/refresh-auth'),
             body: jsonEncode({'token': refreshToken}),
             headers: {'Content-Type': 'application/json'},
-          ).timeout(const Duration(seconds: 15)); // Reduced timeout for better responsiveness
+          ).timeout(const Duration(
+              seconds: 15)); // Reduced timeout for better responsiveness
 
           if (response.statusCode == 200) {
             return response;
@@ -340,11 +341,11 @@ class OpenSenseMapService {
       } else {
         throw Exception('Token refresh failed: ${response.statusCode}');
       }
-      
     } catch (e) {
       rethrow;
     }
   }
+
   void _clearCachedToken() {
     _cachedAccessToken = null;
     _tokenExpiration = null;
@@ -375,7 +376,6 @@ class OpenSenseMapService {
       }
 
       try {
-
         final tokens = await refreshToken();
 
         final retryResponse = await requestFn(tokens!['accessToken']!);
@@ -396,12 +396,19 @@ class OpenSenseMapService {
   }
 
   Future<void> createSenseBoxBike(String name, double latitude,
-      double longitude, SenseBoxBikeModel model, String? selectedTag) async {
+      double longitude, SenseBoxBikeModel model, String? selectedTag,
+      [List<String?>? additionalTags]) async {
     return _makeAuthenticatedRequest<void>(
       requestFn: (accessToken) => client.post(
         Uri.parse('$_baseUrl/boxes'),
-        body: jsonEncode(createSenseBoxBikeModel(name, latitude, longitude,
-            model: model, selectedTag: selectedTag)),
+        body: jsonEncode(createSenseBoxBikeModel(
+          name,
+          latitude,
+          longitude,
+          model: model,
+          selectedTag: selectedTag,
+          additionalTags: additionalTags,
+        )),
         headers: {
           'Authorization': 'Bearer $accessToken',
           'Content-Type': 'application/json',
@@ -473,7 +480,7 @@ class OpenSenseMapService {
               'Client error ${response.statusCode}: ${response.body}',
               StackTrace.current,
               sendToSentry: true);
-          
+
           // Use the same robust token refresh method
           try {
             final tokens = await refreshToken();
@@ -556,6 +563,7 @@ class OpenSenseMapService {
     List<String>? grouptags,
     SenseBoxBikeModel model = SenseBoxBikeModel.classic,
     String? selectedTag,
+    List<String?>? additionalTags = const [],
   }) {
     // Initialize the base grouptags
     final List<String> baseGroupTags = grouptags ??
@@ -565,11 +573,16 @@ class OpenSenseMapService {
       baseGroupTags.add(selectedTag);
     }
 
+    final List<String> allTags = {
+      ...baseGroupTags,
+      ...?additionalTags?.whereType<String>(),
+    }.toList();
+
     final baseProperties = {
       'name': name,
       'exposure': 'mobile',
       'location': [latitude, longitude],
-      'grouptag': baseGroupTags,
+      'grouptag': allTags,
     };
 
     return {

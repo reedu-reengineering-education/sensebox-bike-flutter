@@ -1,4 +1,7 @@
 {
+    "createBoxAddCustomTag": "Adicionar etiqueta de grupo personalizada",
+    "createBoxCustomTag": "Etiqueta de grupo personalizada",
+    "createBoxCustomTagHelper": "Você pode separar etiquetas com vírgulas",
     "@@locale": "pt",
     "generalLoading": "Carregando...",
     "generalError": "Erro",
