@@ -151,8 +151,11 @@ class TrackBloc with ChangeNotifier {
 
   TrackStatus calculateTrackStatusFromValues(
       bool isDirectUpload, bool uploaded, int uploadAttempts) {
-    if (isDirectUpload) {
-      // Check if direct upload failed due to authentication
+    if (isDirectUpload && uploaded) {
+      // Direct upload tracks that have been successfully uploaded
+      return TrackStatus.directUpload;
+    } else if (isDirectUpload) {
+      // Direct upload tracks that haven't been uploaded yet
       if (uploadAttempts > 0) {
         return TrackStatus.directUploadAuthFailed;
       }
