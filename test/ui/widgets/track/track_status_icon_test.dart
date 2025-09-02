@@ -248,7 +248,7 @@ void main() {
       await testTrackBloc.updateDirectUploadAuthFailure(track);
 
       // Verify the track was updated correctly
-      expect(track.uploadAttempts, equals(0));
+      expect(track.uploadAttempts, equals(1));
       expect(track.uploaded, equals(0));
       expect(track.lastUploadAttempt, isNotNull);
       expect(
