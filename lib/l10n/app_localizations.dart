@@ -910,6 +910,12 @@ abstract class AppLocalizations {
   /// **'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.'**
   String get errorNoSenseBoxSelected;
 
+  /// No description provided for @loginRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to share sensor data'**
+  String get loginRequiredMessage;
+
   /// No description provided for @errorExportDirectoryAccess.
   ///
   /// In en, this message translates to:
