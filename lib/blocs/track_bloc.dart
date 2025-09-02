@@ -166,7 +166,6 @@ class TrackBloc with ChangeNotifier {
     }
   }
 
-  /// Updates track status when direct upload fails due to authentication
   Future<void> updateDirectUploadAuthFailure(TrackData track) async {
     track.uploadAttempts = 1;
     track.uploaded = 0;
@@ -176,7 +175,6 @@ class TrackBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  // Dispose the StreamController when no longer needed
   @override
   void dispose() {
     _currentTrackController.close();

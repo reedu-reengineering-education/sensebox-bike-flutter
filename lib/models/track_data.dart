@@ -22,8 +22,6 @@ class TrackData {
   int? uploadAttempts; // null = 0 attempts
   DateTime? lastUploadAttempt;
 
-  // Direct upload tracking - use integer that Isar handles better
-  // (int? is used instead of bool? to avoid Isar's nullable boolean bug)
   @Index()
   int? isDirectUpload; // 0 = false, 1 = true, null = null
 

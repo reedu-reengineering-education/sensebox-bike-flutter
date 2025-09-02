@@ -59,11 +59,7 @@ class RecordingBloc with ChangeNotifier {
     }
   }
 
-  // Test method to expose permanent connection loss handling
-  @visibleForTesting
-  void testOnPermanentConnectionLoss() {
-    _onPermanentConnectionLoss();
-  }
+
 
   void setRecordingCallbacks({
     VoidCallback? onRecordingStart,
@@ -111,9 +107,7 @@ class RecordingBloc with ChangeNotifier {
         return;
       }
 
-      // Create upload services based on user's upload mode preference
       if (settingsBloc.directUploadMode) {
-        // Direct upload mode: create DirectUploadService for real-time uploads
         _directUploadService = DirectUploadService(
             openSenseMapService: OpenSenseMapService(),
             settingsBloc: settingsBloc,
@@ -122,7 +116,6 @@ class RecordingBloc with ChangeNotifier {
             trackService: isarService.trackService,
             trackId: _currentTrack!.id);
       } else {
-        // Post-ride upload mode: only create BatchUploadService
         _batchUploadService = BatchUploadService(
           openSenseMapService: OpenSenseMapService(),
           trackService: isarService.trackService,
@@ -154,17 +147,13 @@ class RecordingBloc with ChangeNotifier {
     _directUploadService = null;
     _currentTrack = null;
 
-    // Trigger batch upload if in post-ride upload mode
     if (_batchUploadService != null &&
         trackToUpload != null &&
         senseBoxForUpload != null &&
         _context != null) {
-      // Show upload progress modal
       _showUploadProgressModal(trackToUpload, senseBoxForUpload);
-
-      // Don't start upload immediately - wait for user confirmation
     } else {
-      // Clean up BatchUploadService if not uploading
+
       _batchUploadService?.dispose();
       _batchUploadService = null;
     }
@@ -172,12 +161,10 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Shows the upload progress modal and starts the batch upload
   void _showUploadProgressModal(TrackData track, SenseBox senseBox) async {
     if (_context == null || _batchUploadService == null) return;
 
     try {
-      // Check if track has geolocations before showing upload modal
       await track.geolocations.load();
       final geolocations = track.geolocations.toList();
 
@@ -185,35 +172,27 @@ class RecordingBloc with ChangeNotifier {
         throw TrackHasNoGeolocationsException(track.id);
       }
 
-      // Show the upload progress modal
       UploadProgressOverlay.show(
         _context!,
         batchUploadService: _batchUploadService!,
         onUploadComplete: () {
-          // Upload completed successfully
           _cleanupBatchUploadService();
           debugPrint('[RecordingBloc] Batch upload completed successfully');
         },
         onUploadFailed: () {
-          // Upload failed permanently
           debugPrint('[RecordingBloc] Batch upload failed permanently');
         },
         onStartUpload: () {
-          // Start the upload when user confirms
           _startBatchUpload(track, senseBox);
         },
       );
-
-      // Don't start upload immediately - wait for user confirmation
     } catch (e, stack) {
       debugPrint('[RecordingBloc] Error showing upload modal: $e');
       ErrorService.handleError(e, stack);
-      // Ensure modal is hidden if there was an error
       UploadProgressOverlay.hide();
     }
   }
 
-  /// Starts the batch upload process
   void _startBatchUpload(TrackData track, SenseBox senseBox) async {
     if (_batchUploadService == null) return;
 
@@ -229,10 +208,6 @@ class RecordingBloc with ChangeNotifier {
       );
     }
   }
-
-
-
-  /// Cleans up the batch upload service
   void _cleanupBatchUploadService() {
     _batchUploadService?.dispose();
     _batchUploadService = null;
