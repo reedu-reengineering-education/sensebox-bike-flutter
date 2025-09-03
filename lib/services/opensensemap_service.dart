@@ -203,6 +203,14 @@ class OpenSenseMapService {
 
   Future<Map<String, dynamic>?> getUserData() async {
     final cachedUserData = await _getCachedUserData();
+    
+    // If we have cached data and a valid access token, return cached data immediately
+    if (cachedUserData != null) {
+      final accessToken = await getAccessToken();
+      if (accessToken != null) {
+        return cachedUserData;
+      }
+    }
 
     try {
       final userData = await _makeAuthenticatedRequest<Map<String, dynamic>?>(
