@@ -73,8 +73,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       // Step 1: Check if refresh token exists in SharedPreferences
       final refreshToken = await _service.getRefreshTokenFromPreferences();
-      if (refreshToken == null) {
+      if (refreshToken == null || refreshToken.isEmpty) {
         _isAuthenticated = false;
+        notifyListeners();
         return;
       }
       // Step 2: Get and validate access token
@@ -82,20 +83,24 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       if (token != null) {
         _isAuthenticated = true;
         await loadSelectedSenseBox();
+        notifyListeners();
         return;
       }
-      // Step 3: Attempt token refresh
+      // Step 3: Only attempt token refresh if we have a valid refresh token
       final refreshSuccess = await _attemptTokenRefresh();
       // Step 4: Token refresh successful - we're authenticated!
       if (refreshSuccess) {
         _isAuthenticated = true;
         await loadSelectedSenseBox();
+        notifyListeners();
         return;
       }
       // Step 5: All attempts failed
       _isAuthenticated = false;
     } catch (e) {
       _isAuthenticated = false;
+    } finally {
+      notifyListeners();
     }
   }
 
@@ -139,6 +144,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
       _isAuthenticatingNotifier.value = true;
+      notifyListeners();
       
       try {
         if (_service.isPermanentlyDisabled) {
@@ -161,15 +167,19 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   Future<void> register(String name, String email, String password) async {
     _isAuthenticatingNotifier.value = true;
+    notifyListeners();
     try {
+      // Clear any existing tokens before fresh registration
+      await _service.removeTokens();
+      
       await _service.register(name, email, password);
       _isAuthenticated = true;
       _senseBoxes.clear();
       _selectedSenseBox = null;
       _senseBoxController.add(null);
-      notifyListeners();
     } catch (e) {
       _isAuthenticated = false;
+      notifyListeners();
       rethrow;
     } finally {
       _isAuthenticatingNotifier.value = false;
@@ -179,7 +189,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   Future<void> login(String email, String password) async {
     _isAuthenticatingNotifier.value = true;
+    notifyListeners();
     try {
+      // Clear any existing tokens before fresh login
+      await _service.removeTokens();
+      
       await _service.login(email, password);
       _isAuthenticated = true;
       notifyListeners();
@@ -191,6 +205,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       }
     } catch (e) {
       _isAuthenticated = false;
+      notifyListeners();
       rethrow;
     } finally {
       _isAuthenticatingNotifier.value = false;
@@ -199,6 +214,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<void> logout() async {
+    _isAuthenticatingNotifier.value = true;
+    notifyListeners();
     try {
       await _service.logout();
       _isAuthenticated = false;
@@ -208,6 +225,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       notifyListeners();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
+    } finally {
+      _isAuthenticatingNotifier.value = false;
+      notifyListeners();
     }
   }
 

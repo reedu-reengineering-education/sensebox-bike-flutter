@@ -53,11 +53,7 @@ class OpenSenseMapService {
     _isPermanentlyDisabled = false;
   }
 
-  bool get isAuthenticated {
-    return _cachedAccessToken != null &&
-        _tokenExpiration != null &&
-        _isTokenValid(_cachedAccessToken!);
-  }
+
 
   DateTime? get tokenExpiration => _tokenExpiration;
 
