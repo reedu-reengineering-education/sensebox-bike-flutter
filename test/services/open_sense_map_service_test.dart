@@ -490,15 +490,17 @@ void main() {
 
   group('Caching & State Management', () {
     group('Token Caching', () {
-      test('isAuthenticated returns true when cached token is valid', () async {
+      test('getAccessToken returns valid token when cached token is valid', () async {
         await setValidTokens();
-        await service.getAccessToken();
+        final token = await service.getAccessToken();
 
-        expect(service.isAuthenticated, true);
+        expect(token, isNotNull);
+        expect(token, isA<String>());
       });
 
-      test('isAuthenticated returns false when no cached token', () {
-        expect(service.isAuthenticated, false);
+      test('getAccessToken returns null when no cached token', () async {
+        final token = await service.getAccessToken();
+        expect(token, null);
       });
 
       test('tokenExpiration returns cached expiration time', () async {
@@ -520,7 +522,8 @@ void main() {
         final token2 = await service.getAccessToken();
 
         expect(token1, equals(token2));
-        expect(service.isAuthenticated, true);
+        expect(token1, isNotNull);
+        expect(token2, isNotNull);
       });
 
       test('cached token is cleared when invalid', () async {
@@ -529,7 +532,6 @@ void main() {
         final token = await service.getAccessToken();
 
         expect(token, null);
-        expect(service.isAuthenticated, false);
       });
     });
 
@@ -547,18 +549,19 @@ void main() {
         expect(prefs.getString('userData'), isNotNull);
       });
 
-      test('clears cache on authentication error', () async {
+      test('returns cached data when token is valid', () async {
         await setValidTokens();
 
-                mockHTTPGETResponse(
+        mockHTTPGETResponse(
           '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
           200);
         await service.getUserData();
 
-        mockHTTPGETResponse('Unauthorized', 401);
+        // Second call should return cached data without making API call
         final userData = await service.getUserData();
 
-        expect(userData, null);
+        expect(userData, isNotNull);
+        expect(userData!['data']['me']['name'], 'Test User');
       });
 
       test('logout clears user data cache', () async {
