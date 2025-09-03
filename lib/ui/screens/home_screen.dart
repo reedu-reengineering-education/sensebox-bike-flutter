@@ -141,8 +141,7 @@ class _SenseBoxSelectionButton extends StatelessWidget {
         final textTheme = Theme.of(context).textTheme;
 
         // Always show the button, but with different styling based on authentication
-        final bool isAuthenticated =
-            osemBloc.isAuthenticated && !osemBloc.isAuthenticating;
+        final bool isAuthenticated = osemBloc.isAuthenticated;
         final bool isAuthenticating = osemBloc.isAuthenticating;
 
         return StreamBuilder<SenseBox?>(
@@ -252,13 +251,10 @@ class _SenseBoxSelectionButton extends StatelessWidget {
                       child: Text(
                         label,
                         style: textTheme.bodyLarge?.copyWith(
-                          color: textColor,
-                          fontWeight: FontWeight.w600,
-                          height:
-                              1.2, // Reduce line spacing for more compact text
-                        ),
-                        maxLines:
-                            3, // Allow more lines for the longer login message
+                            color: textColor,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2),
+                        maxLines: 3,
                       ),
                     ),
                     // Optional description (for error or noBox) - only show when authenticated
@@ -307,16 +303,8 @@ class _FloatingButtons extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _ConnectButton(bleBloc: bleBloc),
-                  // Only show sensebox selection if authenticated
-                  Consumer<OpenSenseMapBloc>(
-                    builder: (context, osemBloc, child) {
-                      if (osemBloc.isAuthenticated &&
-                          !osemBloc.isAuthenticating) {
-                        return _SenseBoxSelectionButton();
-                      }
-                      return SizedBox.shrink();
-                    },
-                  ),
+                  // Always show sensebox selection button with different styling based on auth state
+                  _SenseBoxSelectionButton(),
                 ],
               );
             } else {
@@ -338,16 +326,8 @@ class _FloatingButtons extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // Only show sensebox selection if authenticated
-                  Consumer<OpenSenseMapBloc>(
-                    builder: (context, osemBloc, child) {
-                      if (osemBloc.isAuthenticated &&
-                          !osemBloc.isAuthenticating) {
-                        return _SenseBoxSelectionButton();
-                      }
-                      return SizedBox.shrink();
-                    },
-                  ),
+                  // Always show sensebox selection button with different styling based on auth state
+                  _SenseBoxSelectionButton(),
                 ],
               );
             }
