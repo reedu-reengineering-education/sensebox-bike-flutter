@@ -257,8 +257,8 @@ class _SenseBoxSelectionButton extends StatelessWidget {
                         maxLines: 3,
                       ),
                     ),
-                    // Optional description (for error or noBox) - only show when authenticated
-                    if (isAuthenticated)
+                    // Optional description (for error or noBox) - only show when authenticated and not loading
+                    if (isAuthenticated && !isAuthenticating)
                       if (hasError)
                         Padding(
                           padding: const EdgeInsets.only(left: 8.0),
