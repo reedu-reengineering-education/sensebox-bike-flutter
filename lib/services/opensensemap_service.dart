@@ -268,7 +268,9 @@ class OpenSenseMapService {
         return tokens['accessToken'];
       }
     } catch (e) {
-      // Refresh failed, return null
+      // Refresh failed - data is already cleared by refreshToken()
+      debugPrint(
+          '[OpenSenseMapService] Auto-refresh failed in getAccessToken: $e');
     }
 
     return null;
@@ -355,9 +357,13 @@ class OpenSenseMapService {
           'refreshToken': tokens['refreshToken']!,
         };
       } else {
+        // Token refresh failed - clear all cached data
+        await _clearAllCachedData();
         throw Exception('Token refresh failed: ${response.statusCode}');
       }
     } catch (e) {
+      // Any error during refresh - clear all cached data
+      await _clearAllCachedData();
       rethrow;
     }
   }
@@ -366,6 +372,21 @@ class OpenSenseMapService {
     _cachedAccessToken = null;
     _tokenExpiration = null;
     _isRefreshingToken = false;
+  }
+
+  /// Clears all cached data when authentication fails
+  Future<void> _clearAllCachedData() async {
+    // Clear cached tokens
+    _clearCachedToken();
+
+    // Clear tokens from SharedPreferences
+    await removeTokens();
+
+    // Clear user data cache
+    await _clearUserData();
+
+    debugPrint(
+        '[OpenSenseMapService] All cached data cleared due to authentication failure');
   }
 
   /// Generic method to handle authenticated requests with automatic token refresh

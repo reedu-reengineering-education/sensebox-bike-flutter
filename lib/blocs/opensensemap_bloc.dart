@@ -147,15 +147,43 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       notifyListeners();
       
       try {
-        if (_service.isPermanentlyDisabled) {
-          final tokens = await _service.refreshToken();
-          final refreshSuccess = tokens != null;
-          if (refreshSuccess) {
-            _service.resetPermanentDisable();
-          }
+        // Check if we have a valid (non-expired) access token first
+        final accessToken = await _service.getAccessToken();
+        if (accessToken != null) {
+          // We have a valid, non-expired token, no need to refresh
+          _isAuthenticated = true;
+          notifyListeners();
+          return;
         }
 
-        await _performAuthentication();
+        // No valid access token, check if we have a refresh token to attempt refresh
+        final refreshToken = await _service.getRefreshTokenFromPreferences();
+        if (refreshToken == null || refreshToken.isEmpty) {
+          // No refresh token exists, nothing to refresh
+          _isAuthenticated = false;
+          notifyListeners();
+          return;
+        }
+
+        // If service is permanently disabled, don't attempt refresh
+        if (_service.isPermanentlyDisabled) {
+          _isAuthenticated = false;
+          notifyListeners();
+          return;
+        }
+
+        // Attempt token refresh
+        final tokens = await _service.refreshToken();
+        final refreshSuccess = tokens != null;
+
+        if (refreshSuccess) {
+          _isAuthenticated = true;
+          if (_service.isPermanentlyDisabled) {
+            _service.resetPermanentDisable();
+          }
+        } else {
+          await _performAuthentication();
+        }
       } catch (e) {
         _handleAuthenticationError(e);
       } finally {
