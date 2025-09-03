@@ -146,13 +146,15 @@ class RecordingBloc with ChangeNotifier {
     _directUploadService = null;
     _currentTrack = null;
 
-    if (_batchUploadService != null &&
+    // Only show upload modal for batch upload mode (post-ride upload)
+    if (!settingsBloc.directUploadMode &&
+        _batchUploadService != null &&
         trackToUpload != null &&
         senseBoxForUpload != null &&
         _context != null) {
       _showUploadProgressModal(trackToUpload, senseBoxForUpload);
     } else {
-
+      // For direct upload mode, dispose the batch upload service
       _batchUploadService?.dispose();
       _batchUploadService = null;
     }
@@ -179,6 +181,7 @@ class RecordingBloc with ChangeNotifier {
           debugPrint('[RecordingBloc] Batch upload completed successfully');
         },
         onUploadFailed: () {
+          _cleanupBatchUploadService();
           debugPrint('[RecordingBloc] Batch upload failed permanently');
         },
         onStartUpload: () {
@@ -189,6 +192,7 @@ class RecordingBloc with ChangeNotifier {
       debugPrint('[RecordingBloc] Error showing upload modal: $e');
       ErrorService.handleError(e, stack);
       UploadProgressOverlay.hide();
+      _cleanupBatchUploadService();
     }
   }
 
