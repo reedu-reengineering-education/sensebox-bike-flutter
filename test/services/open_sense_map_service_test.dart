@@ -379,6 +379,41 @@ void main() {
             service.uploadData('sensebox123', {"sensor1": "value1"}),
             throwsException);
       });
+
+      test('automatically refreshes token when access token is expired',
+          () async {
+        // Set up expired access token but valid refresh token
+        await setExpiredTokens();
+
+        // Set up mocks to handle both token refresh and upload requests
+        int callCount = 0;
+        when(() => mockHttpClient.post(
+              any(),
+              headers: any(named: 'headers'),
+              body: any(named: 'body'),
+            )).thenAnswer((invocation) async {
+          callCount++;
+          final uri = invocation.positionalArguments[0] as Uri;
+          
+          if (uri.path.contains('/users/refresh-auth')) {
+            // Token refresh request
+            return http.Response(
+                '{"token": "$accessToken", "refreshToken": "new_refresh"}', 200);
+          } else if (uri.path.contains('/boxes/sensebox123/data')) {
+            // Data upload request
+            return http.Response('{"success": true}', 201);
+          } else {
+            throw Exception('Unexpected request to ${uri.path}');
+          }
+        });
+
+        await expectLater(
+            service.uploadData('sensebox123', {"sensor1": "value1"}),
+            completes);
+        
+        // Verify both requests were made
+        expect(callCount, 2);
+      });
     });
   });
 

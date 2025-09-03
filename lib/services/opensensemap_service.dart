@@ -259,6 +259,18 @@ class OpenSenseMapService {
       return token;
     }
 
+    // Token is expired or null - attempt to refresh automatically
+    try {
+      final tokens = await refreshToken();
+      if (tokens != null) {
+        _cachedAccessToken = tokens['accessToken'];
+        _tokenExpiration = _getTokenExpiration(tokens['accessToken']!);
+        return tokens['accessToken'];
+      }
+    } catch (e) {
+      // Refresh failed, return null
+    }
+
     return null;
   }
 
@@ -473,8 +485,7 @@ class OpenSenseMapService {
             'Content-Type': 'application/json',
           },
         ).timeout(const Duration(seconds: defaultTimeout));
-        // TEMPORARY: Simulate 401/403 for testing authentication failure during upload
-        // throw Exception('Authentication failed - user needs to re-login');
+        
         if (response.statusCode == 201) {
           debugPrint(
               '[OpenSenseMapService] Data uploaded successfully at ${DateTime.now()}');
