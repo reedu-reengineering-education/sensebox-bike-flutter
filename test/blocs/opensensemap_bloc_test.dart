@@ -23,7 +23,10 @@ void main() {
     });
 
     group('Initialization', () {
-      test('should initialize with correct initial state', () {
+      test('should initialize with correct initial state', () async {
+        // Wait for the authentication process to complete
+        await Future.delayed(Duration(milliseconds: 100));
+        
         expect(bloc.isAuthenticated, false);
         expect(bloc.isAuthenticating, false);
         expect(bloc.selectedSenseBox, isNull);
