@@ -104,8 +104,23 @@ class OpenSenseMapService {
   }
 
   Future<String?> getRefreshTokenFromPreferences() async {
+    debugPrint(
+        '[OpenSenseMapService] Retrieving refresh token from SharedPreferences...');
     final prefs = await _prefs;
-    return prefs.getString('refreshToken');
+    final refreshToken = prefs.getString('refreshToken');
+
+    if (refreshToken == null) {
+      debugPrint(
+          '[OpenSenseMapService] No refresh token found in SharedPreferences');
+    } else if (refreshToken.isEmpty) {
+      debugPrint(
+          '[OpenSenseMapService] Refresh token is empty in SharedPreferences');
+    } else {
+      debugPrint(
+          '[OpenSenseMapService] Refresh token found: ${refreshToken.substring(0, 20)}...');
+    }
+
+    return refreshToken;
   }
 
   Future<String?> getAccessTokenFromPreferences() async {
@@ -242,27 +257,43 @@ class OpenSenseMapService {
   }
 
   Future<String?> getAccessToken() async {
+    debugPrint('[OpenSenseMapService] Getting access token...');
+
+    // Check cached token first
     if (_cachedAccessToken != null && _tokenExpiration != null) {
+      debugPrint('[OpenSenseMapService] Checking cached access token...');
       final isValid = _isTokenValid(_cachedAccessToken!);
       if (isValid) {
+        debugPrint('[OpenSenseMapService] Cached access token is valid');
         return _cachedAccessToken;
       } else {
+        debugPrint(
+            '[OpenSenseMapService] Cached access token is expired, clearing cache');
         _clearCachedToken();
       }
     }
 
+    // Try to get token from preferences
+    debugPrint(
+        '[OpenSenseMapService] Retrieving access token from preferences...');
     final token = await getAccessTokenFromPreferences();
 
     if (token != null && _isTokenValid(token)) {
+      debugPrint(
+          '[OpenSenseMapService] Access token from preferences is valid');
       _cachedAccessToken = token;
       _tokenExpiration = _getTokenExpiration(token);
       return token;
     }
 
     // Token is expired or null - attempt to refresh automatically
+    debugPrint(
+        '[OpenSenseMapService] Access token is expired or null, attempting refresh...');
     try {
       final tokens = await refreshToken();
       if (tokens != null) {
+        debugPrint(
+            '[OpenSenseMapService] Token refresh successful, updating cache');
         _cachedAccessToken = tokens['accessToken'];
         _tokenExpiration = _getTokenExpiration(tokens['accessToken']!);
         return tokens['accessToken'];
@@ -273,6 +304,7 @@ class OpenSenseMapService {
           '[OpenSenseMapService] Auto-refresh failed in getAccessToken: $e');
     }
 
+    debugPrint('[OpenSenseMapService] No valid access token available');
     return null;
   }
 
@@ -305,20 +337,68 @@ class OpenSenseMapService {
   }
 
   Future<Map<String, String>?> refreshToken() async {
+    debugPrint('[OpenSenseMapService] Starting token refresh process');
+    
     try {
       // Check if refresh token exists
+      debugPrint(
+          '[OpenSenseMapService] Retrieving refresh token from preferences...');
       final refreshToken = await getRefreshTokenFromPreferences();
+      
       if (refreshToken == null) {
+        debugPrint(
+            '[OpenSenseMapService] No refresh token found in preferences');
         throw Exception('No refresh token found');
       }
+
+      if (refreshToken.isEmpty) {
+        debugPrint('[OpenSenseMapService] Refresh token is empty');
+        throw Exception('Refresh token is empty');
+      }
+
+      debugPrint(
+          '[OpenSenseMapService] Refresh token found: ${refreshToken.substring(0, 20)}...');
+
+      // Validate refresh token format
+      try {
+        final jwt = JWT.decode(refreshToken);
+        debugPrint(
+            '[OpenSenseMapService] Refresh token payload: ${jwt.payload}');
+
+        // Check if refresh token has expiration
+        if (jwt.payload['exp'] != null) {
+          final exp =
+              DateTime.fromMillisecondsSinceEpoch(jwt.payload['exp'] * 1000);
+          debugPrint('[OpenSenseMapService] Refresh token expires at: $exp');
+          if (exp.isBefore(DateTime.now())) {
+            debugPrint('[OpenSenseMapService] Refresh token has expired');
+            throw Exception('Refresh token expired');
+          }
+        }
+      } catch (e) {
+        debugPrint('[OpenSenseMapService] Invalid refresh token format: $e');
+        throw Exception('Invalid refresh token format');
+      }
+
+      final requestBody = jsonEncode({'token': refreshToken});
+      final requestUrl = '$_baseUrl/users/refresh-auth';
+
+      debugPrint(
+          '[OpenSenseMapService] Making refresh request to: $requestUrl');
+      debugPrint('[OpenSenseMapService] Request body: $requestBody');
 
       final response = await retry(
         () async {
           final response = await client.post(
-            Uri.parse('$_baseUrl/users/refresh-auth'),
-            body: jsonEncode({'token': refreshToken}),
+            Uri.parse(requestUrl),
+            body: requestBody,
             headers: {'Content-Type': 'application/json'},
           ).timeout(const Duration(seconds: 30));
+
+          debugPrint(
+              '[OpenSenseMapService] Refresh response status: ${response.statusCode}');
+          debugPrint(
+              '[OpenSenseMapService] Refresh response body: ${response.body}');
 
           if (response.statusCode == 200) {
             return response;
@@ -345,11 +425,13 @@ class OpenSenseMapService {
       );
 
       if (response.statusCode == 200) {
+        debugPrint('[OpenSenseMapService] Token refresh successful');
         final responseData = jsonDecode(response.body);
         final tokens = _validateAndExtractTokens(responseData);
 
         // Save tokens to SharedPreferences
         await setTokens(response);
+        debugPrint('[OpenSenseMapService] New tokens saved to preferences');
 
         return {
           'accessToken': tokens['accessToken']!,
@@ -357,11 +439,15 @@ class OpenSenseMapService {
         };
       } else {
         // Token refresh failed - clear all cached data
+        debugPrint(
+            '[OpenSenseMapService] Token refresh failed with status: ${response.statusCode}');
+        debugPrint('[OpenSenseMapService] Response body: ${response.body}');
         await _clearAllCachedData();
         throw Exception('Token refresh failed: ${response.statusCode}');
       }
     } catch (e) {
       // Any error during refresh - clear all cached data
+      debugPrint('[OpenSenseMapService] Token refresh error: $e');
       await _clearAllCachedData();
       rethrow;
     }

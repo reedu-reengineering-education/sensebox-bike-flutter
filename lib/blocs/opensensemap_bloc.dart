@@ -57,47 +57,65 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<bool> _attemptTokenRefresh() async {
+    debugPrint('[OpenSenseMapBloc] Attempting token refresh...');
     try {
       final tokens = await _service.refreshToken();
       if (tokens != null) {
+        debugPrint('[OpenSenseMapBloc] Token refresh successful');
         return true;
       } else {
+        debugPrint('[OpenSenseMapBloc] Token refresh returned null');
         return false;
       }
     } catch (e) {
+      debugPrint('[OpenSenseMapBloc] Token refresh failed: $e');
       return false;
     }
   }
 
   Future<void> _performAuthentication() async {
+    debugPrint('[OpenSenseMapBloc] Starting full authentication flow (fallback method)');
+    
     try {
       // Step 1: Check if refresh token exists in SharedPreferences
+      debugPrint('[OpenSenseMapBloc] Step 1: Checking for refresh token...');
       final refreshToken = await _service.getRefreshTokenFromPreferences();
       if (refreshToken == null || refreshToken.isEmpty) {
+        debugPrint('[OpenSenseMapBloc] No refresh token found, authentication failed');
         _isAuthenticated = false;
         notifyListeners();
         return;
       }
+      
       // Step 2: Get and validate access token
+      debugPrint('[OpenSenseMapBloc] Step 2: Getting and validating access token...');
       final token = await _service.getAccessToken();
       if (token != null) {
+        debugPrint('[OpenSenseMapBloc] Valid access token found, authentication successful');
         _isAuthenticated = true;
         await loadSelectedSenseBox();
         notifyListeners();
         return;
       }
+      
       // Step 3: Only attempt token refresh if we have a valid refresh token
+      debugPrint('[OpenSenseMapBloc] Step 3: Attempting token refresh...');
       final refreshSuccess = await _attemptTokenRefresh();
+      
       // Step 4: Token refresh successful - we're authenticated!
       if (refreshSuccess) {
+        debugPrint('[OpenSenseMapBloc] Token refresh successful, authentication successful');
         _isAuthenticated = true;
         await loadSelectedSenseBox();
         notifyListeners();
         return;
       }
+      
       // Step 5: All attempts failed
+      debugPrint('[OpenSenseMapBloc] All authentication attempts failed');
       _isAuthenticated = false;
     } catch (e) {
+      debugPrint('[OpenSenseMapBloc] Authentication error: $e');
       _isAuthenticated = false;
     } finally {
       notifyListeners();
@@ -105,10 +123,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<void> _initializeAuth() async {
+    debugPrint('[OpenSenseMapBloc] Starting app initialization authentication');
     _isAuthenticatingNotifier.value = true;
     notifyListeners();
 
-    await _performAuthentication();
+    await _performSmartAuthentication();
     _isAuthenticatingNotifier.value = false;
     notifyListeners();
   }
@@ -140,56 +159,70 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
   }
 
+  /// Smart authentication method that checks tokens first before attempting refresh
+  /// This method uses the proven logic from app resume flow
+  Future<void> _performSmartAuthentication() async {
+          debugPrint('[OpenSenseMapBloc] Starting smart authentication flow');
+    
+    try {
+      // Step 1: Check if we have a valid (non-expired) access token first
+      debugPrint('[OpenSenseMapBloc] Checking for valid access token...');
+      final accessToken = await _service.getAccessToken();
+      if (accessToken != null) {
+        // We have a valid, non-expired token, no need to refresh
+        debugPrint('[OpenSenseMapBloc] Valid access token found, authentication successful');
+        _isAuthenticated = true;
+        await loadSelectedSenseBox();
+        notifyListeners();
+        return;
+      }
+
+      // Step 2: No valid access token, check if we have a refresh token to attempt refresh
+      debugPrint('[OpenSenseMapBloc] No valid access token, checking for refresh token...');
+      final refreshToken = await _service.getRefreshTokenFromPreferences();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        // No refresh token exists, nothing to refresh
+        debugPrint('[OpenSenseMapBloc] No refresh token found, authentication failed');
+        _isAuthenticated = false;
+        notifyListeners();
+        return;
+      }
+
+
+      // Step 4: Attempt token refresh
+      debugPrint('[OpenSenseMapBloc] Attempting token refresh...');
+      final tokens = await _service.refreshToken();
+      final refreshSuccess = tokens != null;
+
+      if (refreshSuccess) {
+        debugPrint('[OpenSenseMapBloc] Token refresh successful');
+        _isAuthenticated = true;
+        if (_service.isPermanentlyDisabled) {
+          _service.resetPermanentDisable();
+        }
+        await loadSelectedSenseBox();
+        notifyListeners();
+      } else {
+        debugPrint('[OpenSenseMapBloc] Token refresh failed, falling back to full authentication');
+        await _performAuthentication();
+      }
+    } catch (e) {
+      debugPrint('[OpenSenseMapBloc] Smart authentication failed: $e');
+      _handleAuthenticationError(e);
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
+      debugPrint('[OpenSenseMapBloc] App resumed, starting authentication check');
       _isAuthenticatingNotifier.value = true;
       notifyListeners();
       
-      try {
-        // Check if we have a valid (non-expired) access token first
-        final accessToken = await _service.getAccessToken();
-        if (accessToken != null) {
-          // We have a valid, non-expired token, no need to refresh
-          _isAuthenticated = true;
-          notifyListeners();
-          return;
-        }
-
-        // No valid access token, check if we have a refresh token to attempt refresh
-        final refreshToken = await _service.getRefreshTokenFromPreferences();
-        if (refreshToken == null || refreshToken.isEmpty) {
-          // No refresh token exists, nothing to refresh
-          _isAuthenticated = false;
-          notifyListeners();
-          return;
-        }
-
-        // If service is permanently disabled, don't attempt refresh
-        if (_service.isPermanentlyDisabled) {
-          _isAuthenticated = false;
-          notifyListeners();
-          return;
-        }
-
-        // Attempt token refresh
-        final tokens = await _service.refreshToken();
-        final refreshSuccess = tokens != null;
-
-        if (refreshSuccess) {
-          _isAuthenticated = true;
-          if (_service.isPermanentlyDisabled) {
-            _service.resetPermanentDisable();
-          }
-        } else {
-          await _performAuthentication();
-        }
-      } catch (e) {
-        _handleAuthenticationError(e);
-      } finally {
-        _isAuthenticatingNotifier.value = false;
-        notifyListeners();
-      }
+      await _performSmartAuthentication();
+      
+      _isAuthenticatingNotifier.value = false;
+      notifyListeners();
     }
   }
 
