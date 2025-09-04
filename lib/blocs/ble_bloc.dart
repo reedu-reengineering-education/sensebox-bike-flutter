@@ -12,9 +12,9 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 1);
-const deviceConnectTimeout = Duration(seconds: 5);
+const deviceConnectTimeout = Duration(seconds: 10);
 const configurableReconnectionDelay = Duration(seconds: 1);
-const dataListeningTimeout = Duration(seconds: 3); 
+const dataListeningTimeout = Duration(seconds: 4); 
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;

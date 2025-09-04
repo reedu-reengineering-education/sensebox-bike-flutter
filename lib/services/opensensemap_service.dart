@@ -318,8 +318,7 @@ class OpenSenseMapService {
             Uri.parse('$_baseUrl/users/refresh-auth'),
             body: jsonEncode({'token': refreshToken}),
             headers: {'Content-Type': 'application/json'},
-          ).timeout(const Duration(
-              seconds: 15)); // Reduced timeout for better responsiveness
+          ).timeout(const Duration(seconds: 30));
 
           if (response.statusCode == 200) {
             return response;
