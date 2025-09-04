@@ -53,11 +53,7 @@ class OpenSenseMapService {
     _isPermanentlyDisabled = false;
   }
 
-  bool get isAuthenticated {
-    return _cachedAccessToken != null &&
-        _tokenExpiration != null &&
-        _isTokenValid(_cachedAccessToken!);
-  }
+
 
   DateTime? get tokenExpiration => _tokenExpiration;
 
@@ -207,6 +203,14 @@ class OpenSenseMapService {
 
   Future<Map<String, dynamic>?> getUserData() async {
     final cachedUserData = await _getCachedUserData();
+    
+    // If we have cached data and a valid access token, return cached data immediately
+    if (cachedUserData != null) {
+      final accessToken = await getAccessToken();
+      if (accessToken != null) {
+        return cachedUserData;
+      }
+    }
 
     try {
       final userData = await _makeAuthenticatedRequest<Map<String, dynamic>?>(
@@ -255,6 +259,20 @@ class OpenSenseMapService {
       return token;
     }
 
+    // Token is expired or null - attempt to refresh automatically
+    try {
+      final tokens = await refreshToken();
+      if (tokens != null) {
+        _cachedAccessToken = tokens['accessToken'];
+        _tokenExpiration = _getTokenExpiration(tokens['accessToken']!);
+        return tokens['accessToken'];
+      }
+    } catch (e) {
+      // Refresh failed - data is already cleared by refreshToken()
+      debugPrint(
+          '[OpenSenseMapService] Auto-refresh failed in getAccessToken: $e');
+    }
+
     return null;
   }
 
@@ -300,8 +318,7 @@ class OpenSenseMapService {
             Uri.parse('$_baseUrl/users/refresh-auth'),
             body: jsonEncode({'token': refreshToken}),
             headers: {'Content-Type': 'application/json'},
-          ).timeout(const Duration(
-              seconds: 15)); // Reduced timeout for better responsiveness
+          ).timeout(const Duration(seconds: 30));
 
           if (response.statusCode == 200) {
             return response;
@@ -339,9 +356,13 @@ class OpenSenseMapService {
           'refreshToken': tokens['refreshToken']!,
         };
       } else {
+        // Token refresh failed - clear all cached data
+        await _clearAllCachedData();
         throw Exception('Token refresh failed: ${response.statusCode}');
       }
     } catch (e) {
+      // Any error during refresh - clear all cached data
+      await _clearAllCachedData();
       rethrow;
     }
   }
@@ -350,6 +371,21 @@ class OpenSenseMapService {
     _cachedAccessToken = null;
     _tokenExpiration = null;
     _isRefreshingToken = false;
+  }
+
+  /// Clears all cached data when authentication fails
+  Future<void> _clearAllCachedData() async {
+    // Clear cached tokens
+    _clearCachedToken();
+
+    // Clear tokens from SharedPreferences
+    await removeTokens();
+
+    // Clear user data cache
+    await _clearUserData();
+
+    debugPrint(
+        '[OpenSenseMapService] All cached data cleared due to authentication failure');
   }
 
   /// Generic method to handle authenticated requests with automatic token refresh
@@ -469,8 +505,7 @@ class OpenSenseMapService {
             'Content-Type': 'application/json',
           },
         ).timeout(const Duration(seconds: defaultTimeout));
-        // TEMPORARY: Simulate 401/403 for testing authentication failure during upload
-        // throw Exception('Authentication failed - user needs to re-login');
+        
         if (response.statusCode == 201) {
           debugPrint(
               '[OpenSenseMapService] Data uploaded successfully at ${DateTime.now()}');
@@ -537,6 +572,7 @@ class OpenSenseMapService {
         final errorString = e.toString();
         return e is TooManyRequestsException ||
             errorString.contains('Server error') ||
+            errorString.contains('Token refreshed, retrying') ||
             e is SocketException || // Network connectivity issues
             e is HttpException || // HTTP protocol errors
             e is TimeoutException;
