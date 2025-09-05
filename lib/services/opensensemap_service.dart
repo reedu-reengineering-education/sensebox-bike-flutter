@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retry/retry.dart';
 import 'dart:async';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:sensebox_bike/constants.dart';
 
 enum SenseBoxBikeModel { classic, atrai }
@@ -234,11 +235,11 @@ class OpenSenseMapService {
   Future<String?> getAccessToken() async {
     final token = await getAccessTokenFromPreferences();
 
-    if (token != null) {
+    if (token != null && _isTokenValid(token)) {
       return token;
     }
 
-    // Token is null - attempt to refresh automatically
+    // Token is null or invalid - attempt to refresh automatically
     try {
       final tokens = await refreshToken();
       if (tokens != null) {
@@ -253,6 +254,21 @@ class OpenSenseMapService {
     return null;
   }
 
+  bool _isTokenValid(String token) {
+    try {
+      final jwt = JWT.decode(token);
+      final exp = jwt.payload['exp'];
+      if (exp == null) {
+        return false;
+      }
+      final expirationTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      final now = DateTime.now();
+
+      return expirationTime.isAfter(now);
+    } catch (e) {
+      return false;
+    }
+  }
 
   Future<Map<String, String>?> refreshToken() async {
     try {
