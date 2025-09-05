@@ -30,9 +30,6 @@ class OpenSenseMapService {
   bool _isRateLimited = false;
   DateTime? _rateLimitUntil;
   bool _isPermanentlyDisabled = false;
-  String? _cachedAccessToken;
-  DateTime? _tokenExpiration;
-  bool _isRefreshingToken = false;
 
   OpenSenseMapService({
     http.Client? client,
@@ -55,7 +52,6 @@ class OpenSenseMapService {
 
 
 
-  DateTime? get tokenExpiration => _tokenExpiration;
 
   /// Validates and extracts tokens from response data
   /// Throws Exception if tokens are missing or empty
@@ -89,9 +85,6 @@ class OpenSenseMapService {
 
     await prefs.setString('accessToken', accessToken);
     await prefs.setString('refreshToken', refreshToken);
-
-    _cachedAccessToken = accessToken;
-    _tokenExpiration = _getTokenExpiration(accessToken);
   }
 
   Future<void> removeTokens() async {
@@ -99,8 +92,6 @@ class OpenSenseMapService {
 
     await prefs.remove('accessToken');
     await prefs.remove('refreshToken');
-
-    _clearCachedToken();
   }
 
   Future<String?> getRefreshTokenFromPreferences() async {
@@ -242,29 +233,16 @@ class OpenSenseMapService {
   }
 
   Future<String?> getAccessToken() async {
-    if (_cachedAccessToken != null && _tokenExpiration != null) {
-      final isValid = _isTokenValid(_cachedAccessToken!);
-      if (isValid) {
-        return _cachedAccessToken;
-      } else {
-        _clearCachedToken();
-      }
-    }
-
     final token = await getAccessTokenFromPreferences();
 
     if (token != null && _isTokenValid(token)) {
-      _cachedAccessToken = token;
-      _tokenExpiration = _getTokenExpiration(token);
       return token;
     }
 
-    // Token is expired or null - attempt to refresh automatically
+    // Token is null or invalid - attempt to refresh automatically
     try {
       final tokens = await refreshToken();
       if (tokens != null) {
-        _cachedAccessToken = tokens['accessToken'];
-        _tokenExpiration = _getTokenExpiration(tokens['accessToken']!);
         return tokens['accessToken'];
       }
     } catch (e) {
@@ -292,16 +270,11 @@ class OpenSenseMapService {
     }
   }
 
-  DateTime? _getTokenExpiration(String token) {
-    try {
-      final jwt = JWT.decode(token);
-      final exp = jwt.payload['exp'];
-      if (exp == null) return null;
-
-      return DateTime.fromMillisecondsSinceEpoch(exp * 1000);
-    } catch (e) {
-      return null;
-    }
+  /// Public method to check if current access token is valid without triggering refresh
+  Future<bool> isCurrentAccessTokenValid() async {
+    final token = await getAccessTokenFromPreferences();
+    if (token == null) return false;
+    return _isTokenValid(token);
   }
 
   Future<Map<String, String>?> refreshToken() async {
@@ -367,17 +340,9 @@ class OpenSenseMapService {
     }
   }
 
-  void _clearCachedToken() {
-    _cachedAccessToken = null;
-    _tokenExpiration = null;
-    _isRefreshingToken = false;
-  }
 
   /// Clears all cached data when authentication fails
   Future<void> _clearAllCachedData() async {
-    // Clear cached tokens
-    _clearCachedToken();
-
     // Clear tokens from SharedPreferences
     await removeTokens();
 
@@ -406,11 +371,7 @@ class OpenSenseMapService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return successHandler(response);
     } else if (response.statusCode == 401 || response.statusCode == 403) {
-      // Only try to refresh token once, and only if we're not already refreshing
-      if (_isRefreshingToken) {
-        throw Exception('Token refresh already in progress');
-      }
-
+      // Try to refresh token
       try {
         final tokens = await refreshToken();
 
@@ -520,9 +481,6 @@ class OpenSenseMapService {
           try {
             final tokens = await refreshToken();
             if (tokens != null) {
-              // Update cache immediately with returned tokens
-              _cachedAccessToken = tokens['accessToken'];
-              _tokenExpiration = _getTokenExpiration(tokens['accessToken']!);
               throw Exception('Token refreshed, retrying');
             }
             throw Exception('Token refresh failed');
