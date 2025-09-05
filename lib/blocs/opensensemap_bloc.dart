@@ -109,18 +109,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
 
-  Future<bool> _attemptTokenRefresh() async {
-    try {
-      final tokens = await _service.refreshToken();
-      if (tokens != null) {
-        return true;
-      } else {
-        return false;
-      }
-    } catch (e) {
-      return false;
-    }
-  }
 
 
 
@@ -306,15 +294,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   Future<void> uploadData(String senseBoxId, Map<String, dynamic> data) async {
     try {
-      // Check if we need to refresh tokens before upload
-      if (!_isAuthenticated) {
-        final refreshSuccess = await _attemptTokenRefresh();
-        if (!refreshSuccess) {
-          throw Exception('Not authenticated');
-        }
-      }
-
-      // Perform the upload through the service
+      // Let the service handle all authentication logic including token refresh
       await _service.uploadData(senseBoxId, data);
 
       // If we get here, upload was successful and we're authenticated
