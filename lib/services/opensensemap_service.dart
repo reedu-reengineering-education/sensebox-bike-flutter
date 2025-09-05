@@ -270,6 +270,13 @@ class OpenSenseMapService {
     }
   }
 
+  /// Public method to check if current access token is valid without triggering refresh
+  Future<bool> isCurrentAccessTokenValid() async {
+    final token = await getAccessTokenFromPreferences();
+    if (token == null) return false;
+    return _isTokenValid(token);
+  }
+
   Future<Map<String, String>?> refreshToken() async {
     try {
       // Check if refresh token exists

@@ -88,6 +88,8 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     // Initialize blocs if they haven't been initialized yet
     if (!_isInitialized) {
       _initializeBlocs();
+      // Trigger authentication check after blocs are initialized
+      _openSenseMapBloc?.performAuthenticationCheck();
     }
 
     // Handle app links only once
