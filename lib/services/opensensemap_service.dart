@@ -117,19 +117,28 @@ class OpenSenseMapService {
     );
 
     if (response.statusCode != 201) {
+      String errorMessage = 'Registration failed';
       try {
         final errorResponse = safeJsonDecode(response.body);
-        throw RegistrationError(
-            errorResponse['message'] ?? 'Registration failed');
+        errorMessage = errorResponse['message'] ?? errorMessage;
       } catch (e) {
-        throw RegistrationError('Registration failed: ${response.statusCode}');
+        // If JSON parsing fails, use status code
+        errorMessage = 'Registration failed: ${response.statusCode}';
       }
+      throw RegistrationError(errorMessage);
     }
 
-    final responseData = safeJsonDecode(response.body);
-    await setTokens(response);
-    await saveUserData(responseData);
-    return responseData;
+    try {
+      final responseData = safeJsonDecode(response.body);
+      await setTokens(response);
+      await saveUserData(responseData);
+      return responseData;
+    } catch (e) {
+      if (e is! RegistrationError) {
+        throw RegistrationError('Registration failed: $e');
+      }
+      rethrow;
+    }
   }
 
   Future<bool> saveUserData(Map<String, dynamic> responseData) async {
@@ -190,15 +199,21 @@ class OpenSenseMapService {
         await saveUserData(responseData);
         return responseData;
       } catch (e) {
-        throw LoginError('Login failed: $e');
+        if (e is! LoginError) {
+          throw LoginError('Login failed: $e');
+        }
+        rethrow;
       }
     } else {
+      String errorMessage = 'Login failed';
       try {
         final errorData = safeJsonDecode(response.body);
-        throw LoginError(errorData['message'] ?? 'Login failed');
+        errorMessage = errorData['message'] ?? errorMessage;
       } catch (e) {
-        throw LoginError('Login failed: ${response.statusCode}');
+        // If JSON parsing fails, use status code
+        errorMessage = 'Login failed: ${response.statusCode}';
       }
+      throw LoginError(errorMessage);
     }
   }
 
