@@ -47,7 +47,6 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildLoginLogoutSection(
       BuildContext context, OpenSenseMapBloc openSenseMapBloc) {
     final isAuthenticated = openSenseMapBloc.isAuthenticated;
-    final userData = openSenseMapBloc.getUserData();
 
     return _buildSettingsContainer(
       context,
@@ -55,8 +54,13 @@ class SettingsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildUserInfoRow(
-              context, isAuthenticated, userData, openSenseMapBloc),
+          FutureBuilder<Map<String, dynamic>?>(
+            future: openSenseMapBloc.userData,
+            builder: (context, snapshot) {
+              return _buildUserInfoRow(
+                  context, isAuthenticated, snapshot.data, openSenseMapBloc);
+            },
+          ),
           const SizedBox(height: 16),
           _buildLoginLogoutButton(context, isAuthenticated, openSenseMapBloc),
           const SizedBox(height: 8),
@@ -83,7 +87,7 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildUserInfoRow(
       BuildContext context,
       bool isAuthenticated,
-      Future<Map<String, dynamic>?> userData,
+      Map<String, dynamic>? userData,
       OpenSenseMapBloc openSenseMapBloc) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -115,28 +119,17 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildAuthenticatedUserInfo(
       BuildContext context,
-      Future<Map<String, dynamic>?> userData,
+      Map<String, dynamic>? userData,
       OpenSenseMapBloc openSenseMapBloc) {
     if (openSenseMapBloc.isAuthenticating) {
       return const CircularProgressIndicator();
     }
 
-    return FutureBuilder(
-      future: userData,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        } else if (snapshot.hasError) {
-          if (snapshot.error.toString().contains('Not authenticated')) {
-            return _buildUnauthenticatedUserInfo(context);
-          }
-          return const SizedBox.shrink();
-        } else {
-          return _buildUserDataDisplay(
-              context, snapshot.data, openSenseMapBloc);
-        }
-      },
-    );
+    if (userData == null) {
+      return const CircularProgressIndicator();
+    }
+    
+    return _buildUserDataDisplay(context, userData, openSenseMapBloc);
   }
 
   Widget _buildUserDataDisplay(BuildContext context,

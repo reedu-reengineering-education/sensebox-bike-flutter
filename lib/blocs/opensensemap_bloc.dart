@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
+import 'package:sensebox_bike/utils/opensensemap_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamController
 
 class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
@@ -24,6 +25,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   SenseBox? _selectedSenseBox;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   bool get isAuthenticated => _isAuthenticated;
+  
+  Future<Map<String, dynamic>?> get userData => _service.getUserData();
 
   OpenSenseMapService get openSenseMapService => _service;
   
@@ -153,11 +156,26 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       // Clear any existing tokens before fresh registration
       await _service.removeTokens();
       
-      await _service.register(name, email, password);
+      // Get the full response data from registration
+      final responseData = await _service.register(name, email, password);
+      
       _isAuthenticated = true;
       _senseBoxes.clear();
       _selectedSenseBox = null;
       _senseBoxController.add(null);
+      
+      // User data is already saved by service.saveUserData()
+
+      // Only fetch boxes if there are box IDs in the response
+      final boxIds = extractBoxIds(responseData);
+      if (boxIds.isNotEmpty) {
+        final senseBoxes = await fetchSenseBoxes(page: 0);
+        if (senseBoxes.isNotEmpty) {
+          await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
+        }
+      }
+
+      notifyListeners();
     } catch (e) {
       _isAuthenticated = false;
       notifyListeners();
@@ -175,15 +193,29 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       // Clear any existing tokens before fresh login
       await _service.removeTokens();
       
-      await _service.login(email, password);
+      // Get the full response data from login
+      final responseData = await _service.login(email, password);
+      
       _isAuthenticated = true;
-      notifyListeners();
 
-      final senseBoxes = await fetchSenseBoxes(page: 0);
+      // User data is already saved by service.saveUserData()
 
-      if (senseBoxes.isNotEmpty) {
-        await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
+      // Only fetch boxes if there are box IDs in the response
+      final boxIds = extractBoxIds(responseData);
+      if (boxIds.isNotEmpty) {
+        final senseBoxes = await fetchSenseBoxes(page: 0);
+        if (senseBoxes.isNotEmpty) {
+          await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
+        }
+      } else {
+        // No boxes in response, clear existing boxes
+        _senseBoxes.clear();
+        _selectedSenseBox = null;
+        _senseBoxController.add(null);
       }
+
+      // Notify listeners after all data processing is complete
+      notifyListeners();
     } catch (e) {
       _isAuthenticated = false;
       notifyListeners();
