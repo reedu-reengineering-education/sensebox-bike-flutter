@@ -81,9 +81,19 @@ class ErrorService {
       return localizations?.errorTrackNoGeolocations ??
           'Track has no geolocation data and cannot be uploaded.';
     } else if (error is LoginError) {
-      return '${localizations?.errorLoginFailed} ${error.toString()}';
+      final mainMessage = localizations?.errorLoginFailed ??
+          'Login failed. Please check your credentials and try once again later.';
+      final details = error.error?.toString() ?? '';
+      return details.isNotEmpty
+          ? '$mainMessage\n\nDetails: $details'
+          : mainMessage;
     } else if (error is RegistrationError) {
-      return '${localizations?.errorRegistrationFailed} ${error.toString()}';
+      final mainMessage = localizations?.errorRegistrationFailed ??
+          'Registration failed. Please check your credentials and try once again later.';
+      final details = error.error?.toString() ?? '';
+      return details.isNotEmpty
+          ? '$mainMessage\n\nDetails: $details'
+          : mainMessage;
     }
 
     return 'An unknown error occurred.\n Details: ${error.toString()}';
