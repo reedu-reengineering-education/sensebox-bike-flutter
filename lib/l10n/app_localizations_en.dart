@@ -463,11 +463,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorLoginFailed =>
-      'Login failed. Please check your credentials and try once again.';
+      'Login failed. Please check your credentials and try once again later.';
 
   @override
   String get errorRegistrationFailed =>
-      'Registration failed. Please check your credentials and try once again.';
+      'Registration failed. Please check your credentials and try once again later.';
 
   @override
   String get errorBleConnectionFailed =>

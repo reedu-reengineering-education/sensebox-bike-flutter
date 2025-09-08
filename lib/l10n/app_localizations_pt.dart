@@ -467,11 +467,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get errorLoginFailed =>
-      'Falha no login. Por favor, verifique suas credenciais e tente novamente.';
+      'Erro no login. Verifique suas credenciais e tente novamente mais tarde.';
 
   @override
   String get errorRegistrationFailed =>
-      'Falha no registro. Por favor, verifique suas credenciais e tente novamente.';
+      'Erro no registro. Verifique suas credenciais e tente novamente mais tarde.';
 
   @override
   String get errorBleConnectionFailed =>

@@ -468,11 +468,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get errorLoginFailed =>
-      'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.';
+      'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es später erneut.';
 
   @override
   String get errorRegistrationFailed =>
-      'Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.';
+      'Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es später erneut.';
 
   @override
   String get errorBleConnectionFailed =>
