@@ -934,7 +934,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorBleConnectionFailed.
   ///
   /// In en, this message translates to:
-  /// **'Connect to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.'**
+  /// **'Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.'**
   String get errorBleConnectionFailed;
 
   /// No description provided for @errorUploadFailed.

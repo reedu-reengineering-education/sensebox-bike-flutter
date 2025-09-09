@@ -53,60 +53,64 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   OpenSenseMapBloc() {
     WidgetsBinding.instance.addObserver(this);
-    _initializeAuth();
   }
 
-  Future<bool> _attemptTokenRefresh() async {
-    try {
-      final tokens = await _service.refreshToken();
-      if (tokens != null) {
-        return true;
-      } else {
-        return false;
-      }
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<void> _performAuthentication() async {
-    try {
-      // Step 1: Check if refresh token exists in SharedPreferences
-      final refreshToken = await _service.getRefreshTokenFromPreferences();
-      if (refreshToken == null) {
-        _isAuthenticated = false;
-        return;
-      }
-      // Step 2: Get and validate access token
-      final token = await _service.getAccessToken();
-      if (token != null) {
-        _isAuthenticated = true;
-        await loadSelectedSenseBox();
-        return;
-      }
-      // Step 3: Attempt token refresh
-      final refreshSuccess = await _attemptTokenRefresh();
-      // Step 4: Token refresh successful - we're authenticated!
-      if (refreshSuccess) {
-        _isAuthenticated = true;
-        await loadSelectedSenseBox();
-        return;
-      }
-      // Step 5: All attempts failed
-      _isAuthenticated = false;
-    } catch (e) {
-      _isAuthenticated = false;
-    }
-  }
-
-  Future<void> _initializeAuth() async {
+  /// Core authentication logic that can be reused
+  Future<void> performAuthenticationCheck() async {
     _isAuthenticatingNotifier.value = true;
     notifyListeners();
+    
+    try {
+      // First, check if we have a valid access token
+      final isTokenValid = await _service.isCurrentAccessTokenValid();
+      if (isTokenValid) {
+        // We have a valid token, no need to refresh
+        _isAuthenticated = true;
+        await loadSelectedSenseBox();
+        notifyListeners();
+        return;
+      }
 
-    await _performAuthentication();
-    _isAuthenticatingNotifier.value = false;
-    notifyListeners();
+      // No valid access token, check if we have a refresh token
+      final refreshToken = await _service.getRefreshTokenFromPreferences();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        // No refresh token exists, nothing to refresh
+        _isAuthenticated = false;
+        notifyListeners();
+        return;
+      }
+
+      // If service is permanently disabled, don't attempt refresh
+      if (_service.isPermanentlyDisabled) {
+        _isAuthenticated = false;
+        notifyListeners();
+        return;
+      }
+
+      // Attempt token refresh directly
+      final tokens = await _service.refreshToken();
+      final refreshSuccess = tokens != null;
+
+      if (refreshSuccess) {
+        _isAuthenticated = true;
+        if (_service.isPermanentlyDisabled) {
+          _service.resetPermanentDisable();
+        }
+        await loadSelectedSenseBox();
+      } else {
+        _isAuthenticated = false;
+      }
+    } catch (e) {
+      _handleAuthenticationError(e);
+    } finally {
+      _isAuthenticatingNotifier.value = false;
+      notifyListeners();
+    }
   }
+
+
+
+
 
   Future<void> loadSelectedSenseBox() async {
     final prefs = await SharedPreferences.getInstance();
@@ -138,38 +142,25 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
-      _isAuthenticatingNotifier.value = true;
-      
-      try {
-        if (_service.isPermanentlyDisabled) {
-          final tokens = await _service.refreshToken();
-          final refreshSuccess = tokens != null;
-          if (refreshSuccess) {
-            _service.resetPermanentDisable();
-          }
-        }
-
-        await _performAuthentication();
-      } catch (e) {
-        _handleAuthenticationError(e);
-      } finally {
-        _isAuthenticatingNotifier.value = false;
-        notifyListeners();
-      }
+      await performAuthenticationCheck();
     }
   }
 
   Future<void> register(String name, String email, String password) async {
     _isAuthenticatingNotifier.value = true;
+    notifyListeners();
     try {
+      // Clear any existing tokens before fresh registration
+      await _service.removeTokens();
+      
       await _service.register(name, email, password);
       _isAuthenticated = true;
       _senseBoxes.clear();
       _selectedSenseBox = null;
       _senseBoxController.add(null);
-      notifyListeners();
     } catch (e) {
       _isAuthenticated = false;
+      notifyListeners();
       rethrow;
     } finally {
       _isAuthenticatingNotifier.value = false;
@@ -179,7 +170,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   Future<void> login(String email, String password) async {
     _isAuthenticatingNotifier.value = true;
+    notifyListeners();
     try {
+      // Clear any existing tokens before fresh login
+      await _service.removeTokens();
+      
       await _service.login(email, password);
       _isAuthenticated = true;
       notifyListeners();
@@ -191,6 +186,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       }
     } catch (e) {
       _isAuthenticated = false;
+      notifyListeners();
       rethrow;
     } finally {
       _isAuthenticatingNotifier.value = false;
@@ -199,6 +195,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<void> logout() async {
+    _isAuthenticatingNotifier.value = true;
+    notifyListeners();
     try {
       await _service.logout();
       _isAuthenticated = false;
@@ -208,6 +206,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       notifyListeners();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
+    } finally {
+      _isAuthenticatingNotifier.value = false;
+      notifyListeners();
     }
   }
 
@@ -293,15 +294,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   Future<void> uploadData(String senseBoxId, Map<String, dynamic> data) async {
     try {
-      // Check if we need to refresh tokens before upload
-      if (!_isAuthenticated) {
-        final refreshSuccess = await _attemptTokenRefresh();
-        if (!refreshSuccess) {
-          throw Exception('Not authenticated');
-        }
-      }
-
-      // Perform the upload through the service
+      // Let the service handle all authentication logic including token refresh
       await _service.uploadData(senseBoxId, data);
 
       // If we get here, upload was successful and we're authenticated
