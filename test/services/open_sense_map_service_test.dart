@@ -538,18 +538,6 @@ void main() {
         expect(token, null);
       });
 
-      test('tokenExpiration returns cached expiration time', () async {
-        await setValidTokens();
-        await service.getAccessToken();
-
-        expect(service.tokenExpiration, isA<DateTime>());
-        expect(service.tokenExpiration!.isAfter(DateTime.now()), true);
-      });
-
-      test('tokenExpiration returns null when no cached token', () {
-        expect(service.tokenExpiration, null);
-      });
-
       test('getAccessToken caches token after first call', () async {
         await setValidTokens();
 

@@ -95,6 +95,16 @@ If you run into issues while running the app, you can take the following trouble
 *   **Updating Dart/Flutter and GitHub Actions:**
     *   Whenever you update Dart or Flutter dependencies within the project, it's **crucial** that you also review and update the relevant GitHub Actions workflow files. This ensures compatibility and prevents build failures. Look for workflows that involve Dart or Flutter setup and adjust versions accordingly.
 
+## Dependency Management
+
+*   **Dependabot Configuration:**
+    *   This project uses Dependabot to automatically check for dependency updates weekly.
+    *   The configuration is optimized for Flutter 3.24.5 and includes safety measures to prevent breaking changes:
+        *   Major version updates are ignored for critical packages (Flutter SDK, Isar, Mapbox, Bluetooth, Geolocator, Sentry)
+        *   Minor and patch updates are allowed for security fixes and bug improvements
+        *   Updates are grouped by dependency type (production vs development)
+    *   Dependabot will create pull requests for safe updates that maintain compatibility with the current Flutter version.
+
 ## Add/remove campaign
 
 - Update the `/data/campaigns.json` file and ensure it is available on the main branch.

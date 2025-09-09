@@ -238,7 +238,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
       // Store brightness before async operation to avoid context gap
       final isDark = Theme.of(context).brightness == Brightness.dark;
       lineAnnotationManager.setLineColor(
-          isDark ? Colors.white.toARGB32() : Colors.black.toARGB32());
+          isDark ? Colors.white.value : Colors.black.value);
       lineAnnotationManager.setLineWidth(4.0);
       lineAnnotationManager.setLineEmissiveStrength(1);
       lineAnnotationManager.setLineCap(LineCap.ROUND);
@@ -264,7 +264,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
       final polygonAnnotationManager =
           await mapInstance!.annotations.createPolygonAnnotationManager();
-      polygonAnnotationManager.setFillColor(Colors.red.toARGB32());
+      polygonAnnotationManager.setFillColor(Colors.red.value);
       polygonAnnotationManager.setFillOpacity(0.5);
       polygonAnnotationManager.setFillEmissiveStrength(1);
 

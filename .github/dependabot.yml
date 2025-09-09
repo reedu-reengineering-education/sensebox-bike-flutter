@@ -19,3 +19,24 @@ updates:
     commit-message:
       prefix: "[dependabot]"
     open-pull-requests-limit: 5
+    # Flutter version constraints
+    versioning-strategy: "increase"
+    # Ignore major version updates that might break compatibility
+    ignore:
+      # Ignore major version updates for critical packages
+      - dependency-name: "flutter"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "isar"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "isar_flutter_libs"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "isar_generator"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "mapbox_maps_flutter"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "flutter_blue_plus"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "geolocator"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "sentry_flutter"
+        update-types: ["version-update:semver-major"]

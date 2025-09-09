@@ -24,15 +24,15 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
     final geolocationBloc = Provider.of<GeolocationBloc>(context);
 
     void onMapCreated(MapboxMap controller) async {
-      await mapboxDrawController.initialize(
-        controller,
-        onChange: (event) {
-          final newPolygons = mapboxDrawController.getAllPolygons();
-          final newPolygonsStrings =
-              newPolygons.map((e) => jsonEncode(e.toJson())).toList();
-          settingsBloc.setPrivacyZones(newPolygonsStrings);
-        },
-      );
+      await mapboxDrawController.initialize(controller);
+
+      // Listen to draw events
+      mapboxDrawController.addListener(() {
+        final newPolygons = mapboxDrawController.getAllPolygons();
+        final newPolygonsStrings =
+            newPolygons.map((e) => jsonEncode(e.toJson())).toList();
+        settingsBloc.setPrivacyZones(newPolygonsStrings);
+      });
 
       final existingPolygons = settingsBloc.privacyZones
           .map((e) => Polygon.fromJson(jsonDecode(e)))

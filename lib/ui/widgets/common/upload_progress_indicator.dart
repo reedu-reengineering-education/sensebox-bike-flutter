@@ -238,13 +238,13 @@ class UploadProgressIndicator extends StatelessWidget {
           borderRadius: BorderRadius.circular(borderRadiusSmall),
         ),
         child: Row(
-          spacing: spacing / 2,
           children: [
             Icon(
               Icons.info,
               color: theme.colorScheme.info,
               size: circleSize,
             ),
+            const SizedBox(width: spacing / 2),
             Expanded(
               child: Text(
                 localizations.uploadProgressInfo,

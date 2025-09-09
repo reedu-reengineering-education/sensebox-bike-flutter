@@ -262,6 +262,14 @@
   "trackDirectUploadAuthFailed": "Este trajeto falhou ao ser enviado em tempo real porque você não estava logado. Por favor, faça login e tente enviar novamente.",
     "trackStatusNotUploaded": "Não enviado",
     "trackStatusUploadFailed": "Envio falhou",
+    "trackStatusUploadFailedAt": "Envio falhou em {date}",
+    "@trackStatusUploadFailedAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
     "trackFilterAll": "Todos",
     "trackFilterUnuploaded": "Não enviados",
     "trackUploadRetryFailed": "Tentativa de envio falhou. Tente novamente.",
