@@ -9,6 +9,15 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get createBoxAddCustomTag => 'Add custom group tag';
+
+  @override
+  String get createBoxCustomTag => 'Custom group tag';
+
+  @override
+  String get createBoxCustomTagHelper => 'You can separate tags with commas';
+
+  @override
   String get generalLoading => 'Loading...';
 
   @override
@@ -18,9 +27,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String generalErrorWithDescription(String error) {
     return 'Error: $error';
   }
-
-  @override
-  String get generalRetry => 'Retry';
 
   @override
   String get generalCancel => 'Cancel';
@@ -45,6 +51,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generalClose => 'Close';
+
+  @override
+  String get generalUpload => 'Upload';
 
   @override
   String get generalPrivacyZones => 'Privacy Zones';
@@ -146,13 +155,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openSenseMapRegisterPasswordConfirm => 'Confirm password';
 
   @override
-  String get openSenseMapRegisterPasswordConfirmErrorEmpty => 'Password confirmation must not be empty';
+  String get openSenseMapRegisterPasswordConfirmErrorEmpty =>
+      'Password confirmation must not be empty';
 
   @override
-  String get openSenseMapRegisterPasswordErrorMismatch => 'Passwords do not match';
+  String get openSenseMapRegisterPasswordErrorMismatch =>
+      'Passwords do not match';
 
   @override
-  String get openSenseMapRegisterPasswordErrorCharacters => 'Password must contain at least 8 characters';
+  String get openSenseMapRegisterPasswordErrorCharacters =>
+      'Password must contain at least 8 characters';
 
   @override
   String get openSenseMapRegisterFailed => 'Registration failed';
@@ -164,7 +176,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openSenseMapRegisterAcceptTermsPrivacy => 'privacy policy';
 
   @override
-  String get openSenseMapRegisterAcceptTermsError => 'You must accept the privacy policy';
+  String get openSenseMapRegisterAcceptTermsError =>
+      'You must accept the privacy policy';
 
   @override
   String get connectionButtonConnect => 'Connect';
@@ -188,7 +201,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bleDeviceSelectTitle => 'Tap to connect';
 
   @override
-  String get noBleDevicesFound => 'No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.';
+  String get noBleDevicesFound =>
+      'No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.';
 
   @override
   String get selectOrCreateBox => 'Select or create senseBox:bike';
@@ -209,19 +223,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createBoxNameError => 'Name must be between 2 and 50 characters';
 
   @override
-  String get createBoxGeolocationCurrentPosition => 'Your current position will be used';
+  String get createBoxGeolocationCurrentPosition =>
+      'Your current position will be used';
 
   @override
   String get openSenseMapBoxSelectionNoBoxes => 'No senseBoxes available';
 
   @override
-  String get openSenseMapBoxSelectionCreateHint => 'Create one using the \'+\' button';
+  String get openSenseMapBoxSelectionCreateHint =>
+      'Create one using the \'+\' button';
 
   @override
   String get openSenseMapBoxSelectionUnnamedBox => 'Unnamed senseBox';
 
   @override
-  String get openSenseMapBoxSelectionIncompatible => 'Not compatible with senseBox:bike';
+  String get openSenseMapBoxSelectionIncompatible =>
+      'Not compatible with senseBox:bike';
 
   @override
   String get settingsGeneral => 'General';
@@ -231,6 +248,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsVibrateOnDisconnect => 'Vibrate on disconnect';
+
+  @override
+  String get settingsUploadMode => 'Upload Mode';
+
+  @override
+  String get settingsUploadModeDirect => 'Direct Upload (Beta)';
+
+  @override
+  String get settingsUploadModePostRide => 'Post-Ride Upload';
+
+  @override
+  String get settingsUploadModeDescription =>
+      'Choose when to upload your data during recording';
+
+  @override
+  String settingsUploadModeCurrent(String mode) {
+    return 'Current: $mode';
+  }
+
+  @override
+  String get settingsUploadModePostRideTitle =>
+      'Upload data after recording stops';
+
+  @override
+  String get settingsUploadModePostRideDescription =>
+      '• Data is stored locally during recording\n• Upload happens all at once when you finish\n• More reliable and stable\n• Uses less battery during recording';
+
+  @override
+  String get settingsUploadModeDirectTitle =>
+      'Upload data in real-time during recording (experimental)';
+
+  @override
+  String get settingsUploadModeDirectDescription =>
+      '• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording';
 
   @override
   String get settingsAbout => 'About';
@@ -253,22 +304,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGithub => 'GitHub issue';
 
   @override
-  String get privacyZonesStart => 'Tap on the map to start drawing a zone. Tap the checkmark to finish.';
+  String get privacyZonesStart =>
+      'Tap on the map to start drawing a zone. Tap the checkmark to finish.';
 
   @override
-  String get privacyZonesDelete => 'Tap on a zone to delete it. Tap the checkmark to finish.';
+  String get privacyZonesDelete =>
+      'Tap on a zone to delete it. Tap the checkmark to finish.';
 
   @override
-  String get trackDetailsPermissionsError => 'Permission denied to save file to external storage.';
+  String get trackDetailsPermissionsError =>
+      'Permission denied to save file to external storage.';
 
   @override
   String get trackDetailsFileSaved => 'CSV file saved to Downloads folder.';
 
   @override
   String get trackDetailsExport => 'Track data CSV export.';
-
-  @override
-  String get trackDetailsNoData => 'No data available.';
 
   @override
   String get trackDetailsLoadingError => 'Error loading track.';
@@ -280,7 +331,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackDelete => 'Delete Track';
 
   @override
-  String get trackDeleteConfirmation => 'Are you sure you wish to delete this track?';
+  String get trackDeleteConfirmation =>
+      'Are you sure you wish to delete this track?';
 
   @override
   String get sensorTemperature => 'Temperature';
@@ -391,31 +443,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Enable Bluetooth';
 
   @override
-  String get errorNoLocationAccess => 'To record tracks, please allow the app to access the device\'s current location in the phone settings.';
+  String get errorNoLocationAccess =>
+      'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.';
 
   @override
-  String get errorNoScanAccess => 'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.';
+  String get errorNoScanAccess =>
+      'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.';
 
   @override
-  String get errorNoSenseBoxSelected => 'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.';
+  String get errorNoSenseBoxSelected =>
+      'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.';
 
   @override
-  String get errorExportDirectoryAccess => 'Error accessing export directory. Please make sure the app has permission to access the storage.';
+  String get loginRequiredMessage => 'Please log in to share sensor data';
 
   @override
-  String get errorLoginFailed => 'Login failed. Please check your credentials.';
+  String get errorExportDirectoryAccess =>
+      'Error accessing export directory. Please make sure the app has permission to access the storage.';
 
   @override
-  String get errorRegistrationFailed => 'Registration failed. Please check your credentials.';
+  String get errorLoginFailed =>
+      'Login failed. Please check your credentials and try once again.';
 
   @override
-  String get errorBleConnectionFailed => 'Connect to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
+  String get errorRegistrationFailed =>
+      'Registration failed. Please check your credentials and try once again.';
 
   @override
-  String get errorUploadFailed => 'Data upload failed. Please check your internet connection and try again.';
+  String get errorBleConnectionFailed =>
+      'Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
 
   @override
-  String get errorPermanentAuthentication => 'Authentication failed permanently. Please log in again to continue uploading data.';
+  String get errorUploadFailed =>
+      'Data upload failed. Please check your internet connection and try again.';
+
+  @override
+  String get errorPermanentAuthentication =>
+      'Authentication failed permanently. Please log in to upload data.';
 
   @override
   String get selectCsvFormat => 'Select CSV format';
@@ -430,13 +494,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDeleteAllData => 'Delete All Data';
 
   @override
-  String get settingsDeleteAllDataConfirmation => 'Are you sure you want to delete all data? This action is irreversible.';
+  String get settingsDeleteAllDataConfirmation =>
+      'Are you sure you want to delete all data? This action is irreversible.';
 
   @override
-  String get settingsDeleteAllDataSuccess => 'All data has been successfully deleted.';
+  String get settingsDeleteAllDataSuccess =>
+      'All data has been successfully deleted.';
 
   @override
-  String get settingsDeleteAllDataError => 'Failed to delete all data. Please try again.';
+  String get settingsDeleteAllDataError =>
+      'Failed to delete all data. Please try again.';
 
   @override
   String get accountManagement => 'Account Management';
@@ -448,7 +515,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalConfirmation => 'Confirmation';
 
   @override
-  String get privacyPolicyAccept => 'I have read and accept the Privacy Policy.';
+  String get privacyPolicyAccept =>
+      'I have read and accept the Privacy Policy.';
 
   @override
   String get trackNoGeolocations => 'No geolocations available for this track.';
@@ -479,4 +547,116 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trackStatistics => 'Track Statistics';
+
+  @override
+  String get uploadProgressTitle => 'Upload Progress';
+
+  @override
+  String get uploadProgressPreparing => 'Preparing upload...';
+
+  @override
+  String get uploadProgressUploading => 'Uploading track data...';
+
+  @override
+  String get uploadProgressInfo =>
+      'Do not close the app while uploading. It can take some time depending on your track length.\n\nIf you would like to upload your track data later, you can do that from track overview screen.';
+
+  @override
+  String get uploadProgressRetrying => 'Retrying upload...';
+
+  @override
+  String get uploadProgressCompleted => 'Upload completed successfully';
+
+  @override
+  String get uploadProgressFailed => 'Upload failed';
+
+  @override
+  String get uploadProgressAuthenticationFailed => 'Authentication required';
+
+  @override
+  String uploadProgressChunks(int completed, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total chunks',
+      one: '1 chunk',
+      zero: '0 chunks',
+    );
+    return '$completed of $_temp0 uploaded';
+  }
+
+  @override
+  String uploadProgressPercentage(int percentage) {
+    return '$percentage% complete';
+  }
+
+  @override
+  String get uploadProgressAuthenticationError =>
+      'Please log in to upload data.';
+
+  @override
+  String get uploadProgressNetworkError =>
+      'Network connection failed. Please check your internet connection and try again.';
+
+  @override
+  String get uploadProgressGenericError => 'Upload failed. Please try again.';
+
+  @override
+  String get uploadConfirmTitle => 'Upload Track Data';
+
+  @override
+  String get uploadConfirmMessage =>
+      'Would you like to upload your track data now?';
+
+  @override
+  String get uploadConfirmUploadNow => 'Upload';
+
+  @override
+  String get trackStatusUploaded => 'Uploaded';
+
+  @override
+  String trackStatusUploadedAt(String date) {
+    return 'Uploaded on $date';
+  }
+
+  @override
+  String get trackStatusNotUploaded => 'Not uploaded';
+
+  @override
+  String get trackStatusUploadFailed => 'Upload failed';
+
+  @override
+  String trackStatusUploadFailedAt(Object date) {
+    return 'Upload failed on $date';
+  }
+
+  @override
+  String get trackDirectUploadInfo =>
+      'This track data was uploaded in real time during your ride. If you\'d like to re-upload it, you can use the upload button above.';
+
+  @override
+  String get trackUploadAttempts => 'Upload attempts';
+
+  @override
+  String get trackLastAttempt => 'Last attempt';
+
+  @override
+  String get trackStatus => 'Status';
+
+  @override
+  String get trackDirectUploadAuthFailed =>
+      'This track failed to upload in real-time because you weren\'t logged in. Please log in and try uploading again.';
+
+  @override
+  String get trackFilterAll => 'All';
+
+  @override
+  String get trackFilterUnuploaded => 'Not uploaded';
+
+  @override
+  String get trackUploadRetryFailed => 'Upload retry failed. Please try again.';
+
+  @override
+  String get errorTrackNoGeolocations =>
+      'Track has no geolocation data and cannot be uploaded.';
 }

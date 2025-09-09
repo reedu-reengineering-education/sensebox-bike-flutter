@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+// Custom colors for specific use cases
+const Color loginRequiredColor =
+    Color.fromARGB(255, 58, 2, 88); // Dark red for login requirement
+const Color loginRequiredTextColor =
+    Colors.white; // White text for login requirement
+
 final lightTheme = ThemeData(
   inputDecorationTheme: InputDecorationTheme(
     filled: true,
@@ -64,6 +70,12 @@ final darkTheme = ThemeData(
     headlineSmall: TextStyle(fontSize: 20),
   ),
 );
+
+extension CustomColors on ColorScheme {
+  Color get success =>
+      brightness == Brightness.light ? Colors.green : Colors.green;
+  Color get info => brightness == Brightness.light ? Colors.blue : Colors.blue;
+}
 
 const double circleSize = 16.0;
 const double iconSize = 12.0;

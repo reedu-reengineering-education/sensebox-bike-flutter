@@ -8,14 +8,14 @@ import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:sensebox_bike/services/permission_service.dart';
-import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection_modal.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/common/error_banner.dart';
+import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
@@ -27,87 +27,106 @@ class HomeScreen extends StatelessWidget {
     final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.connectionErrorNotifier,
-      builder: (context, error, child) {
-        if (error == true && context.mounted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).clearMaterialBanners();
-            ScaffoldMessenger.of(context).showMaterialBanner(
-              MaterialBanner(
-                content: Text(
-                    AppLocalizations.of(context)!.errorBleConnectionFailed),
-                backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      bleBloc.resetConnectionError();
-                      ScaffoldMessenger.of(context).clearMaterialBanners();
-                    },
-                    child: Text(
-                        MaterialLocalizations.of(context).closeButtonLabel),
-                  ),
-                ],
-              ),
-            );
-          });
-        }
-
-        return Scaffold(
-          body: CustomScrollView(
-            clipBehavior: Clip.none,
-            slivers: [
-              // SliverPersistentHeader with the map and floating buttons
-              SliverPersistentHeader(
-                delegate: _SliverAppBarDelegate(
-                  minHeight: MediaQuery.of(context).size.height * 0.33,
-                  maxHeight: MediaQuery.of(context).size.height *
-                      (bleBloc.isConnected ? 0.65 : 0.85),
-                  child: Stack(
-                    children: [
-                      const SizedBox(
-                        width: double.infinity,
-                        child: GeolocationMapWidget(), // The map
-                      ),
-                      const Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: _BottomGradient(),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: _FloatingButtons(
-                              bleBloc: bleBloc, recordingBloc: recordingBloc),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                pinned: true,
-              ),
-              SliverSafeArea(
-                minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                sliver: ValueListenableBuilder<BluetoothDevice?>(
-                  valueListenable: bleBloc.selectedDeviceNotifier,
-                  builder: (context, device, child) {
-                    if (device == null) {
-                      // Not connected: show nothing
-                      return SliverToBoxAdapter(child: SizedBox.shrink());
-                    }
-                    // Connected: show sensor grid
-                    return _SensorGrid(sensorBloc: sensorBloc);
-                  },
-                ),
-              ),
-            ],
+    return Scaffold(
+      body: Column(
+        children: [
+          // Error banner with spacing
+          ValueListenableBuilder<bool>(
+            valueListenable: bleBloc.connectionErrorNotifier,
+            builder: (context, error, child) {
+              if (error == true) {
+                return Column(
+                  children: [
+                    const SizedBox(height: 48),
+                    _ConnectionErrorBanner(bleBloc: bleBloc),
+                    const SizedBox(height: 16),
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            },
           ),
-        );
-      },
+          // Main content
+          Expanded(
+            child: CustomScrollView(
+              clipBehavior: Clip.none,
+              slivers: [
+                // SliverPersistentHeader with the map and floating buttons
+                SliverPersistentHeader(
+                  delegate: _SliverAppBarDelegate(
+                    minHeight: MediaQuery.of(context).size.height * 0.33,
+                    maxHeight: MediaQuery.of(context).size.height *
+                        (bleBloc.isConnected ? 0.65 : 0.85),
+                    child: Stack(
+                      children: [
+                        const SizedBox(
+                          width: double.infinity,
+                          child: GeolocationMapWidget(), // The map
+                        ),
+                        const Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: _BottomGradient(),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: _FloatingButtons(
+                                bleBloc: bleBloc, recordingBloc: recordingBloc),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  pinned: true,
+                ),
+                SliverSafeArea(
+                  minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  sliver: ValueListenableBuilder<BluetoothDevice?>(
+                    valueListenable: bleBloc.selectedDeviceNotifier,
+                    builder: (context, device, child) {
+                      // Only show sensor area if device is connected and not in error state
+                      if (device == null ||
+                          bleBloc.connectionErrorNotifier.value) {
+                        return SliverToBoxAdapter(child: SizedBox.shrink());
+                      }
+
+                      // Check if there are actually any sensor widgets available
+                      final widgets = sensorBloc.getSensorWidgets();
+                      if (widgets.isEmpty) {
+                        // Connected but no sensor data available: show nothing
+                        return SliverToBoxAdapter(child: SizedBox.shrink());
+                      }
+
+                      // Connected and has sensor data: show sensor grid
+                      return _SensorGrid(sensorBloc: sensorBloc);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Connection error banner widget
+class _ConnectionErrorBanner extends StatelessWidget {
+  final BleBloc bleBloc;
+
+  const _ConnectionErrorBanner({required this.bleBloc});
+
+  @override
+  Widget build(BuildContext context) {
+    return ErrorBanner(
+      errorText: AppLocalizations.of(context)!.errorBleConnectionFailed,
+      onDismiss: () => bleBloc.resetConnectionError(),
     );
   }
 }
@@ -121,9 +140,9 @@ class _SenseBoxSelectionButton extends StatelessWidget {
         final colorScheme = Theme.of(context).colorScheme;
         final textTheme = Theme.of(context).textTheme;
 
-        if (!osemBloc.isAuthenticated || osemBloc.isAuthenticating) {
-          return const SizedBox.shrink();
-        }
+        // Always show the button, but with different styling based on authentication
+        final bool isAuthenticated = osemBloc.isAuthenticated;
+        final bool isAuthenticating = osemBloc.isAuthenticating;
 
         return StreamBuilder<SenseBox?>(
           stream: osemBloc.senseBoxStream,
@@ -133,34 +152,68 @@ class _SenseBoxSelectionButton extends StatelessWidget {
             final bool hasError = snapshot.hasError;
             final bool noBox = selectedBox == null;
 
-            Color textColor = hasError
-                ? colorScheme.onErrorContainer
-                : Theme.of(context).colorScheme.onTertiaryContainer;
-            IconData icon = hasError
-                ? Icons.error
-                : noBox
-                    ? Icons.add_box_outlined
-                    : Icons.emergency_share_rounded;
-            String label = hasError
-                ? AppLocalizations.of(context)!.generalError
-                : noBox
-                    ? AppLocalizations.of(context)!.selectOrCreateBox
-                    : selectedBox.name ?? '';
+            // Different styling for authenticated vs unauthenticated state
+            Color backgroundColor;
+            Color textColor;
+            Color borderColor;
+            IconData icon;
+            String label;
+            VoidCallback? onTap;
+
+            if (isAuthenticating) {
+              // Loading state - disabled button with loading indicator
+              backgroundColor = colorScheme.surface.withValues(alpha: 0.5);
+              textColor = colorScheme.onSurface.withValues(alpha: 0.6);
+              borderColor = colorScheme.outline.withValues(alpha: 0.3);
+              icon = Icons.hourglass_empty;
+              label = AppLocalizations.of(context)!.generalLoading;
+              onTap = null; // Disable button
+            } else if (!isAuthenticated) {
+              // Unauthenticated state - use theme-defined dark red with white text
+              backgroundColor = loginRequiredColor;
+              textColor = loginRequiredTextColor;
+              borderColor = loginRequiredColor;
+              icon = Icons.login;
+              label = AppLocalizations.of(context)!.loginRequiredMessage;
+              onTap = () {
+                // Navigate to settings page when not authenticated
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => SettingsScreen()));
+              };
+            } else {
+              // Authenticated state - use existing logic
+              textColor = hasError
+                  ? colorScheme.onErrorContainer
+                  : Theme.of(context).colorScheme.onTertiaryContainer;
+              backgroundColor = hasError
+                  ? colorScheme.errorContainer
+                  : Theme.of(context).colorScheme.tertiary;
+              borderColor = hasError
+                  ? colorScheme.outlineVariant
+                  : Theme.of(context).colorScheme.tertiary;
+              icon = hasError
+                  ? Icons.error
+                  : noBox
+                      ? Icons.add_box_outlined
+                      : Icons.emergency_share_rounded;
+              label = hasError
+                  ? AppLocalizations.of(context)!.generalError
+                  : noBox
+                      ? AppLocalizations.of(context)!.selectOrCreateBox
+                      : selectedBox.name ?? '';
+              onTap = () => showSenseBoxSelection(context, osemBloc);
+            }
 
             return InkWell(
-              onTap: () => showSenseBoxSelection(context, osemBloc),
+              onTap: onTap,
               child: Container(
                 width: double.infinity,
                 constraints: const BoxConstraints(minHeight: 48),
                 decoration: BoxDecoration(
-                  color: hasError
-                      ? colorScheme.errorContainer
-                      : Theme.of(context).colorScheme.tertiary,
+                  color: backgroundColor,
                   borderRadius: BorderRadius.circular(borderRadiusSmall),
                   border: Border.all(
-                    color: hasError
-                        ? colorScheme.outlineVariant
-                        : Theme.of(context).colorScheme.tertiary,
+                    color: borderColor,
                     width: 1.0,
                     style: BorderStyle.solid,
                   ),
@@ -183,15 +236,13 @@ class _SenseBoxSelectionButton extends StatelessWidget {
                       height: 24,
                       width: 24,
                       child: Center(
-                        child: Icon(
-                          icon,
-                          color: hasError
-                              ? colorScheme.onErrorContainer
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onTertiaryContainer,
-                          size: 20,
-                        ),
+                        child: isAuthenticating
+                            ? Loader(light: true)
+                            : Icon(
+                                icon,
+                                color: textColor,
+                                size: 20,
+                              ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -200,28 +251,26 @@ class _SenseBoxSelectionButton extends StatelessWidget {
                       child: Text(
                         label,
                         style: textTheme.bodyLarge?.copyWith(
-                          color: textColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
+                            color: textColor,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2),
+                        maxLines: 3,
                       ),
                     ),
-                    // Optional description (for error or noBox)
-                    if (hasError)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: Icon(Icons.refresh,
-                            color: colorScheme.onErrorContainer, size: 16),
-                      )
-                    else if (noBox)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: Icon(Icons.arrow_forward,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onTertiaryContainer,
-                            size: 16),
-                      ),
+                    // Optional description (for error or noBox) - only show when authenticated and not loading
+                    if (isAuthenticated && !isAuthenticating)
+                      if (hasError)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child:
+                              Icon(Icons.refresh, color: textColor, size: 16),
+                        )
+                      else if (noBox)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: Icon(Icons.arrow_forward,
+                              color: textColor, size: 16),
+                        ),
                   ],
                 ),
               ),
@@ -254,6 +303,7 @@ class _FloatingButtons extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _ConnectButton(bleBloc: bleBloc),
+                  // Always show sensebox selection button with different styling based on auth state
                   _SenseBoxSelectionButton(),
                 ],
               );
@@ -266,13 +316,17 @@ class _FloatingButtons extends StatelessWidget {
                     spacing: 12,
                     children: [
                       Expanded(
-                        child: _StartStopButton(recordingBloc: recordingBloc),
+                        child: _StartStopButton(
+                            recordingBloc: recordingBloc,
+                            isReconnecting: isReconnecting),
                       ),
                       Expanded(
-                        child: _DisconnectButton(bleBloc: bleBloc),
+                        child: _DisconnectButton(
+                            bleBloc: bleBloc, recordingBloc: recordingBloc),
                       ),
                     ],
                   ),
+                  // Always show sensebox selection button with different styling based on auth state
                   _SenseBoxSelectionButton(),
                 ],
               );
@@ -377,10 +431,14 @@ class _ConnectButton extends StatelessWidget {
 // Start/Stop button
 class _StartStopButton extends StatelessWidget {
   final RecordingBloc recordingBloc;
-  const _StartStopButton({required this.recordingBloc});
+  final bool isReconnecting;
+  const _StartStopButton(
+      {required this.recordingBloc, required this.isReconnecting});
 
   @override
   Widget build(BuildContext context) {
+    recordingBloc.setContext(context);
+
     return FilledButton.icon(
       style: const ButtonStyle(
         padding: WidgetStatePropertyAll(
@@ -392,16 +450,15 @@ class _StartStopButton extends StatelessWidget {
           : AppLocalizations.of(context)!.connectionButtonStart),
       icon: Icon(
           recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
-      onPressed: () async {
-        try {
-          await PermissionService.ensureLocationPermissionsGranted();
-          recordingBloc.isRecording
-              ? recordingBloc.stopRecording()
-              : recordingBloc.startRecording();
-        } catch (e) {
-          ErrorService.handleError(e, StackTrace.current);
-        }
-      },
+      onPressed: isReconnecting
+          ? null
+          : () async {
+              if (recordingBloc.isRecording) {
+                await recordingBloc.stopRecording();
+              } else {
+                await recordingBloc.startRecording();
+              }
+            },
     );
   }
 }
@@ -409,7 +466,8 @@ class _StartStopButton extends StatelessWidget {
 // Disconnect button
 class _DisconnectButton extends StatelessWidget {
   final BleBloc bleBloc;
-  const _DisconnectButton({required this.bleBloc});
+  final RecordingBloc recordingBloc;
+  const _DisconnectButton({required this.bleBloc, required this.recordingBloc});
 
   @override
   Widget build(BuildContext context) {
@@ -427,7 +485,15 @@ class _DisconnectButton extends StatelessWidget {
           label: isReconnecting
               ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
               : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
-          onPressed: isReconnecting ? null : bleBloc.disconnectDevice,
+          onPressed: isReconnecting
+              ? null
+              : () async {
+                  // Stop recording if active before disconnecting
+                  if (recordingBloc.isRecording) {
+                    await recordingBloc.stopRecording();
+                  }
+                  bleBloc.disconnectDevice();
+                },
         );
       },
     );

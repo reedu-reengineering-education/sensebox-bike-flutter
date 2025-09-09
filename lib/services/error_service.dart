@@ -29,7 +29,8 @@ class ErrorService {
           error is NoSenseBoxSelected ||
           error is ExportDirectoryAccessError ||
           error is UploadFailureError ||
-          error is PermanentAuthenticationError) {
+          error is PermanentAuthenticationError ||
+          error is TrackHasNoGeolocationsException) {
         showUserFeedback(error);
       } else {
         logToConsole(error, stack);
@@ -60,7 +61,7 @@ class ErrorService {
 
     if (error is LocationPermissionDenied) {
       return localizations?.errorNoLocationAccess ??
-          'Please allow the app to access your location in the phone settings.';
+          'Location services are disabled or access is denied. Please enable location services and allow the app to access your location in the phone settings.';
     } else if (error is ScanPermissionDenied) {
       return localizations?.errorNoScanAccess ??
           'Please allow the app to scan nearby devices in the phone settings.';
@@ -76,6 +77,9 @@ class ErrorService {
     } else if (error is PermanentAuthenticationError) {
       return localizations?.errorPermanentAuthentication ??
           'Authentication failed permanently. Please log in again to continue uploading data.';
+    } else if (error is TrackHasNoGeolocationsException) {
+      return localizations?.errorTrackNoGeolocations ??
+          'Track has no geolocation data and cannot be uploaded.';
     } else if (error is LoginError) {
       return '${localizations?.errorLoginFailed} ${error.toString()}';
     } else if (error is RegistrationError) {

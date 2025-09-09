@@ -43,6 +43,15 @@ This Flutter app connects to a [senseBox device](https://sensebox.de/en/products
 
     This command will build and install the app on your connected device or emulator.
 
+3.  **Android builds:**
+
+    To run or build a release version of the app on Android, you must either:
+
+    - Provide a valid `android/key.properties` file with signing credentials, or
+    - Modify `signingConfigs.release` in `android/app/build.gradle` to use `debug` signing config instead.
+    
+    If you're unsure or just testing the app locally, using the debug configuration is recommended.
+
 ### Seeding Test Data
 
 To populate the app with sample data for development or testing, use the provided seeding function:
@@ -50,6 +59,7 @@ To populate the app with sample data for development or testing, use the provide
     ```
     await seedIsarWithSampleData(isarService);
     ```
+
 *   This will generate several tracks, geolocations, and sensor data in your local database.
 *   You can call this function in your app's initialisation code or anywhere else in the app. Personally, I prefer to replace the IsarService call used to delete all data on the app's Settings screen with the above code.
 
@@ -77,7 +87,7 @@ If you run into issues while running the app, you can take the following trouble
     flutter pub get
     ```
 
-    ## GitHub Actions & Contribution Guidelines
+## GitHub Actions & Contribution Guidelines
 
 *   **Automated Testing on Pull Requests:**
     *   When you create a new pull request (PR), our GitHub Actions workflows automatically run a suite of tests. This ensures that your contributions maintain code quality and don't introduce regressions.
@@ -85,7 +95,7 @@ If you run into issues while running the app, you can take the following trouble
 *   **Updating Dart/Flutter and GitHub Actions:**
     *   Whenever you update Dart or Flutter dependencies within the project, it's **crucial** that you also review and update the relevant GitHub Actions workflow files. This ensures compatibility and prevents build failures. Look for workflows that involve Dart or Flutter setup and adjust versions accordingly.
 
- ## Add/remove campaign
+## Add/remove campaign
 
- - Update the `/data/campaigns.json` file and ensure it is available on the main branch.
- - Check that you can see the new campaign when you create a new box. The new campaign should appear the next time you open the CreateBikeBoxDialog. If the new entry is not available, try restarting the application.
+- Update the `/data/campaigns.json` file and ensure it is available on the main branch.
+- Check that you can see the new campaign when you create a new box. The new campaign should appear the next time you open the CreateBikeBoxModal. If the new entry is not available, try restarting the application.

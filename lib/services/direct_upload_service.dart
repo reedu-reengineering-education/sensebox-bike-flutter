@@ -9,6 +9,7 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/services/isar_service/track_service.dart';
 
 class UploadErrorClassifier {
   static const List<String> _permanentAuthErrorPatterns = [
@@ -93,6 +94,8 @@ class DirectUploadService {
   final SettingsBloc settingsBloc;
   final SenseBox senseBox;
   final OpenSenseMapBloc openSenseMapBloc;
+  final TrackService trackService;
+  final int trackId;
   final UploadDataPreparer _dataPreparer;
   
   Function(List<GeolocationData>)? _onUploadSuccess;
@@ -125,6 +128,8 @@ class DirectUploadService {
     required this.settingsBloc,
     required this.senseBox,
     required this.openSenseMapBloc,
+    required this.trackService,
+    required this.trackId,
   }) : _dataPreparer = UploadDataPreparer(senseBox: senseBox);
 
   void enable() {
@@ -337,7 +342,7 @@ class DirectUploadService {
         return;
       }
 
-      await openSenseMapService.uploadData(senseBox.id, data);
+      await openSenseMapBloc.uploadData(senseBox.id, data);
       
       // SUCCESS: Now clear both the upload buffer AND the corresponding accumulated data
       _directUploadBuffer.clear();
@@ -346,7 +351,7 @@ class DirectUploadService {
       for (final gpsPoint in allGpsPoints) {
         _accumulatedSensorData.remove(gpsPoint);
       }
-      
+
       _onUploadSuccess?.call(allGpsPoints);
     } catch (e, st) {
       final isNonCriticalError = e is TooManyRequestsException ||
@@ -512,7 +517,25 @@ class DirectUploadService {
 
 
   Future<void> _handleUploadError(dynamic e, StackTrace st) async {
-    final errorType = UploadErrorClassifier.classifyError(e);
+    final errorString = e.toString();
+
+    if (errorString.contains('Token refreshed')) {
+      return;
+    }
+
+    // Since the bloc now handles authentication, we only need to handle
+    // non-authentication errors here
+    if (errorString.contains('Not authenticated') ||
+        errorString.contains('Authentication failed') ||
+        errorString.contains('No refresh token found') ||
+        errorString.contains('Refresh token is expired')) {
+      // Authentication errors are handled by the bloc, just log them
+      ErrorService.handleError(
+          'Direct upload authentication error at ${DateTime.now()}: $e. Handled by bloc.',
+          st,
+          sendToSentry: false);
+      return;
+    }
     
     switch (errorType) {
       case UploadErrorType.permanentAuth:
@@ -527,14 +550,8 @@ class DirectUploadService {
             st,
             sendToSentry: false);
         break;
-    }
-  }
 
-  Future<void> _handlePermanentAuthenticationError(
-      dynamic e, StackTrace st) async {
-    _permanentlyDisableService();
-    await openSenseMapBloc.markAuthenticationFailed();
-    throw PermanentAuthenticationError(e.toString());
+    }
   }
 
   void _permanentlyDisableService() {
@@ -545,8 +562,6 @@ class DirectUploadService {
     _uploadTimer = null;
     _restartTimer?.cancel();
     _restartTimer = null;
-
-    
     permanentUploadLossNotifier.value = true;
 
     _onPermanentDisable?.call();
@@ -621,14 +636,13 @@ class DirectUploadService {
 
       if (data.isEmpty) return;
 
-      await openSenseMapService.uploadData(senseBox.id, data);
+      await openSenseMapBloc.uploadData(senseBox.id, data);
 
       _directUploadBuffer.clear();
-      
+
       for (final gpsPoint in allGpsPoints) {
         _accumulatedSensorData.remove(gpsPoint);
       }
-
     } catch (e, st) {
       ErrorService.handleError(
           'Direct upload failed at ${DateTime.now()}: ${e.toString()}',
@@ -643,7 +657,7 @@ class DirectUploadService {
 
   void _startPeriodicUploadCheck() {
     _uploadTimer?.cancel();
-    _uploadTimer = Timer.periodic(Duration(seconds: 30), (_) {
+    _uploadTimer = Timer.periodic(Duration(seconds: 10), (_) async {
       if (_isPermanentlyDisabled) {
         return;
       }
@@ -666,31 +680,6 @@ class DirectUploadService {
       }
     });
   }
-
-  // Add method to log buffer status for debugging
-  // void _logBufferStatus() {
-  //   debugPrint('[DirectUploadService] Buffer Status:');
-  //   debugPrint(
-  //       '  - Accumulated Sensor Data: ${_accumulatedSensorData.length} GPS points');
-  //   debugPrint('  - Direct Upload Buffer: ${_directUploadBuffer.length} items');
-  //   debugPrint('  - Can Upload: ${openSenseMapService.isAcceptingRequests}');
-  //   debugPrint('  - Service Enabled: $_isEnabled');
-  //   debugPrint('  - Permanently Disabled: $_isPermanentlyDisabled');
-  //   debugPrint('  - Pending Restart Timer: ${_restartTimer != null}');
-  //   debugPrint('  - Restart Attempts: $_restartAttempts');
-  //   debugPrint(
-  //       '  - OpenSenseMap Permanently Disabled: ${openSenseMapService.isPermanentlyDisabled}');
-
-  //   if (!openSenseMapService.isAcceptingRequests) {
-  //     if (openSenseMapService.isPermanentlyDisabled) {
-  //       debugPrint('  - Status: Permanently disabled - user needs to re-login');
-  //     } else {
-  //       final remaining = openSenseMapService.remainingRateLimitTime;
-  //       debugPrint(
-  //           '  - Rate Limited: ${remaining?.inSeconds ?? 0} seconds remaining');
-  //     }
-  //   }
-  // }
 
   void dispose() {
     _isDirectUploading = false;

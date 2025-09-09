@@ -14,5 +14,9 @@
       {
         "label": "Greifswald",
         "value": "greifswald"
+      },
+      {
+        "label": "Jena",
+        "value": "jena"
       }
 ]

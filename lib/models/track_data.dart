@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:isar/isar.dart';
+import 'package:sensebox_bike/utils/distance_calculation_utils.dart';
 import 'package:sensebox_bike/utils/geo_utils.dart';
 import 'package:simplify/simplify.dart';
 
@@ -14,6 +15,30 @@ class TrackData {
 
   @Backlink(to: "track")
   final geolocations = IsarLinks<GeolocationData>();
+
+  // Batch Upload tracking properties - use integers that Isar handles better
+  // (int? is used instead of bool? to avoid Isar's nullable boolean bug)
+  int? uploaded; // 0 = false, 1 = true, null = null
+  int? uploadAttempts; // null = 0 attempts
+  DateTime? lastUploadAttempt;
+
+  @Index()
+  int? isDirectUpload; // 0 = false, 1 = true, null = null
+
+  // Computed getters that provide boolean behavior
+  @ignore
+  bool get isUploaded => uploaded == 1;
+
+  @ignore
+  bool get isDirectUploadTrack =>
+      isDirectUpload != 0; // null = true, 1 = true, 0 = false
+
+  @ignore
+  int get uploadAttemptsCount {
+    final attempts = uploadAttempts ?? 0;
+    // Handle corrupted negative values by treating them as 0
+    return attempts < 0 ? 0 : attempts;
+  }
 
   @ignore
   Duration get duration => Duration(
@@ -38,11 +63,8 @@ class TrackData {
 
   @ignore
   String get encodedPolyline {
-    // Convert geolocations to a list of Point<double>
-    final List<Point<double>> coordinates = geolocations
-        .map(
-            (geolocation) => Point(geolocation.latitude, geolocation.longitude))
-        .toList();
+    final List<Point<double>> coordinates =
+        convertToSimplifyPoints(geolocations.toList());
 
     if (coordinates.isEmpty) {
       return "";
