@@ -52,3 +52,6 @@ default.isar*
 
 # FVM Version Cache
 .fvm/
+
+# Localization
+untranslated_messages.txt
