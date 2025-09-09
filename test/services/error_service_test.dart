@@ -108,7 +108,7 @@ void main() {
         expect(
           message,
           contains(
-              'Login failed. Please check your credentials and try once again.'),
+              'Login failed. Please check your credentials and try once again later.'),
         );
       });
 
@@ -124,7 +124,7 @@ void main() {
         expect(
           message,
           contains(
-              'Registration failed. Please check your credentials and try once again.'),
+              'Registration failed. Please check your credentials and try once again later.'),
         );
       });
     });
@@ -178,7 +178,7 @@ void main() {
         // Verify that the SnackBar is displayed with the correct message
         expect(
           find.text(
-              'Location services are disabled or access is denied. Please enable location services and allow the app to access your location in the phone settings.'),
+              'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.'),
           findsOneWidget,
         );
       });
