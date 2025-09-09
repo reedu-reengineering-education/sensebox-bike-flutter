@@ -12,7 +12,8 @@ dependencies {
 android {
     namespace = "de.reedu.senseboxbike"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Comment out ndkVersion to use the default version
+    //ndkVersion = flutter.ndkVersion 
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
