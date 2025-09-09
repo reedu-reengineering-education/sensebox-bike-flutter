@@ -27,7 +27,7 @@ jobs:
            channel: stable
            cache: true
            architecture: x64
-           flutter-version: '3.29.1'
+           flutter-version: '3.24.5'
 
       - name: Create .env file
         run: |
