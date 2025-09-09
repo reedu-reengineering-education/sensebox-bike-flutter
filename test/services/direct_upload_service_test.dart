@@ -30,7 +30,6 @@ void main() {
         final authErrors = [
           'Authentication failed - user needs to re-login',
           'No refresh token found',
-          'Failed to refresh token: Network error',
           'Not authenticated',
         ];
 
@@ -46,6 +45,7 @@ void main() {
           'Server error 502 - retrying',
           'Server error 503 - retrying',
           'Token refreshed, retrying',
+          'Failed to refresh token: Network error',
         ];
 
         for (final error in temporaryErrors) {
@@ -130,6 +130,7 @@ void main() {
       mockOpenSenseMapService = MockOpenSenseMapService();
       mockSettingsBloc = MockSettingsBloc();
       mockOpenSenseMapBloc = MockOpenSenseMapBloc();
+      mockTrackService = MockTrackService();
       
       when(() => mockOpenSenseMapBloc.markAuthenticationFailed()).thenAnswer((_) async {});
 

@@ -15,13 +15,16 @@ class UploadErrorClassifier {
   static const List<String> _permanentAuthErrorPatterns = [
     'Authentication failed - user needs to re-login',
     'No refresh token found',
-    'Failed to refresh token:',
+    'Failed to refresh token: Authentication failed',
+    'Failed to refresh token: Invalid token',
     'Not authenticated',
   ];
 
   static const List<String> _temporaryErrorPatterns = [
+    'Failed to refresh token: Network error',
     'Server error',
     'Token refreshed',
+    'Network error',
   ];
 
   static const List<Type> _temporaryExceptionTypes = [
@@ -56,9 +59,20 @@ class UploadErrorClassifier {
   }
 
   static bool _isPermanentAuthError(String errorString) {
-    return _permanentAuthErrorPatterns.any(
+    // Check specific patterns first
+    if (_permanentAuthErrorPatterns.any(
       (pattern) => errorString.contains(pattern),
-    );
+    )) {
+      return true;
+    }
+
+    // Check for generic "Failed to refresh token:" but exclude network errors
+    if (errorString.contains('Failed to refresh token:') &&
+        !errorString.contains('Failed to refresh token: Network error')) {
+      return true;
+    }
+
+    return false;
   }
 
   static bool _isPermanentAuthExceptionType(dynamic error) {
@@ -537,6 +551,7 @@ class DirectUploadService {
       return;
     }
     
+    final errorType = UploadErrorClassifier.classifyError(e);
     switch (errorType) {
       case UploadErrorType.permanentAuth:
         await _handlePermanentAuthenticationError(e, st);
@@ -573,6 +588,17 @@ class DirectUploadService {
         st,
         sendToSentry: true);
     
+    _disableAndClearBuffers();
+    _scheduleRestart();
+  }
+
+  Future<void> _handlePermanentAuthenticationError(
+      dynamic e, StackTrace st) async {
+    ErrorService.handleError(
+        'Direct upload permanent authentication error at ${DateTime.now()}: $e. Service disabled.',
+        st,
+        sendToSentry: true);
+
     _disableAndClearBuffers();
     _scheduleRestart();
   }

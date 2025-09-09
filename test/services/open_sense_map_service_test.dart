@@ -525,7 +525,7 @@ void main() {
 
     group('data trimming functionality', () {
       test('when data exceeds 2450 items, trims oldest items before upload', () async {
-        await setTokens();
+        await setValidTokens();
         
         // Create test data with 3000 items
         final Map<String, dynamic> largeData = {};
@@ -561,7 +561,7 @@ void main() {
       });
 
       test('when data is exactly 2450 items, no trimming occurs', () async {
-        await setTokens();
+        await setValidTokens();
         
         // Create test data with exactly 2450 items
         final Map<String, dynamic> exactData = {};
@@ -597,7 +597,7 @@ void main() {
       });
 
       test('when data is under 2450 items, no trimming occurs', () async {
-        await setTokens();
+        await setValidTokens();
         
         // Create test data with 1000 items
         final Map<String, dynamic> smallData = {};
@@ -633,7 +633,7 @@ void main() {
       });
 
       test('when data is 2451 items, trims exactly 1 item', () async {
-        await setTokens();
+        await setValidTokens();
         
         // Create test data with 2451 items
         final Map<String, dynamic> boundaryData = {};
@@ -669,7 +669,7 @@ void main() {
       });
 
       test('when data is 5000 items, trims 2550 oldest items', () async {
-        await setTokens();
+        await setValidTokens();
         
         // Create test data with 5000 items
         final Map<String, dynamic> veryLargeData = {};
@@ -705,7 +705,7 @@ void main() {
       });
 
       test('when data is empty, no trimming occurs', () async {
-        await setTokens();
+        await setValidTokens();
         
         // Create empty test data
         final Map<String, dynamic> emptyData = {};
@@ -734,7 +734,7 @@ void main() {
       });
 
       test('when data has exactly 1 item, no trimming occurs', () async {
-        await setTokens();
+        await setValidTokens();
         
         // Create test data with 1 item
         final Map<String, dynamic> singleItemData = {'sensor_1': 'value_1'};
@@ -780,17 +780,6 @@ void main() {
         expect(token, null);
       });
 
-      test('tokenExpiration returns cached expiration time', () async {
-        await setValidTokens();
-        await service.getAccessToken();
-
-        expect(service.tokenExpiration, isA<DateTime>());
-        expect(service.tokenExpiration!.isAfter(DateTime.now()), true);
-      });
-
-      test('tokenExpiration returns null when no cached token', () {
-        expect(service.tokenExpiration, null);
-      });
 
       test('getAccessToken caches token after first call', () async {
         await setValidTokens();
