@@ -162,9 +162,9 @@ class _SenseBoxSelectionButton extends StatelessWidget {
 
             if (isAuthenticating) {
               // Loading state - disabled button with loading indicator
-              backgroundColor = colorScheme.surface.withValues(alpha: 0.5);
-              textColor = colorScheme.onSurface.withValues(alpha: 0.6);
-              borderColor = colorScheme.outline.withValues(alpha: 0.3);
+              backgroundColor = colorScheme.surface.withOpacity(0.5);
+              textColor = colorScheme.onSurface.withOpacity(0.6);
+              borderColor = colorScheme.outline.withOpacity(0.3);
               icon = Icons.hourglass_empty;
               label = AppLocalizations.of(context)!.generalLoading;
               onTap = null; // Disable button
@@ -299,10 +299,10 @@ class _FloatingButtons extends StatelessWidget {
             // Show buttons if device is connected or if reconnecting
             if (selectedDevice == null && !isReconnecting) {
               return Column(
-                spacing: 12,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _ConnectButton(bleBloc: bleBloc),
+                  const SizedBox(height: 12),
                   // Always show sensebox selection button with different styling based on auth state
                   _SenseBoxSelectionButton(),
                 ],
@@ -310,16 +310,16 @@ class _FloatingButtons extends StatelessWidget {
             } else {
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                spacing: 12,
                 children: [
+                  const SizedBox(height: 12),
                   Row(
-                    spacing: 12,
                     children: [
                       Expanded(
                         child: _StartStopButton(
                             recordingBloc: recordingBloc,
                             isReconnecting: isReconnecting),
                       ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: _DisconnectButton(
                             bleBloc: bleBloc, recordingBloc: recordingBloc),

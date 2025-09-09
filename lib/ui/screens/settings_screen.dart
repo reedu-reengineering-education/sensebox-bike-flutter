@@ -87,9 +87,9 @@ class SettingsScreen extends StatelessWidget {
       OpenSenseMapBloc openSenseMapBloc) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
-      spacing: 12,
       children: [
         _buildUserIcon(context),
+        const SizedBox(width: 12),
         if (isAuthenticated)
           _buildAuthenticatedUserInfo(context, userData, openSenseMapBloc)
         else

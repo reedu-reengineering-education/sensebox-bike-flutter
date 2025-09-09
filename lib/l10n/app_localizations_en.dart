@@ -447,7 +447,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorRegistrationFailed => 'Registration failed. Please check your credentials and try once again.';
 
   @override
-  String get errorBleConnectionFailed => 'Connect to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
+  String get errorBleConnectionFailed => 'Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
 
   @override
   String get errorUploadFailed => 'Data upload failed. Please check your internet connection and try again.';
