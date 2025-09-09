@@ -264,7 +264,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
       final polygonAnnotationManager =
           await mapInstance!.annotations.createPolygonAnnotationManager();
-      polygonAnnotationManager.setFillColor(Colors.red.toARGB32());
+      polygonAnnotationManager.setFillColor(Colors.red.value);
       polygonAnnotationManager.setFillOpacity(0.5);
       polygonAnnotationManager.setFillEmissiveStrength(1);
 
