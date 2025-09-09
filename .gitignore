@@ -49,3 +49,6 @@ app.*.map.json
 
 # In-memory Isar instance used for testing
 default.isar*
+
+# FVM Version Cache
+.fvm/
