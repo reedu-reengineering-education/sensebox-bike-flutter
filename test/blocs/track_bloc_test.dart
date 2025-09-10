@@ -179,7 +179,7 @@ void main() {
 
       expect(statusInfo.status, equals(TrackStatus.directUploadAuthFailed));
       expect(statusInfo.color, equals(testTheme.colorScheme.error));
-      expect(statusInfo.icon, equals(Icons.cloud_off));
+      expect(statusInfo.icon, equals(Icons.cloud_sync));
       expect(statusInfo.text, equals('Direct upload auth failed'));
     });
 
