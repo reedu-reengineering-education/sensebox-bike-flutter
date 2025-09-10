@@ -380,6 +380,43 @@ void main() {
       // The onDismiss callback should be properly set up
       expect(find.text('Cancel'), findsOneWidget);
     });
+
+    testWidgets('should always show consent dialog even when BatchUploadService has existing progress',
+        (WidgetTester tester) async {
+      // Arrange - Mock service with existing progress (simulating BLE disconnect scenario)
+      when(() => mockBatchUploadService.currentProgress).thenReturn(
+        const UploadProgress(
+          totalChunks: 5,
+          completedChunks: 2,
+          failedChunks: 0,
+          status: UploadStatus.uploading,
+          canRetry: false,
+        ),
+      );
+
+      await tester.pumpWidget(
+        createLocalizedTestApp(
+          child: Scaffold(
+            body: UploadProgressModal(
+              batchUploadService: mockBatchUploadService,
+            ),
+          ),
+          locale: const Locale('en'),
+        ),
+      );
+
+      // Assert - Should still show consent dialog first, not skip to progress
+      expect(find.text('Would you like to upload your track data now?'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Upload'), findsOneWidget);
+      expect(find.byType(UploadInfoWidget), findsOneWidget);
+      
+      // Should not show progress indicators (LinearProgressIndicator) yet
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      // Should not show progress status text like "Preparing upload..." or "Uploading track data..."
+      expect(find.text('Preparing upload...'), findsNothing);
+      expect(find.text('Uploading track data...'), findsNothing);
+    });
   });
 
   group('UploadProgressOverlay', () {
