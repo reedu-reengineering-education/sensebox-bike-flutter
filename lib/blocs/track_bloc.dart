@@ -77,7 +77,7 @@ class TrackBloc with ChangeNotifier {
       case TrackStatus.notUploaded:
         return Icons.cloud_upload;
       case TrackStatus.directUploadAuthFailed:
-        return Icons.cloud_off;
+        return Icons.cloud_sync;
     }
   }
 
