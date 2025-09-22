@@ -106,13 +106,10 @@ class OpenSenseMapService {
 
   Future<void> register(String name, String email, String password) async {
     final response = await client.post(
-      Uri.parse('$_baseUrl/users/register'),
-      body: jsonEncode({
-        'name': name,
-        'email': email,
-        'password': password,
-      }),
-      headers: {'Content-Type': 'application/json'},
+      Uri.parse('$_baseUrl/users'),
+      body:
+          'name=${Uri.encodeComponent(name)}&email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     );
 
     if (response.statusCode != 201) {
