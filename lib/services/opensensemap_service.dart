@@ -282,10 +282,14 @@ class OpenSenseMapService {
 
       final response = await retry(
         () async {
+          final currentAccessToken = await getAccessTokenFromPreferences();
           final response = await client.post(
-            Uri.parse('$_baseUrl/users/refresh-auth'),
-            body: jsonEncode({'token': refreshToken}),
-            headers: {'Content-Type': 'application/json'},
+            Uri.parse('$_baseUrl/refresh-auth'),
+            body: 'token=${Uri.encodeComponent(refreshToken)}',
+            headers: {
+              'Authorization': 'Bearer $currentAccessToken',
+              'Content-Type': 'application/x-www-form-urlencoded'
+              },
           ).timeout(const Duration(seconds: 30));
 
           if (response.statusCode == 200) {
