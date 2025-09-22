@@ -157,12 +157,10 @@ class OpenSenseMapService {
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await client.post(
-      Uri.parse('$_baseUrl/users/sign-in'),
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
-      headers: {'Content-Type': 'application/json'},
+      Uri.parse('$_baseUrl/sign-in'),
+      body:
+          'email=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     );
 
     if (response.statusCode == 200) {
