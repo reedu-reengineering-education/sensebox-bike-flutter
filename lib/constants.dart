@@ -16,7 +16,7 @@ class SharedPreferencesKeys {
   static const bool vibrateOnDisconnect = false;
 }
 
-const openSenseMapUrl = 'https://api.opensensemap.org';
+const openSenseMapUrl = 'https://bike-data.reedu.de/api';
 const senseBoxBikePrivacyPolicyUrl =
     'https://sensebox.de/sensebox-bike-privacy-policy';
 const contactEmail = 'kontakt@reedu.de';
