@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
@@ -32,6 +33,64 @@ void main() {
 
       test('should register as lifecycle observer', () {
         expect(bloc, isA<WidgetsBindingObserver>());
+      });
+    });
+
+    group('API URL Configuration', () {
+      test('should use default API URL when SettingsBloc has no custom URL',
+          () async {
+        final settingsBloc = SettingsBloc();
+        // Wait for settings to load
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        final blocWithDefaultSettings =
+            OpenSenseMapBloc(settingsBloc: settingsBloc);
+        expect(blocWithDefaultSettings, isA<OpenSenseMapBloc>());
+        expect(blocWithDefaultSettings.isAuthenticated, false);
+
+        // SettingsBloc should return default URL
+        expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
+      });
+
+      test('should use custom API URL from SettingsBloc when stored', () async {
+        final settingsBloc = SettingsBloc();
+        const customUrl = 'https://custom-api.example.com';
+
+        // Set custom URL in settings
+        await settingsBloc.setApiUrl(customUrl);
+
+        final blocWithCustomSettings =
+            OpenSenseMapBloc(settingsBloc: settingsBloc);
+        expect(blocWithCustomSettings, isA<OpenSenseMapBloc>());
+
+        // SettingsBloc should return the custom URL
+        expect(settingsBloc.apiUrl, customUrl);
+      });
+
+      test('should persist API URL in shared preferences', () async {
+        final settingsBloc = SettingsBloc();
+        const customUrl = 'https://test-api.example.com';
+
+        // Set custom URL
+        await settingsBloc.setApiUrl(customUrl);
+
+        // Create new SettingsBloc instance to simulate app restart
+        final newSettingsBloc = SettingsBloc();
+        await Future.delayed(
+            const Duration(milliseconds: 100)); // Wait for loading
+
+        // Should load the stored URL
+        expect(newSettingsBloc.apiUrl, customUrl);
+      });
+
+      test('should fallback to default when stored URL is empty', () async {
+        final settingsBloc = SettingsBloc();
+
+        // Set empty URL
+        await settingsBloc.setApiUrl('');
+
+        // Should return default URL
+        expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
       });
     });
 

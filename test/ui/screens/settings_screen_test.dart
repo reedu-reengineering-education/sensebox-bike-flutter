@@ -237,4 +237,54 @@ void main() {
       expect(settingsBloc.directUploadMode, initialValue);
     });
   });
+
+  group('SettingsScreen API URL Tests', () {
+    late SettingsBloc settingsBloc;
+
+    setUpAll(() {
+      // Set up SharedPreferences mock
+      const sharedPreferencesChannel =
+          MethodChannel('plugins.flutter.io/shared_preferences');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(sharedPreferencesChannel,
+              (MethodCall call) async {
+        if (call.method == 'getAll') {
+          return <String, dynamic>{}; // Return empty preferences
+        }
+        if (call.method == 'setString') {
+          return true; // Mock successful save
+        }
+        return null;
+      });
+    });
+
+    setUp(() {
+      settingsBloc = SettingsBloc();
+    });
+
+    tearDown(() {
+      settingsBloc.dispose();
+    });
+
+    test('should return default API URL when no custom URL is set', () {
+      expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
+    });
+
+    test('should return custom API URL when set', () async {
+      const customUrl = 'https://custom-api.example.com';
+      await settingsBloc.setApiUrl(customUrl);
+      expect(settingsBloc.apiUrl, customUrl);
+    });
+
+    test('should return default API URL when empty string is set', () async {
+      await settingsBloc.setApiUrl('');
+      expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
+    });
+
+    test('should persist API URL setting', () async {
+      const customUrl = 'https://test-api.example.com';
+      await settingsBloc.setApiUrl(customUrl);
+      expect(settingsBloc.apiUrl, customUrl);
+    });
+  });
 }
