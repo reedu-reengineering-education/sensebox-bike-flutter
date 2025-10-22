@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 
-class ApiUrlField extends StatelessWidget {
+class ApiUrlField extends StatefulWidget {
   final TextEditingController controller;
   final String? Function(String?)? validator;
   final String? labelText;
@@ -18,26 +18,62 @@ class ApiUrlField extends StatelessWidget {
   });
 
   @override
+  State<ApiUrlField> createState() => _ApiUrlFieldState();
+}
+
+class _ApiUrlFieldState extends State<ApiUrlField> {
+  late FocusNode _focusNode;
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _isFocused = _focusNode.hasFocus;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final hasStoredValue = widget.controller.text.isNotEmpty;
+    final shouldShowHint = !_isFocused && !hasStoredValue;
+    
     return SizedBox(
       width: 300,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextFormField(
-            controller: controller,
+            controller: widget.controller,
+            focusNode: _focusNode,
             decoration: InputDecoration(
-              labelText: labelText ?? AppLocalizations.of(context)!.settingsApiUrl,
-              hintText: defaultValue ?? 'https://api.opensensemap.org',
+              labelText: widget.labelText ??
+                  AppLocalizations.of(context)!.settingsApiUrl,
+              hintText: shouldShowHint
+                  ? (widget.defaultValue ?? 'https://api.opensensemap.org')
+                  : null,
             ),
-            validator: validator ?? (value) => _defaultValidator(context, value),
+            validator: widget.validator ??
+                (value) => _defaultValidator(context, value),
             keyboardType: TextInputType.url,
             textInputAction: TextInputAction.done,
           ),
-          if (helperText != null) ...[
+          if (widget.helperText != null) ...[
             const SizedBox(height: 4),
             Text(
-              helperText!,
+              widget.helperText!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

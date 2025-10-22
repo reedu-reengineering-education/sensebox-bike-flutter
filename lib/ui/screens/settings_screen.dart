@@ -473,9 +473,9 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     TextButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (formKey.currentState!.validate()) {
-                          settingsBloc.setApiUrl(controller.text);
+                          await settingsBloc.setApiUrl(controller.text);
                           Navigator.of(context).pop();
                         }
                       },
