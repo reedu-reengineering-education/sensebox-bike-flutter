@@ -9,6 +9,7 @@ import 'package:retry/retry.dart';
 import 'dart:async';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 
 enum SenseBoxBikeModel { classic, atrai }
 
@@ -23,9 +24,9 @@ class RetryException implements Exception {
 }
 
 class OpenSenseMapService {
-  static const String _baseUrl = openSenseMapUrl;
   final http.Client client;
   final Future<SharedPreferences> _prefs;
+  final SettingsBloc? _settingsBloc;
 
   bool _isRateLimited = false;
   DateTime? _rateLimitUntil;
@@ -34,8 +35,10 @@ class OpenSenseMapService {
   OpenSenseMapService({
     http.Client? client,
     Future<SharedPreferences>? prefs,
+    SettingsBloc? settingsBloc,
   })  : client = client ?? http.Client(),
-        _prefs = prefs ?? SharedPreferences.getInstance();
+        _prefs = prefs ?? SharedPreferences.getInstance(),
+        _settingsBloc = settingsBloc;
 
   bool get isAcceptingRequests => !_isRateLimited && !_isPermanentlyDisabled;
   bool get isPermanentlyDisabled => _isPermanentlyDisabled;
@@ -48,6 +51,13 @@ class OpenSenseMapService {
 
   void resetPermanentDisable() {
     _isPermanentlyDisabled = false;
+  }
+
+  String get _baseUrl {
+    if (_settingsBloc != null) {
+      return _settingsBloc!.apiUrl;
+    }
+    return openSenseMapUrl;
   }
 
 
