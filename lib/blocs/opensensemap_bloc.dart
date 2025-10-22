@@ -9,6 +9,7 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/utils/opensensemap_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamController
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 
 class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   final OpenSenseMapService _service;
@@ -64,6 +65,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     OpenSenseMapService? service,
   })  : _configurationBloc = configurationBloc,
         _service = service ?? OpenSenseMapService() {
+      : _service = OpenSenseMapService(settingsBloc: settingsBloc) {
     WidgetsBinding.instance.addObserver(this);
   }
 
