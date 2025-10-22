@@ -9,13 +9,15 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
-  String get createBoxAddCustomTag => 'Ajouter une étiquette de groupe personnalisée';
+  String get createBoxAddCustomTag =>
+      'Ajouter une étiquette de groupe personnalisée';
 
   @override
   String get createBoxCustomTag => 'Étiquette de groupe personnalisée';
 
   @override
-  String get createBoxCustomTagHelper => 'Vous pouvez séparer les étiquettes par des virgules';
+  String get createBoxCustomTagHelper =>
+      'Vous pouvez séparer les étiquettes par des virgules';
 
   @override
   String get generalLoading => 'Chargement...';
@@ -125,7 +127,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get openSenseMapLogin => 'Se connecter avec openSenseMap';
 
   @override
-  String get openSenseMapLoginDescription => 'Connectez-vous pour partager vos données.';
+  String get openSenseMapLoginDescription =>
+      'Connectez-vous pour partager vos données.';
 
   @override
   String get openSenseMapLogout => 'Déconnexion';
@@ -143,7 +146,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get openSenseMapEmailErrorInvalid => 'Adresse e-mail invalide';
 
   @override
-  String get openSenseMapPasswordErrorEmpty => 'Le mot de passe ne doit pas être vide';
+  String get openSenseMapPasswordErrorEmpty =>
+      'Le mot de passe ne doit pas être vide';
 
   @override
   String get openSenseMapLoginFailed => 'Échec de la connexion';
@@ -152,7 +156,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get openSenseMapRegisterName => 'Nom d’utilisateur';
 
   @override
-  String get openSenseMapRegisterNameErrorEmpty => 'Le nom d’utilisateur ne doit pas être vide';
+  String get openSenseMapRegisterNameErrorEmpty =>
+      'Le nom d’utilisateur ne doit pas être vide';
 
   @override
   String get openSenseMapRegisterPasswordConfirm => 'Confirmer le mot de passe';
@@ -162,7 +167,8 @@ class AppLocalizationsFr extends AppLocalizations {
       'La confirmation du mot de passe ne doit pas être vide';
 
   @override
-  String get openSenseMapRegisterPasswordErrorMismatch => 'Les mots de passe ne correspondent pas';
+  String get openSenseMapRegisterPasswordErrorMismatch =>
+      'Les mots de passe ne correspondent pas';
 
   @override
   String get openSenseMapRegisterPasswordErrorCharacters =>
@@ -175,7 +181,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get openSenesMapRegisterAcceptTermsPrefix => 'J’accepte la';
 
   @override
-  String get openSenseMapRegisterAcceptTermsPrivacy => 'politique de confidentialité';
+  String get openSenseMapRegisterAcceptTermsPrivacy =>
+      'politique de confidentialité';
 
   @override
   String get openSenseMapRegisterAcceptTermsError =>
@@ -222,23 +229,27 @@ class AppLocalizationsFr extends AppLocalizations {
   String get createBoxName => 'Nom';
 
   @override
-  String get createBoxNameError => 'Le nom doit comporter entre 2 et 50 caractères';
+  String get createBoxNameError =>
+      'Le nom doit comporter entre 2 et 50 caractères';
 
   @override
-  String get createBoxGeolocationCurrentPosition => 'Votre position actuelle sera utilisée';
+  String get createBoxGeolocationCurrentPosition =>
+      'Votre position actuelle sera utilisée';
 
   @override
   String get openSenseMapBoxSelectionNoBoxes =>
       'Aucune senseBox disponible ou configuration non chargée';
 
   @override
-  String get openSenseMapBoxSelectionCreateHint => 'Créez-en une avec le bouton \'+\'';
+  String get openSenseMapBoxSelectionCreateHint =>
+      'Créez-en une avec le bouton \'+\'';
 
   @override
   String get openSenseMapBoxSelectionUnnamedBox => 'senseBox sans nom';
 
   @override
-  String get openSenseMapBoxSelectionIncompatible => 'Non compatible avec senseBox:bike';
+  String get openSenseMapBoxSelectionIncompatible =>
+      'Non compatible avec senseBox:bike';
 
   @override
   String get settingsGeneral => 'Général';
@@ -284,6 +295,16 @@ class AppLocalizationsFr extends AppLocalizations {
       '• Les données sont téléversées immédiatement dès leur collecte\n• Partage des données en temps réel (expérimental)\n• Nécessite une connexion internet stable\n• Peut utiliser plus de batterie pendant l’enregistrement';
 
   @override
+  String get settingsApiUrl => 'API URL';
+
+  @override
+  String get settingsApiUrlHelper => 'Enter the API endpoint for data uploads';
+
+  @override
+  String get settingsApiUrlError =>
+      'Please enter a valid URL (e.g., https://api.opensensemap.org)';
+
+  @override
   String get settingsAbout => 'À propos';
 
   @override
@@ -316,13 +337,15 @@ class AppLocalizationsFr extends AppLocalizations {
       'Permission refusée pour enregistrer le fichier dans le stockage externe.';
 
   @override
-  String get trackDetailsFileSaved => 'Fichier CSV enregistré dans le dossier Téléchargements.';
+  String get trackDetailsFileSaved =>
+      'Fichier CSV enregistré dans le dossier Téléchargements.';
 
   @override
   String get trackDetailsExport => 'Export CSV des données du parcours.';
 
   @override
-  String get trackDetailsLoadingError => 'Erreur lors du chargement du parcours.';
+  String get trackDetailsLoadingError =>
+      'Erreur lors du chargement du parcours.';
 
   @override
   String get trackDetailsNoTrackData => 'Aucun parcours disponible.';
@@ -331,7 +354,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get trackDelete => 'Supprimer le parcours';
 
   @override
-  String get trackDeleteConfirmation => 'Êtes-vous sûr de vouloir supprimer ce parcours ?';
+  String get trackDeleteConfirmation =>
+      'Êtes-vous sûr de vouloir supprimer ce parcours ?';
 
   @override
   String get sensorTemperature => 'Température';
@@ -430,10 +454,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get sensorDistanceShort => 'Distance';
 
   @override
-  String get campaignLoadError => 'Échec du chargement de la liste des campagnes.';
+  String get campaignLoadError =>
+      'Échec du chargement de la liste des campagnes.';
 
   @override
-  String get boxConfigurationLoadError => 'Échec du chargement des configurations de box.';
+  String get boxConfigurationLoadError =>
+      'Échec du chargement des configurations de box.';
 
   @override
   String get selectCampaign => 'Sélectionner une campagne';
@@ -460,7 +486,8 @@ class AppLocalizationsFr extends AppLocalizations {
       'Pour permettre le téléversement des données des capteurs vers le cloud, veuillez vous connecter à votre compte openSenseMap et sélectionner la box.';
 
   @override
-  String get trackUploadLoginSelectHint => 'Connectez-vous et sélectionnez une senseBox pour téléverser.';
+  String get trackUploadLoginSelectHint =>
+      'Connectez-vous et sélectionnez une senseBox pour téléverser.';
 
   @override
   String get uploadRequirementsTitle => 'Téléversement indisponible';
@@ -470,7 +497,8 @@ class AppLocalizationsFr extends AppLocalizations {
       'Pour téléverser votre trajet, connectez-vous à votre compte openSenseMap, sélectionnez une senseBox, puis ouvrez l’aperçu du parcours et touchez le bouton de téléversement en haut à droite.';
 
   @override
-  String get loginRequiredMessage => 'Veuillez vous connecter pour partager les données des capteurs';
+  String get loginRequiredMessage =>
+      'Veuillez vous connecter pour partager les données des capteurs';
 
   @override
   String get errorExportDirectoryAccess =>
@@ -516,7 +544,8 @@ class AppLocalizationsFr extends AppLocalizations {
       'Voulez-vous vraiment supprimer toutes les données ? Cette action est irréversible.';
 
   @override
-  String get settingsDeleteAllDataSuccess => 'Toutes les données ont été supprimées avec succès.';
+  String get settingsDeleteAllDataSuccess =>
+      'Toutes les données ont été supprimées avec succès.';
 
   @override
   String get settingsDeleteAllDataError =>
@@ -526,16 +555,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get accountManagement => 'Gestion du compte';
 
   @override
-  String get deleteAllHint => 'Cela supprimera tous vos parcours de l’application.';
+  String get deleteAllHint =>
+      'Cela supprimera tous vos parcours de l’application.';
 
   @override
   String get generalConfirmation => 'Confirmation';
 
   @override
-  String get privacyPolicyAccept => 'J’ai lu et j’accepte la politique de confidentialité.';
+  String get privacyPolicyAccept =>
+      'J’ai lu et j’accepte la politique de confidentialité.';
 
   @override
-  String get trackNoGeolocations => 'Aucune géolocalisation disponible pour ce parcours.';
+  String get trackNoGeolocations =>
+      'Aucune géolocalisation disponible pour ce parcours.';
 
   @override
   String get tracksAppBarTitle => 'Vos parcours';
@@ -571,7 +603,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get uploadProgressPreparing => 'Préparation du téléversement...';
 
   @override
-  String get uploadProgressUploading => 'Téléversement des données du parcours...';
+  String get uploadProgressUploading =>
+      'Téléversement des données du parcours...';
 
   @override
   String get uploadProgressInfo =>
@@ -607,20 +640,23 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get uploadProgressAuthenticationError => 'Veuillez vous connecter pour téléverser les données.';
+  String get uploadProgressAuthenticationError =>
+      'Veuillez vous connecter pour téléverser les données.';
 
   @override
   String get uploadProgressNetworkError =>
       'Échec de la connexion réseau. Veuillez vérifier votre connexion internet et réessayer.';
 
   @override
-  String get uploadProgressGenericError => 'Échec du téléversement. Veuillez réessayer.';
+  String get uploadProgressGenericError =>
+      'Échec du téléversement. Veuillez réessayer.';
 
   @override
   String get uploadConfirmTitle => 'Téléverser les données du parcours';
 
   @override
-  String get uploadConfirmMessage => 'Voulez-vous téléverser les données de votre parcours maintenant ?';
+  String get uploadConfirmMessage =>
+      'Voulez-vous téléverser les données de votre parcours maintenant ?';
 
   @override
   String get uploadConfirmUploadNow => 'Téléverser';
@@ -668,7 +704,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get trackFilterUnuploaded => 'Non téléversé';
 
   @override
-  String get trackUploadRetryFailed => 'La nouvelle tentative de téléversement a échoué. Veuillez réessayer.';
+  String get trackUploadRetryFailed =>
+      'La nouvelle tentative de téléversement a échoué. Veuillez réessayer.';
 
   @override
   String get errorTrackNoGeolocations =>

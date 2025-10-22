@@ -292,6 +292,17 @@ class AppLocalizationsPt extends AppLocalizations {
       '• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação';
 
   @override
+  String get settingsApiUrl => 'URL da API';
+
+  @override
+  String get settingsApiUrlHelper =>
+      'Digite o endpoint da API para uploads de dados';
+
+  @override
+  String get settingsApiUrlError =>
+      'Por favor, digite uma URL válida (ex: https://api.opensensemap.org)';
+
+  @override
   String get settingsAbout => 'Sobre';
 
   @override
