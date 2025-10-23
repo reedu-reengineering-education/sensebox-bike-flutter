@@ -4,7 +4,7 @@ import 'dart:async';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 
 class GeolocationService {
   final IsarProvider isarProvider;

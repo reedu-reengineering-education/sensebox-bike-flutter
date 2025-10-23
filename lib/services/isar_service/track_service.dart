@@ -1,7 +1,7 @@
 // File: lib/services/isar_service/track_service.dart
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 
 class TrackService {
   final IsarProvider isarProvider;
