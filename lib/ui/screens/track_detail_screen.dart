@@ -609,8 +609,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       );
     }
 
-
-
     return Scaffold(
       appBar: AppBar(title: _buildAppBarTitle(_track)),
       body: SafeArea(
@@ -635,18 +633,24 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 child: Column(children: [
                   Container(
                       height: 12,
-                      decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.all(
+                      decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.all(
                             Radius.circular(20),
                           ),
                           gradient: LinearGradient(
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
-                            colors: <Color>[
-                              Colors.green,
-                              Colors.orange,
-                              Colors.red,
-                            ], // Gradient from https://learnui.design/tools/gradient-generator.html
+                            colors: _sensorType == 'distance'
+                                ? <Color>[
+                                    Colors.red,
+                                    Colors.orange,
+                                    Colors.green
+                                  ]
+                                : <Color>[
+                                    Colors.green,
+                                    Colors.orange,
+                                    Colors.red
+                                  ],
                             tileMode: TileMode.mirror,
                           ))),
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
