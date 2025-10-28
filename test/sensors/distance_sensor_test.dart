@@ -18,7 +18,9 @@ void main() {
   });
 
   group('DistanceSensor', () {
-    test('aggregateData returns the max value from array of values', () {
+    test(
+        'aggregateData returns the min value from array of values (excluding zeros)',
+        () {
       // Arrange
       final sensor = DistanceSensor(
         mockBleBloc,
@@ -42,7 +44,7 @@ void main() {
       // Assert
       expect(result, isA<List<double>>());
       expect(result.length, equals(1));
-      expect(result[0], equals(20.0)); // Should return max value
+      expect(result[0], equals(2.5)); // Should return min value
     });
 
     test('aggregateData handles empty buffer', () {
@@ -57,11 +59,13 @@ void main() {
 
       final valueBuffer = <List<double>>[];
 
-      // Act & Assert
-      expect(
-        () => sensor.aggregateData(valueBuffer),
-        throwsStateError,
-      );
+      // Act
+      final result = sensor.aggregateData(valueBuffer);
+
+      // Assert
+      expect(result, isA<List<double>>());
+      expect(result.length, equals(1));
+      expect(result[0], equals(0.0)); // Should return zero for empty buffer
     });
 
     test('aggregateData handles single value', () {
@@ -135,7 +139,61 @@ void main() {
       // Assert
       expect(result, isA<List<double>>());
       expect(result.length, equals(1));
-      expect(result[0], equals(25.0)); // Max distance
+      expect(result[0], equals(2.0)); // Min distance
+    });
+
+    test(
+        'aggregateData excludes zero values and returns min of non-zero values',
+        () {
+      // Arrange
+      final sensor = DistanceSensor(
+        mockBleBloc,
+        mockGeolocationBloc,
+        mockRecordingBloc,
+        mockSettingsBloc,
+        mockIsarService,
+      );
+
+      final valueBuffer = [
+        [0.0], // 0cm (should be excluded)
+        [5.0], // 5cm
+        [0.0], // 0cm (should be excluded)
+        [3.0], // 3cm
+        [8.0], // 8cm
+      ];
+
+      // Act
+      final result = sensor.aggregateData(valueBuffer);
+
+      // Assert
+      expect(result, isA<List<double>>());
+      expect(result.length, equals(1));
+      expect(result[0], equals(3.0)); // Min of non-zero values
+    });
+
+    test('aggregateData returns zero when all values are zero', () {
+      // Arrange
+      final sensor = DistanceSensor(
+        mockBleBloc,
+        mockGeolocationBloc,
+        mockRecordingBloc,
+        mockSettingsBloc,
+        mockIsarService,
+      );
+
+      final valueBuffer = [
+        [0.0],
+        [0.0],
+        [0.0],
+      ];
+
+      // Act
+      final result = sensor.aggregateData(valueBuffer);
+
+      // Assert
+      expect(result, isA<List<double>>());
+      expect(result.length, equals(1));
+      expect(result[0], equals(0.0)); // Should return zero
     });
   });
 }
