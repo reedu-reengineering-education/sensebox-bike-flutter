@@ -106,6 +106,34 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   }
 
   List<Object> get _sensorColorStops {
+    // Special handling for distance sensor - if value is 0.0, color should be grey
+    if (widget.sensorType == 'distance') {
+      if (minSensorValue == 0.0) {
+        // Range includes 0 - 0 is grey, >0 follows red->orange->green
+        return [
+          0.0,
+          'grey',
+          maxSensorValue! * 0.33, // 1/3 of max = red
+          'red',
+          maxSensorValue! * 0.66, // 2/3 of max = orange
+          'orange',
+          maxSensorValue!,
+          'green'
+        ];
+      } else {
+        // Range doesn't include 0 - normal red->orange->green gradient
+        return [
+          minSensorValue!,
+          'red',
+          minSensorValue! + (maxSensorValue! - minSensorValue!) * 0.5,
+          'orange',
+          maxSensorValue!,
+          'green'
+        ];
+      }
+    }
+
+    // Default behavior for other sensors
     return [
       minSensorValue!,
       'green',
