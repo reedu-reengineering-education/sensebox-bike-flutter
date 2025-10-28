@@ -6,6 +6,7 @@ import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_value_display.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart';
@@ -60,16 +61,10 @@ class DistanceSensor extends Sensor {
           title: AppLocalizations.of(context)!.sensorDistanceShort,
           icon: getSensorIcon(title),
           color: getSensorColor(title),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                value[0].toStringAsFixed(0),
-                style: const TextStyle(fontSize: 48),
-              ),
-              const Text('cm'),
-            ],
+          child: SensorValueDisplay(
+            value: value[0].toStringAsFixed(0),
+            unit: 'cm',
+            isValid: value[0] != 0.0,
           ),
         );
       },
