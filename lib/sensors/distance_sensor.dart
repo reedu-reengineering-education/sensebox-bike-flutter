@@ -39,7 +39,7 @@ class DistanceSensor extends Sensor {
   @override
   List<double> aggregateData(List<List<double>> valueBuffer) {
     List<double> myValues = valueBuffer.map((e) => e[0]).toList();
-    return [myValues.reduce(max)];
+    return [myValues.reduce(min)];
   }
 
   @override
