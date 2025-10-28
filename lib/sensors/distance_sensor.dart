@@ -39,7 +39,15 @@ class DistanceSensor extends Sensor {
   @override
   List<double> aggregateData(List<List<double>> valueBuffer) {
     List<double> myValues = valueBuffer.map((e) => e[0]).toList();
-    return [myValues.reduce(min)];
+    
+    // Filter out zero values
+    List<double> nonZeroValues = myValues.where((value) => value != 0.0).toList();
+
+    if (nonZeroValues.isNotEmpty) {
+      return [nonZeroValues.reduce(min)];
+    }
+    
+    return [0.0];
   }
 
   @override
