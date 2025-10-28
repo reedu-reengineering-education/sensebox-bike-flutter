@@ -632,6 +632,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             SensorGradientWidget(
               sensorType: _sensorType,
               geolocations: _geolocations,
+              senseBox: openSenseMapBloc.selectedSenseBox,
             ),
             SensorTileList(
               sensorData: _sensorData,

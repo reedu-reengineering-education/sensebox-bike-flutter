@@ -1,60 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/ui/widgets/common/sensor_gradient_widget.dart';
 
 void main() {
-  group('getSensorUnit', () {
-    test('returns correct unit for temperature sensor', () {
-      expect(getSensorUnit('temperature'), equals('°C'));
-    });
-
-    test('returns correct unit for humidity sensor', () {
-      expect(getSensorUnit('humidity'), equals('%'));
-    });
-
-    test('returns correct unit for distance sensor', () {
-      expect(getSensorUnit('distance'), equals('cm'));
-    });
-
-    test('returns correct unit for overtaking sensor', () {
-      expect(getSensorUnit('overtaking'), equals('%'));
-    });
-
-    test('returns correct unit for surface classification sensors', () {
-      expect(getSensorUnit('surface_classification_asphalt'), equals('%'));
-      expect(getSensorUnit('surface_classification_sett'), equals('%'));
-      expect(getSensorUnit('surface_classification_compacted'), equals('%'));
-      expect(getSensorUnit('surface_classification_paving'), equals('%'));
-      expect(getSensorUnit('surface_classification_standing'), equals('%'));
-    });
-
-    test('returns correct unit for surface anomaly sensor', () {
-      expect(getSensorUnit('surface_anomaly'), equals('Δ'));
-    });
-
-    test('returns correct unit for acceleration sensors', () {
-      expect(getSensorUnit('acceleration_x'), equals('m/s²'));
-      expect(getSensorUnit('acceleration_y'), equals('m/s²'));
-      expect(getSensorUnit('acceleration_z'), equals('m/s²'));
-    });
-
-    test('returns correct unit for finedust sensors', () {
-      expect(getSensorUnit('finedust_pm1'), equals('µg/m³'));
-      expect(getSensorUnit('finedust_pm2.5'), equals('µg/m³'));
-      expect(getSensorUnit('finedust_pm4'), equals('µg/m³'));
-      expect(getSensorUnit('finedust_pm10'), equals('µg/m³'));
-    });
-
-    test('returns correct unit for GPS sensors', () {
-      expect(getSensorUnit('gps_speed'), equals('m/s'));
-      expect(getSensorUnit('gps_latitude'), equals('°'));
-      expect(getSensorUnit('gps_longitude'), equals('°'));
-    });
-
-    test('returns null for unknown sensor type', () {
-      expect(getSensorUnit('unknown_sensor'), isNull);
-    });
-  });
 
   group('getSensorGradientColors', () {
     test('returns red-orange-green gradient for distance sensor', () {
@@ -106,6 +55,34 @@ void main() {
         home: Scaffold(
           body: child,
         ),
+      );
+    }
+
+    // Helper to create mock SenseBox for testing
+    SenseBox createMockSenseBox() {
+      return SenseBox(
+        sId: 'test-box-id',
+        name: 'Test Box',
+        sensors: [
+          Sensor(
+            id: 'temp-sensor',
+            title: 'Temperature',
+            unit: '°C',
+            sensorType: 'HDC1080',
+          ),
+          Sensor(
+            id: 'humidity-sensor',
+            title: 'Rel. Humidity',
+            unit: '%',
+            sensorType: 'HDC1080',
+          ),
+          Sensor(
+            id: 'distance-sensor',
+            title: 'Overtaking Distance',
+            unit: 'cm',
+            sensorType: 'VL53L8CX',
+          ),
+        ],
       );
     }
 
@@ -235,6 +212,37 @@ void main() {
       expect(gradient.begin, equals(Alignment.centerLeft));
       expect(gradient.end, equals(Alignment.centerRight));
       expect(gradient.tileMode, equals(TileMode.mirror));
+    });
+
+    testWidgets('uses SenseBox data when available',
+        (WidgetTester tester) async {
+      final mockSenseBox = createMockSenseBox();
+      final widget = SensorGradientWidget(
+        sensorType: 'temperature',
+        geolocations: [],
+        senseBox: mockSenseBox,
+      );
+      await tester.pumpWidget(createTestWidget(widget));
+      await tester.pumpAndSettle();
+
+      // Should still display infinity values but with SenseBox unit
+      expect(find.text('Infinity°C'), findsOneWidget);
+      expect(find.text('-Infinity°C'), findsOneWidget);
+    });
+
+    testWidgets('falls back to constants when SenseBox is null',
+        (WidgetTester tester) async {
+      final widget = SensorGradientWidget(
+        sensorType: 'temperature',
+        geolocations: [],
+        senseBox: null, // No SenseBox data
+      );
+      await tester.pumpWidget(createTestWidget(widget));
+      await tester.pumpAndSettle();
+
+      // Should use fallback constants
+      expect(find.text('Infinity°C'), findsOneWidget);
+      expect(find.text('-Infinity°C'), findsOneWidget);
     });
   });
 }

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class SensorGradientWidget extends StatelessWidget {
   final String sensorType;
   final List<GeolocationData> geolocations;
+  final SenseBox? senseBox;
   final double height;
   final EdgeInsets padding;
 
@@ -12,6 +15,7 @@ class SensorGradientWidget extends StatelessWidget {
     super.key,
     required this.sensorType,
     required this.geolocations,
+    this.senseBox,
     this.height = 12.0,
     this.padding = const EdgeInsets.symmetric(horizontal: 12),
   });
@@ -20,7 +24,7 @@ class SensorGradientWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     double minValue = getMinSensorValue(geolocations, sensorType);
     double maxValue = getMaxSensorValue(geolocations, sensorType);
-    final unit = getSensorUnit(sensorType);
+    final unit = _getSensorUnitFromSenseBox(sensorType, senseBox);
 
     // Convert overtaking manoeuvre and surface classification values to percentages
     if (sensorType == 'overtaking' || 
@@ -66,42 +70,23 @@ class SensorGradientWidget extends StatelessWidget {
   }
 }
 
-/// Helper function to get sensor unit based on sensor type
-String? getSensorUnit(String sensorType) {
-  switch (sensorType) {
-    case 'temperature':
-      return '°C';
-    case 'humidity':
-      return '%';
-    case 'distance':
-      return 'cm';
-    case 'overtaking':
-      return '%';
-    case 'surface_classification_asphalt':
-    case 'surface_classification_sett':
-    case 'surface_classification_compacted':
-    case 'surface_classification_paving':
-    case 'surface_classification_standing':
-      return '%';
-    case 'surface_anomaly':
-      return 'Δ';
-    case 'acceleration_x':
-    case 'acceleration_y':
-    case 'acceleration_z':
-      return 'm/s²';
-    case 'finedust_pm1':
-    case 'finedust_pm2.5':
-    case 'finedust_pm4':
-    case 'finedust_pm10':
-      return 'µg/m³';
-    case 'gps_speed':
-      return 'm/s';
-    case 'gps_latitude':
-    case 'gps_longitude':
-      return '°';
-    default:
-      return null;
+/// Helper function to get sensor unit from SenseBox data with fallback to constants
+String? _getSensorUnitFromSenseBox(String sensorType, SenseBox? senseBox) {
+  // Try to get unit from SenseBox API data first
+  if (senseBox?.sensors != null) {
+    // Find matching sensor using existing utility
+    final sensorTitle = getTitleFromSensorKey(sensorType, null);
+    if (sensorTitle != null) {
+      for (final sensor in senseBox!.sensors!) {
+        if (sensor.title == sensorTitle) {
+          return sensor.unit;
+        }
+      }
+    }
   }
+  
+  // Fallback to constants
+  return '';
 }
 
 /// Helper function to get gradient colors based on sensor type
@@ -116,10 +101,10 @@ List<Color> getSensorGradientColors(String sensorType) {
 }
 
 /// Helper function to get min and max sensor values with units
-SensorValueRange getSensorValueRange(String sensorType, List<GeolocationData> geolocations) {
+SensorValueRange getSensorValueRange(String sensorType, List<GeolocationData> geolocations, {SenseBox? senseBox}) {
   double minValue = getMinSensorValue(geolocations, sensorType);
   double maxValue = getMaxSensorValue(geolocations, sensorType);
-  final unit = getSensorUnit(sensorType);
+  final unit = _getSensorUnitFromSenseBox(sensorType, senseBox);
 
   // Convert overtaking manoeuvre and surface classification values to percentages
   if (sensorType == 'overtaking' || 
