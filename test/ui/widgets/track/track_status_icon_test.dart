@@ -125,7 +125,7 @@ void main() {
           authFailedTrack, testTheme, testLocalizations);
 
       expect(statusInfo.status, equals(TrackStatus.directUploadAuthFailed));
-      expect(statusInfo.icon, equals(Icons.cloud_off));
+      expect(statusInfo.icon, equals(Icons.cloud_sync));
       expect(statusInfo.color, equals(testTheme.colorScheme.error));
       expect(statusInfo.text,
           equals(testLocalizations.trackDirectUploadAuthFailed));
@@ -163,7 +163,7 @@ void main() {
 
       // Direct upload tracks with upload attempts show auth failed status
       expect(statusInfo.status, equals(TrackStatus.directUploadAuthFailed));
-      expect(statusInfo.icon, equals(Icons.cloud_off));
+      expect(statusInfo.icon, equals(Icons.cloud_sync));
       expect(statusInfo.color, equals(testTheme.colorScheme.error));
       expect(statusInfo.text,
           equals(testLocalizations.trackDirectUploadAuthFailed));
