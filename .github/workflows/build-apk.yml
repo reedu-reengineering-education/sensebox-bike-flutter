@@ -62,7 +62,7 @@ jobs:
         run: flutter build apk --release --dart-define-from-file=.env
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
