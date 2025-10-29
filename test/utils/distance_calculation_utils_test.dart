@@ -185,9 +185,13 @@ void main() {
 
     group('Edge cases', () {
       test('should handle micro-level coordinate precision (very small distances)', () {
+        // Use the same timestamp to ensure both points are not filtered out
+        final timestamp = DateTime.now();
         final geolocations = [
-          createTestGeolocation(52.5200000000, 13.4050000000),
-          createTestGeolocation(52.5200000001, 13.4050000001),
+          createTestGeolocation(52.5200000000, 13.4050000000)
+            ..timestamp = timestamp,
+          createTestGeolocation(52.5200000001, 13.4050000001)
+            ..timestamp = timestamp,
         ];
 
         final result = calculateDistanceWithSimplify(geolocations);
@@ -196,9 +200,12 @@ void main() {
       });
 
       test('should handle coordinates near geographic poles (high latitude edge case)', () {
+        // Use the same timestamp to ensure both points are not filtered out
+        final timestamp = DateTime.now();
         final geolocations = [
-          createTestGeolocation(90.0, 0.0), // North Pole
-          createTestGeolocation(89.9, 0.0), // Near North Pole
+          createTestGeolocation(90.0, 0.0)..timestamp = timestamp, // North Pole
+          createTestGeolocation(89.9, 0.0)
+            ..timestamp = timestamp, // Near North Pole
         ];
 
         final result = calculateDistanceWithSimplify(geolocations);
@@ -210,9 +217,11 @@ void main() {
       });
 
       test('should handle coordinates crossing international date line (longitude edge case)', () {
+        // Use the same timestamp to ensure both points are not filtered out
+        final timestamp = DateTime.now();
         final geolocations = [
-          createTestGeolocation(0.0, 179.9),
-          createTestGeolocation(0.0, -179.9),
+          createTestGeolocation(0.0, 179.9)..timestamp = timestamp,
+          createTestGeolocation(0.0, -179.9)..timestamp = timestamp,
         ];
 
         final result = calculateDistanceWithSimplify(geolocations);
