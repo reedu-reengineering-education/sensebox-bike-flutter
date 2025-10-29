@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/api_url_field.dart';
 
 void main() {
@@ -17,6 +19,12 @@ void main() {
     testWidgets('should display with default properties', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ApiUrlField(controller: controller),
           ),
@@ -30,6 +38,12 @@ void main() {
     testWidgets('should display custom label text', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ApiUrlField(
               controller: controller,
@@ -45,6 +59,12 @@ void main() {
     testWidgets('should display helper text when provided', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ApiUrlField(
               controller: controller,
@@ -60,6 +80,12 @@ void main() {
     testWidgets('should display default value as hint text', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ApiUrlField(
               controller: controller,
@@ -70,54 +96,101 @@ void main() {
       );
 
       // Check that the hint text is displayed
-      final textField = tester.widget<TextField>(find.byType(TextField));
+      final textField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byType(TextFormField),
+          matching: find.byType(TextField),
+        ),
+      );
       expect(textField.decoration?.hintText, 'https://custom-api.example.com');
     });
 
     testWidgets('should use default hint text when no default value provided', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ApiUrlField(controller: controller),
           ),
         ),
       );
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
+      final textField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byType(TextFormField),
+          matching: find.byType(TextField),
+        ),
+      );
       expect(textField.decoration?.hintText, 'https://api.opensensemap.org');
     });
 
     testWidgets('should have correct keyboard type', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ApiUrlField(controller: controller),
           ),
         ),
       );
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
+      final textField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byType(TextFormField),
+          matching: find.byType(TextField),
+        ),
+      );
       expect(textField.keyboardType, TextInputType.url);
     });
 
     testWidgets('should have correct text input action', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ApiUrlField(controller: controller),
           ),
         ),
       );
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
+      final textField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byType(TextFormField),
+          matching: find.byType(TextField),
+        ),
+      );
       expect(textField.textInputAction, TextInputAction.done);
     });
 
     testWidgets('should validate empty input', (WidgetTester tester) async {
+      final formKey = GlobalKey<FormState>();
+      
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Form(
+              key: formKey,
               child: ApiUrlField(controller: controller),
             ),
           ),
@@ -125,9 +198,6 @@ void main() {
       );
 
       // Trigger validation by trying to submit the form
-      final form = tester.widget<Form>(find.byType(Form));
-      final formKey = form.key as GlobalKey<FormState>;
-      
       formKey.currentState?.validate();
       await tester.pump();
 
@@ -137,11 +207,19 @@ void main() {
 
     testWidgets('should validate invalid URL format', (WidgetTester tester) async {
       controller.text = 'invalid-url';
+      final formKey = GlobalKey<FormState>();
       
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Form(
+              key: formKey,
               child: ApiUrlField(controller: controller),
             ),
           ),
@@ -149,9 +227,6 @@ void main() {
       );
 
       // Trigger validation
-      final form = tester.widget<Form>(find.byType(Form));
-      final formKey = form.key as GlobalKey<FormState>;
-      
       formKey.currentState?.validate();
       await tester.pump();
 
@@ -161,11 +236,19 @@ void main() {
 
     testWidgets('should accept valid URL', (WidgetTester tester) async {
       controller.text = 'https://api.example.com';
+      final formKey = GlobalKey<FormState>();
       
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Form(
+              key: formKey,
               child: ApiUrlField(controller: controller),
             ),
           ),
@@ -173,9 +256,6 @@ void main() {
       );
 
       // Trigger validation
-      final form = tester.widget<Form>(find.byType(Form));
-      final formKey = form.key as GlobalKey<FormState>;
-      
       final isValid = formKey.currentState?.validate();
       await tester.pump();
 
@@ -186,11 +266,19 @@ void main() {
 
     testWidgets('should accept HTTP URL', (WidgetTester tester) async {
       controller.text = 'http://api.example.com';
+      final formKey = GlobalKey<FormState>();
       
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Form(
+              key: formKey,
               child: ApiUrlField(controller: controller),
             ),
           ),
@@ -198,9 +286,6 @@ void main() {
       );
 
       // Trigger validation
-      final form = tester.widget<Form>(find.byType(Form));
-      final formKey = form.key as GlobalKey<FormState>;
-      
       final isValid = formKey.currentState?.validate();
       await tester.pump();
 
@@ -216,10 +301,19 @@ void main() {
         return null;
       }
       
+      final formKey = GlobalKey<FormState>();
+      
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Form(
+              key: formKey,
               child: ApiUrlField(
                 controller: controller,
                 validator: customValidator,
@@ -230,9 +324,6 @@ void main() {
       );
 
       // Trigger validation
-      final form = tester.widget<Form>(find.byType(Form));
-      final formKey = form.key as GlobalKey<FormState>;
-      
       formKey.currentState?.validate();
       await tester.pump();
 
@@ -243,13 +334,19 @@ void main() {
     testWidgets('should have fixed width of 300', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ApiUrlField(controller: controller),
           ),
         ),
       );
 
-      final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox));
+      final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox).first);
       expect(sizedBox.width, 300);
     });
   });
