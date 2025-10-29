@@ -12,7 +12,7 @@ import 'package:sensebox_bike/utils/geo_utils.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:turf/turf.dart' as Turf;
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 
 abstract class Sensor {
   final String characteristicUuid;

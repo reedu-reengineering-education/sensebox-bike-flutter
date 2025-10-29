@@ -1,5 +1,5 @@
 import 'package:sensebox_bike/models/geolocation_data.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 
 part 'sensor_data.g.dart';
 
