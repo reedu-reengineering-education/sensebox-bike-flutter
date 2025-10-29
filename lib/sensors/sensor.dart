@@ -113,9 +113,16 @@ abstract class Sensor {
       geolocationBloc.geolocationStream.listen((geo) {
         _lastGeolocation = geo;
 
+        // Process any deferred data when GPS becomes available
+        if (_directUploadService != null &&
+            _directUploadService!.hasDeferredData) {
+          _directUploadService!.onGpsAvailable(geo);
+        }
+
         if (_preGpsSensorBuffer.isNotEmpty) {
           _groupedBuffer.putIfAbsent(_lastGeolocation!, () => {});
-          _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
+          _groupedBuffer[_lastGeolocation!]!
+              .putIfAbsent(title, () => <List<double>>[]);
           _groupedBuffer[_lastGeolocation!]![title]!
               .addAll(_preGpsSensorBuffer);
 
@@ -295,6 +302,11 @@ abstract class Sensor {
           !_directUploadService!.isUploadDisabled) {
         _directUploadService!.addGroupedDataForUpload(
             groupedDataForUpload, geolocationsForUpload);
+      } else if (_directUploadService != null &&
+          recordingBloc.isRecording &&
+          groupedDataForUpload.isNotEmpty) {
+        // GPS unavailable - store data for deferred upload
+        _storeDataForDeferredUpload(groupedDataForUpload);
       }
       // Note: Buffer clearing is now handled by upload success callback
       // This prevents data loss when recording stops but upload fails
@@ -306,6 +318,27 @@ abstract class Sensor {
   }
 
   Widget buildWidget();
+  
+  /// Stores sensor data for deferred upload when GPS is unavailable
+  void _storeDataForDeferredUpload(
+      Map<GeolocationData, Map<String, List<double>>> groupedData) {
+    if (_directUploadService == null) return;
+
+    for (final entry in groupedData.entries) {
+      final sensorData = entry.value;
+      for (final sensorEntry in sensorData.entries) {
+        final sensorTitle = sensorEntry.key;
+        final values = sensorEntry.value;
+
+        // Store in deferred buffer for later upload
+        _directUploadService!.addDeferredSensorData(sensorTitle, values);
+      }
+    }
+
+    debugPrint(
+        '[Sensor] Stored ${groupedData.length} sensor data entries for deferred upload (GPS unavailable)');
+  }
+  
   void dispose() {
     stopListening();
     _valueController.close();
