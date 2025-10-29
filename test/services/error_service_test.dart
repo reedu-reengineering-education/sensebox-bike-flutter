@@ -108,7 +108,7 @@ void main() {
         expect(
           message,
           contains(
-              'Login failed. Please check your credentials and try once again.'),
+              'Login failed. Please check your credentials and try once again later.'),
         );
       });
 
@@ -124,7 +124,7 @@ void main() {
         expect(
           message,
           contains(
-              'Registration failed. Please check your credentials and try once again.'),
+              'Registration failed. Please check your credentials and try once again later.'),
         );
       });
     });
@@ -156,6 +156,8 @@ void main() {
           (WidgetTester tester) async {
         // Create a test widget with a ScaffoldMessenger
         await tester.pumpWidget(MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           scaffoldMessengerKey: ErrorService.scaffoldKey,
           home: Scaffold(
             body: Builder(
@@ -176,9 +178,12 @@ void main() {
         await tester.pump();
 
         // Verify that the SnackBar is displayed with the correct message
+        // The SnackBar uses RichText, so we need to find it by RichText widget
         expect(
-          find.text(
-              'Location services are disabled or access is denied. Please enable location services and allow the app to access your location in the phone settings.'),
+          find.byWidgetPredicate(
+            (widget) => widget is RichText && 
+            widget.text.toPlainText() == 'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.',
+          ),
           findsOneWidget,
         );
       });

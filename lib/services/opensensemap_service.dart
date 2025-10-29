@@ -9,6 +9,7 @@ import 'package:retry/retry.dart';
 import 'dart:async';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/utils/opensensemap_utils.dart';
 
 enum SenseBoxBikeModel { classic, atrai }
 
@@ -49,10 +50,6 @@ class OpenSenseMapService {
   void resetPermanentDisable() {
     _isPermanentlyDisabled = false;
   }
-
-
-
-
   /// Validates and extracts tokens from response data
   /// Throws Exception if tokens are missing or empty
   Map<String, String> _validateAndExtractTokens(
@@ -77,14 +74,17 @@ class OpenSenseMapService {
 
   Future<void> setTokens(http.Response response) async {
     final prefs = await _prefs;
-    final responseData = jsonDecode(response.body);
+    try {
+      final responseData = safeJsonDecode(response.body);
+      final tokens = _validateAndExtractTokens(responseData);
+      final accessToken = tokens['accessToken']!;
+      final refreshToken = tokens['refreshToken']!;
 
-    final tokens = _validateAndExtractTokens(responseData);
-    final accessToken = tokens['accessToken']!;
-    final refreshToken = tokens['refreshToken']!;
-
-    await prefs.setString('accessToken', accessToken);
-    await prefs.setString('refreshToken', refreshToken);
+      await prefs.setString('accessToken', accessToken);
+      await prefs.setString('refreshToken', refreshToken);
+    } catch (e) {
+      throw Exception('Failed to parse token response: $e');
+    }
   }
 
   Future<void> removeTokens() async {
@@ -104,7 +104,8 @@ class OpenSenseMapService {
     return prefs.getString('accessToken');
   }
 
-  Future<void> register(String name, String email, String password) async {
+  Future<Map<String, dynamic>> register(
+      String name, String email, String password) async {
     final response = await client.post(
       Uri.parse('$_baseUrl/users/register'),
       body: jsonEncode({
@@ -116,26 +117,47 @@ class OpenSenseMapService {
     );
 
     if (response.statusCode != 201) {
-      final errorResponse = jsonDecode(response.body);
-      throw Exception(errorResponse['message']);
+      String errorMessage = 'Registration failed';
+      try {
+        final errorResponse = safeJsonDecode(response.body);
+        errorMessage = errorResponse['message'] ?? errorMessage;
+      } catch (e) {
+        // If JSON parsing fails, use status code
+        errorMessage = 'Registration failed: ${response.statusCode}';
+      }
+      throw RegistrationError(errorMessage);
     }
 
-    final responseData = jsonDecode(response.body);
-
-    await setTokens(response);
-    await _saveUserData({
-      'data': {
-        'me': {
-          'name': name,
-          'email': email,
-        }
+    try {
+      final responseData = safeJsonDecode(response.body);
+      await setTokens(response);
+      await saveUserData(responseData);
+      return responseData;
+    } catch (e) {
+      if (e is! RegistrationError) {
+        throw RegistrationError('Registration failed: $e');
       }
-    });
-
-    return responseData;
+      rethrow;
+    }
   }
 
-  Future<void> _saveUserData(Map<String, dynamic> userData) async {
+  Future<bool> saveUserData(Map<String, dynamic> responseData) async {
+    // Both registration and login responses have the same structure: { "data": { "user": {...} } }
+    if (responseData.containsKey('data') &&
+        responseData['data'] is Map<String, dynamic> &&
+        responseData['data'].containsKey('user') &&
+        responseData['data']['user'] is Map<String, dynamic>) {
+      final userData = {
+        'data': {'me': responseData['data']['user']}
+      };
+      await _storeUserDataInPreferences(userData);
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _storeUserDataInPreferences(
+      Map<String, dynamic> userData) async {
     final prefs = await _prefs;
     await prefs.setString('userData', jsonEncode(userData));
   }
@@ -145,13 +167,14 @@ class OpenSenseMapService {
     final userDataString = prefs.getString('userData');
     if (userDataString != null) {
       try {
-        return jsonDecode(userDataString);
+        return safeJsonDecode(userDataString);
       } catch (e) {
         await prefs.remove('userData');
       }
     }
     return null;
   }
+
 
   Future<void> _clearUserData() async {
     final prefs = await _prefs;
@@ -169,21 +192,28 @@ class OpenSenseMapService {
     );
 
     if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-
-      await setTokens(response);
-
-      resetPermanentDisable();
-
-      if (responseData.containsKey('user')) {
-        await _saveUserData({
-          'data': {'me': responseData['user']}
-        });
+      try {
+        final responseData = safeJsonDecode(response.body);
+        await setTokens(response);
+        resetPermanentDisable();
+        await saveUserData(responseData);
+        return responseData;
+      } catch (e) {
+        if (e is! LoginError) {
+          throw LoginError('Login failed: $e');
+        }
+        rethrow;
       }
-
-      return responseData;
     } else {
-      throw Exception(json.decode(response.body)['message']);
+      String errorMessage = 'Login failed';
+      try {
+        final errorData = safeJsonDecode(response.body);
+        errorMessage = errorData['message'] ?? errorMessage;
+      } catch (e) {
+        // If JSON parsing fails, use status code
+        errorMessage = 'Login failed: ${response.statusCode}';
+      }
+      throw LoginError(errorMessage);
     }
   }
 
@@ -195,12 +225,15 @@ class OpenSenseMapService {
   Future<Map<String, dynamic>?> getUserData() async {
     final cachedUserData = await _getCachedUserData();
     
-    // If we have cached data and a valid access token, return cached data immediately
+    // If we have cached data, return it immediately (no need to check token validity)
     if (cachedUserData != null) {
-      final accessToken = await getAccessToken();
-      if (accessToken != null) {
-        return cachedUserData;
-      }
+      return cachedUserData;
+    }
+    
+    // Check if we have a valid access token before making API call
+    final accessToken = await getAccessToken();
+    if (accessToken == null) {
+      return null;
     }
 
     try {
@@ -209,12 +242,18 @@ class OpenSenseMapService {
           Uri.parse('$_baseUrl/users/me'),
           headers: {'Authorization': 'Bearer $accessToken'},
         ),
-        successHandler: (response) => jsonDecode(response.body),
+        successHandler: (response) {
+          try {
+            return safeJsonDecode(response.body);
+          } catch (e) {
+            throw Exception('Failed to parse user data: $e');
+          }
+        },
         errorMessage: 'Failed to load user data',
       );
 
       if (userData != null) {
-        await _saveUserData(userData);
+        await _storeUserDataInPreferences(userData);
         return userData;
       }
 
@@ -247,8 +286,6 @@ class OpenSenseMapService {
       }
     } catch (e) {
       // Refresh failed - data is already cleared by refreshToken()
-      debugPrint(
-          '[OpenSenseMapService] Auto-refresh failed in getAccessToken: $e');
     }
 
     return null;
@@ -318,16 +355,20 @@ class OpenSenseMapService {
       );
 
       if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        final tokens = _validateAndExtractTokens(responseData);
+        try {
+          final responseData = safeJsonDecode(response.body);
+          final tokens = _validateAndExtractTokens(responseData);
 
-        // Save tokens to SharedPreferences
-        await setTokens(response);
+          // Save tokens to SharedPreferences
+          await setTokens(response);
 
-        return {
-          'accessToken': tokens['accessToken']!,
-          'refreshToken': tokens['refreshToken']!,
-        };
+          return {
+            'accessToken': tokens['accessToken']!,
+            'refreshToken': tokens['refreshToken']!,
+          };
+        } catch (e) {
+          throw Exception('Failed to parse token refresh response: $e');
+        }
       } else {
         // Token refresh failed - clear all cached data
         await _clearAllCachedData();
@@ -423,12 +464,17 @@ class OpenSenseMapService {
         headers: {'Authorization': 'Bearer $accessToken'},
       ),
       successHandler: (response) {
-        dynamic responseData = jsonDecode(response.body);
-        return responseData['data']['boxes'];
+        try {
+          dynamic responseData = safeJsonDecode(response.body);
+          return responseData['data']['boxes'];
+        } catch (e) {
+          throw Exception('Failed to parse senseBoxes response: $e');
+        }
       },
       errorMessage: 'Failed to load senseBoxes',
     );
   }
+
 
   Future<void> uploadData(
       String senseBoxId, Map<String, dynamic> sensorData) async {

@@ -925,13 +925,13 @@ abstract class AppLocalizations {
   /// No description provided for @errorLoginFailed.
   ///
   /// In en, this message translates to:
-  /// **'Login failed. Please check your credentials and try once again.'**
+  /// **'Login failed. Please check your credentials and try once again later.'**
   String get errorLoginFailed;
 
   /// No description provided for @errorRegistrationFailed.
   ///
   /// In en, this message translates to:
-  /// **'Registration failed. Please check your credentials and try once again.'**
+  /// **'Registration failed. Please check your credentials and try once again later.'**
   String get errorRegistrationFailed;
 
   /// No description provided for @errorBleConnectionFailed.

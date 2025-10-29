@@ -726,4 +726,73 @@ void main() {
       });
     });
   });
+
+  group('saveUserData', () {
+    test('saves user data from registration or login response format', () async {
+      final responseData = {
+        'data': {
+          'user': {
+            'name': 'Test User',
+            'email': 'test@example.com',
+            'role': 'user'
+          }
+        }
+      };
+
+      final result = await service.saveUserData(responseData);
+
+      expect(result, isTrue);
+
+      final savedUserData = await service.getUserData();
+      expect(savedUserData, isNotNull);
+      expect(savedUserData!['data']['me']['name'], equals('Test User'));
+      expect(savedUserData['data']['me']['email'], equals('test@example.com'));
+    });
+
+    test('returns false when data.user path does not exist', () async {
+      final responseData = {
+        'data': {'other': 'value'}
+      };
+
+      final result = await service.saveUserData(responseData);
+
+      expect(result, isFalse);
+    });
+
+    test('returns false when user data is not a Map', () async {
+      final responseData = {
+        'data': {'user': 'not a map'}
+      };
+
+      final result = await service.saveUserData(responseData);
+
+      expect(result, isFalse);
+    });
+
+    test('handles null values in user data', () async {
+      final responseData = {
+        'data': {
+          'user': {
+            'name': 'User with nulls',
+            'email': null,
+            'role': 'user',
+            'preferences': null
+          }
+        }
+      };
+
+      final result = await service.saveUserData(responseData);
+
+      expect(result, isTrue);
+
+      final savedUserData = await service.getUserData();
+      expect(savedUserData, isNotNull);
+      final userData = savedUserData!['data']['me'];
+
+      expect(userData['name'], equals('User with nulls'));
+      expect(userData['email'], isNull);
+      expect(userData['role'], equals('user'));
+      expect(userData['preferences'], isNull);
+    });
+  });
 }

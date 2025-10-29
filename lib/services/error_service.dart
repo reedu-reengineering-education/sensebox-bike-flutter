@@ -15,8 +15,6 @@ class ErrorService {
   static void handleError(dynamic error, StackTrace stack,
       {bool sendToSentry = true}) {
     logToConsole(error, stack);
-    // This exception was already reported to Sentry
-    // end exceptions generated during debugging are not reported
     if (sendToSentry) {
       Sentry.captureException(error, stackTrace: stack);
     }
@@ -50,10 +48,37 @@ class ErrorService {
     if (context == null) return;
 
     scaffoldKey.currentState?.showSnackBar(SnackBar(
-        content: Text(parseError(error, context)),
+        content: RichText(
+          text: TextSpan(
+            children: parseErrorWithFormatting(error, context),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
         backgroundColor: errorColor,
         showCloseIcon: true,
         duration: Duration(seconds: 10)));
+  }
+
+  static List<TextSpan> parseErrorWithFormatting(dynamic error, BuildContext context) {
+    final errorMessage = parseError(error, context);
+    
+    if (error is LoginError || error is RegistrationError) {
+      return _createBoldMessageWithDetails(errorMessage);
+    }
+    
+    return [TextSpan(text: errorMessage)];
+  }
+
+  static List<TextSpan> _createBoldMessageWithDetails(String errorMessage) {
+    final parts = errorMessage.split('\n\n');
+    if (parts.length == 1) {
+      return [TextSpan(text: errorMessage, style: TextStyle(fontWeight: FontWeight.bold))];
+    }
+    
+    return [
+      TextSpan(text: parts[0], style: TextStyle(fontWeight: FontWeight.bold)),
+      TextSpan(text: '\n\n${parts[1]}'),
+    ];
   }
 
   static String parseError(dynamic error, BuildContext context) {
@@ -81,9 +106,19 @@ class ErrorService {
       return localizations?.errorTrackNoGeolocations ??
           'Track has no geolocation data and cannot be uploaded.';
     } else if (error is LoginError) {
-      return '${localizations?.errorLoginFailed} ${error.toString()}';
+      final mainMessage = localizations?.errorLoginFailed ??
+          'Login failed. Please check your credentials and try once again later.';
+      final details = error.error?.toString() ?? '';
+      return details.isNotEmpty
+          ? '$mainMessage\n\n$details'
+          : mainMessage;
     } else if (error is RegistrationError) {
-      return '${localizations?.errorRegistrationFailed} ${error.toString()}';
+      final mainMessage = localizations?.errorRegistrationFailed ??
+          'Registration failed. Please check your credentials and try once again later.';
+      final details = error.error?.toString() ?? '';
+      return details.isNotEmpty
+          ? '$mainMessage\n\n$details'
+          : mainMessage;
     }
 
     return 'An unknown error occurred.\n Details: ${error.toString()}';
