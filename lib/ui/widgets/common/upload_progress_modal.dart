@@ -74,12 +74,6 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
       },
     );
 
-    // Check if there's already an upload in progress
-    final currentProgress = widget.batchUploadService.currentProgress;
-    if (currentProgress != null) {
-      _onProgressUpdate(currentProgress);
-      _hasStartedUpload = true;
-    }
   }
 
   @override
