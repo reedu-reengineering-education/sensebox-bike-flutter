@@ -15,6 +15,7 @@ class SettingsBloc with ChangeNotifier {
   List<String> _privacyZones = [];
   bool _directUploadMode =
       false; // false = post-ride upload, true = direct upload
+  String _apiUrl = '';
 
   SettingsBloc() {
     _loadSettings();
@@ -28,6 +29,10 @@ class SettingsBloc with ChangeNotifier {
 
   // Getter for the current upload mode
   bool get directUploadMode => _directUploadMode;
+
+  // Getter for the current API URL
+  String get apiUrl =>
+      _apiUrl.isEmpty ? 'https://api.opensensemap.org' : _apiUrl;
 
   // Stream for vibrateOnDisconnect updates
   Stream<bool> get vibrateOnDisconnectStream =>
@@ -45,6 +50,7 @@ class SettingsBloc with ChangeNotifier {
     _vibrateOnDisconnect = prefs.getBool('vibrateOnDisconnect') ?? false;
     _privacyZones = prefs.getStringList('privacyZones') ?? [];
     _directUploadMode = prefs.getBool('directUploadMode') ?? false;
+    _apiUrl = prefs.getString('apiUrl') ?? '';
 
     // Emit the values to the streams
     _vibrateOnDisconnectController.add(_vibrateOnDisconnect);
@@ -93,7 +99,15 @@ class SettingsBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  // Dispose the StreamController when no longer needed
+  Future<void> setApiUrl(String value) async {
+    _apiUrl = value;
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('apiUrl', value);
+
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _vibrateOnDisconnectController.close();

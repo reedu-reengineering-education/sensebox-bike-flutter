@@ -6,9 +6,10 @@ import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamController
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 
 class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
-  final OpenSenseMapService _service = OpenSenseMapService();
+  final OpenSenseMapService _service;
   bool _isAuthenticated = false;
   final ValueNotifier<bool> _isAuthenticatingNotifier =
       ValueNotifier<bool>(false);
@@ -51,7 +52,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  OpenSenseMapBloc() {
+  OpenSenseMapBloc({SettingsBloc? settingsBloc}) 
+      : _service = OpenSenseMapService(settingsBloc: settingsBloc) {
     WidgetsBinding.instance.addObserver(this);
   }
 

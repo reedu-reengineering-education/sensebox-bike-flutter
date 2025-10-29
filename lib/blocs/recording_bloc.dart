@@ -116,7 +116,7 @@ class RecordingBloc with ChangeNotifier {
             trackId: _currentTrack!.id);
       } else {
         _batchUploadService = BatchUploadService(
-          openSenseMapService: OpenSenseMapService(),
+          openSenseMapService: openSenseMapBloc.openSenseMapService,
           trackService: isarService.trackService,
           openSenseMapBloc: openSenseMapBloc,
         );

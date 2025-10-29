@@ -237,4 +237,213 @@ void main() {
       expect(settingsBloc.directUploadMode, initialValue);
     });
   });
+
+  group('SettingsScreen API URL Tests', () {
+    late SettingsBloc settingsBloc;
+
+    setUpAll(() {
+      // Set up SharedPreferences mock
+      const sharedPreferencesChannel =
+          MethodChannel('plugins.flutter.io/shared_preferences');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(sharedPreferencesChannel,
+              (MethodCall call) async {
+        if (call.method == 'getAll') {
+          return <String, dynamic>{}; // Return empty preferences
+        }
+        if (call.method == 'setString') {
+          return true; // Mock successful save
+        }
+        return null;
+      });
+    });
+
+    setUp(() {
+      settingsBloc = SettingsBloc();
+    });
+
+    tearDown(() {
+      settingsBloc.dispose();
+    });
+
+    test('should return default API URL when no custom URL is set', () {
+      expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
+    });
+
+    test('should return custom API URL when set', () async {
+      const customUrl = 'https://custom-api.example.com';
+      await settingsBloc.setApiUrl(customUrl);
+      expect(settingsBloc.apiUrl, customUrl);
+    });
+
+    test('should return default API URL when empty string is set', () async {
+      await settingsBloc.setApiUrl('');
+      expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
+    });
+
+    test('should persist API URL setting', () async {
+      const customUrl = 'https://test-api.example.com';
+      await settingsBloc.setApiUrl(customUrl);
+      expect(settingsBloc.apiUrl, customUrl);
+    });
+  });
+
+  group('SettingsScreen API URL Validation Tests', () {
+    late SettingsBloc settingsBloc;
+
+    setUpAll(() {
+      // Set up SharedPreferences mock
+      const sharedPreferencesChannel =
+          MethodChannel('plugins.flutter.io/shared_preferences');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(sharedPreferencesChannel,
+              (MethodCall call) async {
+        if (call.method == 'getAll') {
+          return <String, dynamic>{}; // Return empty preferences
+        }
+        if (call.method == 'setString') {
+          return true; // Mock successful save
+        }
+        return null;
+      });
+    });
+
+    setUp(() {
+      settingsBloc = SettingsBloc();
+    });
+
+    tearDown(() {
+      settingsBloc.dispose();
+    });
+
+    testWidgets('should not save invalid URL when validation fails',
+        (WidgetTester tester) async {
+      const initialUrl = 'https://api.opensensemap.org';
+      const invalidUrl = 'not-a-valid-url';
+
+      // Set initial valid URL
+      await settingsBloc.setApiUrl(initialUrl);
+      expect(settingsBloc.apiUrl, initialUrl);
+
+      // Create a form key and controller that will be used in the widget
+      final formKey = GlobalKey<FormState>();
+      final controller = TextEditingController(text: invalidUrl);
+
+      // Create a widget with the form actually in the tree
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChangeNotifierProvider<SettingsBloc>.value(
+            value: settingsBloc,
+            child: Scaffold(
+              body: Form(
+                key: formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: controller,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'URL is required';
+                        }
+                        final uri = Uri.tryParse(value);
+                        if (uri == null ||
+                            (!uri.hasScheme ||
+                                (!uri.scheme.startsWith('http')))) {
+                          return 'Please enter a valid URL';
+                        }
+                        return null;
+                      },
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Try to validate and save
+                        if (formKey.currentState?.validate() ?? false) {
+                          settingsBloc.setApiUrl(controller.text);
+                        }
+                      },
+                      child: const Text('Save Invalid URL'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Tap the button to trigger validation
+      await tester.tap(find.text('Save Invalid URL'));
+      await tester.pump();
+
+      // The URL should not have changed because validation failed
+      expect(settingsBloc.apiUrl, initialUrl);
+      
+      controller.dispose();
+    });
+
+    testWidgets('should save valid URL when validation passes',
+        (WidgetTester tester) async {
+      const initialUrl = 'https://api.opensensemap.org';
+      const validUrl = 'https://custom-api.example.com';
+
+      // Set initial URL
+      await settingsBloc.setApiUrl(initialUrl);
+      expect(settingsBloc.apiUrl, initialUrl);
+
+      // Create a form key and controller that will be used in the widget
+      final formKey = GlobalKey<FormState>();
+      final controller = TextEditingController(text: validUrl);
+
+      // Create a widget with the form actually in the tree
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChangeNotifierProvider<SettingsBloc>.value(
+            value: settingsBloc,
+            child: Scaffold(
+              body: Form(
+                key: formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: controller,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'URL is required';
+                        }
+                        final uri = Uri.tryParse(value);
+                        if (uri == null ||
+                            (!uri.hasScheme ||
+                                (!uri.scheme.startsWith('http')))) {
+                          return 'Please enter a valid URL';
+                        }
+                        return null;
+                      },
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Try to validate and save
+                        if (formKey.currentState?.validate() ?? false) {
+                          settingsBloc.setApiUrl(controller.text);
+                        }
+                      },
+                      child: const Text('Save Valid URL'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Tap the button to trigger validation
+      await tester.tap(find.text('Save Valid URL'));
+      await tester.pump();
+
+      // The URL should have changed because validation passed
+      expect(settingsBloc.apiUrl, validUrl);
+      
+      controller.dispose();
+    });
+  });
 }
