@@ -325,49 +325,46 @@ void main() {
       await settingsBloc.setApiUrl(initialUrl);
       expect(settingsBloc.apiUrl, initialUrl);
 
-      // Create a simple widget that simulates the API URL dialog
+      // Create a form key and controller that will be used in the widget
+      final formKey = GlobalKey<FormState>();
+      final controller = TextEditingController(text: invalidUrl);
+
+      // Create a widget with the form actually in the tree
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<SettingsBloc>.value(
             value: settingsBloc,
             child: Scaffold(
-              body: Builder(
-                builder: (context) {
-                  return ElevatedButton(
-                    onPressed: () {
-                      // Simulate the dialog save logic
-                      final controller =
-                          TextEditingController(text: invalidUrl);
-                      final formKey = GlobalKey<FormState>();
-
-                      // Create a form with validation
-                      final form = Form(
-                        key: formKey,
-                        child: TextFormField(
-                          controller: controller,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'URL is required';
-                            }
-                            final uri = Uri.tryParse(value);
-                            if (uri == null ||
-                                (!uri.hasScheme ||
-                                    (!uri.scheme.startsWith('http')))) {
-                              return 'Please enter a valid URL';
-                            }
-                            return null;
-                          },
-                        ),
-                      );
-
-                      // Try to validate and save
-                      if (formKey.currentState!.validate()) {
-                        settingsBloc.setApiUrl(controller.text);
-                      }
-                    },
-                    child: const Text('Save Invalid URL'),
-                  );
-                },
+              body: Form(
+                key: formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: controller,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'URL is required';
+                        }
+                        final uri = Uri.tryParse(value);
+                        if (uri == null ||
+                            (!uri.hasScheme ||
+                                (!uri.scheme.startsWith('http')))) {
+                          return 'Please enter a valid URL';
+                        }
+                        return null;
+                      },
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Try to validate and save
+                        if (formKey.currentState?.validate() ?? false) {
+                          settingsBloc.setApiUrl(controller.text);
+                        }
+                      },
+                      child: const Text('Save Invalid URL'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -380,6 +377,8 @@ void main() {
 
       // The URL should not have changed because validation failed
       expect(settingsBloc.apiUrl, initialUrl);
+      
+      controller.dispose();
     });
 
     testWidgets('should save valid URL when validation passes',
@@ -391,48 +390,46 @@ void main() {
       await settingsBloc.setApiUrl(initialUrl);
       expect(settingsBloc.apiUrl, initialUrl);
 
-      // Create a simple widget that simulates the API URL dialog
+      // Create a form key and controller that will be used in the widget
+      final formKey = GlobalKey<FormState>();
+      final controller = TextEditingController(text: validUrl);
+
+      // Create a widget with the form actually in the tree
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<SettingsBloc>.value(
             value: settingsBloc,
             child: Scaffold(
-              body: Builder(
-                builder: (context) {
-                  return ElevatedButton(
-                    onPressed: () {
-                      // Simulate the dialog save logic
-                      final controller = TextEditingController(text: validUrl);
-                      final formKey = GlobalKey<FormState>();
-
-                      // Create a form with validation
-                      final form = Form(
-                        key: formKey,
-                        child: TextFormField(
-                          controller: controller,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'URL is required';
-                            }
-                            final uri = Uri.tryParse(value);
-                            if (uri == null ||
-                                (!uri.hasScheme ||
-                                    (!uri.scheme.startsWith('http')))) {
-                              return 'Please enter a valid URL';
-                            }
-                            return null;
-                          },
-                        ),
-                      );
-
-                      // Try to validate and save
-                      if (formKey.currentState!.validate()) {
-                        settingsBloc.setApiUrl(controller.text);
-                      }
-                    },
-                    child: const Text('Save Valid URL'),
-                  );
-                },
+              body: Form(
+                key: formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: controller,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'URL is required';
+                        }
+                        final uri = Uri.tryParse(value);
+                        if (uri == null ||
+                            (!uri.hasScheme ||
+                                (!uri.scheme.startsWith('http')))) {
+                          return 'Please enter a valid URL';
+                        }
+                        return null;
+                      },
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Try to validate and save
+                        if (formKey.currentState?.validate() ?? false) {
+                          settingsBloc.setApiUrl(controller.text);
+                        }
+                      },
+                      child: const Text('Save Valid URL'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -445,6 +442,8 @@ void main() {
 
       // The URL should have changed because validation passed
       expect(settingsBloc.apiUrl, validUrl);
+      
+      controller.dispose();
     });
   });
 }

@@ -62,10 +62,15 @@ void main() {
 
         // SettingsBloc should return default URL
         expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
+        
+        blocWithDefaultSettings.dispose();
       });
 
       test('should use custom API URL from SettingsBloc when stored', () async {
         final settingsBloc = SettingsBloc();
+        // Wait for SettingsBloc to finish loading
+        await Future.delayed(const Duration(milliseconds: 100));
+        
         const customUrl = 'https://custom-api.example.com';
 
         // Set custom URL in settings
@@ -77,10 +82,16 @@ void main() {
 
         // SettingsBloc should return the custom URL
         expect(settingsBloc.apiUrl, customUrl);
+        
+        blocWithCustomSettings.dispose();
+        settingsBloc.dispose();
       });
 
       test('should persist API URL in shared preferences', () async {
         final settingsBloc = SettingsBloc();
+        // Wait for initial load
+        await Future.delayed(const Duration(milliseconds: 100));
+        
         const customUrl = 'https://test-api.example.com';
 
         // Set custom URL
@@ -93,16 +104,23 @@ void main() {
 
         // Should load the stored URL
         expect(newSettingsBloc.apiUrl, customUrl);
+        
+        settingsBloc.dispose();
+        newSettingsBloc.dispose();
       });
 
       test('should fallback to default when stored URL is empty', () async {
         final settingsBloc = SettingsBloc();
+        // Wait for initial load
+        await Future.delayed(const Duration(milliseconds: 100));
 
         // Set empty URL
         await settingsBloc.setApiUrl('');
 
         // Should return default URL
         expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
+        
+        settingsBloc.dispose();
       });
     });
 
