@@ -167,8 +167,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should not throw an error and should display infinity values
-      expect(find.text('Infinity°C'), findsOneWidget);
-      expect(find.text('-Infinity°C'), findsOneWidget);
+      expect(find.text('Infinity'), findsOneWidget);
+      expect(find.text('-Infinity'), findsOneWidget);
     });
 
     testWidgets('displays gradient with correct border radius', (WidgetTester tester) async {
@@ -240,9 +240,9 @@ void main() {
       await tester.pumpWidget(createTestWidget(widget));
       await tester.pumpAndSettle();
 
-      // Should use fallback constants
-      expect(find.text('Infinity°C'), findsOneWidget);
-      expect(find.text('-Infinity°C'), findsOneWidget);
+      // Should use fallback constants (empty unit when SenseBox is null)
+      expect(find.text('Infinity'), findsOneWidget);
+      expect(find.text('-Infinity'), findsOneWidget);
     });
   });
 }
