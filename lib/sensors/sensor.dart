@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -8,9 +7,6 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
-import 'package:sensebox_bike/utils/geo_utils.dart';
-import 'package:sensebox_bike/utils/sensor_utils.dart';
-import 'package:turf/turf.dart' as Turf;
 import 'package:flutter/material.dart';
 import 'package:isar_community/isar.dart';
 
@@ -210,34 +206,9 @@ abstract class Sensor {
           continue;
         }
 
-        // Save GPS point with privacy zone checking if not already saved
+        // Skip if geolocation wasn't saved (id == 0 means save failed in GeolocationBloc)
         if (geolocation.id == Isar.autoIncrement || geolocation.id == 0) {
-          try {
-            // Check privacy zones before saving
-            final privacyZones = settingsBloc.privacyZones
-                .map((e) => Turf.Polygon.fromJson(jsonDecode(e)));
-            bool isInZone = isInsidePrivacyZone(privacyZones, geolocation);
-
-            if (!isInZone) {
-              // Save the geolocation data and get the assigned ID
-              final savedId = await isarService.geolocationService
-                  .saveGeolocationData(geolocation);
-              geolocation.id = savedId;
-              
-              // Create and save GPS speed as SensorData for consistent UI display
-              final gpsSpeedSensorData = createGpsSpeedSensorData(geolocation);
-              if (shouldStoreSensorData(gpsSpeedSensorData)) {
-                await isarService.sensorService
-                    .saveSensorData(gpsSpeedSensorData);
-              }
-            } else {
-              // Skip this GPS point if it's in a privacy zone
-              continue;
-            }
-          } catch (e) {
-            debugPrint('Error saving geolocation data: $e');
-            continue;
-          }
+          continue;
         }
 
         for (final sensorEntry in sensorData.entries) {
