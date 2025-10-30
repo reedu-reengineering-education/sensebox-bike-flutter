@@ -26,10 +26,7 @@ class DirectUploadService {
   final List<UploadBatch> _uploadQueue = [];
   
   bool _isEnabled = false;
-  bool _isPermanentlyDisabled = false;
-  bool _isUploadDisabled = false;
   bool _isUploading = false;
-  Timer? _uploadTimer;
 
   DirectUploadService({
     required this.openSenseMapService,
@@ -39,33 +36,18 @@ class DirectUploadService {
 
   void enable() {
     _isEnabled = true;
-    _isPermanentlyDisabled = false;
-    _isUploadDisabled = false;
-    
     _clearAllBuffers();
-    _startPeriodicUploadCheck();
-
     debugPrint('[DirectUploadService] Service enabled');
   }
 
   void disable() {
     _isEnabled = false;
-    _isPermanentlyDisabled = true;
-    _isUploadDisabled = true;
-    _uploadTimer?.cancel();
-    _uploadTimer = null;
-  }
-
-  void disableTemporarily() {
-    _isEnabled = false;
-    _isUploadDisabled = true;
-    _uploadTimer?.cancel();
-    _uploadTimer = null;
+    _clearAllBuffers();
+    permanentUploadLossNotifier.value = true;
+    _onPermanentDisable?.call();
   }
 
   bool get isEnabled => _isEnabled;
-  bool get permanentlyDisabled => _isPermanentlyDisabled;
-  bool get isUploadDisabled => _isUploadDisabled;
   bool get hasPreservedData => _uploadQueue.isNotEmpty;
 
   void setUploadSuccessCallback(Function(List<int>) callback) {
@@ -93,7 +75,7 @@ class DirectUploadService {
 
     _uploadQueue.add(uploadBatch);
 
-    if (_uploadQueue.length >= 3) {
+    if (openSenseMapService.isAcceptingRequests && !_isUploading) {
       _tryUpload();
     }
   }
@@ -124,28 +106,14 @@ class DirectUploadService {
       try {
         await _uploadAllQueued();
         _uploadQueue.clear();
-      } catch (e, st) {
-        final isNonCriticalError = e is TooManyRequestsException ||
-            e.toString().contains('Server error') ||
-            e.toString().contains('Token refreshed') ||
-            e is TimeoutException;
-
-        if (!isNonCriticalError) {
-          ErrorService.handleError(
-              'Upload failed during recording stop: $e', st,
-              sendToSentry: true);
-          _uploadQueue.clear();
-        }
+      } catch (e) {
+        _uploadQueue.clear();
       }
     }
   }
 
   Future<void> _tryUpload() async {
-    if (_uploadQueue.isEmpty || _isUploading) {
-      return;
-    }
-
-    if (_isPermanentlyDisabled) {
+    if (!_isEnabled || _uploadQueue.isEmpty || _isUploading) {
       return;
     }
 
@@ -157,7 +125,6 @@ class DirectUploadService {
 
     try {
       final uploadBatch = _uploadQueue.first;
-      uploadBatch.recordAttempt();
 
       final data = _prepareUploadData(uploadBatch.batches);
 
@@ -173,27 +140,36 @@ class DirectUploadService {
       final geoIds = uploadBatch.geoLocationIds;
       _onUploadSuccess?.call(geoIds);
     } catch (e, st) {
-      final isNonCriticalError = e is TooManyRequestsException ||
-          e.toString().contains('Server error') ||
-          e.toString().contains('Token refreshed') ||
-          e is TimeoutException;
+      final errorString = e.toString();
+      
+      if (e is TooManyRequestsException) {
+        return;
+      }
+      
+      if (errorString.contains('Server error')) {
+        return;
+      }
 
-      if (!isNonCriticalError) {
-        ErrorService.handleError(
-            'Direct upload failed: $e', st,
-            sendToSentry: true);
-        await _handleUploadError(e, st);
-      } else {
-        final batch = _uploadQueue.first;
-        for (final b in batch.batches) {
-          b.isUploadPending = false;
-        }
+      if (errorString.contains('Token refreshed')) {
+        return;
+      }
 
-        if (batch.hasExceededMaxRetries()) {
-          debugPrint(
-              '[DirectUploadService] Upload batch exceeded max retries, removing');
-          _uploadQueue.removeAt(0);
-        }
+      if (errorString.contains('Not authenticated') ||
+          errorString.contains('Authentication failed') ||
+          errorString.contains('No refresh token found') ||
+          errorString.contains('Refresh token is expired')) {
+        ErrorService.handleError('Authentication error: $e', st,
+            sendToSentry: false);
+        _uploadQueue.removeAt(0);
+        _handlePermanentAuthFailure();
+        return;
+      }
+      
+      ErrorService.handleError('Upload failed: $e', st, sendToSentry: true);
+      final failedBatch = _uploadQueue.removeAt(0);
+
+      for (final b in failedBatch.batches) {
+        b.isUploadPending = false;
       }
     } finally {
       _isUploading = false;
@@ -201,13 +177,9 @@ class DirectUploadService {
   }
 
   Future<void> _uploadAllQueued() async {
-    if (_uploadQueue.isEmpty) return;
-
-    if (_isPermanentlyDisabled) {
+    if (!_isEnabled || _uploadQueue.isEmpty || _isUploading) {
       return;
     }
-
-    if (_isUploading) return;
     _isUploading = true;
 
     try {
@@ -225,10 +197,8 @@ class DirectUploadService {
       _uploadQueue.clear();
       
     } catch (e, st) {
-      ErrorService.handleError(
-          'Batch upload failed: $e', st,
+      ErrorService.handleError('Batch upload failed: $e', st,
           sendToSentry: true);
-      await _handleUploadError(e, st);
       rethrow;
     } finally {
       _isUploading = false;
@@ -256,69 +226,15 @@ class DirectUploadService {
     _uploadQueue.clear();
   }
 
-  Future<void> _handleUploadError(dynamic e, StackTrace st) async {
-    final errorString = e.toString();
-
-    if (errorString.contains('Token refreshed')) {
-      return;
-    }
-
-    if (errorString.contains('Not authenticated') ||
-        errorString.contains('Authentication failed') ||
-        errorString.contains('No refresh token found') ||
-        errorString.contains('Refresh token is expired')) {
-      ErrorService.handleError(
-          'Authentication error: $e',
-          st,
-          sendToSentry: false);
-      return;
-    }
-    
-    if (errorString.contains('Client error') && !errorString.contains('429')) {
-      await _handlePermanentClientError(e, st);
-    } else {
-      ErrorService.handleError(
-          'Temporary upload error: $e',
-          st,
-          sendToSentry: false);
-    }
-  }
-
-  Future<void> _handlePermanentClientError(dynamic e, StackTrace st) async {
-    ErrorService.handleError(
-        'Permanent client error: $e',
-        st,
-        sendToSentry: true);
-    
+  void _handlePermanentAuthFailure() {
     _isEnabled = false;
-    _isPermanentlyDisabled = true;
-    _isUploadDisabled = true;
-    _uploadTimer?.cancel();
-    _uploadTimer = null;
     _clearAllBuffers();
     permanentUploadLossNotifier.value = true;
     _onPermanentDisable?.call();
   }
 
-  void _startPeriodicUploadCheck() {
-    _uploadTimer?.cancel();
-    _uploadTimer = Timer.periodic(Duration(seconds: 10), (_) async {
-      if (_isPermanentlyDisabled) {
-        return;
-      }
-      
-      if (_uploadQueue.isNotEmpty && openSenseMapService.isAcceptingRequests) {
-        _tryUpload().catchError((e) {
-          // Errors handled in _tryUpload
-        });
-      }
-    });
-  }
-
   void dispose() {
     _isUploading = false;
-    _uploadTimer?.cancel();
-    _uploadTimer = null;
     _uploadQueue.clear();
   }
 } 
