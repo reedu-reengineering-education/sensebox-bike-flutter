@@ -256,7 +256,7 @@ abstract class Sensor {
       if (_directUploadService != null &&
           recordingBloc.isRecording &&
           uploadData.isNotEmpty &&
-          !_directUploadService!.isUploadDisabled) {
+          _directUploadService!.isEnabled) {
         
         final batchRefs = geoIdsToSave
             .map((id) => _sensorBatches[id])
