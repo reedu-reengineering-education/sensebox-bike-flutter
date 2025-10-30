@@ -1,6 +1,5 @@
 // File: lib/services/isar_service/geolocation_service.dart
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
@@ -28,17 +27,9 @@ class GeolocationService {
   Future<Id> saveGeolocationData(GeolocationData geolocationData) async {
     final isar = await isarProvider.getDatabase();
     return await isar.writeTxn(() async {
-      try {
-        debugPrint(
-            '[Isar] saveGeolocationData: writing (ts=${geolocationData.timestamp})');
-        Id geoDataId = await isar.geolocationDatas.put(geolocationData);
-        await geolocationData.track.save();
-        debugPrint('[Isar] saveGeolocationData: success id=$geoDataId');
-        return geoDataId;
-      } catch (e) {
-        debugPrint('[Isar] saveGeolocationData: error $e');
-        rethrow;
-      }
+      Id geoDataId = await isar.geolocationDatas.put(geolocationData);
+      await geolocationData.track.save();
+      return geoDataId;
     });
   }
 

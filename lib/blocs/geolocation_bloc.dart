@@ -19,7 +19,6 @@ class GeolocationBloc with ChangeNotifier {
       _geolocationController.stream;
 
   StreamSubscription<Position>? _positionStreamSubscription;
-  int _positionLogCounter = 0;
   GeolocationData? _lastEmittedPosition;
 
   final IsarService isarService;
@@ -38,7 +37,7 @@ class GeolocationBloc with ChangeNotifier {
         PermissionStatus status = await Permission.notification.request();
         if (status.isGranted) {
           locationSettings = AndroidSettings(
-              accuracy: LocationAccuracy.best,
+              accuracy: LocationAccuracy.bestForNavigation,
               distanceFilter: 0,
               foregroundNotificationConfig: const ForegroundNotificationConfig(
                   notificationText:
@@ -48,19 +47,19 @@ class GeolocationBloc with ChangeNotifier {
                   notificationIcon: AndroidResource(
                       name: "@mipmap/ic_stat_sensebox_bike_logo"),
                   color: Colors.blue));
-          debugPrint(
-              '[GeolocationBloc] startListening: Android settings applied (accuracy=best, distanceFilter=0, interval=1s)');
         } else {
           return Future.error('Notification permissions are denied');
         }
       } else if (defaultTargetPlatform == TargetPlatform.iOS ||
           defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
-          accuracy: LocationAccuracy.best,
+          accuracy: LocationAccuracy.bestForNavigation,
           distanceFilter: 0,
+          activityType: ActivityType.fitness,
+          pauseLocationUpdatesAutomatically: false,
+          showBackgroundLocationIndicator: true,
+          allowBackgroundLocationUpdates: true,
         );
-        debugPrint(
-            '[GeolocationBloc] startListening: Apple settings applied (accuracy=best, distanceFilter=0)');
       }
 
       // Listen to position stream
@@ -80,7 +79,6 @@ class GeolocationBloc with ChangeNotifier {
             _lastEmittedPosition!.timestamp == geolocationData.timestamp &&
             _lastEmittedPosition!.latitude == geolocationData.latitude &&
             _lastEmittedPosition!.longitude == geolocationData.longitude) {
-          debugPrint('[GeolocationBloc] Skipping duplicate position');
           return;
         }
         _lastEmittedPosition = geolocationData;
@@ -102,12 +100,10 @@ class GeolocationBloc with ChangeNotifier {
                 await isarService.sensorService
                     .saveSensorData(gpsSpeedSensorData);
               } catch (e) {
-                debugPrint(
-                    '[GeolocationBloc] Failed to save GPS speed sensor data: $e');
+                // Continue on error
               }
             }
           } catch (e) {
-            debugPrint('[GeolocationBloc] Failed to save geolocation: $e');
             // Set id to 0 on failure so sensors skip this point
             geolocationData.id = 0;
           }
@@ -115,11 +111,6 @@ class GeolocationBloc with ChangeNotifier {
 
         // Emit to stream for real-time updates (with ID already set if recording)
         _geolocationController.add(geolocationData);
-
-        // Log every position update
-        _positionLogCounter++;
-        debugPrint(
-            '[GeolocationBloc] position #$_positionLogCounter at \'${position.timestamp}\' (lat=${position.latitude}, lon=${position.longitude}, speed=${position.speed})');
 
         notifyListeners();
       });
@@ -163,7 +154,6 @@ class GeolocationBloc with ChangeNotifier {
   void stopListening() {
     _positionStreamSubscription?.cancel();
     _lastEmittedPosition = null;
-    debugPrint('[GeolocationBloc] stopListening: position stream cancelled');
   }
 
   @override

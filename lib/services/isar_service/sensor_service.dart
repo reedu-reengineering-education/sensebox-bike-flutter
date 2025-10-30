@@ -4,7 +4,6 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:isar_community/isar.dart';
-import 'package:flutter/foundation.dart';
 
 class SensorService {
   final IsarProvider isarProvider;
@@ -66,28 +65,17 @@ class SensorService {
     final isar = await isarProvider.getDatabase();
     
     try {
-      int successCount = 0;
-      debugPrint(
-          '[Isar] saveSensorDataBatch: writing batch size=${batch.length}');
       await isar.writeTxn(() async {
         for (final sensor in batch) {
           try {
             await isar.sensorDatas.put(sensor);
             await sensor.geolocationData.save();
-            successCount++;
           } catch (e) {
-            // Log individual sensor save failures but continue with the batch
-            debugPrint(
-                '[Isar] Failed to save sensor data: ${sensor.title} - ${sensor.attribute} - ${sensor.value}: $e');
             // Continue with other sensors in the batch
           }
         }
       });
-      debugPrint(
-          '[Isar] saveSensorDataBatch: success $successCount/${batch.length}');
     } catch (e) {
-      // Log the overall transaction failure
-      debugPrint('[Isar] saveSensorDataBatch: transaction failed: $e');
       rethrow; // Re-throw to let the caller handle it
     }
   }
