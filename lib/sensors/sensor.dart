@@ -5,6 +5,7 @@ import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_batch.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:flutter/material.dart';
@@ -20,20 +21,20 @@ abstract class Sensor {
   final SettingsBloc settingsBloc;
   final IsarService isarService;
 
-  StreamController<List<double>> _valueController =
+  final StreamController<List<double>> _valueController =
       StreamController<List<double>>.broadcast();
   StreamSubscription<List<double>>? _subscription;
+  StreamSubscription<GeolocationData>? _geoSubscription;
   Timer? _batchTimer;
   final Duration _batchTimeout = Duration(seconds: 5);
-  final Map<GeolocationData, Map<String, List<List<double>>>> _groupedBuffer =
-      {};
-  final List<List<double>> _preGpsSensorBuffer = [];
+  
+  final Map<int, SensorBatch> _sensorBatches = {};
+  final List<List<double>> _preGpsValues = [];
+  
   GeolocationData? _lastGeolocation;
   DirectUploadService? _directUploadService;
   VoidCallback? _recordingListener;
   bool _isFlushing = false;
-  final Set<int> _processedGeolocationIds = {};
-  final Set<int> _uploadedGeolocationIds = {}; 
 
   Sensor(
     this.characteristicUuid,
@@ -55,46 +56,45 @@ abstract class Sensor {
   void setDirectUploadService(DirectUploadService uploadService) {
     _directUploadService = uploadService;
     
-    uploadService.setUploadSuccessCallback((uploadedGpsPoints) {
-      for (final gpsPoint in uploadedGpsPoints) {
-        _uploadedGeolocationIds.add(gpsPoint.id);
-      }
-
-      final List<GeolocationData> pointsToRemove = [];
-      for (final entry in _groupedBuffer.entries) {
-        if (_uploadedGeolocationIds.contains(entry.key.id)) {
-          pointsToRemove.add(entry.key);
+    uploadService.setUploadSuccessCallback((uploadedGeoIds) {
+      for (final geoId in uploadedGeoIds) {
+        final batch = _sensorBatches[geoId];
+        if (batch != null) {
+          batch.isUploaded = true;
+          _sensorBatches.remove(geoId);
         }
       }
-
-      for (final point in pointsToRemove) {
-        _groupedBuffer.remove(point);
-      }
-      
-
     });
 
     uploadService.setPermanentDisableCallback(() {
-      // Don't clear sensor buffers - just clear upload tracking
-      // This allows local data collection to continue even when uploads are disabled
-      _uploadedGeolocationIds.clear();
-      // Keep _groupedBuffer and _processedGeolocationIds for local persistence
-
+      for (final batch in _sensorBatches.values) {
+        batch.isUploadPending = false;
+      }
     });
   }
 
   void onDataReceived(List<double> data) {
     if (data.isNotEmpty && recordingBloc.isRecording) {
-      // Always buffer data for local persistence, regardless of upload service status
-      // This ensures data is collected locally even when uploads are disabled
       if (_lastGeolocation != null) {
-        _groupedBuffer.putIfAbsent(_lastGeolocation!, () => {});
-        _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
-        _groupedBuffer[_lastGeolocation!]![title]!.add(data);
+        final geoId = _lastGeolocation!.id;
+        
+        _sensorBatches.putIfAbsent(
+          geoId,
+          () => SensorBatch(
+            geoLocation: _lastGeolocation!,
+            aggregatedData: {},
+            timestamp: DateTime.now(),
+          ),
+        );
+        
+        _sensorBatches[geoId]!.aggregatedData
+            .putIfAbsent(title, () => [])
+            .addAll(data);
       } else {
-        _preGpsSensorBuffer.add(data);
+        _preGpsValues.add(data);
       }
     }
+    
     _valueController.add(data);
   }
 
@@ -106,16 +106,27 @@ abstract class Sensor {
         onDataReceived(data);
       });
 
-      geolocationBloc.geolocationStream.listen((geo) {
+      _geoSubscription = geolocationBloc.geolocationStream.listen((geo) {
         _lastGeolocation = geo;
 
-        if (_preGpsSensorBuffer.isNotEmpty) {
-          _groupedBuffer.putIfAbsent(_lastGeolocation!, () => {});
-          _groupedBuffer[_lastGeolocation!]!.putIfAbsent(title, () => []);
-          _groupedBuffer[_lastGeolocation!]![title]!
-              .addAll(_preGpsSensorBuffer);
-
-          _preGpsSensorBuffer.clear();
+        if (_preGpsValues.isNotEmpty) {
+          final geoId = geo.id;
+          
+          _sensorBatches.putIfAbsent(
+            geoId,
+            () => SensorBatch(
+              geoLocation: geo,
+              aggregatedData: {},
+              timestamp: DateTime.now(),
+            ),
+          );
+          
+          final aggregated = aggregateData(_preGpsValues);
+          _sensorBatches[geoId]!.aggregatedData
+              .putIfAbsent(title, () => [])
+              .addAll(aggregated);
+          
+          _preGpsValues.clear();
         }
       });
 
@@ -137,6 +148,8 @@ abstract class Sensor {
   Future<void> stopListening() async {
     await _subscription?.cancel();
     _subscription = null;
+    await _geoSubscription?.cancel();
+    _geoSubscription = null;
     _batchTimer?.cancel();
     _batchTimer = null;
     
@@ -154,129 +167,116 @@ abstract class Sensor {
 
   void clearBuffersOnRecordingStop() {
     if (!recordingBloc.isRecording) {
-      _groupedBuffer.clear();
-      _processedGeolocationIds.clear();
+      _sensorBatches.clear();
     }
   }
 
   void clearBuffersForNewRecording() {
-    _groupedBuffer.clear();
-    _processedGeolocationIds.clear();
+    _sensorBatches.clear();
   }
 
-
-
-
-
   Future<void> _flushBuffers() async {
-    if (_groupedBuffer.isEmpty) {
+    if (_sensorBatches.isEmpty) {
       return;
     }
 
-    // Always process and save data locally, regardless of upload service status
-    // Uploads are attempted only when the service is available and enabled
     if (_isFlushing) {
       return;
     }
     _isFlushing = true;
 
     try {
-      // Create a copy of entries to avoid concurrent modification
-      final bufferCopy =
-          Map<GeolocationData, Map<String, List<List<double>>>>.from(
-              _groupedBuffer);
-      
-      final List<SensorData> batch = [];
-      final Set<int> processedInThisFlush = {};
-      final Map<GeolocationData, Map<String, List<double>>>
-          groupedDataForUpload = {};
-      final List<GeolocationData> geolocationsForUpload = [];
-      final int maxBatchSize = 100;
-      int processedCount = 0;
+      final batchesToProcess = _sensorBatches.values
+          .where((b) => !b.isSavedToDb && !b.isUploaded)
+          .toList();
 
-      for (final entry in bufferCopy.entries) {
-        if (processedCount >= maxBatchSize) {
-          break;
-        }
+      if (batchesToProcess.isEmpty) {
+        return;
+      }
+
+      final maxBatchSize = 100;
+      final batchesToSave = batchesToProcess.take(maxBatchSize).toList();
+
+      final List<SensorData> dbBatch = [];
+      final Map<GeolocationData, Map<String, List<double>>> uploadData = {};
+      final List<int> geoIdsToSave = [];
+
+      for (final batch in batchesToSave) {
+        final geolocation = batch.geoLocation;
         
-        final GeolocationData geolocation = entry.key;
-        final Map<String, List<List<double>>> sensorData = entry.value;
-
-        if (_processedGeolocationIds.contains(geolocation.id)) {
-          continue;
-        }
-
-        // Skip if geolocation wasn't saved (id == 0 means save failed in GeolocationBloc)
         if (geolocation.id == Isar.autoIncrement || geolocation.id == 0) {
           continue;
         }
 
-        for (final sensorEntry in sensorData.entries) {
-          final String sensorTitle = sensorEntry.key;
-          final List<List<double>> rawValues = sensorEntry.value;
+        final sensorData = batch.aggregatedData[title];
+        if (sensorData == null || sensorData.isEmpty) {
+          continue;
+        }
 
-          if (sensorTitle == title) {
-            final List<double> aggregatedValues = aggregateData(rawValues);
-            
-            groupedDataForUpload[geolocation] = {sensorTitle: aggregatedValues};
-            geolocationsForUpload.add(geolocation);
+        if (attributes.isNotEmpty) {
+          for (int j = 0; j < attributes.length && j < sensorData.length; j++) {
+            dbBatch.add(SensorData()
+              ..characteristicUuid = characteristicUuid
+              ..title = title
+              ..value = sensorData[j]
+              ..attribute = attributes[j]
+              ..geolocationData.value = geolocation);
+          }
+        } else {
+          dbBatch.add(SensorData()
+            ..characteristicUuid = characteristicUuid
+            ..title = title
+            ..value = sensorData.isNotEmpty ? sensorData[0] : 0.0
+            ..attribute = null
+            ..geolocationData.value = geolocation);
+        }
 
-            if (attributes.isNotEmpty) {
-              for (int j = 0;
-                  j < attributes.length && j < aggregatedValues.length;
-                  j++) {
-                final sensorData = SensorData()
-                  ..characteristicUuid = characteristicUuid
-                  ..title = title
-                  ..value = aggregatedValues[j]
-                  ..attribute = attributes[j]
-                  ..geolocationData.value = geolocation;
-                batch.add(sensorData);
-              }
-            } else {
-              final sensorData = SensorData()
-                ..characteristicUuid = characteristicUuid
-                ..title = title
-                ..value =
-                    aggregatedValues.isNotEmpty ? aggregatedValues[0] : 0.0
-                ..attribute = null
-                ..geolocationData.value = geolocation;
-              batch.add(sensorData);
+        if (recordingBloc.isRecording) {
+          uploadData[geolocation] = {title: sensorData};
+        }
+
+        geoIdsToSave.add(geolocation.id);
+      }
+
+      if (dbBatch.isNotEmpty) {
+        try {
+          await isarService.sensorService.saveSensorDataBatch(dbBatch);
+          
+          for (final geoId in geoIdsToSave) {
+            final batch = _sensorBatches[geoId];
+            if (batch != null) {
+              batch.isSavedToDb = true;
             }
           }
-        }
-
-        processedInThisFlush.add(geolocation.id);
-        _processedGeolocationIds.add(geolocation.id);
-        processedCount++;
-      }
-
-      if (batch.isNotEmpty) {
-        try {
-          await isarService.sensorService.saveSensorDataBatch(batch);
         } catch (e) {
-          return; // Don't clear buffer on save failure
+          return;
         }
       }
 
-      // Only attempt upload if service is available and uploads are enabled
       if (_directUploadService != null &&
           recordingBloc.isRecording &&
-          groupedDataForUpload.isNotEmpty &&
+          uploadData.isNotEmpty &&
           !_directUploadService!.isUploadDisabled) {
-        _directUploadService!.addGroupedDataForUpload(
-            groupedDataForUpload, geolocationsForUpload);
+        
+        final batchRefs = geoIdsToSave
+            .map((id) => _sensorBatches[id])
+            .where((b) => b != null && !b.isUploadPending && !b.isUploaded)
+            .cast<SensorBatch>()
+            .toList();
+
+        if (batchRefs.isNotEmpty) {
+          _directUploadService!.queueBatchesForUpload(batchRefs);
+        }
       }
-      // Note: Buffer clearing is now handled by upload success callback
-      // This prevents data loss when recording stops but upload fails
     } catch (e) {
-      debugPrint('Error in _flushBuffers for sensor $title: $e');
+      debugPrint('[Sensor:$title] Error in _flushBuffers: $e');
     } finally {
       _isFlushing = false;
     }
   }
 
   Widget buildWidget();
+  
   void dispose() {
     stopListening();
     _valueController.close();
