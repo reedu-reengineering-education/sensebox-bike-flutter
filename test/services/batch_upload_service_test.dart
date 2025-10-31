@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
+import 'package:sensebox_bike/services/upload_error_classifier.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 

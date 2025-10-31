@@ -34,7 +34,10 @@ class UploadErrorClassifier {
 
     if (errorString.contains('Client error 400') ||
         errorString.contains('Client error 403') ||
-        errorString.contains('Client error 404')) {
+        errorString.contains('Client error 404') ||
+        errorString.contains('Client error - 400') ||
+        errorString.contains('Client error - 403') ||
+        errorString.contains('Client error - 404')) {
       return UploadErrorType.permanentClient;
     }
 
