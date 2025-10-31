@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_batch.dart';
@@ -18,20 +17,17 @@ abstract class Sensor {
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
   final RecordingBloc recordingBloc;
-  final SettingsBloc settingsBloc;
   final IsarService isarService;
 
   final StreamController<List<double>> _valueController =
       StreamController<List<double>>.broadcast();
   StreamSubscription<List<double>>? _subscription;
   StreamSubscription<GeolocationData>? _geoSubscription;
-  Timer? _batchTimer;
-  final Duration _batchTimeout = Duration(seconds: 5);
+  StreamSubscription<List<int>>? _uploadSuccessSubscription;
   
   final Map<int, SensorBatch> _sensorBatches = {};
   final List<List<double>> _preGpsValues = [];
   
-  GeolocationData? _lastGeolocation;
   DirectUploadService? _directUploadService;
   VoidCallback? _recordingListener;
   bool _isFlushing = false;
@@ -43,7 +39,6 @@ abstract class Sensor {
     this.bleBloc,
     this.geolocationBloc,
     this.recordingBloc,
-    this.settingsBloc,
     this.isarService,
   );
 
@@ -56,7 +51,9 @@ abstract class Sensor {
   void setDirectUploadService(DirectUploadService uploadService) {
     _directUploadService = uploadService;
     
-    uploadService.setUploadSuccessCallback((uploadedGeoIds) {
+    _uploadSuccessSubscription?.cancel();
+    _uploadSuccessSubscription =
+        uploadService.uploadSuccessStream.listen((uploadedGeoIds) {
       for (final geoId in uploadedGeoIds) {
         final batch = _sensorBatches[geoId];
         if (batch != null) {
@@ -65,34 +62,11 @@ abstract class Sensor {
         }
       }
     });
-
-    uploadService.setPermanentDisableCallback(() {
-      for (final batch in _sensorBatches.values) {
-        batch.isUploadPending = false;
-      }
-    });
   }
 
   void onDataReceived(List<double> data) {
     if (data.isNotEmpty && recordingBloc.isRecording) {
-      if (_lastGeolocation != null) {
-        final geoId = _lastGeolocation!.id;
-        
-        _sensorBatches.putIfAbsent(
-          geoId,
-          () => SensorBatch(
-            geoLocation: _lastGeolocation!,
-            aggregatedData: {},
-            timestamp: DateTime.now(),
-          ),
-        );
-        
-        _sensorBatches[geoId]!.aggregatedData
-            .putIfAbsent(title, () => [])
-            .addAll(data);
-      } else {
-        _preGpsValues.add(data);
-      }
+      _preGpsValues.add(data);
     }
     
     _valueController.add(data);
@@ -106,11 +80,13 @@ abstract class Sensor {
         onDataReceived(data);
       });
 
-      _geoSubscription = geolocationBloc.geolocationStream.listen((geo) {
-        _lastGeolocation = geo;
+      _geoSubscription = geolocationBloc.geolocationStream.listen((geo) async {
+        final geoId = geo.id;
+
+        await _flushBuffers();
 
         if (_preGpsValues.isNotEmpty) {
-          final geoId = geo.id;
+          final aggregated = aggregateData(_preGpsValues);
           
           _sensorBatches.putIfAbsent(
             geoId,
@@ -119,19 +95,11 @@ abstract class Sensor {
               aggregatedData: {},
               timestamp: DateTime.now(),
             ),
-          );
-          
-          final aggregated = aggregateData(_preGpsValues);
-          _sensorBatches[geoId]!.aggregatedData
-              .putIfAbsent(title, () => [])
-              .addAll(aggregated);
+              )
+              .aggregatedData[title] = aggregated;
           
           _preGpsValues.clear();
         }
-      });
-
-      _batchTimer = Timer.periodic(_batchTimeout, (_) async {
-        await _flushBuffers();
       });
 
       _recordingListener = () {
@@ -150,8 +118,8 @@ abstract class Sensor {
     _subscription = null;
     await _geoSubscription?.cancel();
     _geoSubscription = null;
-    _batchTimer?.cancel();
-    _batchTimer = null;
+    await _uploadSuccessSubscription?.cancel();
+    _uploadSuccessSubscription = null;
     
     if (_recordingListener != null) {
       recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
@@ -165,14 +133,9 @@ abstract class Sensor {
     await _flushBuffers();
   }
 
-  void clearBuffersOnRecordingStop() {
-    if (!recordingBloc.isRecording) {
-      _sensorBatches.clear();
-    }
-  }
-
   void clearBuffersForNewRecording() {
     _sensorBatches.clear();
+    _preGpsValues.clear();
   }
 
   Future<void> _flushBuffers() async {
