@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_batch.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
@@ -209,6 +210,14 @@ class UploadDataPreparer {
   final SenseBox senseBox;
 
   UploadDataPreparer({required this.senseBox});
+
+  Map<String, dynamic> prepareDataFromBatches(List<SensorBatch> batches) {
+    final groupedData = <GeolocationData, Map<String, List<double>>>{};
+    for (final batch in batches) {
+      groupedData[batch.geoLocation] = batch.aggregatedData;
+    }
+    return prepareDataFromGroupedData(groupedData, groupedData.keys.toList());
+  }
 
   Map<String, dynamic> prepareDataFromGroupedData(
       Map<GeolocationData, Map<String, List<double>>> groupedData,

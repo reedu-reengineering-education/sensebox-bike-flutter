@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/foundation.dart';
-import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_batch.dart';
 import 'package:sensebox_bike/models/upload_batch.dart';
@@ -17,11 +16,8 @@ class DirectUploadService {
   final OpenSenseMapBloc openSenseMapBloc;
   final UploadDataPreparer _dataPreparer;
   
-  Function(List<int>)? _onUploadSuccess;
-  Function()? _onPermanentDisable;
-
-  final ValueNotifier<bool> permanentUploadLossNotifier =
-      ValueNotifier<bool>(false);
+  final StreamController<List<int>> _uploadSuccessController =
+      StreamController<List<int>>.broadcast();
   
   final List<UploadBatch> _uploadQueue = [];
   
@@ -34,6 +30,8 @@ class DirectUploadService {
     required this.openSenseMapBloc,
   }) : _dataPreparer = UploadDataPreparer(senseBox: senseBox);
 
+  Stream<List<int>> get uploadSuccessStream => _uploadSuccessController.stream;
+
   void enable() {
     _isEnabled = true;
     _clearAllBuffers();
@@ -43,20 +41,10 @@ class DirectUploadService {
   void disable() {
     _isEnabled = false;
     _clearAllBuffers();
-    permanentUploadLossNotifier.value = true;
-    _onPermanentDisable?.call();
   }
 
   bool get isEnabled => _isEnabled;
   bool get hasPreservedData => _uploadQueue.isNotEmpty;
-
-  void setUploadSuccessCallback(Function(List<int>) callback) {
-    _onUploadSuccess = callback;
-  }
-
-  void setPermanentDisableCallback(Function() callback) {
-    _onPermanentDisable = callback;
-  }
 
   void queueBatchesForUpload(List<SensorBatch> batches) {
     if (!_isEnabled || batches.isEmpty) {
@@ -78,27 +66,6 @@ class DirectUploadService {
     if (openSenseMapService.isAcceptingRequests && !_isUploading) {
       _tryUpload();
     }
-  }
-
-  @Deprecated('Use queueBatchesForUpload instead')
-  bool addGroupedDataForUpload(
-      Map<GeolocationData, Map<String, List<double>>> groupedData,
-      List<GeolocationData> gpsBuffer) {
-    if (!_isEnabled) {
-      return false;
-    }
-
-    final batches = <SensorBatch>[];
-    for (final entry in groupedData.entries) {
-      batches.add(SensorBatch(
-        geoLocation: entry.key,
-        aggregatedData: entry.value,
-        timestamp: DateTime.now(),
-      ));
-    }
-
-    queueBatchesForUpload(batches);
-    return true;
   }
 
   Future<void> uploadRemainingBufferedData() async {
@@ -129,48 +96,34 @@ class DirectUploadService {
       final data = _prepareUploadData(uploadBatch.batches);
 
       if (data.isEmpty) {
-        _uploadQueue.removeAt(0);
+        _removeFirstBatch();
         return;
       }
 
       await openSenseMapBloc.uploadData(senseBox.id, data);
 
-      _uploadQueue.removeAt(0);
+      final removedBatch = _removeFirstBatch();
 
-      final geoIds = uploadBatch.geoLocationIds;
-      _onUploadSuccess?.call(geoIds);
+      final geoIds = removedBatch.geoLocationIds;
+      _uploadSuccessController.add(geoIds);
     } catch (e, st) {
-      final errorString = e.toString();
-      
       if (e is TooManyRequestsException) {
         return;
       }
       
-      if (errorString.contains('Server error')) {
-        return;
-      }
-
-      if (errorString.contains('Token refreshed')) {
-        return;
-      }
-
-      if (errorString.contains('Not authenticated') ||
-          errorString.contains('Authentication failed') ||
-          errorString.contains('No refresh token found') ||
-          errorString.contains('Refresh token is expired')) {
+      if (e
+          .toString()
+          .contains('Authentication failed - user needs to re-login')) {
         ErrorService.handleError('Authentication error: $e', st,
             sendToSentry: false);
-        _uploadQueue.removeAt(0);
+        _removeFirstBatch();
         _handlePermanentAuthFailure();
         return;
       }
       
-      ErrorService.handleError('Upload failed: $e', st, sendToSentry: true);
-      final failedBatch = _uploadQueue.removeAt(0);
-
-      for (final b in failedBatch.batches) {
-        b.isUploadPending = false;
-      }
+      ErrorService.handleError('Upload failed after retries: $e', st,
+          sendToSentry: true);
+      _removeFirstBatch();
     } finally {
       _isUploading = false;
     }
@@ -206,16 +159,7 @@ class DirectUploadService {
   }
 
   Map<String, dynamic> _prepareUploadData(List<SensorBatch> batches) {
-    final allData = <GeolocationData, Map<String, List<double>>>{};
-
-    for (final batch in batches) {
-      allData[batch.geoLocation] = batch.aggregatedData;
-    }
-
-    return _dataPreparer.prepareDataFromGroupedData(
-      allData,
-      allData.keys.toList(),
-    );
+    return _dataPreparer.prepareDataFromBatches(batches);
   }
 
   String _generateUploadId() {
@@ -226,15 +170,21 @@ class DirectUploadService {
     _uploadQueue.clear();
   }
 
+  UploadBatch _removeFirstBatch() {
+    final batch = _uploadQueue.removeAt(0);
+    for (final b in batch.batches) {
+      b.isUploadPending = false;
+    }
+    return batch;
+  }
+
   void _handlePermanentAuthFailure() {
-    _isEnabled = false;
-    _clearAllBuffers();
-    permanentUploadLossNotifier.value = true;
-    _onPermanentDisable?.call();
+    disable();
   }
 
   void dispose() {
     _isUploading = false;
     _uploadQueue.clear();
+    _uploadSuccessController.close();
   }
 } 

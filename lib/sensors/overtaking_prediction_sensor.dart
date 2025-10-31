@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -24,10 +23,9 @@ class OvertakingPredictionSensor extends Sensor {
   OvertakingPredictionSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc,
       RecordingBloc recordingBloc,
-      SettingsBloc settingsBloc,
       IsarService isarService)
       : super(sensorCharacteristicUuid, "overtaking", [], bleBloc,
-            geolocationBloc, recordingBloc, settingsBloc, isarService);
+            geolocationBloc, recordingBloc, isarService);
 
   @override
   void onDataReceived(List<double> data) {
