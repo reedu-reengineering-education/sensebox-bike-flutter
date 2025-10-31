@@ -6,7 +6,7 @@ import 'package:sensebox_bike/models/sensor_batch.dart';
 import 'package:sensebox_bike/models/upload_batch.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
-import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/upload_error_classifier.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 
@@ -107,13 +107,13 @@ class DirectUploadService {
       final geoIds = removedBatch.geoLocationIds;
       _uploadSuccessController.add(geoIds);
     } catch (e, st) {
-      if (e is TooManyRequestsException) {
+      final errorType = UploadErrorClassifier.classifyError(e);
+      
+      if (errorType == UploadErrorType.temporary) {
         return;
       }
       
-      if (e
-          .toString()
-          .contains('Authentication failed - user needs to re-login')) {
+      if (errorType == UploadErrorType.permanentAuth) {
         ErrorService.handleError('Authentication error: $e', st,
             sendToSentry: false);
         _removeFirstBatch();
