@@ -23,6 +23,10 @@ class DirectUploadService {
   
   bool _isEnabled = false;
   bool _isUploading = false;
+  
+  /// Maximum number of SensorBatch objects allowed in the queue
+  /// This prevents unbounded memory growth during API outages
+  static const int maxQueueSize = 1000;
 
   DirectUploadService({
     required this.openSenseMapService,
@@ -45,6 +49,11 @@ class DirectUploadService {
 
   bool get isEnabled => _isEnabled;
   bool get hasPreservedData => _uploadQueue.isNotEmpty;
+  
+  /// Get total number of SensorBatch objects in the queue
+  int get _totalBatchesInQueue {
+    return _uploadQueue.fold(0, (sum, ub) => sum + ub.batches.length);
+  }
 
   void queueBatchesForUpload(List<SensorBatch> batches) {
     if (!_isEnabled || batches.isEmpty) {
@@ -112,12 +121,34 @@ class DirectUploadService {
         createdAt: DateTime.now(),
       );
 
+      // Check if adding these batches would exceed the queue limit
+      final currentTotal = _totalBatchesInQueue;
+      final newTotal = currentTotal + batchesToAdd.length;
+      
+      if (newTotal > maxQueueSize) {
+        final batchesToRemove = newTotal - maxQueueSize;
+        debugPrint(
+            '[DirectUploadService] queueBatchesForUpload: Queue limit ($maxQueueSize) would be exceeded. Current: $currentTotal, Adding: ${batchesToAdd.length}, Need to remove: $batchesToRemove');
+        
+        // Remove oldest UploadBatches until we have room
+        int removedCount = 0;
+        while (_uploadQueue.isNotEmpty && removedCount < batchesToRemove) {
+          final oldestBatch = _uploadQueue.removeAt(0);
+          removedCount += oldestBatch.batches.length;
+          debugPrint(
+              '[DirectUploadService] queueBatchesForUpload: Removed oldest UploadBatch with ${oldestBatch.batches.length} batches (geoIds: ${oldestBatch.geoLocationIds})');
+        }
+        
+        debugPrint(
+            '[DirectUploadService] queueBatchesForUpload: Removed $removedCount batches to make room. New queue size: ${_totalBatchesInQueue}');
+      }
+
       _uploadQueue.add(uploadBatch);
       debugPrint(
-          '[DirectUploadService] queueBatchesForUpload: Added ${batchesToAdd.length} new batches to queue. Queue size: ${_uploadQueue.length}, total batches in queue: ${_uploadQueue.fold(0, (sum, ub) => sum + ub.batches.length)}');
+          '[DirectUploadService] queueBatchesForUpload: Added ${batchesToAdd.length} new batches to queue. Queue size: ${_uploadQueue.length}, total batches in queue: ${_totalBatchesInQueue}');
     } else {
       debugPrint(
-          '[DirectUploadService] queueBatchesForUpload: All batches merged into existing UploadBatches. Queue size: ${_uploadQueue.length}, total batches in queue: ${_uploadQueue.fold(0, (sum, ub) => sum + ub.batches.length)}');
+          '[DirectUploadService] queueBatchesForUpload: All batches merged into existing UploadBatches. Queue size: ${_uploadQueue.length}, total batches in queue: ${_totalBatchesInQueue}');
     }
 
     if (openSenseMapService.isAcceptingRequests && !_isUploading) {
@@ -169,8 +200,7 @@ class DirectUploadService {
 
     _isUploading = true;
     final queueSizeBefore = _uploadQueue.length;
-    final totalBatchesBefore =
-        _uploadQueue.fold(0, (sum, ub) => sum + ub.batches.length);
+    final totalBatchesBefore = _totalBatchesInQueue;
 
     try {
       // Collect all batches from all UploadBatches and merge by geoId
@@ -297,8 +327,7 @@ class DirectUploadService {
     } finally {
       _isUploading = false;
       final queueSizeAfter = _uploadQueue.length;
-      final totalBatchesAfter =
-          _uploadQueue.fold(0, (sum, ub) => sum + ub.batches.length);
+      final totalBatchesAfter = _totalBatchesInQueue;
       debugPrint(
           '[DirectUploadService] _tryUpload: FINISHED - Queue: $queueSizeBefore -> $queueSizeAfter, Total batches: $totalBatchesBefore -> $totalBatchesAfter');
     }
@@ -318,10 +347,9 @@ class DirectUploadService {
       }
       return;
     }
-    
+
     final queueSizeBefore = _uploadQueue.length;
-    final totalBatchesBefore =
-        _uploadQueue.fold(0, (sum, ub) => sum + ub.batches.length);
+    final totalBatchesBefore = _totalBatchesInQueue;
     debugPrint(
         '[DirectUploadService] _uploadAllQueued: Starting - Queue size: $queueSizeBefore, Total batches: $totalBatchesBefore');
     

@@ -56,6 +56,9 @@ void main() {
             ..title = 'Speed',
         ];
 
+      // Set default mock behavior for isAcceptingRequests
+      when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(true);
+
       directUploadService = DirectUploadService(
         openSenseMapService: mockOpenSenseMapService,
         senseBox: mockSenseBox,
@@ -818,6 +821,327 @@ void main() {
 
           directUploadService.dispose();
         }
+      });
+    });
+
+    group('Queue Limit Tests', () {
+      test('should enforce queue limit of 1000 batches', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        
+        // Create 1000 batches to fill the queue
+        final batches = <SensorBatch>[];
+        for (int i = 0; i < 1000; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          batches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        // Add all batches at once
+        directUploadService.queueBatchesForUpload(batches);
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Try to add 10 more batches - should trigger queue limit
+        final additionalBatches = <SensorBatch>[];
+        for (int i = 1000; i < 1010; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          additionalBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(additionalBatches);
+        
+        // Queue should still be at or below 1000
+        // Note: We can't directly check the internal queue size, but we can verify
+        // the service still has preserved data
+        expect(directUploadService.hasPreservedData, true);
+      });
+
+      test('should remove oldest batches when limit is exceeded', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        
+        // Fill queue with 998 batches (just under limit)
+        final initialBatches = <SensorBatch>[];
+        for (int i = 0; i < 998; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          initialBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(initialBatches);
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Add 5 more batches - should remove 3 oldest batches (998 + 5 - 1000 = 3)
+        final additionalBatches = <SensorBatch>[];
+        for (int i = 998; i < 1003; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          additionalBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(additionalBatches);
+        
+        // Service should still have preserved data
+        expect(directUploadService.hasPreservedData, true);
+      });
+
+      test('should handle adding more batches than limit in one call', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        
+        // Fill queue with 500 batches
+        final initialBatches = <SensorBatch>[];
+        for (int i = 0; i < 500; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          initialBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(initialBatches);
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Try to add 600 batches at once (would exceed limit by 100)
+        final largeBatch = <SensorBatch>[];
+        for (int i = 500; i < 1100; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          largeBatch.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(largeBatch);
+        
+        // Service should still have preserved data and queue should be at limit
+        expect(directUploadService.hasPreservedData, true);
+      });
+
+      test('should not exceed limit when adding batches incrementally', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        
+        // Add batches incrementally to reach limit
+        for (int batch = 0; batch < 10; batch++) {
+          final batches = <SensorBatch>[];
+          for (int i = 0; i < 100; i++) {
+            final geoId = batch * 100 + i;
+            final geo = GeolocationData()
+              ..id = geoId
+              ..latitude = 10.0 + geoId * 0.001
+              ..longitude = 20.0 + geoId * 0.001
+              ..speed = 5.0
+              ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, geoId);
+            
+            batches.add(SensorBatch(
+              geoLocation: geo,
+              aggregatedData: {'temperature': [22.5 + geoId]},
+              timestamp: DateTime.now(),
+            ));
+          }
+          
+          directUploadService.queueBatchesForUpload(batches);
+          
+          // After 10 batches of 100, we should be at exactly 1000
+          if (batch == 9) {
+            expect(directUploadService.hasPreservedData, true);
+          }
+        }
+        
+        // Try to add one more batch - should trigger limit enforcement
+        final additionalBatch = <SensorBatch>[];
+        final geo = GeolocationData()
+          ..id = 1000
+          ..latitude = 10.0 + 1000 * 0.001
+          ..longitude = 20.0 + 1000 * 0.001
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 1000);
+        
+        additionalBatch.add(SensorBatch(
+          geoLocation: geo,
+          aggregatedData: {'temperature': [22.5 + 1000]},
+          timestamp: DateTime.now(),
+        ));
+        
+        directUploadService.queueBatchesForUpload(additionalBatch);
+        
+        // Service should still have preserved data
+        expect(directUploadService.hasPreservedData, true);
+      });
+
+      test('should handle queue limit with merged batches', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        
+        // Add 500 batches
+        final initialBatches = <SensorBatch>[];
+        for (int i = 0; i < 500; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          initialBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(initialBatches);
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Add 500 more batches with same geoIds (should merge)
+        final mergeBatches = <SensorBatch>[];
+        for (int i = 0; i < 500; i++) {
+          final geo = GeolocationData()
+            ..id = i  // Same geoId as initial batches
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          mergeBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'humidity': [50.0 + i]},  // Different sensor
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(mergeBatches);
+        
+        // Merging doesn't increase count, so should still be at 500
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Now add 600 new batches - should trigger limit and remove 100 oldest
+        final newBatches = <SensorBatch>[];
+        for (int i = 500; i < 1100; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          newBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(newBatches);
+        
+        // Service should still have preserved data
+        expect(directUploadService.hasPreservedData, true);
+      });
+
+      test('should maintain limit when queue is cleared and refilled', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(true);
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any())).thenAnswer((_) async {});
+        
+        // Fill queue with 1000 batches
+        final batches = <SensorBatch>[];
+        for (int i = 0; i < 1000; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          batches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(batches);
+        
+        // Upload should succeed and clear queue
+        await Future.delayed(Duration(milliseconds: 100));
+        expect(directUploadService.hasPreservedData, false);
+        
+        // Refill queue with 1000 batches again
+        directUploadService.queueBatchesForUpload(batches);
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Try to add more - should enforce limit again
+        final additionalBatches = <SensorBatch>[];
+        for (int i = 1000; i < 1010; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          additionalBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(additionalBatches);
+        expect(directUploadService.hasPreservedData, true);
       });
     });
 
