@@ -84,7 +84,6 @@ class GeolocationBloc with ChangeNotifier {
         }
         _lastEmittedPosition = geolocationData;
 
-        // Reset stationary timer since we got a new position
         _resetStationaryLocationTimer();
 
         if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
@@ -119,8 +118,6 @@ class GeolocationBloc with ChangeNotifier {
         notifyListeners();
       });
       
-      // Start timer to emit periodic location updates when stationary
-      // This ensures sensors can upload data even when GPS isn't updating
       _startStationaryLocationTimer();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
@@ -148,15 +145,11 @@ class GeolocationBloc with ChangeNotifier {
       if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
         geolocationData.track.value = recordingBloc.currentTrack;
         
-        // Save geolocation immediately to get an ID so sensors can use it
-        // This is critical for direct upload to work when phone is stationary
         try {
           final savedId = await isarService.geolocationService
               .saveGeolocationData(geolocationData);
           geolocationData.id = savedId;
-          debugPrint('[GeolocationBloc] getCurrentLocationAndEmit: Saved initial location with id=$savedId');
 
-          // Save GPS speed as SensorData for consistent UI display
           final gpsSpeedSensorData =
               createGpsSpeedSensorData(geolocationData);
           if (shouldStoreSensorData(gpsSpeedSensorData)) {
@@ -164,13 +157,10 @@ class GeolocationBloc with ChangeNotifier {
               await isarService.sensorService
                   .saveSensorData(gpsSpeedSensorData);
             } catch (e) {
-              // Continue on error
             }
           }
         } catch (e) {
-          // Set id to 0 on failure so sensors skip this point
           geolocationData.id = 0;
-          debugPrint('[GeolocationBloc] getCurrentLocationAndEmit: Failed to save location: $e');
         }
       }
 
@@ -180,14 +170,10 @@ class GeolocationBloc with ChangeNotifier {
       _geolocationController.add(geolocationData);
       notifyListeners();
     } catch (e, stack) {
-      debugPrint('[GeolocationBloc] getCurrentLocationAndEmit: Error getting location: $e');
       ErrorService.handleError(e, stack);
     }
   }
 
-  /// Start a timer that periodically emits the last known location
-  /// when the device is stationary. This ensures sensors can upload data
-  /// even when GPS isn't providing new updates.
   void _startStationaryLocationTimer() {
     _stopStationaryLocationTimer();
     
@@ -195,8 +181,6 @@ class GeolocationBloc with ChangeNotifier {
       return;
     }
     
-    // Emit location every 20 seconds when stationary
-    // This allows sensors to flush and upload data regularly
     _stationaryLocationTimer = Timer.periodic(const Duration(seconds: 20), (timer) async {
       if (!recordingBloc.isRecording) {
         _stopStationaryLocationTimer();
@@ -204,7 +188,6 @@ class GeolocationBloc with ChangeNotifier {
       }
       
       if (_lastEmittedPosition != null) {
-        // Create a new geolocation with updated timestamp
         final geolocationData = GeolocationData()
           ..latitude = _lastEmittedPosition!.latitude
           ..longitude = _lastEmittedPosition!.longitude
@@ -218,28 +201,23 @@ class GeolocationBloc with ChangeNotifier {
             final savedId = await isarService.geolocationService
                 .saveGeolocationData(geolocationData);
             geolocationData.id = savedId;
-            debugPrint('[GeolocationBloc] Stationary timer: Emitting location id=$savedId (stationary update)');
           } catch (e) {
             geolocationData.id = 0;
-            debugPrint('[GeolocationBloc] Stationary timer: Failed to save location: $e');
           }
         }
         
         _geolocationController.add(geolocationData);
         notifyListeners();
       } else {
-        // No last position yet, try to get current location
         try {
           await getCurrentLocationAndEmit();
         } catch (e) {
-          debugPrint('[GeolocationBloc] Stationary timer: Failed to get location: $e');
         }
       }
     });
   }
   
   void _resetStationaryLocationTimer() {
-    // Restart timer when new position arrives
     _startStationaryLocationTimer();
   }
   
