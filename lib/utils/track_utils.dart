@@ -213,40 +213,29 @@ class UploadDataPreparer {
   UploadDataPreparer({required this.senseBox});
 
   Map<String, dynamic> prepareDataFromBatches(List<SensorBatch> batches) {
-    debugPrint('[UploadDataPreparer] prepareDataFromBatches: INPUT - ${batches.length} batches');
     final groupedData = <GeolocationData, Map<String, List<double>>>{};
     for (final batch in batches) {
-      final geoId = batch.geoLocation.id;
-      final sensors = batch.sensorTitles;
-      final dataPoints = batch.totalDataPoints;
-      debugPrint('[UploadDataPreparer] prepareDataFromBatches: Processing batch geoId=$geoId, sensors=$sensors, dataPoints=$dataPoints');
       
       // Check if this geoLocation already exists in groupedData
       final alreadyExists = groupedData.containsKey(batch.geoLocation);
       if (alreadyExists) {
-        debugPrint('[UploadDataPreparer] prepareDataFromBatches: WARNING - geoId $geoId already exists in groupedData! Overwriting with new data. Existing sensors: ${groupedData[batch.geoLocation]!.keys.toList()}, New sensors: $sensors');
       }
       
       groupedData[batch.geoLocation] = batch.aggregatedData;
-      debugPrint('[UploadDataPreparer] prepareDataFromBatches: Added geoId=$geoId to groupedData with sensors: ${batch.aggregatedData.keys.toList()}');
     }
     
     final uniqueGeoIds = groupedData.keys.map((g) => g.id).toList();
-    debugPrint('[UploadDataPreparer] prepareDataFromBatches: OUTPUT - ${groupedData.length} unique geolocations (geoIds: $uniqueGeoIds)');
     return prepareDataFromGroupedData(groupedData, groupedData.keys.toList());
   }
 
   Map<String, dynamic> prepareDataFromGroupedData(
       Map<GeolocationData, Map<String, List<double>>> groupedData,
       List<GeolocationData> gpsBuffer) {
-    debugPrint('[UploadDataPreparer] prepareDataFromGroupedData: INPUT - ${groupedData.length} geolocations, ${gpsBuffer.length} GPS points');
     final geoIds = gpsBuffer.map((g) => g.id).toList();
-    debugPrint('[UploadDataPreparer] prepareDataFromGroupedData: GPS buffer geoIds: $geoIds');
     
     final Map<String, dynamic> data = {};
 
     if (gpsBuffer.isEmpty) {
-      debugPrint('[UploadDataPreparer] prepareDataFromGroupedData: GPS buffer is EMPTY, returning empty data');
       return data;
     }
 
@@ -361,12 +350,6 @@ class UploadDataPreparer {
         }
       }
     }
-
-    final finalDataKeys = data.keys.length;
-    debugPrint('[UploadDataPreparer] prepareDataFromGroupedData: OUTPUT - $finalDataKeys data entries');
-    final speedKeys = data.keys.where((k) => k.startsWith('speed_')).length;
-    final sensorKeys = data.keys.where((k) => !k.startsWith('speed_')).length;
-    debugPrint('[UploadDataPreparer] prepareDataFromGroupedData: Data breakdown - speed entries: $speedKeys, sensor entries: $sensorKeys');
     return data;
   }
 

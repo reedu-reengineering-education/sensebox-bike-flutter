@@ -49,7 +49,6 @@ abstract class Sensor {
   int get uiPriority;
 
   void setDirectUploadService(DirectUploadService uploadService) {
-    debugPrint('[Sensor:$title] setDirectUploadService: Setting direct upload service (enabled: ${uploadService.isEnabled})');
     _directUploadService = uploadService;
     
     _uploadSuccessSubscription?.cancel();
@@ -59,6 +58,7 @@ abstract class Sensor {
         final batch = _sensorBatches[geoId];
         if (batch != null) {
           batch.isUploaded = true;
+          batch.isUploadPending = false;
           _sensorBatches.remove(geoId);
         }
       }
@@ -68,7 +68,6 @@ abstract class Sensor {
   void onDataReceived(List<double> data) {
     if (data.isNotEmpty && recordingBloc.isRecording) {
       _preGpsValues.add(data);
-      debugPrint('[Sensor:$title] onDataReceived: Received ${data.length} values (preGpsValues count: ${_preGpsValues.length})');
     }
     
     _valueController.add(data);
@@ -84,13 +83,11 @@ abstract class Sensor {
 
       _geoSubscription = geolocationBloc.geolocationStream.listen((geo) async {
         final geoId = geo.id;
-        debugPrint('[Sensor:$title] Geolocation received: geoId=$geoId, preGpsValues=${_preGpsValues.length}, recording=${recordingBloc.isRecording}');
 
         await _flushBuffers();
 
         if (_preGpsValues.isNotEmpty) {
           final aggregated = aggregateData(_preGpsValues);
-          debugPrint('[Sensor:$title] Aggregating ${_preGpsValues.length} preGpsValues into batch for geoId=$geoId');
           
           _sensorBatches.putIfAbsent(
             geoId,
@@ -143,7 +140,9 @@ abstract class Sensor {
   }
 
   Future<void> _flushBuffers() async {
-    if (_sensorBatches.isEmpty) {
+    final isRecording = recordingBloc.isRecording;
+
+    if (_sensorBatches.isEmpty && _preGpsValues.isEmpty) {
       return;
     }
 
@@ -153,8 +152,24 @@ abstract class Sensor {
     _isFlushing = true;
 
     try {
+      if (_preGpsValues.isNotEmpty &&
+          !isRecording &&
+          _sensorBatches.isNotEmpty) {
+        final lastBatch = _sensorBatches.values.last;
+        if (lastBatch.geoLocation.id != Isar.autoIncrement &&
+            lastBatch.geoLocation.id != 0) {
+          final aggregated = aggregateData(_preGpsValues);
+          lastBatch.aggregatedData[title] = aggregated;
+          _preGpsValues.clear();
+        }
+      }
+
       final batchesToProcess = _sensorBatches.values
-          .where((b) => !b.isSavedToDb && !b.isUploaded)
+          .where((b) =>
+              !b.isUploaded &&
+              (!b.isSavedToDb ||
+                  (_directUploadService != null &&
+                      _directUploadService!.isEnabled)))
           .toList();
 
       if (batchesToProcess.isEmpty) {
@@ -198,7 +213,7 @@ abstract class Sensor {
             ..geolocationData.value = geolocation);
         }
 
-        if (recordingBloc.isRecording) {
+        if (_directUploadService != null && _directUploadService!.isEnabled) {
           uploadData[geolocation] = {title: sensorData};
         }
 
@@ -220,39 +235,28 @@ abstract class Sensor {
         }
       }
 
-      // Diagnostic logging for direct upload
-      if (_directUploadService == null) {
-        debugPrint('[Sensor:$title] _flushBuffers: DirectUploadService is NULL');
-      } else if (!recordingBloc.isRecording) {
-        debugPrint('[Sensor:$title] _flushBuffers: Recording is NOT active');
-      } else if (uploadData.isEmpty) {
-        debugPrint('[Sensor:$title] _flushBuffers: uploadData is EMPTY (no sensor data to upload)');
-      } else if (!_directUploadService!.isEnabled) {
-        debugPrint('[Sensor:$title] _flushBuffers: DirectUploadService is DISABLED');
-      } else {
-        debugPrint('[Sensor:$title] _flushBuffers: Conditions met - checking batches. uploadData keys: ${uploadData.keys.length}, geoIdsToSave: $geoIdsToSave');
-      }
-
-      if (_directUploadService != null &&
-          recordingBloc.isRecording &&
+      final canUpload = _directUploadService != null &&
           uploadData.isNotEmpty &&
-          _directUploadService!.isEnabled) {
-        
+          _directUploadService!.isEnabled;
+
+      if (canUpload) {
         final batchRefs = geoIdsToSave
             .map((id) => _sensorBatches[id])
-            .where((b) => b != null && !b.isUploadPending && !b.isUploaded)
+            .where((b) => b != null && !b.isUploaded)
             .cast<SensorBatch>()
             .toList();
+        
+        for (final batch in batchRefs) {
+          if (batch.isUploadPending) {
+            batch.isUploadPending = false;
+          }
+        }
 
         if (batchRefs.isNotEmpty) {
-          debugPrint('[Sensor:$title] _flushBuffers: Calling queueBatchesForUpload with ${batchRefs.length} batches');
           _directUploadService!.queueBatchesForUpload(batchRefs);
-        } else {
-          debugPrint('[Sensor:$title] _flushBuffers: batchRefs is EMPTY (all batches already uploaded/pending)');
         }
       }
     } catch (e) {
-      debugPrint('[Sensor:$title] Error in _flushBuffers: $e');
     } finally {
       _isFlushing = false;
     }
