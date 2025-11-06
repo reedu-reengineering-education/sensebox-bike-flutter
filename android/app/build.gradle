@@ -12,7 +12,7 @@ dependencies {
 android {
     namespace = "de.reedu.senseboxbike"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
@@ -44,68 +44,25 @@ android {
 
     signingConfigs {
         release {
-            def cmKeystorePath = System.getenv()["CM_KEYSTORE_PATH"]
-            def cmKeystorePassword = System.getenv()["CM_KEYSTORE_PASSWORD"]
-            def cmKeyAlias = System.getenv()["CM_KEY_ALIAS"]
-            def cmKeyPassword = System.getenv()["CM_KEY_PASSWORD"]
-            
-            // Use Codemagic variables if available, otherwise fall back to key.properties
-            if (cmKeystorePath && cmKeystorePassword && cmKeyAlias && cmKeyPassword) {
-                // CI=true is exported by Codemagic
-                storeFile file(cmKeystorePath)
-                storePassword cmKeystorePassword
-                keyAlias cmKeyAlias
-                keyPassword cmKeyPassword
+              if (System.getenv()["CI"]) { // CI=true is exported by Codemagic
+                storeFile file(System.getenv()["CM_KEYSTORE_PATH"])
+                storePassword System.getenv()["CM_KEYSTORE_PASSWORD"]
+                keyAlias System.getenv()["CM_KEY_ALIAS"]
+                keyPassword System.getenv()["CM_KEY_PASSWORD"]
             } else {
-                // Fall back to key.properties (used by GitHub Actions and local builds)
-                def storeFileProp = keystoreProperties['storeFile']
-                def keyAliasProp = keystoreProperties['keyAlias']
-                def keyPasswordProp = keystoreProperties['keyPassword']
-                def storePasswordProp = keystoreProperties['storePassword']
-                
-                // Only set signing config if all properties are present and non-empty (after trimming)
-                def storeFileStr = storeFileProp ? ("" + storeFileProp).trim() : ""
-                def keyAliasStr = keyAliasProp ? ("" + keyAliasProp).trim() : ""
-                def keyPasswordStr = keyPasswordProp ? ("" + keyPasswordProp).trim() : ""
-                def storePasswordStr = storePasswordProp ? ("" + storePasswordProp).trim() : ""
-                
-                if (storeFileStr && keyAliasStr && keyPasswordStr && storePasswordStr) {
-                    storeFile file(storeFileStr)
-                    storePassword storePasswordStr
-                    keyAlias keyAliasStr
-                    keyPassword keyPasswordStr
-                }
-                // If properties are missing or empty, signing config will remain null
-                // This is handled in buildTypes.release below
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                storePassword keystoreProperties['storePassword']
             }
         }
     }
 
     buildTypes {
         release {
-            // Enable code shrinking and resource shrinking to reduce APK size
-            minifyEnabled true
-            shrinkResources true
-            
-            // Use release signing if configured, otherwise fall back to debug signing for local testing
-            if (signingConfigs.release.storeFile != null) {
-                signingConfig = signingConfigs.release
-            } else {
-                // Fall back to debug signing when no keystore is configured (for local testing only)
-                signingConfig = signingConfigs.debug
-            }
-        }
-    }
-    
-    // Exclude x86 and x86_64 architectures to reduce APK size
-    // Most Android devices use ARM (arm64-v8a or armeabi-v7a)
-    // x86/x86_64 are mainly for emulators
-    splits {
-        abi {
-            enable true
-            reset()
-            include 'armeabi-v7a', 'arm64-v8a'
-            universalApk false
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
+            signingConfig = signingConfigs.release
         }
     }
 }
