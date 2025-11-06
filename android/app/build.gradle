@@ -50,18 +50,41 @@ android {
             def cmKeyPassword = System.getenv()["CM_KEY_PASSWORD"]
             
             // Use Codemagic variables if available, otherwise fall back to key.properties
-            if (cmKeystorePath && cmKeystorePassword && cmKeyAlias && cmKeyPassword) {
+            def cmPath = cmKeystorePath ? ("" + cmKeystorePath).trim() : ""
+            def cmPassword = cmKeystorePassword ? ("" + cmKeystorePassword).trim() : ""
+            def cmAlias = cmKeyAlias ? ("" + cmKeyAlias).trim() : ""
+            def cmKeyPass = cmKeyPassword ? ("" + cmKeyPassword).trim() : ""
+            
+            def hasCodemagicVars = cmPath && cmPassword && cmAlias && cmKeyPass
+            
+            if (hasCodemagicVars) {
                 // CI=true is exported by Codemagic
-                storeFile file(cmKeystorePath)
-                storePassword cmKeystorePassword
-                keyAlias cmKeyAlias
-                keyPassword cmKeyPassword
+                storeFile file(cmPath)
+                storePassword cmPassword
+                keyAlias cmAlias
+                keyPassword cmKeyPass
             } else {
                 // Fall back to key.properties (used by GitHub Actions and local builds)
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-                storePassword keystoreProperties['storePassword']
+                def storeFileProp = keystoreProperties['storeFile']
+                def keyAliasProp = keystoreProperties['keyAlias']
+                def keyPasswordProp = keystoreProperties['keyPassword']
+                def storePasswordProp = keystoreProperties['storePassword']
+                
+                def storeFileStr = storeFileProp ? ("" + storeFileProp).trim() : ""
+                def keyAliasStr = keyAliasProp ? ("" + keyAliasProp).trim() : ""
+                def keyPasswordStr = keyPasswordProp ? ("" + keyPasswordProp).trim() : ""
+                def storePasswordStr = storePasswordProp ? ("" + storePasswordProp).trim() : ""
+                
+                def hasKeyProperties = storeFileStr && keyAliasStr && keyPasswordStr && storePasswordStr
+                
+                if (hasKeyProperties) {
+                    storeFile file(storeFileStr)
+                    storePassword storePasswordStr
+                    keyAlias keyAliasStr
+                    keyPassword keyPasswordStr
+                }
+                // If neither Codemagic vars nor key.properties are valid, signing config will be null/empty
+                // This is fine - Gradle will skip signing or use debug signing
             }
         }
     }
