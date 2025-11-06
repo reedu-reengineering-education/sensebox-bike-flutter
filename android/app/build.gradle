@@ -44,12 +44,20 @@ android {
 
     signingConfigs {
         release {
-              if (System.getenv()["CI"]) { // CI=true is exported by Codemagic
-                storeFile file(System.getenv()["CM_KEYSTORE_PATH"])
-                storePassword System.getenv()["CM_KEYSTORE_PASSWORD"]
-                keyAlias System.getenv()["CM_KEY_ALIAS"]
-                keyPassword System.getenv()["CM_KEY_PASSWORD"]
+            def cmKeystorePath = System.getenv()["CM_KEYSTORE_PATH"]
+            def cmKeystorePassword = System.getenv()["CM_KEYSTORE_PASSWORD"]
+            def cmKeyAlias = System.getenv()["CM_KEY_ALIAS"]
+            def cmKeyPassword = System.getenv()["CM_KEY_PASSWORD"]
+            
+            // Use Codemagic variables if available, otherwise fall back to key.properties
+            if (cmKeystorePath && cmKeystorePassword && cmKeyAlias && cmKeyPassword) {
+                // CI=true is exported by Codemagic
+                storeFile file(cmKeystorePath)
+                storePassword cmKeystorePassword
+                keyAlias cmKeyAlias
+                keyPassword cmKeyPassword
             } else {
+                // Fall back to key.properties (used by GitHub Actions and local builds)
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
                 storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
