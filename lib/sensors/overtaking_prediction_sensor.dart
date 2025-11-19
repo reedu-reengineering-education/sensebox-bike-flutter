@@ -39,6 +39,7 @@ class OvertakingPredictionSensor extends Sensor {
   @override
   List<double> aggregateData(List<List<double>> valueBuffer) {
     List<double> myValues = valueBuffer.map((e) => e[0]).toList();
+
     return [myValues.reduce(max)];
   }
 
@@ -48,9 +49,10 @@ class OvertakingPredictionSensor extends Sensor {
       valueStream: valueStream,
       initialValue: _latestPrediction,
       latestValue: _latestPrediction,
-      decimalPlaces: 0,
+      decimalPlaces: 4,
       builder: (context, value) {
         double displayValue = value[0];
+
         return SensorCard(
           title: AppLocalizations.of(context)!.sensorOvertakingShort,
           icon: getSensorIcon(title),
