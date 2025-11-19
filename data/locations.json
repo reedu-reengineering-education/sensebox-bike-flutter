@@ -18,5 +18,9 @@
       {
         "label": "Jena",
         "value": "jena"
+      },
+      {
+        "label": "Sao Paulo",
+        "value": "saopaulo"
       }
 ]
