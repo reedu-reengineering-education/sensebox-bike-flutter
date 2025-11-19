@@ -5,7 +5,7 @@ import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/chunk_upload_result.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
-import 'package:sensebox_bike/services/direct_upload_service.dart';
+import 'package:sensebox_bike/services/upload_error_classifier.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 
@@ -123,8 +123,6 @@ class ChunkedUploader {
     SenseBox senseBox,
     int chunkIndex,
   ) async {
-    final timestamp = DateTime.now().toIso8601String();
-
     try {
       if (chunk.isEmpty) {
         _logInfo('Empty chunk', 'Chunk $chunkIndex is empty, skipping upload',

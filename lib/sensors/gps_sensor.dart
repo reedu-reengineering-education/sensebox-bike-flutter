@@ -4,7 +4,6 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -33,7 +32,6 @@ class GPSSensor extends Sensor {
   GPSSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc,
       RecordingBloc recordingBloc,
-      SettingsBloc settingsBloc,
       IsarService isarService)
       : super(
             sensorCharacteristicUuid,
@@ -42,7 +40,6 @@ class GPSSensor extends Sensor {
             bleBloc,
             geolocationBloc,
             recordingBloc,
-            settingsBloc,
             isarService) {
     // Set the access token for Mapbox
     MapboxOptions.setAccessToken(mapboxAccessToken);

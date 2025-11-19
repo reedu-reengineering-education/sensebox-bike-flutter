@@ -109,11 +109,8 @@ class RecordingBloc with ChangeNotifier {
       if (settingsBloc.directUploadMode) {
         _directUploadService = DirectUploadService(
             openSenseMapService: OpenSenseMapService(),
-            settingsBloc: settingsBloc,
             senseBox: _selectedSenseBox!,
-            openSenseMapBloc: openSenseMapBloc,
-            trackService: isarService.trackService,
-            trackId: _currentTrack!.id);
+            openSenseMapBloc: openSenseMapBloc);
       } else {
         _batchUploadService = BatchUploadService(
           openSenseMapService: OpenSenseMapService(),

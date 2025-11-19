@@ -100,13 +100,7 @@ class SensorBloc with ChangeNotifier {
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
       await directUploadService.uploadRemainingBufferedData();
-
-      for (var sensor in _sensors) {
-        sensor.clearBuffersOnRecordingStop();
-      }
-
       directUploadService.disable();
-
     }
   }
 
@@ -121,27 +115,27 @@ class SensorBloc with ChangeNotifier {
     final isarService = geolocationBloc.isarService;
 
     _sensors.add(TemperatureSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(
         HumiditySensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(
         DistanceSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(SurfaceClassificationSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(AccelerationSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(OvertakingPredictionSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(SurfaceAnomalySensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(
         FinedustSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors
         .add(GPSSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
   }
 
   void _startListening() {
