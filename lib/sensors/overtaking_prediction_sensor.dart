@@ -17,6 +17,13 @@ class OvertakingPredictionSensor extends Sensor {
   @override
   get uiPriority => 40;
 
+  /// Use a 1500ms (1.5 second) lookback window to capture sensor values that arrive
+  /// slightly before or after the geolocation timestamp.
+  /// This accounts for GPS timestamp accuracy, sensor transmission delays,
+  /// and clock synchronization differences.
+  @override
+  Duration get lookbackWindow => const Duration(milliseconds: 1500);
+
   static const String sensorCharacteristicUuid =
       'fc01c688-2c44-4965-ae18-373af9fed18d';
 
@@ -38,9 +45,20 @@ class OvertakingPredictionSensor extends Sensor {
 
   @override
   List<double> aggregateData(List<List<double>> valueBuffer) {
-    List<double> myValues = valueBuffer.map((e) => e[0]).toList();
+    if (valueBuffer.isEmpty) {
+      return [0.0];
+    }
 
-    return [myValues.reduce(max)];
+    List<double> myValues =
+        valueBuffer.map((e) => e.isNotEmpty ? e[0] : 0.0).toList();
+
+    if (myValues.isEmpty) {
+      return [0.0];
+    }
+
+    final maxValue = myValues.reduce(max);
+    
+    return [maxValue];
   }
 
   @override

@@ -20,6 +20,7 @@ import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
+import 'package:sensebox_bike/services/sensor_csv_logger_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/initial_screen.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -61,7 +62,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
   static bool _isInitialized = false;
 
   // Initialize all blocs and services once
-  static void _initializeBlocs() {
+  static Future<void> _initializeBlocs() async {
     if (_isInitialized) return; // Already initialized
 
     _settingsBloc = SettingsBloc();
@@ -77,6 +78,10 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
         _bleBloc!, _geolocationBloc!, _recordingBloc!, _settingsBloc!);
     _mapboxDrawController = MapboxDrawController();
 
+    // Initialize CSV logger service (logging starts/stops with recording)
+    final csvLogger = SensorCsvLoggerService();
+    await csvLogger.initialize();
+
     _isInitialized = true;
     debugPrint('Blocs initialized successfully');
   }
@@ -87,9 +92,10 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
 
     // Initialize blocs if they haven't been initialized yet
     if (!_isInitialized) {
-      _initializeBlocs();
-      // Trigger authentication check after blocs are initialized
-      _openSenseMapBloc?.performAuthenticationCheck();
+      _initializeBlocs().then((_) {
+        // Trigger authentication check after blocs are initialized
+        _openSenseMapBloc?.performAuthenticationCheck();
+      });
     }
 
     // Handle app links only once

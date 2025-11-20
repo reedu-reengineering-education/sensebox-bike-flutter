@@ -69,11 +69,12 @@ class GeolocationBloc with ChangeNotifier {
               .listen((Position position) async {
         
         // Create geolocation data object
+        // Ensure timestamp is stored in UTC for consistent comparison with sensor timestamps
         GeolocationData geolocationData = GeolocationData()
           ..latitude = position.latitude
           ..longitude = position.longitude
           ..speed = position.speed
-          ..timestamp = position.timestamp;
+          ..timestamp = position.timestamp.isUtc ? position.timestamp : position.timestamp.toUtc();
 
         // Filter duplicates (iOS often emits same position multiple times)
         if (_lastEmittedPosition != null &&
@@ -136,11 +137,12 @@ class GeolocationBloc with ChangeNotifier {
       final position = await getCurrentLocation();
 
       // Create geolocation data object
+      // Ensure timestamp is stored in UTC for consistent comparison with sensor timestamps
       GeolocationData geolocationData = GeolocationData()
         ..latitude = position.latitude
         ..longitude = position.longitude
         ..speed = position.speed
-        ..timestamp = position.timestamp;
+        ..timestamp = position.timestamp.isUtc ? position.timestamp : position.timestamp.toUtc();
 
       if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
         geolocationData.track.value = recordingBloc.currentTrack;
@@ -192,7 +194,8 @@ class GeolocationBloc with ChangeNotifier {
           ..latitude = _lastEmittedPosition!.latitude
           ..longitude = _lastEmittedPosition!.longitude
           ..speed = _lastEmittedPosition!.speed
-          ..timestamp = DateTime.now();
+          // Ensure timestamp is stored in UTC for consistent comparison with sensor timestamps
+          ..timestamp = DateTime.now().toUtc();
         
         if (recordingBloc.currentTrack != null) {
           geolocationData.track.value = recordingBloc.currentTrack;

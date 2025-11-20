@@ -16,6 +16,7 @@ import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
 import 'package:sensebox_bike/sensors/temperature_sensor.dart';
+import 'package:sensebox_bike/services/sensor_csv_logger_service.dart';
 
 class SensorBloc with ChangeNotifier {
   final BleBloc bleBloc;
@@ -80,6 +81,10 @@ class SensorBloc with ChangeNotifier {
   void _onRecordingStart() {
     _clearAllSensorBuffersForNewRecording();
     
+    // Start CSV logging
+    final csvLogger = SensorCsvLoggerService();
+    csvLogger.startLogging(_sensors);
+    
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
 
@@ -97,6 +102,10 @@ class SensorBloc with ChangeNotifier {
   }
 
   Future<void> _onRecordingStop() async {
+    // Stop CSV logging
+    final csvLogger = SensorCsvLoggerService();
+    await csvLogger.stopLogging();
+    
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
       await directUploadService.uploadRemainingBufferedData();
