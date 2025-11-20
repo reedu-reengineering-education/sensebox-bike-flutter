@@ -1,6 +1,8 @@
 // File: lib/blocs/sensor_bloc.dart
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -81,9 +83,17 @@ class SensorBloc with ChangeNotifier {
   void _onRecordingStart() {
     _clearAllSensorBuffersForNewRecording();
     
-    // Start CSV logging
-    final csvLogger = SensorCsvLoggerService();
-    csvLogger.startLogging(_sensors);
+    // Start CSV logging (only in debug mode if enabled in .env)
+    if (!kReleaseMode) {
+      final enableLogging = dotenv
+              .get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false')
+              .toLowerCase() ==
+          'true';
+      if (enableLogging) {
+        final csvLogger = SensorCsvLoggerService();
+        csvLogger.startLogging(_sensors);
+      }
+    }
     
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
@@ -102,9 +112,17 @@ class SensorBloc with ChangeNotifier {
   }
 
   Future<void> _onRecordingStop() async {
-    // Stop CSV logging
-    final csvLogger = SensorCsvLoggerService();
-    await csvLogger.stopLogging();
+    // Stop CSV logging (only in debug mode if enabled in .env)
+    if (!kReleaseMode) {
+      final enableLogging = dotenv
+              .get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false')
+              .toLowerCase() ==
+          'true';
+      if (enableLogging) {
+        final csvLogger = SensorCsvLoggerService();
+        await csvLogger.stopLogging();
+      }
+    }
     
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {

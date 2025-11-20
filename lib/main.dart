@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -79,8 +79,14 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     _mapboxDrawController = MapboxDrawController();
 
     // Initialize CSV logger service (logging starts/stops with recording)
-    final csvLogger = SensorCsvLoggerService();
-    await csvLogger.initialize();
+    // Only initialize if not in release mode and enabled in .env file
+    if (!kReleaseMode) {
+      final enableLogging = dotenv.get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false').toLowerCase() == 'true';
+      if (enableLogging) {
+        final csvLogger = SensorCsvLoggerService();
+        await csvLogger.initialize();
+      }
+    }
 
     _isInitialized = true;
     debugPrint('Blocs initialized successfully');

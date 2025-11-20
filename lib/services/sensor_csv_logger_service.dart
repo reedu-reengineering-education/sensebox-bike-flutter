@@ -298,6 +298,7 @@ class SensorCsvLoggerService {
     
     _buffer.clear();
     _currentFile = null;
+    _logDirectory = null;
     _isInitialized = false;
     
     debugPrint('SensorCsvLoggerService disposed');
