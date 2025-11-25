@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
+import 'package:sensebox_bike/models/timestamped_sensor_value.dart';
 
 /// Service that logs sensor data from streams to a single CSV file
 /// Logging starts when recording starts and stops when recording stops
@@ -14,12 +15,18 @@ class SensorCsvLoggerService {
   SensorCsvLoggerService._internal();
 
   final Map<String, StreamSubscription<List<double>>> _subscriptions = {};
+  final Map<String, StreamSubscription<TimestampedSensorValue>>
+      _timestampedSubscriptions = {};
   final List<String> _buffer = [];
   File? _currentFile;
   Directory? _logDirectory;
   bool _isLogging = false;
   bool _isInitialized = false;
   Timer? _flushTimer;
+  
+  // Track last logged entry per sensor to prevent duplicates
+  // Key: sensor name, Value: tuple of (timestamp in milliseconds, values string)
+  final Map<String, MapEntry<int, String>> _lastLoggedEntry = {};
 
   // Configuration
   static const int _bufferSize = 100; // Flush after 100 entries
@@ -85,6 +92,8 @@ class SensorCsvLoggerService {
 
     _isLogging = true;
     _buffer.clear();
+    _lastLoggedEntry
+        .clear(); // Clear duplicate tracking when starting new session
     _createCsvFile();
 
     // Subscribe to all sensor streams
@@ -106,6 +115,10 @@ class SensorCsvLoggerService {
       await subscription.cancel();
     }
     _subscriptions.clear();
+    for (final subscription in _timestampedSubscriptions.values) {
+      await subscription.cancel();
+    }
+    _timestampedSubscriptions.clear();
 
     // Flush remaining data
     await _flushBuffer();
@@ -117,32 +130,51 @@ class SensorCsvLoggerService {
   void _subscribeToSensor(Sensor sensor) {
     final sensorName = sensor.title;
     
-    // Cancel existing subscription if any
+    // Cancel existing subscriptions if any
     _subscriptions[sensorName]?.cancel();
+    _timestampedSubscriptions[sensorName]?.cancel();
 
-    // Subscribe to the sensor's value stream
-    final subscription = sensor.valueStream.listen(
-      (data) {
+    // Subscribe to the sensor's timestamped value stream (uses same timestamp as aggregation)
+    final timestampedSubscription = sensor.timestampedValueStream.listen(
+      (timestampedValue) {
         if (_isLogging) {
-          _logData(sensorName, data);
+          _logDataWithTimestamp(
+              sensorName, timestampedValue.values, timestampedValue.timestamp);
         }
       },
       onError: (error) {
-        debugPrint('Error in sensor stream for $sensorName: $error');
+        debugPrint(
+            'Error in timestamped sensor stream for $sensorName: $error');
       },
     );
 
-    _subscriptions[sensorName] = subscription;
+    _timestampedSubscriptions[sensorName] = timestampedSubscription;
   }
 
-  /// Log data to buffer
-  void _logData(String sensorName, List<double> data) {
+  /// Log data to buffer with provided timestamp (from aggregation)
+  void _logDataWithTimestamp(
+      String sensorName, List<double> data, DateTime timestamp) {
     if (!_isLogging || _currentFile == null) return;
 
-    final timestamp = DateTime.now().toUtc().toIso8601String();
+    final timestampUtc = timestamp.isUtc ? timestamp : timestamp.toUtc();
+    final timestampStr = timestampUtc.toIso8601String();
+    final timestampMs = timestampUtc.millisecondsSinceEpoch;
     final values = data.map((v) => v.toString()).join(',');
-    final csvLine = '$sensorName,$timestamp,$values';
-    
+    final csvLine = '$sensorName,$timestampStr,$values';
+
+    // Prevent duplicate entries: same sensor + same values within 10ms window
+    final lastEntry = _lastLoggedEntry[sensorName];
+    if (lastEntry != null) {
+      final timeDiff = (timestampMs - lastEntry.key).abs();
+      final sameValues = lastEntry.value == values;
+
+      // Skip if same values arrived within 10ms (likely duplicate)
+      if (sameValues && timeDiff < 10) {
+        return;
+      }
+    }
+
+    _lastLoggedEntry[sensorName] = MapEntry(timestampMs, values);
     _buffer.add(csvLine);
 
     // Flush if buffer is full
@@ -295,8 +327,13 @@ class SensorCsvLoggerService {
       await subscription.cancel();
     }
     _subscriptions.clear();
+    for (final subscription in _timestampedSubscriptions.values) {
+      await subscription.cancel();
+    }
+    _timestampedSubscriptions.clear();
     
     _buffer.clear();
+    _lastLoggedEntry.clear();
     _currentFile = null;
     _logDirectory = null;
     _isInitialized = false;

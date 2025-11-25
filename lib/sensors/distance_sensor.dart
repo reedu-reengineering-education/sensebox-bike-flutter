@@ -36,6 +36,9 @@ class DistanceSensor extends Sensor {
   }
 
   @override
+  Duration get lookbackWindow => const Duration(milliseconds: 2000);
+
+  @override
   List<double> aggregateData(List<List<double>> valueBuffer) {
     List<double> myValues = valueBuffer.map((e) => e[0]).toList();
     

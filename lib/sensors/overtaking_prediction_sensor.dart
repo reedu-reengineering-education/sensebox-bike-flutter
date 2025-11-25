@@ -22,7 +22,7 @@ class OvertakingPredictionSensor extends Sensor {
   /// This accounts for GPS timestamp accuracy, sensor transmission delays,
   /// and clock synchronization differences.
   @override
-  Duration get lookbackWindow => const Duration(milliseconds: 1500);
+  Duration get lookbackWindow => const Duration(milliseconds: 2000);
 
   static const String sensorCharacteristicUuid =
       'fc01c688-2c44-4965-ae18-373af9fed18d';
