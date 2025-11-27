@@ -1,6 +1,8 @@
 // File: lib/blocs/sensor_bloc.dart
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -16,6 +18,7 @@ import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
 import 'package:sensebox_bike/sensors/temperature_sensor.dart';
+import 'package:sensebox_bike/services/sensor_csv_logger_service.dart';
 
 class SensorBloc with ChangeNotifier {
   final BleBloc bleBloc;
@@ -80,6 +83,18 @@ class SensorBloc with ChangeNotifier {
   void _onRecordingStart() {
     _clearAllSensorBuffersForNewRecording();
     
+    // Start CSV logging (only in debug mode if enabled in .env)
+    if (!kReleaseMode) {
+      final enableLogging = dotenv
+              .get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false')
+              .toLowerCase() ==
+          'true';
+      if (enableLogging) {
+        final csvLogger = SensorCsvLoggerService();
+        csvLogger.startLogging(_sensors);
+      }
+    }
+    
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
 
@@ -97,16 +112,22 @@ class SensorBloc with ChangeNotifier {
   }
 
   Future<void> _onRecordingStop() async {
+    // Stop CSV logging (only in debug mode if enabled in .env)
+    if (!kReleaseMode) {
+      final enableLogging = dotenv
+              .get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false')
+              .toLowerCase() ==
+          'true';
+      if (enableLogging) {
+        final csvLogger = SensorCsvLoggerService();
+        await csvLogger.stopLogging();
+      }
+    }
+    
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
       await directUploadService.uploadRemainingBufferedData();
-
-      for (var sensor in _sensors) {
-        sensor.clearBuffersOnRecordingStop();
-      }
-
       directUploadService.disable();
-
     }
   }
 
@@ -121,27 +142,27 @@ class SensorBloc with ChangeNotifier {
     final isarService = geolocationBloc.isarService;
 
     _sensors.add(TemperatureSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(
         HumiditySensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(
         DistanceSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(SurfaceClassificationSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(AccelerationSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(OvertakingPredictionSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(SurfaceAnomalySensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(
         FinedustSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors
         .add(GPSSensor(
-        bleBloc, geolocationBloc, recordingBloc, settingsBloc, isarService));
+        bleBloc, geolocationBloc, recordingBloc, isarService));
   }
 
   void _startListening() {

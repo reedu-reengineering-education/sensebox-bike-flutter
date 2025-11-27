@@ -24,6 +24,7 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/track/sensor_tile_list.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:intl/intl.dart';
+import 'package:sensebox_bike/ui/widgets/common/sensor_gradient_widget.dart';
 
 class TrackDetailScreen extends StatefulWidget {
   final TrackData track;
@@ -609,8 +610,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       );
     }
 
-
-
     return Scaffold(
       appBar: AppBar(title: _buildAppBarTitle(_track)),
       body: SafeArea(
@@ -630,33 +629,11 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 ),
               ),
             ),
-            Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(children: [
-                  Container(
-                      height: 12,
-                      decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(20),
-                          ),
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: <Color>[
-                              Colors.green,
-                              Colors.orange,
-                              Colors.red,
-                            ], // Gradient from https://learnui.design/tools/gradient-generator.html
-                            tileMode: TileMode.mirror,
-                          ))),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Text(getMinSensorValue(_geolocations, _sensorType)
-                        .toStringAsFixed(1)),
-                    const Spacer(),
-                    Text(getMaxSensorValue(_geolocations, _sensorType)
-                        .toStringAsFixed(1))
-                  ])
-                ])),
+            SensorGradientWidget(
+              sensorType: _sensorType,
+              geolocations: _geolocations,
+              senseBox: openSenseMapBloc.selectedSenseBox,
+            ),
             SensorTileList(
               sensorData: _sensorData,
               selectedSensorType: _sensorType,

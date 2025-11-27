@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:retry/retry.dart';
-import 'package:sensebox_bike/services/direct_upload_service.dart';
+import 'package:sensebox_bike/services/upload_error_classifier.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 
 /// Manages retry logic for upload operations with exponential backoff

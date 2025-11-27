@@ -1,10 +1,12 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_batch.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
@@ -210,9 +212,27 @@ class UploadDataPreparer {
 
   UploadDataPreparer({required this.senseBox});
 
+  Map<String, dynamic> prepareDataFromBatches(List<SensorBatch> batches) {
+    final groupedData = <GeolocationData, Map<String, List<double>>>{};
+    for (final batch in batches) {
+      
+      // Check if this geoLocation already exists in groupedData
+      final alreadyExists = groupedData.containsKey(batch.geoLocation);
+      if (alreadyExists) {
+      }
+      
+      groupedData[batch.geoLocation] = batch.aggregatedData;
+    }
+    
+    final uniqueGeoIds = groupedData.keys.map((g) => g.id).toList();
+    return prepareDataFromGroupedData(groupedData, groupedData.keys.toList());
+  }
+
   Map<String, dynamic> prepareDataFromGroupedData(
       Map<GeolocationData, Map<String, List<double>>> groupedData,
       List<GeolocationData> gpsBuffer) {
+    final geoIds = gpsBuffer.map((g) => g.id).toList();
+    
     final Map<String, dynamic> data = {};
 
     if (gpsBuffer.isEmpty) {
@@ -330,7 +350,6 @@ class UploadDataPreparer {
         }
       }
     }
-
     return data;
   }
 

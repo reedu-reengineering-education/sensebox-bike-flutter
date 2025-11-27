@@ -66,6 +66,30 @@ To populate the app with sample data for development or testing, use the provide
 **Note:**
 Seeding will only affect your local Isar database and is safe for development and testing purposes.
 
+### Sensor CSV Logging
+
+The app includes a sensor CSV logging service that logs raw sensor data to CSV files during recording sessions. This feature is useful for debugging and data analysis.
+
+**Configuration:**
+
+1. **Set the logging flag** in your `.env` file:
+   ```
+   ENABLE_SENSOR_CSV_LOGGING=true
+   ```
+
+**Behavior:**
+
+*   **Release mode**: CSV logging is **always disabled** regardless of the `.env` setting for security and performance reasons.
+*   **Debug mode**: CSV logging respects the `ENABLE_SENSOR_CSV_LOGGING` value from the `.env` file.
+*   **Default**: If the variable is not set in `.env`, logging defaults to `false` (disabled).
+
+**Log File Location:**
+
+*   **Android**: `/storage/emulated/0/Download/sensebox_bike_sensor_logs/`
+*   **iOS**: App Documents directory (accessible via Files app)
+
+**Note:** Log files are created automatically when recording starts (if logging is enabled) and are named with timestamps: `sensor_data_YYYY-MM-DD_HH-mm-ss.csv`
+
 ## Troubleshooting
 
 If you run into issues while running the app, you can take the following troubleshooting steps:

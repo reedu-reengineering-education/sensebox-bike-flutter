@@ -33,6 +33,7 @@ class RecordingBloc with ChangeNotifier {
 
   // Context for showing upload modal
   BuildContext? _context;
+  DateTime? _lastRecordingStopTimestamp;
 
   bool get isRecording => _isRecording;
 
@@ -40,6 +41,7 @@ class RecordingBloc with ChangeNotifier {
 
   TrackData? get currentTrack => _currentTrack;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
+  DateTime? get lastRecordingStopTimestamp => _lastRecordingStopTimestamp;
 
   RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
       this.openSenseMapBloc, this.settingsBloc) {
@@ -93,6 +95,7 @@ class RecordingBloc with ChangeNotifier {
 
     _isRecording = true;
     _isRecordingNotifier.value = true;
+    _lastRecordingStopTimestamp = null;
     await trackBloc.startNewTrack(isDirectUpload: settingsBloc.directUploadMode);
 
     _currentTrack = trackBloc.currentTrack;
@@ -109,11 +112,8 @@ class RecordingBloc with ChangeNotifier {
       if (settingsBloc.directUploadMode) {
         _directUploadService = DirectUploadService(
             openSenseMapService: OpenSenseMapService(),
-            settingsBloc: settingsBloc,
             senseBox: _selectedSenseBox!,
-            openSenseMapBloc: openSenseMapBloc,
-            trackService: isarService.trackService,
-            trackId: _currentTrack!.id);
+            openSenseMapBloc: openSenseMapBloc);
       } else {
         _batchUploadService = BatchUploadService(
           openSenseMapService: OpenSenseMapService(),
@@ -132,6 +132,8 @@ class RecordingBloc with ChangeNotifier {
 
   Future<void> stopRecording() async {
     if (!_isRecording) return;
+
+    _lastRecordingStopTimestamp = DateTime.now().toUtc();
 
     _isRecording = false;
     _isRecordingNotifier.value = false;
