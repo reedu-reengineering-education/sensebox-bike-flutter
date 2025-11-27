@@ -3,164 +3,70 @@ import 'package:sensebox_bike/sensors/overtaking_prediction_sensor.dart';
 import '../mocks.dart';
 
 void main() {
-  late MockBleBloc mockBleBloc;
-  late MockGeolocationBloc mockGeolocationBloc;
-  late MockRecordingBloc mockRecordingBloc;
-  late MockSettingsBloc mockSettingsBloc;
-  late MockIsarService mockIsarService;
+  late OvertakingPredictionSensor sensor;
 
   setUp(() {
-    mockBleBloc = MockBleBloc();
-    mockGeolocationBloc = MockGeolocationBloc();
-    mockRecordingBloc = MockRecordingBloc();
-    mockSettingsBloc = MockSettingsBloc();
-    mockIsarService = MockIsarService();
+    sensor = OvertakingPredictionSensor(
+      MockBleBloc(),
+      MockGeolocationBloc(),
+      MockRecordingBloc(),
+      MockIsarService(),
+    );
   });
 
   group('OvertakingPredictionSensor', () {
-    test('aggregateData returns the max value from array of values', () {
-      // Arrange
-      final sensor = OvertakingPredictionSensor(
-        mockBleBloc,
-        mockGeolocationBloc,
-        mockRecordingBloc,
-        mockSettingsBloc,
-        mockIsarService,
-      );
-
-      final valueBuffer = [
-        [0.3],
-        [0.5],
-        [0.8],
-        [0.2],
-        [0.9],
-      ];
-
-      // Act
-      final result = sensor.aggregateData(valueBuffer);
-
-      // Assert
-      expect(result, isA<List<double>>());
-      expect(result.length, equals(1));
-      expect(result[0], equals(0.9)); // Should return max value
+    test('uiPriority returns 40', () {
+      expect(sensor.uiPriority, 40);
     });
 
-    test('aggregateData handles empty buffer', () {
-      // Arrange
-      final sensor = OvertakingPredictionSensor(
-        mockBleBloc,
-        mockGeolocationBloc,
-        mockRecordingBloc,
-        mockSettingsBloc,
-        mockIsarService,
-      );
-
-      final valueBuffer = <List<double>>[];
-
-      // Act & Assert
+    test('sensorCharacteristicUuid is correct', () {
       expect(
-        () => sensor.aggregateData(valueBuffer),
-        throwsStateError,
+        OvertakingPredictionSensor.sensorCharacteristicUuid,
+        'fc01c688-2c44-4965-ae18-373af9fed18d',
       );
+    });
+
+    test('lookbackWindow returns 2000ms', () {
+      expect(sensor.lookbackWindow, const Duration(milliseconds: 2000));
+    });
+
+    test('aggregateData returns max value from buffer', () {
+      final result = sensor.aggregateData([
+        [0.3],
+        [0.9],
+        [0.5],
+        [0.2],
+      ]);
+
+      expect(result, [0.9]);
+    });
+
+    test('aggregateData handles boundary values 0.0 and 1.0', () {
+      final result = sensor.aggregateData([
+        [0.0],
+        [0.5],
+        [1.0],
+      ]);
+
+      expect(result, [1.0]);
+    });
+
+    test('aggregateData returns zero for empty buffer', () {
+      expect(sensor.aggregateData([]), [0.0]);
     });
 
     test('aggregateData handles single value', () {
-      // Arrange
-      final sensor = OvertakingPredictionSensor(
-        mockBleBloc,
-        mockGeolocationBloc,
-        mockRecordingBloc,
-        mockSettingsBloc,
-        mockIsarService,
-      );
-
-      final valueBuffer = [
-        [0.75],
-      ];
-
-      // Act
-      final result = sensor.aggregateData(valueBuffer);
-
-      // Assert
-      expect(result, isA<List<double>>());
-      expect(result.length, equals(1));
-      expect(result[0], equals(0.75));
+      expect(sensor.aggregateData([[0.75]]), [0.75]);
     });
 
-    test('aggregateData returns max even when all values are the same', () {
-      // Arrange
-      final sensor = OvertakingPredictionSensor(
-        mockBleBloc,
-        mockGeolocationBloc,
-        mockRecordingBloc,
-        mockSettingsBloc,
-        mockIsarService,
-      );
-
-      final valueBuffer = [
+    test('aggregateData handles empty inner lists', () {
+      final result = sensor.aggregateData([
+        [],
         [0.5],
-        [0.5],
-        [0.5],
-      ];
+        [],
+      ]);
 
-      // Act
-      final result = sensor.aggregateData(valueBuffer);
-
-      // Assert
-      expect(result, isA<List<double>>());
-      expect(result.length, equals(1));
-      expect(result[0], equals(0.5));
-    });
-
-    test('aggregateData handles zero and boundary values', () {
-      // Arrange
-      final sensor = OvertakingPredictionSensor(
-        mockBleBloc,
-        mockGeolocationBloc,
-        mockRecordingBloc,
-        mockSettingsBloc,
-        mockIsarService,
-      );
-
-      final valueBuffer = [
-        [0.0],
-        [0.1],
-        [1.0],
-        [0.5],
-      ];
-
-      // Act
-      final result = sensor.aggregateData(valueBuffer);
-
-      // Assert
-      expect(result, isA<List<double>>());
-      expect(result.length, equals(1));
-      expect(result[0], equals(1.0)); // Should return max value
-    });
-
-    test('aggregateData handles very small differences', () {
-      // Arrange
-      final sensor = OvertakingPredictionSensor(
-        mockBleBloc,
-        mockGeolocationBloc,
-        mockRecordingBloc,
-        mockSettingsBloc,
-        mockIsarService,
-      );
-
-      final valueBuffer = [
-        [0.123456],
-        [0.123457],
-        [0.123455],
-      ];
-
-      // Act
-      final result = sensor.aggregateData(valueBuffer);
-
-      // Assert
-      expect(result, isA<List<double>>());
-      expect(result.length, equals(1));
-      expect(result[0], equals(0.123457)); // Should return max value
+      expect(result, [0.5]);
     });
   });
 }

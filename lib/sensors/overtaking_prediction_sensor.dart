@@ -17,10 +17,6 @@ class OvertakingPredictionSensor extends Sensor {
   @override
   get uiPriority => 40;
 
-  /// Use a 1500ms (1.5 second) lookback window to capture sensor values that arrive
-  /// slightly before or after the geolocation timestamp.
-  /// This accounts for GPS timestamp accuracy, sensor transmission delays,
-  /// and clock synchronization differences.
   @override
   Duration get lookbackWindow => const Duration(milliseconds: 2000);
 
@@ -36,10 +32,9 @@ class OvertakingPredictionSensor extends Sensor {
 
   @override
   void onDataReceived(List<double> data) {
-    super.onDataReceived(data); // Call the parent class to handle buffering
+    super.onDataReceived(data);
     if (data.isNotEmpty) {
-      _latestPrediction =
-          data; // Assuming the first value is the prediction score
+      _latestPrediction = data;
     }
   }
 

@@ -29,9 +29,9 @@ class DistanceSensor extends Sensor {
 
   @override
   void onDataReceived(List<double> data) {
-    super.onDataReceived(data); // Call the parent class to handle buffering
+    super.onDataReceived(data);
     if (data.isNotEmpty) {
-      _latestValue = data; // Assuming the first value is the distance
+      _latestValue = data;
     }
   }
 
@@ -41,10 +41,7 @@ class DistanceSensor extends Sensor {
   @override
   List<double> aggregateData(List<List<double>> valueBuffer) {
     List<double> myValues = valueBuffer.map((e) => e[0]).toList();
-    
-    // Filter out zero values
     List<double> nonZeroValues = myValues.where((value) => value != 0.0).toList();
-    
     if (nonZeroValues.isNotEmpty) {
       return [nonZeroValues.reduce(min)];
     }
