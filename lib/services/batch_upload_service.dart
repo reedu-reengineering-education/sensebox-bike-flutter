@@ -6,8 +6,8 @@ import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/chunked_uploader.dart';
 import 'package:sensebox_bike/services/upload_retry_manager.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
+import 'package:sensebox_bike/services/upload_error_classifier.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
-import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 
@@ -520,13 +520,6 @@ class BatchUploadService {
     final timestamp = DateTime.now().toIso8601String();
     final trackInfo = trackId != null ? ' [Track: $trackId]' : '';
     debugPrint('[$timestamp] [BatchUploadService] [ERROR] [$operation]$trackInfo $message');
-  }
-
-  /// Logs retry attempts with structured format
-  void _logRetry(String operation, String message, int? trackId, int attempt) {
-    final timestamp = DateTime.now().toIso8601String();
-    final trackInfo = trackId != null ? ' [Track: $trackId]' : '';
-    debugPrint('[$timestamp] [BatchUploadService] [RETRY] [$operation]$trackInfo [Attempt: $attempt] $message');
   }
 
   /// Disposes of the service and closes the progress stream

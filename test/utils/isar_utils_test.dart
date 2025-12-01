@@ -8,24 +8,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   final geoData = GeolocationData()
     ..id = 1
-    ..timestamp = DateTime.parse('2025-05-14T12:00:00')
+    ..timestamp = DateTime.utc(2025, 5, 14, 12, 0, 0)
     ..latitude = 52.52
     ..longitude = 13.405;
+
   final tempSensorData = SensorData()
     ..id = 1
     ..title = 'temperature'
     ..attribute = '°C'
     ..value = 22.5;
+
   final surfaceSensorData = SensorData()
     ..id = 2
     ..title = 'surface_classification_compacted'
     ..attribute = '%'
     ..value = 60.0;
+
   final overtakingSensorData = SensorData()
     ..id = 3
     ..title = 'distance'
     ..attribute = 'cm'
     ..value = 100.0;
+
   group('formatOpenSenseMapCsvLine', () {
     test('formats all fields correctly', () {
       final result = formatOpenSenseMapCsvLine('sensor-1', 22.5, geoData);
@@ -47,12 +51,16 @@ void main() {
         'distance%%cm': 100.0,
       });
     });
+
+    test('returns empty map for empty list', () {
+      expect(organizeSensorData([]), {});
+    });
   });
 
   group('collectSensorTitles', () {
     test('collects unique sensor titles and attributes', () {
       final Map<int, List<SensorData>> sensorDataByGeolocation = {
-        1: [ tempSensorData, surfaceSensorData ],
+        1: [tempSensorData, surfaceSensorData],
         2: [tempSensorData, overtakingSensorData],
       };
       final result = collectSensorTitles(sensorDataByGeolocation);
@@ -65,6 +73,10 @@ void main() {
           ['distance', 'cm'],
         },
       );
+    });
+
+    test('returns empty set for empty map', () {
+      expect(collectSensorTitles({}), <List<String?>>{});
     });
   });
 
@@ -88,18 +100,22 @@ void main() {
         ],
       );
     });
+
+    test('returns base headers for empty set', () {
+      expect(buildCsvHeaders({}), ['timestamp', 'latitude', 'longitude']);
+    });
   });
 
   group('buildCsvRows', () {
     test('builds correct rows for geolocation and sensor data', () {
       final geoData1 = GeolocationData()
         ..id = 1
-        ..timestamp = DateTime.parse('2025-05-14T12:00:00')
+        ..timestamp = DateTime.utc(2025, 5, 14, 12, 0, 0)
         ..latitude = 52.52
         ..longitude = 13.405;
       final geoData2 = GeolocationData()
         ..id = 2
-        ..timestamp = DateTime.parse('2025-05-14T12:05:00')
+        ..timestamp = DateTime.utc(2025, 5, 14, 12, 5, 0)
         ..latitude = 52.53
         ..longitude = 13.406;
 
@@ -133,14 +149,14 @@ void main() {
 
       expect(rows, [
         [
-          '2025-05-14 12:00:00.000',
+          '2025-05-14 12:00:00.000Z',
           '52.52',
           '13.405',
           '22.50',
           '60.00',
         ],
         [
-          '2025-05-14 12:05:00.000',
+          '2025-05-14 12:05:00.000Z',
           '52.53',
           '13.406',
           '23.00',
@@ -152,12 +168,12 @@ void main() {
     test('skips rows with no sensor data', () {
       final geoData1 = GeolocationData()
         ..id = 1
-        ..timestamp = DateTime.parse('2025-05-14T12:00:00')
+        ..timestamp = DateTime.utc(2025, 5, 14, 12, 0, 0)
         ..latitude = 52.52
         ..longitude = 13.405;
       final geoData2 = GeolocationData()
         ..id = 2
-        ..timestamp = DateTime.parse('2025-05-14T12:05:00')
+        ..timestamp = DateTime.utc(2025, 5, 14, 12, 5, 0)
         ..latitude = 52.53
         ..longitude = 13.406;
 
@@ -180,7 +196,7 @@ void main() {
 
       expect(rows, [
         [
-          '2025-05-14 12:00:00.000',
+          '2025-05-14 12:00:00.000Z',
           '52.52',
           '13.405',
           '22.50',

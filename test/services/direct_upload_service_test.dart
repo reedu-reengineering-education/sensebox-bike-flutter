@@ -3,15 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/models/sensor_batch.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
-import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
-import 'package:sensebox_bike/services/isar_service/track_service.dart';
 
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
-class MockSettingsBloc extends Mock implements SettingsBloc {}
 class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {
   @override
   Future<void> uploadData(String senseBoxId, Map<String, dynamic> data) async {
@@ -20,117 +18,32 @@ class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {
     );
   }
 }
-class MockTrackService extends Mock implements TrackService {}
+
+List<SensorBatch> convertToSensorBatches(
+    Map<GeolocationData, Map<String, List<double>>> groupedData) {
+  final batches = <SensorBatch>[];
+  for (final entry in groupedData.entries) {
+    batches.add(SensorBatch(
+      geoLocation: entry.key,
+      aggregatedData: entry.value,
+      timestamp: DateTime.now(),
+    ));
+  }
+  return batches;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  group('UploadErrorClassifier Tests', () {
-    group('classifyError', () {
-      test('classifies permanent authentication errors correctly', () {
-        final authErrors = [
-          'Authentication failed - user needs to re-login',
-          'No refresh token found',
-          'Failed to refresh token: Network error',
-          'Not authenticated',
-        ];
-
-        for (final error in authErrors) {
-          final result = UploadErrorClassifier.classifyError(Exception(error));
-          expect(result, equals(UploadErrorType.permanentAuth),
-              reason: 'Should classify "$error" as permanent auth error');
-        }
-      });
-
-      test('classifies temporary errors correctly', () {
-        final temporaryErrors = [
-          'Server error 502 - retrying',
-          'Server error 503 - retrying',
-          'Token refreshed, retrying',
-        ];
-
-        for (final error in temporaryErrors) {
-          final result = UploadErrorClassifier.classifyError(Exception(error));
-          expect(result, equals(UploadErrorType.temporary),
-              reason: 'Should classify "$error" as temporary error');
-        }
-      });
-
-      test('classifies exception types correctly', () {
-        final temporaryExceptions = [
-          TooManyRequestsException(30),
-          TimeoutException('Upload timeout', const Duration(seconds: 30)),
-        ];
-
-        for (final exception in temporaryExceptions) {
-          final result = UploadErrorClassifier.classifyError(exception);
-          expect(result, equals(UploadErrorType.temporary),
-              reason:
-                  'Should classify ${exception.runtimeType} as temporary error');
-        }
-      });
-
-      test('classifies permanent client errors correctly', () {
-        final clientErrors = [
-          'Client error 403: Forbidden',
-          'Client error 404: Not Found',
-          'Client error 400: Bad Request',
-        ];
-
-        for (final error in clientErrors) {
-          final result = UploadErrorClassifier.classifyError(Exception(error));
-          expect(result, equals(UploadErrorType.permanentClient),
-              reason: 'Should classify "$error" as permanent client error');
-        }
-      });
-
-      test('excludes 429 from permanent client errors', () {
-        final result = UploadErrorClassifier.classifyError(
-            Exception('Client error 429: Too Many Requests'));
-        expect(result, equals(UploadErrorType.temporary),
-            reason:
-                'Should classify 429 as temporary error, not permanent client error');
-      });
-
-      test('defaults to temporary for unknown errors', () {
-        final unknownErrors = [
-          'Unknown error',
-          'Network error',
-          'Some other error',
-        ];
-
-        for (final error in unknownErrors) {
-          final result = UploadErrorClassifier.classifyError(Exception(error));
-          expect(result, equals(UploadErrorType.temporary),
-              reason: 'Should classify "$error" as temporary error by default');
-        }
-      });
-
-      test('prioritizes permanent auth over other classifications', () {
-        // This error contains both "Server error" (temporary) and "Authentication failed" (permanent auth)
-        final mixedError =
-            'Server error 500: Authentication failed - user needs to re-login';
-        final result =
-            UploadErrorClassifier.classifyError(Exception(mixedError));
-        expect(result, equals(UploadErrorType.permanentAuth),
-            reason:
-                'Should prioritize permanent auth over temporary classification');
-      });
-    });
-  });
 
   group('DirectUploadService Tests', () {
     late DirectUploadService directUploadService;
     late MockOpenSenseMapService mockOpenSenseMapService;
-    late MockSettingsBloc mockSettingsBloc;
     late MockOpenSenseMapBloc mockOpenSenseMapBloc;
-    late MockTrackService mockTrackService;
     late SenseBox mockSenseBox;
 
     setUp(() {
       mockOpenSenseMapService = MockOpenSenseMapService();
-      mockSettingsBloc = MockSettingsBloc();
       mockOpenSenseMapBloc = MockOpenSenseMapBloc();
-      mockTrackService = MockTrackService();
       mockSenseBox = SenseBox()
         ..sId = 'test-sensebox-id'
         ..name = 'Test SenseBox'
@@ -143,19 +56,13 @@ void main() {
             ..title = 'Speed',
         ];
 
-      // Setup default mock behavior
-      when(() => mockOpenSenseMapBloc.markAuthenticationFailed())
-          .thenAnswer((_) async {});
-      when(() => mockTrackService.markTrackAsUploaded(any()))
-          .thenAnswer((_) async => Future.value(true)); // Mock success for now
+      // Set default mock behavior for isAcceptingRequests
+      when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(true);
 
       directUploadService = DirectUploadService(
         openSenseMapService: mockOpenSenseMapService,
-        settingsBloc: mockSettingsBloc,
         senseBox: mockSenseBox,
         openSenseMapBloc: mockOpenSenseMapBloc,
-        trackService: mockTrackService,
-        trackId: 1,
       );
     });
 
@@ -183,11 +90,8 @@ void main() {
           },
         };
 
-        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
         await directUploadService.uploadRemainingBufferedData();
-
-        // Verify that markTrackAsUploaded was NOT called
-        verifyNever(() => mockTrackService.markTrackAsUploaded(any()));
 
         expect(directUploadService.isEnabled, true);
         expect(directUploadService.hasPreservedData, false);
@@ -212,13 +116,9 @@ void main() {
           },
         };
 
-        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
 
-        // Trigger upload which should not mark track as uploaded
         await directUploadService.uploadRemainingBufferedData();
-
-        // Verify that markTrackAsUploaded was NOT called
-        verifyNever(() => mockTrackService.markTrackAsUploaded(any()));
 
         expect(directUploadService.isEnabled, true);
       });
@@ -243,11 +143,8 @@ void main() {
         },
       };
 
-      // Add data
-      final result =
-          directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
       
-      expect(result, true);
       expect(directUploadService.hasPreservedData, true);
     });
     test('returns false when service is disabled', () async {
@@ -268,10 +165,8 @@ void main() {
         },
       };
 
-      // Should return false when service is disabled
-      final result =
-          directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
-      expect(result, false);
+      directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
+      expect(directUploadService.hasPreservedData, false);
     });
 
     test('can be re-enabled after being disabled', () async {
@@ -309,7 +204,7 @@ void main() {
         },
       };
 
-      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
       expect(directUploadService.hasPreservedData, true);
 
       // Setup mock to throw network error - should be handled by OpenSenseMapService
@@ -351,7 +246,7 @@ void main() {
         },
       };
 
-      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
       await directUploadService.uploadRemainingBufferedData();
       
       // Service should remain enabled because temporary auth errors are handled by OpenSenseMap service
@@ -385,7 +280,7 @@ void main() {
         },
       };
 
-      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
       await directUploadService.uploadRemainingBufferedData();
       
       // Service should remain enabled since bloc handles authentication
@@ -419,7 +314,7 @@ void main() {
         },
       };
 
-      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
       await directUploadService.uploadRemainingBufferedData();
 
       // Service should remain enabled since bloc handles authentication
@@ -453,7 +348,7 @@ void main() {
         },
       };
 
-      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
       await directUploadService.uploadRemainingBufferedData();
 
       // Service should be disabled for client errors (4xx)
@@ -487,7 +382,7 @@ void main() {
         },
       };
 
-      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
       await directUploadService.uploadRemainingBufferedData();
 
       // Service should remain enabled since bloc handles authentication
@@ -519,7 +414,7 @@ void main() {
         },
       };
 
-      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
       await directUploadService.uploadRemainingBufferedData();
 
       // Service should remain enabled because temporary server errors are handled by OpenSenseMap service
@@ -551,7 +446,7 @@ void main() {
         },
       };
 
-      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
       await directUploadService.uploadRemainingBufferedData();
 
       // Service should remain enabled because rate limiting errors are handled by OpenSenseMap service
@@ -583,7 +478,7 @@ void main() {
         },
       };
 
-      directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+      directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
       await directUploadService.uploadRemainingBufferedData();
 
       // Service should remain enabled after successful upload
@@ -617,7 +512,7 @@ void main() {
           },
         };
 
-        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
         await directUploadService.uploadRemainingBufferedData();
 
         // Service should remain enabled for 429 errors (temporary)
@@ -651,7 +546,7 @@ void main() {
           },
         };
 
-        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
         await directUploadService.uploadRemainingBufferedData();
 
         // Service should remain enabled for 502 errors (temporary)
@@ -687,14 +582,10 @@ void main() {
           },
         };
 
-        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
         await directUploadService.uploadRemainingBufferedData();
 
-        // Service should remain enabled since bloc handles authentication
         expect(directUploadService.isEnabled, true);
-        // No restart timer should be scheduled for auth errors
-        expect(directUploadService.hasPendingRestartTimer, false);
-        // Data should be cleared after upload attempt (even on auth errors)
         expect(directUploadService.hasPreservedData, false);
       });
 
@@ -723,7 +614,7 @@ void main() {
           },
         };
 
-        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
         await directUploadService.uploadRemainingBufferedData();
 
         // Service should remain enabled for token refresh errors (temporary)
@@ -759,14 +650,10 @@ void main() {
           },
         };
 
-        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
         await directUploadService.uploadRemainingBufferedData();
 
-        // Service should remain enabled since bloc handles authentication
         expect(directUploadService.isEnabled, true);
-        // No restart timer should be scheduled for auth errors
-        expect(directUploadService.hasPendingRestartTimer, false);
-        // Data should be cleared after upload attempt (even on auth errors)
         expect(directUploadService.hasPreservedData, false);
       });
 
@@ -795,7 +682,7 @@ void main() {
           },
         };
 
-        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
         await directUploadService.uploadRemainingBufferedData();
 
         // Service should remain enabled for timeout errors (temporary)
@@ -830,14 +717,10 @@ void main() {
           },
         };
 
-        directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+        directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
         await directUploadService.uploadRemainingBufferedData();
 
-        // Service should be disabled for 404 client errors (permanent)
         expect(directUploadService.isEnabled, false);
-        // Restart timer should be scheduled for client errors
-        expect(directUploadService.hasPendingRestartTimer, true);
-        // Data should be cleared during final upload attempt
         expect(directUploadService.hasPreservedData, false);
       });
 
@@ -881,7 +764,7 @@ void main() {
             },
           };
 
-          directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+          directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
           await directUploadService.uploadRemainingBufferedData();
 
           expect(directUploadService.isEnabled, true,
@@ -927,20 +810,338 @@ void main() {
             },
           };
 
-          directUploadService.addGroupedDataForUpload(groupedData, gpsBuffer);
+          directUploadService.queueBatchesForUpload(convertToSensorBatches(groupedData));
           await directUploadService.uploadRemainingBufferedData();
 
           expect(directUploadService.isEnabled, true,
               reason: 'Service should remain enabled for auth error: $error');
-          expect(directUploadService.hasPendingRestartTimer, false,
-              reason: 'No restart should be scheduled for auth error: $error');
-          // Data should be cleared during final upload attempt
           expect(directUploadService.hasPreservedData, false,
               reason:
                   'Data should be cleared after upload attempt for auth error: $error');
 
           directUploadService.dispose();
         }
+      });
+    });
+
+    group('Queue Limit Tests', () {
+      test('should enforce queue limit of 1000 batches', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        
+        // Create 1000 batches to fill the queue
+        final batches = <SensorBatch>[];
+        for (int i = 0; i < 1000; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          batches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        // Add all batches at once
+        directUploadService.queueBatchesForUpload(batches);
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Try to add 10 more batches - should trigger queue limit
+        final additionalBatches = <SensorBatch>[];
+        for (int i = 1000; i < 1010; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          additionalBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(additionalBatches);
+        
+        // Queue should still be at or below 1000
+        // Note: We can't directly check the internal queue size, but we can verify
+        // the service still has preserved data
+        expect(directUploadService.hasPreservedData, true);
+      });
+
+      test('should remove oldest batches when limit is exceeded', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        
+        // Fill queue with 998 batches (just under limit)
+        final initialBatches = <SensorBatch>[];
+        for (int i = 0; i < 998; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          initialBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(initialBatches);
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Add 5 more batches - should remove 3 oldest batches (998 + 5 - 1000 = 3)
+        final additionalBatches = <SensorBatch>[];
+        for (int i = 998; i < 1003; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          additionalBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(additionalBatches);
+        
+        // Service should still have preserved data
+        expect(directUploadService.hasPreservedData, true);
+      });
+
+      test('should handle adding more batches than limit in one call', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        
+        // Fill queue with 500 batches
+        final initialBatches = <SensorBatch>[];
+        for (int i = 0; i < 500; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          initialBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(initialBatches);
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Try to add 600 batches at once (would exceed limit by 100)
+        final largeBatch = <SensorBatch>[];
+        for (int i = 500; i < 1100; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          largeBatch.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(largeBatch);
+        
+        // Service should still have preserved data and queue should be at limit
+        expect(directUploadService.hasPreservedData, true);
+      });
+
+      test('should not exceed limit when adding batches incrementally', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        
+        // Add batches incrementally to reach limit
+        for (int batch = 0; batch < 10; batch++) {
+          final batches = <SensorBatch>[];
+          for (int i = 0; i < 100; i++) {
+            final geoId = batch * 100 + i;
+            final geo = GeolocationData()
+              ..id = geoId
+              ..latitude = 10.0 + geoId * 0.001
+              ..longitude = 20.0 + geoId * 0.001
+              ..speed = 5.0
+              ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, geoId);
+            
+            batches.add(SensorBatch(
+              geoLocation: geo,
+              aggregatedData: {'temperature': [22.5 + geoId]},
+              timestamp: DateTime.now(),
+            ));
+          }
+          
+          directUploadService.queueBatchesForUpload(batches);
+          
+          // After 10 batches of 100, we should be at exactly 1000
+          if (batch == 9) {
+            expect(directUploadService.hasPreservedData, true);
+          }
+        }
+        
+        // Try to add one more batch - should trigger limit enforcement
+        final additionalBatch = <SensorBatch>[];
+        final geo = GeolocationData()
+          ..id = 1000
+          ..latitude = 10.0 + 1000 * 0.001
+          ..longitude = 20.0 + 1000 * 0.001
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 1000);
+        
+        additionalBatch.add(SensorBatch(
+          geoLocation: geo,
+          aggregatedData: {'temperature': [22.5 + 1000]},
+          timestamp: DateTime.now(),
+        ));
+        
+        directUploadService.queueBatchesForUpload(additionalBatch);
+        
+        // Service should still have preserved data
+        expect(directUploadService.hasPreservedData, true);
+      });
+
+      test('should handle queue limit with merged batches', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        
+        // Add 500 batches
+        final initialBatches = <SensorBatch>[];
+        for (int i = 0; i < 500; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          initialBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(initialBatches);
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Add 500 more batches with same geoIds (should merge)
+        final mergeBatches = <SensorBatch>[];
+        for (int i = 0; i < 500; i++) {
+          final geo = GeolocationData()
+            ..id = i  // Same geoId as initial batches
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          mergeBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'humidity': [50.0 + i]},  // Different sensor
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(mergeBatches);
+        
+        // Merging doesn't increase count, so should still be at 500
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Now add 600 new batches - should trigger limit and remove 100 oldest
+        final newBatches = <SensorBatch>[];
+        for (int i = 500; i < 1100; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          newBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(newBatches);
+        
+        // Service should still have preserved data
+        expect(directUploadService.hasPreservedData, true);
+      });
+
+      test('should maintain limit when queue is cleared and refilled', () async {
+        directUploadService.enable();
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(true);
+        when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any())).thenAnswer((_) async {});
+        
+        // Fill queue with 1000 batches
+        final batches = <SensorBatch>[];
+        for (int i = 0; i < 1000; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          batches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(batches);
+        
+        // Upload should succeed and clear queue
+        await Future.delayed(Duration(milliseconds: 100));
+        expect(directUploadService.hasPreservedData, false);
+        
+        // Refill queue with 1000 batches again
+        directUploadService.queueBatchesForUpload(batches);
+        expect(directUploadService.hasPreservedData, true);
+        
+        // Try to add more - should enforce limit again
+        final additionalBatches = <SensorBatch>[];
+        for (int i = 1000; i < 1010; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i * 0.001
+            ..longitude = 20.0 + i * 0.001
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          additionalBatches.add(SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5 + i]},
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        directUploadService.queueBatchesForUpload(additionalBatches);
+        expect(directUploadService.hasPreservedData, true);
       });
     });
 

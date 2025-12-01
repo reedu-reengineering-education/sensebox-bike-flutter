@@ -71,16 +71,11 @@ class SensorService {
             await isar.sensorDatas.put(sensor);
             await sensor.geolocationData.save();
           } catch (e) {
-            // Log individual sensor save failures but continue with the batch
-            print(
-                'Failed to save individual sensor data: ${sensor.title} - ${sensor.attribute} - ${sensor.value}: $e');
             // Continue with other sensors in the batch
           }
         }
       });
     } catch (e) {
-      // Log the overall transaction failure
-      print('Failed to save sensor data batch: $e');
       rethrow; // Re-throw to let the caller handle it
     }
   }

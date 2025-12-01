@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_batch.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
@@ -950,6 +951,66 @@ void main() {
       
       expect(speedCreatedAt, endsWith('Z'), reason: 'Speed timestamp should be in UTC format ending with Z');
       expect(speedCreatedAt, contains('T'), reason: 'Speed timestamp should be in ISO8601 format');
+    });
+
+    test('prepareDataFromBatches produces same result as prepareDataFromGroupedData',
+        () {
+      final tempSensor = Sensor()
+        ..id = 'tempSensorId'
+        ..title = 'Temperature';
+      final speedSensor = Sensor()
+        ..id = 'speedSensorId'
+        ..title = 'Speed';
+      final senseBox = SenseBox(sensors: [tempSensor, speedSensor]);
+      final preparer = UploadDataPreparer(senseBox: senseBox);
+
+      final geolocation1 = GeolocationData()
+        ..latitude = 10.0
+        ..longitude = 20.0
+        ..speed = 5.0
+        ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+
+      final geolocation2 = GeolocationData()
+        ..latitude = 10.1
+        ..longitude = 20.1
+        ..speed = 6.0
+        ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 10);
+
+      // Create SensorBatches
+      final batch1 = SensorBatch(
+        geoLocation: geolocation1,
+        aggregatedData: {'temperature': [22.5]},
+        timestamp: geolocation1.timestamp,
+      );
+
+      final batch2 = SensorBatch(
+        geoLocation: geolocation2,
+        aggregatedData: {'temperature': [23.5]},
+        timestamp: geolocation2.timestamp,
+      );
+
+      // Test new method
+      final resultFromBatches =
+          preparer.prepareDataFromBatches([batch1, batch2]);
+
+      // Test old method for comparison
+      final groupedData = {
+        geolocation1: {'temperature': [22.5]},
+        geolocation2: {'temperature': [23.5]},
+      };
+      final gpsBuffer = [geolocation1, geolocation2];
+      final resultFromGroupedData =
+          preparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
+
+      // Results should be identical
+      expect(resultFromBatches.length, resultFromGroupedData.length);
+      expect(resultFromBatches.keys, equals(resultFromGroupedData.keys));
+
+      // Verify each entry is the same
+      for (final key in resultFromBatches.keys) {
+        expect(resultFromBatches[key], equals(resultFromGroupedData[key]),
+            reason: 'Entry $key should match');
+      }
     });
   });
 }

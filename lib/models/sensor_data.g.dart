@@ -56,7 +56,7 @@ const SensorDataSchema = CollectionSchema(
   getId: _sensorDataGetId,
   getLinks: _sensorDataGetLinks,
   attach: _sensorDataAttach,
-  version: '3.3.0-dev.3',
+  version: '3.3.0',
 );
 
 int _sensorDataEstimateSize(
