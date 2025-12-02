@@ -20,6 +20,7 @@ class GeolocationBloc with ChangeNotifier {
       _geolocationController.stream;
 
   StreamSubscription<Position>? _positionStreamSubscription;
+  StreamSubscription<List<String>>? _privacyZonesSubscription;
   GeolocationData? _lastEmittedPosition;
   Timer? _stationaryLocationTimer;
   final PrivacyZoneChecker _privacyZoneChecker = PrivacyZoneChecker();
@@ -30,6 +31,9 @@ class GeolocationBloc with ChangeNotifier {
 
   GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc) {
     _privacyZoneChecker.updatePrivacyZones(settingsBloc.privacyZones);
+    _privacyZonesSubscription = settingsBloc.privacyZonesStream.listen((zones) {
+      _privacyZoneChecker.updatePrivacyZones(zones);
+    });
   }
 
   void startListening() async {
@@ -182,11 +186,9 @@ class GeolocationBloc with ChangeNotifier {
       return true;
     }
 
-    if (recordingBloc.isRecording) {
-      _privacyZoneChecker.updatePrivacyZones(settingsBloc.privacyZones);
-    }
-
-    if (_privacyZoneChecker.isInsidePrivacyZone(geolocationData)) {
+    final isInsidePrivacyZone =
+        _privacyZoneChecker.isInsidePrivacyZone(geolocationData);
+    if (isInsidePrivacyZone) {
       return true;
     }
 
@@ -224,6 +226,7 @@ class GeolocationBloc with ChangeNotifier {
 
   @override
   void dispose() {
+    _privacyZonesSubscription?.cancel();
     _privacyZoneChecker.dispose();
     _geolocationController.close();
     super.dispose();

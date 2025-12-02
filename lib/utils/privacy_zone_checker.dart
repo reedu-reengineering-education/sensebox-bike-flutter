@@ -42,6 +42,10 @@ class PrivacyZoneChecker {
         }
 
         final outerRing = coordinates[0] as List<dynamic>;
+        if (outerRing.isEmpty) {
+          continue;
+        }
+
         final turfCoordinates = outerRing.map((coord) {
           final coordList = coord as List<dynamic>;
           return Turf.Position(

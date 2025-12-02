@@ -165,7 +165,7 @@ String _createSquareZone(double centerLat, double centerLng, double size) {
     [centerLng - halfSize, centerLat - halfSize],
   ];
   
-  return '{"type": "Polygon", "coordinates": [$coordinates]}';
+  return '{"type": "Polygon", "coordinates": [[$coordinates]]}';
 }
 
 String _createUnclosedZone(double centerLat, double centerLng, double size) {
@@ -177,5 +177,5 @@ String _createUnclosedZone(double centerLat, double centerLng, double size) {
     [centerLng - halfSize, centerLat + halfSize],
   ];
   
-  return '{"type": "Polygon", "coordinates": [$coordinates]}';
+  return '{"type": "Polygon", "coordinates": [[$coordinates]]}';
 }
