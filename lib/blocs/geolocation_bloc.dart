@@ -11,6 +11,7 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
+import 'package:sensebox_bike/utils/privacy_zone_checker.dart';
 
 class GeolocationBloc with ChangeNotifier {
   final StreamController<GeolocationData> _geolocationController =
@@ -21,12 +22,15 @@ class GeolocationBloc with ChangeNotifier {
   StreamSubscription<Position>? _positionStreamSubscription;
   GeolocationData? _lastEmittedPosition;
   Timer? _stationaryLocationTimer;
+  final PrivacyZoneChecker _privacyZoneChecker = PrivacyZoneChecker();
 
   final IsarService isarService;
   final RecordingBloc recordingBloc;
   final SettingsBloc settingsBloc;
 
-  GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc);
+  GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc) {
+    _privacyZoneChecker.updatePrivacyZones(settingsBloc.privacyZones);
+  }
 
   void startListening() async {
     try {
@@ -63,60 +67,20 @@ class GeolocationBloc with ChangeNotifier {
         );
       }
 
-      // Listen to position stream
       _positionStreamSubscription =
           Geolocator.getPositionStream(locationSettings: locationSettings)
               .listen((Position position) async {
-        
-        // Create geolocation data object
-        // Ensure timestamp is stored in UTC for consistent comparison with sensor timestamps
-        GeolocationData geolocationData = GeolocationData()
-          ..latitude = position.latitude
-          ..longitude = position.longitude
-          ..speed = position.speed
-          ..timestamp = position.timestamp.isUtc ? position.timestamp : position.timestamp.toUtc();
+        final geolocationData = _createGeolocationFromPosition(position);
 
-        // Filter duplicates (iOS often emits same position multiple times)
-        if (_lastEmittedPosition != null &&
-            _lastEmittedPosition!.timestamp == geolocationData.timestamp &&
-            _lastEmittedPosition!.latitude == geolocationData.latitude &&
-            _lastEmittedPosition!.longitude == geolocationData.longitude) {
+        if (_shouldSkipGeolocation(geolocationData)) {
           return;
         }
-        _lastEmittedPosition = geolocationData;
 
+        _lastEmittedPosition = geolocationData;
         _resetStationaryLocationTimer();
 
-        if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
-          geolocationData.track.value = recordingBloc.currentTrack;
-          
-          // Save geolocation immediately to avoid race conditions from multiple sensors
-          try {
-            final savedId = await isarService.geolocationService
-                .saveGeolocationData(geolocationData);
-            geolocationData.id = savedId;
-
-            // Save GPS speed as SensorData for consistent UI display
-            final gpsSpeedSensorData =
-                createGpsSpeedSensorData(geolocationData);
-            if (shouldStoreSensorData(gpsSpeedSensorData)) {
-              try {
-                await isarService.sensorService
-                    .saveSensorData(gpsSpeedSensorData);
-              } catch (e) {
-                // Continue on error
-              }
-            }
-          } catch (e) {
-            // Set id to 0 on failure so sensors skip this point
-            geolocationData.id = 0;
-          }
-        }
-
-        // Emit to stream for real-time updates (with ID already set if recording)
-        _geolocationController.add(geolocationData);
-
-        notifyListeners();
+        await _saveGeolocationIfRecording(geolocationData);
+        _emitGeolocation(geolocationData);
       });
       
       _startStationaryLocationTimer();
@@ -135,42 +99,15 @@ class GeolocationBloc with ChangeNotifier {
   Future<void> getCurrentLocationAndEmit() async {
     try {
       final position = await getCurrentLocation();
+      final geolocationData = _createGeolocationFromPosition(position);
 
-      // Create geolocation data object
-      // Ensure timestamp is stored in UTC for consistent comparison with sensor timestamps
-      GeolocationData geolocationData = GeolocationData()
-        ..latitude = position.latitude
-        ..longitude = position.longitude
-        ..speed = position.speed
-        ..timestamp = position.timestamp.isUtc ? position.timestamp : position.timestamp.toUtc();
-
-      if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
-        geolocationData.track.value = recordingBloc.currentTrack;
-        
-        try {
-          final savedId = await isarService.geolocationService
-              .saveGeolocationData(geolocationData);
-          geolocationData.id = savedId;
-
-          final gpsSpeedSensorData =
-              createGpsSpeedSensorData(geolocationData);
-          if (shouldStoreSensorData(gpsSpeedSensorData)) {
-            try {
-              await isarService.sensorService
-                  .saveSensorData(gpsSpeedSensorData);
-            } catch (e) {
-            }
-          }
-        } catch (e) {
-          geolocationData.id = 0;
-        }
+      if (_shouldSkipGeolocation(geolocationData)) {
+        return;
       }
 
-      // Update last emitted position to prevent duplicate filtering
       _lastEmittedPosition = geolocationData;
-      
-      _geolocationController.add(geolocationData);
-      notifyListeners();
+      await _saveGeolocationIfRecording(geolocationData);
+      _emitGeolocation(geolocationData);
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
@@ -194,23 +131,14 @@ class GeolocationBloc with ChangeNotifier {
           ..latitude = _lastEmittedPosition!.latitude
           ..longitude = _lastEmittedPosition!.longitude
           ..speed = _lastEmittedPosition!.speed
-          // Ensure timestamp is stored in UTC for consistent comparison with sensor timestamps
           ..timestamp = DateTime.now().toUtc();
-        
-        if (recordingBloc.currentTrack != null) {
-          geolocationData.track.value = recordingBloc.currentTrack;
-          
-          try {
-            final savedId = await isarService.geolocationService
-                .saveGeolocationData(geolocationData);
-            geolocationData.id = savedId;
-          } catch (e) {
-            geolocationData.id = 0;
-          }
+
+        if (_shouldSkipGeolocation(geolocationData)) {
+          return;
         }
-        
-        _geolocationController.add(geolocationData);
-        notifyListeners();
+
+        await _saveGeolocationIfRecording(geolocationData);
+        _emitGeolocation(geolocationData);
       } else {
         try {
           await getCurrentLocationAndEmit();
@@ -236,8 +164,67 @@ class GeolocationBloc with ChangeNotifier {
     _lastEmittedPosition = null;
   }
 
+  GeolocationData _createGeolocationFromPosition(Position position) {
+    return GeolocationData()
+      ..latitude = position.latitude
+      ..longitude = position.longitude
+      ..speed = position.speed
+      ..timestamp = position.timestamp.isUtc
+          ? position.timestamp
+          : position.timestamp.toUtc();
+  }
+
+  bool _shouldSkipGeolocation(GeolocationData geolocationData) {
+    if (_lastEmittedPosition != null &&
+        _lastEmittedPosition!.timestamp == geolocationData.timestamp &&
+        _lastEmittedPosition!.latitude == geolocationData.latitude &&
+        _lastEmittedPosition!.longitude == geolocationData.longitude) {
+      return true;
+    }
+
+    if (recordingBloc.isRecording) {
+      _privacyZoneChecker.updatePrivacyZones(settingsBloc.privacyZones);
+    }
+
+    if (_privacyZoneChecker.isInsidePrivacyZone(geolocationData)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  Future<void> _saveGeolocationIfRecording(
+      GeolocationData geolocationData) async {
+    if (!recordingBloc.isRecording || recordingBloc.currentTrack == null) {
+      return;
+    }
+
+    geolocationData.track.value = recordingBloc.currentTrack;
+
+    try {
+      final savedId = await isarService.geolocationService
+          .saveGeolocationData(geolocationData);
+      geolocationData.id = savedId;
+
+      final gpsSpeedSensorData = createGpsSpeedSensorData(geolocationData);
+      if (shouldStoreSensorData(gpsSpeedSensorData)) {
+        try {
+          await isarService.sensorService.saveSensorData(gpsSpeedSensorData);
+        } catch (e) {}
+      }
+    } catch (e) {
+      geolocationData.id = 0;
+    }
+  }
+
+  void _emitGeolocation(GeolocationData geolocationData) {
+    _geolocationController.add(geolocationData);
+    notifyListeners();
+  }
+
   @override
   void dispose() {
+    _privacyZoneChecker.dispose();
     _geolocationController.close();
     super.dispose();
   }
