@@ -1,16 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mocktail/mocktail.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import '../mocks.dart';
-
-class MockGeolocator extends Mock
-    with MockPlatformInterfaceMixin
-    implements geo.GeolocatorPlatform {}
+import '../test_helpers.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +17,7 @@ void main() {
     late MockSettingsBloc mockSettingsBloc;
     late StreamController<List<String>> privacyZonesController;
     late List<GeolocationData> emittedGeolocations;
+    late MockGeolocator mockGeolocator;
 
     setUp(() {
       mockIsarService = MockIsarService();
@@ -29,8 +25,7 @@ void main() {
       mockSettingsBloc = MockSettingsBloc();
       privacyZonesController = StreamController<List<String>>.broadcast();
       emittedGeolocations = [];
-
-      final mockGeolocator = MockGeolocator();
+      mockGeolocator = MockGeolocator();
       geo.GeolocatorPlatform.instance = mockGeolocator;
 
       when(() => mockSettingsBloc.privacyZones).thenReturn([]);
@@ -54,37 +49,10 @@ void main() {
       emittedGeolocations.clear();
     });
 
-    group('privacy zone stream subscription', () {
-      test('should initialize with current privacy zones', () {
-        final zoneJson = _createSquareZone(52.5, 13.4, 0.1);
-        when(() => mockSettingsBloc.privacyZones).thenReturn([zoneJson]);
-
-        final newBloc = GeolocationBloc(
-          mockIsarService,
-          mockRecordingBloc,
-          mockSettingsBloc,
-        );
-
-        expect(newBloc, isNotNull);
-        newBloc.dispose();
-      });
-
-      test('should update privacy zones when stream emits', () async {
-        final zone1 = _createSquareZone(52.5, 13.4, 0.1);
-        privacyZonesController.add([zone1]);
-        await Future.delayed(const Duration(milliseconds: 10));
-
-        final zone2 = _createSquareZone(53.0, 14.0, 0.1);
-        privacyZonesController.add([zone2]);
-        await Future.delayed(const Duration(milliseconds: 10));
-
-        expect(geolocationBloc, isNotNull);
-      });
-    });
-
-    group('privacy zone filtering', () {
-      test('should initialize privacy zone checker with current zones', () {
-        final zoneJson = _createSquareZone(52.5, 13.4, 0.1);
+    group('privacy zone initialization', () {
+      test('should initialize with current privacy zones from settings', () {
+        final zoneJson =
+            createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize);
         when(() => mockSettingsBloc.privacyZones).thenReturn([zoneJson]);
 
         final newBloc = GeolocationBloc(
@@ -97,110 +65,215 @@ void main() {
         newBloc.dispose();
       });
 
-      test('should update privacy zones when stream emits changes', () async {
-        final zone1 = _createSquareZone(52.5, 13.4, 0.1);
+      test('should subscribe to privacy zones stream on initialization',
+          () async {
+        final zone1 =
+            createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize);
         privacyZonesController.add([zone1]);
-        await Future.delayed(const Duration(milliseconds: 10));
+        await Future.delayed(shortDelay);
 
-        final zone2 = _createSquareZone(53.0, 14.0, 0.1);
+        setupMockGeolocator(mockGeolocator, testLat1, testLng1);
+        await geolocationBloc.getCurrentLocationAndEmit();
+        await Future.delayed(mediumDelay);
+
+        expect(emittedGeolocations.length, 0);
+
+        final zone2 =
+            createSquarePrivacyZone(testLat2, testLng2, defaultZoneSize);
         privacyZonesController.add([zone2]);
-        await Future.delayed(const Duration(milliseconds: 10));
+        await Future.delayed(shortDelay);
 
-        expect(geolocationBloc, isNotNull);
+        emittedGeolocations.clear();
+        setupMockGeolocator(mockGeolocator, testLat1, testLng1);
+        await geolocationBloc.getCurrentLocationAndEmit();
+        await Future.delayed(mediumDelay);
+
+        expect(emittedGeolocations.length, 1);
+      });
+    });
+
+    group('privacy zone filtering during recording', () {
+      setUp(() {
+        setupRecordingMode(mockRecordingBloc, mockIsarService);
       });
 
       test('should not emit geolocations inside privacy zone', () async {
-        final zoneJson = _createSquareZone(52.5, 13.4, 0.1);
-        privacyZonesController.add([zoneJson]);
-        await Future.delayed(const Duration(milliseconds: 10));
-
-        final mockGeolocator = geo.GeolocatorPlatform.instance as MockGeolocator;
-        when(() => mockGeolocator.isLocationServiceEnabled())
-            .thenAnswer((_) async => true);
-        when(() => mockGeolocator.checkPermission())
-            .thenAnswer((_) async => geo.LocationPermission.whileInUse);
-        when(() => mockGeolocator.getCurrentPosition(
-                locationSettings: any(named: 'locationSettings')))
-            .thenAnswer((_) async => geo.Position(
-                  latitude: 52.5,
-                  longitude: 13.4,
-                  timestamp: DateTime.now(),
-                  accuracy: 1.0,
-                  altitude: 0.0,
-                  altitudeAccuracy: 0.0,
-                  heading: 0.0,
-                  headingAccuracy: 0.0,
-                  speed: 0.0,
-                  speedAccuracy: 0.0,
-                ));
-
-        when(() => mockIsarService.geolocationService.saveGeolocationData(any()))
-            .thenAnswer((_) async => 1);
-        mockRecordingBloc.setRecording(true);
-        when(() => mockRecordingBloc.currentTrack).thenReturn(null);
-
-        final initialCount = emittedGeolocations.length;
-        await geolocationBloc.getCurrentLocationAndEmit();
-        await Future.delayed(const Duration(milliseconds: 50));
-
-        expect(emittedGeolocations.length, initialCount);
+        await testGeolocationWithPrivacyZone(
+          geolocationBloc: geolocationBloc,
+          privacyZonesController: privacyZonesController,
+          emittedGeolocations: emittedGeolocations,
+          mockGeolocator: mockGeolocator,
+          mockIsarService: mockIsarService,
+          lat: testLat1,
+          lng: testLng1,
+          zones: [createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize)],
+          shouldEmit: false,
+          shouldSave: false,
+        );
       });
 
-      test('should emit geolocations outside privacy zone', () async {
-        final zoneJson = _createSquareZone(52.5, 13.4, 0.1);
-        privacyZonesController.add([zoneJson]);
-        await Future.delayed(const Duration(milliseconds: 10));
+      test('should emit and save geolocations outside privacy zone', () async {
+        await testGeolocationWithPrivacyZone(
+          geolocationBloc: geolocationBloc,
+          privacyZonesController: privacyZonesController,
+          emittedGeolocations: emittedGeolocations,
+          mockGeolocator: mockGeolocator,
+          mockIsarService: mockIsarService,
+          lat: testLat2,
+          lng: testLng2,
+          zones: [createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize)],
+          shouldEmit: true,
+          shouldSave: true,
+        );
+      });
 
-        final mockGeolocator = geo.GeolocatorPlatform.instance as MockGeolocator;
-        when(() => mockGeolocator.isLocationServiceEnabled())
-            .thenAnswer((_) async => true);
-        when(() => mockGeolocator.checkPermission())
-            .thenAnswer((_) async => geo.LocationPermission.whileInUse);
-        when(() => mockGeolocator.getCurrentPosition(
-                locationSettings: any(named: 'locationSettings')))
-            .thenAnswer((_) async => geo.Position(
-                  latitude: 53.0,
-                  longitude: 14.0,
-                  timestamp: DateTime.now(),
-                  accuracy: 1.0,
-                  altitude: 0.0,
-                  altitudeAccuracy: 0.0,
-                  heading: 0.0,
-                  headingAccuracy: 0.0,
-                  speed: 0.0,
-                  speedAccuracy: 0.0,
-                ));
+      test('should apply privacy zone updates during active recording',
+          () async {
+        final zone1 =
+            createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize);
+        privacyZonesController.add([zone1]);
+        await Future.delayed(shortDelay);
 
-        when(() => mockIsarService.geolocationService.saveGeolocationData(any()))
-            .thenAnswer((_) async => 1);
-        mockRecordingBloc.setRecording(true);
-        when(() => mockRecordingBloc.currentTrack).thenReturn(null);
-
-        final initialCount = emittedGeolocations.length;
+        setupMockGeolocator(mockGeolocator, testLat1, testLng1);
         await geolocationBloc.getCurrentLocationAndEmit();
-        await Future.delayed(const Duration(milliseconds: 50));
+        await Future.delayed(mediumDelay);
 
-        expect(emittedGeolocations.length, greaterThan(initialCount));
+        expect(emittedGeolocations.length, 0);
+        verifyNever(() =>
+            mockIsarService.geolocationService.saveGeolocationData(any()));
+
+        final zone2 =
+            createSquarePrivacyZone(testLat2, testLng2, defaultZoneSize);
+        privacyZonesController.add([zone2]);
+        await Future.delayed(shortDelay);
+
+        emittedGeolocations.clear();
+        setupMockGeolocator(mockGeolocator, testLat1, testLng1);
+        await geolocationBloc.getCurrentLocationAndEmit();
+        await Future.delayed(mediumDelay);
+
+        expect(emittedGeolocations.length, 1);
+        verify(() =>
+                mockIsarService.geolocationService.saveGeolocationData(any()))
+            .called(1);
+      });
+    });
+
+    group('privacy zone filtering when not recording', () {
+      test('should filter privacy zones even when not recording', () async {
+        await testGeolocationWithPrivacyZone(
+          geolocationBloc: geolocationBloc,
+          privacyZonesController: privacyZonesController,
+          emittedGeolocations: emittedGeolocations,
+          mockGeolocator: mockGeolocator,
+          mockIsarService: mockIsarService,
+          lat: testLat1,
+          lng: testLng1,
+          zones: [createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize)],
+          shouldEmit: false,
+          shouldSave: false,
+        );
+      });
+
+      test('should emit geolocations outside privacy zone when not recording',
+          () async {
+        await testGeolocationWithPrivacyZone(
+          geolocationBloc: geolocationBloc,
+          privacyZonesController: privacyZonesController,
+          emittedGeolocations: emittedGeolocations,
+          mockGeolocator: mockGeolocator,
+          mockIsarService: mockIsarService,
+          lat: testLat2,
+          lng: testLng2,
+          zones: [createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize)],
+          shouldEmit: true,
+          shouldSave: false,
+        );
+      });
+    });
+
+    group('duplicate geolocation filtering with privacy zones', () {
+      setUp(() {
+        setupRecordingMode(mockRecordingBloc, mockIsarService);
+      });
+
+      test('should skip duplicate geolocations even if outside privacy zone',
+          () async {
+        final zoneJson =
+            createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize);
+        privacyZonesController.add([zoneJson]);
+        await Future.delayed(shortDelay);
+
+        final now = DateTime.now();
+        setupMockGeolocator(mockGeolocator, testLat2, testLng2, timestamp: now);
+
+        await geolocationBloc.getCurrentLocationAndEmit();
+        await Future.delayed(mediumDelay);
+
+        emittedGeolocations.clear();
+
+        setupMockGeolocator(mockGeolocator, testLat2, testLng2, timestamp: now);
+        await geolocationBloc.getCurrentLocationAndEmit();
+        await Future.delayed(mediumDelay);
+
+        expect(emittedGeolocations.length, 0);
+      });
+
+      test('should handle privacy zone check before duplicate check', () async {
+        final zoneJson =
+            createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize);
+        privacyZonesController.add([zoneJson]);
+        await Future.delayed(shortDelay);
+
+        final now = DateTime.now();
+        setupMockGeolocator(mockGeolocator, testLat1, testLng1, timestamp: now);
+
+        await geolocationBloc.getCurrentLocationAndEmit();
+        await Future.delayed(mediumDelay);
+
+        setupMockGeolocator(mockGeolocator, testLat1, testLng1, timestamp: now);
+        await geolocationBloc.getCurrentLocationAndEmit();
+        await Future.delayed(mediumDelay);
+
+        expect(emittedGeolocations.length, 0);
+        verifyNever(() =>
+            mockIsarService.geolocationService.saveGeolocationData(any()));
+      });
+    });
+
+    group('multiple privacy zones', () {
+      setUp(() {
+        setupRecordingMode(mockRecordingBloc, mockIsarService);
+      });
+
+      test('should filter point inside any of multiple zones', () async {
+        final zone1 =
+            createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize);
+        final zone2 =
+            createSquarePrivacyZone(testLat2, testLng2, defaultZoneSize);
+        privacyZonesController.add([zone1, zone2]);
+        await Future.delayed(shortDelay);
+
+        setupMockGeolocator(mockGeolocator, testLat1, testLng1);
+        await geolocationBloc.getCurrentLocationAndEmit();
+        await Future.delayed(mediumDelay);
+
+        expect(emittedGeolocations.length, 0);
+
+        emittedGeolocations.clear();
+        setupMockGeolocator(mockGeolocator, testLat2, testLng2);
+        await geolocationBloc.getCurrentLocationAndEmit();
+        await Future.delayed(mediumDelay);
+
+        expect(emittedGeolocations.length, 0);
+
+        emittedGeolocations.clear();
+        setupMockGeolocator(mockGeolocator, testLat3, testLng3);
+        await geolocationBloc.getCurrentLocationAndEmit();
+        await Future.delayed(mediumDelay);
+
+        expect(emittedGeolocations.length, 1);
       });
     });
   });
 }
-
-String _createSquareZone(double centerLat, double centerLng, double size) {
-  final halfSize = size / 2;
-  final coordinates = [
-    [centerLng - halfSize, centerLat - halfSize],
-    [centerLng + halfSize, centerLat - halfSize],
-    [centerLng + halfSize, centerLat + halfSize],
-    [centerLng - halfSize, centerLat + halfSize],
-    [centerLng - halfSize, centerLat - halfSize],
-  ];
-
-  final geoJson = {
-    'type': 'Polygon',
-    'coordinates': [coordinates],
-  };
-
-  return jsonEncode(geoJson);
-}
-

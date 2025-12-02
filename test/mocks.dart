@@ -21,6 +21,8 @@ import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class MockIsarProvider extends Mock implements IsarProvider {}
 
@@ -223,6 +225,10 @@ class MockRecordingBloc extends Mock implements RecordingBloc {
 class MockSensorBloc extends Mock implements SensorBloc {
   Map<String, List<SensorData>> get sensorData => {};
 }
+
+class MockGeolocator extends Mock
+    with MockPlatformInterfaceMixin
+    implements geo.GeolocatorPlatform {}
 
 class MockSensor extends Mock implements sensors.Sensor {}
 

@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import 'package:mocktail/mocktail.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -151,4 +155,156 @@ SensorData createMockSensorData(GeolocationData geolocationData) {
     ..attribute = null
     ..characteristicUuid = '1234-5678-9012-3456'
     ..geolocationData.value = geolocationData;
+}
+
+/// Creates a square privacy zone GeoJSON string
+/// [centerLat] - center latitude
+/// [centerLng] - center longitude
+/// [size] - size of the square (in degrees)
+/// [closed] - whether to close the polygon (default: true)
+String createSquarePrivacyZone(double centerLat, double centerLng, double size, {bool closed = true}) {
+  final halfSize = size / 2;
+  final coordinates = [
+    [centerLng - halfSize, centerLat - halfSize],
+    [centerLng + halfSize, centerLat - halfSize],
+    [centerLng + halfSize, centerLat + halfSize],
+    [centerLng - halfSize, centerLat + halfSize],
+    if (closed) [centerLng - halfSize, centerLat - halfSize],
+  ];
+  
+  final geoJson = {
+    'type': 'Polygon',
+    'coordinates': [coordinates],
+  };
+  
+  return jsonEncode(geoJson);
+}
+
+/// Creates a polygon with many vertices (for testing complex polygons)
+String createPolygonWithManyVertices(
+    double centerLat, double centerLng, double size, int vertexCount) {
+  final halfSize = size / 2;
+  final coordinates = <List<double>>[];
+
+  for (int i = 0; i < vertexCount; i++) {
+    final angle = (2 * pi * i) / vertexCount;
+    final lat = centerLat + halfSize * cos(angle);
+    final lng = centerLng + halfSize * sin(angle);
+    coordinates.add([lng, lat]);
+  }
+
+  coordinates.add(coordinates.first);
+
+  final geoJson = {
+    'type': 'Polygon',
+    'coordinates': [coordinates],
+  };
+
+  return jsonEncode(geoJson);
+}
+
+/// Creates a privacy zone crossing the international date line
+String createZoneCrossingDateLine() {
+  final coordinates = [
+    [179.9, 52.4],
+    [-179.9, 52.4],
+    [-179.9, 52.6],
+    [179.9, 52.6],
+    [179.9, 52.4],
+  ];
+
+  final geoJson = {
+    'type': 'Polygon',
+    'coordinates': [coordinates],
+  };
+
+  return jsonEncode(geoJson);
+}
+
+/// Creates a mock Position for testing
+geo.Position createMockPosition(double lat, double lng, {DateTime? timestamp}) {
+  return geo.Position(
+    latitude: lat,
+    longitude: lng,
+    timestamp: timestamp ?? DateTime.now(),
+    accuracy: 1.0,
+    altitude: 0.0,
+    altitudeAccuracy: 0.0,
+    heading: 0.0,
+    headingAccuracy: 0.0,
+    speed: 0.0,
+    speedAccuracy: 0.0,
+  );
+}
+
+/// Sets up a mock Geolocator to return a specific position
+/// Requires MockGeolocator from mocks.dart
+void setupMockGeolocator(dynamic mockGeolocator, double lat, double lng,
+    {DateTime? timestamp}) {
+  when(() => mockGeolocator.isLocationServiceEnabled())
+      .thenAnswer((_) async => true);
+  when(() => mockGeolocator.checkPermission())
+      .thenAnswer((_) async => geo.LocationPermission.whileInUse);
+  when(() => mockGeolocator.getCurrentPosition(
+          locationSettings: any(named: 'locationSettings')))
+      .thenAnswer(
+          (_) async => createMockPosition(lat, lng, timestamp: timestamp));
+}
+
+/// Sets up recording mode for tests
+/// Requires MockRecordingBloc and MockIsarService from mocks.dart
+void setupRecordingMode(dynamic recordingBloc, dynamic isarService) {
+  when(() => isarService.geolocationService.saveGeolocationData(any()))
+      .thenAnswer((_) async => 1);
+  recordingBloc.setRecording(true);
+  when(() => recordingBloc.currentTrack).thenReturn(createMockTrackData());
+}
+
+/// Test constants for privacy zone tests
+const double testLat1 = 52.5;
+const double testLng1 = 13.4;
+const double testLat2 = 53.0;
+const double testLng2 = 14.0;
+const double testLat3 = 54.0;
+const double testLng3 = 15.0;
+const double defaultZoneSize = 0.1;
+const Duration shortDelay = Duration(milliseconds: 10);
+const Duration mediumDelay = Duration(milliseconds: 50);
+
+/// Helper function to test geolocation filtering with privacy zones
+/// This function sets up privacy zones, mocks a position, and verifies emission/saving behavior
+Future<void> testGeolocationWithPrivacyZone({
+  required dynamic geolocationBloc,
+  required StreamController<List<String>> privacyZonesController,
+  required List<GeolocationData> emittedGeolocations,
+  required dynamic mockGeolocator,
+  required dynamic mockIsarService,
+  required double lat,
+  required double lng,
+  required List<String> zones,
+  required bool shouldEmit,
+  required bool shouldSave,
+}) async {
+  privacyZonesController.add(zones);
+  await Future.delayed(shortDelay);
+
+  setupMockGeolocator(mockGeolocator, lat, lng);
+
+  final initialCount = emittedGeolocations.length;
+  await geolocationBloc.getCurrentLocationAndEmit();
+  await Future.delayed(mediumDelay);
+
+  if (shouldEmit) {
+    expect(emittedGeolocations.length, greaterThan(initialCount));
+  } else {
+    expect(emittedGeolocations.length, initialCount);
+  }
+
+  if (shouldSave) {
+    verify(() => mockIsarService.geolocationService.saveGeolocationData(any()))
+        .called(1);
+  } else {
+    verifyNever(
+        () => mockIsarService.geolocationService.saveGeolocationData(any()));
+  }
 }
