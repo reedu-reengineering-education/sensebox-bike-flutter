@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/utils/privacy_zone_checker.dart';
 import '../test_helpers.dart';
@@ -114,7 +115,8 @@ void main() {
         final zone = _createSquareZone(52.5, 13.4, 0.1);
         checker.updatePrivacyZones([zone]);
         
-        expect(checker.isInsidePrivacyZone(createTestGeolocation(52.4, 13.4)), true);
+        // Point on the boundary: centerLat - halfSize = 52.5 - 0.05 = 52.45
+        expect(checker.isInsidePrivacyZone(createTestGeolocation(52.45, 13.4)), true);
       });
     });
 
@@ -165,7 +167,12 @@ String _createSquareZone(double centerLat, double centerLng, double size) {
     [centerLng - halfSize, centerLat - halfSize],
   ];
   
-  return '{"type": "Polygon", "coordinates": [[$coordinates]]}';
+  final geoJson = {
+    'type': 'Polygon',
+    'coordinates': [coordinates],
+  };
+  
+  return jsonEncode(geoJson);
 }
 
 String _createUnclosedZone(double centerLat, double centerLng, double size) {
@@ -177,5 +184,10 @@ String _createUnclosedZone(double centerLat, double centerLng, double size) {
     [centerLng - halfSize, centerLat + halfSize],
   ];
   
-  return '{"type": "Polygon", "coordinates": [[$coordinates]]}';
+  final geoJson = {
+    'type': 'Polygon',
+    'coordinates': [coordinates],
+  };
+  
+  return jsonEncode(geoJson);
 }

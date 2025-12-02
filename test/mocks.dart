@@ -201,15 +201,26 @@ class MockSettingsBloc extends Mock
     implements SettingsBloc {}
 
 class MockRecordingBloc extends Mock implements RecordingBloc {
-  @override
-  bool get isRecording => false;
+  bool _isRecording = false;
+  late final ValueNotifier<bool> _isRecordingNotifier;
+
+  MockRecordingBloc() {
+    _isRecordingNotifier = ValueNotifier<bool>(_isRecording);
+  }
 
   @override
-  ValueNotifier<bool> get isRecordingNotifier => ValueNotifier<bool>(false);
+  bool get isRecording => _isRecording;
+
+  void setRecording(bool value) {
+    _isRecording = value;
+    _isRecordingNotifier.value = value;
+  }
+
+  @override
+  ValueNotifier<bool> get isRecordingNotifier => _isRecordingNotifier;
 }
 
 class MockSensorBloc extends Mock implements SensorBloc {
-  @override
   Map<String, List<SensorData>> get sensorData => {};
 }
 

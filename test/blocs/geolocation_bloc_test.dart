@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mocktail/mocktail.dart';
@@ -33,9 +33,6 @@ void main() {
       final mockGeolocator = MockGeolocator();
       geo.GeolocatorPlatform.instance = mockGeolocator;
 
-      when(() => mockRecordingBloc.isRecording).thenReturn(false);
-      when(() => mockRecordingBloc.isRecordingNotifier)
-          .thenReturn(ValueNotifier<bool>(false));
       when(() => mockSettingsBloc.privacyZones).thenReturn([]);
       when(() => mockSettingsBloc.privacyZonesStream)
           .thenAnswer((_) => privacyZonesController.stream);
@@ -139,7 +136,7 @@ void main() {
 
         when(() => mockIsarService.geolocationService.saveGeolocationData(any()))
             .thenAnswer((_) async => 1);
-        when(() => mockRecordingBloc.isRecording).thenReturn(true);
+        mockRecordingBloc.setRecording(true);
         when(() => mockRecordingBloc.currentTrack).thenReturn(null);
 
         final initialCount = emittedGeolocations.length;
@@ -176,7 +173,7 @@ void main() {
 
         when(() => mockIsarService.geolocationService.saveGeolocationData(any()))
             .thenAnswer((_) async => 1);
-        when(() => mockRecordingBloc.isRecording).thenReturn(true);
+        mockRecordingBloc.setRecording(true);
         when(() => mockRecordingBloc.currentTrack).thenReturn(null);
 
         final initialCount = emittedGeolocations.length;
@@ -199,6 +196,11 @@ String _createSquareZone(double centerLat, double centerLng, double size) {
     [centerLng - halfSize, centerLat - halfSize],
   ];
 
-  return '{"type": "Polygon", "coordinates": [[$coordinates]]}';
+  final geoJson = {
+    'type': 'Polygon',
+    'coordinates': [coordinates],
+  };
+
+  return jsonEncode(geoJson);
 }
 
