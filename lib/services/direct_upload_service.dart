@@ -58,43 +58,37 @@ class DirectUploadService {
     }
     
     _markBatchesAsPending(batches);
-
     final batchesToAdd = _mergeBatchesIntoQueue(batches);
 
     if (batchesToAdd.isNotEmpty) {
       _enforceQueueLimit(batchesToAdd.length);
-      _uploadQueue.add(_createUploadBatch(batchesToAdd));
+      _uploadQueue.add(UploadBatch(
+        batches: batchesToAdd,
+        uploadId: '${DateTime.now().millisecondsSinceEpoch}_${_uploadQueue.length}',
+        createdAt: DateTime.now(),
+      ));
     }
 
-    if (openSenseMapService.isAcceptingRequests && !_isUploading) {
+    if (_canStartUpload()) {
       _tryUpload();
     }
   }
 
+  bool _canStartUpload() {
+    return openSenseMapService.isAcceptingRequests && 
+           !_isUploading && 
+           _isEnabled && 
+           _uploadQueue.isNotEmpty;
+  }
+
   void _markBatchesAsPending(List<SensorBatch> batches) {
-    for (final batch in batches) {
-      if (!batch.isUploaded) {
-        batch.isUploadPending = true;
-      }
-    }
+    batches.where((b) => !b.isUploaded).forEach((b) => b.isUploadPending = true);
   }
 
   List<SensorBatch> _mergeBatchesIntoQueue(List<SensorBatch> newBatches) {
-    final batchesToAdd = <SensorBatch>[];
-    
-    for (final newBatch in newBatches) {
-      bool merged = false;
-
-      if (!_isUploading) {
-        merged = _tryMergeBatchIntoQueue(newBatch);
-      }
-
-      if (!merged) {
-        batchesToAdd.add(newBatch);
-      }
-    }
-    
-    return batchesToAdd;
+    return _isUploading 
+        ? newBatches 
+        : newBatches.where((newBatch) => !_tryMergeBatchIntoQueue(newBatch)).toList();
   }
 
   bool _tryMergeBatchIntoQueue(SensorBatch newBatch) {
@@ -104,8 +98,8 @@ class DirectUploadService {
       );
 
       if (existingBatchIndex >= 0) {
-        final existingBatch = uploadBatch.batches[existingBatchIndex];
-        existingBatch.aggregatedData.addAll(newBatch.aggregatedData);
+        uploadBatch.batches[existingBatchIndex]
+            .aggregatedData.addAll(newBatch.aggregatedData);
         return true;
       }
     }
@@ -113,40 +107,33 @@ class DirectUploadService {
   }
 
   void _enforceQueueLimit(int batchesToAdd) {
-    final currentTotal = _totalBatchesInQueue;
-    final newTotal = currentTotal + batchesToAdd;
+    final newTotal = _totalBatchesInQueue + batchesToAdd;
     
     if (newTotal > maxQueueSize) {
-      final batchesToRemove = newTotal - maxQueueSize;
-      
-      int removedCount = 0;
-      while (_uploadQueue.isNotEmpty && removedCount < batchesToRemove) {
-        final oldestBatch = _uploadQueue.removeAt(0);
-        removedCount += oldestBatch.batches.length;
-      }
+      _removeOldestBatches(newTotal - maxQueueSize);
     }
   }
 
-  UploadBatch _createUploadBatch(List<SensorBatch> batches) {
-    return UploadBatch(
-      batches: batches,
-      uploadId: _generateUploadId(),
-      createdAt: DateTime.now(),
-    );
+  void _removeOldestBatches(int batchesToRemove) {
+    int removedCount = 0;
+    while (_uploadQueue.isNotEmpty && removedCount < batchesToRemove) {
+      final oldestBatch = _uploadQueue.removeAt(0);
+      removedCount += oldestBatch.batches.length;
+    }
   }
 
   Future<void> uploadRemainingBufferedData() async {
-    if (_uploadQueue.isNotEmpty) {
-      try {
-        await _uploadAllQueued();
-        _uploadQueue.clear();
-      } catch (e) {
-        if (_isEnabled) {
-          _isEnabled = false;
-          _reportUploadFailure();
-        }
-        _uploadQueue.clear();
-      }
+    if (_uploadQueue.isEmpty) {
+      return;
+    }
+    
+    try {
+      await _uploadAllQueued();
+    } catch (e) {
+      _isEnabled = false;
+      _reportUploadFailure();
+    } finally {
+      _uploadQueue.clear();
     }
   }
 
@@ -158,11 +145,7 @@ class DirectUploadService {
   }
 
   Future<void> _tryUpload() async {
-    if (!_isEnabled || _uploadQueue.isEmpty || _isUploading) {
-      return;
-    }
-
-    if (!openSenseMapService.isAcceptingRequests) {
+    if (!_canStartUpload()) {
       return;
     }
 
@@ -170,22 +153,22 @@ class DirectUploadService {
 
     try {
       final queueSnapshot = List<UploadBatch>.from(_uploadQueue);
-      final mergedBatches = _mergeBatchesByGeoId(_collectAllBatches(queueSnapshot));
+      final uploadData = _dataPreparer.prepareDataFromBatches(
+        _mergeBatches(
+          queueSnapshot.expand((batch) => batch.batches).toList(),
+          preserveMetadata: false,
+        ),
+      );
 
-      final data = _prepareUploadData(mergedBatches);
-
-      if (data.isEmpty) {
+      if (uploadData.isEmpty) {
         _removeFirstBatch();
         return;
       }
 
-      await openSenseMapBloc.uploadData(senseBox.id, data);
-
+      await openSenseMapBloc.uploadData(senseBox.id, uploadData);
       _handleSuccessfulUpload(queueSnapshot);
-
       _mergeDuplicateBatchesInQueue();
-
-      if (_uploadQueue.isNotEmpty && !_isUploading) {
+      if (_canStartUpload()) {
         _tryUpload();
       }
     } catch (_) {
@@ -195,48 +178,62 @@ class DirectUploadService {
     }
   }
 
-  List<SensorBatch> _collectAllBatches(List<UploadBatch> uploadBatches) {
-    final allBatches = <SensorBatch>[];
-    for (final uploadBatch in uploadBatches) {
-      allBatches.addAll(uploadBatch.batches);
-    }
-    return allBatches;
+  List<SensorBatch> _mergeBatchesByGeoIdWithMetadata(List<SensorBatch> batches) {
+    return _mergeBatches(batches, preserveMetadata: true);
   }
 
-  List<SensorBatch> _mergeBatchesByGeoId(List<SensorBatch> batches) {
+  List<SensorBatch> _mergeBatches(
+    List<SensorBatch> batches, {
+    required bool preserveMetadata,
+  }) {
     final mergedBatches = <int, SensorBatch>{};
 
     for (final batch in batches) {
       final geoId = batch.geoLocation.id;
-      if (mergedBatches.containsKey(geoId)) {
-        final existingBatch = mergedBatches[geoId]!;
+      final existingBatch = mergedBatches[geoId];
+      
+      if (existingBatch != null) {
         existingBatch.aggregatedData.addAll(batch.aggregatedData);
+        if (preserveMetadata) {
+          existingBatch.isUploadPending = existingBatch.isUploadPending || batch.isUploadPending;
+        }
       } else {
-        final mergedBatch = SensorBatch(
-          geoLocation: batch.geoLocation,
-          aggregatedData: Map<String, List<double>>.from(batch.aggregatedData),
-          timestamp: batch.timestamp,
-        );
-        mergedBatch.isUploadPending = batch.isUploadPending;
-        mergedBatches[geoId] = mergedBatch;
+        mergedBatches[geoId] = _createMergedBatch(batch, preserveMetadata);
       }
     }
 
     return mergedBatches.values.toList();
   }
 
-  void _handleSuccessfulUpload(List<UploadBatch> queueSnapshot) {
-    final uploadedGeoIds = <int>[];
+  SensorBatch _createMergedBatch(SensorBatch batch, bool preserveMetadata) {
+    final mergedBatch = SensorBatch(
+      geoLocation: batch.geoLocation,
+      aggregatedData: Map<String, List<double>>.from(batch.aggregatedData),
+      timestamp: batch.timestamp,
+    );
     
-    for (final uploadBatch in queueSnapshot) {
-      for (final batch in uploadBatch.batches) {
-        batch.isUploadPending = false;
-        uploadedGeoIds.add(batch.geoLocation.id);
-      }
-      _uploadQueue.remove(uploadBatch);
+    if (preserveMetadata) {
+      mergedBatch.isUploadPending = batch.isUploadPending;
+      mergedBatch.isSavedToDb = batch.isSavedToDb;
+      mergedBatch.isUploaded = batch.isUploaded;
     }
+    
+    return mergedBatch;
+  }
 
-    _uploadSuccessController.add(uploadedGeoIds.toSet().toList());
+  void _handleSuccessfulUpload(List<UploadBatch> queueSnapshot) {
+    final uploadedGeoIds = queueSnapshot
+        .expand((uploadBatch) => uploadBatch.batches)
+        .map((batch) {
+          batch.isUploadPending = false;
+          return batch.geoLocation.id;
+        })
+        .toSet()
+        .toList();
+
+    _uploadQueue.removeWhere((batch) => queueSnapshot.contains(batch));
+
+    _uploadSuccessController.add(uploadedGeoIds);
   }
 
   void _handleUploadError() {
@@ -250,49 +247,24 @@ class DirectUploadService {
   }
 
   Future<void> _uploadAllQueued() async {
-    final isFinalFlush = !_isEnabled;
-
-    if ((!_isEnabled && !isFinalFlush) ||
-        _uploadQueue.isEmpty ||
-        _isUploading) {
+    if (_uploadQueue.isEmpty || _isUploading) {
       return;
-    }
-    
-    if (isFinalFlush) {
-      _isEnabled = true;
     }
     
     _isUploading = true;
 
     try {
-      final allBatches = _collectAllBatches(_uploadQueue);
-      final data = _prepareUploadData(allBatches);
+      final allBatches = _uploadQueue.expand((batch) => batch.batches).toList();
+      final data = _dataPreparer.prepareDataFromBatches(allBatches);
 
       if (data.isEmpty) {
-        _uploadQueue.clear();
         return;
       }
 
       await openSenseMapBloc.uploadData(senseBox.id, data);
-      _uploadQueue.clear();
-      
-    } catch (e) {
-      _uploadQueue.clear();
-      rethrow;
     } finally {
       _isUploading = false;
-      if (isFinalFlush) {
-        _isEnabled = false;
-      }
     }
-  }
-
-  Map<String, dynamic> _prepareUploadData(List<SensorBatch> batches) {
-    return _dataPreparer.prepareDataFromBatches(batches);
-  }
-
-  String _generateUploadId() {
-    return '${DateTime.now().millisecondsSinceEpoch}_${_uploadQueue.length}';
   }
 
   void _clearAllBuffers() {
@@ -300,58 +272,32 @@ class DirectUploadService {
   }
 
   void _mergeDuplicateBatchesInQueue() {
-    if (_uploadQueue.isEmpty) {
-      return;
-    }
+    if (_uploadQueue.isEmpty) return;
 
-    final allBatches = _collectAllBatches(_uploadQueue);
-    final mergedBatches = _mergeBatchesByGeoIdWithMetadata(allBatches);
+    final mergedBatches = _mergeBatchesByGeoIdWithMetadata(
+      _uploadQueue.expand((batch) => batch.batches).toList(),
+    );
 
-    _uploadQueue.clear();
-
-    if (mergedBatches.isNotEmpty) {
-      _uploadQueue.add(_createUploadBatch(mergedBatches));
-    }
-  }
-
-  List<SensorBatch> _mergeBatchesByGeoIdWithMetadata(List<SensorBatch> batches) {
-    final mergedBatches = <int, SensorBatch>{};
-    
-    for (final batch in batches) {
-      final geoId = batch.geoLocation.id;
-      if (mergedBatches.containsKey(geoId)) {
-        final existingBatch = mergedBatches[geoId]!;
-        existingBatch.aggregatedData.addAll(batch.aggregatedData);
-        existingBatch.isUploadPending =
-            existingBatch.isUploadPending || batch.isUploadPending;
-      } else {
-        final mergedBatch = SensorBatch(
-          geoLocation: batch.geoLocation,
-          aggregatedData: Map<String, List<double>>.from(batch.aggregatedData),
-          timestamp: batch.timestamp,
-        );
-        mergedBatch.isUploadPending = batch.isUploadPending;
-        mergedBatch.isSavedToDb = batch.isSavedToDb;
-        mergedBatch.isUploaded = batch.isUploaded;
-        mergedBatches[geoId] = mergedBatch;
-      }
-    }
-
-    return mergedBatches.values.toList();
+    _uploadQueue
+      ..clear()
+      ..addAll(mergedBatches.isEmpty ? [] : [
+        UploadBatch(
+          batches: mergedBatches,
+          uploadId: '${DateTime.now().millisecondsSinceEpoch}_${_uploadQueue.length}',
+          createdAt: DateTime.now(),
+        )
+      ]);
   }
 
   UploadBatch _removeFirstBatch() {
     final batch = _uploadQueue.removeAt(0);
-    for (final b in batch.batches) {
-      b.isUploadPending = false;
-    }
+    batch.batches.forEach((b) => b.isUploadPending = false);
     return batch;
   }
-
 
   void dispose() {
     _isUploading = false;
     _uploadQueue.clear();
     _uploadSuccessController.close();
   }
-} 
+}

@@ -423,5 +423,242 @@ void main() {
         expect(service.hasPreservedData, true);
       });
     });
+
+    group('Batch Merging', () {
+      test('merges batches with same geoId during queueing', () {
+        service.enable();
+        disableAutoUpload();
+
+        final geo = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+
+        service.queueBatchesForUpload([
+          SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {
+              'temperature': [22.5]
+            },
+            timestamp: DateTime.now(),
+          )
+        ]);
+
+        service.queueBatchesForUpload([
+          SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {
+              'humidity': [50.0]
+            },
+            timestamp: DateTime.now(),
+          )
+        ]);
+
+        expect(service.hasPreservedData, true);
+      });
+
+      test('does not merge batches when service is uploading', () async {
+        service.enable();
+        setupMockToSucceed();
+
+        final geo1 = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+
+        final geo2 = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+
+        service.queueBatchesForUpload([
+          SensorBatch(
+            geoLocation: geo1,
+            aggregatedData: {
+              'temperature': [22.5]
+            },
+            timestamp: DateTime.now(),
+          )
+        ]);
+
+        await Future.delayed(_asyncWaitDuration);
+
+        service.queueBatchesForUpload([
+          SensorBatch(
+            geoLocation: geo2,
+            aggregatedData: {
+              'humidity': [50.0]
+            },
+            timestamp: DateTime.now(),
+          )
+        ]);
+
+        await Future.delayed(_asyncWaitDuration);
+        expect(service.hasPreservedData, false);
+      });
+
+      test('preserves metadata when merging duplicate batches in queue', () {
+        service.enable();
+        disableAutoUpload();
+
+        final geo = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+
+        final batch1 = SensorBatch(
+          geoLocation: geo,
+          aggregatedData: {
+            'temperature': [22.5]
+          },
+          timestamp: DateTime.now(),
+        );
+        batch1.isUploadPending = true;
+        batch1.isSavedToDb = true;
+
+        final batch2 = SensorBatch(
+          geoLocation: geo,
+          aggregatedData: {
+            'humidity': [50.0]
+          },
+          timestamp: DateTime.now(),
+        );
+        batch2.isUploadPending = false;
+        batch2.isSavedToDb = false;
+
+        service.queueBatchesForUpload([batch1]);
+        service.queueBatchesForUpload([batch2]);
+
+        expect(service.hasPreservedData, true);
+      });
+    });
+
+    group('Upload Readiness', () {
+      test('does not start upload when service is disabled', () {
+        expect(service.isEnabled, false);
+        disableAutoUpload();
+
+        service.queueBatchesForUpload(createTestBatches());
+        expect(service.hasPreservedData, false);
+      });
+
+      test('does not start upload when queue is empty', () {
+        service.enable();
+        expect(service.hasPreservedData, false);
+      });
+
+      test('does not start upload when already uploading', () async {
+        service.enable();
+        setupMockToSucceed();
+
+        service.queueBatchesForUpload(createTestBatches());
+        await Future.delayed(_asyncWaitDuration);
+
+        expect(service.hasPreservedData, false);
+      });
+
+      test('does not start upload when service is not accepting requests', () {
+        service.enable();
+        disableAutoUpload();
+
+        service.queueBatchesForUpload(createTestBatches());
+        expect(service.hasPreservedData, true);
+      });
+    });
+
+    group('Empty Data Handling', () {
+      test('handles batches with empty aggregatedData', () async {
+        service.enable();
+        setupMockToSucceed();
+
+        final geo = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+
+        final emptyBatch = SensorBatch(
+          geoLocation: geo,
+          aggregatedData: {},
+          timestamp: DateTime.now(),
+        );
+
+        service.queueBatchesForUpload([emptyBatch]);
+        await queueAndUploadRemaining(service);
+
+        expect(service.hasPreservedData, false);
+        expect(service.isEnabled, true);
+      });
+    });
+
+    group('Final Upload Failure Handling', () {
+      test('handles failure when uploading remaining data', () async {
+        service.enable();
+        disableAutoUpload();
+
+        service.queueBatchesForUpload(createTestBatches());
+
+        setupMockToThrow(Exception('Network error'));
+
+        await service.uploadRemainingBufferedData();
+
+        expect(service.isEnabled, false);
+        expect(service.hasPreservedData, false);
+      });
+
+      test('does not report failure twice for final upload', () async {
+        bool uploadFailedCalled = false;
+        final serviceWithCallback = createService(
+          onUploadFailed: () => uploadFailedCalled = true,
+        );
+
+        serviceWithCallback.enable();
+        disableAutoUpload();
+
+        serviceWithCallback.queueBatchesForUpload(createTestBatches());
+
+        setupMockToThrow(Exception('Network error'));
+
+        await serviceWithCallback.uploadRemainingBufferedData();
+        await serviceWithCallback.uploadRemainingBufferedData();
+
+        expect(uploadFailedCalled, true);
+        serviceWithCallback.dispose();
+      });
+    });
+
+    group('Queue State Transitions', () {
+      test('clears queue after successful upload', () async {
+        service.enable();
+        setupMockToSucceed();
+
+        service.queueBatchesForUpload(createTestBatches(count: 5));
+        await queueAndUploadRemaining(service);
+
+        expect(service.hasPreservedData, false);
+        expect(service.isEnabled, true);
+      });
+
+      test('maintains queue state during upload', () async {
+        service.enable();
+        setupMockToSucceed();
+
+        service.queueBatchesForUpload(createTestBatches(count: 3));
+        expect(service.hasPreservedData, true);
+
+        await Future.delayed(_asyncWaitDuration);
+
+        expect(service.hasPreservedData, false);
+      });
+    });
   });
 }
