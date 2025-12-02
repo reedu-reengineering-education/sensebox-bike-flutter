@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
@@ -29,7 +30,10 @@ void main() {
     late MockOpenSenseMapBloc mockOpenSenseMapBloc;
     late SenseBox mockSenseBox;
 
-    // Helper to create test sensor batches
+    const _asyncWaitDuration = Duration(milliseconds: 10);
+    const _uploadWaitDuration = Duration(milliseconds: 100);
+    const _maxQueueSize = 1000;
+
     List<SensorBatch> createTestBatches({
       int count = 1,
       int startId = 1,
@@ -46,28 +50,51 @@ void main() {
 
         batches.add(SensorBatch(
           geoLocation: geo,
-          aggregatedData: sensorData ??
-              {
-                'temperature': [22.5 + i]
-              },
+          aggregatedData: sensorData ?? {'temperature': [22.5 + i]},
           timestamp: DateTime.now(),
         ));
       }
       return batches;
     }
 
-    // Helper to setup mock for upload error
+    DirectUploadService createService({VoidCallback? onUploadFailed}) {
+      return DirectUploadService(
+        openSenseMapService: mockOpenSenseMapService,
+        senseBox: mockSenseBox,
+        openSenseMapBloc: mockOpenSenseMapBloc,
+        onUploadFailed: onUploadFailed,
+      );
+    }
+
     void setupMockToThrow(dynamic error) {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
       when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
           .thenThrow(error);
     }
 
-    // Helper to setup mock for successful upload
     void setupMockToSucceed() {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
       when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
           .thenAnswer((_) async {});
+    }
+
+    void disableAutoUpload() {
+      when(() => mockOpenSenseMapService.isAcceptingRequests)
+          .thenReturn(false);
+    }
+
+    void enableAutoUpload() {
+      when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(true);
+    }
+
+    Future<void> queueAndWaitForUpload(DirectUploadService svc) async {
+      svc.queueBatchesForUpload(createTestBatches());
+      await Future.delayed(_asyncWaitDuration);
+    }
+
+    Future<void> queueAndUploadRemaining(DirectUploadService svc) async {
+      svc.queueBatchesForUpload(createTestBatches());
+      await svc.uploadRemainingBufferedData();
     }
 
     setUp(() {
@@ -85,13 +112,9 @@ void main() {
             ..title = 'Speed',
         ];
 
-      when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(true);
+      enableAutoUpload();
 
-      service = DirectUploadService(
-        openSenseMapService: mockOpenSenseMapService,
-        senseBox: mockSenseBox,
-        openSenseMapBloc: mockOpenSenseMapBloc,
-      );
+      service = createService();
     });
 
     tearDown(() {
@@ -125,8 +148,7 @@ void main() {
 
       test('clears buffer when disabled', () {
         service.enable();
-        when(() => mockOpenSenseMapService.isAcceptingRequests)
-            .thenReturn(false);
+        disableAutoUpload();
 
         service.queueBatchesForUpload(createTestBatches());
         expect(service.hasPreservedData, true);
@@ -139,8 +161,7 @@ void main() {
     group('Data Queueing', () {
       test('queues data when enabled', () {
         service.enable();
-        when(() => mockOpenSenseMapService.isAcceptingRequests)
-            .thenReturn(false);
+        disableAutoUpload();
 
         service.queueBatchesForUpload(createTestBatches());
         expect(service.hasPreservedData, true);
@@ -159,12 +180,11 @@ void main() {
         setupMockToThrow(Exception('Network error'));
 
         service.queueBatchesForUpload(createTestBatches(startId: 1));
-        await Future.delayed(Duration(milliseconds: 10));
+        await Future.delayed(_asyncWaitDuration);
 
         expect(service.isEnabled, false);
         expect(service.hasPreservedData, false);
 
-        // Try to queue more data - should be ignored
         service.queueBatchesForUpload(createTestBatches(startId: 2));
         expect(service.hasPreservedData, false);
       });
@@ -176,8 +196,7 @@ void main() {
           service.enable();
           setupMockToSucceed();
 
-          service.queueBatchesForUpload(createTestBatches());
-          await service.uploadRemainingBufferedData();
+          await queueAndUploadRemaining(service);
 
           expect(service.isEnabled, true);
         });
@@ -186,8 +205,7 @@ void main() {
           service.enable();
           setupMockToSucceed();
 
-          service.queueBatchesForUpload(createTestBatches());
-          await service.uploadRemainingBufferedData();
+          await queueAndUploadRemaining(service);
 
           expect(service.hasPreservedData, false);
         });
@@ -217,8 +235,7 @@ void main() {
             service.enable();
             setupMockToThrow(entry.value);
 
-            service.queueBatchesForUpload(createTestBatches());
-            await service.uploadRemainingBufferedData();
+            await queueAndUploadRemaining(service);
 
             expect(service.isEnabled, false,
                 reason: 'Service should be disabled after ${entry.key}');
@@ -244,60 +261,45 @@ void main() {
       });
 
       test('calls callback on error', () async {
-        serviceWithCallback = DirectUploadService(
-          openSenseMapService: mockOpenSenseMapService,
-          senseBox: mockSenseBox,
-          openSenseMapBloc: mockOpenSenseMapBloc,
+        serviceWithCallback = createService(
           onUploadFailed: () => uploadFailedCalled = true,
         );
 
         serviceWithCallback.enable();
         setupMockToThrow(Exception('Network error'));
 
-        serviceWithCallback.queueBatchesForUpload(createTestBatches());
-        await Future.delayed(Duration(milliseconds: 10));
+        await queueAndWaitForUpload(serviceWithCallback);
 
         expect(uploadFailedCalled, true);
       });
 
       test('calls callback only once for multiple errors', () async {
-        serviceWithCallback = DirectUploadService(
-          openSenseMapService: mockOpenSenseMapService,
-          senseBox: mockSenseBox,
-          openSenseMapBloc: mockOpenSenseMapBloc,
+        serviceWithCallback = createService(
           onUploadFailed: () => uploadFailedCallCount++,
         );
 
         serviceWithCallback.enable();
         setupMockToThrow(Exception('Network error'));
 
-        // Queue multiple batches
         for (int i = 0; i < 3; i++) {
           serviceWithCallback
               .queueBatchesForUpload(createTestBatches(startId: i));
-          await Future.delayed(Duration(milliseconds: 10));
+          await Future.delayed(_asyncWaitDuration);
         }
 
         expect(uploadFailedCallCount, 1);
       });
 
       test('calls callback when final upload fails', () async {
-        serviceWithCallback = DirectUploadService(
-          openSenseMapService: mockOpenSenseMapService,
-          senseBox: mockSenseBox,
-          openSenseMapBloc: mockOpenSenseMapBloc,
+        serviceWithCallback = createService(
           onUploadFailed: () => uploadFailedCalled = true,
         );
 
         serviceWithCallback.enable();
-
-        // Disable accepting requests so _tryUpload doesn't run during queueing
-        when(() => mockOpenSenseMapService.isAcceptingRequests)
-            .thenReturn(false);
+        disableAutoUpload();
 
         serviceWithCallback.queueBatchesForUpload(createTestBatches());
 
-        // Setup failure for final upload
         setupMockToThrow(Exception('Network error'));
 
         await serviceWithCallback.uploadRemainingBufferedData();
@@ -306,69 +308,51 @@ void main() {
       });
 
       test('does not call callback on success', () async {
-        serviceWithCallback = DirectUploadService(
-          openSenseMapService: mockOpenSenseMapService,
-          senseBox: mockSenseBox,
-          openSenseMapBloc: mockOpenSenseMapBloc,
+        serviceWithCallback = createService(
           onUploadFailed: () => uploadFailedCalled = true,
         );
 
         serviceWithCallback.enable();
         setupMockToSucceed();
 
-        serviceWithCallback.queueBatchesForUpload(createTestBatches());
-        await serviceWithCallback.uploadRemainingBufferedData();
+        await queueAndUploadRemaining(serviceWithCallback);
 
         expect(uploadFailedCalled, false);
       });
 
       test('works without callback (null)', () async {
-        serviceWithCallback = DirectUploadService(
-          openSenseMapService: mockOpenSenseMapService,
-          senseBox: mockSenseBox,
-          openSenseMapBloc: mockOpenSenseMapBloc,
-        );
-
+        serviceWithCallback = createService();
         serviceWithCallback.enable();
         setupMockToThrow(Exception('Network error'));
 
-        serviceWithCallback.queueBatchesForUpload(createTestBatches());
-
-        // Should not throw
-        await serviceWithCallback.uploadRemainingBufferedData();
+        await queueAndUploadRemaining(serviceWithCallback);
 
         expect(serviceWithCallback.hasPreservedData, false);
       });
     });
 
     group('Queue Limit', () {
-      const maxQueueSize = 1000;
-
       setUp(() {
-        // Prevent auto-upload during queue tests
-        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        disableAutoUpload();
       });
 
-      test('enforces limit of $maxQueueSize batches', () {
+      test('enforces limit of $_maxQueueSize batches', () {
         service.enable();
 
-        service.queueBatchesForUpload(createTestBatches(count: maxQueueSize));
+        service.queueBatchesForUpload(createTestBatches(count: _maxQueueSize));
         expect(service.hasPreservedData, true);
 
-        // Add more - should enforce limit
         service.queueBatchesForUpload(
-            createTestBatches(count: 10, startId: maxQueueSize));
+            createTestBatches(count: 10, startId: _maxQueueSize));
         expect(service.hasPreservedData, true);
       });
 
       test('removes oldest batches when limit is exceeded', () {
         service.enable();
 
-        // Fill to just under limit
         service.queueBatchesForUpload(createTestBatches(count: 998));
         expect(service.hasPreservedData, true);
 
-        // Add 5 more - should remove oldest 3
         service
             .queueBatchesForUpload(createTestBatches(count: 5, startId: 998));
         expect(service.hasPreservedData, true);
@@ -377,10 +361,8 @@ void main() {
       test('handles adding more batches than limit in one call', () {
         service.enable();
 
-        // Fill with 500
         service.queueBatchesForUpload(createTestBatches(count: 500));
 
-        // Try to add 600 more (would exceed by 100)
         service
             .queueBatchesForUpload(createTestBatches(count: 600, startId: 500));
 
@@ -390,7 +372,6 @@ void main() {
       test('handles incremental additions up to limit', () {
         service.enable();
 
-        // Add batches incrementally
         for (int batch = 0; batch < 10; batch++) {
           service.queueBatchesForUpload(
             createTestBatches(count: 100, startId: batch * 100),
@@ -399,7 +380,6 @@ void main() {
 
         expect(service.hasPreservedData, true);
 
-        // Add one more batch - should trigger limit
         service
             .queueBatchesForUpload(createTestBatches(count: 1, startId: 1000));
         expect(service.hasPreservedData, true);
@@ -408,47 +388,38 @@ void main() {
       test('merges batches with same geoId without increasing count', () {
         service.enable();
 
-        // Add 500 batches
         service.queueBatchesForUpload(createTestBatches(count: 500));
 
-        // Add 500 more with same geoIds (should merge)
         service.queueBatchesForUpload(
           createTestBatches(
             count: 500,
-            sensorData: {
-              'humidity': [50.0]
-            },
+            sensorData: {'humidity': [50.0]},
           ),
         );
 
         expect(service.hasPreservedData, true);
 
-        // Now add 600 new batches - should trigger limit
         service
             .queueBatchesForUpload(createTestBatches(count: 600, startId: 500));
         expect(service.hasPreservedData, true);
       });
 
       test('maintains limit after queue is cleared and refilled', () async {
-        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(true);
+        enableAutoUpload();
         setupMockToSucceed();
 
         service.enable();
 
-        // Fill queue
-        service.queueBatchesForUpload(createTestBatches(count: maxQueueSize));
+        service.queueBatchesForUpload(createTestBatches(count: _maxQueueSize));
 
-        // Upload clears queue
-        await Future.delayed(Duration(milliseconds: 100));
+        await Future.delayed(_uploadWaitDuration);
         expect(service.hasPreservedData, false);
 
-        // Refill queue
-        service.queueBatchesForUpload(createTestBatches(count: maxQueueSize));
+        service.queueBatchesForUpload(createTestBatches(count: _maxQueueSize));
         expect(service.hasPreservedData, true);
 
-        // Add more - should enforce limit again
         service.queueBatchesForUpload(
-            createTestBatches(count: 10, startId: maxQueueSize));
+            createTestBatches(count: 10, startId: _maxQueueSize));
         expect(service.hasPreservedData, true);
       });
     });
