@@ -946,6 +946,12 @@ abstract class AppLocalizations {
   /// **'Data upload failed. Please check your internet connection and try again.'**
   String get errorUploadFailed;
 
+  /// No description provided for @errorDirectUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time upload failed due to connectivity issues. Don\'t worry – your data has been saved locally. After stopping the recording, you can upload the track manually from the track overview.'**
+  String get errorDirectUploadFailed;
+
   /// No description provided for @errorPermanentAuthentication.
   ///
   /// In en, this message translates to:

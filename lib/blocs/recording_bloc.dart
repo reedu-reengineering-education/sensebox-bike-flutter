@@ -63,6 +63,11 @@ class RecordingBloc with ChangeNotifier {
   void _onDirectUploadDataLoss() {
     if (_currentTrack != null) {
       trackBloc.updateDirectUploadAuthFailure(_currentTrack!);
+      ErrorService.handleError(
+        DirectUploadFailureError(),
+        StackTrace.current,
+        sendToSentry: false,
+      );
     }
   }
 

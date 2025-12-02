@@ -242,19 +242,20 @@ class DirectUploadService {
   void _handleUploadError(dynamic error, StackTrace stackTrace) {
     final errorType = UploadErrorClassifier.classifyError(error);
     
-    _reportDataLoss();
-    
     switch (errorType) {
       case UploadErrorType.temporary:
+        // Don't report data loss for temporary errors - upload may succeed on next attempt
         return;
         
       case UploadErrorType.permanentAuth:
+        _reportDataLoss();
         ErrorService.handleError('Authentication error: $error', stackTrace,
             sendToSentry: false);
         _removeFirstBatch();
         return;
         
       case UploadErrorType.permanentClient:
+        _reportDataLoss();
         ErrorService.handleError('Client error: $error', stackTrace,
             sendToSentry: true);
         _removeFirstBatch();

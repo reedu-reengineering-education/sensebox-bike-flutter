@@ -265,5 +265,6 @@
     "trackFilterAll": "Todos",
     "trackFilterUnuploaded": "Não enviados",
     "trackUploadRetryFailed": "Tentativa de envio falhou. Tente novamente.",
-    "errorTrackNoGeolocations": "Trajeto não possui dados de geolocalização e não pode ser enviado."
+    "errorTrackNoGeolocations": "Trajeto não possui dados de geolocalização e não pode ser enviado.",
+    "errorDirectUploadFailed": "O upload em tempo real falhou devido a problemas de conectividade. Não se preocupe – seus dados foram salvos localmente. Após parar a gravação, você pode enviar o trajeto manualmente na tela de visão geral dos trajetos."
 }

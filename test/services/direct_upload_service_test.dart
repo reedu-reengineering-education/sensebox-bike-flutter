@@ -825,7 +825,7 @@ void main() {
     });
 
     group('Data Loss Callback Tests', () {
-      test('should call onDataLoss callback when upload fails during recording', () async {
+      test('should NOT call onDataLoss for temporary errors during recording', () async {
         bool dataLossCalled = false;
         
         final serviceWithCallback = DirectUploadService(
@@ -837,6 +837,7 @@ void main() {
         
         serviceWithCallback.enable();
         
+        // Temporary network error - should NOT trigger callback during recording
         when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
             .thenThrow(Exception('Network error'));
         
@@ -856,14 +857,61 @@ void main() {
         ];
         
         serviceWithCallback.queueBatchesForUpload(batches);
+        
+        // Wait for async _tryUpload to complete
+        await Future.delayed(Duration(milliseconds: 10));
+        
+        // During recording, temporary errors should NOT trigger callback
+        expect(dataLossCalled, false);
+        
+        serviceWithCallback.dispose();
+      });
+
+      test('should call onDataLoss when final upload fails (recording stopped)', () async {
+        bool dataLossCalled = false;
+        
+        final serviceWithCallback = DirectUploadService(
+          openSenseMapService: mockOpenSenseMapService,
+          senseBox: mockSenseBox,
+          openSenseMapBloc: mockOpenSenseMapBloc,
+          onDataLoss: () => dataLossCalled = true,
+        );
+        
+        serviceWithCallback.enable();
+        
+        // Disable accepting requests so _tryUpload doesn't run
+        when(() => mockOpenSenseMapService.isAcceptingRequests).thenReturn(false);
+        
+        final geo = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+        
+        final batches = [
+          SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5]},
+            timestamp: DateTime.now(),
+          )
+        ];
+        
+        serviceWithCallback.queueBatchesForUpload(batches);
+        
+        // Now simulate recording stop - final upload attempt fails
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
+            .thenThrow(Exception('Network error'));
+        
         await serviceWithCallback.uploadRemainingBufferedData();
         
+        // Final upload failure SHOULD trigger callback
         expect(dataLossCalled, true);
         
         serviceWithCallback.dispose();
       });
 
-      test('should call onDataLoss callback only once for multiple errors', () async {
+      test('should call onDataLoss callback only once for multiple permanent errors', () async {
         int dataLossCallCount = 0;
         
         final serviceWithCallback = DirectUploadService(
@@ -875,10 +923,11 @@ void main() {
         
         serviceWithCallback.enable();
         
+        // Permanent auth error - should trigger callback
         when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
-            .thenThrow(Exception('Network error'));
+            .thenThrow(Exception('Authentication failed - user needs to re-login'));
         
-        // Queue and try to upload multiple times
+        // Queue and try to upload multiple times with permanent errors
         for (int i = 0; i < 3; i++) {
           final geo = GeolocationData()
             ..id = i
@@ -896,9 +945,10 @@ void main() {
           ];
           
           serviceWithCallback.queueBatchesForUpload(batches);
-          await serviceWithCallback.uploadRemainingBufferedData();
+          await Future.delayed(Duration(milliseconds: 10));
         }
         
+        // Callback should only be called once even with multiple errors
         expect(dataLossCallCount, 1);
         
         serviceWithCallback.dispose();
@@ -942,7 +992,7 @@ void main() {
         serviceWithCallback.dispose();
       });
 
-      test('should call onDataLoss for temporary network errors', () async {
+      test('should NOT call onDataLoss for temporary server errors during recording', () async {
         bool dataLossCalled = false;
         
         final serviceWithCallback = DirectUploadService(
@@ -954,6 +1004,7 @@ void main() {
         
         serviceWithCallback.enable();
         
+        // Temporary server error - should NOT trigger callback during recording
         when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
             .thenThrow(Exception('Server error 503 - retrying'));
         
@@ -973,9 +1024,12 @@ void main() {
         ];
         
         serviceWithCallback.queueBatchesForUpload(batches);
-        await serviceWithCallback.uploadRemainingBufferedData();
         
-        expect(dataLossCalled, true);
+        // Wait for async _tryUpload to complete
+        await Future.delayed(Duration(milliseconds: 10));
+        
+        // During recording, temporary errors should NOT trigger callback
+        expect(dataLossCalled, false);
         
         serviceWithCallback.dispose();
       });

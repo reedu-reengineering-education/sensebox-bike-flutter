@@ -474,8 +474,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
 
   @override
-  String get errorUploadFailed =>
-      'Data upload failed. Please check your internet connection and try again.';
+  String get errorDirectUploadFailed => 'Real-time upload failed due to connectivity issues. Don\'t worry – your data has been saved locally. After stopping the recording, you can upload the track manually from the track overview.';
 
   @override
   String get errorPermanentAuthentication =>
