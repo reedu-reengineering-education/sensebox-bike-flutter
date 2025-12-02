@@ -263,6 +263,7 @@
   "trackDirectUploadAuthFailed": "Dieser Track konnte nicht in Echtzeit hochgeladen werden, da du nicht angemeldet warst. Bitte melde dich an und versuche den Upload erneut.",
     "trackStatusNotUploaded": "Nicht hochgeladen",
     "trackStatusUploadFailed": "Upload fehlgeschlagen",
+    "trackStatusUploadFailedAt": "Upload fehlgeschlagen am {date}",
     "trackFilterAll": "Alle",
     "trackFilterUnuploaded": "Nicht hochgeladen",
     "trackUploadRetryFailed": "Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut.",

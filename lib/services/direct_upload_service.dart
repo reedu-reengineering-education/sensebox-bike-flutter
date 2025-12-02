@@ -3,9 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_batch.dart';
 import 'package:sensebox_bike/models/upload_batch.dart';
-import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
-import 'package:sensebox_bike/services/upload_error_classifier.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 
@@ -38,6 +36,7 @@ class DirectUploadService {
 
   void enable() {
     _isEnabled = true;
+    _dataLossReported = false;
     _clearAllBuffers();
   }
 
@@ -141,10 +140,11 @@ class DirectUploadService {
       try {
         await _uploadAllQueued();
         _uploadQueue.clear();
-      } catch (e, st) {
-        _reportDataLoss();
-        ErrorService.handleError(
-            'Failed to upload remaining buffered data: $e', st);
+      } catch (e) {
+        if (_isEnabled) {
+          _isEnabled = false;
+          _reportDataLoss();
+        }
         _uploadQueue.clear();
       }
     }
@@ -188,8 +188,8 @@ class DirectUploadService {
       if (_uploadQueue.isNotEmpty && !_isUploading) {
         _tryUpload();
       }
-    } catch (e, st) {
-      _handleUploadError(e, st);
+    } catch (_) {
+      _handleUploadError();
     } finally {
       _isUploading = false;
     }
@@ -239,29 +239,14 @@ class DirectUploadService {
     _uploadSuccessController.add(uploadedGeoIds.toSet().toList());
   }
 
-  void _handleUploadError(dynamic error, StackTrace stackTrace) {
-    final errorType = UploadErrorClassifier.classifyError(error);
-    
-    switch (errorType) {
-      case UploadErrorType.temporary:
-        // Don't report data loss for temporary errors - upload may succeed on next attempt
-        return;
-        
-      case UploadErrorType.permanentAuth:
-        _reportDataLoss();
-        ErrorService.handleError('Authentication error: $error', stackTrace,
-            sendToSentry: false);
-        _removeFirstBatch();
-        return;
-        
-      case UploadErrorType.permanentClient:
-        _reportDataLoss();
-        ErrorService.handleError('Client error: $error', stackTrace,
-            sendToSentry: true);
-        _removeFirstBatch();
-        disable();
-        return;
+  void _handleUploadError() {
+    if (!_isEnabled) {
+      return;
     }
+    
+    _isEnabled = false;
+    _reportDataLoss();
+    _clearAllBuffers();
   }
 
   Future<void> _uploadAllQueued() async {
@@ -291,9 +276,7 @@ class DirectUploadService {
       await openSenseMapBloc.uploadData(senseBox.id, data);
       _uploadQueue.clear();
       
-    } catch (e, st) {
-      ErrorService.handleError('Batch upload failed: $e', st,
-          sendToSentry: true);
+    } catch (e) {
       _uploadQueue.clear();
       rethrow;
     } finally {
