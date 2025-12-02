@@ -191,6 +191,7 @@
     "errorRegistrationFailed": "Erro no registro. Verifique suas credenciais e tente novamente mais tarde.",
     "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.",
     "errorUploadFailed": "Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.",
+    "errorDirectUploadFailed": "O upload em tempo real falhou devido a problemas de conectividade. Não se preocupe – seus dados foram salvos localmente. Após parar a gravação, você pode enviar o trajeto manualmente na tela de visão geral dos trajetos.",
     "errorPermanentAuthentication": "Falha permanente na autenticação. Por favor, faça login para enviar dados.",
     "selectCsvFormat": "Selecionar formato CSV",
     "regularCsv": "CSV padrão",
@@ -266,6 +267,5 @@
     "trackFilterAll": "Todos",
     "trackFilterUnuploaded": "Não enviados",
     "trackUploadRetryFailed": "Tentativa de envio falhou. Tente novamente.",
-    "errorTrackNoGeolocations": "Trajeto não possui dados de geolocalização e não pode ser enviado.",
-    "errorDirectUploadFailed": "O upload em tempo real falhou devido a problemas de conectividade. Não se preocupe – seus dados foram salvos localmente. Após parar a gravação, você pode enviar o trajeto manualmente na tela de visão geral dos trajetos."
+    "errorTrackNoGeolocations": "Trajeto não possui dados de geolocalização e não pode ser enviado."
 }
