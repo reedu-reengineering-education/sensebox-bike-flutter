@@ -266,7 +266,8 @@ void main() {
         );
 
         serviceWithCallback.enable();
-        setupMockToThrow(Exception('Network error'));
+        setupMockToThrow(
+            Exception('Authentication failed - user needs to re-login'));
 
         await queueAndWaitForUpload(serviceWithCallback);
 
@@ -279,7 +280,8 @@ void main() {
         );
 
         serviceWithCallback.enable();
-        setupMockToThrow(Exception('Network error'));
+        setupMockToThrow(
+            Exception('Authentication failed - user needs to re-login'));
 
         for (int i = 0; i < 3; i++) {
           serviceWithCallback
@@ -300,7 +302,8 @@ void main() {
 
         serviceWithCallback.queueBatchesForUpload(createTestBatches());
 
-        setupMockToThrow(Exception('Network error'));
+        setupMockToThrow(
+            Exception('Authentication failed - user needs to re-login'));
 
         await serviceWithCallback.uploadRemainingBufferedData();
 
@@ -607,7 +610,8 @@ void main() {
 
         service.queueBatchesForUpload(createTestBatches());
 
-        setupMockToThrow(Exception('Network error'));
+        setupMockToThrow(
+            Exception('Authentication failed - user needs to re-login'));
 
         await service.uploadRemainingBufferedData();
 
@@ -626,7 +630,8 @@ void main() {
 
         serviceWithCallback.queueBatchesForUpload(createTestBatches());
 
-        setupMockToThrow(Exception('Network error'));
+        setupMockToThrow(
+            Exception('Authentication failed - user needs to re-login'));
 
         await serviceWithCallback.uploadRemainingBufferedData();
         await serviceWithCallback.uploadRemainingBufferedData();

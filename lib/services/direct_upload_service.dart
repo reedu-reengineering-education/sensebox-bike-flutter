@@ -176,8 +176,8 @@ class DirectUploadService {
       if (_canStartUpload()) {
         _tryUpload();
       }
-    } catch (_) {
-      _handleUploadError();
+    } catch (e) {
+      _handleUploadError(e);
     } finally {
       _isUploading = false;
     }
@@ -243,7 +243,7 @@ class DirectUploadService {
     _uploadSuccessController.add(uploadedGeoIds);
   }
 
-  void _handleUploadError() {
+  void _handleUploadError(dynamic error) {
     if (!_isEnabled) {
       return;
     }
