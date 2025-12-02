@@ -64,7 +64,8 @@ class DirectUploadService {
       _enforceQueueLimit(batchesToAdd.length);
       _uploadQueue.add(UploadBatch(
         batches: batchesToAdd,
-        uploadId: '${DateTime.now().millisecondsSinceEpoch}_${_uploadQueue.length}',
+        uploadId:
+            '${DateTime.now().millisecondsSinceEpoch}_${_uploadQueue.length}',
         createdAt: DateTime.now(),
       ));
     }
@@ -75,20 +76,24 @@ class DirectUploadService {
   }
 
   bool _canStartUpload() {
-    return openSenseMapService.isAcceptingRequests && 
-           !_isUploading && 
-           _isEnabled && 
-           _uploadQueue.isNotEmpty;
+    return openSenseMapService.isAcceptingRequests &&
+        !_isUploading &&
+        _isEnabled &&
+        _uploadQueue.isNotEmpty;
   }
 
   void _markBatchesAsPending(List<SensorBatch> batches) {
-    batches.where((b) => !b.isUploaded).forEach((b) => b.isUploadPending = true);
+    batches
+        .where((b) => !b.isUploaded)
+        .forEach((b) => b.isUploadPending = true);
   }
 
   List<SensorBatch> _mergeBatchesIntoQueue(List<SensorBatch> newBatches) {
-    return _isUploading 
-        ? newBatches 
-        : newBatches.where((newBatch) => !_tryMergeBatchIntoQueue(newBatch)).toList();
+    return _isUploading
+        ? newBatches
+        : newBatches
+            .where((newBatch) => !_tryMergeBatchIntoQueue(newBatch))
+            .toList();
   }
 
   bool _tryMergeBatchIntoQueue(SensorBatch newBatch) {
@@ -98,8 +103,8 @@ class DirectUploadService {
       );
 
       if (existingBatchIndex >= 0) {
-        uploadBatch.batches[existingBatchIndex]
-            .aggregatedData.addAll(newBatch.aggregatedData);
+        uploadBatch.batches[existingBatchIndex].aggregatedData
+            .addAll(newBatch.aggregatedData);
         return true;
       }
     }
@@ -178,7 +183,8 @@ class DirectUploadService {
     }
   }
 
-  List<SensorBatch> _mergeBatchesByGeoIdWithMetadata(List<SensorBatch> batches) {
+  List<SensorBatch> _mergeBatchesByGeoIdWithMetadata(
+      List<SensorBatch> batches) {
     return _mergeBatches(batches, preserveMetadata: true);
   }
 
@@ -191,11 +197,12 @@ class DirectUploadService {
     for (final batch in batches) {
       final geoId = batch.geoLocation.id;
       final existingBatch = mergedBatches[geoId];
-      
+
       if (existingBatch != null) {
         existingBatch.aggregatedData.addAll(batch.aggregatedData);
         if (preserveMetadata) {
-          existingBatch.isUploadPending = existingBatch.isUploadPending || batch.isUploadPending;
+          existingBatch.isUploadPending =
+              existingBatch.isUploadPending || batch.isUploadPending;
         }
       } else {
         mergedBatches[geoId] = _createMergedBatch(batch, preserveMetadata);
@@ -280,13 +287,16 @@ class DirectUploadService {
 
     _uploadQueue
       ..clear()
-      ..addAll(mergedBatches.isEmpty ? [] : [
-        UploadBatch(
-          batches: mergedBatches,
-          uploadId: '${DateTime.now().millisecondsSinceEpoch}_${_uploadQueue.length}',
-          createdAt: DateTime.now(),
-        )
-      ]);
+      ..addAll(mergedBatches.isEmpty
+          ? []
+          : [
+              UploadBatch(
+                batches: mergedBatches,
+                uploadId:
+                    '${DateTime.now().millisecondsSinceEpoch}_${_uploadQueue.length}',
+                createdAt: DateTime.now(),
+              )
+            ]);
   }
 
   UploadBatch _removeFirstBatch() {
