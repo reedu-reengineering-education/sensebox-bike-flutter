@@ -229,14 +229,14 @@ void main() {
       });
     });
 
-    group('Data Loss Callback', () {
-      late bool dataLossCalled;
-      late int dataLossCallCount;
+    group('Upload Failure Callback', () {
+      late bool uploadFailedCalled;
+      late int uploadFailedCallCount;
       late DirectUploadService serviceWithCallback;
 
       setUp(() {
-        dataLossCalled = false;
-        dataLossCallCount = 0;
+        uploadFailedCalled = false;
+        uploadFailedCallCount = 0;
       });
 
       tearDown(() {
@@ -248,7 +248,7 @@ void main() {
           openSenseMapService: mockOpenSenseMapService,
           senseBox: mockSenseBox,
           openSenseMapBloc: mockOpenSenseMapBloc,
-          onDataLoss: () => dataLossCalled = true,
+          onUploadFailed: () => uploadFailedCalled = true,
         );
 
         serviceWithCallback.enable();
@@ -257,7 +257,7 @@ void main() {
         serviceWithCallback.queueBatchesForUpload(createTestBatches());
         await Future.delayed(Duration(milliseconds: 10));
 
-        expect(dataLossCalled, true);
+        expect(uploadFailedCalled, true);
       });
 
       test('calls callback only once for multiple errors', () async {
@@ -265,7 +265,7 @@ void main() {
           openSenseMapService: mockOpenSenseMapService,
           senseBox: mockSenseBox,
           openSenseMapBloc: mockOpenSenseMapBloc,
-          onDataLoss: () => dataLossCallCount++,
+          onUploadFailed: () => uploadFailedCallCount++,
         );
 
         serviceWithCallback.enable();
@@ -278,7 +278,7 @@ void main() {
           await Future.delayed(Duration(milliseconds: 10));
         }
 
-        expect(dataLossCallCount, 1);
+        expect(uploadFailedCallCount, 1);
       });
 
       test('calls callback when final upload fails', () async {
@@ -286,7 +286,7 @@ void main() {
           openSenseMapService: mockOpenSenseMapService,
           senseBox: mockSenseBox,
           openSenseMapBloc: mockOpenSenseMapBloc,
-          onDataLoss: () => dataLossCalled = true,
+          onUploadFailed: () => uploadFailedCalled = true,
         );
 
         serviceWithCallback.enable();
@@ -302,7 +302,7 @@ void main() {
 
         await serviceWithCallback.uploadRemainingBufferedData();
 
-        expect(dataLossCalled, true);
+        expect(uploadFailedCalled, true);
       });
 
       test('does not call callback on success', () async {
@@ -310,7 +310,7 @@ void main() {
           openSenseMapService: mockOpenSenseMapService,
           senseBox: mockSenseBox,
           openSenseMapBloc: mockOpenSenseMapBloc,
-          onDataLoss: () => dataLossCalled = true,
+          onUploadFailed: () => uploadFailedCalled = true,
         );
 
         serviceWithCallback.enable();
@@ -319,7 +319,7 @@ void main() {
         serviceWithCallback.queueBatchesForUpload(createTestBatches());
         await serviceWithCallback.uploadRemainingBufferedData();
 
-        expect(dataLossCalled, false);
+        expect(uploadFailedCalled, false);
       });
 
       test('works without callback (null)', () async {

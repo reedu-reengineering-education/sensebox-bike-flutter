@@ -60,7 +60,7 @@ class RecordingBloc with ChangeNotifier {
     }
   }
 
-  void _onDirectUploadDataLoss() {
+  void _onDirectUploadFailed() {
     if (_currentTrack != null) {
       trackBloc.updateDirectUploadAuthFailure(_currentTrack!);
       ErrorService.handleError(
@@ -125,7 +125,7 @@ class RecordingBloc with ChangeNotifier {
             openSenseMapService: OpenSenseMapService(),
             senseBox: _selectedSenseBox!,
             openSenseMapBloc: openSenseMapBloc,
-            onDataLoss: _onDirectUploadDataLoss);
+            onUploadFailed: _onDirectUploadFailed);
       } else {
         _batchUploadService = BatchUploadService(
           openSenseMapService: OpenSenseMapService(),

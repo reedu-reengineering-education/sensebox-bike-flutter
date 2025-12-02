@@ -11,7 +11,7 @@ class DirectUploadService {
   final OpenSenseMapService openSenseMapService;
   final SenseBox senseBox;
   final OpenSenseMapBloc openSenseMapBloc;
-  final VoidCallback? onDataLoss;
+  final VoidCallback? onUploadFailed;
   final UploadDataPreparer _dataPreparer;
   
   final StreamController<List<int>> _uploadSuccessController =
@@ -21,7 +21,7 @@ class DirectUploadService {
   
   bool _isEnabled = false;
   bool _isUploading = false;
-  bool _dataLossReported = false;
+  bool _uploadFailureReported = false;
   
   static const int maxQueueSize = 1000;
 
@@ -29,14 +29,14 @@ class DirectUploadService {
     required this.openSenseMapService,
     required this.senseBox,
     required this.openSenseMapBloc,
-    this.onDataLoss,
+    this.onUploadFailed,
   }) : _dataPreparer = UploadDataPreparer(senseBox: senseBox);
 
   Stream<List<int>> get uploadSuccessStream => _uploadSuccessController.stream;
 
   void enable() {
     _isEnabled = true;
-    _dataLossReported = false;
+    _uploadFailureReported = false;
     _clearAllBuffers();
   }
 
@@ -143,17 +143,17 @@ class DirectUploadService {
       } catch (e) {
         if (_isEnabled) {
           _isEnabled = false;
-          _reportDataLoss();
+          _reportUploadFailure();
         }
         _uploadQueue.clear();
       }
     }
   }
 
-  void _reportDataLoss() {
-    if (!_dataLossReported) {
-      _dataLossReported = true;
-      onDataLoss?.call();
+  void _reportUploadFailure() {
+    if (!_uploadFailureReported) {
+      _uploadFailureReported = true;
+      onUploadFailed?.call();
     }
   }
 
@@ -245,7 +245,7 @@ class DirectUploadService {
     }
     
     _isEnabled = false;
-    _reportDataLoss();
+    _reportUploadFailure();
     _clearAllBuffers();
   }
 
