@@ -824,6 +824,276 @@ void main() {
       });
     });
 
+    group('Data Loss Callback Tests', () {
+      test('should call onDataLoss callback when upload fails during recording', () async {
+        bool dataLossCalled = false;
+        
+        final serviceWithCallback = DirectUploadService(
+          openSenseMapService: mockOpenSenseMapService,
+          senseBox: mockSenseBox,
+          openSenseMapBloc: mockOpenSenseMapBloc,
+          onDataLoss: () => dataLossCalled = true,
+        );
+        
+        serviceWithCallback.enable();
+        
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
+            .thenThrow(Exception('Network error'));
+        
+        final geo = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+        
+        final batches = [
+          SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5]},
+            timestamp: DateTime.now(),
+          )
+        ];
+        
+        serviceWithCallback.queueBatchesForUpload(batches);
+        await serviceWithCallback.uploadRemainingBufferedData();
+        
+        expect(dataLossCalled, true);
+        
+        serviceWithCallback.dispose();
+      });
+
+      test('should call onDataLoss callback only once for multiple errors', () async {
+        int dataLossCallCount = 0;
+        
+        final serviceWithCallback = DirectUploadService(
+          openSenseMapService: mockOpenSenseMapService,
+          senseBox: mockSenseBox,
+          openSenseMapBloc: mockOpenSenseMapBloc,
+          onDataLoss: () => dataLossCallCount++,
+        );
+        
+        serviceWithCallback.enable();
+        
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
+            .thenThrow(Exception('Network error'));
+        
+        // Queue and try to upload multiple times
+        for (int i = 0; i < 3; i++) {
+          final geo = GeolocationData()
+            ..id = i
+            ..latitude = 10.0 + i
+            ..longitude = 20.0 + i
+            ..speed = 5.0
+            ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, i);
+          
+          final batches = [
+            SensorBatch(
+              geoLocation: geo,
+              aggregatedData: {'temperature': [22.5 + i]},
+              timestamp: DateTime.now(),
+            )
+          ];
+          
+          serviceWithCallback.queueBatchesForUpload(batches);
+          await serviceWithCallback.uploadRemainingBufferedData();
+        }
+        
+        expect(dataLossCallCount, 1);
+        
+        serviceWithCallback.dispose();
+      });
+
+      test('should not call onDataLoss callback when upload succeeds', () async {
+        bool dataLossCalled = false;
+        
+        final serviceWithCallback = DirectUploadService(
+          openSenseMapService: mockOpenSenseMapService,
+          senseBox: mockSenseBox,
+          openSenseMapBloc: mockOpenSenseMapBloc,
+          onDataLoss: () => dataLossCalled = true,
+        );
+        
+        serviceWithCallback.enable();
+        
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
+            .thenAnswer((_) async {});
+        
+        final geo = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+        
+        final batches = [
+          SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5]},
+            timestamp: DateTime.now(),
+          )
+        ];
+        
+        serviceWithCallback.queueBatchesForUpload(batches);
+        await serviceWithCallback.uploadRemainingBufferedData();
+        
+        expect(dataLossCalled, false);
+        
+        serviceWithCallback.dispose();
+      });
+
+      test('should call onDataLoss for temporary network errors', () async {
+        bool dataLossCalled = false;
+        
+        final serviceWithCallback = DirectUploadService(
+          openSenseMapService: mockOpenSenseMapService,
+          senseBox: mockSenseBox,
+          openSenseMapBloc: mockOpenSenseMapBloc,
+          onDataLoss: () => dataLossCalled = true,
+        );
+        
+        serviceWithCallback.enable();
+        
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
+            .thenThrow(Exception('Server error 503 - retrying'));
+        
+        final geo = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+        
+        final batches = [
+          SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5]},
+            timestamp: DateTime.now(),
+          )
+        ];
+        
+        serviceWithCallback.queueBatchesForUpload(batches);
+        await serviceWithCallback.uploadRemainingBufferedData();
+        
+        expect(dataLossCalled, true);
+        
+        serviceWithCallback.dispose();
+      });
+
+      test('should call onDataLoss for authentication errors', () async {
+        bool dataLossCalled = false;
+        
+        final serviceWithCallback = DirectUploadService(
+          openSenseMapService: mockOpenSenseMapService,
+          senseBox: mockSenseBox,
+          openSenseMapBloc: mockOpenSenseMapBloc,
+          onDataLoss: () => dataLossCalled = true,
+        );
+        
+        serviceWithCallback.enable();
+        
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
+            .thenThrow(Exception('Authentication failed - user needs to re-login'));
+        
+        final geo = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+        
+        final batches = [
+          SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5]},
+            timestamp: DateTime.now(),
+          )
+        ];
+        
+        serviceWithCallback.queueBatchesForUpload(batches);
+        await serviceWithCallback.uploadRemainingBufferedData();
+        
+        expect(dataLossCalled, true);
+        
+        serviceWithCallback.dispose();
+      });
+
+      test('should call onDataLoss for client errors', () async {
+        bool dataLossCalled = false;
+        
+        final serviceWithCallback = DirectUploadService(
+          openSenseMapService: mockOpenSenseMapService,
+          senseBox: mockSenseBox,
+          openSenseMapBloc: mockOpenSenseMapBloc,
+          onDataLoss: () => dataLossCalled = true,
+        );
+        
+        serviceWithCallback.enable();
+        
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
+            .thenThrow(Exception('Client error 404: Not Found'));
+        
+        final geo = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+        
+        final batches = [
+          SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5]},
+            timestamp: DateTime.now(),
+          )
+        ];
+        
+        serviceWithCallback.queueBatchesForUpload(batches);
+        await serviceWithCallback.uploadRemainingBufferedData();
+        
+        expect(dataLossCalled, true);
+        
+        serviceWithCallback.dispose();
+      });
+
+      test('should work without onDataLoss callback (null)', () async {
+        final serviceWithoutCallback = DirectUploadService(
+          openSenseMapService: mockOpenSenseMapService,
+          senseBox: mockSenseBox,
+          openSenseMapBloc: mockOpenSenseMapBloc,
+        );
+        
+        serviceWithoutCallback.enable();
+        
+        when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
+            .thenThrow(Exception('Network error'));
+        
+        final geo = GeolocationData()
+          ..id = 1
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0);
+        
+        final batches = [
+          SensorBatch(
+            geoLocation: geo,
+            aggregatedData: {'temperature': [22.5]},
+            timestamp: DateTime.now(),
+          )
+        ];
+        
+        serviceWithoutCallback.queueBatchesForUpload(batches);
+        
+        // Should not throw even without callback
+        await serviceWithoutCallback.uploadRemainingBufferedData();
+        
+        expect(serviceWithoutCallback.hasPreservedData, false);
+        
+        serviceWithoutCallback.dispose();
+      });
+    });
+
     group('Queue Limit Tests', () {
       test('should enforce queue limit of 1000 batches', () async {
         directUploadService.enable();

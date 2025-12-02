@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_batch.dart';
 import 'package:sensebox_bike/models/upload_batch.dart';
@@ -12,6 +13,7 @@ class DirectUploadService {
   final OpenSenseMapService openSenseMapService;
   final SenseBox senseBox;
   final OpenSenseMapBloc openSenseMapBloc;
+  final VoidCallback? onDataLoss;
   final UploadDataPreparer _dataPreparer;
   
   final StreamController<List<int>> _uploadSuccessController =
@@ -21,6 +23,7 @@ class DirectUploadService {
   
   bool _isEnabled = false;
   bool _isUploading = false;
+  bool _dataLossReported = false;
   
   static const int maxQueueSize = 1000;
 
@@ -28,6 +31,7 @@ class DirectUploadService {
     required this.openSenseMapService,
     required this.senseBox,
     required this.openSenseMapBloc,
+    this.onDataLoss,
   }) : _dataPreparer = UploadDataPreparer(senseBox: senseBox);
 
   Stream<List<int>> get uploadSuccessStream => _uploadSuccessController.stream;
@@ -138,10 +142,18 @@ class DirectUploadService {
         await _uploadAllQueued();
         _uploadQueue.clear();
       } catch (e, st) {
+        _reportDataLoss();
         ErrorService.handleError(
             'Failed to upload remaining buffered data: $e', st);
         _uploadQueue.clear();
       }
+    }
+  }
+
+  void _reportDataLoss() {
+    if (!_dataLossReported) {
+      _dataLossReported = true;
+      onDataLoss?.call();
     }
   }
 
@@ -229,6 +241,8 @@ class DirectUploadService {
 
   void _handleUploadError(dynamic error, StackTrace stackTrace) {
     final errorType = UploadErrorClassifier.classifyError(error);
+    
+    _reportDataLoss();
     
     switch (errorType) {
       case UploadErrorType.temporary:
