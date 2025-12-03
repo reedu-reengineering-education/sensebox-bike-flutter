@@ -151,3 +151,8 @@ double _degreesToRadians(double degrees) {
   return degrees * (pi / 180.0);
 }
 
+/// Calculates distance for a list of geolocations
+double getDistance(List<GeolocationData> geolocations) {
+  return calculateDistanceWithSimplify(geolocations);
+}
+

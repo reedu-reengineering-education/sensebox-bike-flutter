@@ -21,6 +21,8 @@ import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class MockIsarProvider extends Mock implements IsarProvider {}
 
@@ -201,17 +203,32 @@ class MockSettingsBloc extends Mock
     implements SettingsBloc {}
 
 class MockRecordingBloc extends Mock implements RecordingBloc {
-  @override
-  bool get isRecording => false;
+  bool _isRecording = false;
+  late final ValueNotifier<bool> _isRecordingNotifier;
+
+  MockRecordingBloc() {
+    _isRecordingNotifier = ValueNotifier<bool>(_isRecording);
+  }
 
   @override
-  ValueNotifier<bool> get isRecordingNotifier => ValueNotifier<bool>(false);
+  bool get isRecording => _isRecording;
+
+  void setRecording(bool value) {
+    _isRecording = value;
+    _isRecordingNotifier.value = value;
+  }
+
+  @override
+  ValueNotifier<bool> get isRecordingNotifier => _isRecordingNotifier;
 }
 
 class MockSensorBloc extends Mock implements SensorBloc {
-  @override
   Map<String, List<SensorData>> get sensorData => {};
 }
+
+class MockGeolocator extends Mock
+    with MockPlatformInterfaceMixin
+    implements geo.GeolocatorPlatform {}
 
 class MockSensor extends Mock implements sensors.Sensor {}
 
