@@ -189,6 +189,7 @@
     "errorRegistrationFailed": "Registration failed. Please check your credentials and try once again later.",
     "errorBleConnectionFailed": "Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.",
     "errorUploadFailed": "Data upload failed. Please check your internet connection and try again.",
+    "errorDirectUploadFailed": "Real-time upload failed due to connectivity issues. Don't worry – your data has been saved locally. After stopping the recording, you can upload the track manually from the track overview.",
     "errorPermanentAuthentication": "Authentication failed permanently. Please log in to upload data.",
     "selectCsvFormat": "Select CSV format",
     "regularCsv": "Standard CSV",
