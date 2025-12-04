@@ -22,5 +22,9 @@
       {
         "label": "Sao Paulo",
         "value": "saopaulo"
+      },
+      {
+        "label": "Heilbronn",
+        "value": "heilbronn"
       }
 ]
