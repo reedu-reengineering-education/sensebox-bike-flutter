@@ -25,6 +25,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   SenseBox? _selectedSenseBox;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   bool get isAuthenticated => _isAuthenticated;
+  bool get hasAuthAndSelectedSenseBox =>
+      _isAuthenticated && _selectedSenseBox != null;
   
   Future<Map<String, dynamic>?> get userData => _service.getUserData();
 

@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
@@ -281,6 +282,33 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     );
   }
 
+  Widget _buildUploadRequirementHint(AppLocalizations localizations) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding:
+          const EdgeInsets.symmetric(horizontal: spacing, vertical: spacing),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: iconSize,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: spacing / 2),
+          Expanded(
+            child: Text(
+              localizations.trackUploadLoginSelectHint,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _loadTrackData() async {
     try {
       // Refresh track metadata from database to get updated upload status
@@ -451,22 +479,14 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   Future<void> _startUpload() async {
     final localizations = AppLocalizations.of(context)!;
 
-    // Check if user is authenticated
-    if (!openSenseMapBloc.isAuthenticated) {
+    final hasAuthAndBox = openSenseMapBloc.hasAuthAndSelectedSenseBox;
+    if (!hasAuthAndBox) {
+      final message = !openSenseMapBloc.isAuthenticated
+          ? localizations.uploadProgressAuthenticationError
+          : localizations.errorNoSenseBoxSelected;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(localizations.uploadProgressAuthenticationError),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
-
-    // Check if senseBox is selected
-    if (openSenseMapBloc.selectedSenseBox == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(localizations.errorNoSenseBoxSelected),
+          content: Text(message),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -549,7 +569,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
 
 
-  Widget _buildAppBarTitle(TrackData track) {
+  Widget _buildAppBarTitle(TrackData track, bool hideUploadButton) {
     final theme = Theme.of(context);
 
     return Row(
@@ -562,7 +582,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         ),
         const Spacer(),
         // Upload button - only show if track hasn't been uploaded
-        if (!_track.isUploaded)
+        if (!_track.isUploaded && !hideUploadButton)
           GestureDetector(
             onTap: _isUploading ? null : _startUpload,
             child: Container(
@@ -603,19 +623,26 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settingsBloc = Provider.of<SettingsBloc>(context);
+    final isPostRideMode = !settingsBloc.directUploadMode;
+    final uploadEligible = openSenseMapBloc.hasAuthAndSelectedSenseBox;
+    final hideUploadButton = isPostRideMode && !uploadEligible;
+    final localizations = AppLocalizations.of(context)!;
+
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: _buildAppBarTitle(_track)),
+        appBar: AppBar(title: _buildAppBarTitle(_track, hideUploadButton)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: _buildAppBarTitle(_track)),
+      appBar: AppBar(title: _buildAppBarTitle(_track, hideUploadButton)),
       body: SafeArea(
         minimum: const EdgeInsets.only(bottom: 8),
         child: Column(
           children: [
+            if (hideUploadButton) _buildUploadRequirementHint(localizations),
             // Upload status section
             _buildUploadStatusSection(),
             Expanded(
