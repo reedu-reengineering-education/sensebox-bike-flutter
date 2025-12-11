@@ -16,7 +16,7 @@
 
     "generalCancel": "Cancelar",
     "generalCreate": "Criar",
-    "generalOk": "OK",
+    "generalOk": "Ok",
     "generalSave": "Salvar",
     "generalDelete": "Excluir",
     "generalEdit": "Editar",
@@ -92,11 +92,11 @@
     "connectionButtonStart": "Iniciar",
     "connectionButtonStop": "Parar",
     "bleDeviceSelectTitle": "Toque para conectar",
-    "noBleDevicesFound": "Nenhuma senseBox detectada. Certifique-se de que sua senseBox está ligada, feche esta janela e tente novamente.",
+    "noBleDevicesFound": "Nenhuma senseBox encontrada. Certifique-se de que sua senseBox está ligada, toque fora desta janela e tente novamente.",
     "selectOrCreateBox": "Selecionar ou criar senseBox",
     "createBoxTitle": "Criar senseBox:bike",
     "createBoxModel": "Modelo",
-    "createBoxModelErrorEmpty": "Selecione um modelo para continuar",
+    "createBoxModelErrorEmpty": "Por favor, selecione um modelo",
     "createBoxName": "Nome",
     "createBoxNameError": "O nome deve ter entre 2 e 50 caracteres",
     "createBoxGeolocationCurrentPosition": "Sua posição atual será usada",
@@ -110,7 +110,7 @@
     "settingsUploadMode": "Modo de Upload",
     "settingsUploadModeDirect": "Upload Direto (Beta)",
     "settingsUploadModePostRide": "Upload Pós-Corrida",
-    "settingsUploadModeDescription": "Defina quando os seus dados são enviados durante a gravação",
+    "settingsUploadModeDescription": "Escolha quando enviar seus dados durante a gravação",
     "settingsUploadModeCurrent": "Atual: {mode}",
     "@settingsUploadModeCurrent": {
         "placeholders": {
@@ -139,10 +139,10 @@
     "privacyZonesStart": "Toque no mapa para começar a desenhar uma área. Toque na marca de seleção para finalizar.",
     "privacyZonesDelete": "Toque em uma área para excluí-la. Toque na marca de seleção para finalizar.",
     "trackDetailsPermissionsError": "Permissão negada para salvar o arquivo no armazenamento externo.",
-    "trackDetailsFileSaved": "O arquivo CSV foi salvo na pasta Downloads.",
+    "trackDetailsFileSaved": "Arquivo CSV salvo na pasta Downloads.",
     "trackDetailsExport": "Exportação de dados do trajeto em CSV.",
   
-    "trackDetailsLoadingError": "Não foi possível carregar o trajeto.",
+    "trackDetailsLoadingError": "Erro ao carregar o trajeto.",
     "trackDetailsNoTrackData": "Nenhum trajeto disponível.",
     "trackDelete": "Excluir Trajeto",
     "trackDeleteConfirmation": "Tem certeza de que deseja excluir este trajeto?",
@@ -219,7 +219,7 @@
     "uploadProgressTitle": "Progresso do Upload",
     "uploadProgressPreparing": "Preparando upload...",
     "uploadProgressUploading": "Enviando dados do trajeto...",
-    "uploadProgressInfo": "Mantenha o aplicativo aberto durante o upload. Dependendo do comprimento do trajeto, isso pode demorar um pouco.\n\nPara enviar mais tarde, use a tela de visão geral do trajeto.",
+    "uploadProgressInfo": "Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser enviar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.",
     "uploadProgressRetrying": "Tentando upload novamente...",
     "uploadProgressCompleted": "Upload concluído com sucesso",
     "uploadProgressFailed": "Upload falhou",
@@ -244,8 +244,8 @@
         }
     },
     "uploadProgressAuthenticationError": "Por favor, faça login para enviar dados.",
-    "uploadProgressNetworkError": "Conexão de rede interrompida. Verifique sua internet e tente novamente.",
-    "uploadProgressGenericError": "Upload não foi concluído. Tente novamente.",
+    "uploadProgressNetworkError": "Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.",
+    "uploadProgressGenericError": "Upload falhou. Tente novamente.",
     "uploadConfirmTitle": "Enviar Dados do Trajeto",
     "uploadConfirmMessage": "Gostaria de enviar os dados do seu trajeto agora ou mais tarde?",
     "uploadConfirmUploadNow": "Enviar agora",
@@ -258,7 +258,7 @@
             }
         }
     },
-      "trackDirectUploadInfo": "Este trajeto foi enviado em tempo real durante o passeio. Para reenviar, use o botão de upload acima.",
+      "trackDirectUploadInfo": "Estes dados do trajeto foram enviados em tempo real durante o seu passeio. Se quiser reenviá-los, pode usar o botão de upload acima.",
   "trackUploadAttempts": "Tentativas de envio",
   "trackLastAttempt": "Última tentativa",
   "trackStatus": "Status",
