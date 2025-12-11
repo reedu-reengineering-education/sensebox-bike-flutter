@@ -35,7 +35,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generalCreate => 'Criar';
 
   @override
-  String get generalOk => 'OK';
+  String get generalOk => 'Ok';
 
   @override
   String get generalSave => 'Salvar';
@@ -197,7 +197,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get bleDeviceSelectTitle => 'Toque para conectar';
 
   @override
-  String get noBleDevicesFound => 'Nenhuma senseBox detectada. Certifique-se de que sua senseBox está ligada, feche esta janela e tente novamente.';
+  String get noBleDevicesFound => 'Nenhuma senseBox encontrada. Certifique-se de que sua senseBox está ligada, toque fora desta janela e tente novamente.';
 
   @override
   String get selectOrCreateBox => 'Selecionar ou criar senseBox';
@@ -209,7 +209,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get createBoxModel => 'Modelo';
 
   @override
-  String get createBoxModelErrorEmpty => 'Selecione um modelo para continuar';
+  String get createBoxModelErrorEmpty => 'Por favor, selecione um modelo';
 
   @override
   String get createBoxName => 'Nome';
@@ -251,7 +251,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsUploadModePostRide => 'Upload Pós-Corrida';
 
   @override
-  String get settingsUploadModeDescription => 'Defina quando os seus dados são enviados durante a gravação';
+  String get settingsUploadModeDescription => 'Escolha quando enviar seus dados durante a gravação';
 
   @override
   String settingsUploadModeCurrent(String mode) {
@@ -300,13 +300,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackDetailsPermissionsError => 'Permissão negada para salvar o arquivo no armazenamento externo.';
 
   @override
-  String get trackDetailsFileSaved => 'O arquivo CSV foi salvo na pasta Downloads.';
+  String get trackDetailsFileSaved => 'Arquivo CSV salvo na pasta Downloads.';
 
   @override
   String get trackDetailsExport => 'Exportação de dados do trajeto em CSV.';
 
   @override
-  String get trackDetailsLoadingError => 'Não foi possível carregar o trajeto.';
+  String get trackDetailsLoadingError => 'Erro ao carregar o trajeto.';
 
   @override
   String get trackDetailsNoTrackData => 'Nenhum trajeto disponível.';
@@ -537,7 +537,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get uploadProgressUploading => 'Enviando dados do trajeto...';
 
   @override
-  String get uploadProgressInfo => 'Mantenha o aplicativo aberto durante o upload. Dependendo do comprimento do trajeto, isso pode demorar um pouco.\n\nPara enviar mais tarde, use a tela de visão geral do trajeto.';
+  String get uploadProgressInfo => 'Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser enviar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.';
 
   @override
   String get uploadProgressRetrying => 'Tentando upload novamente...';
@@ -572,10 +572,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get uploadProgressAuthenticationError => 'Por favor, faça login para enviar dados.';
 
   @override
-  String get uploadProgressNetworkError => 'Conexão de rede interrompida. Verifique sua internet e tente novamente.';
+  String get uploadProgressNetworkError => 'Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.';
 
   @override
-  String get uploadProgressGenericError => 'Upload não foi concluído. Tente novamente.';
+  String get uploadProgressGenericError => 'Upload falhou. Tente novamente.';
 
   @override
   String get uploadConfirmTitle => 'Enviar Dados do Trajeto';
@@ -606,7 +606,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get trackDirectUploadInfo => 'Este trajeto foi enviado em tempo real durante o passeio. Para reenviar, use o botão de upload acima.';
+  String get trackDirectUploadInfo => 'Estes dados do trajeto foram enviados em tempo real durante o seu passeio. Se quiser reenviá-los, pode usar o botão de upload acima.';
 
   @override
   String get trackUploadAttempts => 'Tentativas de envio';
