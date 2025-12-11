@@ -49,8 +49,8 @@ abstract class Sensor {
   Duration get lookbackWindow => Duration.zero;
 
   /// Maximum age of values to keep in buffer (for cleanup)
-  /// Values older than this will be removed
-  Duration get maxBufferAge => const Duration(seconds: 5);
+  /// Values older than this will be removed as a safety net
+  Duration get maxBufferAge => const Duration(minutes: 5);
 
   Sensor(
     this.characteristicUuid,
@@ -106,8 +106,8 @@ abstract class Sensor {
         _checkAndTriggerPendingAggregations(sensorTimestamp);
       }
 
-      // Clean up old values periodically
-      _cleanupOldValues();
+      // Safety cleanup: only clean up very old data if buffer gets too large
+      _cleanupOldValuesIfBufferTooLarge();
       
       // Emit timestamped value for CSV logger
       _timestampedValueController.add(timestampedValue);
@@ -116,10 +116,14 @@ abstract class Sensor {
     _valueController.add(data);
   }
 
-  /// Removes values older than maxBufferAge from the buffer
-  void _cleanupOldValues() {
+  /// Safety cleanup: removes very old values only if buffer gets excessively large
+  void _cleanupOldValuesIfBufferTooLarge() {
+    if (_preGpsValues.length < 1000) {
+      return;
+    }
+
     final now = DateTime.now();
-    final cutoffTime = now.subtract(maxBufferAge);
+    final cutoffTime = now.subtract(maxBufferAge); // 5 minutes as safety net
     _preGpsValues.removeWhere((entry) => entry.timestamp.isBefore(cutoffTime));
   }
 
