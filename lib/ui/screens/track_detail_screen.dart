@@ -26,6 +26,7 @@ import 'package:sensebox_bike/ui/widgets/track/sensor_tile_list.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:intl/intl.dart';
 import 'package:sensebox_bike/ui/widgets/common/sensor_gradient_widget.dart';
+import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
 
 class TrackDetailScreen extends StatefulWidget {
   final TrackData track;
@@ -87,11 +88,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
     if (_track.isDirectUploadTrack && _track.lastUploadAttempt == null) {
       // For direct upload tracks
-      return Padding(
-        padding:
-            const EdgeInsets.symmetric(vertical: padding, horizontal: spacing),
-        child: _buildDirectUploadInfoMessage(localizations, theme),
-      );
+      return InfoBanner(text: localizations.trackDirectUploadInfo);
     } else if (_track.isUploaded || _track.uploadAttemptsCount == 0) {
       // If uploaded, show only status icon (not collapsible)
       return Padding(
@@ -282,33 +279,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     );
   }
 
-  Widget _buildUploadRequirementHint(AppLocalizations localizations) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: spacing, vertical: spacing),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.info_outline,
-            size: iconSize,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(width: spacing / 2),
-          Expanded(
-            child: Text(
-              localizations.trackUploadLoginSelectHint,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _loadTrackData() async {
     try {
       // Refresh track metadata from database to get updated upload status
@@ -338,40 +308,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
-  Widget _buildDirectUploadInfoMessage(
-      AppLocalizations localizations, ThemeData theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(spacing),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(borderRadiusSmall),
-        border: Border.all(
-          color: Colors.blue.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline,
-            size: iconSize,
-            color: Colors.blue,
-          ),
-          const SizedBox(width: spacing / 2),
-          Expanded(
-            child: Text(
-              localizations.trackDirectUploadInfo,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.blue,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _shareFile(String filePath) async {
     final localization = AppLocalizations.of(context)!;
@@ -567,8 +503,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
 
-
-
   Widget _buildAppBarTitle(TrackData track, bool hideUploadButton) {
     final theme = Theme.of(context);
 
@@ -642,9 +576,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         minimum: const EdgeInsets.only(bottom: 8),
         child: Column(
           children: [
-            if (hideUploadButton) _buildUploadRequirementHint(localizations),
-            // Upload status section
             _buildUploadStatusSection(),
+            if (!uploadEligible && _track.uploaded != 1)
+              InfoBanner(text: localizations.trackUploadLoginSelectHint),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
