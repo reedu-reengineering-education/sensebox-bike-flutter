@@ -147,17 +147,15 @@ class LiveUploadService {
         };
       }
 
-      String speedSensorId = getSpeedSensorId();
+      final speedSensorId = findSpeedSensorId(senseBox);
 
-      data['speed_${geoData.timestamp.toIso8601String()}'] = {
-        'sensor': speedSensorId,
-        'value': geoData.speed.toStringAsFixed(2),
-        'createdAt': geoData.timestamp.toUtc().toIso8601String(),
-        'location': {
-          'lat': geoData.latitude,
-          'lng': geoData.longitude,
-        }
-      };
+      if (speedSensorId != null) {
+        addSpeedEntries(
+          target: data,
+          gpsBuffer: [geoData],
+          speedSensorId: speedSensorId,
+        );
+      }
     }
 
     return data;
@@ -168,12 +166,6 @@ class LiveUploadService {
         .where((sensor) =>
             sensor.title!.toLowerCase() == sensorTitle.toLowerCase())
         .firstOrNull;
-  }
-
-  String getSpeedSensorId() {
-    return senseBox.sensors!
-        .firstWhere((sensor) => sensor.title == 'Speed')
-        .id!;
   }
 
   Future<void> uploadDataToOpenSenseMap(Map<String, dynamic> data) async {
