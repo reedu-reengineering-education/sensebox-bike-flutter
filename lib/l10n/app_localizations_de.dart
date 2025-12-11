@@ -35,7 +35,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalCreate => 'Erstellen';
 
   @override
-  String get generalOk => 'OK';
+  String get generalOk => 'Ok';
 
   @override
   String get generalSave => 'Speichern';
@@ -197,7 +197,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get bleDeviceSelectTitle => 'Tippen, um zu verbinden';
 
   @override
-  String get noBleDevicesFound => 'Keine senseBox erkannt. Stellen Sie sicher, dass Ihre senseBox eingeschaltet ist, schließen Sie dieses Fenster und versuchen Sie es erneut.';
+  String get noBleDevicesFound => 'Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.';
 
   @override
   String get selectOrCreateBox => 'senseBox wählen oder erstellen';
@@ -209,7 +209,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get createBoxModel => 'Modell';
 
   @override
-  String get createBoxModelErrorEmpty => 'Bitte wählen Sie ein Modell aus, um fortzufahren';
+  String get createBoxModelErrorEmpty => 'Bitte wähle ein Modell';
 
   @override
   String get createBoxName => 'Name';
@@ -251,7 +251,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsUploadModePostRide => 'Upload nach der Fahrt';
 
   @override
-  String get settingsUploadModeDescription => 'Legen Sie fest, wann Ihre Daten während der Aufzeichnung hochgeladen werden.';
+  String get settingsUploadModeDescription => 'Wählen Sie, wann Ihre Daten während der Aufzeichnung hochgeladen werden sollen';
 
   @override
   String settingsUploadModeCurrent(String mode) {
@@ -300,13 +300,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackDetailsPermissionsError => 'Keine Berechtigung zum Speichern der Datei auf externem Speicher.';
 
   @override
-  String get trackDetailsFileSaved => 'Die CSV-Datei wurde im Ordner Downloads gespeichert.';
+  String get trackDetailsFileSaved => 'Die CSV-Datei wird im Ordner Downloads gespeichert.';
 
   @override
   String get trackDetailsExport => 'CSV-Export von Trackdaten.';
 
   @override
-  String get trackDetailsLoadingError => 'Track konnte nicht geladen werden.';
+  String get trackDetailsLoadingError => 'Fehler beim Laden des Tracks.';
 
   @override
   String get trackDetailsNoTrackData => 'Kein Track verfügbar.';
@@ -537,7 +537,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get uploadProgressUploading => 'Track wird hochgeladen...';
 
   @override
-  String get uploadProgressInfo => 'Bitte lassen Sie die App während des Uploads geöffnet. Abhängig von der Länge des Tracks kann dies etwas dauern.\n\nZum späteren Hochladen nutzen Sie die Track-Übersicht.';
+  String get uploadProgressInfo => 'Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.\n\nFalls Sie Ihre Track-Daten später hochladen möchten, können Sie das in der Trackübersicht tun.';
 
   @override
   String get uploadProgressRetrying => 'Upload wird wiederholt...';
@@ -572,10 +572,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get uploadProgressAuthenticationError => 'Bitte melden Sie sich an, um Daten hochzuladen.';
 
   @override
-  String get uploadProgressNetworkError => 'Netzwerkverbindung unterbrochen. Bitte Internetverbindung prüfen und erneut versuchen.';
+  String get uploadProgressNetworkError => 'Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
 
   @override
-  String get uploadProgressGenericError => 'Upload nicht erfolgreich. Bitte erneut versuchen.';
+  String get uploadProgressGenericError => 'Upload fehlgeschlagen. Bitte versuchen Sie es erneut.';
 
   @override
   String get uploadConfirmTitle => 'Track-Daten hochladen';
@@ -606,7 +606,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get trackDirectUploadInfo => 'Dieser Track wurde in Echtzeit während Ihrer Fahrt hochgeladen. Zum erneuten Hochladen den Upload-Button oben verwenden.';
+  String get trackDirectUploadInfo => 'Diese Track-Daten wurden in Echtzeit während deiner Fahrt hochgeladen. Falls du sie erneut hochladen möchtest, kannst du den Upload-Button oben verwenden.';
 
   @override
   String get trackUploadAttempts => 'Upload-Versuche';

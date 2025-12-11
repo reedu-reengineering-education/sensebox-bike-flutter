@@ -148,7 +148,7 @@ abstract class AppLocalizations {
   /// No description provided for @generalOk.
   ///
   /// In en, this message translates to:
-  /// **'OK'**
+  /// **'Ok'**
   String get generalOk;
 
   /// No description provided for @generalSave.
@@ -442,7 +442,7 @@ abstract class AppLocalizations {
   /// No description provided for @noBleDevicesFound.
   ///
   /// In en, this message translates to:
-  /// **'No senseBoxes detected. Make sure your senseBox is powered on, close this window, and try again.'**
+  /// **'No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.'**
   String get noBleDevicesFound;
 
   /// No description provided for @selectOrCreateBox.
@@ -466,7 +466,7 @@ abstract class AppLocalizations {
   /// No description provided for @createBoxModelErrorEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Select a model to continue'**
+  /// **'Please select a model'**
   String get createBoxModelErrorEmpty;
 
   /// No description provided for @createBoxName.
@@ -550,7 +550,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsUploadModeDescription.
   ///
   /// In en, this message translates to:
-  /// **'Choose when your data is uploaded during recording'**
+  /// **'Choose when to upload your data during recording'**
   String get settingsUploadModeDescription;
 
   /// No description provided for @settingsUploadModeCurrent.
@@ -640,7 +640,7 @@ abstract class AppLocalizations {
   /// No description provided for @trackDetailsFileSaved.
   ///
   /// In en, this message translates to:
-  /// **'CSV file saved to the Downloads folder.'**
+  /// **'CSV file saved to Downloads folder.'**
   String get trackDetailsFileSaved;
 
   /// No description provided for @trackDetailsExport.
@@ -652,7 +652,7 @@ abstract class AppLocalizations {
   /// No description provided for @trackDetailsLoadingError.
   ///
   /// In en, this message translates to:
-  /// **'Unable to load the track.'**
+  /// **'Error loading track.'**
   String get trackDetailsLoadingError;
 
   /// No description provided for @trackDetailsNoTrackData.
@@ -1114,7 +1114,7 @@ abstract class AppLocalizations {
   /// No description provided for @uploadProgressInfo.
   ///
   /// In en, this message translates to:
-  /// **'Keep the app open during upload. Depending on track length, this may take a moment.\n\nTo upload later, use the track overview screen.'**
+  /// **'Do not close the app while uploading. It can take some time depending on your track length.\n\nIf you would like to upload your track data later, you can do that from track overview screen.'**
   String get uploadProgressInfo;
 
   /// No description provided for @uploadProgressRetrying.
@@ -1162,13 +1162,13 @@ abstract class AppLocalizations {
   /// No description provided for @uploadProgressNetworkError.
   ///
   /// In en, this message translates to:
-  /// **'Network connection lost. Check your internet connection and try again.'**
+  /// **'Network connection failed. Please check your internet connection and try again.'**
   String get uploadProgressNetworkError;
 
   /// No description provided for @uploadProgressGenericError.
   ///
   /// In en, this message translates to:
-  /// **'Upload unsuccessful. Try again.'**
+  /// **'Upload failed. Please try again.'**
   String get uploadProgressGenericError;
 
   /// No description provided for @uploadConfirmTitle.
@@ -1222,7 +1222,7 @@ abstract class AppLocalizations {
   /// No description provided for @trackDirectUploadInfo.
   ///
   /// In en, this message translates to:
-  /// **'This track was uploaded in real time during your ride. To upload it again, use the upload button above.'**
+  /// **'This track data was uploaded in real time during your ride. If you\'d like to re-upload it, you can use the upload button above.'**
   String get trackDirectUploadInfo;
 
   /// No description provided for @trackUploadAttempts.

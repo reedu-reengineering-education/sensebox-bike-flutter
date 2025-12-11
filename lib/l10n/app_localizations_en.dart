@@ -35,7 +35,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalCreate => 'Create';
 
   @override
-  String get generalOk => 'OK';
+  String get generalOk => 'Ok';
 
   @override
   String get generalSave => 'Save';
@@ -197,7 +197,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bleDeviceSelectTitle => 'Tap to connect';
 
   @override
-  String get noBleDevicesFound => 'No senseBoxes detected. Make sure your senseBox is powered on, close this window, and try again.';
+  String get noBleDevicesFound => 'No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.';
 
   @override
   String get selectOrCreateBox => 'Select or create senseBox:bike';
@@ -209,7 +209,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createBoxModel => 'Model';
 
   @override
-  String get createBoxModelErrorEmpty => 'Select a model to continue';
+  String get createBoxModelErrorEmpty => 'Please select a model';
 
   @override
   String get createBoxName => 'Name';
@@ -251,7 +251,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsUploadModePostRide => 'Post-Ride Upload';
 
   @override
-  String get settingsUploadModeDescription => 'Choose when your data is uploaded during recording';
+  String get settingsUploadModeDescription => 'Choose when to upload your data during recording';
 
   @override
   String settingsUploadModeCurrent(String mode) {
@@ -300,13 +300,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackDetailsPermissionsError => 'Permission denied to save file to external storage.';
 
   @override
-  String get trackDetailsFileSaved => 'CSV file saved to the Downloads folder.';
+  String get trackDetailsFileSaved => 'CSV file saved to Downloads folder.';
 
   @override
   String get trackDetailsExport => 'Track data CSV export.';
 
   @override
-  String get trackDetailsLoadingError => 'Unable to load the track.';
+  String get trackDetailsLoadingError => 'Error loading track.';
 
   @override
   String get trackDetailsNoTrackData => 'No track available.';
@@ -537,7 +537,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uploadProgressUploading => 'Uploading track data...';
 
   @override
-  String get uploadProgressInfo => 'Keep the app open during upload. Depending on track length, this may take a moment.\n\nTo upload later, use the track overview screen.';
+  String get uploadProgressInfo => 'Do not close the app while uploading. It can take some time depending on your track length.\n\nIf you would like to upload your track data later, you can do that from track overview screen.';
 
   @override
   String get uploadProgressRetrying => 'Retrying upload...';
@@ -572,10 +572,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uploadProgressAuthenticationError => 'Please log in to upload data.';
 
   @override
-  String get uploadProgressNetworkError => 'Network connection lost. Check your internet connection and try again.';
+  String get uploadProgressNetworkError => 'Network connection failed. Please check your internet connection and try again.';
 
   @override
-  String get uploadProgressGenericError => 'Upload unsuccessful. Try again.';
+  String get uploadProgressGenericError => 'Upload failed. Please try again.';
 
   @override
   String get uploadConfirmTitle => 'Upload Track Data';
@@ -606,7 +606,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get trackDirectUploadInfo => 'This track was uploaded in real time during your ride. To upload it again, use the upload button above.';
+  String get trackDirectUploadInfo => 'This track data was uploaded in real time during your ride. If you\'d like to re-upload it, you can use the upload button above.';
 
   @override
   String get trackUploadAttempts => 'Upload attempts';

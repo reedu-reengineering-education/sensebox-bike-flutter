@@ -166,7 +166,7 @@ class RecordingBloc with ChangeNotifier {
   void _showUploadProgressModal(TrackData track, SenseBox? senseBox) async {
     if (_context == null || _batchUploadService == null) return;
 
-  final canUpload =
+    final canUpload =
         senseBox != null && openSenseMapBloc.hasAuthAndSelectedSenseBox;
 
     try {
@@ -190,7 +190,7 @@ class RecordingBloc with ChangeNotifier {
           debugPrint('[RecordingBloc] Batch upload failed permanently');
         },
         onStartUpload: () {
-          if (canUpload)_startBatchUpload(track, senseBox);
+          if (canUpload) _startBatchUpload(track, senseBox!);
         },
       );
     } catch (e, stack) {

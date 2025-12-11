@@ -16,7 +16,7 @@
 
     "generalCancel": "Abbrechen",
     "generalCreate": "Erstellen",
-    "generalOk": "OK",
+    "generalOk": "Ok",
     "generalSave": "Speichern",
     "generalDelete": "Löschen",
     "generalEdit": "Bearbeiten",
@@ -89,11 +89,11 @@
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
     "bleDeviceSelectTitle": "Tippen, um zu verbinden",
-    "noBleDevicesFound": "Keine senseBox erkannt. Stellen Sie sicher, dass Ihre senseBox eingeschaltet ist, schließen Sie dieses Fenster und versuchen Sie es erneut.",
+    "noBleDevicesFound": "Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.",
     "selectOrCreateBox": "senseBox wählen oder erstellen",
     "createBoxTitle": "senseBox:bike erstellen",
     "createBoxModel": "Modell",
-    "createBoxModelErrorEmpty": "Bitte wählen Sie ein Modell aus, um fortzufahren",
+    "createBoxModelErrorEmpty": "Bitte wähle ein Modell",
     "createBoxName": "Name",
     "createBoxNameError": "Name muss zwischen 2 und 50 Zeichen lang sein",
     "createBoxGeolocationCurrentPosition": "Deine aktuelle Position wird verwendet",
@@ -110,7 +110,7 @@
     "settingsUploadMode": "Upload-Modus",
     "settingsUploadModeDirect": "Direkter Upload (Beta)",
     "settingsUploadModePostRide": "Upload nach der Fahrt",
-    "settingsUploadModeDescription": "Legen Sie fest, wann Ihre Daten während der Aufzeichnung hochgeladen werden.",
+    "settingsUploadModeDescription": "Wählen Sie, wann Ihre Daten während der Aufzeichnung hochgeladen werden sollen",
     "settingsUploadModeCurrent": "Aktuell: {mode}",
     "@settingsUploadModeCurrent": {
         "placeholders": {
@@ -139,10 +139,10 @@
     "privacyZonesStart": "Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.",
     "privacyZonesDelete": "Tippen Sie auf eine Zone, um sie zu löschen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.",
     "trackDetailsPermissionsError": "Keine Berechtigung zum Speichern der Datei auf externem Speicher.",
-    "trackDetailsFileSaved": "Die CSV-Datei wurde im Ordner Downloads gespeichert.",
+    "trackDetailsFileSaved": "Die CSV-Datei wird im Ordner Downloads gespeichert.",
     "trackDetailsExport": "CSV-Export von Trackdaten.",
   
-    "trackDetailsLoadingError": "Track konnte nicht geladen werden.",
+    "trackDetailsLoadingError": "Fehler beim Laden des Tracks.",
     "trackDetailsNoTrackData": "Kein Track verfügbar.",
     "trackDelete": "Track löschen",
     "trackDeleteConfirmation": "Wollen Sie diesen Track wirklich löschen?",
@@ -219,7 +219,7 @@
     "uploadProgressTitle": "Track Upload",
     "uploadProgressPreparing": "Upload wird vorbereitet...",
     "uploadProgressUploading": "Track wird hochgeladen...",
-    "uploadProgressInfo": "Bitte lassen Sie die App während des Uploads geöffnet. Abhängig von der Länge des Tracks kann dies etwas dauern.\n\nZum späteren Hochladen nutzen Sie die Track-Übersicht.",
+    "uploadProgressInfo": "Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.\n\nFalls Sie Ihre Track-Daten später hochladen möchten, können Sie das in der Trackübersicht tun.",
     "uploadProgressRetrying": "Upload wird wiederholt...",
     "uploadProgressCompleted": "Upload erfolgreich",
     "uploadProgressFailed": "Upload fehlgeschlagen",
@@ -244,8 +244,8 @@
         }
     },
     "uploadProgressAuthenticationError": "Bitte melden Sie sich an, um Daten hochzuladen.",
-    "uploadProgressNetworkError": "Netzwerkverbindung unterbrochen. Bitte Internetverbindung prüfen und erneut versuchen.",
-    "uploadProgressGenericError": "Upload nicht erfolgreich. Bitte erneut versuchen.",
+    "uploadProgressNetworkError": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+    "uploadProgressGenericError": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "uploadConfirmTitle": "Track-Daten hochladen",
     "uploadConfirmMessage": "Möchten Sie Ihre Track-Daten jetzt oder später hochladen?",
     "uploadConfirmUploadNow": "Jetzt hochladen",
@@ -258,7 +258,7 @@
             }
         }
     },
-      "trackDirectUploadInfo": "Dieser Track wurde in Echtzeit während Ihrer Fahrt hochgeladen. Zum erneuten Hochladen den Upload-Button oben verwenden.",
+      "trackDirectUploadInfo": "Diese Track-Daten wurden in Echtzeit während deiner Fahrt hochgeladen. Falls du sie erneut hochladen möchtest, kannst du den Upload-Button oben verwenden.",
   "trackUploadAttempts": "Upload-Versuche",
   "trackLastAttempt": "Letzter Versuch",
   "trackStatus": "Status",
