@@ -11,7 +11,7 @@ class InfoBanner extends StatelessWidget {
     required this.text,
     this.color = Colors.blue,
     this.outerPadding = const EdgeInsets.symmetric(
-      vertical: 0,
+      vertical: spacing / 4,
       horizontal: spacing / 2,
     ),
   });
