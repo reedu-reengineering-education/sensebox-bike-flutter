@@ -122,6 +122,15 @@ void main() {
     });
 
     test('matches speed sensor case-insensitively', () {
+      final speedSensor = Sensor(id: 'speedId', title: 'SPEED');
+      final senseBox = SenseBox(sensors: [speedSensor]);
+
+      final result = findSpeedSensorId(senseBox);
+
+      expect(result, 'speedId');
+    });
+
+    test('matches sensor with speed in title', () {
       final speedSensor = Sensor(id: 'speedId', title: 'speed sensor');
       final senseBox = SenseBox(sensors: [speedSensor]);
 
