@@ -82,6 +82,22 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     super.dispose();
   }
 
+  bool _shouldHideUploadButton() {
+    final openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    final uploadEligible = openSenseMapBloc.hasAuthAndSelectedSenseBox;
+
+    return !uploadEligible;
+  }
+
+  bool _shouldShowUploadHint() {
+    final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
+    final openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    final isPostRideMode = !settingsBloc.directUploadMode;
+    final uploadEligible = openSenseMapBloc.hasAuthAndSelectedSenseBox;
+
+    return isPostRideMode && !uploadEligible && _track.uploaded != 1;
+  }
+
   Widget _buildUploadStatusSection() {
     final localizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
@@ -557,10 +573,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final settingsBloc = Provider.of<SettingsBloc>(context);
-    final isPostRideMode = !settingsBloc.directUploadMode;
-    final uploadEligible = openSenseMapBloc.hasAuthAndSelectedSenseBox;
-    final hideUploadButton = isPostRideMode && !uploadEligible;
+    final hideUploadButton = _shouldHideUploadButton();
     final localizations = AppLocalizations.of(context)!;
 
     if (_isLoading) {
@@ -577,7 +590,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         child: Column(
           children: [
             _buildUploadStatusSection(),
-            if (!uploadEligible && _track.uploaded != 1)
+            if (_shouldShowUploadHint())
               InfoBanner(text: localizations.trackUploadLoginSelectHint),
             Expanded(
               child: Padding(
