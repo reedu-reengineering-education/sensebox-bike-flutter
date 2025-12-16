@@ -27,6 +27,7 @@ class ErrorService {
           error is NoSenseBoxSelected ||
           error is ExportDirectoryAccessError ||
           error is UploadFailureError ||
+          error is DirectUploadFailureError ||
           error is PermanentAuthenticationError ||
           error is TrackHasNoGeolocationsException) {
         showUserFeedback(error);
@@ -99,6 +100,9 @@ class ErrorService {
     } else if (error is UploadFailureError) {
       return localizations?.errorUploadFailed ??
           'Data upload failed. Please check your internet connection and try again.';
+    } else if (error is DirectUploadFailureError) {
+      return localizations?.errorDirectUploadFailed ??
+          'Real-time upload failed due to connectivity issues. Your data has been saved locally. After stopping the recording, you can upload the track manually from the track overview.';
     } else if (error is PermanentAuthenticationError) {
       return localizations?.errorPermanentAuthentication ??
           'Authentication failed permanently. Please log in again to continue uploading data.';
