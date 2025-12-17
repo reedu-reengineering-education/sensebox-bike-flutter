@@ -192,6 +192,7 @@
     "errorExportDirectoryAccess": "Erro ao acessar o diretório de exportação. Por favor, verifique se o aplicativo tem permissão para acessar o armazenamento.",
     "errorLoginFailed": "Erro no login. Verifique suas credenciais e tente novamente mais tarde.",
     "errorRegistrationFailed": "Erro no registro. Verifique suas credenciais e tente novamente mais tarde.",
+    "errorReasonPrefix": "Motivo:",
     "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.",
     "errorUploadFailed": "Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.",
     "errorPermanentAuthentication": "Falha permanente na autenticação. Por favor, faça login para enviar dados.",

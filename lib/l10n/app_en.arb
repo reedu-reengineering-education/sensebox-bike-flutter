@@ -190,6 +190,7 @@
     "errorExportDirectoryAccess": "Error accessing export directory. Please make sure the app has permission to access the storage.",
     "errorLoginFailed": "Login failed. Please check your credentials and try once again later.",
     "errorRegistrationFailed": "Registration failed. Please check your credentials and try once again later.",
+    "errorReasonPrefix": "Reason:",
     "errorBleConnectionFailed": "Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.",
     "errorUploadFailed": "Data upload failed. Please check your internet connection and try again.",
     "errorPermanentAuthentication": "Authentication failed permanently. Please log in to upload data.",
