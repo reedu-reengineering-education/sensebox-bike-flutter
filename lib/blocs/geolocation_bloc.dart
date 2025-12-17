@@ -71,6 +71,10 @@ class GeolocationBloc with ChangeNotifier {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.bestForNavigation,
           distanceFilter: 0,
+          activityType: ActivityType.fitness,
+          pauseLocationUpdatesAutomatically: false,
+          showBackgroundLocationIndicator: true,
+          allowBackgroundLocationUpdates: true,
         );
       }
 
@@ -192,9 +196,12 @@ class GeolocationBloc with ChangeNotifier {
       if (shouldStoreSensorData(gpsSpeedSensorData)) {
         try {
           await isarService.sensorService.saveSensorData(gpsSpeedSensorData);
-        } catch (e) {}
+        } catch (e, stack) {
+          ErrorService.handleError(e, stack);
+        }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
       geolocationData.id = 0;
     }
   }

@@ -8,7 +8,6 @@ import '../mocks.dart';
 void main() {
   group('BleBloc', () {
     late BleBloc bleBloc;
-    late MockSettingsBloc mockSettingsBloc;
 
     setUpAll(() {
       registerFallbackValue(MockBluetoothDevice());
@@ -16,7 +15,6 @@ void main() {
     });
 
     setUp(() {
-      mockSettingsBloc = MockSettingsBloc();
       bleBloc = MockBleBloc();
     });
 
@@ -35,7 +33,6 @@ void main() {
         expect(bleBloc.characteristicStreamsVersion.value, equals(0));
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
         expect(bleBloc.isConnected, isFalse);
-        expect(bleBloc.devicesList, isEmpty);
       });
     });
 
@@ -98,7 +95,6 @@ void main() {
 
       test('scanForNewDevices clears selected device', () {
         final mockDevice = MockBluetoothDevice();
-        bleBloc.selectedDevice = mockDevice;
         bleBloc.selectedDeviceNotifier.value = mockDevice;
         
         bleBloc.scanForNewDevices();

@@ -48,6 +48,7 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
   final Map<String, StreamController<List<double>>> _characteristicStreams = {};
   final Map<String, StreamSubscription<List<int>>> _characteristicSubscriptions = {};
   final Map<String, BluetoothCharacteristic> _characteristics = {};
+  final Set<String> _recoveringCharacteristics = {};
 
   bool get isConnected => _isConnected;
   BluetoothDevice? get selectedDevice => selectedDeviceNotifier.value;
@@ -199,7 +200,7 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);
       _resetConnectionState();
-      _handleConnectionError(context: context, isInitialConnection: true);
+      await _handleConnectionError(context: context, isInitialConnection: true);
     } finally {
       isConnectingNotifier.value = false;
       _isInRetryMode = false;
@@ -215,7 +216,7 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
     required Future<bool> Function(BluetoothDevice, BuildContext?)
         attemptConnection,
     required Future<void> Function(BluetoothDevice) prepareForRetry,
-    required void Function(
+    required Future<void> Function(
             {required BuildContext context, bool isInitialConnection})
         handleError,
   }) async {
@@ -250,7 +251,7 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
     _isInRetryMode = false;
 
     if (context != null) {
-      handleError(context: context, isInitialConnection: !isReconnection);
+      await handleError(context: context, isInitialConnection: !isReconnection);
     }
     return false;
   }
@@ -282,7 +283,7 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
     bool updateConnectionState = true,
   }) async {
     try {
-      _clearCharacteristicStreams();
+      await _clearCharacteristicStreams();
 
       final services = await device.discoverServices();
       if (services.isEmpty) {
@@ -371,13 +372,13 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  void _clearCharacteristicStreams() {
-    for (var uuid in _characteristicSubscriptions.keys.toList()) {
-      _cleanupCharacteristic(uuid);
-    }
+  Future<void> _clearCharacteristicStreams() async {
+    final uuids = _characteristicSubscriptions.keys.toList();
+    await Future.wait(uuids.map((uuid) => _cleanupCharacteristic(uuid)));
     _characteristicSubscriptions.clear();
     _characteristicStreams.clear();
     _characteristics.clear();
+    _recoveringCharacteristics.clear();
   }
 
   Future<void> _cleanupCharacteristic(String uuid) async {
@@ -414,15 +415,16 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
         isReconnectingNotifier.value = true;
         try {
           _startReconnectionProcess(device, context);
-        } catch (e) {
+        } catch (e, stack) {
+          ErrorService.handleError(e, stack);
           _isReconnecting = false;
           isReconnectingNotifier.value = false;
         }
       }
     });
 
-    _reconnectionListener?.onError((error) {
-      _handleConnectionError(context: context, isInitialConnection: false);
+    _reconnectionListener?.onError((error) async {
+      await _handleConnectionError(context: context, isInitialConnection: false);
     });
   }
 
@@ -469,12 +471,12 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
       _resetReconnectionState();
       notifyListeners();
     } else if (_reconnectionAttempts >= _maxReconnectionAttempts) {
-      _handleConnectionError(context: context, isInitialConnection: false);
+      await _handleConnectionError(context: context, isInitialConnection: false);
     }
   }
 
-  void _handleConnectionError(
-      {required BuildContext context, bool isInitialConnection = false}) {
+  Future<void> _handleConnectionError(
+      {required BuildContext context, bool isInitialConnection = false}) async {
     if (isInitialConnection) {
       _resetConnectionState();
       _userInitiatedDisconnect = false;
@@ -486,7 +488,7 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
       connectionErrorNotifier.value = true;
       _reconnectionListener?.cancel();
       _reconnectionListener = null;
-      _clearCharacteristicStreams();
+      await _clearCharacteristicStreams();
       _resetReconnectionState();
       isConnectingNotifier.value = false;
     }
@@ -566,6 +568,11 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
 
   Future<void> _handleCharacteristicStreamError(
       String uuid, BluetoothCharacteristic characteristic) async {
+    if (_recoveringCharacteristics.contains(uuid)) {
+      return;
+    }
+
+    _recoveringCharacteristics.add(uuid);
     try {
       await _characteristicSubscriptions[uuid]?.cancel();
       _characteristicSubscriptions.remove(uuid);
@@ -580,8 +587,11 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
           _createCharacteristicSubscription(uuid, characteristic, controller);
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
       await _cleanupCharacteristic(uuid);
+    } finally {
+      _recoveringCharacteristics.remove(uuid);
     }
   }
 
@@ -610,7 +620,7 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _reconnectionListener?.cancel();
     _devicesListController.close();
-    _clearCharacteristicStreams();
+    unawaited(_clearCharacteristicStreams());
     selectedDeviceNotifier.dispose();
     isBluetoothEnabledNotifier.dispose();
     isScanningNotifier.dispose();

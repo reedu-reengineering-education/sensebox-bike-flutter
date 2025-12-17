@@ -234,7 +234,8 @@ abstract class Sensor {
         latitude: latitude,
         longitude: longitude,
       );
-    } catch (e) {
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
       return null;
     }
   }
@@ -288,8 +289,6 @@ abstract class Sensor {
           _sensorBatches.putIfAbsent(geoId, () => _createSensorBatch(geo));
 
           if (lookbackWindow != Duration.zero) {
-            _pendingGeolocations.remove(geoId);
-            _pendingGeolocations[geoId] = geo;
             _scheduleDeferredAggregation(geoId, geo);
           } else {
             _performImmediateAggregation(geo);
@@ -431,7 +430,8 @@ abstract class Sensor {
                   _setAggregatedDataOnBatch(
                       geolocationToUse.id, geolocationToUse, aggregated);
                 }
-              } catch (e) {
+              } catch (e, stack) {
+                ErrorService.handleError(e, stack);
               }
 
               final cutoffTime =
@@ -466,8 +466,9 @@ abstract class Sensor {
                       .getGeolocationDataByTrackId(trackId);
                   lastGeo = findLatestGeolocation(geolocations);
                 }
-              } catch (e) {
-            }
+              } catch (e, stack) {
+                ErrorService.handleError(e, stack);
+              }
 
               geolocationToUse = GeolocationData()
                 ..latitude = lastGeo?.latitude ?? 0.0
@@ -497,7 +498,8 @@ abstract class Sensor {
                 _setAggregatedDataOnBatch(
                     geolocationToUse.id, geolocationToUse, aggregated);
               }
-            } catch (e) {
+            } catch (e, stack) {
+              ErrorService.handleError(e, stack);
             }
 
             _preGpsValues.clear();

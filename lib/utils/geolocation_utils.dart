@@ -52,8 +52,8 @@ GeolocationData? findLatestGeolocation(List<GeolocationData> geolocations) {
     return null;
   }
 
-  geolocations.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-  return geolocations.first;
+  return geolocations
+      .reduce((a, b) => a.timestamp.isAfter(b.timestamp) ? a : b);
 }
 
 List<List<double>> getValuesInLookbackWindow(
