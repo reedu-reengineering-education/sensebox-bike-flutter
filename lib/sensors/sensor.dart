@@ -33,11 +33,13 @@ abstract class Sensor {
 
   final Map<int, SensorBatch> _sensorBatches = {};
   final List<TimestampedSensorValue> _preGpsValues = [];
+  static const int _bufferCleanupThreshold = 1000; // limit to avoid unbounded growth
 
   DirectUploadService? _directUploadService;
   VoidCallback? _recordingListener;
   bool _isFlushing = false;
   bool _isListening = false;
+  bool _isStarting = false;
 
   final Map<int, GeolocationData> _pendingGeolocations = {};
 
@@ -102,7 +104,7 @@ abstract class Sensor {
   }
 
   void _cleanupOldValuesIfBufferExceedsThreshold() {
-    if (_preGpsValues.length < 1000) {
+    if (_preGpsValues.length < _bufferCleanupThreshold) {
       return;
     }
 
@@ -253,10 +255,12 @@ abstract class Sensor {
       ..geolocationData.value = geolocation;
   }
 
-  void startListening() async {
-    if (_isListening) {
+  Future<void> startListening() async {
+    if (_isListening || _isStarting) {
       return;
     }
+
+    _isStarting = true;
 
     try {
       _isListening = true;
@@ -274,7 +278,7 @@ abstract class Sensor {
         onError: (error) {
           _isListening = false;
           Future.delayed(const Duration(seconds: 1), () {
-            if (_isListening) {
+            if (_isListening || _isStarting) {
               return;
             }
             startListening();
@@ -315,6 +319,8 @@ abstract class Sensor {
       recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
     } catch (e) {
       _isListening = false;
+    } finally {
+      _isStarting = false;
     }
   }
 
