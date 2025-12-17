@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:async' show StreamSubscription, StreamController;
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -94,14 +94,14 @@ abstract class Sensor {
         _checkAndTriggerPendingAggregations(sensorTimestamp);
       }
 
-      _cleanupOldValuesIfBufferTooLarge();
+      _cleanupOldValuesIfBufferExceedsThreshold();
       _timestampedValueController.add(timestampedValue);
     }
     
     _valueController.add(data);
   }
 
-  void _cleanupOldValuesIfBufferTooLarge() {
+  void _cleanupOldValuesIfBufferExceedsThreshold() {
     if (_preGpsValues.length < 1000) {
       return;
     }
@@ -195,7 +195,7 @@ abstract class Sensor {
     if (valuesInWindow.isNotEmpty) {
       final aggregated = aggregateData(valuesInWindow);
       _setAggregatedDataOnBatch(geoId, geo, aggregated);
-      _cleanupOldValuesIfBufferTooLarge();
+      _cleanupOldValuesIfBufferExceedsThreshold();
     }
   }
 
@@ -211,7 +211,7 @@ abstract class Sensor {
     if (valuesInWindow.isNotEmpty) {
       final aggregated = aggregateData(valuesInWindow);
       _setAggregatedDataOnBatch(geoId, geo, aggregated);
-      _cleanupOldValuesIfBufferTooLarge();
+      _cleanupOldValuesIfBufferExceedsThreshold();
     }
   }
 
@@ -274,6 +274,9 @@ abstract class Sensor {
         onError: (error) {
           _isListening = false;
           Future.delayed(const Duration(seconds: 1), () {
+            if (_isListening) {
+              return;
+            }
             startListening();
           });
         },

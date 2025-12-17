@@ -167,11 +167,11 @@ class GeolocationBloc with ChangeNotifier {
 
   bool _shouldEmitGeolocation(GeolocationData geolocationData) {
     final timestamp = geolocationData.timestamp.millisecondsSinceEpoch;
-    if (_lastEmittedTimestamp == timestamp) {
-      return false;
-    }
+    final isDuplicate = _lastEmittedTimestamp == timestamp;
+    final inPrivacyZone =
+        _privacyZoneChecker.isInsidePrivacyZone(geolocationData);
 
-    if (_privacyZoneChecker.isInsidePrivacyZone(geolocationData)) {
+    if (isDuplicate || inPrivacyZone) {
       return false;
     }
 

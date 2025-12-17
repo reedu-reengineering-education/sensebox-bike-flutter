@@ -1,4 +1,7 @@
-import 'dart:async';
+import 'dart:async'
+    show Completer, Future, StreamController, StreamSubscription, unawaited;
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
@@ -64,7 +67,7 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && defaultTargetPlatform == TargetPlatform.iOS) {
+    if (state == AppLifecycleState.resumed && Platform.isIOS) {
       _reenableAllNotifications();
     }
   }
