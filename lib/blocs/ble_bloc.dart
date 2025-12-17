@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
@@ -356,19 +355,22 @@ class BleBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       try {
         await device.disconnect();
-      } catch (e) {
+      } catch (e, stack) {
+        ErrorService.handleError(e, stack);
       }
 
       await Future.delayed(configurableReconnectionDelay);
 
       try {
         await device.connect(timeout: deviceConnectTimeout);
-      } catch (e) {
+      } catch (e, stack) {
+        ErrorService.handleError(e, stack);
         return;
       }
 
       await Future.delayed(configurableReconnectionDelay);
-    } catch (e) {
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
     }
   }
 
