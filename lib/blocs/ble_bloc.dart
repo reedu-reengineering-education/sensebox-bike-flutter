@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import 'package:sensebox_bike/services/custom_exceptions.dart';
@@ -16,7 +17,7 @@ const deviceConnectTimeout = Duration(seconds: 10);
 const configurableReconnectionDelay = Duration(seconds: 1);
 const dataListeningTimeout = Duration(seconds: 4); 
 
-class BleBloc with ChangeNotifier {
+class BleBloc with ChangeNotifier, WidgetsBindingObserver {
   final SettingsBloc settingsBloc;
 
   final ValueNotifier<bool> isBluetoothEnabledNotifier = ValueNotifier(false);
@@ -48,6 +49,8 @@ class BleBloc with ChangeNotifier {
   StreamSubscription<BluetoothConnectionState>? _reconnectionListener;
 
   final Map<String, StreamController<List<double>>> _characteristicStreams = {};
+  final Map<String, StreamSubscription<List<int>>> _characteristicSubscriptions = {};
+  final Map<String, BluetoothCharacteristic> _characteristics = {};
 
   bool get isConnected => _isConnected;
 
@@ -58,6 +61,34 @@ class BleBloc with ChangeNotifier {
     });
 
     _initializeBluetoothStatus();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && defaultTargetPlatform == TargetPlatform.iOS) {
+      _reenableAllNotifications();
+    }
+  }
+
+  Future<void> _reenableAllNotifications() async {
+    if (!_isConnected || selectedDevice?.isConnected != true) {
+      return;
+    }
+
+    try {
+      for (var entry in _characteristics.entries) {
+        final characteristic = entry.value;
+        
+        try {
+          await characteristic.setNotifyValue(false);
+          await Future.delayed(const Duration(milliseconds: 200));
+          await characteristic.setNotifyValue(true);
+        } catch (e) {
+        }
+      }
+    } catch (e) {
+    }
   }
 
   Future<void> _initializeBluetoothStatus() async {
@@ -399,10 +430,17 @@ class BleBloc with ChangeNotifier {
   }
 
   void _clearCharacteristicStreams() {
+    for (var subscription in _characteristicSubscriptions.values) {
+      subscription.cancel();
+    }
+    _characteristicSubscriptions.clear();
+    
     for (var controller in _characteristicStreams.values) {
       controller.close();
     }
     _characteristicStreams.clear();
+    
+    _characteristics.clear();
   }
 
   BluetoothService _findSenseBoxService(List<BluetoothService> services) {
@@ -598,7 +636,11 @@ class BleBloc with ChangeNotifier {
       BluetoothCharacteristic characteristic) async {
     final uuid = characteristic.uuid.toString();
 
-    // If a controller exists for this characteristic, close and remove it firs
+    // Cancel existing subscription if any
+    await _characteristicSubscriptions[uuid]?.cancel();
+    _characteristicSubscriptions.remove(uuid);
+
+    // If a controller exists for this characteristic, close and remove it first
     if (_characteristicStreams.containsKey(uuid)) {
       await _characteristicStreams[uuid]?.close();
       _characteristicStreams.remove(uuid);
@@ -606,14 +648,67 @@ class BleBloc with ChangeNotifier {
 
     final controller = StreamController<List<double>>.broadcast();
     _characteristicStreams[uuid] = controller;
+    _characteristics[uuid] = characteristic;
 
-    await characteristic.setNotifyValue(true);
-    characteristic.onValueReceived.listen((value) {
-      if (!controller.isClosed) {
-        List<double> parsedData = _parseData(Uint8List.fromList(value));
-        controller.add(parsedData);
+    try {
+      await characteristic.setNotifyValue(true);
+      
+      final subscription = characteristic.onValueReceived.listen(
+        (value) {
+          if (!controller.isClosed) {
+            List<double> parsedData = _parseData(Uint8List.fromList(value));
+            controller.add(parsedData);
+          }
+        },
+        onError: (error) {
+          debugPrint('[BleBloc] Characteristic $uuid stream error: $error');
+          _handleCharacteristicStreamError(uuid, characteristic);
+        },
+        cancelOnError: false,
+      );
+      
+      _characteristicSubscriptions[uuid] = subscription;
+    } catch (e) {
+      await controller.close();
+      _characteristicStreams.remove(uuid);
+      _characteristics.remove(uuid);
+      rethrow;
+    }
+  }
+
+  Future<void> _handleCharacteristicStreamError(
+      String uuid, BluetoothCharacteristic characteristic) async {
+    try {
+      await _characteristicSubscriptions[uuid]?.cancel();
+      _characteristicSubscriptions.remove(uuid);
+      
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (_isConnected && selectedDevice?.isConnected == true) {
+        await characteristic.setNotifyValue(false);
+        await Future.delayed(const Duration(milliseconds: 200));
+        await characteristic.setNotifyValue(true);
+        
+        final controller = _characteristicStreams[uuid];
+        if (controller != null && !controller.isClosed) {
+          final subscription = characteristic.onValueReceived.listen(
+            (value) {
+              if (!controller.isClosed) {
+                List<double> parsedData = _parseData(Uint8List.fromList(value));
+                controller.add(parsedData);
+              }
+            },
+            onError: (error) {
+              _handleCharacteristicStreamError(uuid, characteristic);
+            },
+            cancelOnError: false,
+          );
+          
+          _characteristicSubscriptions[uuid] = subscription;
+        }
       }
-    });
+    } catch (e) {
+    }
   }
 
 
@@ -640,6 +735,7 @@ class BleBloc with ChangeNotifier {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _reconnectionListener?.cancel();
     _devicesListController.close();
     _clearCharacteristicStreams();

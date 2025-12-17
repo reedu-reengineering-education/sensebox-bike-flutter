@@ -171,14 +171,14 @@ class SensorBloc with ChangeNotifier {
     }
   }
 
-  void _stopListening() {
+  Future<void> _stopListening() async {
     for (var sensor in _sensors) {
-      sensor.stopListening();
+      await sensor.stopListening();
     }
   }
 
-  void _restartAllSensors() {
-    _stopListening();
+  Future<void> _restartAllSensors() async {
+    await _stopListening();
     _startListening();
   }
 
