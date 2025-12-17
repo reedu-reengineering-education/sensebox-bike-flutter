@@ -1,4 +1,3 @@
-// File: lib/blocs/geolocation_bloc.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -10,6 +9,7 @@ import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
+import 'package:sensebox_bike/utils/date_utils.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/privacy_zone_checker.dart';
 
@@ -41,10 +41,10 @@ class GeolocationBloc with ChangeNotifier {
     if (_isListening) {
       return;
     }
-    
+
     try {
       _positionStreamSubscription?.cancel();
-      
+
       await PermissionService.ensureLocationPermissionsGranted();
 
       late LocationSettings locationSettings;
@@ -71,25 +71,27 @@ class GeolocationBloc with ChangeNotifier {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.bestForNavigation,
           distanceFilter: 0,
-          // activityType: ActivityType.fitness,
-          // pauseLocationUpdatesAutomatically: false,
-          // showBackgroundLocationIndicator: true,
-          // allowBackgroundLocationUpdates: true,
         );
       }
 
       _positionStreamSubscription =
           Geolocator.getPositionStream(locationSettings: locationSettings)
-              .listen((Position position) async {
-        final geolocationData = _createGeolocationFromPosition(position);
+              .listen(
+        (Position position) async {
+          final geolocationData = _createGeolocationFromPosition(position);
 
-        if (_shouldEmitGeolocation(geolocationData)) {
-          _resetStationaryLocationTimer();
-          await _saveGeolocationIfRecording(geolocationData);
-          _emitGeolocation(geolocationData);
-        }
-      });
-      
+          if (_shouldEmitGeolocation(geolocationData)) {
+            _startStationaryLocationTimer();
+            await _saveGeolocationIfRecording(geolocationData);
+            _emitGeolocation(geolocationData);
+          }
+        },
+        onError: (error) {
+          ErrorService.handleError(error, StackTrace.current);
+        },
+        cancelOnError: false,
+      );
+
       _isListening = true;
       _startStationaryLocationTimer();
     } catch (e, stack) {
@@ -120,11 +122,11 @@ class GeolocationBloc with ChangeNotifier {
 
   void _startStationaryLocationTimer() {
     _stopStationaryLocationTimer();
-    
+
     if (!recordingBloc.isRecording) {
       return;
     }
-    
+
     _stationaryLocationTimer = Timer.periodic(const Duration(seconds: 20), (timer) async {
       if (!recordingBloc.isRecording) {
         _stopStationaryLocationTimer();
@@ -133,14 +135,12 @@ class GeolocationBloc with ChangeNotifier {
       
       try {
         await getCurrentLocationAndEmit();
-      } catch (e) {}
+      } catch (e) {
+        ErrorService.handleError(e, StackTrace.current);
+      }
     });
   }
-  
-  void _resetStationaryLocationTimer() {
-    _startStationaryLocationTimer();
-  }
-  
+
   void _stopStationaryLocationTimer() {
     _stationaryLocationTimer?.cancel();
     _stationaryLocationTimer = null;
@@ -158,9 +158,7 @@ class GeolocationBloc with ChangeNotifier {
       ..latitude = position.latitude
       ..longitude = position.longitude
       ..speed = position.speed
-      ..timestamp = position.timestamp.isUtc
-          ? position.timestamp
-          : position.timestamp.toUtc();
+      ..timestamp = toUtc(position.timestamp);
   }
 
   bool _shouldEmitGeolocation(GeolocationData geolocationData) {
