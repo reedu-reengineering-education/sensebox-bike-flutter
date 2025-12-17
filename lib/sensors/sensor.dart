@@ -48,7 +48,7 @@ abstract class Sensor {
 
   /// Maximum age of values to keep in buffer (for cleanup)
   /// Values older than this will be removed as a safety net
-  Duration get maxBufferAge => const Duration(minutes: 5);
+  Duration get maxBufferAge => const Duration(minutes: 2);
 
   Sensor(
     this.characteristicUuid,
