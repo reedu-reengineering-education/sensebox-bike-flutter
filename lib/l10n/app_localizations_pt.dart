@@ -146,10 +146,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get openSenseMapLoginFailed => 'Falha no login';
 
   @override
-  String get openSenseMapRegisterName => 'Nome';
+  String get openSenseMapRegisterName => 'Nome de usuário';
 
   @override
-  String get openSenseMapRegisterNameErrorEmpty => 'O nome não pode estar vazio';
+  String get openSenseMapRegisterNameErrorEmpty => 'O nome de usuário não pode estar vazio';
 
   @override
   String get openSenseMapRegisterPasswordConfirm => 'Confirmar senha';
