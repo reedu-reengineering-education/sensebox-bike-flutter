@@ -84,16 +84,8 @@ class SensorBloc with ChangeNotifier {
     _clearAllSensorBuffersForNewRecording();
     
     // Start CSV logging (only in debug mode if enabled in .env)
-    if (!kReleaseMode) {
-      final enableLogging = dotenv
-              .get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false')
-              .toLowerCase() ==
-          'true';
-      if (enableLogging) {
-        final csvLogger = SensorCsvLoggerService();
-        csvLogger.startLogging(_sensors);
-      }
-    }
+    final csvLogger = SensorCsvLoggerService();
+    csvLogger.startLogging(_sensors);
     
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
