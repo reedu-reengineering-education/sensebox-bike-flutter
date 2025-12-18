@@ -192,6 +192,7 @@ class SensorCsvLoggerService {
       final fileName = 'sensor_data_$timestamp.csv';
       final filePath = '${_logDirectory!.path}/$fileName';
       final file = File(filePath);
+      _currentFile = file; // set early so incoming samples are not dropped
 
       // Write CSV header
       // Format: sensor_name, timestamp, value1, value2, value3, ...
@@ -199,10 +200,10 @@ class SensorCsvLoggerService {
       final header = 'sensor_name,timestamp,value1,value2,value3,value4,value5,value6,value7,value8,value9,value10';
       await file.writeAsString('$header\n');
 
-      _currentFile = file;
       debugPrint('Created CSV file: $fileName');
     } catch (e) {
       debugPrint('Error creating CSV file: $e');
+      _currentFile = null;
     }
   }
 
