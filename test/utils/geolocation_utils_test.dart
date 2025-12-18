@@ -250,7 +250,7 @@ void main() {
       sensorBatches = [];
     });
 
-    test('returns all values when lookbackWindow is zero', () {
+    test('returns all values up to geoTime when lookbackWindow is zero and no previous geolocations', () {
       final geoTime = DateTime.utc(2024, 1, 1, 12, 0, 3);
 
       final result = getValuesInLookbackWindow(
