@@ -82,9 +82,5 @@
 	</array>
 	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
-	<key>UIFileSharingEnabled</key>
-	<true/>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
 </dict>
 </plist>
