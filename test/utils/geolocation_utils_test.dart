@@ -266,6 +266,30 @@ void main() {
       expect(result[2], equals([3.0]));
     });
 
+    test('for zero lookback uses values after previous geolocation only', () {
+      final previousGeo = GeolocationData()
+        ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 1);
+      sensorBatches = [
+        SensorBatch(
+          geoLocation: previousGeo,
+          aggregatedData: {},
+          timestamp: DateTime.now(),
+        )
+      ];
+
+      final geoTime = DateTime.utc(2024, 1, 1, 12, 0, 2);
+
+      final result = getValuesInLookbackWindow(
+        geoTime,
+        preGpsValues,
+        sensorBatches,
+        Duration.zero,
+      );
+
+      expect(result.length, equals(1));
+      expect(result[0], equals([3.0]));
+    });
+
     test('returns values within lookback window', () {
       final geoTime = DateTime.utc(2024, 1, 1, 12, 0, 2, 500);
       final lookbackWindow = const Duration(seconds: 1);

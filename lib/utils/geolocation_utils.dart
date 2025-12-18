@@ -62,11 +62,34 @@ List<List<double>> getValuesInLookbackWindow(
   List<SensorBatch> sensorBatches,
   Duration lookbackWindow,
 ) {
-  if (lookbackWindow == Duration.zero) {
-    return preGpsValues.map((entry) => entry.values).toList();
-  }
-
   final geoTimeUtc = toUtc(geoTime);
+
+  // For sensors without a lookback window, only use values collected after the
+  // previous geolocation (if any) up to the current geolocation time.
+  if (lookbackWindow == Duration.zero) {
+    final previousGeoTime = sensorBatches
+        .map((b) => toUtc(b.geoLocation.timestamp))
+        // Ignore geolocations that are effectively the same moment
+        .where((t) =>
+            t.isBefore(geoTimeUtc.subtract(const Duration(milliseconds: 100))))
+        .fold<DateTime?>(null, (latest, t) {
+      if (latest == null || t.isAfter(latest)) {
+        return t;
+      }
+      return latest;
+    });
+
+    return preGpsValues
+        .where((entry) {
+          final ts = toUtc(entry.timestamp);
+          final afterPrevious =
+              previousGeoTime == null || ts.isAfter(previousGeoTime);
+          final beforeOrAtCurrent = !ts.isAfter(geoTimeUtc);
+          return afterPrevious && beforeOrAtCurrent;
+        })
+        .map((entry) => entry.values)
+        .toList();
+  }
 
   final otherBatches = sensorBatches.where((b) {
     return (b.geoLocation.timestamp.difference(geoTimeUtc))
