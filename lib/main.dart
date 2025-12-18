@@ -78,8 +78,15 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
         _bleBloc!, _geolocationBloc!, _recordingBloc!, _settingsBloc!);
     _mapboxDrawController = MapboxDrawController();
 
-    final csvLogger = SensorCsvLoggerService();
-    await csvLogger.initialize();
+    // Initialize CSV logger service (logging starts/stops with recording)
+    // Only initialize if not in release mode and enabled in .env file
+    if (!kReleaseMode) {
+      final enableLogging = dotenv.get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false').toLowerCase() == 'true';
+      if (enableLogging) {
+        final csvLogger = SensorCsvLoggerService();
+        await csvLogger.initialize();
+      }
+    }
 
     _isInitialized = true;
     debugPrint('Blocs initialized successfully');
