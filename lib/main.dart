@@ -80,8 +80,16 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
 
     // Initialize CSV logger service (logging starts/stops with recording)
     // Only initialize if not in release mode and enabled in .env file
-    final csvLogger = SensorCsvLoggerService();
-    await csvLogger.initialize();
+    if (!kReleaseMode) {
+      final enableLogging = dotenv
+              .get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false')
+              .toLowerCase() ==
+          'true';
+      if (enableLogging) {
+        final csvLogger = SensorCsvLoggerService();
+        await csvLogger.initialize();
+      }
+    }
 
     _isInitialized = true;
     debugPrint('Blocs initialized successfully');
