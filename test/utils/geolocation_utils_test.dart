@@ -266,17 +266,7 @@ void main() {
       expect(result[2], equals([3.0]));
     });
 
-    test('for zero lookback uses values after previous geolocation only', () {
-      final previousGeo = GeolocationData()
-        ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 1);
-      sensorBatches = [
-        SensorBatch(
-          geoLocation: previousGeo,
-          aggregatedData: {},
-          timestamp: DateTime.now(),
-        )
-      ];
-
+    test('for zero lookback returns all buffered values before geoTime', () {
       final geoTime = DateTime.utc(2024, 1, 1, 12, 0, 2);
 
       final result = getValuesInLookbackWindow(
@@ -286,8 +276,67 @@ void main() {
         Duration.zero,
       );
 
+      // Returns all values before geoTime (excludes values at exactly geoTime)
+      expect(result.length, equals(2));
+      expect(result[0], equals([1.0]));
+      expect(result[1], equals([2.0]));
+    });
+
+    test('for zero lookback excludes values at exactly geoTime', () {
+      final geoTime = DateTime.utc(2024, 1, 1, 12, 0, 2);
+      final valuesWithExactMatch = [
+        TimestampedSensorValue(
+          values: [1.0],
+          timestamp: DateTime.utc(2024, 1, 1, 12, 0, 1),
+        ),
+        TimestampedSensorValue(
+          values: [2.0],
+          timestamp: DateTime.utc(2024, 1, 1, 12, 0, 2), // Exactly at geoTime
+        ),
+        TimestampedSensorValue(
+          values: [3.0],
+          timestamp: DateTime.utc(2024, 1, 1, 12, 0, 3), // After geoTime
+        ),
+      ];
+
+      final result = getValuesInLookbackWindow(
+        geoTime,
+        valuesWithExactMatch,
+        sensorBatches,
+        Duration.zero,
+      );
+
+      // Should exclude values at exactly geoTime and after
       expect(result.length, equals(1));
-      expect(result[0], equals([3.0]));
+      expect(result[0], equals([1.0]));
+    });
+
+    test('for zero lookback returns empty list when buffer is empty', () {
+      final geoTime = DateTime.utc(2024, 1, 1, 12, 0, 2);
+
+      final result = getValuesInLookbackWindow(
+        geoTime,
+        [],
+        sensorBatches,
+        Duration.zero,
+      );
+
+      expect(result, isEmpty);
+    });
+
+    test(
+        'for zero lookback returns empty list when geoTime is before all values',
+        () {
+      final geoTime = DateTime.utc(2023, 12, 31, 12, 0, 0);
+
+      final result = getValuesInLookbackWindow(
+        geoTime,
+        preGpsValues,
+        sensorBatches,
+        Duration.zero,
+      );
+
+      expect(result, isEmpty);
     });
 
     test('returns values within lookback window', () {
@@ -301,8 +350,11 @@ void main() {
         lookbackWindow,
       );
 
-      expect(result.length, greaterThan(0));
-      expect(result.every((values) => values.isNotEmpty), isTrue);
+      // Window starts at earliest reading (12:00:00), ends at geoTime (12:00:02.500)
+      // Should include values from 12:00:01.500 to 12:00:02.500
+      expect(result.length, equals(2));
+      expect(result[0], equals([2.0])); // 12:00:01 is within window
+      expect(result[1], equals([3.0])); // 12:00:02 is within window
     });
 
     test('returns empty list when geoTime is before earliest reading', () {
@@ -392,8 +444,42 @@ void main() {
         lookbackWindow,
       );
 
-      expect(result.length, lessThanOrEqualTo(2));
-      expect(result.length, greaterThan(0));
+      // Window starts at earliest reading (12:00:00), ends at geoTime (12:00:01)
+      // Should include values at 12:00:00 and 12:00:01, but not 12:00:02
+      expect(result.length, equals(2));
+      expect(result[0], equals([1.0]));
+      expect(result[1], equals([2.0]));
+    });
+
+    test('includes values at exactly geoTime for non-zero lookback', () {
+      final geoTime = DateTime.utc(2024, 1, 1, 12, 0, 2);
+      final lookbackWindow = const Duration(seconds: 5);
+      final valuesWithExactMatch = [
+        TimestampedSensorValue(
+          values: [1.0],
+          timestamp: DateTime.utc(2024, 1, 1, 12, 0, 1),
+        ),
+        TimestampedSensorValue(
+          values: [2.0],
+          timestamp: DateTime.utc(2024, 1, 1, 12, 0, 2), // Exactly at geoTime
+        ),
+        TimestampedSensorValue(
+          values: [3.0],
+          timestamp: DateTime.utc(2024, 1, 1, 12, 0, 3), // After geoTime
+        ),
+      ];
+
+      final result = getValuesInLookbackWindow(
+        geoTime,
+        valuesWithExactMatch,
+        sensorBatches,
+        lookbackWindow,
+      );
+
+      // Should include values up to and including geoTime
+      expect(result.length, equals(2));
+      expect(result[0], equals([1.0]));
+      expect(result[1], equals([2.0]));
     });
 
     test('handles empty preGpsValues with no batches', () {

@@ -187,7 +187,15 @@ abstract class Sensor {
     final batch =
         _sensorBatches.putIfAbsent(geoId, () => _createSensorBatch(geo));
     batch.aggregatedData[title] = aggregated;
-    flushBuffers();
+  }
+
+  void _removeAggregatedValues(DateTime geoTime) {
+    final geoTimeUtc = toUtc(geoTime);
+    // Remove values that were aggregated: values with timestamp < geoTime
+    // This matches what was aggregated and prevents double-aggregation
+    // Note: This function is only called when aggregation occurred (valuesInWindow.isNotEmpty)
+    _preGpsValues
+        .removeWhere((entry) => toUtc(entry.timestamp).isBefore(geoTimeUtc));
   }
 
   void _performImmediateAggregation(GeolocationData geo) {
@@ -197,6 +205,7 @@ abstract class Sensor {
     if (valuesInWindow.isNotEmpty) {
       final aggregated = aggregateData(valuesInWindow);
       _setAggregatedDataOnBatch(geoId, geo, aggregated);
+      _removeAggregatedValues(geo.timestamp);
       _cleanupOldValuesIfBufferExceedsThreshold();
     }
   }
@@ -213,6 +222,7 @@ abstract class Sensor {
     if (valuesInWindow.isNotEmpty) {
       final aggregated = aggregateData(valuesInWindow);
       _setAggregatedDataOnBatch(geoId, geo, aggregated);
+      _removeAggregatedValues(batchGeo.timestamp);
       _cleanupOldValuesIfBufferExceedsThreshold();
     }
   }
