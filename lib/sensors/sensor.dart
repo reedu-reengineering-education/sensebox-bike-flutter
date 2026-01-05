@@ -137,19 +137,13 @@ abstract class Sensor {
     for (final entry in _pendingGeolocations.entries) {
       final geoId = entry.key;
       final geo = entry.value;
-      final geoTimeUtc =
-          geo.timestamp.isUtc ? geo.timestamp : geo.timestamp.toUtc();
+      final geoTimeUtc = _toUtc(geo.timestamp);
       
-      // Get when this geolocation was added (for 2-second timeout)
       final batch = _sensorBatches[geoId];
       final geoArrivalTime = batch?.timestamp ?? geo.timestamp;
       final waitUntilTime = geoArrivalTime.add(lookbackWindow);
 
-      // Stop waiting if:
-      // 1. Sensor timestamp > geolocation timestamp (sensor value doesn't belong to this geo)
-      // 2. 2 seconds have passed since geolocation arrived
-      final sensorTimestampUtc =
-          sensorTimestamp.isUtc ? sensorTimestamp : sensorTimestamp.toUtc();
+      final sensorTimestampUtc = _toUtc(sensorTimestamp);
       if (sensorTimestampUtc.isAfter(geoTimeUtc) ||
           !now.isBefore(waitUntilTime)) {
         geoIdsToProcess.add(geoId);
@@ -207,25 +201,56 @@ abstract class Sensor {
   void _cancelPendingAggregation(int geoId) {
     final completer = _pendingAggregations[geoId];
     if (completer != null && !completer.isCompleted) {
-      completer.complete(); // Signal cancellation
+      completer.complete();
       _pendingAggregations.remove(geoId);
     }
     _pendingGeolocations.remove(geoId);
   }
 
-  /// Gets all sensor values that belong to a geolocation
-  /// Sensor values belong to geolocation if their timestamp <= geolocation timestamp
-  /// Window starts at previous geolocation timestamp (or beginning of data for first geolocation)
-  /// Window ends at geoTime (inclusive)
-  /// Both geoTime and sensor timestamps should be in UTC for correct comparison
-  List<List<double>> _getValuesInLookbackWindow(DateTime geoTime) {
-    if (lookbackWindow == Duration.zero) {
-      // No lookback: return all current values (backward compatible)
-      return _preGpsValues.map((entry) => entry.values).toList();
+  DateTime _toUtc(DateTime timestamp) {
+    return timestamp.isUtc ? timestamp : timestamp.toUtc();
+  }
+
+  void _removeAggregatedValues(DateTime geoTime) {
+    final geoTimeUtc = _toUtc(geoTime);
+    _preGpsValues.removeWhere((entry) {
+      return _toUtc(entry.timestamp).isBefore(geoTimeUtc);
+    });
+  }
+
+  void _setAggregatedData(
+      int geoId, GeolocationData geo, List<double> aggregated) {
+    final existingBatch = _sensorBatches[geoId];
+    if (existingBatch != null &&
+        existingBatch.aggregatedData.containsKey(title)) {
+      return;
     }
 
-    // Ensure geoTime is in UTC for comparison with sensor timestamps
-    final geoTimeUtc = geoTime.isUtc ? geoTime : geoTime.toUtc();
+    final batch = _sensorBatches.putIfAbsent(
+      geoId,
+      () => SensorBatch(
+        geoLocation: geo,
+        aggregatedData: {},
+        timestamp: DateTime.now(),
+      ),
+    );
+    batch.aggregatedData[title] = aggregated;
+
+    Future.microtask(() async {
+      await _flushBuffers();
+    });
+  }
+
+  List<List<double>> _getValuesInLookbackWindow(DateTime geoTime) {
+    if (lookbackWindow == Duration.zero) {
+      final geoTimeUtc = _toUtc(geoTime);
+      return _preGpsValues
+          .where((entry) => _toUtc(entry.timestamp).isBefore(geoTimeUtc))
+          .map((entry) => entry.values)
+          .toList();
+    }
+
+    final geoTimeUtc = _toUtc(geoTime);
     
     // Calculate window start: previous geolocation timestamp, or beginning of data for first geolocation
     DateTime windowStart;
@@ -268,11 +293,7 @@ abstract class Sensor {
       otherBatches.sort(
           (a, b) => a.geoLocation.timestamp.compareTo(b.geoLocation.timestamp));
       final previousGeo = otherBatches.last.geoLocation;
-      final previousGeoTimeUtc = previousGeo.timestamp.isUtc
-          ? previousGeo.timestamp
-          : previousGeo.timestamp.toUtc();
-      // Window starts just after previous geolocation timestamp (exclusive)
-      // to avoid double-counting values exactly at the boundary
+      final previousGeoTimeUtc = _toUtc(previousGeo.timestamp);
       windowStart = previousGeoTimeUtc.add(const Duration(microseconds: 1));
     }
 
@@ -291,84 +312,40 @@ abstract class Sensor {
     return valuesInWindow;
   }
 
-  /// Performs immediate aggregation (for sensors without lookback window)
   void _performImmediateAggregation(GeolocationData geo) {
     final geoId = geo.id;
-
-    // Get values within lookback window around this geolocation's timestamp
     final valuesInWindow = _getValuesInLookbackWindow(geo.timestamp);
 
     if (valuesInWindow.isNotEmpty) {
       final aggregated = aggregateData(valuesInWindow);
-
-      // Check if batch already exists and has data for this sensor - don't overwrite it
-      final existingBatch = _sensorBatches[geoId];
-      if (existingBatch != null &&
-          existingBatch.aggregatedData.containsKey(title)) {
-        // Skip - batch already has data for this sensor
-      } else {
-        final batch = _sensorBatches.putIfAbsent(
-          geoId,
-          () => SensorBatch(
-            geoLocation: geo,
-            aggregatedData: {},
-            timestamp: DateTime.now(),
-          ),
-        );
-        batch.aggregatedData[title] = aggregated;
-
-        // Trigger flush to save the aggregated data immediately
-        // Use Future.microtask to avoid blocking and allow other operations to complete
-        Future.microtask(() async {
-          await _flushBuffers();
-        });
-      }
-      
-      // Remove values that have been aggregated (timestamp <= geolocation timestamp)
-      // They won't be used by future geolocations
-      final cutoffTime = geo.timestamp.add(const Duration(microseconds: 1));
-      _preGpsValues
-          .removeWhere((entry) => !entry.timestamp.isAfter(cutoffTime));
+      _setAggregatedData(geoId, geo, aggregated);
+      _removeAggregatedValues(geo.timestamp);
     }
   }
 
-  /// Performs deferred aggregation after lookback window closes
   void _performDeferredAggregation(int geoId, GeolocationData geo) {
-    // Check if geolocation still exists in batches (might have been flushed)
     final batch = _sensorBatches[geoId];
     if (batch == null) {
-      // Batch was already flushed or removed, skip aggregation
       return;
     }
 
-    // Use batch's geolocation to ensure we have the latest data
     final batchGeo = batch.geoLocation;
-
-    // Get values within lookback window around this geolocation's timestamp
     final valuesInWindow = _getValuesInLookbackWindow(batchGeo.timestamp);
 
     if (valuesInWindow.isNotEmpty) {
       final aggregated = aggregateData(valuesInWindow);
 
-      // Check if batch already has data for this sensor - don't overwrite it
       if (batch.aggregatedData.containsKey(title)) {
-        // Skip - batch already has data for this sensor
-      } else {
-        batch.aggregatedData[title] = aggregated;
-        
-        // Trigger flush to save the aggregated data immediately
-        // Use Future.microtask to avoid blocking and allow other operations to complete
-        Future.microtask(() async {
-          await _flushBuffers();
-        });
+        return;
       }
-      
-      // Remove values that have been aggregated (timestamp <= geolocation timestamp)
-      // They won't be used by future geolocations
-      final cutoffTime =
-          batchGeo.timestamp.add(const Duration(microseconds: 1));
-      _preGpsValues
-          .removeWhere((entry) => !entry.timestamp.isAfter(cutoffTime));
+
+      batch.aggregatedData[title] = aggregated;
+
+      Future.microtask(() async {
+        await _flushBuffers();
+      });
+
+      _removeAggregatedValues(batchGeo.timestamp);
     }
   }
 
