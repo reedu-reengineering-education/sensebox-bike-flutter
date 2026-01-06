@@ -34,6 +34,9 @@ abstract class Sensor {
   DirectUploadService? _directUploadService;
   VoidCallback? _recordingListener;
   bool _isFlushing = false;
+  bool _isListening = false;
+  bool _isStartingListening = false;
+  int _subscriptionId = 0;
   
   // Track pending aggregations (geolocations waiting for lookback window to close)
   // Key: geoId, Value: Completer that can be used to cancel the future
@@ -43,9 +46,8 @@ abstract class Sensor {
   // Key: geoId, Value: GeolocationData with timestamp for window checking
   final Map<int, GeolocationData> _pendingGeolocations = {};
 
-  /// Lookback window duration in milliseconds for retroactive aggregation
-  /// Sensors can override this to customize the time window
-  /// Default is 0ms (no lookback) for backward compatibility
+  /// Lookback window duration for retroactive aggregation
+  /// All sensors must override this to provide a non-zero lookback window
   Duration get lookbackWindow => Duration.zero;
 
   /// Maximum age of values to keep in buffer (for cleanup)
@@ -95,21 +97,12 @@ abstract class Sensor {
       final sensorTimestamp = DateTime.now().toUtc();
       final timestampedValue = TimestampedSensorValue(
         values: data,
-        // Use UTC to match geolocation timestamps which come from GPS device
         timestamp: sensorTimestamp,
       );
       _preGpsValues.add(timestampedValue);
 
-      // Event-driven re-aggregation: Check if this new data falls within
-      // any pending geolocation's lookback window and trigger aggregation
-      if (lookbackWindow != Duration.zero) {
-        _checkAndTriggerPendingAggregations(sensorTimestamp);
-      }
-
-      // Clean up old values periodically
+      _checkAndTriggerPendingAggregations(sensorTimestamp);
       _cleanupOldValues();
-      
-      // Emit timestamped value for CSV logger
       _timestampedValueController.add(timestampedValue);
     }
     
@@ -123,17 +116,12 @@ abstract class Sensor {
     _preGpsValues.removeWhere((entry) => entry.timestamp.isBefore(cutoffTime));
   }
 
-  /// Event-driven re-aggregation: Check if new sensor data indicates we should stop waiting
-  /// Stop waiting if:
-  /// 1. We receive a sensor value with timestamp > geolocation timestamp (doesn't belong to this geo)
-  /// 2. 2 seconds have passed since geolocation arrived
   void _checkAndTriggerPendingAggregations(DateTime sensorTimestamp) {
     if (_pendingGeolocations.isEmpty) return;
 
     final now = DateTime.now().toUtc();
     final geoIdsToProcess = <int>[];
 
-    // Check each pending geolocation
     for (final entry in _pendingGeolocations.entries) {
       final geoId = entry.key;
       final geo = entry.value;
@@ -150,7 +138,6 @@ abstract class Sensor {
       }
     }
 
-    // Process geolocations that should stop waiting
     for (final geoId in geoIdsToProcess) {
       final geo = _pendingGeolocations[geoId];
       if (geo != null) {
@@ -160,24 +147,17 @@ abstract class Sensor {
     }
   }
 
-  /// Schedules deferred aggregation using Future.delayed with cancellation support
-  /// Waits for 2 seconds OR until a sensor value arrives with timestamp > geolocation timestamp
   void _scheduleDeferredAggregation(int geoId, GeolocationData geo) {
-    // Calculate when to stop waiting: 2 seconds after geolocation was added
     final batch = _sensorBatches[geoId];
     final geoArrivalTime = batch?.timestamp ?? DateTime.now().toUtc();
     final waitUntilTime = geoArrivalTime.add(lookbackWindow);
     final now = DateTime.now().toUtc();
     final delay = waitUntilTime.difference(now);
 
-    // Create a completer for cancellation
     final completer = Completer<void>();
     _pendingAggregations[geoId] = completer;
 
-    // Schedule aggregation after 2 seconds
-    // If 2 seconds have already passed (negative delay), aggregate immediately
     if (delay.isNegative) {
-      // 2 seconds already passed, aggregate immediately
       Future.microtask(() {
         if (!completer.isCompleted) {
           _performDeferredAggregation(geoId, geo);
@@ -186,7 +166,6 @@ abstract class Sensor {
         }
       });
     } else {
-      // Wait for 2 seconds using Future.delayed
       Future.delayed(delay, () {
         if (!completer.isCompleted) {
           _performDeferredAggregation(geoId, geo);
@@ -214,42 +193,13 @@ abstract class Sensor {
   void _removeAggregatedValues(DateTime geoTime) {
     final geoTimeUtc = _toUtc(geoTime);
     _preGpsValues.removeWhere((entry) {
-      return _toUtc(entry.timestamp).isBefore(geoTimeUtc);
-    });
-  }
-
-  void _setAggregatedData(
-      int geoId, GeolocationData geo, List<double> aggregated) {
-    final existingBatch = _sensorBatches[geoId];
-    if (existingBatch != null &&
-        existingBatch.aggregatedData.containsKey(title)) {
-      return;
-    }
-
-    final batch = _sensorBatches.putIfAbsent(
-      geoId,
-      () => SensorBatch(
-        geoLocation: geo,
-        aggregatedData: {},
-        timestamp: DateTime.now(),
-      ),
-    );
-    batch.aggregatedData[title] = aggregated;
-
-    Future.microtask(() async {
-      await _flushBuffers();
+      final entryTimeUtc = _toUtc(entry.timestamp);
+      return entryTimeUtc.isBefore(geoTimeUtc) ||
+          entryTimeUtc.isAtSameMomentAs(geoTimeUtc);
     });
   }
 
   List<List<double>> _getValuesInLookbackWindow(DateTime geoTime) {
-    if (lookbackWindow == Duration.zero) {
-      final geoTimeUtc = _toUtc(geoTime);
-      return _preGpsValues
-          .where((entry) => _toUtc(entry.timestamp).isBefore(geoTimeUtc))
-          .map((entry) => entry.values)
-          .toList();
-    }
-
     final geoTimeUtc = _toUtc(geoTime);
     
     // Calculate window start: previous geolocation timestamp, or beginning of data for first geolocation
@@ -296,11 +246,7 @@ abstract class Sensor {
       final previousGeoTimeUtc = _toUtc(previousGeo.timestamp);
       windowStart = previousGeoTimeUtc.add(const Duration(microseconds: 1));
     }
-
-    // Window ends at geolocation timestamp (inclusive)
     final windowEnd = geoTimeUtc;
-
-    // Include values where timestamp > windowStart and timestamp <= windowEnd
     final valuesInWindow = _preGpsValues
         .where((entry) =>
             entry.timestamp.isAfter(
@@ -310,17 +256,6 @@ abstract class Sensor {
         .toList();
 
     return valuesInWindow;
-  }
-
-  void _performImmediateAggregation(GeolocationData geo) {
-    final geoId = geo.id;
-    final valuesInWindow = _getValuesInLookbackWindow(geo.timestamp);
-
-    if (valuesInWindow.isNotEmpty) {
-      final aggregated = aggregateData(valuesInWindow);
-      _setAggregatedData(geoId, geo, aggregated);
-      _removeAggregatedValues(geo.timestamp);
-    }
   }
 
   void _performDeferredAggregation(int geoId, GeolocationData geo) {
@@ -350,25 +285,46 @@ abstract class Sensor {
   }
 
 
-  void startListening() async {
+  Future<void> startListening() async {
+    if (_isListening) {
+      return;
+    }
+    if (_isStartingListening) {
+      while (_isStartingListening) {
+        await Future.delayed(Duration(milliseconds: 10));
+      }
+    }
+    _isStartingListening = true;
+    _isListening = true;
+    
     try {
-      // Cancel existing subscriptions to prevent duplicates
-      await _subscription?.cancel();
-      await _geoSubscription?.cancel();
-      
-      _subscription = bleBloc
-          .getCharacteristicStream(characteristicUuid)
-          .listen((data) {
+      if (_subscription != null) {
+        await _subscription?.cancel();
+        _subscription = null;
+      }
+      if (_geoSubscription != null) {
+        await _geoSubscription?.cancel();
+        _geoSubscription = null;
+      }
+
+      if (!_isListening) {
+        return;
+      }
+
+      final stream = bleBloc.getCharacteristicStream(characteristicUuid);
+      _subscriptionId++;
+      _subscription = stream.listen((data) {
         onDataReceived(data);
       });
-
       _geoSubscription = geolocationBloc.geolocationStream.listen((geo) async {
         final geoId = geo.id;
+        final isRecording = recordingBloc.isRecording;
 
         await _flushBuffers();
 
         // Create batch entry for this geolocation (if it doesn't exist)
         // This ensures the batch exists even if aggregation is deferred
+        final isNewBatch = !_sensorBatches.containsKey(geoId);
         _sensorBatches.putIfAbsent(
           geoId,
           () => SensorBatch(
@@ -378,20 +334,17 @@ abstract class Sensor {
           ),
         );
 
-        // If sensor has a lookback window, defer aggregation until window closes
-        // This ensures we capture all values that arrive within the window
-        if (lookbackWindow != Duration.zero) {
-          // Cancel any existing pending aggregation for this geolocation
+        if (!isRecording) {
+          // Recording stopped - immediately aggregate and process this geolocation
           _cancelPendingAggregation(geoId);
-          
-          // Store geolocation for event-driven re-aggregation
-          _pendingGeolocations[geoId] = geo;
-          
-          // Schedule aggregation after the lookback window closes using Future.delayed
-          _scheduleDeferredAggregation(geoId, geo);
+          _performDeferredAggregation(geoId, geo);
+          await _flushBuffers();
         } else {
-          // No lookback window: aggregate immediately (backward compatible)
-          _performImmediateAggregation(geo);
+          // Defer aggregation until lookback window closes
+          // This ensures we capture all values that arrive within the window
+          _cancelPendingAggregation(geoId);
+          _pendingGeolocations[geoId] = geo;
+          _scheduleDeferredAggregation(geoId, geo);
         }
       });
 
@@ -407,11 +360,17 @@ abstract class Sensor {
       };
       recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
     } catch (e) {
-      // Handle error silently
+      _isListening = false;
+    } finally {
+      _isStartingListening = false;
     }
   }
 
   Future<void> stopListening() async {
+    if (!_isListening) {
+      return;
+    }
+    
     // Cancel all pending aggregations
     for (final geoId in _pendingAggregations.keys.toList()) {
       _cancelPendingAggregation(geoId);
@@ -419,10 +378,14 @@ abstract class Sensor {
     _pendingAggregations.clear();
     _pendingGeolocations.clear();
     
-    await _subscription?.cancel();
-    _subscription = null;
-    await _geoSubscription?.cancel();
-    _geoSubscription = null;
+    if (_subscription != null) {
+      await _subscription?.cancel();
+      _subscription = null;
+    }
+    if (_geoSubscription != null) {
+      await _geoSubscription?.cancel();
+      _geoSubscription = null;
+    }
     await _uploadSuccessSubscription?.cancel();
     _uploadSuccessSubscription = null;
     
@@ -432,6 +395,7 @@ abstract class Sensor {
     }
 
     await _flushBuffers();
+    _isListening = false;
   }
 
   Future<void> flushBuffers() async {
@@ -439,7 +403,6 @@ abstract class Sensor {
   }
 
   void clearBuffersForNewRecording() {
-    // Cancel all pending aggregations
     for (final geoId in _pendingAggregations.keys.toList()) {
       _cancelPendingAggregation(geoId);
     }
@@ -449,16 +412,61 @@ abstract class Sensor {
     _preGpsValues.clear();
   }
 
+  /// Check if sensor has remaining values that need to be processed when recording stops
+  bool hasRemainingValuesWhenStopped() {
+    return _preGpsValues.isNotEmpty;
+  }
+
+  /// Get SensorData entries for a specific geolocation ID without saving them
+  /// Returns empty list if no batch exists for the geolocation or no data is available
+  List<SensorData> getSensorDataForGeolocation(int geoId) {
+    final batch = _sensorBatches[geoId];
+    if (batch == null) {
+      return [];
+    }
+
+    final sensorData = batch.aggregatedData[title];
+    if (sensorData == null || sensorData.isEmpty) {
+      return [];
+    }
+
+    final List<SensorData> result = [];
+    if (attributes.isNotEmpty) {
+      for (int j = 0; j < attributes.length && j < sensorData.length; j++) {
+        result.add(SensorData()
+          ..characteristicUuid = characteristicUuid
+          ..title = title
+          ..value = sensorData[j]
+          ..attribute = attributes[j]
+          ..geolocationData.value = batch.geoLocation);
+      }
+    } else {
+      result.add(SensorData()
+        ..characteristicUuid = characteristicUuid
+        ..title = title
+        ..value = sensorData.isNotEmpty ? sensorData[0] : 0.0
+        ..attribute = null
+        ..geolocationData.value = batch.geoLocation);
+    }
+
+    return result;
+  }
+
+  /// Mark a batch for a specific geolocation as saved to database
+  void markBatchAsSaved(int geoId) {
+    final batch = _sensorBatches[geoId];
+    if (batch != null) {
+      batch.isSavedToDb = true;
+    }
+  }
+
   Future<void> _flushBuffers() async {
     final isRecording = recordingBloc.isRecording;
 
-    // If recording stopped, trigger immediate aggregation for all pending aggregations
     if (!isRecording && _pendingAggregations.isNotEmpty) {
       final pendingGeoIds = _pendingAggregations.keys.toList();
       for (final geoId in pendingGeoIds) {
         _cancelPendingAggregation(geoId);
-        
-        // Perform immediate aggregation for this geolocation
         final batch = _sensorBatches[geoId];
         if (batch != null) {
           _performDeferredAggregation(geoId, batch.geoLocation);
@@ -476,226 +484,6 @@ abstract class Sensor {
     _isFlushing = true;
 
     try {
-      if (_preGpsValues.isNotEmpty && !isRecording) {
-        // Process remaining sensor data when recording stops
-        // Create a new geolocation for all buffered sensor data
-
-        if (_sensorBatches.isNotEmpty) {
-          // There are existing geolocations - process remaining values
-          final lastBatch = _sensorBatches.values.last;
-          if (lastBatch.geoLocation.id != Isar.autoIncrement &&
-              lastBatch.geoLocation.id != 0) {
-            // Use lookback window for the last batch as well
-            final valuesInWindow =
-                _getValuesInLookbackWindow(lastBatch.geoLocation.timestamp);
-            if (valuesInWindow.isNotEmpty) {
-              final aggregated = aggregateData(valuesInWindow);
-              lastBatch.aggregatedData[title] = aggregated;
-            }
-
-            // Handle remaining values that don't belong to the last geolocation
-            // With new logic: values belong to geo if timestamp <= geo timestamp
-            // So remaining values are those with timestamp > lastGeoTimeUtc
-            final lastGeoTimeUtc = lastBatch.geoLocation.timestamp.isUtc
-                ? lastBatch.geoLocation.timestamp
-                : lastBatch.geoLocation.timestamp.toUtc();
-
-            final remainingValues = _preGpsValues
-                .where((entry) => entry.timestamp.isAfter(lastGeoTimeUtc))
-                .toList();
-
-            // Get track from last batch's geolocation (since currentTrack may be null when recording stops)
-            await lastBatch.geoLocation.track.load();
-            final track = lastBatch.geoLocation.track.value;
-
-            if (remainingValues.isNotEmpty && track != null) {
-              final stopTimestamp = recordingBloc.lastRecordingStopTimestamp ??
-                  DateTime.now().toUtc();
-
-              // Check if a geolocation with this timestamp/location already exists
-              GeolocationData? geolocationToUse;
-              GeolocationData? existingGeolocation;
-              try {
-                final trackId = track.id;
-                if (trackId != Isar.autoIncrement && trackId != 0) {
-                  final geolocations = await isarService.geolocationService
-                      .getGeolocationDataByTrackId(trackId);
-                  try {
-                    existingGeolocation = geolocations.firstWhere((geo) {
-                      final timeDiff =
-                          (geo.timestamp.difference(stopTimestamp)).abs();
-                      final sameLocation =
-                          (geo.latitude - lastBatch.geoLocation.latitude)
-                                      .abs() <
-                                  0.000001 &&
-                              (geo.longitude - lastBatch.geoLocation.longitude)
-                                      .abs() <
-                                  0.000001;
-                      return sameLocation && timeDiff.inMilliseconds < 100;
-                    });
-                  } catch (e) {
-                    existingGeolocation = null;
-                  }
-                }
-              } catch (e) {
-                existingGeolocation = null;
-              }
-
-              if (existingGeolocation != null) {
-                geolocationToUse = existingGeolocation;
-              } else {
-                geolocationToUse = GeolocationData()
-                  ..latitude = lastBatch.geoLocation.latitude
-                  ..longitude = lastBatch.geoLocation.longitude
-                  ..speed = lastBatch.geoLocation.speed
-                  ..timestamp = stopTimestamp
-                  ..track.value = track;
-
-                try {
-                  final savedId = await isarService.geolocationService
-                      .saveGeolocationData(geolocationToUse);
-                  geolocationToUse.id = savedId;
-                } catch (e) {
-                  _preGpsValues.clear();
-                  return;
-                }
-              }
-
-              try {
-                final valuesForNewGeo =
-                    remainingValues.map((entry) => entry.values).toList();
-
-                if (valuesForNewGeo.isNotEmpty) {
-                  final aggregated = aggregateData(valuesForNewGeo);
-
-                  final existingBatch = _sensorBatches[geolocationToUse.id];
-                  if (existingBatch != null) {
-                    existingBatch.aggregatedData[title] = aggregated;
-                  } else {
-                    final newBatch = SensorBatch(
-                      geoLocation: geolocationToUse,
-                      aggregatedData: {title: aggregated},
-                      timestamp: DateTime.now(),
-                    );
-                    _sensorBatches[geolocationToUse.id] = newBatch;
-                  }
-                }
-              } catch (e) {
-                // Ignore aggregation errors during stop
-              }
-
-              final cutoffTime =
-                  stopTimestamp.add(const Duration(microseconds: 1));
-              _preGpsValues
-                  .removeWhere((entry) => !entry.timestamp.isAfter(cutoffTime));
-            } else {
-              _preGpsValues.clear();
-            }
-          }
-        } else {
-          // No existing geolocations - create one for all buffered sensor data
-          // Try to get track from recordingBloc, but if null, we can't create a geolocation
-          final track = recordingBloc.currentTrack;
-          if (track != null) {
-            // Get timestamp from the latest sensor value
-            final latestTimestamp = _preGpsValues
-                .map((e) => e.timestamp)
-                .reduce((a, b) => a.isAfter(b) ? a : b);
-
-            // Check if a geolocation with this timestamp already exists
-            GeolocationData? existingGeolocation;
-            try {
-              final trackId = track.id;
-              if (trackId != Isar.autoIncrement && trackId != 0) {
-                final geolocations = await isarService.geolocationService
-                    .getGeolocationDataByTrackId(trackId);
-                try {
-                  existingGeolocation = geolocations.firstWhere(
-                    (geo) {
-                      final timeDiff =
-                          (geo.timestamp.difference(latestTimestamp)).abs();
-                      return timeDiff.inMilliseconds < 100;
-                    },
-                  );
-                } catch (e) {
-                  existingGeolocation = null;
-                }
-              }
-            } catch (e) {
-              existingGeolocation = null;
-            }
-
-            GeolocationData geolocationToUse;
-            if (existingGeolocation != null) {
-              geolocationToUse = existingGeolocation;
-            } else {
-              // Create new geolocation - use coordinates from last known position or default
-              // Get last geolocation from track if available
-              GeolocationData? lastGeo;
-              try {
-                final trackId = track.id;
-                if (trackId != Isar.autoIncrement && trackId != 0) {
-                  final geolocations = await isarService.geolocationService
-                      .getGeolocationDataByTrackId(trackId);
-                  if (geolocations.isNotEmpty) {
-                    geolocations
-                        .sort((a, b) => b.timestamp.compareTo(a.timestamp));
-                    lastGeo = geolocations.first;
-                  }
-                }
-              } catch (e) {
-                // Ignore errors
-              }
-
-              geolocationToUse = GeolocationData()
-                ..latitude = lastGeo?.latitude ?? 0.0
-                ..longitude = lastGeo?.longitude ?? 0.0
-                ..speed = lastGeo?.speed ?? 0.0
-                ..timestamp = latestTimestamp
-                ..track.value = track;
-
-              try {
-                final savedId = await isarService.geolocationService
-                    .saveGeolocationData(geolocationToUse);
-                geolocationToUse.id = savedId;
-              } catch (e) {
-                _preGpsValues.clear();
-                return;
-              }
-            }
-
-            try {
-              // Aggregate all buffered values (they belong to this geolocation)
-              final valuesForGeo = _preGpsValues
-                  .where((entry) => !entry.timestamp.isAfter(latestTimestamp))
-                  .map((entry) => entry.values)
-                  .toList();
-
-              if (valuesForGeo.isNotEmpty) {
-                final aggregated = aggregateData(valuesForGeo);
-
-                final existingBatch = _sensorBatches[geolocationToUse.id];
-                if (existingBatch != null) {
-                  existingBatch.aggregatedData[title] = aggregated;
-                } else {
-                  final newBatch = SensorBatch(
-                    geoLocation: geolocationToUse,
-                    aggregatedData: {title: aggregated},
-                    timestamp: DateTime.now(),
-                  );
-                  _sensorBatches[geolocationToUse.id] = newBatch;
-                }
-                // Batch will be processed in the same _flushBuffers() call (line 741)
-              }
-            } catch (e) {
-              // If processing fails, continue
-            }
-
-            // Clear all processed values
-            _preGpsValues.clear();
-          }
-        }
-      }
 
       final batchesToProcess = _sensorBatches.values
           .where((b) =>
@@ -789,7 +577,6 @@ abstract class Sensor {
           _directUploadService!.queueBatchesForUpload(batchRefs);
         }
       }
-    } catch (e) {
     } finally {
       _isFlushing = false;
     }

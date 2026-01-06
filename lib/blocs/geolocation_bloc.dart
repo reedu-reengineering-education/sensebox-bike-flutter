@@ -24,6 +24,9 @@ class GeolocationBloc with ChangeNotifier {
   GeolocationData? _lastEmittedPosition;
   Timer? _stationaryLocationTimer;
   final PrivacyZoneChecker _privacyZoneChecker = PrivacyZoneChecker();
+  bool _isListening = false;
+
+  bool get isListening => _isListening;
 
   final IsarService isarService;
   final RecordingBloc recordingBloc;
@@ -37,6 +40,10 @@ class GeolocationBloc with ChangeNotifier {
   }
 
   void startListening() async {
+    if (_isListening) {
+      return;
+    }
+    
     try {
       await PermissionService.ensureLocationPermissionsGranted();
 
@@ -71,6 +78,7 @@ class GeolocationBloc with ChangeNotifier {
         );
       }
 
+      await _positionStreamSubscription?.cancel();
       _positionStreamSubscription =
           Geolocator.getPositionStream(locationSettings: locationSettings)
               .listen((Position position) async {
@@ -83,11 +91,14 @@ class GeolocationBloc with ChangeNotifier {
         _lastEmittedPosition = geolocationData;
         _resetStationaryLocationTimer();
 
-        await _saveGeolocationIfRecording(geolocationData);
-        _emitGeolocation(geolocationData);
+        final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
+        if (shouldEmit) {
+          _emitGeolocation(geolocationData);
+        }
       });
       
       _startStationaryLocationTimer();
+      _isListening = true;
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
@@ -110,8 +121,10 @@ class GeolocationBloc with ChangeNotifier {
       }
 
       _lastEmittedPosition = geolocationData;
-      await _saveGeolocationIfRecording(geolocationData);
-      _emitGeolocation(geolocationData);
+      final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
+      if (shouldEmit) {
+        _emitGeolocation(geolocationData);
+      }
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
@@ -141,8 +154,10 @@ class GeolocationBloc with ChangeNotifier {
           return;
         }
 
-        await _saveGeolocationIfRecording(geolocationData);
-        _emitGeolocation(geolocationData);
+        final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
+        if (shouldEmit) {
+          _emitGeolocation(geolocationData);
+        }
       } else {
         try {
           await getCurrentLocationAndEmit();
@@ -166,6 +181,7 @@ class GeolocationBloc with ChangeNotifier {
     _positionStreamSubscription?.cancel();
     _stopStationaryLocationTimer();
     _lastEmittedPosition = null;
+    _isListening = false;
   }
 
   GeolocationData _createGeolocationFromPosition(Position position) {
@@ -179,26 +195,47 @@ class GeolocationBloc with ChangeNotifier {
   }
 
   bool _shouldSkipGeolocation(GeolocationData geolocationData) {
-    if (_lastEmittedPosition != null &&
-        _lastEmittedPosition!.timestamp == geolocationData.timestamp &&
-        _lastEmittedPosition!.latitude == geolocationData.latitude &&
-        _lastEmittedPosition!.longitude == geolocationData.longitude) {
+    if (_lastEmittedPosition == null) {
+      final inPrivacyZone =
+          _privacyZoneChecker.isInsidePrivacyZone(geolocationData);
+
+      return inPrivacyZone;
+    }
+
+    final lastTimestamp =
+        _lastEmittedPosition!.timestamp.millisecondsSinceEpoch;
+    final currentTimestamp = geolocationData.timestamp.millisecondsSinceEpoch;
+
+    if (lastTimestamp == currentTimestamp) {
       return true;
     }
 
-    final isInsidePrivacyZone =
-        _privacyZoneChecker.isInsidePrivacyZone(geolocationData);
-    if (isInsidePrivacyZone) {
+    final timeDiff = (currentTimestamp - lastTimestamp).abs();
+    if (timeDiff < 1000) {
+      final distance = Geolocator.distanceBetween(
+        _lastEmittedPosition!.latitude,
+        _lastEmittedPosition!.longitude,
+        geolocationData.latitude,
+        geolocationData.longitude,
+      );
+      if (distance < 1.0) {
+        return true;
+      }
+    }
+
+    if (_privacyZoneChecker.isInsidePrivacyZone(geolocationData)) {
       return true;
     }
 
     return false;
   }
 
-  Future<void> _saveGeolocationIfRecording(
-      GeolocationData geolocationData) async {
-    if (!recordingBloc.isRecording || recordingBloc.currentTrack == null) {
-      return;
+  Future<bool> _saveGeolocationIfRecording(
+      GeolocationData geolocationData,
+      {bool allowFinalGeolocation = false}) async {
+    if ((!recordingBloc.isRecording && !allowFinalGeolocation) ||
+        recordingBloc.currentTrack == null) {
+      return false;
     }
 
     geolocationData.track.value = recordingBloc.currentTrack;
@@ -214,14 +251,42 @@ class GeolocationBloc with ChangeNotifier {
           await isarService.sensorService.saveSensorData(gpsSpeedSensorData);
         } catch (e) {}
       }
+      
+      return true;
     } catch (e) {
       geolocationData.id = 0;
+      return false;
     }
   }
 
   void _emitGeolocation(GeolocationData geolocationData) {
     _geolocationController.add(geolocationData);
     notifyListeners();
+  }
+
+  Future<void> emitFinalGeolocation() async {
+    if (_lastEmittedPosition == null || recordingBloc.currentTrack == null) {
+      return;
+    }
+
+    final stopTimestamp =
+        recordingBloc.lastRecordingStopTimestamp ?? DateTime.now().toUtc();
+
+    final finalGeolocation = GeolocationData()
+      ..latitude = _lastEmittedPosition!.latitude
+      ..longitude = _lastEmittedPosition!.longitude
+      ..speed = _lastEmittedPosition!.speed
+      ..timestamp = stopTimestamp;
+
+    if (_shouldSkipGeolocation(finalGeolocation)) {
+      return;
+    }
+
+    final shouldEmit = await _saveGeolocationIfRecording(finalGeolocation,
+        allowFinalGeolocation: true);
+    if (shouldEmit) {
+      _emitGeolocation(finalGeolocation);
+    }
   }
 
   @override

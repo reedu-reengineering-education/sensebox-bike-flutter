@@ -48,6 +48,8 @@ class BleBloc with ChangeNotifier {
   StreamSubscription<BluetoothConnectionState>? _reconnectionListener;
 
   final Map<String, StreamController<List<double>>> _characteristicStreams = {};
+  final Map<String, StreamSubscription<List<int>>>
+      _characteristicSubscriptions = {};
 
   bool get isConnected => _isConnected;
 
@@ -399,6 +401,11 @@ class BleBloc with ChangeNotifier {
   }
 
   void _clearCharacteristicStreams() {
+    for (var subscription in _characteristicSubscriptions.values) {
+      subscription.cancel();
+    }
+    _characteristicSubscriptions.clear();
+    
     for (var controller in _characteristicStreams.values) {
       controller.close();
     }
@@ -598,7 +605,9 @@ class BleBloc with ChangeNotifier {
       BluetoothCharacteristic characteristic) async {
     final uuid = characteristic.uuid.toString();
 
-    // If a controller exists for this characteristic, close and remove it firs
+    await _characteristicSubscriptions[uuid]?.cancel();
+    _characteristicSubscriptions.remove(uuid);
+
     if (_characteristicStreams.containsKey(uuid)) {
       await _characteristicStreams[uuid]?.close();
       _characteristicStreams.remove(uuid);
@@ -608,12 +617,14 @@ class BleBloc with ChangeNotifier {
     _characteristicStreams[uuid] = controller;
 
     await characteristic.setNotifyValue(true);
-    characteristic.onValueReceived.listen((value) {
+    final subscription = characteristic.onValueReceived.listen((value) {
       if (!controller.isClosed) {
         List<double> parsedData = _parseData(Uint8List.fromList(value));
+
         controller.add(parsedData);
       }
     });
+    _characteristicSubscriptions[uuid] = subscription;
   }
 
 

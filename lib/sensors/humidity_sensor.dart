@@ -15,6 +15,9 @@ class HumiditySensor extends Sensor {
   @override
   get uiPriority => 20;
 
+  @override
+  Duration get lookbackWindow => const Duration(milliseconds: 1000);
+
   static const String sensorCharacteristicUuid =
       '772df7ec-8cdc-4ea9-86af-410abe0ba257';
 
