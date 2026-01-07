@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mocktail/mocktail.dart';
@@ -273,6 +274,320 @@ void main() {
         await Future.delayed(mediumDelay);
 
         expect(emittedGeolocations.length, 1);
+      });
+    });
+  });
+
+  group('GeolocationBloc.shouldSkipGeolocation', () {
+    late GeolocationBloc geolocationBloc;
+    late MockIsarService mockIsarService;
+    late MockRecordingBloc mockRecordingBloc;
+    late MockSettingsBloc mockSettingsBloc;
+    late StreamController<List<String>> privacyZonesController;
+    late MockGeolocator mockGeolocator;
+
+    setUp(() {
+      mockIsarService = MockIsarService();
+      mockRecordingBloc = MockRecordingBloc();
+      mockSettingsBloc = MockSettingsBloc();
+      privacyZonesController = StreamController<List<String>>.broadcast();
+      mockGeolocator = MockGeolocator();
+      geo.GeolocatorPlatform.instance = mockGeolocator;
+
+      when(() => mockSettingsBloc.privacyZones).thenReturn([]);
+      when(() => mockSettingsBloc.privacyZonesStream)
+          .thenAnswer((_) => privacyZonesController.stream);
+
+      geolocationBloc = GeolocationBloc(
+        mockIsarService,
+        mockRecordingBloc,
+        mockSettingsBloc,
+      );
+    });
+
+    tearDown(() {
+      privacyZonesController.close();
+      geolocationBloc.dispose();
+    });
+
+    GeolocationData createGeolocation({
+      double? latitude,
+      double? longitude,
+      DateTime? timestamp,
+      double? speed,
+    }) {
+      return GeolocationData()
+        ..latitude = latitude ?? 52.5200
+        ..longitude = longitude ?? 13.4050
+        ..timestamp = timestamp ?? DateTime.now().toUtc()
+        ..speed = speed ?? 0.0;
+    }
+
+    group('when lastEmittedPosition is null', () {
+      test('should skip if geolocation is in privacy zone', () {
+        final zoneJson =
+            createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize);
+        privacyZonesController.add([zoneJson]);
+
+        final geolocation = createGeolocation(
+          latitude: testLat1,
+          longitude: testLng1,
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(geolocation);
+
+        expect(result, true);
+      });
+
+      test('should not skip if geolocation is outside privacy zone', () {
+        final zoneJson =
+            createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize);
+        privacyZonesController.add([zoneJson]);
+
+        final geolocation = createGeolocation(
+          latitude: testLat2,
+          longitude: testLng2,
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(geolocation);
+
+        expect(result, false);
+      });
+    });
+
+    group('duplicate timestamp filtering', () {
+      test('should skip if timestamps are identical', () {
+        final now = DateTime.now().toUtc();
+        final lastPosition = createGeolocation(timestamp: now);
+        final currentPosition = createGeolocation(timestamp: now);
+
+        final result = geolocationBloc.shouldSkipGeolocation(
+          currentPosition,
+          lastEmittedPosition: lastPosition,
+        );
+
+        expect(result, true);
+      });
+
+      test('should not skip if timestamps differ', () {
+        final now = DateTime.now().toUtc();
+        final lastPosition = createGeolocation(timestamp: now);
+        final currentPosition = createGeolocation(
+          timestamp: now.add(const Duration(seconds: 10)),
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(
+          currentPosition,
+          lastEmittedPosition: lastPosition,
+        );
+
+        expect(result, false);
+      });
+    });
+
+    group('iOS platform - 5 second interval enforcement', () {
+      test('should skip if less than 5 seconds have passed', () {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+
+        final now = DateTime.now().toUtc();
+        final lastPosition = createGeolocation(timestamp: now);
+        final currentPosition = createGeolocation(
+          timestamp: now.add(const Duration(seconds: 3)),
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(
+          currentPosition,
+          lastEmittedPosition: lastPosition,
+        );
+
+        expect(result, true);
+
+        debugDefaultTargetPlatformOverride = null;
+      });
+
+      test('should not skip if 5 or more seconds have passed', () {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+
+        final now = DateTime.now().toUtc();
+        final lastPosition = createGeolocation(timestamp: now);
+        final currentPosition = createGeolocation(
+          timestamp: now.add(const Duration(seconds: 5)),
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(
+          currentPosition,
+          lastEmittedPosition: lastPosition,
+        );
+
+        expect(result, false);
+
+        debugDefaultTargetPlatformOverride = null;
+      });
+
+      test('should skip if exactly 4.999 seconds have passed', () {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+
+        final now = DateTime.now().toUtc();
+        final lastPosition = createGeolocation(timestamp: now);
+        final currentPosition = createGeolocation(
+          timestamp: now.add(const Duration(milliseconds: 4999)),
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(
+          currentPosition,
+          lastEmittedPosition: lastPosition,
+        );
+
+        expect(result, true);
+
+        debugDefaultTargetPlatformOverride = null;
+      });
+    });
+
+    group('Android platform - 1 second interval with distance check', () {
+      test('should skip if less than 1 second AND distance less than 1 meter',
+          () {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
+        final now = DateTime.now().toUtc();
+        final lastPosition = createGeolocation(
+          timestamp: now,
+          latitude: 52.5200,
+          longitude: 13.4050,
+        );
+        final currentPosition = createGeolocation(
+          timestamp: now.add(const Duration(milliseconds: 500)),
+          latitude: 52.52001,
+          longitude: 13.40501,
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(
+          currentPosition,
+          lastEmittedPosition: lastPosition,
+        );
+
+        expect(result, true);
+
+        debugDefaultTargetPlatformOverride = null;
+      });
+
+      test(
+          'should not skip if less than 1 second BUT distance greater than 1 meter',
+          () {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
+        final now = DateTime.now().toUtc();
+        final lastPosition = createGeolocation(
+          timestamp: now,
+          latitude: 52.5200,
+          longitude: 13.4050,
+        );
+        final currentPosition = createGeolocation(
+          timestamp: now.add(const Duration(milliseconds: 500)),
+          latitude: 52.5210,
+          longitude: 13.4060,
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(
+          currentPosition,
+          lastEmittedPosition: lastPosition,
+        );
+
+        expect(result, false);
+
+        debugDefaultTargetPlatformOverride = null;
+      });
+
+      test('should not skip if 1 or more seconds have passed', () {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
+        final now = DateTime.now().toUtc();
+        final lastPosition = createGeolocation(timestamp: now);
+        final currentPosition = createGeolocation(
+          timestamp: now.add(const Duration(seconds: 1)),
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(
+          currentPosition,
+          lastEmittedPosition: lastPosition,
+        );
+
+        expect(result, false);
+
+        debugDefaultTargetPlatformOverride = null;
+      });
+    });
+
+    group('privacy zone filtering with lastEmittedPosition', () {
+      test('should skip if geolocation is in privacy zone', () {
+        final zoneJson =
+            createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize);
+        privacyZonesController.add([zoneJson]);
+
+        final now = DateTime.now().toUtc();
+        final lastPosition = createGeolocation(
+          timestamp: now.subtract(const Duration(seconds: 10)),
+          latitude: testLat2,
+          longitude: testLng2,
+        );
+        final currentPosition = createGeolocation(
+          timestamp: now,
+          latitude: testLat1,
+          longitude: testLng1,
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(
+          currentPosition,
+          lastEmittedPosition: lastPosition,
+        );
+
+        expect(result, true);
+      });
+
+      test('should not skip if geolocation is outside privacy zone', () {
+        final zoneJson =
+            createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize);
+        privacyZonesController.add([zoneJson]);
+
+        final now = DateTime.now().toUtc();
+        final lastPosition = createGeolocation(
+          timestamp: now.subtract(const Duration(seconds: 10)),
+          latitude: testLat2,
+          longitude: testLng2,
+        );
+        final currentPosition = createGeolocation(
+          timestamp: now,
+          latitude: testLat2,
+          longitude: testLng2,
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(
+          currentPosition,
+          lastEmittedPosition: lastPosition,
+        );
+
+        expect(result, false);
+      });
+    });
+
+    group('macOS platform - same as iOS', () {
+      test('should skip if less than 5 seconds have passed', () {
+        debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+
+        final now = DateTime.now().toUtc();
+        final lastPosition = createGeolocation(timestamp: now);
+        final currentPosition = createGeolocation(
+          timestamp: now.add(const Duration(seconds: 3)),
+        );
+
+        final result = geolocationBloc.shouldSkipGeolocation(
+          currentPosition,
+          lastEmittedPosition: lastPosition,
+        );
+
+        expect(result, true);
+
+        debugDefaultTargetPlatformOverride = null;
       });
     });
   });

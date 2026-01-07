@@ -12,6 +12,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/privacy_zone_checker.dart';
+import 'package:sensebox_bike/utils/geolocation_utils.dart';
 
 class GeolocationBloc with ChangeNotifier {
   final StreamController<GeolocationData> _geolocationController =
@@ -84,7 +85,7 @@ class GeolocationBloc with ChangeNotifier {
               .listen((Position position) async {
         final geolocationData = _createGeolocationFromPosition(position);
 
-        if (_shouldSkipGeolocation(geolocationData)) {
+        if (shouldSkipGeolocation(geolocationData)) {
           return;
         }
 
@@ -116,7 +117,7 @@ class GeolocationBloc with ChangeNotifier {
       final position = await getCurrentLocation();
       final geolocationData = _createGeolocationFromPosition(position);
 
-      if (_shouldSkipGeolocation(geolocationData)) {
+      if (shouldSkipGeolocation(geolocationData)) {
         return;
       }
 
@@ -150,7 +151,7 @@ class GeolocationBloc with ChangeNotifier {
           ..speed = _lastEmittedPosition!.speed
           ..timestamp = DateTime.now().toUtc();
 
-        if (_shouldSkipGeolocation(geolocationData)) {
+        if (shouldSkipGeolocation(geolocationData)) {
           return;
         }
 
@@ -194,33 +195,19 @@ class GeolocationBloc with ChangeNotifier {
           : position.timestamp.toUtc();
   }
 
-  bool _shouldSkipGeolocation(GeolocationData geolocationData) {
-    if (_lastEmittedPosition == null) {
+  bool shouldSkipGeolocation(GeolocationData geolocationData,
+      {GeolocationData? lastEmittedPosition}) {
+    final lastPosition = lastEmittedPosition ?? _lastEmittedPosition;
+
+    if (lastPosition == null) {
       final inPrivacyZone =
           _privacyZoneChecker.isInsidePrivacyZone(geolocationData);
 
       return inPrivacyZone;
     }
 
-    final lastTimestamp =
-        _lastEmittedPosition!.timestamp.millisecondsSinceEpoch;
-    final currentTimestamp = geolocationData.timestamp.millisecondsSinceEpoch;
-
-    if (lastTimestamp == currentTimestamp) {
+    if (shouldSkipGeolocationByTimeAndDistance(geolocationData, lastPosition)) {
       return true;
-    }
-
-    final timeDiff = (currentTimestamp - lastTimestamp).abs();
-    if (timeDiff < 1000) {
-      final distance = Geolocator.distanceBetween(
-        _lastEmittedPosition!.latitude,
-        _lastEmittedPosition!.longitude,
-        geolocationData.latitude,
-        geolocationData.longitude,
-      );
-      if (distance < 1.0) {
-        return true;
-      }
     }
 
     if (_privacyZoneChecker.isInsidePrivacyZone(geolocationData)) {
@@ -278,7 +265,7 @@ class GeolocationBloc with ChangeNotifier {
       ..speed = _lastEmittedPosition!.speed
       ..timestamp = stopTimestamp;
 
-    if (_shouldSkipGeolocation(finalGeolocation)) {
+    if (shouldSkipGeolocation(finalGeolocation)) {
       return;
     }
 
