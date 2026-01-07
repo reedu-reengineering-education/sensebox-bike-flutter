@@ -423,14 +423,14 @@ void main() {
       });
     });
 
-    group('iOS platform - 5 second interval enforcement', () {
-      test('should skip if less than 5 seconds have passed', () {
+    group('iOS platform - 1 second interval enforcement', () {
+      test('should skip if less than 1 second has passed', () {
         debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
 
         final now = DateTime.now().toUtc();
         final lastPosition = createGeolocation(timestamp: now);
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(seconds: 3)),
+          timestamp: now.add(const Duration(milliseconds: 500)),
         );
 
         final result = geolocationBloc.shouldSkipGeolocation(
@@ -443,13 +443,13 @@ void main() {
         debugDefaultTargetPlatformOverride = null;
       });
 
-      test('should not skip if 5 or more seconds have passed', () {
+      test('should not skip if 1 or more seconds have passed', () {
         debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
 
         final now = DateTime.now().toUtc();
         final lastPosition = createGeolocation(timestamp: now);
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(seconds: 5)),
+          timestamp: now.add(const Duration(seconds: 1)),
         );
 
         final result = geolocationBloc.shouldSkipGeolocation(
@@ -462,13 +462,13 @@ void main() {
         debugDefaultTargetPlatformOverride = null;
       });
 
-      test('should skip if exactly 4.999 seconds have passed', () {
+      test('should skip if exactly 0.999 seconds have passed', () {
         debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
 
         final now = DateTime.now().toUtc();
         final lastPosition = createGeolocation(timestamp: now);
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(milliseconds: 4999)),
+          timestamp: now.add(const Duration(milliseconds: 999)),
         );
 
         final result = geolocationBloc.shouldSkipGeolocation(
@@ -482,8 +482,8 @@ void main() {
       });
     });
 
-    group('Android platform - 5 second interval enforcement', () {
-      test('should skip if less than 5 seconds have passed', () {
+    group('Android platform - 1 second interval enforcement', () {
+      test('should skip if less than 1 second has passed', () {
         debugDefaultTargetPlatformOverride = TargetPlatform.android;
 
         final now = DateTime.now().toUtc();
@@ -493,7 +493,7 @@ void main() {
           longitude: 13.4050,
         );
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(seconds: 3)),
+          timestamp: now.add(const Duration(milliseconds: 500)),
           latitude: 52.5210,
           longitude: 13.4060,
         );
@@ -508,7 +508,7 @@ void main() {
         debugDefaultTargetPlatformOverride = null;
       });
 
-      test('should not skip if 5 or more seconds have passed', () {
+      test('should not skip if 1 or more seconds have passed', () {
         debugDefaultTargetPlatformOverride = TargetPlatform.android;
 
         final now = DateTime.now().toUtc();
@@ -518,7 +518,7 @@ void main() {
           longitude: 13.4050,
         );
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(seconds: 5)),
+          timestamp: now.add(const Duration(seconds: 1)),
           latitude: 52.5210,
           longitude: 13.4060,
         );
@@ -533,13 +533,13 @@ void main() {
         debugDefaultTargetPlatformOverride = null;
       });
 
-      test('should skip if exactly 4.999 seconds have passed', () {
+      test('should skip if exactly 0.999 seconds have passed', () {
         debugDefaultTargetPlatformOverride = TargetPlatform.android;
 
         final now = DateTime.now().toUtc();
         final lastPosition = createGeolocation(timestamp: now);
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(milliseconds: 4999)),
+          timestamp: now.add(const Duration(milliseconds: 999)),
         );
 
         final result = geolocationBloc.shouldSkipGeolocation(
@@ -608,13 +608,13 @@ void main() {
     });
 
     group('macOS platform - same as iOS', () {
-      test('should skip if less than 5 seconds have passed', () {
+      test('should skip if less than 1 second has passed', () {
         debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
 
         final now = DateTime.now().toUtc();
         final lastPosition = createGeolocation(timestamp: now);
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(seconds: 3)),
+          timestamp: now.add(const Duration(milliseconds: 500)),
         );
 
         final result = geolocationBloc.shouldSkipGeolocation(

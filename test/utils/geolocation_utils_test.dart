@@ -47,12 +47,12 @@ void main() {
       });
     });
 
-    group('5 second interval enforcement (all platforms)', () {
-      test('should skip if less than 5 seconds have passed', () {
+    group('1 second interval enforcement (all platforms)', () {
+      test('should skip if less than 1 second has passed', () {
         final now = DateTime.now().toUtc();
         final lastPosition = createGeolocation(timestamp: now);
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(seconds: 3)),
+          timestamp: now.add(const Duration(milliseconds: 500)),
         );
 
         final result = shouldSkipGeolocationByTime(
@@ -63,11 +63,11 @@ void main() {
         expect(result, true);
       });
 
-      test('should not skip if exactly 5 seconds have passed', () {
+      test('should not skip if exactly 1 second has passed', () {
         final now = DateTime.now().toUtc();
         final lastPosition = createGeolocation(timestamp: now);
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(seconds: 5)),
+          timestamp: now.add(const Duration(seconds: 1)),
         );
 
         final result = shouldSkipGeolocationByTime(
@@ -78,11 +78,11 @@ void main() {
         expect(result, false);
       });
 
-      test('should not skip if more than 5 seconds have passed', () {
+      test('should not skip if more than 1 second has passed', () {
         final now = DateTime.now().toUtc();
         final lastPosition = createGeolocation(timestamp: now);
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(seconds: 6)),
+          timestamp: now.add(const Duration(seconds: 2)),
         );
 
         final result = shouldSkipGeolocationByTime(
@@ -93,11 +93,11 @@ void main() {
         expect(result, false);
       });
 
-      test('should skip if exactly 4.999 seconds have passed', () {
+      test('should skip if exactly 0.999 seconds have passed', () {
         final now = DateTime.now().toUtc();
         final lastPosition = createGeolocation(timestamp: now);
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(milliseconds: 4999)),
+          timestamp: now.add(const Duration(milliseconds: 999)),
         );
 
         final result = shouldSkipGeolocationByTime(
@@ -116,7 +116,7 @@ void main() {
           longitude: 13.4050,
         );
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(seconds: 3)),
+          timestamp: now.add(const Duration(milliseconds: 500)),
           latitude: 52.5300,
           longitude: 13.4150,
         );
@@ -134,7 +134,7 @@ void main() {
       test('should handle negative time difference correctly', () {
         final now = DateTime.now().toUtc();
         final lastPosition = createGeolocation(
-          timestamp: now.add(const Duration(seconds: 3)),
+          timestamp: now.add(const Duration(milliseconds: 500)),
         );
         final currentPosition = createGeolocation(timestamp: now);
 
@@ -169,7 +169,7 @@ void main() {
           longitude: 13.4050,
         );
         final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(seconds: 3)),
+          timestamp: now.add(const Duration(milliseconds: 500)),
           latitude: 52.5200,
           longitude: 13.4050,
         );
