@@ -3,7 +3,7 @@ import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/utils/geolocation_utils.dart';
 
 void main() {
-  group('shouldSkipGeolocationByTimeAndDistance', () {
+  group('shouldSkipGeolocationByTime', () {
     GeolocationData createGeolocation({
       double? latitude,
       double? longitude,
@@ -23,7 +23,7 @@ void main() {
         final lastPosition = createGeolocation(timestamp: now);
         final currentPosition = createGeolocation(timestamp: now);
 
-        final result = shouldSkipGeolocationByTimeAndDistance(
+        final result = shouldSkipGeolocationByTime(
           currentPosition,
           lastPosition,
         );
@@ -38,7 +38,7 @@ void main() {
           timestamp: now.add(const Duration(seconds: 10)),
         );
 
-        final result = shouldSkipGeolocationByTimeAndDistance(
+        final result = shouldSkipGeolocationByTime(
           currentPosition,
           lastPosition,
         );
@@ -55,7 +55,7 @@ void main() {
           timestamp: now.add(const Duration(seconds: 3)),
         );
 
-        final result = shouldSkipGeolocationByTimeAndDistance(
+        final result = shouldSkipGeolocationByTime(
           currentPosition,
           lastPosition,
         );
@@ -70,7 +70,7 @@ void main() {
           timestamp: now.add(const Duration(seconds: 5)),
         );
 
-        final result = shouldSkipGeolocationByTimeAndDistance(
+        final result = shouldSkipGeolocationByTime(
           currentPosition,
           lastPosition,
         );
@@ -85,7 +85,7 @@ void main() {
           timestamp: now.add(const Duration(seconds: 6)),
         );
 
-        final result = shouldSkipGeolocationByTimeAndDistance(
+        final result = shouldSkipGeolocationByTime(
           currentPosition,
           lastPosition,
         );
@@ -100,7 +100,7 @@ void main() {
           timestamp: now.add(const Duration(milliseconds: 4999)),
         );
 
-        final result = shouldSkipGeolocationByTimeAndDistance(
+        final result = shouldSkipGeolocationByTime(
           currentPosition,
           lastPosition,
         );
@@ -121,7 +121,7 @@ void main() {
           longitude: 13.4150,
         );
 
-        final result = shouldSkipGeolocationByTimeAndDistance(
+        final result = shouldSkipGeolocationByTime(
           currentPosition,
           lastPosition,
         );
@@ -138,7 +138,7 @@ void main() {
         );
         final currentPosition = createGeolocation(timestamp: now);
 
-        final result = shouldSkipGeolocationByTimeAndDistance(
+        final result = shouldSkipGeolocationByTime(
           currentPosition,
           lastPosition,
         );
@@ -153,7 +153,7 @@ void main() {
           timestamp: now.add(const Duration(hours: 1)),
         );
 
-        final result = shouldSkipGeolocationByTimeAndDistance(
+        final result = shouldSkipGeolocationByTime(
           currentPosition,
           lastPosition,
         );
@@ -174,7 +174,7 @@ void main() {
           longitude: 13.4050,
         );
 
-        final result = shouldSkipGeolocationByTimeAndDistance(
+        final result = shouldSkipGeolocationByTime(
           currentPosition,
           lastPosition,
         );

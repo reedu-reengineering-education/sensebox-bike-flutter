@@ -65,7 +65,7 @@ class GeolocationBloc with ChangeNotifier {
                       name: "@mipmap/ic_stat_sensebox_bike_logo"),
                   color: Colors.blue));
         } else {
-          return Future.error('Notification permissions are denied');
+          throw Exception('Notification permissions are denied');
         }
       } else if (defaultTargetPlatform == TargetPlatform.iOS ||
           defaultTargetPlatform == TargetPlatform.macOS) {
@@ -101,6 +101,10 @@ class GeolocationBloc with ChangeNotifier {
       _startStationaryLocationTimer();
       _isListening = true;
     } catch (e, stack) {
+      _positionStreamSubscription?.cancel();
+      _positionStreamSubscription = null;
+      _stopStationaryLocationTimer();
+      _isListening = false;
       ErrorService.handleError(e, stack);
     }
   }
@@ -162,7 +166,8 @@ class GeolocationBloc with ChangeNotifier {
       } else {
         try {
           await getCurrentLocationAndEmit();
-        } catch (e) {
+        } catch (e, stack) {
+          ErrorService.handleError(e, stack);
         }
       }
     });
@@ -206,7 +211,7 @@ class GeolocationBloc with ChangeNotifier {
       return inPrivacyZone;
     }
 
-    if (shouldSkipGeolocationByTimeAndDistance(geolocationData, lastPosition)) {
+    if (shouldSkipGeolocationByTime(geolocationData, lastPosition)) {
       return true;
     }
 
@@ -236,7 +241,9 @@ class GeolocationBloc with ChangeNotifier {
       if (shouldStoreSensorData(gpsSpeedSensorData)) {
         try {
           await isarService.sensorService.saveSensorData(gpsSpeedSensorData);
-        } catch (e) {}
+        } catch (e, stack) {
+          ErrorService.handleError(e, stack);
+        }
       }
       
       return true;
@@ -265,7 +272,15 @@ class GeolocationBloc with ChangeNotifier {
       ..speed = _lastEmittedPosition!.speed
       ..timestamp = stopTimestamp;
 
-    if (shouldSkipGeolocation(finalGeolocation)) {
+    final lastTimestamp =
+        _lastEmittedPosition!.timestamp.millisecondsSinceEpoch;
+    final stopTimestampMs = stopTimestamp.millisecondsSinceEpoch;
+
+    if (lastTimestamp == stopTimestampMs) {
+      return;
+    }
+
+    if (_privacyZoneChecker.isInsidePrivacyZone(finalGeolocation)) {
       return;
     }
 

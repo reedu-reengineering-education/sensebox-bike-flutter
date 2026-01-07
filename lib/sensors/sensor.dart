@@ -8,6 +8,7 @@ import 'package:sensebox_bike/models/sensor_batch.dart';
 import 'package:sensebox_bike/models/timestamped_sensor_value.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:flutter/material.dart';
 import 'package:isar_community/isar.dart';
 
@@ -293,7 +294,6 @@ abstract class Sensor {
       }
     }
     _isStartingListening = true;
-    _isListening = true;
     
     try {
       if (_subscription != null) {
@@ -305,14 +305,11 @@ abstract class Sensor {
         _geoSubscription = null;
       }
 
-      if (!_isListening) {
-        return;
-      }
-
       final stream = bleBloc.getCharacteristicStream(characteristicUuid);
       _subscription = stream.listen((data) {
         onDataReceived(data);
       });
+      
       _geoSubscription = geolocationBloc.geolocationStream.listen((geo) async {
         final geoId = geo.id;
         final isRecording = recordingBloc.isRecording;
@@ -352,8 +349,10 @@ abstract class Sensor {
         }
       };
       recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
-    } catch (e) {
+      _isListening = true;
+    } catch (e, stack) {
       _isListening = false;
+      ErrorService.handleError(e, stack);
     } finally {
       _isStartingListening = false;
     }
@@ -548,7 +547,8 @@ abstract class Sensor {
               _sensorBatches.remove(geoId);
             }
           }
-        } catch (e) {
+        } catch (e, stack) {
+          ErrorService.handleError(e, stack);
           return;
         }
       }

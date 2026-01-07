@@ -2,7 +2,7 @@ import 'package:sensebox_bike/models/geolocation_data.dart';
 
 const int geolocationMinimumIntervalMs = 5000;
 
-bool shouldSkipGeolocationByTimeAndDistance(
+bool shouldSkipGeolocationByTime(
   GeolocationData currentGeolocation,
   GeolocationData lastEmittedGeolocation,
 ) {
