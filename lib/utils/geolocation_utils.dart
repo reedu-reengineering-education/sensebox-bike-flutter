@@ -1,6 +1,6 @@
 import 'package:sensebox_bike/models/geolocation_data.dart';
 
-const int geolocationMinimumIntervalMs = 5000;
+const int geolocationMinimumIntervalMs = 1000;
 
 bool shouldSkipGeolocationByTime(
   GeolocationData currentGeolocation,
