@@ -286,6 +286,7 @@ class GeolocationBloc with ChangeNotifier {
         allowFinalGeolocation: true);
     if (shouldEmit) {
       _emitGeolocation(finalGeolocation);
+      _lastEmittedPosition = finalGeolocation;
     }
   }
 

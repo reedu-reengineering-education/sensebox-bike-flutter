@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/sensors/temperature_sensor.dart';
 import '../mocks.dart';
 
@@ -171,4 +173,118 @@ void main() {
       expect(sensor, isNotNull);
     });
   });
+
+  group('Sensor batch processing does not starve on empty batches', () {
+    late MockRecordingBloc recordingBloc;
+    late MockGeolocationBloc geolocationBloc;
+    late StreamController<GeolocationData> geoController;
+    late MockIsarService isarService;
+    late MockSensorService sensorService;
+
+    setUp(() {
+      recordingBloc = MockRecordingBloc();
+      recordingBloc.setRecording(true);
+
+      geolocationBloc = MockGeolocationBloc();
+      geoController = StreamController<GeolocationData>.broadcast();
+      when(() => geolocationBloc.geolocationStream)
+          .thenAnswer((_) => geoController.stream);
+
+      isarService = MockIsarService();
+      sensorService = MockSensorService();
+      when(() => isarService.sensorService).thenReturn(sensorService);
+      when(() => sensorService.saveSensorDataBatch(any()))
+          .thenAnswer((_) async {});
+    });
+
+    tearDown(() async {
+      await geoController.close();
+    });
+
+    test(
+        'continues saving when many geolocations have no sensor data (no starvation)',
+        () async {
+      var saveCalls = 0;
+      when(() => sensorService.saveSensorDataBatch(any()))
+          .thenAnswer((_) async => saveCalls++);
+
+      final sensor = _TestSingleValueSensor(
+        MockBleBloc(),
+        geolocationBloc,
+        recordingBloc,
+        isarService,
+      );
+
+      await sensor.startListening();
+
+      // Emit many geolocations where this sensor has no data.
+      final baseTime = DateTime.now().toUtc().add(const Duration(seconds: 10));
+      for (int i = 1; i <= 120; i++) {
+        geoController.add(GeolocationData()
+          ..id = i
+          ..timestamp = baseTime.add(Duration(milliseconds: i))
+          ..latitude = 52.0
+          ..longitude = 13.0
+          ..speed = 0.0);
+      }
+
+      // Now emit some sensor values and a few more geolocations; these should get saved.
+      sensor.onDataReceived([42.0]);
+      await Future.delayed(const Duration(milliseconds: 5));
+      sensor.onDataReceived([43.0]);
+      await Future.delayed(const Duration(milliseconds: 5));
+
+      for (int i = 121; i <= 130; i++) {
+        geoController.add(GeolocationData()
+          ..id = i
+          ..timestamp = baseTime.add(Duration(milliseconds: i))
+          ..latitude = 52.0
+          ..longitude = 13.0
+          ..speed = 0.0);
+      }
+
+      // Allow deferred aggregation + microtask flush to run.
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // We expect at least one DB batch to be saved; previously, empty batches could starve saving.
+      expect(saveCalls, greaterThan(0));
+
+      sensor.dispose();
+    });
+  });
+}
+
+class _TestSingleValueSensor extends Sensor {
+  _TestSingleValueSensor(
+    MockBleBloc bleBloc,
+    MockGeolocationBloc geolocationBloc,
+    MockRecordingBloc recordingBloc,
+    MockIsarService isarService,
+  ) : super(
+          'test-uuid',
+          'test_sensor',
+          const [],
+          bleBloc,
+          geolocationBloc,
+          recordingBloc,
+          isarService,
+        );
+
+  @override
+  Duration get lookbackWindow => const Duration(milliseconds: 10);
+
+  @override
+  int get uiPriority => 0;
+
+  @override
+  List<double> aggregateData(List<List<double>> rawData) {
+    final values = rawData.map((e) => e[0]).toList();
+    final avg = values.reduce((a, b) => a + b) / values.length;
+    return [avg];
+  }
+
+  @override
+  Widget buildWidget() {
+    return const SizedBox.shrink();
+  }
 }

@@ -46,6 +46,10 @@ abstract class Sensor {
   // Key: geoId, Value: GeolocationData with timestamp for window checking
   final Map<int, GeolocationData> _pendingGeolocations = {};
 
+  // Tracks the end timestamp of the last processed geolocation window.
+  // Used to avoid unbounded batch growth and prevent "empty batch" starvation.
+  DateTime? _lastAggregatedGeolocationTimeUtc;
+
   /// Lookback window duration for retroactive aggregation
   /// All sensors must override this to provide a non-zero lookback window
   Duration get lookbackWindow => Duration.zero;
@@ -202,56 +206,34 @@ abstract class Sensor {
   List<List<double>> _getValuesInLookbackWindow(DateTime geoTime) {
     final geoTimeUtc = _toUtc(geoTime);
     
-    // Calculate window start: previous geolocation timestamp, or beginning of data for first geolocation
     DateTime windowStart;
-    // Check if this is the first geolocation by comparing with existing batches
-    // (excluding the current one which might already be in _sensorBatches)
-    // Use timestamp comparison with tolerance to handle potential precision differences
-    final otherBatches = _sensorBatches.values.where((b) {
-      final timeDiff = (b.geoLocation.timestamp.difference(geoTimeUtc)).abs();
-      return timeDiff.inMilliseconds >
-          100; // Different if more than 100ms apart
-    }).toList();
 
-    if (otherBatches.isEmpty) {
-      // First geolocation: use all buffered data points (start from beginning)
-      // windowStart should be BEFORE geolocation timestamp to allow readings
-      // with timestamp <= geoTime to be included
+    // Calculate window start: end of previous processed window, or "beginning" for first window.
+    if (_lastAggregatedGeolocationTimeUtc == null) {
       if (_preGpsValues.isEmpty) {
-        windowStart =
-            geoTimeUtc.subtract(const Duration(days: 1)); // Fallback if no data
+        windowStart = geoTimeUtc.subtract(const Duration(days: 1));
       } else {
-        // Use the minimum of earliest sensor reading and geolocation timestamp
-        // This ensures windowStart <= windowEnd even if all readings arrive after geoTime
         final earliestReading = _preGpsValues
-            .map((e) => e.timestamp)
+            .map((e) => _toUtc(e.timestamp))
             .reduce((a, b) => a.isBefore(b) ? a : b);
-        // Set windowStart to be before geoTime, using earliest reading if it's before geoTime,
-        // otherwise use geoTime - 1 day to ensure valid window
         if (earliestReading.isBefore(geoTimeUtc) ||
             earliestReading.isAtSameMomentAs(geoTimeUtc)) {
           windowStart = earliestReading;
         } else {
-          // All readings arrived after geolocation timestamp
-          // Set windowStart before geoTime to allow readings with timestamp <= geoTime
           windowStart = geoTimeUtc.subtract(const Duration(days: 1));
         }
       }
     } else {
-      // Not first geolocation: window starts at previous geolocation timestamp
-      // Find the most recent geolocation
-      otherBatches.sort(
-          (a, b) => a.geoLocation.timestamp.compareTo(b.geoLocation.timestamp));
-      final previousGeo = otherBatches.last.geoLocation;
-      final previousGeoTimeUtc = _toUtc(previousGeo.timestamp);
-      windowStart = previousGeoTimeUtc.add(const Duration(microseconds: 1));
+      windowStart =
+          _lastAggregatedGeolocationTimeUtc!.add(const Duration(microseconds: 1));
     }
+
     final windowEnd = geoTimeUtc;
     final valuesInWindow = _preGpsValues
         .where((entry) =>
-            entry.timestamp.isAfter(
+            _toUtc(entry.timestamp).isAfter(
                 windowStart.subtract(const Duration(microseconds: 1))) &&
-            !entry.timestamp.isAfter(windowEnd))
+            !_toUtc(entry.timestamp).isAfter(windowEnd))
         .map((entry) => entry.values)
         .toList();
 
@@ -267,20 +249,27 @@ abstract class Sensor {
     final batchGeo = batch.geoLocation;
     final valuesInWindow = _getValuesInLookbackWindow(batchGeo.timestamp);
 
-    if (valuesInWindow.isNotEmpty) {
+    if (valuesInWindow.isNotEmpty && !batch.aggregatedData.containsKey(title)) {
       final aggregated = aggregateData(valuesInWindow);
-
-      if (batch.aggregatedData.containsKey(title)) {
-        return;
-      }
-
       batch.aggregatedData[title] = aggregated;
 
       Future.microtask(() async {
         await _flushBuffers();
       });
+    }
 
-      _removeAggregatedValues(batchGeo.timestamp);
+    // Always advance the window end and remove values up to this geolocation.
+    // This prevents "empty batch" starvation and unbounded buffer growth.
+    _lastAggregatedGeolocationTimeUtc = _toUtc(batchGeo.timestamp);
+    _removeAggregatedValues(batchGeo.timestamp);
+
+    // If there is no data for this geolocation for this sensor, mark it as processed.
+    // Otherwise, batches without data would remain unsaved forever and block later batches.
+    if (!batch.aggregatedData.containsKey(title)) {
+      batch.isSavedToDb = true;
+      if (_directUploadService == null || !_directUploadService!.isEnabled) {
+        _sensorBatches.remove(geoId);
+      }
     }
   }
 
@@ -322,9 +311,6 @@ abstract class Sensor {
 
         await _flushBuffers();
 
-        // Create batch entry for this geolocation (if it doesn't exist)
-        // This ensures the batch exists even if aggregation is deferred
-        final isNewBatch = !_sensorBatches.containsKey(geoId);
         _sensorBatches.putIfAbsent(
           geoId,
           () => SensorBatch(
@@ -348,7 +334,6 @@ abstract class Sensor {
         }
       });
 
-      // Remove existing listener if any
       if (_recordingListener != null) {
         recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
       }
@@ -410,15 +395,12 @@ abstract class Sensor {
     _pendingGeolocations.clear();
     _sensorBatches.clear();
     _preGpsValues.clear();
+    _lastAggregatedGeolocationTimeUtc = null;
   }
 
-  /// Check if sensor has remaining values that need to be processed when recording stops
   bool hasRemainingValuesWhenStopped() {
     return _preGpsValues.isNotEmpty;
   }
-
-  /// Get SensorData entries for a specific geolocation ID without saving them
-  /// Returns empty list if no batch exists for the geolocation or no data is available
   List<SensorData> getSensorDataForGeolocation(int geoId) {
     final batch = _sensorBatches[geoId];
     if (batch == null) {
@@ -549,6 +531,13 @@ abstract class Sensor {
             final batch = _sensorBatches[geoId];
             if (batch != null) {
               batch.isSavedToDb = true;
+            }
+          }
+
+          // In non-upload mode, we can drop saved batches to prevent unbounded memory growth.
+          if (_directUploadService == null || !_directUploadService!.isEnabled) {
+            for (final geoId in geoIdsToSave) {
+              _sensorBatches.remove(geoId);
             }
           }
         } catch (e) {

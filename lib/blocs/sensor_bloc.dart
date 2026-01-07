@@ -90,7 +90,7 @@ class SensorBloc with ChangeNotifier {
       final enableLogging = envValue.toLowerCase() == 'true';
       if (enableLogging) {
         final csvLogger = SensorCsvLoggerService();
-        await csvLogger.startLogging(_sensors);
+        csvLogger.startLogging(_sensors);
       }
     }
     
