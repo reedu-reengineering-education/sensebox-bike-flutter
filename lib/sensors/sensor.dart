@@ -36,7 +36,6 @@ abstract class Sensor {
   bool _isFlushing = false;
   bool _isListening = false;
   bool _isStartingListening = false;
-  int _subscriptionId = 0;
   
   // Track pending aggregations (geolocations waiting for lookback window to close)
   // Key: geoId, Value: Completer that can be used to cancel the future
@@ -50,8 +49,18 @@ abstract class Sensor {
   // Used to avoid unbounded batch growth and prevent "empty batch" starvation.
   DateTime? _lastAggregatedGeolocationTimeUtc;
 
-  /// Lookback window duration for retroactive aggregation
-  /// All sensors must override this to provide a non-zero lookback window
+  /// Lookback window duration for retroactive aggregation.
+  ///
+  /// This determines how long to wait after a geolocation arrives before
+  /// aggregating sensor values. This allows capturing sensor readings that
+  /// arrive slightly after the geolocation timestamp.
+  ///
+  /// - Duration.zero: Aggregation happens immediately (no delay)
+  /// - Non-zero duration: Aggregation is delayed by this duration to capture
+  ///   late-arriving values
+  ///
+  /// Default is Duration.zero. Override this property to customize the delay
+  /// for sensors that may have delayed data arrival.
   Duration get lookbackWindow => Duration.zero;
 
   /// Maximum age of values to keep in buffer (for cleanup)
@@ -301,7 +310,6 @@ abstract class Sensor {
       }
 
       final stream = bleBloc.getCharacteristicStream(characteristicUuid);
-      _subscriptionId++;
       _subscription = stream.listen((data) {
         onDataReceived(data);
       });

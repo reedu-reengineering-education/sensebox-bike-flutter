@@ -228,7 +228,9 @@ class SensorBloc with ChangeNotifier {
         .removeListener(_characteristicStreamsVersionListener);
     recordingBloc.isRecordingNotifier.removeListener(_recordingListener);
     
-    _stopListening().catchError((e) {
+    _stopListening().catchError((e, stackTrace) {
+      debugPrint('Error during sensor cleanup: $e');
+      debugPrintStack(stackTrace: stackTrace);
     });
     
     for (final sensor in _sensors) {
