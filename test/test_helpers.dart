@@ -287,8 +287,9 @@ Future<void> testGeolocationWithPrivacyZone({
 }) async {
   privacyZonesController.add(zones);
   await Future.delayed(shortDelay);
-
-  setupMockGeolocator(mockGeolocator, lat, lng);
+  
+  final timestamp = DateTime.now().toUtc();
+  setupMockGeolocator(mockGeolocator, lat, lng, timestamp: timestamp);
 
   final initialCount = emittedGeolocations.length;
   await geolocationBloc.getCurrentLocationAndEmit();
