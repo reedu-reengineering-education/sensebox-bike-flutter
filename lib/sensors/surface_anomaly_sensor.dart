@@ -15,6 +15,9 @@ class SurfaceAnomalySensor extends Sensor {
   @override
   get uiPriority => 60;
 
+  @override
+  Duration get lookbackWindow => const Duration(milliseconds: 1000);
+
   static const String sensorCharacteristicUuid =
       'b944af10-f495-4560-968f-2f0d18cab523';
 

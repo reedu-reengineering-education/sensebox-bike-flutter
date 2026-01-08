@@ -94,8 +94,15 @@ List<List<String>> buildCsvRows(
     if (sensorData.isEmpty) return null;
     final sensorMap = organizeSensorData(sensorData, separator: separator);
     final values = sensorTitles.map((title) => sensorMap['${title[0]}$separator${title[1]}']).toList();
+    
+        // Format timestamp as UTC ISO8601 string
+        final timestampUtc = geoData.timestamp.isUtc
+            ? geoData.timestamp
+            : geoData.timestamp.toUtc();
+        final timestampString = timestampUtc.toIso8601String();
+    
     return [
-      geoData.timestamp.toString(),
+          timestampString,
       geoData.latitude.toString(),
       geoData.longitude.toString(),
           ...values.map((value) =>

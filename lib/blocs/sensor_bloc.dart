@@ -1,4 +1,3 @@
-// File: lib/blocs/sensor_bloc.dart
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +30,7 @@ class SensorBloc with ChangeNotifier {
   late final VoidCallback _selectedDeviceListener;
   late final VoidCallback _recordingListener;
   List<String> _lastCharacteristicUuids = [];
+  bool _isStartingListening = false;
 
   SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc,
       this.settingsBloc) {
@@ -40,7 +40,9 @@ class SensorBloc with ChangeNotifier {
       if (bleBloc.selectedDevice != null &&
           bleBloc.selectedDevice!.isConnected) {
         _startListening();
-        geolocationBloc.startListening();
+        if (!geolocationBloc.isListening) {
+          geolocationBloc.startListening();
+        }
       } else {
         _stopListening();
         geolocationBloc.stopListening();
@@ -73,22 +75,19 @@ class SensorBloc with ChangeNotifier {
       onRecordingStop: _onRecordingStop,
     );
 
-    // Add listeners
     bleBloc.selectedDeviceNotifier.addListener(_selectedDeviceListener);
     bleBloc.availableCharacteristics.addListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .addListener(_characteristicStreamsVersionListener);
   }
 
-  void _onRecordingStart() {
+  Future<void> _onRecordingStart() async {
     _clearAllSensorBuffersForNewRecording();
     
-    // Start CSV logging (only in debug mode if enabled in .env)
     if (!kReleaseMode) {
-      final enableLogging = dotenv
-              .get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false')
-              .toLowerCase() ==
-          'true';
+      final envValue =
+          dotenv.get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false');
+      final enableLogging = envValue.toLowerCase() == 'true';
       if (enableLogging) {
         final csvLogger = SensorCsvLoggerService();
         csvLogger.startLogging(_sensors);
@@ -105,9 +104,10 @@ class SensorBloc with ChangeNotifier {
       directUploadService.enable();
     }
     
-    geolocationBloc.startListening();
+    if (!geolocationBloc.isListening) {
+      geolocationBloc.startListening();
+    }
     geolocationBloc.getCurrentLocationAndEmit().catchError((e) {
-      debugPrint('Failed to get initial GPS location: $e');
     });
   }
 
@@ -165,28 +165,35 @@ class SensorBloc with ChangeNotifier {
         bleBloc, geolocationBloc, recordingBloc, isarService));
   }
 
-  void _startListening() {
-    for (var sensor in _sensors) {
-      sensor.startListening();
+  Future<void> _startListening() async {
+    if (_isStartingListening) {
+      return;
+    }
+    _isStartingListening = true;
+    try {
+      for (var sensor in _sensors) {
+        await sensor.startListening();
+      }
+    } finally {
+      _isStartingListening = false;
     }
   }
 
-  void _stopListening() {
+  Future<void> _stopListening() async {
     for (var sensor in _sensors) {
-      sensor.stopListening();
+      await sensor.stopListening();
     }
   }
 
-  void _restartAllSensors() {
-    _stopListening();
-    _startListening();
+  Future<void> _restartAllSensors() async {
+    await _stopListening();
+    await _startListening();
   }
 
   Future<void> _flushAllSensorBuffers() async {
-    for (var sensor in _sensors) {
-      await sensor.flushBuffers();
-    }
+    await geolocationBloc.emitFinalGeolocation();
   }
+
 
   void _clearAllSensorBuffersForNewRecording() {
     for (var sensor in _sensors) {
@@ -202,7 +209,6 @@ class SensorBloc with ChangeNotifier {
         .toSet();
 
     final availableSensors = _sensors.where((sensor) {
-      // Filter out surface_anomaly if the feature flag is enabled
       if (FeatureFlags.hideSurfaceAnomalySensor &&
           sensor.title == 'surface_anomaly') {
         return false;
@@ -222,7 +228,10 @@ class SensorBloc with ChangeNotifier {
         .removeListener(_characteristicStreamsVersionListener);
     recordingBloc.isRecordingNotifier.removeListener(_recordingListener);
     
-    _stopListening();
+    _stopListening().catchError((e, stackTrace) {
+      debugPrint('Error during sensor cleanup: $e');
+      debugPrintStack(stackTrace: stackTrace);
+    });
     
     for (final sensor in _sensors) {
       sensor.dispose();
