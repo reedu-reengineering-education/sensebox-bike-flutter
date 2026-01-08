@@ -4,13 +4,15 @@ import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/services/tag_service.dart';
+import 'package:sensebox_bike/models/campaign.dart';
+import 'package:sensebox_bike/services/remote_data_service.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 
 class CreateBikeBoxModal extends StatefulWidget {
-  final TagService tagService;
+  final RemoteDataService? remoteDataService;
 
-  const CreateBikeBoxModal({super.key, required this.tagService});
+  const CreateBikeBoxModal({super.key, this.remoteDataService});
 
   @override
   _CreateBikeBoxModalState createState() => _CreateBikeBoxModalState();
@@ -21,24 +23,32 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
   final _customTagController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  List<Map<String, String>> availableTags = [];
+  List<Campaign> availableTags = [];
   String? selectedTag;
   bool _loading = false;
   SenseBoxBikeModel _selectedModel = SenseBoxBikeModel.atrai;
+  late final RemoteDataService _remoteDataService;
 
   @override
   void initState() {
     super.initState();
+    _remoteDataService = widget.remoteDataService ?? RemoteDataService();
     _loadTags();
   }
 
   Future<void> _loadTags() async {
     try {
-      final tags = await widget.tagService.loadTags();
-
-      setState(() {
-        availableTags = tags;
-      });
+      final dynamic data = await _remoteDataService.fetchJson(campaignsUrl);
+      if (data is List) {
+        final tags = data
+            .map((item) => Campaign.fromJson(item as Map<String, dynamic>))
+            .toList();
+        setState(() {
+          availableTags = tags;
+        });
+      } else {
+        throw Exception('Invalid data format: Expected List');
+      }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -165,8 +175,7 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                       ),
                       ...availableTags.map((tag) {
                         return DropdownMenuItem(
-                            value: tag['value'],
-                            child: Text(tag['label'] ?? ''));
+                            value: tag.value, child: Text(tag.label));
                       }).toList(),
                     ],
                     onChanged: availableTags.isNotEmpty

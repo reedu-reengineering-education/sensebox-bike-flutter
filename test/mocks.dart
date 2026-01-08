@@ -14,7 +14,7 @@ import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/services/isar_service/sensor_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
-import 'package:sensebox_bike/services/tag_service.dart';
+import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
@@ -26,7 +26,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class MockIsarProvider extends Mock implements IsarProvider {}
 
-class MockTagService extends Mock implements TagService {}
+class MockRemoteDataService extends Mock implements RemoteDataService {}
 
 class MockErrorService extends Mock implements ErrorService {}
 

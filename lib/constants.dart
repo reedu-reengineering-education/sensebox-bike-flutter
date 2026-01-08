@@ -24,8 +24,15 @@ const gitHubNewIssueUrl =
     'https://github.com/reedu-reengineering-education/sensebox-bike-flutter/issues/new/choose';
 const privacyPolicyUrl =
     'https://opensensemap.org/privacy'; // URL for the privacy policy
-const tagsUrl =
-    'https://raw.githubusercontent.com/reedu-reengineering-education/sensebox-bike-flutter/main/data/locations.json'; // URL for the campaigns
+
+const githubDataBaseUrl =
+    'https://raw.githubusercontent.com/reedu-reengineering-education/sensebox-bike-flutter/main/data';
+const campaignsPath = '/locations.json';
+const boxConfigurationsPath = '/box_configurations.json';
+
+const campaignsUrl = '$githubDataBaseUrl$campaignsPath'; // URL for the campaigns
+const boxConfigurationsUrl =
+    '$githubDataBaseUrl$boxConfigurationsPath'; // URL for the box configurations
 
 const classicModelSensors = [
   {

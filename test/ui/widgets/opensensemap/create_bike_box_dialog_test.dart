@@ -8,13 +8,14 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart';
+import 'package:sensebox_bike/constants.dart';
 
 import '../../../mocks.dart';
 import '../../../test_helpers.dart';
 
 void main() {
   group('CreateBikeBoxModal - Custom Grouptag', () {
-    late MockTagService mockTagService;
+    late MockRemoteDataService mockRemoteDataService;
     late MockOpenSenseMapBloc mockOpenSenseMapBloc;
 
     setUpAll(() {
@@ -22,9 +23,10 @@ void main() {
     });
 
     setUp(() {
-      mockTagService = MockTagService();
+      mockRemoteDataService = MockRemoteDataService();
       mockOpenSenseMapBloc = MockOpenSenseMapBloc();
-      when(() => mockTagService.loadTags()).thenAnswer((_) async => []);
+      when(() => mockRemoteDataService.fetchJson(any()))
+          .thenAnswer((_) async => <Map<String, dynamic>>[]);
     });
 
     testWidgets('shows ExpansionTile for custom grouptag',
@@ -33,7 +35,7 @@ void main() {
         locale: Locale('en'),
         child: Scaffold(
           body: CreateBikeBoxModal(
-            tagService: mockTagService,
+            remoteDataService: mockRemoteDataService,
           ),
         ),
       ));
@@ -45,7 +47,8 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
-        child: Scaffold(body: CreateBikeBoxModal(tagService: mockTagService)),
+        child: Scaffold(
+            body: CreateBikeBoxModal(remoteDataService: mockRemoteDataService)),
       ));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add custom group tag'));
@@ -83,7 +86,7 @@ void main() {
                   value: mockGeolocationBloc),
             ],
             child: CreateBikeBoxModal(
-              tagService: mockTagService,
+              remoteDataService: mockRemoteDataService,
             ),
           ),
         ),
@@ -102,7 +105,7 @@ void main() {
     });
   });
   group('CreateBikeBoxModal - Location Selection', () {
-    late MockTagService mockTagService;
+    late MockRemoteDataService mockRemoteDataService;
     final mockTags = [
       {'label': 'Wiesbaden', 'value': 'wiesbaden'},
       {'label': 'Münster', 'value': 'muenster'},
@@ -110,8 +113,9 @@ void main() {
     ];
 
     setUp(() {
-      mockTagService = MockTagService();
-      when(() => mockTagService.loadTags()).thenAnswer((_) async => mockTags);
+      mockRemoteDataService = MockRemoteDataService();
+      when(() => mockRemoteDataService.fetchJson(campaignsUrl))
+          .thenAnswer((_) async => mockTags);
     });
 
     testWidgets(
@@ -122,7 +126,7 @@ void main() {
         locale: Locale('en'),
         child: Scaffold(
             body: CreateBikeBoxModal(
-          tagService: mockTagService,
+          remoteDataService: mockRemoteDataService,
         )),
       ));
       await tester.pumpAndSettle();
@@ -146,7 +150,7 @@ void main() {
         locale: Locale('en'),
         child: Scaffold(
             body: CreateBikeBoxModal(
-          tagService: mockTagService,
+          remoteDataService: mockRemoteDataService,
         )),
       ));
       await tester.pumpAndSettle();
@@ -172,7 +176,7 @@ void main() {
         locale: Locale('de'),
         child: Scaffold(
             body: CreateBikeBoxModal(
-          tagService: mockTagService,
+          remoteDataService: mockRemoteDataService,
         )),
       ));
       await tester.pumpAndSettle();
@@ -192,7 +196,7 @@ void main() {
         locale: Locale('pt'),
         child: Scaffold(
             body: CreateBikeBoxModal(
-          tagService: mockTagService,
+          remoteDataService: mockRemoteDataService,
         )),
       ));
       await tester.pumpAndSettle();

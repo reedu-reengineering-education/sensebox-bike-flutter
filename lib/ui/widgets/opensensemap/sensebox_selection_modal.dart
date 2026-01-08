@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
-import 'package:sensebox_bike/services/tag_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection.dart';
@@ -65,7 +64,7 @@ Future<void> _showCreateSenseBoxDialog(
     enableDrag: false,
     isDismissible: false,
     builder: (context) {
-      return CreateBikeBoxModal(tagService: TagService());
+      return CreateBikeBoxModal();
     },
   );
 }
