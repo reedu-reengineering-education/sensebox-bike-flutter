@@ -343,13 +343,13 @@ abstract class AppLocalizations {
   /// No description provided for @openSenseMapRegisterName.
   ///
   /// In en, this message translates to:
-  /// **'Name'**
+  /// **'User Name'**
   String get openSenseMapRegisterName;
 
   /// No description provided for @openSenseMapRegisterNameErrorEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Name must not be empty'**
+  /// **'User name must not be empty'**
   String get openSenseMapRegisterNameErrorEmpty;
 
   /// No description provided for @openSenseMapRegisterPasswordConfirm.
@@ -910,6 +910,24 @@ abstract class AppLocalizations {
   /// **'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.'**
   String get errorNoSenseBoxSelected;
 
+  /// No description provided for @trackUploadLoginSelectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in and select a senseBox to upload.'**
+  String get trackUploadLoginSelectHint;
+
+  /// No description provided for @uploadRequirementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload not available'**
+  String get uploadRequirementsTitle;
+
+  /// No description provided for @uploadPostRideRequirementsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'To upload your ride, log in to your openSenseMap account, select a senseBox, then open the track overview and tap the upload button in the top right.'**
+  String get uploadPostRideRequirementsMessage;
+
   /// No description provided for @loginRequiredMessage.
   ///
   /// In en, this message translates to:
@@ -933,6 +951,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Registration failed. Please check your credentials and try once again later.'**
   String get errorRegistrationFailed;
+
+  /// No description provided for @errorReasonPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason:'**
+  String get errorReasonPrefix;
 
   /// No description provided for @errorBleConnectionFailed.
   ///

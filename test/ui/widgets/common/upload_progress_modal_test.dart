@@ -563,5 +563,66 @@ void main() {
       // Cleanup
       progressController.close();
     });
+
+    testWidgets('should show requirements dialog when canUpload is false',
+        (WidgetTester tester) async {
+      late StreamController<UploadProgress> progressController;
+      late MockBatchUploadService mockService;
+      bool dismissed = false;
+
+      // Setup
+      mockService = MockBatchUploadService();
+      progressController = StreamController<UploadProgress>.broadcast();
+
+      when(() => mockService.uploadProgressStream)
+          .thenAnswer((_) => progressController.stream);
+      when(() => mockService.currentProgress).thenReturn(null);
+
+      await tester.pumpWidget(
+        createLocalizedTestApp(
+          child: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: ElevatedButton(
+                  onPressed: () {
+                    UploadProgressOverlay.show(
+                      context,
+                      batchUploadService: mockService,
+                      canUpload: false,
+                      onDismiss: () {
+                        dismissed = true;
+                      },
+                    );
+                  },
+                  child: const Text('Show Overlay'),
+                ),
+              );
+            },
+          ),
+          locale: const Locale('en'),
+        ),
+      );
+
+      // Trigger overlay
+      await tester.tap(find.text('Show Overlay'));
+      await tester.pump();
+
+      expect(UploadProgressOverlay.isShown, isTrue);
+      expect(find.text('Upload not available'), findsOneWidget);
+      expect(
+        find.text(
+            'To upload your ride, log in to your openSenseMap account, select a senseBox, then open the track overview and tap the upload button in the top right.'),
+        findsOneWidget,
+      );
+
+      // Dismiss dialog
+      await tester.tap(find.text('Ok'));
+      await tester.pump();
+
+      expect(dismissed, isTrue);
+      expect(UploadProgressOverlay.isShown, isFalse);
+
+      progressController.close();
+    });
   });
 }

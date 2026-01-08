@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -223,16 +222,12 @@ class UploadDataPreparer {
       
       groupedData[batch.geoLocation] = batch.aggregatedData;
     }
-    
-    final uniqueGeoIds = groupedData.keys.map((g) => g.id).toList();
     return prepareDataFromGroupedData(groupedData, groupedData.keys.toList());
   }
 
   Map<String, dynamic> prepareDataFromGroupedData(
       Map<GeolocationData, Map<String, List<double>>> groupedData,
       List<GeolocationData> gpsBuffer) {
-    final geoIds = gpsBuffer.map((g) => g.id).toList();
-    
     final Map<String, dynamic> data = {};
 
     if (gpsBuffer.isEmpty) {
@@ -240,17 +235,13 @@ class UploadDataPreparer {
     }
 
     // Add speed data from ALL GPS points (one per geolocation) - always include this
-    String speedSensorId = getSpeedSensorId();
-    for (final gps in gpsBuffer) {
-      data['speed_${gps.timestamp.toIso8601String()}'] = {
-        'sensor': speedSensorId,
-        'value': gps.speed.toStringAsFixed(2),
-        'createdAt': gps.timestamp.toUtc().toIso8601String(),
-        'location': {
-          'lat': gps.latitude,
-          'lng': gps.longitude,
-        }
-      };
+    final String? speedSensorId = findSpeedSensorId(senseBox);
+    if (speedSensorId != null) {
+      addSpeedEntries(
+        target: data,
+        gpsBuffer: gpsBuffer,
+        speedSensorId: speedSensorId,
+      );
     }
 
     // Convert grouped data to API format
@@ -358,11 +349,5 @@ class UploadDataPreparer {
         .where((sensor) =>
             sensor.title!.toLowerCase() == sensorTitle.toLowerCase())
         .firstOrNull;
-  }
-
-  String getSpeedSensorId() {
-    return senseBox.sensors!
-        .firstWhere((sensor) => sensor.title == 'Speed')
-        .id!;
   }
 }

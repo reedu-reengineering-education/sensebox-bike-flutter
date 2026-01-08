@@ -55,7 +55,7 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(createTestWidget());
 
-    expect(find.text('Name'), findsOneWidget);
+    expect(find.text('User Name'), findsOneWidget);
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
     expect(find.text('Confirm password'), findsOneWidget);

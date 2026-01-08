@@ -110,4 +110,68 @@ void main() {
       expect(shouldStoreSensorData(sensorData), isFalse);
     });
   });
+
+  group('findSpeedSensorId', () {
+    test('returns exact speed sensor match', () {
+      final speedSensor = Sensor(id: 'speedId', title: 'Speed');
+      final senseBox = SenseBox(sensors: [speedSensor]);
+
+      final result = findSpeedSensorId(senseBox);
+
+      expect(result, 'speedId');
+    });
+
+    test('matches speed sensor case-insensitively', () {
+      final speedSensor = Sensor(id: 'speedId', title: 'SPEED');
+      final senseBox = SenseBox(sensors: [speedSensor]);
+
+      final result = findSpeedSensorId(senseBox);
+
+      expect(result, 'speedId');
+    });
+
+    test('matches sensor with speed in title', () {
+      final speedSensor = Sensor(id: 'speedId', title: 'speed sensor');
+      final senseBox = SenseBox(sensors: [speedSensor]);
+
+      final result = findSpeedSensorId(senseBox);
+
+      expect(result, 'speedId');
+    });
+
+    test('returns null when no speed sensor found', () {
+      final senseBox = SenseBox(sensors: []);
+
+      final result = findSpeedSensorId(senseBox);
+
+      expect(result, isNull);
+    });
+  });
+
+  group('addSpeedEntries', () {
+    test('adds speed entries for each gps point', () {
+      final speedSensorId = 'speedId';
+      final gpsPoints = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+      final target = <String, dynamic>{};
+
+      addSpeedEntries(
+        target: target,
+        gpsBuffer: gpsPoints,
+        speedSensorId: speedSensorId,
+      );
+
+      expect(target.length, 1);
+      final entry = target.values.first as Map<String, dynamic>;
+      expect(entry['sensor'], speedSensorId);
+      expect(entry['value'], '5.00');
+      expect(entry['location']['lat'], 10.0);
+      expect(entry['location']['lng'], 20.0);
+    });
+  });
 }

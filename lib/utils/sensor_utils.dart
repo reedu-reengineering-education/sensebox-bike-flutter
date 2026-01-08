@@ -212,3 +212,40 @@ bool shouldStoreSensorData(SensorData sensorData) {
 
   return true;
 }
+
+String? findSpeedSensorId(SenseBox senseBox) {
+  final sensors = senseBox.sensors;
+  if (sensors == null || sensors.isEmpty) {
+    return null;
+  }
+
+  final speedSensor = sensors
+      .where((sensor) => (sensor.title ?? '').toLowerCase() == 'speed')
+      .firstOrNull;
+  if (speedSensor != null) {
+    return speedSensor.id;
+  }
+
+  return sensors
+      .where((sensor) => (sensor.title ?? '').toLowerCase().contains('speed'))
+      .firstOrNull
+      ?.id;
+}
+
+void addSpeedEntries({
+  required Map<String, dynamic> target,
+  required List<GeolocationData> gpsBuffer,
+  required String speedSensorId,
+}) {
+  for (final gps in gpsBuffer) {
+    target['speed_${gps.timestamp.toIso8601String()}'] = {
+      'sensor': speedSensorId,
+      'value': gps.speed.toStringAsFixed(2),
+      'createdAt': gps.timestamp.toUtc().toIso8601String(),
+      'location': {
+        'lat': gps.latitude,
+        'lng': gps.longitude,
+      }
+    };
+  }
+}

@@ -146,10 +146,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openSenseMapLoginFailed => 'Login failed';
 
   @override
-  String get openSenseMapRegisterName => 'Name';
+  String get openSenseMapRegisterName => 'User Name';
 
   @override
-  String get openSenseMapRegisterNameErrorEmpty => 'Name must not be empty';
+  String get openSenseMapRegisterNameErrorEmpty =>
+      'User name must not be empty';
 
   @override
   String get openSenseMapRegisterPasswordConfirm => 'Confirm password';
@@ -455,6 +456,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.';
 
   @override
+  String get trackUploadLoginSelectHint =>
+      'Log in and select a senseBox to upload.';
+
+  @override
+  String get uploadRequirementsTitle => 'Upload not available';
+
+  @override
+  String get uploadPostRideRequirementsMessage =>
+      'To upload your ride, log in to your openSenseMap account, select a senseBox, then open the track overview and tap the upload button in the top right.';
+
+  @override
   String get loginRequiredMessage => 'Please log in to share sensor data';
 
   @override
@@ -468,6 +480,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorRegistrationFailed =>
       'Registration failed. Please check your credentials and try once again later.';
+
+  @override
+  String get errorReasonPrefix => 'Reason:';
 
   @override
   String get errorBleConnectionFailed =>

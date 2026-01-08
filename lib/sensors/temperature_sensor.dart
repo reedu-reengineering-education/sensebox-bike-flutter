@@ -15,6 +15,9 @@ class TemperatureSensor extends Sensor {
   @override
   get uiPriority => 10;
 
+  @override
+  Duration get lookbackWindow => const Duration(milliseconds: 1000);
+
   static const String sensorCharacteristicUuid =
       '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8';
 

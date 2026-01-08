@@ -240,6 +240,7 @@ class UploadProgressOverlay {
   static void show(
     BuildContext context, {
     required BatchUploadService batchUploadService,
+    bool canUpload = true,
     VoidCallback? onUploadComplete,
     VoidCallback? onUploadFailed,
     VoidCallback? onStartUpload,
@@ -248,6 +249,32 @@ class UploadProgressOverlay {
     if (_isShown) return;
 
     _isShown = true;
+
+    if (!canUpload) {
+      final localizations = AppLocalizations.of(context)!;
+      final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: Theme.of(context).colorScheme.error,
+          );
+
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(localizations.uploadRequirementsTitle, style: titleStyle),
+          content: Text(localizations.uploadPostRideRequirementsMessage),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                hide();
+                onDismiss?.call();
+              },
+              child: Text(localizations.generalOk),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
     showDialog(
       context: context,
