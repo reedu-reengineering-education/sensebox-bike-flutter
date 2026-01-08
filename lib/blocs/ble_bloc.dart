@@ -631,8 +631,9 @@ class BleBloc with ChangeNotifier {
 
   Stream<List<double>> getCharacteristicStream(String characteristicUuid) {
     if (!_characteristicStreams.containsKey(characteristicUuid)) {
-      // Supress sending report to Sentry and show error in UI
-      debugPrint('Characteristic stream not found');
+      throw Exception(
+          'Characteristic stream not found for UUID: $characteristicUuid. '
+          'The characteristic may not be available yet or the device may not be connected.');
     }
     return _characteristicStreams[characteristicUuid]!.stream;
   }
