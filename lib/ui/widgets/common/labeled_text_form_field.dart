@@ -4,16 +4,13 @@ class LabeledTextFormField extends FormField<String> {
   LabeledTextFormField({
     super.key,
     required String labelText,
-    String? initialValue,
+    super.initialValue,
     bool enabled = true,
-    String? Function(String?)? validator,
-    void Function(String?)? onSaved,
+    super.validator,
+    super.onSaved,
     TextInputType? keyboardType,
     List<String>? autofillHints,
   }) : super(
-          initialValue: initialValue,
-          validator: validator,
-          onSaved: onSaved,
           builder: (FormFieldState<String> state) {
             return _LabeledTextFormFieldStateful(
               labelText: labelText,
