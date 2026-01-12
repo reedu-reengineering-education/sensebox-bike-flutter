@@ -43,8 +43,9 @@ class ConfigurationBloc {
     required void Function(dynamic) setData,
     required dynamic Function(dynamic) parseData,
     required String dataTypeName,
+    bool allowReload = false,
   }) async {
-    if (isAlreadyLoading() || isAlreadyLoaded()) {
+    if (isAlreadyLoading() || (!allowReload && isAlreadyLoaded())) {
       return;
     }
 
@@ -89,6 +90,7 @@ class ConfigurationBloc {
               BoxConfiguration.fromJson(item as Map<String, dynamic>))
           .toList(),
       dataTypeName: 'box configurations',
+      allowReload: true,
     );
   }
 

@@ -184,6 +184,12 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get generalClose;
 
+  /// No description provided for @reloadConfiguration.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload configuration'**
+  String get reloadConfiguration;
+
   /// No description provided for @generalUpload.
   ///
   /// In en, this message translates to:
@@ -867,6 +873,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load list of campaigns.'**
   String get campaignLoadError;
+
+  /// No description provided for @boxConfigurationLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load box configurations.'**
+  String get boxConfigurationLoadError;
 
   /// No description provided for @selectCampaign.
   ///

@@ -133,7 +133,7 @@ void main() {
                   value: mockOpenSenseMapBloc),
               ChangeNotifierProvider<GeolocationBloc>.value(
                   value: mockGeolocationBloc),
-              ChangeNotifierProvider<ConfigurationBloc>.value(
+              Provider<ConfigurationBloc>.value(
                   value: mockConfigurationBloc),
             ],
             child: CreateBikeBoxModal(

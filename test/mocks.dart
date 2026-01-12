@@ -198,9 +198,7 @@ class MockOpenSenseMapBloc extends Mock
   Future<Map<String, dynamic>?> get userData => Future.value(null);
 }
 
-class MockConfigurationBloc extends Mock
-    with ChangeNotifier
-    implements ConfigurationBloc {}
+class MockConfigurationBloc extends Mock implements ConfigurationBloc {}
 
 class MockSettingsBloc extends Mock
     with ChangeNotifier

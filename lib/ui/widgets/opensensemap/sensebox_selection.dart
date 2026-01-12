@@ -83,8 +83,45 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.configurationBloc.isLoadingBoxConfigurations ||
-        widget.configurationBloc.boxConfigurations == null) {
+    final configurationBloc = widget.configurationBloc;
+    final localizations = AppLocalizations.of(context)!;
+    
+    // Show error if there's an error loading configurations
+    if (configurationBloc.boxConfigurationsError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              localizations.boxConfigurationLoadError,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
+              child: Text(
+                configurationBloc.boxConfigurationsError!,
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Show loader if still loading
+    if (configurationBloc.isLoadingBoxConfigurations ||
+        configurationBloc.boxConfigurations == null) {
       return const Center(child: CircularProgressIndicator());
     }
     

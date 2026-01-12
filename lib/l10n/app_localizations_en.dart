@@ -53,6 +53,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalClose => 'Close';
 
   @override
+  String get reloadConfiguration => 'Reload configuration';
+
+  @override
   String get generalUpload => 'Upload';
 
   @override
@@ -430,6 +433,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get campaignLoadError => 'Failed to load list of campaigns.';
+
+  @override
+  String get boxConfigurationLoadError => 'Failed to load box configurations.';
 
   @override
   String get selectCampaign => 'Select campaign';

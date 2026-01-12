@@ -55,6 +55,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generalClose => 'Fechar';
 
   @override
+  String get reloadConfiguration => 'Recarregar configuração';
+
+  @override
   String get generalUpload => 'Enviar';
 
   @override
@@ -433,6 +436,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get campaignLoadError => 'Falha ao carregar a lista de campanhas.';
+
+  @override
+  String get boxConfigurationLoadError =>
+      'Falha ao carregar as configurações da caixa.';
 
   @override
   String get selectCampaign => 'Selecionar campanha';

@@ -53,6 +53,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalClose => 'Schließen';
 
   @override
+  String get reloadConfiguration => 'Konfiguration neu laden';
+
+  @override
   String get generalUpload => 'Hochladen';
 
   @override
@@ -435,6 +438,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get campaignLoadError =>
       'Die Liste der Kampagnen konnte nicht geladen werden.';
+
+  @override
+  String get boxConfigurationLoadError =>
+      'Fehler beim Laden der Box-Konfigurationen.';
 
   @override
   String get selectCampaign => 'Kampagne auswählen';

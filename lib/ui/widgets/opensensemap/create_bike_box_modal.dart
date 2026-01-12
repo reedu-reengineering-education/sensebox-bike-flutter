@@ -142,11 +142,13 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                 child: Text(config.displayName),
               ))
           .toList(),
-      onChanged: (value) {
-        setState(() {
-          selectedBoxConfigId = value;
-        });
-      },
+      onChanged: _loading
+          ? null
+          : (value) {
+              setState(() {
+                selectedBoxConfigId = value;
+              });
+            },
     );
   }
 
@@ -171,13 +173,15 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
           );
         }).toList(),
       ],
-      onChanged: campaigns.isNotEmpty
-          ? (value) {
-              setState(() {
-                selectedTag = value;
-              });
-            }
-          : null,
+      onChanged: _loading
+          ? null
+          : (campaigns.isNotEmpty
+              ? (value) {
+                  setState(() {
+                    selectedTag = value;
+                  });
+                }
+              : null),
       disabledHint: Text(
         AppLocalizations.of(context)!.selectCampaign,
       ),
@@ -187,10 +191,10 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
   @override
   Widget build(BuildContext context) {
     return Material(
-      type: MaterialType.transparency,
-      color: Colors.transparent,
-      child: Center(
-        child: Padding(
+        type: MaterialType.transparency,
+        color: Colors.transparent,
+        child: Center(
+          child: Padding(
           padding: MediaQuery.of(context).viewInsets,
           child: SingleChildScrollView(
             child: Container(
@@ -213,17 +217,12 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                     const SizedBox(height: 24),
                     if (widget.isLoadingBoxConfigurations)
                       const CircularProgressIndicator()
-                    else if (widget.boxConfigurationsError != null)
-                      Text(
-                        widget.boxConfigurationsError!,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.error),
-                      )
                     else
                       _buildBoxConfigurationDropdown(context),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _nameController,
+                      enabled: !_loading,
                       decoration: InputDecoration(
                         labelText: AppLocalizations.of(context)!.createBoxName,
                       ),
@@ -248,11 +247,13 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                       title: Text(
                           AppLocalizations.of(context)!.createBoxAddCustomTag),
                       initiallyExpanded: _customTagExpanded,
-                      onExpansionChanged: (expanded) {
-                        setState(() {
-                          _customTagExpanded = expanded;
-                        });
-                      },
+                      onExpansionChanged: _loading
+                          ? null
+                          : (expanded) {
+                              setState(() {
+                                _customTagExpanded = expanded;
+                              });
+                            },
                       shape: Border.all(color: Colors.transparent),
                       collapsedShape: Border.all(color: Colors.transparent),
                       children: [
@@ -263,6 +264,7 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                             children: [
                               TextFormField(
                                 controller: _customTagController,
+                                enabled: !_loading,
                                 decoration: InputDecoration(
                                   labelText: AppLocalizations.of(context)!
                                       .createBoxCustomTag,
@@ -291,9 +293,11 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
+                        onPressed: _loading
+                            ? null
+                            : () {
+                                Navigator.of(context).pop();
+                              },
                         child:
                             Text(AppLocalizations.of(context)!.generalCancel),
                       ),
