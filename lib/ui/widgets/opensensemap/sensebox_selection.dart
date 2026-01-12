@@ -5,6 +5,8 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/ui/widgets/common/loader.dart';
+import 'package:sensebox_bike/ui/widgets/common/error_message.dart';
 
 class SenseBoxSelectionWidget extends StatefulWidget {
   final ConfigurationBloc configurationBloc;
@@ -25,6 +27,7 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
   int page = 0;
   bool isLoading = false;
   bool hasMore = true;
+  String? _fetchError;
 
   @override
   void initState() {
@@ -46,22 +49,23 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
 
     final bloc = context.read<OpenSenseMapBloc>();
     bloc.fetchSenseBoxes(page: page).then((values) {
-      if (!mounted) return; // Ensure the widget is still in the tree
+      if (!mounted) return;
 
       setState(() {
         isLoading = false;
         page++;
+        _fetchError = null;
 
-        // Stop loading if no more senseBoxes are found
         if (values.isEmpty) {
           hasMore = false;
         }
       });
     }).catchError((error) {
-      if (!mounted) return; // Ensure the widget is still in the tree
+      if (!mounted) return;
 
       setState(() {
         isLoading = false;
+        _fetchError = error.toString();
       });
       ErrorService.handleError(
           'Error fetching senseBoxes: $error', StackTrace.current);
@@ -86,53 +90,35 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     final configurationBloc = widget.configurationBloc;
     final localizations = AppLocalizations.of(context)!;
     
-    // Show error if there's an error loading configurations
     if (configurationBloc.boxConfigurationsError != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              localizations.boxConfigurationLoadError,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0),
-              child: Text(
-                configurationBloc.boxConfigurationsError!,
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
+      return ErrorMessage(
+        icon: Icons.error_outline,
+        title: localizations.boxConfigurationLoadError,
+        detail: configurationBloc.boxConfigurationsError,
       );
     }
     
-    // Show loader if still loading
     if (configurationBloc.isLoadingBoxConfigurations ||
         configurationBloc.boxConfigurations == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: Loader());
     }
     
     return Consumer<OpenSenseMapBloc>(
       builder: (context, bloc, child) {
 
         if (bloc.senseBoxes.isEmpty && isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: Loader());
         }
 
         if (bloc.senseBoxes.isEmpty) {
+          if (_fetchError != null) {
+            return ErrorMessage(
+              icon: Icons.error_outline,
+              title:
+                  AppLocalizations.of(context)!.openSenseMapBoxSelectionNoBoxes,
+              detail: _fetchError,
+            );
+          }
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -156,7 +142,10 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
           itemCount: bloc.senseBoxes.length + (isLoading ? 1 : 0),
           itemBuilder: (context, index) {
             if (index == bloc.senseBoxes.length && isLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: Loader()),
+              );
             }
 
             if (index == bloc.senseBoxes.length) {
@@ -204,14 +193,12 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
               onTap: isSenseBoxBikeCompatible
                   ? () async {
                       if (isSelected) {
-                        // Unselect the box if it's already selected
                         await bloc.setSelectedSenseBox(null);
                       } else {
-                        // Select the box
                         await bloc.setSelectedSenseBox(senseBox);
                       }
                       if (context.mounted) {
-                        Navigator.pop(context); // Go back after selecting
+                        Navigator.pop(context);
                       }
                     }
                   : null,
