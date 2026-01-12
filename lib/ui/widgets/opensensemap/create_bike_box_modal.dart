@@ -6,6 +6,9 @@ import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/campaign.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
+import 'package:sensebox_bike/ui/widgets/common/labeled_text_form_field.dart';
+import 'package:sensebox_bike/ui/widgets/common/dropdown_form_field.dart';
+import 'package:sensebox_bike/ui/utils/common.dart';
 
 class CreateBikeBoxModal extends StatefulWidget {
   final List<BoxConfiguration>? boxConfigurations;
@@ -35,27 +38,23 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
   bool _customTagExpanded = false;
   final _customTagController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  String? selectedTag;
-  String? selectedBoxConfigId;
+  final _boxConfigKey = GlobalKey<FormFieldState<String>>();
+  final _campaignKey = GlobalKey<FormFieldState<String>>();
+  final _nameKey = GlobalKey<FormFieldState<String>>();
   bool _loading = false;
 
   @override
   void initState() {
     super.initState();
-    // Set initial box configuration if available
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && selectedBoxConfigId == null) {
+      if (mounted) {
         final configs = widget.boxConfigurations ?? [];
-        if (configs.isNotEmpty) {
-          setState(() {
-            selectedBoxConfigId = configs.first.id;
-          });
+        if (configs.isNotEmpty && _boxConfigKey.currentState?.value == null) {
+          _boxConfigKey.currentState?.didChange(configs.first.id);
         }
       }
     });
 
-    // Show error snackbar if campaigns failed to load
     if (widget.campaignsError != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -74,7 +73,6 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
   @override
   void dispose() {
     _customTagController.dispose();
-    _nameController.dispose();
     super.dispose();
   }
 
@@ -90,27 +88,28 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
 
         final position = await geolocationBloc.getCurrentLocation();
 
+        final selectedBoxConfigId = _boxConfigKey.currentState?.value;
         if (selectedBoxConfigId == null) {
           throw Exception('Please select a box type');
         }
 
-        final boxConfig = widget.getBoxConfigurationById(selectedBoxConfigId!);
+        final boxConfig = widget.getBoxConfigurationById(selectedBoxConfigId);
         if (boxConfig == null) {
           throw Exception(
               'Box configuration not found for ID: $selectedBoxConfigId');
         }
 
+        final boxName = _nameKey.currentState?.value ?? '';
+        final selectedTag = _campaignKey.currentState?.value;
+        final customTags = parseCustomTags(_customTagController.text);
+
         await opensensemapBloc.createSenseBoxBike(
-            _nameController.text,
+            boxName,
             position.latitude,
             position.longitude,
             boxConfig,
             selectedTag,
-            _customTagController.text
-                .split(',')
-                .map((e) => e.trim())
-                .where((e) => e.isNotEmpty)
-                .toList());
+            customTags);
 
         await opensensemapBloc.fetchSenseBoxes();
 
@@ -131,70 +130,54 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
 
   Widget _buildBoxConfigurationDropdown(BuildContext context) {
     final configs = widget.boxConfigurations ?? [];
-    return DropdownButtonFormField<String>(
-      value: selectedBoxConfigId,
-      decoration: InputDecoration(
-        labelText: AppLocalizations.of(context)!.createBoxModel,
-      ),
+    return DropdownFormField<String>(
+      key: _boxConfigKey,
+      labelText: AppLocalizations.of(context)!.createBoxModel,
       items: configs
-          .map((config) => DropdownMenuItem(
+          .map((config) => DropdownItem<String>(
                 value: config.id,
-                child: Text(config.displayName),
+                label: config.displayName,
               ))
           .toList(),
-      onChanged: _loading
-          ? null
-          : (value) {
-              setState(() {
-                selectedBoxConfigId = value;
-              });
-            },
+      enabled: !_loading,
+      validator: (value) {
+        if (value == null) {
+          return AppLocalizations.of(context)!.createBoxModel;
+        }
+        return null;
+      },
     );
   }
 
   Widget _buildCampaignDropdown(BuildContext context) {
     final campaigns = widget.campaigns ?? [];
-    return DropdownButtonFormField<String>(
-      decoration: InputDecoration(
-        labelText: AppLocalizations.of(context)!.selectCampaign,
+    final items = [
+      DropdownItem<String>(
+        value: null,
+        label: AppLocalizations.of(context)!.selectCampaign,
       ),
-      value: selectedTag,
-      items: [
-        DropdownMenuItem(
-          value: null,
-          child: Text(
-            AppLocalizations.of(context)!.selectCampaign,
-          ),
-        ),
-        ...campaigns.map((tag) {
-          return DropdownMenuItem(
-            value: tag.value,
-            child: Text(tag.label),
-          );
-        }).toList(),
-      ],
-      onChanged: _loading
-          ? null
-          : (campaigns.isNotEmpty
-              ? (value) {
-                  setState(() {
-                    selectedTag = value;
-                  });
-                }
-              : null),
-      disabledHint: Text(
-        AppLocalizations.of(context)!.selectCampaign,
-      ),
+      ...campaigns.map((campaign) => DropdownItem<String>(
+            value: campaign.value,
+            label: campaign.label,
+          )),
+    ];
+
+    return DropdownFormField<String>(
+      key: _campaignKey,
+      labelText: AppLocalizations.of(context)!.selectCampaign,
+      items: items,
+      enabled: !_loading && campaigns.isNotEmpty,
+      disabledHint: AppLocalizations.of(context)!.selectCampaign,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Material(
-        type: MaterialType.transparency,
-        color: Colors.transparent,
-        child: Center(
-          child: Padding(
+      type: MaterialType.transparency,
+      color: Colors.transparent,
+      child: Center(
+        child: Padding(
           padding: MediaQuery.of(context).viewInsets,
           child: SingleChildScrollView(
             child: Container(
@@ -220,22 +203,11 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                     else
                       _buildBoxConfigurationDropdown(context),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _nameController,
+                    LabeledTextFormField(
+                      key: _nameKey,
+                      labelText: AppLocalizations.of(context)!.createBoxName,
                       enabled: !_loading,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context)!.createBoxName,
-                      ),
-                      validator: (value) {
-                        if (value == null ||
-                            value.isEmpty ||
-                            value.length < 2 ||
-                            value.length > 50) {
-                          return AppLocalizations.of(context)!
-                              .createBoxNameError;
-                        }
-                        return null;
-                      },
+                      validator: (value) => boxNameValidator(context, value),
                     ),
                     const SizedBox(height: 16),
                     if (widget.isLoadingCampaigns)
@@ -277,43 +249,43 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                         ),
                       ],
                     ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Icon(Icons.info_outline),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(AppLocalizations.of(context)!
-                            .createBoxGeolocationCurrentPosition),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: _loading
-                            ? null
-                            : () {
-                                Navigator.of(context).pop();
-                              },
-                        child:
-                            Text(AppLocalizations.of(context)!.generalCancel),
-                      ),
-                      const SizedBox(width: 8),
-                      ButtonWithLoader(
-                        isLoading: _loading,
-                        onPressed: _loading ? null : _submitForm,
-                        text: AppLocalizations.of(context)!.generalCreate,
-                      ),
-                    ],
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(AppLocalizations.of(context)!
+                              .createBoxGeolocationCurrentPosition),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: _loading
+                              ? null
+                              : () {
+                                  Navigator.of(context).pop();
+                                },
+                          child:
+                              Text(AppLocalizations.of(context)!.generalCancel),
+                        ),
+                        const SizedBox(width: 8),
+                        ButtonWithLoader(
+                          isLoading: _loading,
+                          onPressed: _loading ? null : _submitForm,
+                          text: AppLocalizations.of(context)!.generalCreate,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
         ),
       ),
     );

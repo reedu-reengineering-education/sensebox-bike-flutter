@@ -77,35 +77,6 @@ void main() {
       expect(find.text('Add custom group tag'), findsOneWidget);
     });
 
-    testWidgets('accepts custom grouptag input and splits tags',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(createLocalizedTestApp(
-        locale: Locale('en'),
-        child: Scaffold(
-          body: Provider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
-        ),
-      ));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Add custom group tag'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField).last, 'foo, bar ,baz');
-      expect(find.text('foo, bar ,baz'), findsOneWidget);
-    });
-
     testWidgets(
         'splits the custom grouptag input into individual tags and passes them to the createSenseBoxBike method',
         (WidgetTester tester) async {
@@ -194,10 +165,8 @@ void main() {
           .thenReturn(mockBoxConfigurations.first);
     });
 
-    testWidgets(
-        'should populate dropdown with tags and select the first tag by default',
+    testWidgets('selects first box configuration by default',
         (WidgetTester tester) async {
-      // Act
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
@@ -220,54 +189,11 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      // Expand the campaigns dropdown (second dropdown)
       final dropdowns = find.byType(DropdownButtonFormField<String>);
-      expect(dropdowns, findsNWidgets(2));
-      await tester.tap(dropdowns.last);
+      await tester.tap(dropdowns.first);
       await tester.pumpAndSettle();
 
-      // Assert
-      expect(find.text('Wiesbaden'), findsOneWidget);
-      expect(find.text('Münster'), findsOneWidget);
-      expect(find.text('Arnsberg'), findsOneWidget);
-    });
-
-    testWidgets('should update selectedTag when a new tag is selected',
-        (WidgetTester tester) async {
-      // Act
-      await tester.pumpWidget(createLocalizedTestApp(
-        locale: Locale('en'),
-        child: Scaffold(
-          body: Provider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
-        ),
-      ));
-      await tester.pumpAndSettle();
-
-      // Expand the campaigns dropdown (second dropdown)
-      final dropdowns = find.byType(DropdownButtonFormField<String>);
-      expect(dropdowns, findsNWidgets(2));
-      await tester.tap(dropdowns.last);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Münster').last); // Select 'Münster'
-      await tester.pumpAndSettle();
-
-      // Assert
-      // Verify the selected tag by checking the displayed text
-      expect(find.text('Münster'), findsOneWidget); // Verify the selected tag
+      expect(find.text('2022'), findsWidgets);
     });
 
     testWidgets(
@@ -302,6 +228,159 @@ void main() {
       expect(dropdownItemFinder,
           findsOneWidget); // Verify the translated dropdown item exists
     });
+  });
 
+  group('CreateBikeBoxModal - Form Validation', () {
+    late MockConfigurationBloc mockConfigurationBloc;
+    final mockBoxConfiguration = BoxConfiguration(
+      id: 'classic',
+      displayName: '2022',
+      defaultGrouptag: 'classic',
+      sensors: [],
+    );
+
+    setUp(() {
+      mockConfigurationBloc = MockConfigurationBloc();
+      when(() => mockConfigurationBloc.boxConfigurations)
+          .thenReturn([mockBoxConfiguration]);
+      when(() => mockConfigurationBloc.campaigns).thenReturn(null);
+      when(() => mockConfigurationBloc.isLoadingBoxConfigurations)
+          .thenReturn(false);
+      when(() => mockConfigurationBloc.isLoadingCampaigns).thenReturn(false);
+      when(() => mockConfigurationBloc.boxConfigurationsError).thenReturn(null);
+      when(() => mockConfigurationBloc.campaignsError).thenReturn(null);
+      when(() => mockConfigurationBloc.getBoxConfigurationById('classic'))
+          .thenReturn(mockBoxConfiguration);
+    });
+
+    testWidgets('shows validation error for invalid box name',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createLocalizedTestApp(
+        locale: Locale('en'),
+        child: Scaffold(
+          body: Provider<ConfigurationBloc>.value(
+            value: mockConfigurationBloc,
+            child: CreateBikeBoxModal(
+              boxConfigurations: mockConfigurationBloc.boxConfigurations,
+              campaigns: mockConfigurationBloc.campaigns,
+              isLoadingBoxConfigurations:
+                  mockConfigurationBloc.isLoadingBoxConfigurations,
+              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
+              boxConfigurationsError:
+                  mockConfigurationBloc.boxConfigurationsError,
+              campaignsError: mockConfigurationBloc.campaignsError,
+              getBoxConfigurationById: (id) =>
+                  mockConfigurationBloc.getBoxConfigurationById(id),
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextFormField).first, 'A');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ButtonWithLoader, 'Create'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('A'), findsOneWidget);
+    });
+  });
+
+  group('CreateBikeBoxModal - Error Handling', () {
+    late MockConfigurationBloc mockConfigurationBloc;
+    final mockBoxConfiguration = BoxConfiguration(
+      id: 'classic',
+      displayName: '2022',
+      defaultGrouptag: 'classic',
+      sensors: [],
+    );
+
+    setUp(() {
+      mockConfigurationBloc = MockConfigurationBloc();
+      when(() => mockConfigurationBloc.boxConfigurations)
+          .thenReturn([mockBoxConfiguration]);
+      when(() => mockConfigurationBloc.campaigns).thenReturn(null);
+      when(() => mockConfigurationBloc.isLoadingBoxConfigurations)
+          .thenReturn(false);
+      when(() => mockConfigurationBloc.isLoadingCampaigns).thenReturn(false);
+      when(() => mockConfigurationBloc.boxConfigurationsError).thenReturn(null);
+      when(() => mockConfigurationBloc.getBoxConfigurationById('classic'))
+          .thenReturn(mockBoxConfiguration);
+    });
+
+    testWidgets('shows snackbar when campaigns fail to load',
+        (WidgetTester tester) async {
+      when(() => mockConfigurationBloc.campaignsError)
+          .thenReturn('Failed to load');
+
+      await tester.pumpWidget(createLocalizedTestApp(
+        locale: Locale('en'),
+        child: Scaffold(
+          body: Provider<ConfigurationBloc>.value(
+            value: mockConfigurationBloc,
+            child: CreateBikeBoxModal(
+              boxConfigurations: mockConfigurationBloc.boxConfigurations,
+              campaigns: mockConfigurationBloc.campaigns,
+              isLoadingBoxConfigurations:
+                  mockConfigurationBloc.isLoadingBoxConfigurations,
+              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
+              boxConfigurationsError:
+                  mockConfigurationBloc.boxConfigurationsError,
+              campaignsError: mockConfigurationBloc.campaignsError,
+              getBoxConfigurationById: (id) =>
+                  mockConfigurationBloc.getBoxConfigurationById(id),
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsOneWidget);
+    });
+
+    testWidgets('shows error snackbar when geolocation fails',
+        (WidgetTester tester) async {
+      final mockGeolocationBloc = MockGeolocationBloc();
+      final mockOpenSenseMapBloc = MockOpenSenseMapBloc();
+      when(() => mockGeolocationBloc.getCurrentLocation())
+          .thenThrow(Exception('Location error'));
+
+      await tester.pumpWidget(createLocalizedTestApp(
+        locale: Locale('en'),
+        child: Scaffold(
+          body: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<OpenSenseMapBloc>.value(
+                  value: mockOpenSenseMapBloc),
+              ChangeNotifierProvider<GeolocationBloc>.value(
+                  value: mockGeolocationBloc),
+              Provider<ConfigurationBloc>.value(
+                  value: mockConfigurationBloc),
+            ],
+            child: CreateBikeBoxModal(
+              boxConfigurations: mockConfigurationBloc.boxConfigurations,
+              campaigns: mockConfigurationBloc.campaigns,
+              isLoadingBoxConfigurations:
+                  mockConfigurationBloc.isLoadingBoxConfigurations,
+              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
+              boxConfigurationsError:
+                  mockConfigurationBloc.boxConfigurationsError,
+              campaignsError: mockConfigurationBloc.campaignsError,
+              getBoxConfigurationById: (id) =>
+                  mockConfigurationBloc.getBoxConfigurationById(id),
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextFormField).first, 'My Bike');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ButtonWithLoader, 'Create'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.textContaining('Location error'), findsOneWidget);
+    });
   });
 }

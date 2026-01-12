@@ -50,3 +50,21 @@ String truncateBoxName(String name, {int maxLength = 10}) {
       ? '${name.substring(0, maxLength - 2)}...'
       : name;
 }
+
+String? boxNameValidator(BuildContext context, String? value) {
+  if (value == null ||
+      value.isEmpty ||
+      value.length < 2 ||
+      value.length > 50) {
+    return AppLocalizations.of(context)!.createBoxNameError;
+  }
+  return null;
+}
+
+List<String> parseCustomTags(String input) {
+  return input
+      .split(',')
+      .map((e) => e.trim())
+      .where((e) => e.isNotEmpty)
+      .toList();
+}

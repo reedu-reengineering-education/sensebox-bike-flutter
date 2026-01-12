@@ -108,4 +108,69 @@ void main() {
       expect(result, 'ShortName');
     });
   });
+
+  group('boxNameValidator', () {
+    testWidgets('returns error when value is null or empty',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget((context) {
+        final result = boxNameValidator(context, null);
+        expect(result, isNotNull);
+
+        final resultEmpty = boxNameValidator(context, '');
+        expect(resultEmpty, isNotNull);
+      }));
+    });
+
+    testWidgets('returns error when value is less than 2 characters',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget((context) {
+        final result = boxNameValidator(context, 'A');
+        expect(result, isNotNull);
+      }));
+    });
+
+    testWidgets('returns error when value is more than 50 characters',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget((context) {
+        final longName = 'A' * 51;
+        final result = boxNameValidator(context, longName);
+        expect(result, isNotNull);
+      }));
+    });
+
+    testWidgets('returns null when value is valid',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget((context) {
+        final result = boxNameValidator(context, 'Valid Name');
+        expect(result, null);
+      }));
+    });
+  });
+
+  group('parseCustomTags', () {
+    test('returns empty list for empty input', () {
+      final result = parseCustomTags('');
+      expect(result, isEmpty);
+    });
+
+    test('parses single tag', () {
+      final result = parseCustomTags('tag1');
+      expect(result, ['tag1']);
+    });
+
+    test('parses multiple comma-separated tags', () {
+      final result = parseCustomTags('tag1,tag2,tag3');
+      expect(result, ['tag1', 'tag2', 'tag3']);
+    });
+
+    test('trims whitespace from tags', () {
+      final result = parseCustomTags(' tag1 , tag2 , tag3 ');
+      expect(result, ['tag1', 'tag2', 'tag3']);
+    });
+
+    test('filters out empty tags', () {
+      final result = parseCustomTags('tag1,,tag2, ,tag3');
+      expect(result, ['tag1', 'tag2', 'tag3']);
+    });
+  });
 }
