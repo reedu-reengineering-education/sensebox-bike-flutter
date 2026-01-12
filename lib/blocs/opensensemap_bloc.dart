@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
@@ -250,12 +251,20 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       String name,
       double latitude,
       double longitude,
-      SenseBoxBikeModel model,
+      BoxConfiguration boxConfiguration,
       String? selectedTag,
       List<String?> additionalTags) async {
     try {
-      await _service.createSenseBoxBike(
-          name, latitude, longitude, model, selectedTag, additionalTags);
+      final model = buildSenseBoxBikeModel(
+        name,
+        latitude,
+        longitude,
+        boxConfiguration,
+        selectedTag,
+        additionalTags,
+      );
+      await _service.createSenseBoxBike(model);
+      await fetchSenseBoxes();
     } catch (e, stack) {
       if (!_handleAuthenticationError(e)) {
         ErrorService.handleError(e, stack);
@@ -263,20 +272,39 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  bool isSenseBoxBikeCompatible(SenseBox sensebox) {
-    // check the sensor names if they are compatible with the SenseBoxBike
-    final validSensorNames = _service.sensors.values
-        .expand((sensorList) => sensorList.map((sensor) => sensor['title']))
-        .toSet()
-        .toList();
+  Map<String, dynamic> buildSenseBoxBikeModel(
+    String name,
+    double latitude,
+    double longitude,
+    BoxConfiguration boxConfiguration,
+    String? selectedTag,
+    List<String?> additionalTags,
+  ) {
+    final sensorsList = boxConfiguration.sensorsAsMap;
+    final defaultGrouptag = boxConfiguration.defaultGrouptag;
 
-    for (var sensor in sensebox.sensors!) {
-      if (!validSensorNames.contains(sensor.title)) {
-        return false;
-      }
+    final List<String> baseGroupTags = ['bike', defaultGrouptag];
+
+    if (selectedTag != null && selectedTag.isNotEmpty) {
+      baseGroupTags.add(selectedTag);
     }
 
-    return true;
+    final List<String> allTags = {
+      ...baseGroupTags,
+      ...additionalTags.whereType<String>(),
+    }.toList();
+
+    final baseProperties = {
+      'name': name,
+      'exposure': 'mobile',
+      'location': [latitude, longitude],
+      'grouptag': allTags,
+    };
+
+    return {
+      ...baseProperties,
+      'sensors': sensorsList,
+    };
   }
 
   Future<List> fetchSenseBoxes({int page = 0}) async {

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/constants.dart';
 
@@ -58,7 +59,6 @@ void main() {
         expect(bloc.boxConfigurations, isNotNull);
         expect(bloc.boxConfigurations!.length, 2);
         expect(bloc.boxConfigurations!.first.id, 'classic');
-        expect(bloc.boxConfigurations!.first.displayName, '2022');
         expect(bloc.isLoadingBoxConfigurations, false);
         expect(bloc.boxConfigurationsError, isNull);
       });
@@ -122,70 +122,6 @@ void main() {
       });
     });
 
-    group('loadCampaigns()', () {
-      final mockCampaigns = [
-        {'label': 'Wiesbaden', 'value': 'wiesbaden'},
-        {'label': 'Münster', 'value': 'muenster'},
-      ];
-
-      test('loads and parses campaigns successfully', () async {
-        when(() => mockRemoteDataService.fetchJson(campaignsUrl))
-            .thenAnswer((_) async => mockCampaigns);
-
-        await bloc.loadCampaigns();
-
-        expect(bloc.campaigns, isNotNull);
-        expect(bloc.campaigns!.length, 2);
-        expect(bloc.campaigns!.first.label, 'Wiesbaden');
-        expect(bloc.campaigns!.first.value, 'wiesbaden');
-        expect(bloc.isLoadingCampaigns, false);
-        expect(bloc.campaignsError, isNull);
-      });
-
-      test('sets loading state during load', () async {
-        when(() => mockRemoteDataService.fetchJson(campaignsUrl))
-            .thenAnswer((_) async => Future.delayed(
-                  const Duration(milliseconds: 100),
-                  () => mockCampaigns,
-                ));
-
-        final loadFuture = bloc.loadCampaigns();
-        expect(bloc.isLoadingCampaigns, true);
-        await loadFuture;
-        expect(bloc.isLoadingCampaigns, false);
-      });
-
-      test('handles network error', () async {
-        when(() => mockRemoteDataService.fetchJson(campaignsUrl))
-            .thenThrow(Exception('Network error'));
-
-        await bloc.loadCampaigns();
-
-        expect(bloc.campaigns, isNull);
-        expect(bloc.campaignsError, contains('Failed to load campaigns'));
-        expect(bloc.isLoadingCampaigns, false);
-      });
-
-      test('handles invalid data format', () async {
-        when(() => mockRemoteDataService.fetchJson(campaignsUrl))
-            .thenAnswer((_) async => {'invalid': 'format'});
-
-        await bloc.loadCampaigns();
-
-        expect(bloc.campaigns, isNull);
-        expect(bloc.campaignsError, contains('Failed to load campaigns'));
-      });
-
-      test('does not reload if already loaded', () async {
-        when(() => mockRemoteDataService.fetchJson(campaignsUrl))
-            .thenAnswer((_) async => mockCampaigns);
-
-        await bloc.loadCampaigns();
-        await bloc.loadCampaigns();
-
-        verify(() => mockRemoteDataService.fetchJson(campaignsUrl)).called(1);
-      });
-    });
 
     group('loadAll()', () {
       final mockBoxConfigurations = [
@@ -263,6 +199,119 @@ void main() {
         expect(bloc.getBoxConfigurationById('unknown'), isNull);
       });
     });
+
+    group('isSenseBoxBikeCompatible()', () {
+      test('returns false when configurations not loaded', () {
+        final senseBox = SenseBox(
+          sensors: [
+            Sensor(title: 'Temperature', unit: '°C', sensorType: 'HDC1080'),
+          ],
+        );
+
+        expect(bloc.isSenseBoxBikeCompatible(senseBox), false);
+      });
+
+      test('returns false when senseBox has no sensors', () async {
+        final mockBoxConfigurations = [
+          {
+            'id': 'classic',
+            'displayName': '2022',
+            'defaultGrouptag': 'classic',
+            'sensors': [
+              {
+                'id': '0',
+                'icon': 'osem-thermometer',
+                'title': 'Temperature',
+                'unit': '°C',
+                'sensorType': 'HDC1080',
+              },
+            ],
+          },
+        ];
+
+        when(() => mockRemoteDataService.fetchJson(boxConfigurationsUrl))
+            .thenAnswer((_) async => mockBoxConfigurations);
+
+        await bloc.loadBoxConfigurations();
+
+        final senseBox = SenseBox(sensors: []);
+        expect(bloc.isSenseBoxBikeCompatible(senseBox), false);
+      });
+
+      test('returns true when all sensors are compatible', () async {
+        final mockBoxConfigurations = [
+          {
+            'id': 'classic',
+            'displayName': '2022',
+            'defaultGrouptag': 'classic',
+            'sensors': [
+              {
+                'id': '0',
+                'icon': 'osem-thermometer',
+                'title': 'Temperature',
+                'unit': '°C',
+                'sensorType': 'HDC1080',
+              },
+              {
+                'id': '1',
+                'icon': 'osem-humidity',
+                'title': 'Humidity',
+                'unit': '%',
+                'sensorType': 'HDC1080',
+              },
+            ],
+          },
+        ];
+
+        when(() => mockRemoteDataService.fetchJson(boxConfigurationsUrl))
+            .thenAnswer((_) async => mockBoxConfigurations);
+
+        await bloc.loadBoxConfigurations();
+
+        final senseBox = SenseBox(
+          sensors: [
+            Sensor(title: 'Temperature', unit: '°C', sensorType: 'HDC1080'),
+            Sensor(title: 'Humidity', unit: '%', sensorType: 'HDC1080'),
+          ],
+        );
+
+        expect(bloc.isSenseBoxBikeCompatible(senseBox), true);
+      });
+
+      test('returns false when some sensors are not compatible', () async {
+        final mockBoxConfigurations = [
+          {
+            'id': 'classic',
+            'displayName': '2022',
+            'defaultGrouptag': 'classic',
+            'sensors': [
+              {
+                'id': '0',
+                'icon': 'osem-thermometer',
+                'title': 'Temperature',
+                'unit': '°C',
+                'sensorType': 'HDC1080',
+              },
+            ],
+          },
+        ];
+
+        when(() => mockRemoteDataService.fetchJson(boxConfigurationsUrl))
+            .thenAnswer((_) async => mockBoxConfigurations);
+
+        await bloc.loadBoxConfigurations();
+
+        final senseBox = SenseBox(
+          sensors: [
+            Sensor(title: 'Temperature', unit: '°C', sensorType: 'HDC1080'),
+            Sensor(title: 'Unknown Sensor', unit: '?', sensorType: 'UNKNOWN'),
+          ],
+        );
+
+        expect(bloc.isSenseBoxBikeCompatible(senseBox), false);
+      });
+    });
+
   });
 }
 

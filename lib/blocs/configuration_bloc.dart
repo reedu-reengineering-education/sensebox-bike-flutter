@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/campaign.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/constants.dart';
 
-class ConfigurationBloc with ChangeNotifier {
+class ConfigurationBloc {
   final RemoteDataService _remoteDataService;
 
   List<BoxConfiguration>? _boxConfigurations;
@@ -13,6 +13,7 @@ class ConfigurationBloc with ChangeNotifier {
   bool _isLoadingCampaigns = false;
   String? _boxConfigurationsError;
   String? _campaignsError;
+  Set<String> _allSensorTitles = {};
 
   ConfigurationBloc({RemoteDataService? remoteDataService})
       : _remoteDataService = remoteDataService ?? RemoteDataService();
@@ -49,7 +50,6 @@ class ConfigurationBloc with ChangeNotifier {
 
     setLoading(true);
     setError(null);
-    notifyListeners();
 
     try {
       final dynamic data = await _remoteDataService.fetchJson(url);
@@ -65,7 +65,6 @@ class ConfigurationBloc with ChangeNotifier {
       setData(null);
     } finally {
       setLoading(false);
-      notifyListeners();
     }
   }
 
@@ -75,8 +74,16 @@ class ConfigurationBloc with ChangeNotifier {
       isAlreadyLoading: () => _isLoadingBoxConfigurations,
       isAlreadyLoaded: () => _boxConfigurations != null,
       setLoading: (value) => _isLoadingBoxConfigurations = value,
-      setError: (error) => _boxConfigurationsError = error,
-      setData: (data) => _boxConfigurations = data as List<BoxConfiguration>?,
+      setError: (error) {
+        _boxConfigurationsError = error;
+        if (error != null) {
+          _allSensorTitles = {};
+        }
+      },
+      setData: (data) {
+        _boxConfigurations = data as List<BoxConfiguration>?;
+        _updateAllSensorTitles();
+      },
       parseData: (data) => (data as List)
           .map((item) =>
               BoxConfiguration.fromJson(item as Map<String, dynamic>))
@@ -105,6 +112,33 @@ class ConfigurationBloc with ChangeNotifier {
       loadBoxConfigurations(),
       loadCampaigns(),
     ]);
+  }
+
+  void _updateAllSensorTitles() {
+    if (_boxConfigurations == null || _boxConfigurations!.isEmpty) {
+      _allSensorTitles = {};
+      return;
+    }
+    _allSensorTitles = _boxConfigurations!
+        .expand((config) => config.sensors.map((sensor) => sensor.title))
+        .toSet();
+  }
+
+  bool isSenseBoxBikeCompatible(SenseBox sensebox) {
+    if (_allSensorTitles.isEmpty) {
+      return false;
+    }
+
+    if (sensebox.sensors == null || sensebox.sensors!.isEmpty) {
+      return false;
+    }
+
+    for (var sensor in sensebox.sensors!) {
+      if (!_allSensorTitles.contains(sensor.title)) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 

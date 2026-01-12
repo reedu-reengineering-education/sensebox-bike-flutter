@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection.dart';
 
-void showSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
+void showSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc,
+    ConfigurationBloc configurationBloc) {
   showModalBottomSheet(
     context: context,
     clipBehavior: Clip.antiAlias,
     isScrollControlled: true,
     builder: (BuildContext context) {
-      return _buildSenseBoxSelection(context, bloc);
+      return _buildSenseBoxSelection(context, bloc, configurationBloc);
     },
   );
 }
 
-Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
+Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc,
+    ConfigurationBloc configurationBloc) {
+  
   return SizedBox(
     height: MediaQuery.of(context).size.height * 0.8,
     child: Stack(
@@ -35,7 +39,10 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
                 ),
               ),
               const CustomSpacer(),
-              const Expanded(child: SenseBoxSelectionWidget()),
+              Expanded(
+                child: SenseBoxSelectionWidget(
+                    configurationBloc: configurationBloc),
+              ),
             ],
           ),
         ),
@@ -45,7 +52,7 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
           right: 32,
           child: FloatingActionButton(
             onPressed: () async {
-              await _showCreateSenseBoxDialog(context, bloc);
+              await _showCreateSenseBoxDialog(context, bloc, configurationBloc);
             },
             shape: const CircleBorder(),
             child: const Icon(Icons.add),
@@ -57,14 +64,23 @@ Widget _buildSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc) {
 }
 
 Future<void> _showCreateSenseBoxDialog(
-    BuildContext context, OpenSenseMapBloc bloc) {
-  return showModalBottomSheet(
+    BuildContext context,
+    OpenSenseMapBloc bloc, ConfigurationBloc configurationBloc) {
+  return showDialog(
     context: context,
-    isScrollControlled: true,
-    enableDrag: false,
-    isDismissible: false,
+    barrierDismissible: false,
     builder: (context) {
-      return CreateBikeBoxModal();
+      return CreateBikeBoxModal(
+        boxConfigurations: configurationBloc.boxConfigurations,
+        campaigns: configurationBloc.campaigns,
+        isLoadingBoxConfigurations:
+            configurationBloc.isLoadingBoxConfigurations,
+        isLoadingCampaigns: configurationBloc.isLoadingCampaigns,
+        boxConfigurationsError: configurationBloc.boxConfigurationsError,
+        campaignsError: configurationBloc.campaignsError,
+        getBoxConfigurationById: (id) =>
+            configurationBloc.getBoxConfigurationById(id),
+      );
     },
   );
 }

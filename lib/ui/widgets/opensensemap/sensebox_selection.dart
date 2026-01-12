@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 
 class SenseBoxSelectionWidget extends StatefulWidget {
-  const SenseBoxSelectionWidget({super.key});
+  final ConfigurationBloc configurationBloc;
+
+  const SenseBoxSelectionWidget({
+    super.key,
+    required this.configurationBloc,
+  });
 
   @override
   _SenseBoxSelectionWidgetState createState() =>
@@ -14,7 +20,6 @@ class SenseBoxSelectionWidget extends StatefulWidget {
 }
 
 class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
-  late OpenSenseMapBloc bloc;
   late ScrollController _scrollController;
 
   int page = 0;
@@ -24,7 +29,7 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
   @override
   void initState() {
     super.initState();
-    bloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    final bloc = context.read<OpenSenseMapBloc>();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
 
@@ -39,6 +44,7 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
       isLoading = true;
     });
 
+    final bloc = context.read<OpenSenseMapBloc>();
     bloc.fetchSenseBoxes(page: page).then((values) {
       if (!mounted) return; // Ensure the widget is still in the tree
 
@@ -77,8 +83,14 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.configurationBloc.isLoadingBoxConfigurations ||
+        widget.configurationBloc.boxConfigurations == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
     return Consumer<OpenSenseMapBloc>(
       builder: (context, bloc, child) {
+
         if (bloc.senseBoxes.isEmpty && isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -111,13 +123,13 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
             }
 
             if (index == bloc.senseBoxes.length) {
-              return const SizedBox(); // End of list
+              return const SizedBox();
             }
 
             final senseBox = SenseBox.fromJson(bloc.senseBoxes[index]);
             final isSelected = senseBox.id == bloc.selectedSenseBox?.id;
             final isSenseBoxBikeCompatible =
-                bloc.isSenseBoxBikeCompatible(senseBox);
+                widget.configurationBloc.isSenseBoxBikeCompatible(senseBox);
 
             return ListTile(
               title: Text(senseBox.name ??

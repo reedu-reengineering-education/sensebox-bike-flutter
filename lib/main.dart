@@ -10,6 +10,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mapbox_maps_flutter_draw/mapbox_maps_flutter_draw.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -57,6 +58,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
   static RecordingBloc? _recordingBloc;
   static GeolocationBloc? _geolocationBloc;
   static SensorBloc? _sensorBloc;
+  static ConfigurationBloc? _configurationBloc;
   static MapboxDrawController? _mapboxDrawController;
   static StreamSubscription<Uri>? _appLinksSubscription;
   static bool _isInitialized = false;
@@ -68,6 +70,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     _settingsBloc = SettingsBloc();
     _isarService = IsarService(isarProvider: IsarProvider());
     _bleBloc = BleBloc(_settingsBloc!);
+    _configurationBloc = ConfigurationBloc();
     _openSenseMapBloc = OpenSenseMapBloc();
     _trackBloc = TrackBloc(_isarService!);
     _recordingBloc = RecordingBloc(_isarService!, _bleBloc!, _trackBloc!,
@@ -77,6 +80,11 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     _sensorBloc = SensorBloc(
         _bleBloc!, _geolocationBloc!, _recordingBloc!, _settingsBloc!);
     _mapboxDrawController = MapboxDrawController();
+
+    // Preload box configurations and campaigns
+    _configurationBloc!.loadAll().catchError((error) {
+      debugPrint('Failed to preload configurations: $error');
+    });
 
     // Initialize CSV logger service (logging starts/stops with recording)
     // Only initialize if not in release mode and enabled in .env file
@@ -185,6 +193,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
         ChangeNotifierProvider.value(value: _geolocationBloc!),
         ChangeNotifierProvider.value(value: _sensorBloc!),
         ChangeNotifierProvider.value(value: _openSenseMapBloc!),
+        Provider.value(value: _configurationBloc!),
         ChangeNotifierProvider.value(value: _mapboxDrawController!),
       ],
       child: MaterialApp(

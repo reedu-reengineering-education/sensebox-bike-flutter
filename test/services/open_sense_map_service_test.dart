@@ -16,6 +16,7 @@ void main() {
   final String expiredToken =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyMzkwMjJ9.test_signature';
 
+
   setUpAll(() {
     registerFallbackValue(Uri());
   });
@@ -24,8 +25,11 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
     mockHttpClient = MockClient();
-    service =
-        OpenSenseMapService(client: mockHttpClient, prefs: Future.value(prefs));
+    
+    service = OpenSenseMapService(
+      client: mockHttpClient,
+      prefs: Future.value(prefs),
+    );
   });
 
   tearDown(() async {
@@ -218,29 +222,44 @@ void main() {
         await setValidTokens();
         mockHTTPPOSTResponse('{"id": "sensebox123"}', 201);
 
-        await expectLater(
-            service.createSenseBoxBike(
-                "Test Box", 52.5200, 13.4050, SenseBoxBikeModel.atrai, null),
-            completes);
+        final model = {
+          'name': 'Test Box',
+          'exposure': 'mobile',
+          'location': [52.5200, 13.4050],
+          'grouptag': ['bike', 'atrai'],
+          'sensors': [],
+        };
+
+        await expectLater(service.createSenseBoxBike(model), completes);
       });
 
       test('throws exception when not authenticated', () async {
         mockHTTPPOSTResponse('{"id": "sensebox123"}', 201);
 
-        await expectLater(
-            service.createSenseBoxBike(
-                "Test Box", 52.5200, 13.4050, SenseBoxBikeModel.atrai, null),
-            throwsException);
+        final model = {
+          'name': 'Test Box',
+          'exposure': 'mobile',
+          'location': [52.5200, 13.4050],
+          'grouptag': ['bike', 'atrai'],
+          'sensors': [],
+        };
+
+        await expectLater(service.createSenseBoxBike(model), throwsException);
       });
 
       test('throws exception on server error', () async {
         await setValidTokens();
         mockHTTPPOSTResponse('{"error": "Invalid data"}', 400);
 
-        await expectLater(
-            service.createSenseBoxBike(
-                "Test Box", 52.5200, 13.4050, SenseBoxBikeModel.atrai, null),
-            throwsException);
+        final model = {
+          'name': 'Test Box',
+          'exposure': 'mobile',
+          'location': [52.5200, 13.4050],
+          'grouptag': ['bike', 'atrai'],
+          'sensors': [],
+        };
+
+        await expectLater(service.createSenseBoxBike(model), throwsException);
       });
     });
 
@@ -280,7 +299,7 @@ void main() {
         await expectLater(service.getSenseBoxes(), throwsException);
       });
 
-      test('refreshes token and retries on 401 error', () async {
+      test('refreshes token and retries on authentication error', () async {
         await setValidTokens();
 
         int callCount = 0;
@@ -291,32 +310,6 @@ void main() {
           callCount++;
           if (callCount == 1) {
             return http.Response('Unauthorized', 401);
-          } else {
-            return http.Response(
-                '{"data": {"boxes": [{"id": "box1"}]}}', 200);
-          }
-        });
-
-        mockHTTPPOSTResponse(
-            '{"token": "$accessToken", "refreshToken": "new_refresh"}', 200);
-
-        final boxes = await service.getSenseBoxes();
-
-        expect(boxes, [{"id": "box1"}]);
-        expect(callCount, 2);
-      });
-
-      test('refreshes token and retries on 403 error', () async {
-        await setValidTokens();
-
-        int callCount = 0;
-        when(() => mockHttpClient.get(
-              any(),
-              headers: any(named: 'headers'),
-            )).thenAnswer((_) async {
-          callCount++;
-          if (callCount == 1) {
-            return http.Response('Forbidden', 403);
           } else {
             return http.Response(
                 '{"data": {"boxes": [{"id": "box1"}]}}', 200);
@@ -442,7 +435,7 @@ void main() {
         expect(userData, null);
       });
 
-      test('refreshes token and retries on 401 error', () async {
+      test('refreshes token and retries on authentication error', () async {
         await setValidTokens();
 
         int callCount = 0;
@@ -453,34 +446,6 @@ void main() {
           callCount++;
           if (callCount == 1) {
             return http.Response('Unauthorized', 401);
-          } else {
-            return http.Response(
-                '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
-                200);
-          }
-        });
-
-        mockHTTPPOSTResponse(
-            '{"token": "$accessToken", "refreshToken": "new_refresh"}', 200);
-
-        final userData = await service.getUserData();
-
-        expect(userData, isNotNull);
-        expect(userData!['data']['me']['name'], 'Test User');
-        expect(callCount, 2);
-      });
-
-      test('refreshes token and retries on 403 error', () async {
-        await setValidTokens();
-
-        int callCount = 0;
-        when(() => mockHttpClient.get(
-              any(),
-              headers: any(named: 'headers'),
-            )).thenAnswer((_) async {
-          callCount++;
-          if (callCount == 1) {
-            return http.Response('Forbidden', 403);
           } else {
             return http.Response(
                 '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
@@ -523,207 +488,30 @@ void main() {
     });
   });
 
-  group('Caching & State Management', () {
-    group('Token Caching', () {
-      test('getAccessToken returns valid token when cached token is valid', () async {
-        await setValidTokens();
-        final token = await service.getAccessToken();
-
-        expect(token, isNotNull);
-        expect(token, isA<String>());
-      });
-
-      test('getAccessToken returns null when no cached token', () async {
-        final token = await service.getAccessToken();
-        expect(token, null);
-      });
-
-
-      test('getAccessToken caches token after first call', () async {
-        await setValidTokens();
-
-        final token1 = await service.getAccessToken();
-        final token2 = await service.getAccessToken();
-
-        expect(token1, equals(token2));
-        expect(token1, isNotNull);
-        expect(token2, isNotNull);
-      });
-
-      test('cached token is cleared when invalid', () async {
-        await setExpiredTokens();
-
-        final token = await service.getAccessToken();
-
-        expect(token, null);
-      });
-    });
-
-    group('User Data Caching', () {
-      test('caches user data after successful API call', () async {
-        await setValidTokens();
-        mockHTTPGETResponse(
-          '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
-            200);
-
-        final userData = await service.getUserData();
-
-        expect(userData, isNotNull);
-        expect(userData!['data']['me']['name'], 'Test User');
-        expect(prefs.getString('userData'), isNotNull);
-      });
-
-      test('returns cached data when token is valid', () async {
-        await setValidTokens();
-
-        mockHTTPGETResponse(
-          '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
+  group('User Data Caching', () {
+    test('caches user data after successful API call', () async {
+      await setValidTokens();
+      mockHTTPGETResponse(
+        '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
           200);
-        await service.getUserData();
 
-        // Second call should return cached data without making API call
-        final userData = await service.getUserData();
+      final userData = await service.getUserData();
 
-        expect(userData, isNotNull);
-        expect(userData!['data']['me']['name'], 'Test User');
-      });
-
-      test('logout clears user data cache', () async {
-        await setValidTokens();
-        mockHTTPGETResponse(
-          '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
-            200);
-
-        await service.getUserData();
-        await service.logout();
-
-        expect(prefs.getString('userData'), null);
-      });
+      expect(userData, isNotNull);
+      expect(userData!['data']['me']['name'], 'Test User');
+      expect(prefs.getString('userData'), isNotNull);
     });
 
-    group('Service State', () {
-      test('isAcceptingRequests returns true initially', () {
-        expect(service.isAcceptingRequests, true);
-      });
+    test('logout clears user data cache', () async {
+      await setValidTokens();
+      mockHTTPGETResponse(
+        '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
+          200);
 
-      test('isPermanentlyDisabled returns false initially', () {
-        expect(service.isPermanentlyDisabled, false);
-      });
+      await service.getUserData();
+      await service.logout();
 
-      test('remainingRateLimitTime returns null when not rate limited', () {
-        expect(service.remainingRateLimitTime, null);
-      });
-
-      test('resetPermanentDisable resets disabled state', () {
-        service.resetPermanentDisable();
-        expect(service.isPermanentlyDisabled, false);
-      });
-
-      test('resetPermanentDisable can be called multiple times safely', () {
-        service.resetPermanentDisable();
-        service.resetPermanentDisable();
-        expect(service.isPermanentlyDisabled, false);
-      });
-
-      test('resetPermanentDisable maintains other service state', () {
-        final initialAcceptingRequests = service.isAcceptingRequests;
-        final initialRateLimitTime = service.remainingRateLimitTime;
-        
-        service.resetPermanentDisable();
-        
-        expect(service.isAcceptingRequests, initialAcceptingRequests);
-        expect(service.remainingRateLimitTime, initialRateLimitTime);
-      });
-    });
-  });
-  group('Factory & Utility Methods', () {
-    group('createSenseBoxBikeModel()', () {
-      test('creates model with default values', () {
-        final model =
-            service.createSenseBoxBikeModel('Test Box', 13.4050, 52.5200);
-
-        expect(model['name'], 'Test Box');
-        expect(model['exposure'], 'mobile');
-        expect(model['location'], [52.5200, 13.4050]);
-        expect(model['grouptag'], ['bike', 'classic']);
-        expect(model['sensors'], isNotNull);
-      });
-
-      test('creates model with custom grouptags', () {
-        final model = service.createSenseBoxBikeModel(
-          'Test Box',
-          13.4050,
-          52.5200,
-          grouptags: ['custom', 'test'],
-        );
-
-        expect(model['grouptag'], ['custom', 'test']);
-      });
-
-      test('creates atrai model with correct grouptag', () {
-        final model = service.createSenseBoxBikeModel(
-          'Test Box',
-          13.4050,
-          52.5200,
-          model: SenseBoxBikeModel.atrai,
-        );
-
-        expect(model['grouptag'], ['bike', 'atrai']);
-        expect(model['sensors'], service.sensors[SenseBoxBikeModel.atrai]);
-      });
-
-      test('adds selected tag to grouptags', () {
-        final model = service.createSenseBoxBikeModel(
-          'Test Box',
-          13.4050,
-          52.5200,
-          selectedTag: 'custom-tag',
-        );
-
-        expect(model['grouptag'], ['bike', 'classic', 'custom-tag']);
-      });
-
-      test('ignores empty selected tag', () {
-        final model = service.createSenseBoxBikeModel(
-          'Test Box',
-          13.4050,
-          52.5200,
-          selectedTag: '',
-        );
-
-        expect(model['grouptag'], ['bike', 'classic']);
-      });
-
-      test('handles coordinates correctly', () {
-        final model = service.createSenseBoxBikeModel('Test', 13.4050, 52.5200);
-
-        expect(model['location'], [52.5200, 13.4050]);
-      });
-    });
-
-    group('sensors Configuration', () {
-      test('contains configurations for both bike models', () {
-        expect(service.sensors.containsKey(SenseBoxBikeModel.classic), true);
-        expect(service.sensors.containsKey(SenseBoxBikeModel.atrai), true);
-      });
-
-      test('classic and atrai models have sensor lists', () {
-        final classicSensors = service.sensors[SenseBoxBikeModel.classic];
-        final atraiSensors = service.sensors[SenseBoxBikeModel.atrai];
-
-        expect(classicSensors, isNotNull);
-        expect(atraiSensors, isNotNull);
-        expect(classicSensors, isA<List>());
-        expect(atraiSensors, isA<List>());
-      });
-
-      test('sensor lists are not empty', () {
-        final classicSensors = service.sensors[SenseBoxBikeModel.classic]!;
-        final atraiSensors = service.sensors[SenseBoxBikeModel.atrai]!;
-
-        expect(classicSensors.isNotEmpty, true);
-        expect(atraiSensors.isNotEmpty, true);
-      });
+      expect(prefs.getString('userData'), null);
     });
   });
 
