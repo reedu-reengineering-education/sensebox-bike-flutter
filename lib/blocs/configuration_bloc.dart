@@ -27,11 +27,10 @@ class ConfigurationBloc {
 
   BoxConfiguration? getBoxConfigurationById(String id) {
     if (_boxConfigurations == null) return null;
-    try {
-      return _boxConfigurations!.firstWhere((config) => config.id == id);
-    } catch (e) {
-      return null;
+    for (final config in _boxConfigurations!) {
+      if (config.id == id) return config;
     }
+    return null;
   }
 
   Future<void> _loadData({

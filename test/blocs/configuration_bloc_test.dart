@@ -97,14 +97,15 @@ void main() {
         expect(bloc.boxConfigurationsError, contains('Failed to load box configurations'));
       });
 
-      test('does not reload if already loaded', () async {
+      test('allows reload if already loaded', () async {
         when(() => mockRemoteDataService.fetchJson(boxConfigurationsUrl))
             .thenAnswer((_) async => mockBoxConfigurations);
 
         await bloc.loadBoxConfigurations();
         await bloc.loadBoxConfigurations();
 
-        verify(() => mockRemoteDataService.fetchJson(boxConfigurationsUrl)).called(1);
+        verify(() => mockRemoteDataService.fetchJson(boxConfigurationsUrl))
+            .called(2);
       });
 
       test('does not reload if already loading', () async {
@@ -145,7 +146,15 @@ void main() {
         await bloc.loadAll();
 
         expect(bloc.boxConfigurations, isNotNull);
+        expect(bloc.boxConfigurations!.length, 1);
+        expect(bloc.boxConfigurations!.first.id, 'classic');
+        expect(bloc.boxConfigurations!.first.displayName, '2022');
+        expect(bloc.boxConfigurations!.first.defaultGrouptag, 'classic');
+
         expect(bloc.campaigns, isNotNull);
+        expect(bloc.campaigns!.length, 1);
+        expect(bloc.campaigns!.first.label, 'Wiesbaden');
+        expect(bloc.campaigns!.first.value, 'wiesbaden');
       });
     });
 
