@@ -1,3 +1,5 @@
+import 'package:sensebox_bike/utils/json_validation.dart';
+
 class Campaign {
   final String label;
   final String value;
@@ -6,8 +8,8 @@ class Campaign {
 
   factory Campaign.fromJson(Map<String, dynamic> json) {
     return Campaign(
-      label: json['label'] as String,
-      value: json['value'] as String,
+      label: requireString(json, 'label', 'Campaign'),
+      value: requireString(json, 'value', 'Campaign'),
     );
   }
 

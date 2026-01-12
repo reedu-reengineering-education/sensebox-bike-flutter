@@ -1,3 +1,5 @@
+import 'package:sensebox_bike/utils/json_validation.dart';
+
 class BoxConfiguration {
   final String id;
   final String displayName;
@@ -13,12 +15,15 @@ class BoxConfiguration {
 
   factory BoxConfiguration.fromJson(Map<String, dynamic> json) {
     return BoxConfiguration(
-      id: json['id'] as String,
-      displayName: json['displayName'] as String,
-      defaultGrouptag: json['defaultGrouptag'] as String,
-      sensors: (json['sensors'] as List<dynamic>)
-          .map((sensor) => SensorDefinition.fromJson(sensor as Map<String, dynamic>))
-          .toList(),
+      id: requireString(json, 'id', 'BoxConfiguration'),
+      displayName: requireString(json, 'displayName', 'BoxConfiguration'),
+      defaultGrouptag: requireString(json, 'defaultGrouptag', 'BoxConfiguration'),
+      sensors: requireList<SensorDefinition>(
+        json,
+        'sensors',
+        'BoxConfiguration',
+        (item) => SensorDefinition.fromJson(item as Map<String, dynamic>),
+      ),
     );
   }
 
@@ -44,11 +49,11 @@ class SensorDefinition {
 
   factory SensorDefinition.fromJson(Map<String, dynamic> json) {
     return SensorDefinition(
-      id: json['id'] as String,
-      icon: json['icon'] as String,
-      title: json['title'] as String,
-      unit: json['unit'] as String,
-      sensorType: json['sensorType'] as String,
+      id: requireString(json, 'id', 'SensorDefinition'),
+      icon: requireString(json, 'icon', 'SensorDefinition'),
+      title: requireString(json, 'title', 'SensorDefinition'),
+      unit: requireString(json, 'unit', 'SensorDefinition'),
+      sensorType: requireString(json, 'sensorType', 'SensorDefinition'),
     );
   }
 
