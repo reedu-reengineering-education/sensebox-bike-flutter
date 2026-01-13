@@ -360,10 +360,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sensorFinedustPM1 => 'Material Particulado PM1';
 
   @override
-  String get sensorDistance => 'Distância de Ultrapassagem';
+  String get sensorDistance => 'Distância Direita';
 
   @override
-  String get sensorOvertaking => 'Manobra de Ultrapassagem';
+  String get sensorDistanceRight => 'Distância Direita';
+
+  @override
+  String get sensorOvertaking => 'Previsão de Ultrapassagem';
 
   @override
   String get sensorOvertakingShort => 'Ultrapassagem';

@@ -95,6 +95,8 @@ String? getTranslatedTitleFromSensorKey(
       return AppLocalizations.of(context)!.sensorFinedustPM1;
     case 'distance':
       return AppLocalizations.of(context)!.sensorDistance;
+    case 'distance_right':
+      return AppLocalizations.of(context)!.sensorDistanceRight;
     case 'overtaking':
       return AppLocalizations.of(context)!.sensorOvertaking;
     case 'surface_classification_asphalt':
@@ -322,6 +324,15 @@ List<SensorEntry> getUniqueSortedSensorEntries(List<SensorData> sensorData) {
 
   final entriesList = uniqueEntries.toList();
   entriesList.sort((a, b) {
+    // Speed (gps with attribute 'speed') should always be last
+    final isSpeedA = a.title == 'gps' && a.attribute == 'speed';
+    final isSpeedB = b.title == 'gps' && b.attribute == 'speed';
+    
+    if (isSpeedA && !isSpeedB) return 1; // Speed goes after everything
+    if (!isSpeedA && isSpeedB) return -1; // Non-speed goes before speed
+    if (isSpeedA && isSpeedB) return 0; // Both are speed, keep order
+    
+    // For non-speed entries, sort by priority
     final priorityA = getUiPriorityByUuid(a.characteristicUuid);
     final priorityB = getUiPriorityByUuid(b.characteristicUuid);
     return priorityA.compareTo(priorityB);

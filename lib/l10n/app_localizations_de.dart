@@ -361,10 +361,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sensorFinedustPM1 => 'Feinstaub PM1';
 
   @override
-  String get sensorDistance => 'Überholabstand';
+  String get sensorDistance => 'Abstand Rechts';
 
   @override
-  String get sensorOvertaking => 'Überholmanöver';
+  String get sensorDistanceRight => 'Abstand Rechts';
+
+  @override
+  String get sensorOvertaking => 'Überholvorhersage';
 
   @override
   String get sensorOvertakingShort => 'Überholen';

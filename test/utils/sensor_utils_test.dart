@@ -1,4 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
@@ -314,9 +317,79 @@ void main() {
       expect(entries[2].title, 'humidity');
     });
 
+    test('sorts speed (gps with speed attribute) to the end', () {
+      final sensorData = [
+        SensorData()
+          ..title = 'gps'
+          ..attribute = 'speed'
+          ..characteristicUuid = GPSSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'temperature'
+          ..attribute = null
+          ..characteristicUuid = TemperatureSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'humidity'
+          ..attribute = null
+          ..characteristicUuid = HumiditySensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'finedust'
+          ..attribute = 'pm1'
+          ..characteristicUuid = FinedustSensor.sensorCharacteristicUuid,
+      ];
+
+      final entries = getUniqueSortedSensorEntries(sensorData);
+
+      expect(entries.length, 4);
+      // Speed should be last regardless of its priority
+      expect(entries.last.title, 'gps');
+      expect(entries.last.attribute, 'speed');
+    });
+
     test('returns empty list for empty input', () {
       final entries = getUniqueSortedSensorEntries([]);
       expect(entries, isEmpty);
+    });
+  });
+
+  group('getTranslatedTitleFromSensorKey', () {
+    testWidgets('returns correct translation for distance sensor', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (context) {
+              final result = getTranslatedTitleFromSensorKey('distance', null, context);
+              expect(result, AppLocalizations.of(context)!.sensorDistance);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('returns correct translation for distance_right sensor', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (context) {
+              final result = getTranslatedTitleFromSensorKey('distance_right', null, context);
+              expect(result, AppLocalizations.of(context)!.sensorDistanceRight);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
   });
 }

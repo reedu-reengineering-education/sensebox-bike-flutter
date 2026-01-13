@@ -59,7 +59,7 @@ class DistanceRightSensor extends Sensor {
       decimalPlaces: 0,
       builder: (context, value) {
         return SensorDisplayCard(
-          title: AppLocalizations.of(context)!.sensorDistanceShort,
+          title: AppLocalizations.of(context)!.sensorDistanceRight,
           icon: getSensorIcon(title),
           color: getSensorColor(title),
           valueStream: valueStream,
