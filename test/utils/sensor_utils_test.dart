@@ -3,6 +3,16 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
+import 'package:sensebox_bike/sensors/distance_sensor.dart';
+import 'package:sensebox_bike/sensors/distance_right_sensor.dart';
+import 'package:sensebox_bike/sensors/overtaking_prediction_sensor.dart';
+import 'package:sensebox_bike/sensors/temperature_sensor.dart';
+import 'package:sensebox_bike/sensors/humidity_sensor.dart';
+import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
+import 'package:sensebox_bike/sensors/gps_sensor.dart';
+import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
+import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
+import 'package:sensebox_bike/sensors/finedust_sensor.dart';
 
 void main() {
   final boxSensors = [
@@ -172,6 +182,141 @@ void main() {
       expect(entry['value'], '5.00');
       expect(entry['location']['lat'], 10.0);
       expect(entry['location']['lng'], 20.0);
+    });
+  });
+
+  group('getUiPriorityByUuid', () {
+    test('returns correct priority for distance sensor UUID', () {
+      expect(getUiPriorityByUuid(DistanceSensor.sensorCharacteristicUuid), 10);
+    });
+
+    test('returns correct priority for distance right sensor UUID', () {
+      expect(
+          getUiPriorityByUuid(DistanceRightSensor.sensorCharacteristicUuid), 20);
+    });
+
+    test('returns correct priority for overtaking prediction sensor UUID', () {
+      expect(
+          getUiPriorityByUuid(
+              OvertakingPredictionSensor.sensorCharacteristicUuid),
+          30);
+    });
+
+    test('returns correct priority for temperature sensor UUID', () {
+      expect(
+          getUiPriorityByUuid(TemperatureSensor.sensorCharacteristicUuid), 40);
+    });
+
+    test('returns correct priority for humidity sensor UUID', () {
+      expect(getUiPriorityByUuid(HumiditySensor.sensorCharacteristicUuid), 50);
+    });
+
+    test('returns correct priority for acceleration sensor UUID', () {
+      expect(
+          getUiPriorityByUuid(AccelerationSensor.sensorCharacteristicUuid), 60);
+    });
+
+    test('returns correct priority for GPS sensor UUID', () {
+      expect(getUiPriorityByUuid(GPSSensor.sensorCharacteristicUuid), 60);
+    });
+
+    test('returns correct priority for surface classification sensor UUID', () {
+      expect(
+          getUiPriorityByUuid(
+              SurfaceClassificationSensor.sensorCharacteristicUuid),
+          60);
+    });
+
+    test('returns correct priority for surface anomaly sensor UUID', () {
+      expect(
+          getUiPriorityByUuid(SurfaceAnomalySensor.sensorCharacteristicUuid),
+          60);
+    });
+
+    test('returns correct priority for finedust sensor UUID', () {
+      expect(getUiPriorityByUuid(FinedustSensor.sensorCharacteristicUuid), 80);
+    });
+
+    test('returns default priority for unknown UUID', () {
+      expect(getUiPriorityByUuid('unknown-uuid'), 999999);
+    });
+
+    test('returns default priority for empty string', () {
+      expect(getUiPriorityByUuid(''), 999999);
+    });
+  });
+
+  group('getUniqueSortedSensorEntries', () {
+    test('deduplicates sensor entries with same title, attribute, and UUID',
+        () {
+      final sensorData = [
+        SensorData()
+          ..title = 'temperature'
+          ..attribute = null
+          ..characteristicUuid = TemperatureSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'temperature'
+          ..attribute = null
+          ..characteristicUuid = TemperatureSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'humidity'
+          ..attribute = null
+          ..characteristicUuid = HumiditySensor.sensorCharacteristicUuid,
+      ];
+
+      final entries = getUniqueSortedSensorEntries(sensorData);
+
+      expect(entries.length, 2);
+      expect(entries.any((e) => e.title == 'temperature'), isTrue);
+      expect(entries.any((e) => e.title == 'humidity'), isTrue);
+    });
+
+    test('keeps entries with same title but different attributes', () {
+      final sensorData = [
+        SensorData()
+          ..title = 'finedust'
+          ..attribute = 'pm1'
+          ..characteristicUuid = FinedustSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'finedust'
+          ..attribute = 'pm2.5'
+          ..characteristicUuid = FinedustSensor.sensorCharacteristicUuid,
+      ];
+
+      final entries = getUniqueSortedSensorEntries(sensorData);
+
+      expect(entries.length, 2);
+      expect(entries.any((e) => e.attribute == 'pm1'), isTrue);
+      expect(entries.any((e) => e.attribute == 'pm2.5'), isTrue);
+    });
+
+    test('sorts entries by UUID priority', () {
+      final sensorData = [
+        SensorData()
+          ..title = 'humidity'
+          ..attribute = null
+          ..characteristicUuid = HumiditySensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'temperature'
+          ..attribute = null
+          ..characteristicUuid = TemperatureSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'distance'
+          ..attribute = null
+          ..characteristicUuid = DistanceSensor.sensorCharacteristicUuid,
+      ];
+
+      final entries = getUniqueSortedSensorEntries(sensorData);
+
+      expect(entries.length, 3);
+      expect(entries[0].title, 'distance');
+      expect(entries[1].title, 'temperature');
+      expect(entries[2].title, 'humidity');
+    });
+
+    test('returns empty list for empty input', () {
+      final entries = getUniqueSortedSensorEntries([]);
+      expect(entries, isEmpty);
     });
   });
 }

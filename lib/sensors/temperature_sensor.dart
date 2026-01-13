@@ -12,8 +12,10 @@ import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart
 class TemperatureSensor extends Sensor {
   List<double> _latestValue = [0.0];
 
+  static int get staticUiPriority => 40;
+
   @override
-  get uiPriority => 40;
+  get uiPriority => staticUiPriority;
 
   @override
   Duration get lookbackWindow => const Duration(milliseconds: 1000);

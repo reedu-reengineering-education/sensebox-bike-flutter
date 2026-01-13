@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/theme.dart';
@@ -20,54 +19,47 @@ class SensorTileList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, String?>> sensorTitles = sensorData
-        .map((e) => {'title': e.title, 'attribute': e.attribute})
-        .map((map) => map.entries.map((e) => '${e.key}:${e.value}').join(','))
-        .toSet()
-        .map((str) {
-      var entries = str.split(',').map((e) => e.split(':'));
-      return Map<String, String?>.fromEntries(
-        entries.map((e) => MapEntry(e[0], e[1] == 'null' ? null : e[1])),
-      );
-    }).toList();
-
-    // Filter out surface_anomaly if the feature flag is enabled
-    if (FeatureFlags.hideSurfaceAnomalySensor) {
-      sensorTitles.removeWhere((sensor) => sensor['title'] == 'surface_anomaly');
-    }
-
-    sensorTitles.sort((a, b) {
-      int indexA = sensorOrder.indexOf(
-          '${a['title']}${a['attribute'] == null ? '' : '_${a['attribute']}'}');
-      int indexB = sensorOrder.indexOf(
-          '${b['title']}${b['attribute'] == null ? '' : '_${b['attribute']}'}');
-      return indexA.compareTo(indexB);
-    });
-    final tileList = <Widget>[];
-    for (var sensor in sensorTitles) {
-      String title = sensor['title']!;
-      String? attribute = sensor['attribute'];
-      String displayTitle =
-          getTranslatedTitleFromSensorKey(title, attribute, context) ?? title;
-      Color cardColor = selectedSensorType ==
-              '$title${attribute == null ? '' : '_$attribute'}'
-          ? getSensorColor(title).withOpacity(0.25)
-          : Theme.of(context).canvasColor;
-
-      tileList.add(SensorTile(
-        title: displayTitle,
-        cardColor: cardColor,
-        sensorColor: getSensorColor(title),
-        sensorIcon: getSensorIcon(title),
-        onTap: () => onSensorTypeSelected(
-            '$title${attribute == null ? '' : '_$attribute'}'),
-      ));
-    }
+    final sensorEntries = getUniqueSortedSensorEntries(sensorData);
+    final filteredEntries = _filterSensorEntries(sensorEntries);
+    final tiles = _buildSensorTiles(context, filteredEntries);
 
     return SizedBox(
       height: 200,
-      child: _SensorTileGrid(tileList: tileList),
+      child: _SensorTileGrid(tileList: tiles),
     );
+  }
+
+  List<SensorEntry> _filterSensorEntries(List<SensorEntry> entries) {
+    if (FeatureFlags.hideSurfaceAnomalySensor) {
+      return entries
+          .where((entry) => entry.title != 'surface_anomaly')
+          .toList();
+    }
+    return entries;
+  }
+
+  List<Widget> _buildSensorTiles(
+      BuildContext context, List<SensorEntry> entries) {
+    return entries.map((entry) {
+      final sensorKey = entry.title;
+      final attribute = entry.attribute;
+      final displayTitle =
+          getTranslatedTitleFromSensorKey(sensorKey, attribute, context) ??
+              sensorKey;
+      final sensorTypeKey =
+          '$sensorKey${attribute == null ? '' : '_$attribute'}';
+      final cardColor = selectedSensorType == sensorTypeKey
+          ? getSensorColor(sensorKey).withOpacity(0.25)
+          : Theme.of(context).canvasColor;
+
+      return SensorTile(
+        title: displayTitle,
+        cardColor: cardColor,
+        sensorColor: getSensorColor(sensorKey),
+        sensorIcon: getSensorIcon(sensorKey),
+        onTap: () => onSensorTypeSelected(sensorTypeKey),
+      );
+    }).toList();
   }
 }
 

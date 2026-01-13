@@ -17,8 +17,10 @@ class SurfaceClassificationSensor extends Sensor {
   double _latestSett = 0.0;
   double _latestStanding = 0.0;
 
+  static int get staticUiPriority => 60;
+
   @override
-  get uiPriority => 60;
+  get uiPriority => staticUiPriority;
 
   @override
   Duration get lookbackWindow => const Duration(milliseconds: 1000);

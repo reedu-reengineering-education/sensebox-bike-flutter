@@ -38,6 +38,7 @@ class SensorDefinition {
   final String title;
   final String unit;
   final String sensorType;
+  final String characteristicUuid;
 
   SensorDefinition({
     required this.id,
@@ -45,6 +46,7 @@ class SensorDefinition {
     required this.title,
     required this.unit,
     required this.sensorType,
+    required this.characteristicUuid,
   });
 
   factory SensorDefinition.fromJson(Map<String, dynamic> json) {
@@ -54,6 +56,8 @@ class SensorDefinition {
       title: requireString(json, 'title', 'SensorDefinition'),
       unit: requireString(json, 'unit', 'SensorDefinition'),
       sensorType: requireString(json, 'sensorType', 'SensorDefinition'),
+      characteristicUuid:
+          requireString(json, 'characteristicUuid', 'SensorDefinition'),
     );
   }
 
@@ -64,6 +68,7 @@ class SensorDefinition {
       'title': title,
       'unit': unit,
       'sensorType': sensorType,
+      'characteristicUuid': characteristicUuid,
     };
   }
 }

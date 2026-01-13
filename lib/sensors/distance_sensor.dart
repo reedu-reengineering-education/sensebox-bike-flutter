@@ -14,8 +14,10 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 class DistanceSensor extends Sensor {
   List<double> _latestValue = [0.0];
 
+  static int get staticUiPriority => 10;
+
   @override
-  get uiPriority => 10;
+  get uiPriority => staticUiPriority;
 
   static const String sensorCharacteristicUuid =
       'b3491b60-c0f3-4306-a30d-49c91f37a62b';
