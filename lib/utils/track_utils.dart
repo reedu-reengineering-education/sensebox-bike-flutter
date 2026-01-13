@@ -260,7 +260,6 @@ class UploadDataPreparer {
         // Handle multi-value sensors directly
         if (sensorTitle == 'surface_classification' ||
             sensorTitle == 'finedust' ||
-            sensorTitle == 'distance' ||
             sensorTitle == 'overtaking' ||
             sensorTitle == 'surface_anomaly') {
           // For multi-value sensors, we need to find all the individual sensors
@@ -277,12 +276,6 @@ class UploadDataPreparer {
                 .where((s) =>
                     s.title!.toLowerCase().contains('surface') ||
                     s.title!.toLowerCase() == 'standing')
-                .toList();
-          } else if (sensorTitle == 'distance') {
-            // Find the Overtaking Distance sensor
-            individualSensors = senseBox.sensors!
-                .where((s) =>
-                    s.title!.toLowerCase().contains('overtaking distance'))
                 .toList();
           } else if (sensorTitle == 'overtaking') {
             // Find the Overtaking Manoeuvre sensor
@@ -315,18 +308,36 @@ class UploadDataPreparer {
             };
           }
         } else {
-          String? sensorTitleForMatching =
-              getTitleFromSensorKey(sensorTitle, null);
-          if (sensorTitleForMatching == null) {
-            continue;
+          // Handle single-value sensors, including distance sensors
+          Sensor? sensor;
+
+          if (sensorTitle == 'distance') {
+            // "distance" can map to "Overtaking Distance" (older boxes) or "Distance Left" (LAUDS)
+            sensor = senseBox.sensors!.where((s) {
+              final titleLower = s.title!.toLowerCase();
+              return titleLower.contains('overtaking distance') ||
+                  titleLower == 'distance left';
+            }).firstOrNull;
+          } else if (sensorTitle == 'distance_right') {
+            // "distance_right" maps to "Distance Right" (LAUDS)
+            sensor = senseBox.sensors!
+                .where((s) => s.title!.toLowerCase() == 'distance right')
+                .firstOrNull;
+          } else {
+            // For other sensors, use the standard title mapping
+            String? sensorTitleForMatching =
+                getTitleFromSensorKey(sensorTitle, null);
+            if (sensorTitleForMatching == null) {
+              continue;
+            }
+            sensor = getMatchingSensor(sensorTitleForMatching);
           }
 
-          Sensor? sensor = getMatchingSensor(sensorTitleForMatching);
           if (sensor == null) {
             continue;
           }
 
-          // Single-value sensor (like temperature, humidity)
+          // Single-value sensor (like temperature, humidity, distance)
           data['${sensor.id}_${geolocation.timestamp.toIso8601String()}'] = {
             'sensor': sensor.id,
             'value': aggregatedValues.isNotEmpty

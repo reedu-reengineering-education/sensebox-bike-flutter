@@ -5,95 +5,116 @@
     "defaultGrouptag": "lauds_26",
     "sensors": [
       {
-        "id": "2",
-        "icon": "osem-cloud",
-        "title": "Finedust PM1",
-        "unit": "µg/m³",
-        "sensorType": "SPS30"
+        "id": "7",
+        "icon": "osem-shock",
+        "title": "Distance Left",
+        "unit": "cm",
+        "sensorType": "VL53L8CX",
+        "characteristicUuid": "b3491b60-c0f3-4306-a30d-49c91f37a62b"
       },
       {
-        "id": "3",
-        "icon": "osem-cloud",
-        "title": "Finedust PM2.5",
-        "unit": "µg/m³",
-        "sensorType": "SPS30"
-      },
-      {
-        "id": "4",
-        "icon": "osem-cloud",
-        "title": "Finedust PM4",
-        "unit": "µg/m³",
-        "sensorType": "SPS30"
-      },
-      {
-        "id": "5",
-        "icon": "osem-cloud",
-        "title": "Finedust PM10",
-        "unit": "µg/m³",
-        "sensorType": "SPS30"
+        "id": "8",
+        "icon": "osem-shock",
+        "title": "Distance Right",
+        "unit": "cm",
+        "sensorType": "VL53L8CX",
+        "characteristicUuid": "b3491b60-c0f3-4306-a30d-49c91f37a62c"
       },
       {
         "id": "6",
         "icon": "osem-shock",
         "title": "Overtaking Manoeuvre",
         "unit": "%",
-        "sensorType": "VL53L8CX"
+        "sensorType": "VL53L8CX",
+        "characteristicUuid": "fc01c688-2c44-4965-ae18-373af9fed18d"
       },
       {
-        "id": "7",
-        "icon": "osem-shock",
-        "title": "Overtaking Distance",
-        "unit": "cm",
-        "sensorType": "VL53L8CX"
+        "id": "2",
+        "icon": "osem-cloud",
+        "title": "Finedust PM1",
+        "unit": "µg/m³",
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
       },
       {
-        "id": "8",
-        "icon": "osem-shock",
-        "title": "Surface Asphalt",
-        "unit": "%",
-        "sensorType": "MPU-6050"
+        "id": "3",
+        "icon": "osem-cloud",
+        "title": "Finedust PM2.5",
+        "unit": "µg/m³",
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
+      },
+      {
+        "id": "4",
+        "icon": "osem-cloud",
+        "title": "Finedust PM4",
+        "unit": "µg/m³",
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
+      },
+      {
+        "id": "5",
+        "icon": "osem-cloud",
+        "title": "Finedust PM10",
+        "unit": "µg/m³",
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
       },
       {
         "id": "9",
         "icon": "osem-shock",
-        "title": "Surface Sett",
+        "title": "Surface Asphalt",
         "unit": "%",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab521"
       },
       {
         "id": "10",
         "icon": "osem-shock",
-        "title": "Surface Compacted",
+        "title": "Surface Sett",
         "unit": "%",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab521"
       },
       {
         "id": "11",
         "icon": "osem-shock",
-        "title": "Surface Paving",
+        "title": "Surface Compacted",
         "unit": "%",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab521"
       },
       {
         "id": "12",
         "icon": "osem-shock",
-        "title": "Standing",
+        "title": "Surface Paving",
         "unit": "%",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab521"
       },
       {
         "id": "13",
         "icon": "osem-shock",
-        "title": "Surface Anomaly",
-        "unit": "Δ",
-        "sensorType": "MPU-6050"
+        "title": "Standing",
+        "unit": "%",
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab521"
       },
       {
         "id": "14",
+        "icon": "osem-shock",
+        "title": "Surface Anomaly",
+        "unit": "Δ",
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab523"
+      },
+      {
+        "id": "15",
         "icon": "osem-dashboard",
         "title": "Speed",
         "unit": "m/s",
-        "sensorType": "GPS"
+        "sensorType": "GPS",
+        "characteristicUuid": "8edf8ebb-1246-4329-928d-ee0c91db2389"
       }
     ]
   },
@@ -103,109 +124,124 @@
     "defaultGrouptag": "atrai",
     "sensors": [
       {
-        "id": "0",
-        "icon": "osem-thermometer",
-        "title": "Temperature",
-        "unit": "°C",
-        "sensorType": "HDC1080"
-      },
-      {
-        "id": "1",
-        "icon": "osem-humidity",
-        "title": "Rel. Humidity",
-        "unit": "%",
-        "sensorType": "HDC1080"
-      },
-      {
-        "id": "2",
-        "icon": "osem-cloud",
-        "title": "Finedust PM1",
-        "unit": "µg/m³",
-        "sensorType": "SPS30"
-      },
-      {
-        "id": "3",
-        "icon": "osem-cloud",
-        "title": "Finedust PM2.5",
-        "unit": "µg/m³",
-        "sensorType": "SPS30"
-      },
-      {
-        "id": "4",
-        "icon": "osem-cloud",
-        "title": "Finedust PM4",
-        "unit": "µg/m³",
-        "sensorType": "SPS30"
-      },
-      {
-        "id": "5",
-        "icon": "osem-cloud",
-        "title": "Finedust PM10",
-        "unit": "µg/m³",
-        "sensorType": "SPS30"
+        "id": "7",
+        "icon": "osem-shock",
+        "title": "Overtaking Distance",
+        "unit": "cm",
+        "sensorType": "VL53L8CX",
+        "characteristicUuid": "test"
       },
       {
         "id": "6",
         "icon": "osem-shock",
         "title": "Overtaking Manoeuvre",
         "unit": "%",
-        "sensorType": "VL53L8CX"
+        "sensorType": "VL53L8CX",
+        "characteristicUuid": "fc01c688-2c44-4965-ae18-373af9fed18d"
       },
       {
-        "id": "7",
-        "icon": "osem-shock",
-        "title": "Overtaking Distance",
-        "unit": "cm",
-        "sensorType": "VL53L8CX"
+        "id": "0",
+        "icon": "osem-thermometer",
+        "title": "Temperature",
+        "unit": "°C",
+        "sensorType": "HDC1080",
+        "characteristicUuid": "2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8"
+      },
+      {
+        "id": "1",
+        "icon": "osem-humidity",
+        "title": "Rel. Humidity",
+        "unit": "%",
+        "sensorType": "HDC1080",
+        "characteristicUuid": "772df7ec-8cdc-4ea9-86af-410abe0ba257"
+      },
+      {
+        "id": "2",
+        "icon": "osem-cloud",
+        "title": "Finedust PM1",
+        "unit": "µg/m³",
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
+      },
+      {
+        "id": "3",
+        "icon": "osem-cloud",
+        "title": "Finedust PM2.5",
+        "unit": "µg/m³",
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
+      },
+      {
+        "id": "4",
+        "icon": "osem-cloud",
+        "title": "Finedust PM4",
+        "unit": "µg/m³",
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
+      },
+      {
+        "id": "5",
+        "icon": "osem-cloud",
+        "title": "Finedust PM10",
+        "unit": "µg/m³",
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
       },
       {
         "id": "8",
         "icon": "osem-shock",
         "title": "Surface Asphalt",
         "unit": "%",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab521"
       },
       {
         "id": "9",
         "icon": "osem-shock",
         "title": "Surface Sett",
         "unit": "%",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab521"
       },
       {
         "id": "10",
         "icon": "osem-shock",
         "title": "Surface Compacted",
         "unit": "%",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab521"
       },
       {
         "id": "11",
         "icon": "osem-shock",
         "title": "Surface Paving",
         "unit": "%",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab521"
       },
       {
         "id": "12",
         "icon": "osem-shock",
         "title": "Standing",
         "unit": "%",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab521"
       },
       {
         "id": "13",
         "icon": "osem-shock",
         "title": "Surface Anomaly",
         "unit": "Δ",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab523"
       },
       {
         "id": "14",
         "icon": "osem-dashboard",
         "title": "Speed",
         "unit": "m/s",
-        "sensorType": "GPS"
+        "sensorType": "GPS",
+        "characteristicUuid": "8edf8ebb-1246-4329-928d-ee0c91db2389"
       }
     ]
   },
@@ -215,83 +251,93 @@
     "defaultGrouptag": "classic",
     "sensors": [
       {
+        "id": "6",
+        "icon": "osem-signal",
+        "title": "Overtaking Distance",
+        "unit": "cm",
+        "sensorType": "HC-SR04",
+        "characteristicUuid": "test"
+      },
+      {
         "id": "0",
         "icon": "osem-thermometer",
         "title": "Temperature",
         "unit": "°C",
-        "sensorType": "HDC1080"
+        "sensorType": "HDC1080",
+        "characteristicUuid": "2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8"
       },
       {
         "id": "1",
         "icon": "osem-humidity",
         "title": "Rel. Humidity",
         "unit": "%",
-        "sensorType": "HDC1080"
+        "sensorType": "HDC1080",
+        "characteristicUuid": "772df7ec-8cdc-4ea9-86af-410abe0ba257"
       },
       {
         "id": "2",
         "icon": "osem-cloud",
         "title": "Finedust PM1",
         "unit": "µg/m³",
-        "sensorType": "SPS30"
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
       },
       {
         "id": "3",
         "icon": "osem-cloud",
         "title": "Finedust PM2.5",
         "unit": "µg/m³",
-        "sensorType": "SPS30"
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
       },
       {
         "id": "4",
         "icon": "osem-cloud",
         "title": "Finedust PM4",
         "unit": "µg/m³",
-        "sensorType": "SPS30"
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
       },
       {
         "id": "5",
         "icon": "osem-cloud",
         "title": "Finedust PM10",
         "unit": "µg/m³",
-        "sensorType": "SPS30"
-      },
-      {
-        "id": "6",
-        "icon": "osem-signal",
-        "title": "Overtaking Distance",
-        "unit": "cm",
-        "sensorType": "HC-SR04"
+        "sensorType": "SPS30",
+        "characteristicUuid": "7e14e070-84ea-489f-b45a-e1317364b979"
       },
       {
         "id": "7",
         "icon": "osem-shock",
         "title": "Acceleration X",
         "unit": "m/s²",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab522"
       },
       {
         "id": "8",
         "icon": "osem-shock",
         "title": "Acceleration Y",
         "unit": "m/s²",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab522"
       },
       {
         "id": "9",
         "icon": "osem-shock",
         "title": "Acceleration Z",
         "unit": "m/s²",
-        "sensorType": "MPU-6050"
+        "sensorType": "MPU-6050",
+        "characteristicUuid": "b944af10-f495-4560-968f-2f0d18cab522"
       },
       {
         "id": "10",
         "icon": "osem-dashboard",
         "title": "Speed",
         "unit": "m/s",
-        "sensorType": "GPS"
+        "sensorType": "GPS",
+        "characteristicUuid": "8edf8ebb-1246-4329-928d-ee0c91db2389"
       }
     ]
   }
 ]
-

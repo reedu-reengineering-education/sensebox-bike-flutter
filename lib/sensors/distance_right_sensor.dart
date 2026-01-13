@@ -24,7 +24,7 @@ class DistanceRightSensor extends Sensor {
       BleBloc bleBloc, GeolocationBloc geolocationBloc,
       RecordingBloc recordingBloc,
       IsarService isarService)
-      : super(sensorCharacteristicUuid, "distance", [], bleBloc,
+      : super(sensorCharacteristicUuid, "distance_right", [], bleBloc,
             geolocationBloc, recordingBloc, isarService);
 
   @override
