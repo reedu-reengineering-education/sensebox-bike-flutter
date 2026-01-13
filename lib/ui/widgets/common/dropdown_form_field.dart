@@ -14,7 +14,9 @@ class DropdownFormField<T> extends FormField<T> {
   }) : super(
           builder: (FormFieldState<T> state) {
             return DropdownButtonFormField<T>(
-              initialValue: state.value,
+              // ignore: deprecated_member_use
+              // Using 'value' for compatibility with Flutter 3.29.1
+              value: state.value,
               decoration: InputDecoration(
                 labelText: labelText,
                 errorText: state.errorText,
@@ -22,6 +24,7 @@ class DropdownFormField<T> extends FormField<T> {
               items: items.map((item) {
                 Widget child;
                 if (itemBuilder != null && item.value != null) {
+                  // ignore: null_check_on_nullable_type_parameter
                   final built = itemBuilder(state.context, item.value!);
                   child = built ?? Text(item.label);
                 } else {
