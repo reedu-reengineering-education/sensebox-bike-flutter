@@ -21,19 +21,19 @@ class ChunkedUploader {
   })  : _openSenseMapService = openSenseMapService,
         _dataPreparer = UploadDataPreparer(senseBox: senseBox);
 
-  /// Splits a list of GeolocationData into chunks that will generate at most 2400 measurements each.
+  /// Splits a list of GeolocationData into chunks that will generate at most 2000 measurements each.
   ///
   /// This ensures compliance with OpenSenseMap API limitations while maintaining
   /// chronological order of data points. Each GPS point can generate multiple measurements
   /// (speed + sensor data), so we need to estimate the total measurement count.
-  /// Using 2400 instead of 2500 provides a significant safety buffer to avoid hitting the API limit.
+  /// Using 2000 instead of 2500 provides a significant safety buffer to avoid hitting the API limit.
   ///
   /// [geolocations] - The list of GPS points to split into chunks
   /// [senseBox] - SenseBox configuration to estimate measurements per point
-  /// Returns a list of chunks, each estimated to generate at most 2400 measurements
+  /// Returns a list of chunks, each estimated to generate at most 2000 measurements
   List<List<GeolocationData>> splitIntoChunks(
       List<GeolocationData> geolocations, SenseBox senseBox) {
-    const int maxMeasurements = 2400;
+    const int maxMeasurements = 2000;
     final List<List<GeolocationData>> chunks = [];
 
     if (geolocations.isEmpty) {
@@ -92,8 +92,12 @@ class ChunkedUploader {
     if (sensorTitles.any((title) => title.contains('standing'))) surfaceSensorCount++;
     count += surfaceSensorCount;
     
-    // Overtaking sensors
+    // Distance sensors - count each distance sensor individually
     if (sensorTitles.any((title) => title.contains('overtaking distance'))) count++;
+    if (sensorTitles.any((title) => title == 'distance left')) count++;
+    if (sensorTitles.any((title) => title == 'distance right')) count++;
+    
+    // Overtaking manoeuvre sensor
     if (sensorTitles.any((title) => title.contains('overtaking manoeuvre'))) count++;
     
     // Surface anomaly
@@ -113,7 +117,7 @@ class ChunkedUploader {
   /// consistency with the current upload format and sensor mapping.
   /// Implements data preservation on failures and detailed logging.
   ///
-  /// [chunk] - List of GeolocationData points to upload (max 2400 points)
+  /// [chunk] - List of GeolocationData points to upload (max 2200 measurements)
   /// [senseBox] - SenseBox configuration containing sensor mappings
   /// [chunkIndex] - Index of this chunk for tracking purposes
   ///
