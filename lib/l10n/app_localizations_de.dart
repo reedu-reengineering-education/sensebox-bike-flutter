@@ -361,7 +361,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sensorFinedustPM1 => 'Feinstaub PM1';
 
   @override
-  String get sensorDistance => 'Abstand Rechts';
+  String get sensorDistance => 'Abstand Links';
 
   @override
   String get sensorDistanceRight => 'Abstand Rechts';

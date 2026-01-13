@@ -153,7 +153,7 @@
     "sensorFinedustPM4": "Feinstaub PM4",
     "sensorFinedustPM25": "Feinstaub PM2,5",
     "sensorFinedustPM1": "Feinstaub PM1",
-    "sensorDistance": "Abstand Rechts",
+    "sensorDistance": "Abstand Links",
     "sensorDistanceRight": "Abstand Rechts",
     "sensorOvertaking": "Überholvorhersage",
     "sensorOvertakingShort": "Überholen",

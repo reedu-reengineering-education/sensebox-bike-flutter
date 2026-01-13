@@ -360,7 +360,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sensorFinedustPM1 => 'Material Particulado PM1';
 
   @override
-  String get sensorDistance => 'Distância Direita';
+  String get sensorDistance => 'Distância Esquerda';
 
   @override
   String get sensorDistanceRight => 'Distância Direita';

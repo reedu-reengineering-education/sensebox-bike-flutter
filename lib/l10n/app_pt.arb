@@ -153,7 +153,7 @@
     "sensorFinedustPM4": "Material Particulado PM4",
     "sensorFinedustPM25": "Material Particulado PM2,5",
     "sensorFinedustPM1": "Material Particulado PM1",
-    "sensorDistance": "Distância Direita",
+    "sensorDistance": "Distância Esquerda",
     "sensorDistanceRight": "Distância Direita",
     "sensorOvertaking": "Previsão de Ultrapassagem",
     "sensorOvertakingShort": "Ultrapassagem",

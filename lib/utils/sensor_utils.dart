@@ -138,7 +138,9 @@ IconData getSensorIcon(String sensorType) {
     case 'humidity':
       return Icons.water_drop_outlined;
     case 'distance':
-      return Icons.sensors;
+      return Icons.arrow_back;
+    case 'distance_right':
+      return Icons.arrow_forward;
     case 'acceleration':
       return Icons.vibration;
     case 'finedust':

@@ -721,7 +721,7 @@ abstract class AppLocalizations {
   /// No description provided for @sensorDistance.
   ///
   /// In en, this message translates to:
-  /// **'Distance Right'**
+  /// **'Distance Left'**
   String get sensorDistance;
 
   /// No description provided for @sensorDistanceRight.

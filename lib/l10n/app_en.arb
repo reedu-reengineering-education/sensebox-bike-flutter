@@ -151,7 +151,7 @@
     "sensorFinedustPM4": "Finedust PM4",
     "sensorFinedustPM25": "Finedust PM25",
     "sensorFinedustPM1": "Finedust PM1",
-    "sensorDistance": "Distance Right",
+    "sensorDistance": "Distance Left",
     "sensorDistanceRight": "Distance Right",
     "sensorOvertaking": "Overtaking Prediction",
     "sensorOvertakingShort": "Overtaking",
