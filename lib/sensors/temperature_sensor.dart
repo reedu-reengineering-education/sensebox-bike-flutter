@@ -13,7 +13,7 @@ class TemperatureSensor extends Sensor {
   List<double> _latestValue = [0.0];
 
   @override
-  get uiPriority => 10;
+  get uiPriority => 40;
 
   @override
   Duration get lookbackWindow => const Duration(milliseconds: 1000);

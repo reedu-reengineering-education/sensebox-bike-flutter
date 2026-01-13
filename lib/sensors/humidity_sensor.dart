@@ -13,7 +13,7 @@ class HumiditySensor extends Sensor {
   List<double> _latestValue = [0.0];
 
   @override
-  get uiPriority => 20;
+  get uiPriority => 50;
 
   @override
   Duration get lookbackWindow => const Duration(milliseconds: 1000);

@@ -22,7 +22,7 @@ class GPSSensor extends Sensor {
   final Completer<void> _mapReadyCompleter = Completer<void>();
 
   @override
-  get uiPriority => 25;
+  get uiPriority => 60;
 
   static const String sensorCharacteristicUuid =
       '8edf8ebb-1246-4329-928d-ee0c91db2389';

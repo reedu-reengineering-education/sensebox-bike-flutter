@@ -15,7 +15,7 @@ class OvertakingPredictionSensor extends Sensor {
   List<double> _latestPrediction = [0.0];
 
   @override
-  get uiPriority => 40;
+  get uiPriority => 30;
 
   @override
   Duration get lookbackWindow => const Duration(milliseconds: 2000);
