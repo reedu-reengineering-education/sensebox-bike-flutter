@@ -9,6 +9,7 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
+import 'package:sensebox_bike/sensors/distance_right_sensor.dart';
 import 'package:sensebox_bike/sensors/finedust_sensor.dart';
 import 'package:sensebox_bike/sensors/gps_sensor.dart';
 import 'package:sensebox_bike/sensors/humidity_sensor.dart';
@@ -148,6 +149,9 @@ class SensorBloc with ChangeNotifier {
         bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(
         DistanceSensor(
+        bleBloc, geolocationBloc, recordingBloc, isarService));
+    _sensors.add(
+        DistanceRightSensor(
         bleBloc, geolocationBloc, recordingBloc, isarService));
     _sensors.add(SurfaceClassificationSensor(
         bleBloc, geolocationBloc, recordingBloc, isarService));
