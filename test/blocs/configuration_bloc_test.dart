@@ -55,6 +55,30 @@ void main() {
     });
 
     group('loadBoxConfigurations()', () {
+      final mockBoxConfigurations = [
+        {
+          'id': 'classic',
+          'displayName': '2022',
+          'defaultGrouptag': 'classic',
+          'sensors': [
+            {
+              'id': '0',
+              'icon': 'osem-thermometer',
+              'title': 'Temperature',
+              'unit': '°C',
+              'sensorType': 'HDC1080',
+              'characteristicUuid': '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8',
+            }
+          ],
+        },
+        {
+          'id': 'atrai',
+          'displayName': '2025',
+          'defaultGrouptag': 'atrai',
+          'sensors': [],
+        },
+      ];
+
       test('loads and parses box configurations successfully', () async {
         when(() => mockRemoteDataService.fetchJson(boxConfigurationsUrl))
             .thenAnswer((_) async => mockBoxConfigurations);
@@ -203,6 +227,7 @@ void main() {
                 'title': 'Temperature',
                 'unit': '°C',
                 'sensorType': 'HDC1080',
+                'characteristicUuid': '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8',
               },
             ],
           },
@@ -246,6 +271,7 @@ void main() {
                 'title': 'Temperature',
                 'unit': '°C',
                 'sensorType': 'HDC1080',
+                'characteristicUuid': '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8',
               },
             ],
           },
