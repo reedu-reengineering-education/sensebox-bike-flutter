@@ -18,7 +18,7 @@ class DistanceRightSensor extends Sensor {
   get uiPriority => 30;
 
   static const String sensorCharacteristicUuid =
-      'b3491b60-c0f3-4306-a30d-49c91f37a62b';
+      'b3491b60-c0f3-4306-a30d-49c91f37a62c';
 
   DistanceRightSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc,

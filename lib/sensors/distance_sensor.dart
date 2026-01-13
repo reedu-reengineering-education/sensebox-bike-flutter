@@ -17,8 +17,8 @@ class DistanceSensor extends Sensor {
   @override
   get uiPriority => 30;
 
-  static const String sensorCharacteristicUuid = 'test';
-  //'b3491b60-c0f3-4306-a30d-49c91f37a62b';
+  static const String sensorCharacteristicUuid =
+      'b3491b60-c0f3-4306-a30d-49c91f37a62b';
 
   DistanceSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc,
