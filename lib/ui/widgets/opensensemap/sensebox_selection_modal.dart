@@ -103,7 +103,7 @@ class _SenseBoxSelectionModalState extends State<_SenseBoxSelectionModal> {
                   // Reload senseBoxes if list is empty, otherwise they'll use new config automatically
                   final bloc = widget.bloc;
                   if (bloc.senseBoxes.isEmpty) {
-                    await bloc.fetchSenseBoxes(page: 0);
+                    await bloc.fetchSenseBoxes();
                   }
                 }
               },

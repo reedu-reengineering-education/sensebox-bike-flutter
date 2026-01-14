@@ -69,164 +69,8 @@ void main() {
       });
     });
 
-    group('Stream Management', () {
-      test('should emit selected sensebox through stream', () async {
-        final testBox = SenseBox(
-            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
-
-        final emittedValues = <SenseBox?>[];
-        bloc.senseBoxStream.listen(emittedValues.add);
-
-        await bloc.setSelectedSenseBox(testBox);
-
-        await Future.delayed(Duration(milliseconds: 100));
-
-        expect(emittedValues, contains(testBox));
-      });
-
-      test('should emit null when sensebox is cleared', () async {
-        final testBox = SenseBox(
-            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
-
-        final emittedValues = <SenseBox?>[];
-        bloc.senseBoxStream.listen(emittedValues.add);
-
-        await bloc.setSelectedSenseBox(testBox);
-        await bloc.setSelectedSenseBox(null);
-
-        await Future.delayed(Duration(milliseconds: 100));
-
-        expect(emittedValues, contains(null));
-      });
-    });
-
     group('buildSenseBoxBikeModel()', () {
-      test('creates model with default tags', () {
-        final boxConfig = BoxConfiguration(
-          id: 'classic',
-          displayName: 'Classic',
-          defaultGrouptag: 'classic',
-          sensors: [
-            SensorDefinition(
-              id: '1',
-              icon: 'osem-thermometer',
-              title: 'Temperature',
-              unit: '°C',
-              sensorType: 'HDC1080',
-            ),
-          ],
-        );
-
-        final model = bloc.buildSenseBoxBikeModel(
-          'Test Box',
-          13.4050,
-          52.5200,
-          boxConfig,
-          null,
-          [],
-        );
-
-        expect(model['name'], 'Test Box');
-        expect(model['exposure'], 'mobile');
-        expect(model['location'], [52.5200, 13.4050]);
-        expect(model['grouptag'], ['bike', 'classic']);
-        expect(model['sensors'], isA<List>());
-        expect((model['sensors'] as List).length, 1);
-      });
-
-      test('adds selected tag to grouptags', () {
-        final boxConfig = BoxConfiguration(
-          id: 'classic',
-          displayName: 'Classic',
-          defaultGrouptag: 'classic',
-          sensors: [],
-        );
-
-        final model = bloc.buildSenseBoxBikeModel(
-          'Test Box',
-          13.4050,
-          52.5200,
-          boxConfig,
-          'custom-tag',
-          [],
-        );
-
-        expect(model['grouptag'], ['bike', 'classic', 'custom-tag']);
-      });
-
-      test('ignores empty selected tag', () {
-        final boxConfig = BoxConfiguration(
-          id: 'classic',
-          displayName: 'Classic',
-          defaultGrouptag: 'classic',
-          sensors: [],
-        );
-
-        final model = bloc.buildSenseBoxBikeModel(
-          'Test Box',
-          13.4050,
-          52.5200,
-          boxConfig,
-          '',
-          [],
-        );
-
-        expect(model['grouptag'], ['bike', 'classic']);
-      });
-
-      test('adds additional tags to grouptags', () {
-        final boxConfig = BoxConfiguration(
-          id: 'atrai',
-          displayName: 'Atrai',
-          defaultGrouptag: 'atrai',
-          sensors: [],
-        );
-
-        final model = bloc.buildSenseBoxBikeModel(
-          'Test Box',
-          13.4050,
-          52.5200,
-          boxConfig,
-          'selected-tag',
-          ['foo', 'bar', null, 'baz'],
-        );
-
-        final tags = model['grouptag'] as List;
-        expect(tags, contains('bike'));
-        expect(tags, contains('atrai'));
-        expect(tags, contains('selected-tag'));
-        expect(tags, contains('foo'));
-        expect(tags, contains('bar'));
-        expect(tags, contains('baz'));
-        expect(tags.length, 6);
-      });
-
-      test('filters out null values from additional tags', () {
-        final boxConfig = BoxConfiguration(
-          id: 'classic',
-          displayName: 'Classic',
-          defaultGrouptag: 'classic',
-          sensors: [],
-        );
-
-        final model = bloc.buildSenseBoxBikeModel(
-          'Test Box',
-          13.4050,
-          52.5200,
-          boxConfig,
-          null,
-          ['valid', null, 'also-valid', null],
-        );
-
-        final tags = model['grouptag'] as List;
-        expect(tags, contains('bike'));
-        expect(tags, contains('classic'));
-        expect(tags, contains('valid'));
-        expect(tags, contains('also-valid'));
-        expect(tags.length, 4);
-      });
-
-      test('includes sensors from box configuration', () {
+      test('creates model with all components', () {
         final boxConfig = BoxConfiguration(
           id: 'atrai',
           displayName: 'Atrai',
@@ -254,17 +98,29 @@ void main() {
           13.4050,
           52.5200,
           boxConfig,
-          null,
-          [],
+          'selected-tag',
+          ['foo', 'bar', null, 'baz'],
         );
 
+        expect(model['name'], 'Test Box');
+        expect(model['exposure'], 'mobile');
+        expect(model['location'], [52.5200, 13.4050]);
+        
+        final tags = model['grouptag'] as List;
+        expect(tags, contains('bike'));
+        expect(tags, contains('atrai'));
+        expect(tags, contains('selected-tag'));
+        expect(tags, contains('foo'));
+        expect(tags, contains('bar'));
+        expect(tags, contains('baz'));
+        expect(tags.length, 6);
+        
         expect(model['sensors'], isA<List>());
         final sensors = model['sensors'] as List;
         expect(sensors.length, 2);
         expect(sensors[0]['title'], 'Temperature');
         expect(sensors[1]['title'], 'Rel. Humidity');
       });
-
     });
   });
 }

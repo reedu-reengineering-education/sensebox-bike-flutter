@@ -17,7 +17,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   ValueNotifier<bool> get isAuthenticatingNotifier => _isAuthenticatingNotifier;
   bool get isAuthenticating => _isAuthenticatingNotifier.value;
 
-  final Map<int, List<dynamic>> _senseBoxes = {};
+  List<dynamic> _senseBoxes = [];
   final _senseBoxController =
       StreamController<SenseBox?>.broadcast(); // StreamController
   Stream<SenseBox?> get senseBoxStream =>
@@ -46,7 +46,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
   }
 
-  List<dynamic> get senseBoxes => _senseBoxes.values.expand((e) => e).toList();
+  List<dynamic> get senseBoxes => _senseBoxes;
 
   Future<Map<String, dynamic>?> getUserData() async {
     try {
@@ -172,7 +172,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       // Only fetch boxes if there are box IDs in the response
       final boxIds = extractBoxIds(responseData);
       if (boxIds.isNotEmpty) {
-        final senseBoxes = await fetchSenseBoxes(page: 0);
+        final senseBoxes = await fetchSenseBoxes();
         if (senseBoxes.isNotEmpty) {
           await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
         }
@@ -206,7 +206,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       // Only fetch boxes if there are box IDs in the response
       final boxIds = extractBoxIds(responseData);
       if (boxIds.isNotEmpty) {
-        final senseBoxes = await fetchSenseBoxes(page: 0);
+        final senseBoxes = await fetchSenseBoxes();
         if (senseBoxes.isNotEmpty) {
           await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
         }
@@ -307,10 +307,10 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     };
   }
 
-  Future<List> fetchSenseBoxes({int page = 0}) async {
+  Future<List> fetchSenseBoxes() async {
     try {
-      final myBoxes = await _service.getSenseBoxes(page: page);
-      _senseBoxes[page] = myBoxes;
+      final myBoxes = await _service.getSenseBoxes();
+      _senseBoxes = myBoxes;
       notifyListeners();
       return myBoxes;
     } catch (e) {

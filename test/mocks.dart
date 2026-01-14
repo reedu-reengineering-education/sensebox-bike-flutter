@@ -198,7 +198,7 @@ class MockOpenSenseMapBloc extends Mock
   Future<Map<String, dynamic>?> get userData => Future.value(null);
 
   @override
-  Future<List> fetchSenseBoxes({int page = 0}) async => [];
+  Future<List> fetchSenseBoxes() async => [];
 }
 
 class MockConfigurationBloc extends Mock implements ConfigurationBloc {}

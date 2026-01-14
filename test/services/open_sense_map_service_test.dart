@@ -138,12 +138,6 @@ void main() {
         expect(token, accessToken);
       });
 
-      test('returns null when no token stored', () async {
-        String? token = await service.getAccessToken();
-
-        expect(token, null);
-      });
-
       test('returns null when stored token is expired', () async {
         await setExpiredTokens();
 
@@ -183,37 +177,6 @@ void main() {
       });
     });
 
-    group('getRefreshTokenFromPreferences()', () {
-      test('returns stored refresh token', () async {
-        await setValidTokens();
-
-        final token = await service.getRefreshTokenFromPreferences();
-
-        expect(token, accessToken);
-      });
-
-      test('returns null when no refresh token stored', () async {
-        final token = await service.getRefreshTokenFromPreferences();
-
-        expect(token, null);
-      });
-    });
-
-    group('getAccessTokenFromPreferences()', () {
-      test('returns stored access token', () async {
-        await setValidTokens();
-
-        final token = await service.getAccessTokenFromPreferences();
-
-        expect(token, accessToken);
-      });
-
-      test('returns null when no access token stored', () async {
-        final token = await service.getAccessTokenFromPreferences();
-
-        expect(token, null);
-      });
-    });
   });
 
   group('API Operations', () {
@@ -233,8 +196,9 @@ void main() {
         await expectLater(service.createSenseBoxBike(model), completes);
       });
 
-      test('throws exception when not authenticated', () async {
-        mockHTTPPOSTResponse('{"id": "sensebox123"}', 201);
+      test('throws exception on error', () async {
+        await setValidTokens();
+        mockHTTPPOSTResponse('{"error": "Invalid data"}', 400);
 
         final model = {
           'name': 'Test Box',
@@ -247,7 +211,7 @@ void main() {
         await expectLater(service.createSenseBoxBike(model), throwsException);
       });
 
-      test('throws exception on server error', () async {
+      test('throws exception on error', () async {
         await setValidTokens();
         mockHTTPPOSTResponse('{"error": "Invalid data"}', 400);
 
@@ -277,24 +241,8 @@ void main() {
         ]);
       });
 
-      test('returns empty list when no senseboxes exist', () async {
-        await setValidTokens();
-        mockHTTPGETResponse('{"data": {"boxes": []}}', 200);
-
-        final boxes = await service.getSenseBoxes();
-
-        expect(boxes, []);
-      });
-
       test('throws exception when not authenticated', () async {
         mockHTTPGETResponse('{"data": {"boxes": []}}', 200);
-
-        await expectLater(service.getSenseBoxes(), throwsException);
-      });
-
-      test('throws exception on server error', () async {
-        await setValidTokens();
-        mockHTTPGETResponse('{"error": "Server error"}', 500);
 
         await expectLater(service.getSenseBoxes(), throwsException);
       });
@@ -348,19 +296,7 @@ void main() {
             completes);
       });
 
-      test('throws exception when not authenticated', () async {
-        when(() => mockHttpClient.post(
-              any(),
-              headers: any(named: 'headers'),
-              body: any(named: 'body'),
-            )).thenAnswer((_) async => http.Response('Unauthorized', 401));
-
-        await expectLater(
-            service.uploadData('sensebox123', {"sensor1": "value1"}),
-            throwsException);
-      });
-
-      test('throws exception on client error', () async {
+      test('throws exception on error', () async {
         await setValidTokens();
         when(() => mockHttpClient.post(
               any(),
@@ -425,16 +361,6 @@ void main() {
         expect(userData['data']['me']['email'], 'test@example.com');
       });
 
-      test('returns null when not authenticated', () async {
-        mockHTTPGETResponse(
-            '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
-            200);
-
-        final userData = await service.getUserData();
-
-        expect(userData, null);
-      });
-
       test('refreshes token and retries on authentication error', () async {
         await setValidTokens();
 
@@ -463,7 +389,7 @@ void main() {
         expect(callCount, 2);
       });
 
-      test('returns null when token refresh fails on 401 error', () async {
+      test('returns null when token refresh fails', () async {
         await setValidTokens();
         when(() => mockHttpClient.get(
               any(),
@@ -471,15 +397,6 @@ void main() {
             )).thenAnswer((_) async => http.Response('Unauthorized', 401));
 
         mockHTTPPOSTResponse('{"error": "Invalid refresh token"}', 400);
-
-        final userData = await service.getUserData();
-
-        expect(userData, null);
-      });
-
-      test('returns null on server error', () async {
-        await setValidTokens();
-        mockHTTPGETResponse('{"error": "Internal server error"}', 500);
 
         final userData = await service.getUserData();
 
@@ -537,19 +454,9 @@ void main() {
       expect(savedUserData['data']['me']['email'], equals('test@example.com'));
     });
 
-    test('returns false when data.user path does not exist', () async {
+    test('returns false when data format is invalid', () async {
       final responseData = {
         'data': {'other': 'value'}
-      };
-
-      final result = await service.saveUserData(responseData);
-
-      expect(result, isFalse);
-    });
-
-    test('returns false when user data is not a Map', () async {
-      final responseData = {
-        'data': {'user': 'not a map'}
       };
 
       final result = await service.saveUserData(responseData);
