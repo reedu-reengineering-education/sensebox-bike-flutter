@@ -297,7 +297,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     final baseProperties = {
       'name': name,
       'exposure': 'mobile',
-      'location': [longitude, latitude],
+      'location': [latitude, longitude],
       'grouptag': allTags,
     };
 
