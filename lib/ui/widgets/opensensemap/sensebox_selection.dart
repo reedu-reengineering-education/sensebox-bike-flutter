@@ -45,19 +45,21 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     });
   }
 
-  void _fetchSenseBoxes() {
-    isLoading = true;
-    if (mounted) {
-      setState(() {});
-    }
+  void _fetchSenseBoxes() async {
+    if (!mounted) return;
+    
+    setState(() {
+      isLoading = true;
+    });
 
-    _bloc.fetchSenseBoxes().then((values) {
+    try {
+      await _bloc.fetchSenseBoxes();
       _updateLoadingState();
-    }).catchError((error) {
+    } catch (error) {
       _updateLoadingState(error: error.toString());
       ErrorService.handleError(
           'Error fetching senseBoxes: $error', StackTrace.current);
-    });
+    }
   }
 
   @override
@@ -83,20 +85,7 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
         }
 
         if (bloc.senseBoxes.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.directions_bike, size: 48),
-                const SizedBox(height: 16),
-                Text(
-                    localizations.openSenseMapBoxSelectionNoBoxes,
-                    style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Text(localizations.openSenseMapBoxSelectionCreateHint),
-              ],
-            ),
-          );
+          return _buildEmptyState(localizations, theme);
         }
 
         return ListView.builder(
@@ -153,6 +142,23 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildEmptyState(AppLocalizations localizations, ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.directions_bike, size: 48),
+          const SizedBox(height: 16),
+          Text(
+              localizations.openSenseMapBoxSelectionNoBoxes,
+              style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(localizations.openSenseMapBoxSelectionCreateHint),
+        ],
+      ),
     );
   }
 }
