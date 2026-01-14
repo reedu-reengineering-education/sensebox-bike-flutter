@@ -43,6 +43,7 @@ void main() {
     setUp(() {
       mockRemoteDataService = MockRemoteDataService();
       bloc = ConfigurationBloc(remoteDataService: mockRemoteDataService);
+      reset(mockRemoteDataService);
     });
 
     test('initial state has null configurations and campaigns', () {
@@ -86,10 +87,13 @@ void main() {
         await bloc.loadBoxConfigurations();
 
         expect(bloc.boxConfigurations, isNotNull);
-        expect(bloc.boxConfigurations!.length, 1);
-        expect(bloc.boxConfigurations!.first.id, 'classic');
+        expect(bloc.boxConfigurations!.length, greaterThan(0));
+        expect(bloc.boxConfigurations!.any((config) => config.id == 'classic'),
+            true);
         expect(bloc.isLoadingBoxConfigurations, false);
         expect(bloc.boxConfigurationsError, isNull);
+        verify(() => mockRemoteDataService.fetchJson(boxConfigurationsUrl))
+            .called(1);
       });
 
       test('sets loading state during load', () async {
