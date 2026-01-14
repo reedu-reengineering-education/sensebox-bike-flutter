@@ -105,8 +105,8 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
 
         await opensensemapBloc.createSenseBoxBike(
             boxName,
-            position.latitude,
             position.longitude,
+            position.latitude,
             boxConfig,
             selectedTag,
             customTags);

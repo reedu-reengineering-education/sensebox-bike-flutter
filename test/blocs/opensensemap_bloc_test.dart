@@ -119,8 +119,8 @@ void main() {
 
         final model = bloc.buildSenseBoxBikeModel(
           'Test Box',
-          52.5200,
           13.4050,
+          52.5200,
           boxConfig,
           null,
           [],
@@ -144,8 +144,8 @@ void main() {
 
         final model = bloc.buildSenseBoxBikeModel(
           'Test Box',
-          52.5200,
           13.4050,
+          52.5200,
           boxConfig,
           'custom-tag',
           [],
@@ -164,8 +164,8 @@ void main() {
 
         final model = bloc.buildSenseBoxBikeModel(
           'Test Box',
-          52.5200,
           13.4050,
+          52.5200,
           boxConfig,
           '',
           [],
@@ -184,8 +184,8 @@ void main() {
 
         final model = bloc.buildSenseBoxBikeModel(
           'Test Box',
-          52.5200,
           13.4050,
+          52.5200,
           boxConfig,
           'selected-tag',
           ['foo', 'bar', null, 'baz'],
@@ -211,8 +211,8 @@ void main() {
 
         final model = bloc.buildSenseBoxBikeModel(
           'Test Box',
-          52.5200,
           13.4050,
+          52.5200,
           boxConfig,
           null,
           ['valid', null, 'also-valid', null],
@@ -251,8 +251,8 @@ void main() {
 
         final model = bloc.buildSenseBoxBikeModel(
           'Test Box',
-          52.5200,
           13.4050,
+          52.5200,
           boxConfig,
           null,
           [],

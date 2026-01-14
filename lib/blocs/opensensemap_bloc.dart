@@ -249,16 +249,16 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   Future<void> createSenseBoxBike(
       String name,
-      double latitude,
       double longitude,
+      double latitude,
       BoxConfiguration boxConfiguration,
       String? selectedTag,
       List<String?> additionalTags) async {
     try {
       final model = buildSenseBoxBikeModel(
         name,
-        latitude,
         longitude,
+        latitude,
         boxConfiguration,
         selectedTag,
         additionalTags,
@@ -274,8 +274,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   Map<String, dynamic> buildSenseBoxBikeModel(
     String name,
-    double latitude,
     double longitude,
+    double latitude,
     BoxConfiguration boxConfiguration,
     String? selectedTag,
     List<String?> additionalTags,
@@ -297,7 +297,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     final baseProperties = {
       'name': name,
       'exposure': 'mobile',
-      'location': [latitude, longitude],
+      'location': [longitude, latitude],
       'grouptag': allTags,
     };
 
