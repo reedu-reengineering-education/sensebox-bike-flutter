@@ -221,7 +221,9 @@ class SensorBloc with ChangeNotifier {
     }).toList();
 
     availableSensors.sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
-    return availableSensors.map((sensor) => sensor.buildWidget()).toList();
+    return availableSensors
+        .map<Widget>((sensor) => sensor.buildWidget())
+        .toList();
   }
 
   @override

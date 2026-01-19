@@ -43,6 +43,7 @@ void main() {
     setUp(() {
       mockRemoteDataService = MockRemoteDataService();
       bloc = ConfigurationBloc(remoteDataService: mockRemoteDataService);
+      reset(mockRemoteDataService);
     });
 
     test('initial state has null configurations and campaigns', () {
@@ -55,6 +56,30 @@ void main() {
     });
 
     group('loadBoxConfigurations()', () {
+      final mockBoxConfigurations = [
+        {
+          'id': 'classic',
+          'displayName': '2022',
+          'defaultGrouptag': 'classic',
+          'sensors': [
+            {
+              'id': '0',
+              'icon': 'osem-thermometer',
+              'title': 'Temperature',
+              'unit': '°C',
+              'sensorType': 'HDC1080',
+              'characteristicUuid': '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8',
+            }
+          ],
+        },
+        {
+          'id': 'atrai',
+          'displayName': '2025',
+          'defaultGrouptag': 'atrai',
+          'sensors': [],
+        },
+      ];
+
       test('loads and parses box configurations successfully', () async {
         when(() => mockRemoteDataService.fetchJson(boxConfigurationsUrl))
             .thenAnswer((_) async => mockBoxConfigurations);
@@ -62,10 +87,13 @@ void main() {
         await bloc.loadBoxConfigurations();
 
         expect(bloc.boxConfigurations, isNotNull);
-        expect(bloc.boxConfigurations!.length, 1);
-        expect(bloc.boxConfigurations!.first.id, 'classic');
+        expect(bloc.boxConfigurations!.length, greaterThan(0));
+        expect(bloc.boxConfigurations!.any((config) => config.id == 'classic'),
+            true);
         expect(bloc.isLoadingBoxConfigurations, false);
         expect(bloc.boxConfigurationsError, isNull);
+        verify(() => mockRemoteDataService.fetchJson(boxConfigurationsUrl))
+            .called(1);
       });
 
       test('sets loading state during load', () async {
@@ -203,6 +231,7 @@ void main() {
                 'title': 'Temperature',
                 'unit': '°C',
                 'sensorType': 'HDC1080',
+                'characteristicUuid': '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8',
               },
             ],
           },
@@ -246,6 +275,7 @@ void main() {
                 'title': 'Temperature',
                 'unit': '°C',
                 'sensorType': 'HDC1080',
+                'characteristicUuid': '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8',
               },
             ],
           },

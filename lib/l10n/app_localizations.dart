@@ -721,13 +721,19 @@ abstract class AppLocalizations {
   /// No description provided for @sensorDistance.
   ///
   /// In en, this message translates to:
-  /// **'Overtaking Distance'**
+  /// **'Distance Left'**
   String get sensorDistance;
+
+  /// No description provided for @sensorDistanceRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance Right'**
+  String get sensorDistanceRight;
 
   /// No description provided for @sensorOvertaking.
   ///
   /// In en, this message translates to:
-  /// **'Overtaking Manoeuvre'**
+  /// **'Overtaking Prediction'**
   String get sensorOvertaking;
 
   /// No description provided for @sensorOvertakingShort.

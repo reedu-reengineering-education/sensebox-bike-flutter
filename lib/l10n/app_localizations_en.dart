@@ -357,10 +357,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sensorFinedustPM1 => 'Finedust PM1';
 
   @override
-  String get sensorDistance => 'Overtaking Distance';
+  String get sensorDistance => 'Distance Left';
 
   @override
-  String get sensorOvertaking => 'Overtaking Manoeuvre';
+  String get sensorDistanceRight => 'Distance Right';
+
+  @override
+  String get sensorOvertaking => 'Overtaking Prediction';
 
   @override
   String get sensorOvertakingShort => 'Overtaking';
