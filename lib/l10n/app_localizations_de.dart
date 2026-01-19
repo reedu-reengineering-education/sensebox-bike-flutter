@@ -367,7 +367,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sensorDistanceRight => 'Abstand Rechts';
 
   @override
-  String get sensorOvertaking => 'Überholvorhersage';
+  String get sensorOvertaking => 'Überholmanöver';
 
   @override
   String get sensorOvertakingShort => 'Überholen';

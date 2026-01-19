@@ -155,7 +155,7 @@
     "sensorFinedustPM1": "Feinstaub PM1",
     "sensorDistance": "Abstand Links",
     "sensorDistanceRight": "Abstand Rechts",
-    "sensorOvertaking": "Überholvorhersage",
+    "sensorOvertaking": "Überholmanöver",
     "sensorOvertakingShort": "Überholen",
     "sensorSurface": "Oberfläche",
     "sensorSurfaceAsphalt": "Oberfläche Asphalt",
