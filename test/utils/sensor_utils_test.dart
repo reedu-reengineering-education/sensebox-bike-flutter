@@ -632,6 +632,21 @@ void main() {
     test('handles empty list', () {
       expect(sortApiSensorsByCanonicalOrder([]), isEmpty);
     });
+
+    test('sorts unknown sensors alphabetically', () {
+      final sensors = [
+        Sensor()..title = 'Unknown Sensor Z',
+        Sensor()..title = 'Unknown Sensor A',
+        Sensor()..title = 'Another Unknown',
+      ];
+
+      final sorted = sortApiSensorsByCanonicalOrder(sensors);
+
+      expect(sorted.length, 3);
+      expect(sorted[0].title, 'Another Unknown');
+      expect(sorted[1].title, 'Unknown Sensor A');
+      expect(sorted[2].title, 'Unknown Sensor Z');
+    });
   });
 
   group('sortSensorTilesByCanonicalOrder', () {

@@ -69,13 +69,28 @@ int _compareApiSensorsByCanonicalOrder(
 ) {
   final keyA = getCanonicalKeyFromApiTitle(apiTitleA);
   final keyB = getCanonicalKeyFromApiTitle(apiTitleB);
-  return compareSensorKeysByCanonicalOrder(keyA, keyB);
+  
+  final canonicalComparison = compareSensorKeysByCanonicalOrder(keyA, keyB);
+  if (canonicalComparison != 0) {
+    return canonicalComparison;
+  }
+  
+  if (keyA.isEmpty && keyB.isEmpty) {
+    return apiTitleA.compareTo(apiTitleB);
+  }
+  
+  return canonicalComparison;
 }
 
 List<Sensor> sortApiSensorsByCanonicalOrder(List<Sensor> sensors) {
   final sorted = List<Sensor>.from(sensors);
-  sorted.sort((a, b) =>
-      _compareApiSensorsByCanonicalOrder(a.title ?? '', b.title ?? ''));
+  sorted.sort((a, b) {
+    final comparison = _compareApiSensorsByCanonicalOrder(a.title ?? '', b.title ?? '');
+    if (comparison != 0) {
+      return comparison;
+    }
+    return (a.title ?? '').compareTo(b.title ?? '');
+  });
   return sorted;
 }
 
@@ -85,7 +100,13 @@ List<Map<String, String?>> sortSensorTilesByCanonicalOrder(
   sorted.sort((a, b) {
     final keyA = buildCanonicalSensorKey(a['title'] ?? '', a['attribute']);
     final keyB = buildCanonicalSensorKey(b['title'] ?? '', b['attribute']);
-    return compareSensorKeysByCanonicalOrder(keyA, keyB);
+    
+    final canonicalComparison = compareSensorKeysByCanonicalOrder(keyA, keyB);
+    if (canonicalComparison != 0) {
+      return canonicalComparison;
+    }
+    
+    return keyA.compareTo(keyB);
   });
   return sorted;
 }
