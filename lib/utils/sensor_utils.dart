@@ -15,6 +15,20 @@ import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/finedust_sensor.dart';
 
+int compareSensorKeysByCanonicalOrder(String sensorKeyA, String sensorKeyB) {
+  final indexA = sensorOrder.indexOf(sensorKeyA);
+  final indexB = sensorOrder.indexOf(sensorKeyB);
+
+  if (indexA != -1 && indexB != -1) {
+    return indexA.compareTo(indexB);
+  }
+
+  if (indexA != -1) return -1;
+  if (indexB != -1) return 1;
+
+  return 0;
+}
+
 String? getSearchKey(String key, String? attribute) {
   if (attribute != null) {
     return '${key}_${attribute.replaceAll(".", "_")}';
@@ -340,30 +354,19 @@ List<SensorEntry> getUniqueSortedSensorEntries(List<SensorData> sensorData) {
     final priorityB = getUiPriorityByUuid(b.characteristicUuid);
     final priorityComparison = priorityA.compareTo(priorityB);
     
-    // If priorities are equal, use canonical sensorOrder as tiebreaker
-    // This ensures consistent ordering for sensors with same priority (e.g., surface sensors)
     if (priorityComparison != 0) {
       return priorityComparison;
     }
     
-    // Build sensor key in format 'title_attribute' or 'title' if no attribute
     final sensorKeyA = '${a.title}${a.attribute == null ? '' : '_${a.attribute}'}';
     final sensorKeyB = '${b.title}${b.attribute == null ? '' : '_${b.attribute}'}';
     
-    // Find indices in canonical sensorOrder
-    final indexA = sensorOrder.indexOf(sensorKeyA);
-    final indexB = sensorOrder.indexOf(sensorKeyB);
-    
-    // If both found in sensorOrder, sort by their indices
-    if (indexA != -1 && indexB != -1) {
-      return indexA.compareTo(indexB);
+    final canonicalComparison =
+        compareSensorKeysByCanonicalOrder(sensorKeyA, sensorKeyB);
+    if (canonicalComparison != 0) {
+      return canonicalComparison;
     }
     
-    // If only one found, the found one comes first
-    if (indexA != -1) return -1;
-    if (indexB != -1) return 1;
-    
-    // If neither found, maintain original order (stable sort)
     return 0;
   });
 
