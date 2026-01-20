@@ -152,17 +152,18 @@ List<SensorData> getAllUniqueSensorData(List<GeolocationData> geolocations) {
 }
 
 String getFirstAvailableSensorType(List<SensorData> sensorData) {
-  if (sensorData.isEmpty) return 'distance';
+  const String defaultSensorType = 'distance';
 
-  final availableSensors = <String>{};
-  for (final sensor in sensorData) {
-    availableSensors
-        .add(buildCanonicalSensorKey(sensor.title, sensor.attribute));
+  if (sensorData.isEmpty) return defaultSensorType;
+
+  final availableSensors = sensorData
+      .map((sensor) => buildCanonicalSensorKey(sensor.title, sensor.attribute))
+      .toSet();
+
+  if (availableSensors.contains(defaultSensorType)) {
+    return defaultSensorType;
   }
 
-  if (availableSensors.contains('distance')) {
-    return 'distance';
-  }
   for (final sensorType in sensorOrder) {
     if (availableSensors.contains(sensorType)) {
       return sensorType;
