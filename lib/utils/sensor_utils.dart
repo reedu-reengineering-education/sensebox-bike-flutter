@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/sensebox.dart' as sensebox_model;
 import 'package:sensebox_bike/models/sensor_data.dart';
@@ -334,10 +335,36 @@ List<SensorEntry> getUniqueSortedSensorEntries(List<SensorData> sensorData) {
     if (!isSpeedA && isSpeedB) return -1; // Non-speed goes before speed
     if (isSpeedA && isSpeedB) return 0; // Both are speed, keep order
     
-    // For non-speed entries, sort by priority
+    // For non-speed entries, sort by priority first
     final priorityA = getUiPriorityByUuid(a.characteristicUuid);
     final priorityB = getUiPriorityByUuid(b.characteristicUuid);
-    return priorityA.compareTo(priorityB);
+    final priorityComparison = priorityA.compareTo(priorityB);
+    
+    // If priorities are equal, use canonical sensorOrder as tiebreaker
+    // This ensures consistent ordering for sensors with same priority (e.g., surface sensors)
+    if (priorityComparison != 0) {
+      return priorityComparison;
+    }
+    
+    // Build sensor key in format 'title_attribute' or 'title' if no attribute
+    final sensorKeyA = '${a.title}${a.attribute == null ? '' : '_${a.attribute}'}';
+    final sensorKeyB = '${b.title}${b.attribute == null ? '' : '_${b.attribute}'}';
+    
+    // Find indices in canonical sensorOrder
+    final indexA = sensorOrder.indexOf(sensorKeyA);
+    final indexB = sensorOrder.indexOf(sensorKeyB);
+    
+    // If both found in sensorOrder, sort by their indices
+    if (indexA != -1 && indexB != -1) {
+      return indexA.compareTo(indexB);
+    }
+    
+    // If only one found, the found one comes first
+    if (indexA != -1) return -1;
+    if (indexB != -1) return 1;
+    
+    // If neither found, maintain original order (stable sort)
+    return 0;
   });
 
   return entriesList;

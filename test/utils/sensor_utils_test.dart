@@ -349,6 +349,133 @@ void main() {
       final entries = getUniqueSortedSensorEntries([]);
       expect(entries, isEmpty);
     });
+
+    test('sorts surface classification sensors in correct order', () {
+      final sensorData = [
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'sett'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'asphalt'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'standing'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'compacted'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'paving'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+      ];
+
+      final entries = getUniqueSortedSensorEntries(sensorData);
+
+      expect(entries.length, 5);
+      // Verify correct order: asphalt, compacted, paving, sett, standing
+      expect(entries[0].attribute, 'asphalt');
+      expect(entries[1].attribute, 'compacted');
+      expect(entries[2].attribute, 'paving');
+      expect(entries[3].attribute, 'sett');
+      expect(entries[4].attribute, 'standing');
+    });
+
+    test('sorts surface classification sensors correctly when mixed with other sensors',
+        () {
+      final sensorData = [
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'sett'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'temperature'
+          ..attribute = null
+          ..characteristicUuid = TemperatureSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'asphalt'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'humidity'
+          ..attribute = null
+          ..characteristicUuid = HumiditySensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'compacted'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'paving'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'standing'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+      ];
+
+      final entries = getUniqueSortedSensorEntries(sensorData);
+
+      expect(entries.length, 7);
+      // Temperature should come first (higher priority)
+      expect(entries[0].title, 'temperature');
+      // Humidity should come second
+      expect(entries[1].title, 'humidity');
+      // Surface sensors should follow in correct order: asphalt, compacted, paving, sett, standing
+      expect(entries[2].title, 'surface_classification');
+      expect(entries[2].attribute, 'asphalt');
+      expect(entries[3].title, 'surface_classification');
+      expect(entries[3].attribute, 'compacted');
+      expect(entries[4].title, 'surface_classification');
+      expect(entries[4].attribute, 'paving');
+      expect(entries[5].title, 'surface_classification');
+      expect(entries[5].attribute, 'sett');
+      expect(entries[6].title, 'surface_classification');
+      expect(entries[6].attribute, 'standing');
+    });
+
+    test('maintains surface sensor order regardless of input order', () {
+      // Test with different input orders
+      final orders = [
+        ['standing', 'sett', 'paving', 'compacted', 'asphalt'],
+        ['compacted', 'asphalt', 'sett', 'standing', 'paving'],
+        ['asphalt', 'compacted', 'paving', 'sett', 'standing'], // correct order
+      ];
+
+      for (final inputOrder in orders) {
+        final sensorData = inputOrder.map((attr) {
+          return SensorData()
+            ..title = 'surface_classification'
+            ..attribute = attr
+            ..characteristicUuid =
+                SurfaceClassificationSensor.sensorCharacteristicUuid;
+        }).toList();
+
+        final entries = getUniqueSortedSensorEntries(sensorData);
+
+        expect(entries.length, 5);
+        // Should always be sorted correctly regardless of input order
+        expect(entries[0].attribute, 'asphalt');
+        expect(entries[1].attribute, 'compacted');
+        expect(entries[2].attribute, 'paving');
+        expect(entries[3].attribute, 'sett');
+        expect(entries[4].attribute, 'standing');
+      }
+    });
   });
 
   group('getTranslatedTitleFromSensorKey', () {
