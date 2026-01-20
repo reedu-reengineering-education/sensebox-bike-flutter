@@ -688,7 +688,8 @@ void main() {
       expect(sortSensorTilesByCanonicalOrder([]), isEmpty);
     });
 
-    test('sorts unknown sensors alphabetically when not in canonical order', () {
+    test('sorts unknown sensors alphabetically when not in canonical order',
+        () {
       final tiles = [
         {'title': 'unknown_sensor_z', 'attribute': null},
         {'title': 'unknown_sensor_a', 'attribute': null},

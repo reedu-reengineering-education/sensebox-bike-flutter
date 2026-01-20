@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/sensebox.dart' as sensebox_model;
-import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/sensors/gps_sensor.dart';
@@ -49,7 +48,7 @@ int compareSensorKeysByCanonicalOrder(String sensorKeyA, String sensorKeyB) {
   if (indexA != -1) return -1;
   if (indexB != -1) return 1;
 
-  return 0;
+  return sensorKeyA.compareTo(sensorKeyB);
 }
 
 int compareSensorsByCanonicalOrder(
@@ -75,22 +74,13 @@ int _compareApiSensorsByCanonicalOrder(
     return canonicalComparison;
   }
   
-  if (keyA.isEmpty && keyB.isEmpty) {
-    return apiTitleA.compareTo(apiTitleB);
-  }
-  
-  return canonicalComparison;
+  return apiTitleA.compareTo(apiTitleB);
 }
 
-List<Sensor> sortApiSensorsByCanonicalOrder(List<Sensor> sensors) {
-  final sorted = List<Sensor>.from(sensors);
-  sorted.sort((a, b) {
-    final comparison = _compareApiSensorsByCanonicalOrder(a.title ?? '', b.title ?? '');
-    if (comparison != 0) {
-      return comparison;
-    }
-    return (a.title ?? '').compareTo(b.title ?? '');
-  });
+List<sensebox_model.Sensor> sortApiSensorsByCanonicalOrder(List<sensebox_model.Sensor> sensors) {
+  final sorted = List<sensebox_model.Sensor>.from(sensors);
+  sorted.sort((a, b) =>
+      _compareApiSensorsByCanonicalOrder(a.title ?? '', b.title ?? ''));
   return sorted;
 }
 
