@@ -104,7 +104,7 @@ void main() {
 
         expect(model['name'], 'Test Box');
         expect(model['exposure'], 'mobile');
-        expect(model['location'], [52.5200, 13.4050]);
+        expect(model['location'], [13.4050, 52.5200]);
         
         final tags = model['grouptag'] as List;
         expect(tags, contains('bike'));
