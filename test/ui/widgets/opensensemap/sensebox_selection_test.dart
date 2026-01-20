@@ -116,6 +116,9 @@ void main() {
 
     testWidgets('shows empty state when no boxes available',
         (WidgetTester tester) async {
+      mockOpenSenseMapBloc.isAuthenticated = true;
+      mockOpenSenseMapBloc.setFetchSenseBoxesResult([]);
+
       await tester.pumpWidget(
         createLocalizedTestApp(
           locale: const Locale('en'),
