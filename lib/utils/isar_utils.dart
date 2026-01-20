@@ -64,8 +64,8 @@ Set<List<String?>> collectSensorTitles(Map<int, List<SensorData>> sensorDataByGe
 List<List<String?>> sortSensorTitlesByCanonicalOrder(Set<List<String?>> sensorTitles) {
   final titlesList = sensorTitles.toList();
   titlesList.sort((a, b) {
-    final sensorKeyA = '${a[0]}${a[1] == null ? '' : '_${a[1]}'}';
-    final sensorKeyB = '${b[0]}${b[1] == null ? '' : '_${b[1]}'}';
+    final sensorKeyA = buildCanonicalSensorKey(a[0] ?? '', a[1]);
+    final sensorKeyB = buildCanonicalSensorKey(b[0] ?? '', b[1]);
     
     final canonicalComparison = compareSensorKeysByCanonicalOrder(sensorKeyA, sensorKeyB);
     if (canonicalComparison != 0) {

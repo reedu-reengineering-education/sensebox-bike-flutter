@@ -4,6 +4,7 @@ import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import '../../../secrets.dart'; 
 
@@ -223,7 +224,7 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
           "properties": {
             for (var sensor in first.sensorData)
               if (!sensor.value.isNaN)
-                '${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}':
+                buildCanonicalSensorKey(sensor.title, sensor.attribute):
                     sensor.value,
           },
           "geometry": {
@@ -246,7 +247,7 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
         "properties": {
           for (var sensor in current.sensorData)
             if (!sensor.value.isNaN)
-              '${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}':
+              buildCanonicalSensorKey(sensor.title, sensor.attribute):
                   sensor.value,
         },
         "geometry": {

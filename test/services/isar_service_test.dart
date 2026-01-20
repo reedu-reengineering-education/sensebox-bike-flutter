@@ -9,7 +9,6 @@ import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
-import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 import '../mocks.dart';
 import '../test_helpers.dart';
@@ -292,7 +291,7 @@ void main() {
 
       // Test the sorting logic
       final sensorData = [temperatureData, gpsSpeedData, humidityData];
-      final sensorTitles = sensorData
+      var sensorTitles = sensorData
           .map((e) => {'title': e.title, 'attribute': e.attribute})
           .map((map) => map.entries.map((e) => '${e.key}:${e.value}').join(','))
           .toSet()
@@ -303,37 +302,7 @@ void main() {
         );
       }).toList();
 
-      // Sort using the same logic as in track_utils.dart
-      final order = [
-        'temperature',
-        'humidity',
-        'distance',
-        'overtaking',
-        'surface_classification_asphalt',
-        'surface_classification_compacted',
-        'surface_classification_paving',
-        'surface_classification_sett',
-        'surface_classification_standing',
-        'surface_anomaly',
-        'acceleration_x',
-        'acceleration_y',
-        'acceleration_z',
-        'finedust_pm1',
-        'finedust_pm2.5',
-        'finedust_pm4',
-        'finedust_pm10',
-        'gps_latitude',
-        'gps_longitude',
-        'gps_speed',
-      ];
-
-      sensorTitles.sort((a, b) {
-        int indexA = order.indexOf(
-            '${a['title']}${a['attribute'] == null ? '' : '_${a['attribute']}'}');
-        int indexB = order.indexOf(
-            '${b['title']}${b['attribute'] == null ? '' : '_${b['attribute']}'}');
-        return indexA.compareTo(indexB);
-      });
+      sensorTitles = sortSensorTilesByCanonicalOrder(sensorTitles);
 
       // Verify the order: temperature (0), humidity (1), gps_speed (19)
       expect(sensorTitles.length, equals(3));
@@ -430,7 +399,7 @@ void main() {
         ..geolocationData.value = geolocationData;
 
       final sensorData = [temperatureData, gpsSpeedData];
-      final sensorTitles = sensorData
+      var sensorTitles = sensorData
           .map((e) => {'title': e.title, 'attribute': e.attribute})
           .map((map) => map.entries.map((e) => '${e.key}:${e.value}').join(','))
           .toSet()
@@ -441,37 +410,7 @@ void main() {
         );
       }).toList();
 
-      // Sort using the same logic as in track_utils.dart
-      final order = [
-        'temperature',
-        'humidity',
-        'distance',
-        'overtaking',
-        'surface_classification_asphalt',
-        'surface_classification_compacted',
-        'surface_classification_paving',
-        'surface_classification_sett',
-        'surface_classification_standing',
-        'surface_anomaly',
-        'acceleration_x',
-        'acceleration_y',
-        'acceleration_z',
-        'finedust_pm1',
-        'finedust_pm2.5',
-        'finedust_pm4',
-        'finedust_pm10',
-        'gps_latitude',
-        'gps_longitude',
-        'gps_speed',
-      ];
-
-      sensorTitles.sort((a, b) {
-        int indexA = order.indexOf(
-            '${a['title']}${a['attribute'] == null ? '' : '_${a['attribute']}'}');
-        int indexB = order.indexOf(
-            '${b['title']}${b['attribute'] == null ? '' : '_${b['attribute']}'}');
-        return indexA.compareTo(indexB);
-      });
+      sensorTitles = sortSensorTilesByCanonicalOrder(sensorTitles);
 
       // Verify the order: temperature (0), gps_speed (19)
       expect(sensorTitles.length, equals(2));
