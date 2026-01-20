@@ -186,7 +186,7 @@ List<SensorData> getAllUniqueSensorData(List<GeolocationData> geolocations) {
 }
 
 String getFirstAvailableSensorType(List<SensorData> sensorData) {
-  if (sensorData.isEmpty) return 'temperature';
+  if (sensorData.isEmpty) return 'distance';
 
   final availableSensors = <String>{};
   for (final sensor in sensorData) {
@@ -194,6 +194,10 @@ String getFirstAvailableSensorType(List<SensorData> sensorData) {
         ? '${sensor.title}_${sensor.attribute}'
         : sensor.title;
     availableSensors.add(sensorKey);
+  }
+
+  if (availableSensors.contains('distance')) {
+    return 'distance';
   }
 
   for (final sensorType in order) {
