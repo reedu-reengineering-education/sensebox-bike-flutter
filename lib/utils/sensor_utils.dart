@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/sensebox.dart' as sensebox_model;
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/sensors/gps_sensor.dart';
@@ -15,6 +16,28 @@ import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/finedust_sensor.dart';
 
+String buildCanonicalSensorKey(String title, String? attribute) {
+  return '${title}${attribute == null ? '' : '_${attribute}'}';
+}
+
+String getCanonicalKeyFromApiTitle(String apiTitle) {
+  final titleLower = apiTitle.toLowerCase();
+
+  if (titleLower.contains('asphalt')) {
+    return 'surface_classification_asphalt';
+  } else if (titleLower.contains('compacted')) {
+    return 'surface_classification_compacted';
+  } else if (titleLower.contains('paving')) {
+    return 'surface_classification_paving';
+  } else if (titleLower.contains('sett')) {
+    return 'surface_classification_sett';
+  } else if (titleLower == 'standing') {
+    return 'surface_classification_standing';
+  }
+
+  return '';
+}
+
 int compareSensorKeysByCanonicalOrder(String sensorKeyA, String sensorKeyB) {
   final indexA = sensorOrder.indexOf(sensorKeyA);
   final indexB = sensorOrder.indexOf(sensorKeyB);
@@ -27,6 +50,44 @@ int compareSensorKeysByCanonicalOrder(String sensorKeyA, String sensorKeyB) {
   if (indexB != -1) return 1;
 
   return 0;
+}
+
+int compareSensorsByCanonicalOrder(
+  String titleA,
+  String? attributeA,
+  String titleB,
+  String? attributeB,
+) {
+  final keyA = buildCanonicalSensorKey(titleA, attributeA);
+  final keyB = buildCanonicalSensorKey(titleB, attributeB);
+  return compareSensorKeysByCanonicalOrder(keyA, keyB);
+}
+
+int compareApiSensorsByCanonicalOrder(
+  String apiTitleA,
+  String apiTitleB,
+) {
+  final keyA = getCanonicalKeyFromApiTitle(apiTitleA);
+  final keyB = getCanonicalKeyFromApiTitle(apiTitleB);
+  return compareSensorKeysByCanonicalOrder(keyA, keyB);
+}
+
+List<Sensor> sortApiSensorsByCanonicalOrder(List<Sensor> sensors) {
+  final sorted = List<Sensor>.from(sensors);
+  sorted.sort((a, b) =>
+      compareApiSensorsByCanonicalOrder(a.title ?? '', b.title ?? ''));
+  return sorted;
+}
+
+List<Map<String, String?>> sortSensorTilesByCanonicalOrder(
+    List<Map<String, String?>> tiles) {
+  final sorted = List<Map<String, String?>>.from(tiles);
+  sorted.sort((a, b) {
+    final keyA = buildCanonicalSensorKey(a['title'] ?? '', a['attribute']);
+    final keyB = buildCanonicalSensorKey(b['title'] ?? '', b['attribute']);
+    return compareSensorKeysByCanonicalOrder(keyA, keyB);
+  });
+  return sorted;
 }
 
 String? getSearchKey(String key, String? attribute) {
@@ -358,11 +419,12 @@ List<SensorEntry> getUniqueSortedSensorEntries(List<SensorData> sensorData) {
       return priorityComparison;
     }
     
-    final sensorKeyA = '${a.title}${a.attribute == null ? '' : '_${a.attribute}'}';
-    final sensorKeyB = '${b.title}${b.attribute == null ? '' : '_${b.attribute}'}';
-    
-    final canonicalComparison =
-        compareSensorKeysByCanonicalOrder(sensorKeyA, sensorKeyB);
+    final canonicalComparison = compareSensorsByCanonicalOrder(
+      a.title,
+      a.attribute,
+      b.title,
+      b.attribute,
+    );
     if (canonicalComparison != 0) {
       return canonicalComparison;
     }
