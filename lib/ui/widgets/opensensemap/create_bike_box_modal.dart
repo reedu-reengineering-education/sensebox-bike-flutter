@@ -111,7 +111,7 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
             selectedTag,
             customTags);
 
-        await opensensemapBloc.fetchSenseBoxes();
+        await opensensemapBloc.fetchSenseBoxes(page: 0);
 
         Navigator.of(context).pop();
       } catch (error) {

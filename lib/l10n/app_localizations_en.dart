@@ -231,7 +231,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your current position will be used';
 
   @override
-  String get openSenseMapBoxSelectionNoBoxes => 'No senseBoxes available';
+  String get openSenseMapBoxSelectionNoBoxes =>
+      'No senseBoxes available or configuration not loaded';
 
   @override
   String get openSenseMapBoxSelectionCreateHint =>

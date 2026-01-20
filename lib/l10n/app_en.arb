@@ -100,7 +100,7 @@
     "createBoxName": "Name",
     "createBoxNameError": "Name must be between 2 and 50 characters",
     "createBoxGeolocationCurrentPosition": "Your current position will be used",
-    "openSenseMapBoxSelectionNoBoxes": "No senseBoxes available",
+    "openSenseMapBoxSelectionNoBoxes": "No senseBoxes available or configuration not loaded",
     "openSenseMapBoxSelectionCreateHint": "Create one using the '+' button",
     "openSenseMapBoxSelectionUnnamedBox": "Unnamed senseBox",
     "openSenseMapBoxSelectionIncompatible": "Not compatible with senseBox:bike",

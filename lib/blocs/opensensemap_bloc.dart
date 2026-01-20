@@ -17,7 +17,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   ValueNotifier<bool> get isAuthenticatingNotifier => _isAuthenticatingNotifier;
   bool get isAuthenticating => _isAuthenticatingNotifier.value;
 
-  List<dynamic> _senseBoxes = [];
+  final Map<int, List<dynamic>> _senseBoxes = {};
   final _senseBoxController =
       StreamController<SenseBox?>.broadcast(); // StreamController
   Stream<SenseBox?> get senseBoxStream =>
@@ -46,7 +46,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
   }
 
-  List<dynamic> get senseBoxes => _senseBoxes;
+  List<dynamic> get senseBoxes => _senseBoxes.values.expand((e) => e).toList();
 
   Future<Map<String, dynamic>?> getUserData() async {
     try {
@@ -172,7 +172,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       // Only fetch boxes if there are box IDs in the response
       final boxIds = extractBoxIds(responseData);
       if (boxIds.isNotEmpty) {
-        final senseBoxes = await fetchSenseBoxes();
+        final senseBoxes = await fetchSenseBoxes(page: 0);
         if (senseBoxes.isNotEmpty) {
           await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
         }
@@ -206,7 +206,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       // Only fetch boxes if there are box IDs in the response
       final boxIds = extractBoxIds(responseData);
       if (boxIds.isNotEmpty) {
-        final senseBoxes = await fetchSenseBoxes();
+        final senseBoxes = await fetchSenseBoxes(page: 0);
         if (senseBoxes.isNotEmpty) {
           await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
         }
@@ -264,7 +264,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
         additionalTags,
       );
       await _service.createSenseBoxBike(model);
-      await fetchSenseBoxes();
+      await fetchSenseBoxes(page: 0);
     } catch (e, stack) {
       if (!_handleAuthenticationError(e)) {
         ErrorService.handleError(e, stack);
@@ -307,10 +307,10 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     };
   }
 
-  Future<List> fetchSenseBoxes() async {
+  Future<List> fetchSenseBoxes({int page = 0}) async {
     try {
-      final myBoxes = await _service.getSenseBoxes();
-      _senseBoxes = myBoxes;
+      final myBoxes = await _service.getSenseBoxes(page: page);
+      _senseBoxes[page] = myBoxes;
       notifyListeners();
       return myBoxes;
     } catch (e) {

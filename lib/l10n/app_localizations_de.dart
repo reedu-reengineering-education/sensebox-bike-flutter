@@ -234,7 +234,8 @@ class AppLocalizationsDe extends AppLocalizations {
       'Deine aktuelle Position wird verwendet';
 
   @override
-  String get openSenseMapBoxSelectionNoBoxes => 'Keine senseBox verfügbar';
+  String get openSenseMapBoxSelectionNoBoxes =>
+      'Keine senseBox verfügbar oder Konfiguration nicht geladen';
 
   @override
   String get openSenseMapBoxSelectionCreateHint =>

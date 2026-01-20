@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -39,40 +40,44 @@ class _SenseBoxSelectionModal extends StatefulWidget {
 class _SenseBoxSelectionModalState extends State<_SenseBoxSelectionModal> {
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.8,
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                // Close button at the top right corner
-                Align(
-                  alignment: Alignment.topRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      Navigator.pop(context); // Close the modal
-                    },
-                  ),
+    return Consumer<OpenSenseMapBloc>(
+      builder: (context, bloc, child) {
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.8,
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    // Close button at the top right corner
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          Navigator.pop(context); // Close the modal
+                        },
+                      ),
+                    ),
+                    const CustomSpacer(),
+                    Expanded(
+                      child: SenseBoxSelectionWidget(
+                          configurationBloc: widget.configurationBloc),
+                    ),
+                  ],
                 ),
-                const CustomSpacer(),
-                Expanded(
-                  child: SenseBoxSelectionWidget(
-                      configurationBloc: widget.configurationBloc),
-                ),
-              ],
-            ),
+              ),
+              // Plus button or reload button at the bottom right corner
+              Positioned(
+                bottom: 32,
+                right: 32,
+                child: _buildActionButton(context),
+              ),
+            ],
           ),
-          // Plus button or reload button at the bottom right corner
-          Positioned(
-            bottom: 32,
-            right: 32,
-            child: _buildActionButton(context),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -99,8 +104,7 @@ class _SenseBoxSelectionModalState extends State<_SenseBoxSelectionModal> {
             : () async {
                 await configurationBloc.loadBoxConfigurations();
                 if (mounted) {
-                  setState(() {}); // Rebuild to update button state
-                  // Reload senseBoxes if list is empty, otherwise they'll use new config automatically
+                  setState(() {}); 
                   final bloc = widget.bloc;
                   if (bloc.senseBoxes.isEmpty) {
                     await bloc.fetchSenseBoxes();

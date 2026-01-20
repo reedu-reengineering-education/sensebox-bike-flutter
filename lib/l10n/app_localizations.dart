@@ -499,7 +499,7 @@ abstract class AppLocalizations {
   /// No description provided for @openSenseMapBoxSelectionNoBoxes.
   ///
   /// In en, this message translates to:
-  /// **'No senseBoxes available'**
+  /// **'No senseBoxes available or configuration not loaded'**
   String get openSenseMapBoxSelectionNoBoxes;
 
   /// No description provided for @openSenseMapBoxSelectionCreateHint.

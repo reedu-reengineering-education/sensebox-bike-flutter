@@ -446,10 +446,10 @@ class OpenSenseMapService {
     );
   }
 
-  Future<List<dynamic>> getSenseBoxes() async {
+  Future<List<dynamic>> getSenseBoxes({int page = 0}) async {
     return _makeAuthenticatedRequest<List<dynamic>>(
       requestFn: (accessToken) => client.get(
-        Uri.parse('$_baseUrl/users/me/boxes'),
+        Uri.parse('$_baseUrl/users/me/boxes?page=$page'),
         headers: {'Authorization': 'Bearer $accessToken'},
       ),
       successHandler: (response) {
