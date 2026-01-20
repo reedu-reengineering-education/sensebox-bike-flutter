@@ -297,7 +297,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     final baseProperties = {
       'name': name,
       'exposure': 'mobile',
-      'location': [latitude, longitude],
+      'location': [longitude, latitude], // opensensemap expects [lon, lat]: https://docs.opensensemap.org/#api-Boxes-postNewBox
       'grouptag': allTags,
     };
 
