@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<SenseBox> getSelectedSenseBoxOrThrow() async {
@@ -60,7 +61,24 @@ Set<List<String?>> collectSensorTitles(Map<int, List<SensorData>> sensorDataByGe
   }).toSet();
 }
 
-List<String> buildCsvHeaders(Set<List<String?>> sensorTitles) {
+List<List<String?>> sortSensorTitlesByCanonicalOrder(Set<List<String?>> sensorTitles) {
+  final titlesList = sensorTitles.toList();
+  titlesList.sort((a, b) {
+    final sensorKeyA = '${a[0]}${a[1] == null ? '' : '_${a[1]}'}';
+    final sensorKeyB = '${b[0]}${b[1] == null ? '' : '_${b[1]}'}';
+    
+    final canonicalComparison = compareSensorKeysByCanonicalOrder(sensorKeyA, sensorKeyB);
+    if (canonicalComparison != 0) {
+      return canonicalComparison;
+    }
+    
+    return sensorKeyA.compareTo(sensorKeyB);
+  });
+  
+  return titlesList;
+}
+
+List<String> buildCsvHeaders(List<List<String?>> sensorTitles) {
   return [
     'timestamp',
     'latitude',
@@ -86,7 +104,7 @@ Map<String, double?> organizeSensorData(List<SensorData> sensorDataList,{String 
 List<List<String>> buildCsvRows(
   List<GeolocationData> geolocationDataList,
   Map<int, List<SensorData>> sensorDataByGeolocation,
-  Set<List<String?>> sensorTitles,
+  List<List<String?>> sensorTitles,
 ) {
   const separator = '%%';
   return geolocationDataList.map((geoData) {
