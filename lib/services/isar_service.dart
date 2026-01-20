@@ -67,8 +67,7 @@ class IsarService {
       sensorDataByGeolocation[geoData.id] = sensorData;
     }
 
-    final sensorTitlesSet = collectSensorTitles(sensorDataByGeolocation);
-    final sensorTitles = sortSensorTitlesByCanonicalOrder(sensorTitlesSet);
+    final sensorTitles = collectAndSortSensorTitles(sensorDataByGeolocation);
     final headers = buildCsvHeaders(sensorTitles);
     final csvData = <List<String>>[
       headers,

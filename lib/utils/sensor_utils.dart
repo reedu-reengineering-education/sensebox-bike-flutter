@@ -63,7 +63,7 @@ int compareSensorsByCanonicalOrder(
   return compareSensorKeysByCanonicalOrder(keyA, keyB);
 }
 
-int compareApiSensorsByCanonicalOrder(
+int _compareApiSensorsByCanonicalOrder(
   String apiTitleA,
   String apiTitleB,
 ) {
@@ -75,7 +75,7 @@ int compareApiSensorsByCanonicalOrder(
 List<Sensor> sortApiSensorsByCanonicalOrder(List<Sensor> sensors) {
   final sorted = List<Sensor>.from(sensors);
   sorted.sort((a, b) =>
-      compareApiSensorsByCanonicalOrder(a.title ?? '', b.title ?? ''));
+      _compareApiSensorsByCanonicalOrder(a.title ?? '', b.title ?? ''));
   return sorted;
 }
 

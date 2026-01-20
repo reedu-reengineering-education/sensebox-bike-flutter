@@ -78,6 +78,12 @@ List<List<String?>> sortSensorTitlesByCanonicalOrder(Set<List<String?>> sensorTi
   return titlesList;
 }
 
+List<List<String?>> collectAndSortSensorTitles(
+    Map<int, List<SensorData>> sensorDataByGeolocation) {
+  return sortSensorTitlesByCanonicalOrder(
+      collectSensorTitles(sensorDataByGeolocation));
+}
+
 List<String> buildCsvHeaders(List<List<String?>> sensorTitles) {
   return [
     'timestamp',
