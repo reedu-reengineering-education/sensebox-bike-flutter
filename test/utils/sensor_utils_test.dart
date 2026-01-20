@@ -596,41 +596,6 @@ void main() {
     });
   });
 
-  group('compareApiSensorsByCanonicalOrder', () {
-    test('sorts surface sensor API titles correctly', () {
-      expect(
-          compareApiSensorsByCanonicalOrder('Surface Sett', 'Surface Asphalt'),
-          greaterThan(0));
-      expect(
-          compareApiSensorsByCanonicalOrder(
-              'Surface Asphalt', 'Surface Compacted'),
-          lessThan(0));
-      expect(
-          compareApiSensorsByCanonicalOrder(
-              'Surface Compacted', 'Surface Paving'),
-          lessThan(0));
-      expect(compareApiSensorsByCanonicalOrder('Surface Paving', 'Standing'),
-          lessThan(0));
-    });
-
-    test('returns 0 for same sensors', () {
-      expect(
-          compareApiSensorsByCanonicalOrder(
-              'Surface Asphalt', 'Surface Asphalt'),
-          0);
-      expect(compareApiSensorsByCanonicalOrder('Standing', 'Standing'), 0);
-    });
-
-    test('handles case-insensitive matching', () {
-      expect(
-          compareApiSensorsByCanonicalOrder('SURFACE SETT', 'surface asphalt'),
-          greaterThan(0));
-      expect(
-          compareApiSensorsByCanonicalOrder(
-              'surface compacted', 'SURFACE PAVING'),
-          lessThan(0));
-    });
-  });
 
   group('sortApiSensorsByCanonicalOrder', () {
     test('sorts surface sensors in correct order', () {

@@ -300,4 +300,48 @@ void main() {
       expect(result[2][0], 'unknown_sensor');
     });
   });
+
+  group('collectAndSortSensorTitles', () {
+    test('collects and sorts sensor titles in canonical order', () {
+      final sensorData1 = SensorData()
+        ..id = 1
+        ..title = 'humidity'
+        ..attribute = null
+        ..value = 60.0;
+      final sensorData2 = SensorData()
+        ..id = 2
+        ..title = 'surface_classification'
+        ..attribute = 'sett'
+        ..value = 10.0;
+      final sensorData3 = SensorData()
+        ..id = 3
+        ..title = 'temperature'
+        ..attribute = null
+        ..value = 25.0;
+      final sensorData4 = SensorData()
+        ..id = 4
+        ..title = 'surface_classification'
+        ..attribute = 'asphalt'
+        ..value = 80.0;
+
+      final Map<int, List<SensorData>> sensorDataByGeolocation = {
+        1: [sensorData1, sensorData2],
+        2: [sensorData3, sensorData4],
+      };
+
+      final result = collectAndSortSensorTitles(sensorDataByGeolocation);
+
+      expect(result.length, 4);
+      expect(result[0][0], 'temperature');
+      expect(result[1][0], 'humidity');
+      expect(result[2][0], 'surface_classification');
+      expect(result[2][1], 'asphalt');
+      expect(result[3][0], 'surface_classification');
+      expect(result[3][1], 'sett');
+    });
+
+    test('handles empty map', () {
+      expect(collectAndSortSensorTitles({}), isEmpty);
+    });
+  });
 }
