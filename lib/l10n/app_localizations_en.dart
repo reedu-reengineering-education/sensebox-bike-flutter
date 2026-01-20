@@ -53,6 +53,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalClose => 'Close';
 
   @override
+  String get reloadConfiguration => 'Reload configuration';
+
+  @override
   String get generalUpload => 'Upload';
 
   @override
@@ -228,7 +231,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your current position will be used';
 
   @override
-  String get openSenseMapBoxSelectionNoBoxes => 'No senseBoxes available';
+  String get openSenseMapBoxSelectionNoBoxes =>
+      'No senseBoxes available or configuration not loaded';
 
   @override
   String get openSenseMapBoxSelectionCreateHint =>
@@ -354,10 +358,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sensorFinedustPM1 => 'Finedust PM1';
 
   @override
-  String get sensorDistance => 'Overtaking Distance';
+  String get sensorDistance => 'Distance Left';
 
   @override
-  String get sensorOvertaking => 'Overtaking Manoeuvre';
+  String get sensorDistanceRight => 'Distance Right';
+
+  @override
+  String get sensorOvertaking => 'Overtaking Prediction';
 
   @override
   String get sensorOvertakingShort => 'Overtaking';
@@ -430,6 +437,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get campaignLoadError => 'Failed to load list of campaigns.';
+
+  @override
+  String get boxConfigurationLoadError => 'Failed to load box configurations.';
 
   @override
   String get selectCampaign => 'Select campaign';

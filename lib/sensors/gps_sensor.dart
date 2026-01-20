@@ -21,8 +21,10 @@ class GPSSensor extends Sensor {
   late final MapboxMap? mapInstance;
   final Completer<void> _mapReadyCompleter = Completer<void>();
 
+  static int get staticUiPriority => 60;
+
   @override
-  get uiPriority => 25;
+  get uiPriority => staticUiPriority;
 
   static const String sensorCharacteristicUuid =
       '8edf8ebb-1246-4329-928d-ee0c91db2389';

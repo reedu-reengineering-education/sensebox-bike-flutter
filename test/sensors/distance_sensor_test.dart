@@ -15,8 +15,8 @@ void main() {
   });
 
   group('DistanceSensor', () {
-    test('uiPriority returns 30', () {
-      expect(sensor.uiPriority, 30);
+    test('uiPriority returns 10', () {
+      expect(sensor.uiPriority, 10);
     });
 
     test('sensorCharacteristicUuid is correct', () {

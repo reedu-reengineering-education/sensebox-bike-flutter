@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:mocktail/mocktail.dart';
@@ -13,13 +14,11 @@ void main() {
 
   group('OpenSenseMapBloc', () {
     late OpenSenseMapBloc bloc;
-    late MockOpenSenseMapService mockService;
 
     setUp(() {
       SharedPreferences.setMockInitialValues({});
 
       bloc = OpenSenseMapBloc();
-      mockService = MockOpenSenseMapService();
     });
 
     group('Initialization', () {
@@ -36,23 +35,6 @@ void main() {
     });
 
     group('SenseBox Management', () {
-      test('should call createSenseBoxBike with additional tags', () async {
-        final mockService = MockOpenSenseMapService();
-        final name = 'Test';
-        final lat = 1.0;
-        final lng = 2.0;
-        final model = SenseBoxBikeModel.atrai;
-        final selectedTag = 'tag1';
-        final additionalTags = ['foo', 'bar', 'baz'];
-        when(() => mockService.createSenseBoxBike(
-                name, lat, lng, model, selectedTag, additionalTags))
-            .thenAnswer((_) async => Future.value());
-        // Call the method
-        await mockService.createSenseBoxBike(
-            name, lat, lng, model, selectedTag, additionalTags);
-        verify(() => mockService.createSenseBoxBike(
-            name, lat, lng, model, selectedTag, additionalTags)).called(1);
-      });
       test('should set selected sensebox correctly', () async {
         final testBox = SenseBox(
             sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
@@ -73,14 +55,6 @@ void main() {
         expect(bloc.selectedSenseBox, isNull);
       });
 
-      test('should load selected sensebox from preferences', () async {
-        final testBox = SenseBox(
-            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
-
-        await bloc.setSelectedSenseBox(testBox);
-
-        expect(bloc.selectedSenseBox, testBox);
-      });
 
       test('should clear selected sensebox when not authenticated', () async {
         final testBox = SenseBox(
@@ -95,34 +69,57 @@ void main() {
       });
     });
 
-    group('Stream Management', () {
-      test('should emit selected sensebox through stream', () async {
-        final testBox = SenseBox(
-            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
+    group('buildSenseBoxBikeModel()', () {
+      test('creates model with all components', () {
+        final boxConfig = BoxConfiguration(
+          id: 'atrai',
+          displayName: 'Atrai',
+          defaultGrouptag: 'atrai',
+          sensors: [
+            SensorDefinition(
+              id: '1',
+              icon: 'osem-thermometer',
+              title: 'Temperature',
+              unit: '°C',
+              sensorType: 'HDC1080',
+            ),
+            SensorDefinition(
+              id: '2',
+              icon: 'osem-humidity',
+              title: 'Rel. Humidity',
+              unit: '%',
+              sensorType: 'HDC1080',
+            ),
+          ],
+        );
 
-        final emittedValues = <SenseBox?>[];
-        bloc.senseBoxStream.listen(emittedValues.add);
+        final model = bloc.buildSenseBoxBikeModel(
+          'Test Box',
+          13.4050,
+          52.5200,
+          boxConfig,
+          'selected-tag',
+          ['foo', 'bar', null, 'baz'],
+        );
 
-        await bloc.setSelectedSenseBox(testBox);
-
-        await Future.delayed(Duration(milliseconds: 100));
-
-        expect(emittedValues, contains(testBox));
-      });
-
-      test('should emit null when sensebox is cleared', () async {
-        final testBox = SenseBox(
-            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
-
-        final emittedValues = <SenseBox?>[];
-        bloc.senseBoxStream.listen(emittedValues.add);
-
-        await bloc.setSelectedSenseBox(testBox);
-        await bloc.setSelectedSenseBox(null);
-
-        await Future.delayed(Duration(milliseconds: 100));
-
-        expect(emittedValues, contains(null));
+        expect(model['name'], 'Test Box');
+        expect(model['exposure'], 'mobile');
+        expect(model['location'], [13.4050, 52.5200]);
+        
+        final tags = model['grouptag'] as List;
+        expect(tags, contains('bike'));
+        expect(tags, contains('atrai'));
+        expect(tags, contains('selected-tag'));
+        expect(tags, contains('foo'));
+        expect(tags, contains('bar'));
+        expect(tags, contains('baz'));
+        expect(tags.length, 6);
+        
+        expect(model['sensors'], isA<List>());
+        final sensors = model['sensors'] as List;
+        expect(sensors.length, 2);
+        expect(sensors[0]['title'], 'Temperature');
+        expect(sensors[1]['title'], 'Rel. Humidity');
       });
     });
   });

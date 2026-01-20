@@ -11,7 +11,7 @@ void main() {
       home: Builder(
         builder: (context) {
           testBody(context);
-          return const SizedBox.shrink(); // Placeholder widget
+          return const SizedBox.shrink();
         },
       ),
     );
@@ -22,10 +22,12 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(buildTestWidget((context) {
         final result = emailValidator(context, null);
-        expect(result, 'Email must not be empty');
+        expect(
+            result, AppLocalizations.of(context)!.openSenseMapEmailErrorEmpty);
 
         final resultEmpty = emailValidator(context, '');
-        expect(resultEmpty, 'Email must not be empty');
+        expect(resultEmpty,
+            AppLocalizations.of(context)!.openSenseMapEmailErrorEmpty);
       }));
     });
 
@@ -33,7 +35,8 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(buildTestWidget((context) {
         final result = emailValidator(context, 'invalid-email');
-        expect(result, 'Invalid email address');
+        expect(result,
+            AppLocalizations.of(context)!.openSenseMapEmailErrorInvalid);
       }));
     });
 
@@ -51,10 +54,12 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(buildTestWidget((context) {
         final result = passwordValidatorSimple(context, null);
-        expect(result, 'Password must not be empty');
+        expect(result,
+            AppLocalizations.of(context)!.openSenseMapPasswordErrorEmpty);
 
         final resultEmpty = passwordValidatorSimple(context, '');
-        expect(resultEmpty, 'Password must not be empty');
+        expect(resultEmpty,
+            AppLocalizations.of(context)!.openSenseMapPasswordErrorEmpty);
       }));
     });
 
@@ -72,10 +77,12 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(buildTestWidget((context) {
         final result = passwordValidator(context, null);
-        expect(result, 'Password must not be empty');
+        expect(result,
+            AppLocalizations.of(context)!.openSenseMapPasswordErrorEmpty);
 
         final resultEmpty = passwordValidator(context, '');
-        expect(resultEmpty, 'Password must not be empty');
+        expect(resultEmpty,
+            AppLocalizations.of(context)!.openSenseMapPasswordErrorEmpty);
       }));
     });
 
@@ -83,7 +90,10 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(buildTestWidget((context) {
         final result = passwordValidator(context, 'short');
-        expect(result, 'Password must contain at least 8 characters');
+        expect(
+            result,
+            AppLocalizations.of(context)!
+                .openSenseMapRegisterPasswordErrorCharacters);
       }));
     });
 
@@ -106,6 +116,71 @@ void main() {
         () {
       final result = truncateBoxName('ShortName');
       expect(result, 'ShortName');
+    });
+  });
+
+  group('boxNameValidator', () {
+    testWidgets('returns error when value is null or empty',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget((context) {
+        final result = boxNameValidator(context, null);
+        expect(result, AppLocalizations.of(context)!.createBoxNameError);
+
+        final resultEmpty = boxNameValidator(context, '');
+        expect(resultEmpty, AppLocalizations.of(context)!.createBoxNameError);
+      }));
+    });
+
+    testWidgets('returns error when value is less than 2 characters',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget((context) {
+        final result = boxNameValidator(context, 'A');
+        expect(result, AppLocalizations.of(context)!.createBoxNameError);
+      }));
+    });
+
+    testWidgets('returns error when value is more than 50 characters',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget((context) {
+        final longName = 'A' * 51;
+        final result = boxNameValidator(context, longName);
+        expect(result, AppLocalizations.of(context)!.createBoxNameError);
+      }));
+    });
+
+    testWidgets('returns null when value is valid',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget((context) {
+        final result = boxNameValidator(context, 'Valid Name');
+        expect(result, null);
+      }));
+    });
+  });
+
+  group('parseCustomTags', () {
+    test('returns empty list for empty input', () {
+      final result = parseCustomTags('');
+      expect(result, isEmpty);
+    });
+
+    test('parses single tag', () {
+      final result = parseCustomTags('tag1');
+      expect(result, ['tag1']);
+    });
+
+    test('parses multiple comma-separated tags', () {
+      final result = parseCustomTags('tag1,tag2,tag3');
+      expect(result, ['tag1', 'tag2', 'tag3']);
+    });
+
+    test('trims whitespace from tags', () {
+      final result = parseCustomTags(' tag1 , tag2 , tag3 ');
+      expect(result, ['tag1', 'tag2', 'tag3']);
+    });
+
+    test('filters out empty tags', () {
+      final result = parseCustomTags('tag1,,tag2, ,tag3');
+      expect(result, ['tag1', 'tag2', 'tag3']);
     });
   });
 }

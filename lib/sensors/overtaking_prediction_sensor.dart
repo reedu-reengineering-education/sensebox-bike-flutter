@@ -14,8 +14,10 @@ import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart
 class OvertakingPredictionSensor extends Sensor {
   List<double> _latestPrediction = [0.0];
 
+  static int get staticUiPriority => 30;
+
   @override
-  get uiPriority => 40;
+  get uiPriority => staticUiPriority;
 
   @override
   Duration get lookbackWindow => const Duration(milliseconds: 2000);
@@ -67,7 +69,7 @@ class OvertakingPredictionSensor extends Sensor {
         double displayValue = value[0];
 
         return SensorCard(
-          title: AppLocalizations.of(context)!.sensorOvertakingShort,
+          title: AppLocalizations.of(context)!.sensorOvertaking,
           icon: getSensorIcon(title),
           color: getSensorColor(title),
           child: Row(

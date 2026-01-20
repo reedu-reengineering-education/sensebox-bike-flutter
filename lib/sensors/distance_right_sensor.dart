@@ -1,49 +1,53 @@
+import 'dart:math';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:flutter/material.dart';
-import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_display_card.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_value_display.dart';
+import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart';
 
-class TemperatureSensor extends Sensor {
+class DistanceRightSensor extends Sensor {
   List<double> _latestValue = [0.0];
 
-  static int get staticUiPriority => 40;
+  static int get staticUiPriority => 20;
 
   @override
   get uiPriority => staticUiPriority;
 
-  @override
-  Duration get lookbackWindow => const Duration(milliseconds: 1000);
-
   static const String sensorCharacteristicUuid =
-      '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8';
+      'b3491b60-c0f3-4306-a30d-49c91f37a62c';
 
-  TemperatureSensor(
+  DistanceRightSensor(
       BleBloc bleBloc, GeolocationBloc geolocationBloc,
       RecordingBloc recordingBloc,
       IsarService isarService)
-      : super(sensorCharacteristicUuid, "temperature", [], bleBloc,
+      : super(sensorCharacteristicUuid, "distance_right", [], bleBloc,
             geolocationBloc, recordingBloc, isarService);
 
   @override
   void onDataReceived(List<double> data) {
-    super.onDataReceived(data); // Call the parent class to handle buffering
+    super.onDataReceived(data);
     if (data.isNotEmpty) {
-      _latestValue = data; // Assuming the first value is temperature
+      _latestValue = data;
     }
   }
 
   @override
+  Duration get lookbackWindow => const Duration(milliseconds: 2000);
+
+  @override
   List<double> aggregateData(List<List<double>> valueBuffer) {
     List<double> myValues = valueBuffer.map((e) => e[0]).toList();
-
-    // Example aggregation logic: calculating the mean temperature
-    return [myValues.reduce((a, b) => a + b) / myValues.length];
+    List<double> nonZeroValues = myValues.where((value) => value != 0.0).toList();
+    if (nonZeroValues.isNotEmpty) {
+      return [nonZeroValues.reduce(min)];
+    }
+    return [0.0];
   }
 
   @override
@@ -52,22 +56,19 @@ class TemperatureSensor extends Sensor {
       valueStream: valueStream,
       initialValue: _latestValue,
       latestValue: _latestValue,
-      decimalPlaces: 1,
+      decimalPlaces: 0,
       builder: (context, value) {
-        return SensorCard(
-          title: AppLocalizations.of(context)!.sensorTemperature,
+        return SensorDisplayCard(
+          title: AppLocalizations.of(context)!.sensorDistanceRight,
           icon: getSensorIcon(title),
           color: getSensorColor(title),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                value[0].toStringAsFixed(1),
-                style: const TextStyle(fontSize: 48),
-              ),
-              const Text('°C'),
-            ],
+          valueStream: valueStream,
+          initialValue: _latestValue,
+          decimalPlaces: 0,
+          valueBuilder: (context, value) => SensorValueDisplay(
+            value: value[0].toStringAsFixed(0),
+            unit: 'cm',
+            isValid: value[0] != 0.0,
           ),
         );
       },

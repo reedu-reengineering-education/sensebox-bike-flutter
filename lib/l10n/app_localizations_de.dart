@@ -53,6 +53,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalClose => 'Schließen';
 
   @override
+  String get reloadConfiguration => 'Konfiguration neu laden';
+
+  @override
   String get generalUpload => 'Hochladen';
 
   @override
@@ -231,7 +234,8 @@ class AppLocalizationsDe extends AppLocalizations {
       'Deine aktuelle Position wird verwendet';
 
   @override
-  String get openSenseMapBoxSelectionNoBoxes => 'Keine senseBox verfügbar';
+  String get openSenseMapBoxSelectionNoBoxes =>
+      'Keine senseBox verfügbar oder Konfiguration nicht geladen';
 
   @override
   String get openSenseMapBoxSelectionCreateHint =>
@@ -358,7 +362,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sensorFinedustPM1 => 'Feinstaub PM1';
 
   @override
-  String get sensorDistance => 'Überholabstand';
+  String get sensorDistance => 'Abstand Links';
+
+  @override
+  String get sensorDistanceRight => 'Abstand Rechts';
 
   @override
   String get sensorOvertaking => 'Überholmanöver';
@@ -435,6 +442,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get campaignLoadError =>
       'Die Liste der Kampagnen konnte nicht geladen werden.';
+
+  @override
+  String get boxConfigurationLoadError =>
+      'Fehler beim Laden der Box-Konfigurationen.';
 
   @override
   String get selectCampaign => 'Kampagne auswählen';

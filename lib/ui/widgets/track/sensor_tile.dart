@@ -37,11 +37,23 @@ Widget build(BuildContext context) {
                 children: [
                   Icon(sensorIcon, size: 24, color: sensorColor),
                   const SizedBox(height: spacing),
-                  Text(
-                    title,
-                    style: TextStyle(fontSize: 12, color: sensorColor),
-                    textAlign: TextAlign.center,
-                  ),
+                  if (title.split(' ').length == 2)
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: title.split(' ').map((word) {
+                        return Text(
+                          word,
+                          style: TextStyle(fontSize: 12, color: sensorColor),
+                          textAlign: TextAlign.center,
+                        );
+                      }).toList(),
+                    )
+                  else
+                    Text(
+                      title,
+                      style: TextStyle(fontSize: 12, color: sensorColor),
+                      textAlign: TextAlign.center,
+                    ),
                 ],
               ),
             );

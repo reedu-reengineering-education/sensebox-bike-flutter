@@ -184,6 +184,12 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get generalClose;
 
+  /// No description provided for @reloadConfiguration.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload configuration'**
+  String get reloadConfiguration;
+
   /// No description provided for @generalUpload.
   ///
   /// In en, this message translates to:
@@ -493,7 +499,7 @@ abstract class AppLocalizations {
   /// No description provided for @openSenseMapBoxSelectionNoBoxes.
   ///
   /// In en, this message translates to:
-  /// **'No senseBoxes available'**
+  /// **'No senseBoxes available or configuration not loaded'**
   String get openSenseMapBoxSelectionNoBoxes;
 
   /// No description provided for @openSenseMapBoxSelectionCreateHint.
@@ -715,13 +721,19 @@ abstract class AppLocalizations {
   /// No description provided for @sensorDistance.
   ///
   /// In en, this message translates to:
-  /// **'Overtaking Distance'**
+  /// **'Distance Left'**
   String get sensorDistance;
+
+  /// No description provided for @sensorDistanceRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance Right'**
+  String get sensorDistanceRight;
 
   /// No description provided for @sensorOvertaking.
   ///
   /// In en, this message translates to:
-  /// **'Overtaking Manoeuvre'**
+  /// **'Overtaking Prediction'**
   String get sensorOvertaking;
 
   /// No description provided for @sensorOvertakingShort.
@@ -867,6 +879,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load list of campaigns.'**
   String get campaignLoadError;
+
+  /// No description provided for @boxConfigurationLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load box configurations.'**
+  String get boxConfigurationLoadError;
 
   /// No description provided for @selectCampaign.
   ///

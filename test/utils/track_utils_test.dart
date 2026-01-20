@@ -163,9 +163,9 @@ void main() {
   });
 
   group('getFirstAvailableSensorType', () {
-    test('returns temperature for empty sensor data', () {
+    test('returns distance for empty sensor data', () {
       final result = getFirstAvailableSensorType([]);
-      expect(result, 'temperature');
+      expect(result, 'distance');
     });
 
     test('returns temperature when temperature sensor is available', () {
@@ -181,7 +181,7 @@ void main() {
       expect(result, 'temperature');
     });
 
-    test('returns humidity when temperature is not available but humidity is', () {
+    test('returns distance when distance is available', () {
       final sensorData = [
         SensorData()
           ..characteristicUuid = 'humidity-uuid'
@@ -196,7 +196,7 @@ void main() {
       ];
 
       final result = getFirstAvailableSensorType(sensorData);
-      expect(result, 'humidity');
+      expect(result, 'distance');
     });
 
     test('returns distance when temperature and humidity are not available', () {
@@ -217,7 +217,7 @@ void main() {
       expect(result, 'distance');
     });
 
-    test('returns first sensor in order when multiple sensors are available', () {
+    test('returns distance when distance is available even with other sensors', () {
       final sensorData = [
         SensorData()
           ..characteristicUuid = 'humidity-uuid'
@@ -237,7 +237,7 @@ void main() {
       ];
 
       final result = getFirstAvailableSensorType(sensorData);
-      expect(result, 'temperature');
+      expect(result, 'distance');
     });
 
     test('handles sensors with attributes correctly', () {

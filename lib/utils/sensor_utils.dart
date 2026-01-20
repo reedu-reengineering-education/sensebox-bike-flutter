@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/models/sensebox.dart' as sensebox_model;
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/sensors/gps_sensor.dart';
+import 'package:sensebox_bike/sensors/distance_sensor.dart';
+import 'package:sensebox_bike/sensors/distance_right_sensor.dart';
+import 'package:sensebox_bike/sensors/overtaking_prediction_sensor.dart';
+import 'package:sensebox_bike/sensors/temperature_sensor.dart';
+import 'package:sensebox_bike/sensors/humidity_sensor.dart';
+import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
+import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
+import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
+import 'package:sensebox_bike/sensors/finedust_sensor.dart';
 
 String? getSearchKey(String key, String? attribute) {
   if (attribute != null) {
@@ -31,6 +40,8 @@ String? getTitleFromSensorKey(String key, String? attribute) {
       return 'Finedust PM1';
     case 'distance':
       return 'Overtaking Distance';
+    case 'distance_right':
+      return 'Distance Right';
     case 'overtaking':
       return 'Overtaking Manoeuvre';
     case 'surface_classification_asphalt':
@@ -84,6 +95,8 @@ String? getTranslatedTitleFromSensorKey(
       return AppLocalizations.of(context)!.sensorFinedustPM1;
     case 'distance':
       return AppLocalizations.of(context)!.sensorDistance;
+    case 'distance_right':
+      return AppLocalizations.of(context)!.sensorDistanceRight;
     case 'overtaking':
       return AppLocalizations.of(context)!.sensorOvertaking;
     case 'surface_classification_asphalt':
@@ -125,7 +138,9 @@ IconData getSensorIcon(String sensorType) {
     case 'humidity':
       return Icons.water_drop_outlined;
     case 'distance':
-      return Icons.sensors;
+      return Icons.arrow_back;
+    case 'distance_right':
+      return Icons.arrow_forward;
     case 'acceleration':
       return Icons.vibration;
     case 'finedust':
@@ -168,7 +183,8 @@ Color getSensorColor(String sensorType) {
   }
 }
 
-String? findSensorIdByData(SensorData sensorData, List<Sensor> boxSensors) {
+String? findSensorIdByData(
+    SensorData sensorData, List<sensebox_model.Sensor> boxSensors) {
   final sensorDataTitle =
       getTitleFromSensorKey(sensorData.title, sensorData.attribute);
 
@@ -213,7 +229,7 @@ bool shouldStoreSensorData(SensorData sensorData) {
   return true;
 }
 
-String? findSpeedSensorId(SenseBox senseBox) {
+String? findSpeedSensorId(sensebox_model.SenseBox senseBox) {
   final sensors = senseBox.sensors;
   if (sensors == null || sensors.isEmpty) {
     return null;
@@ -249,3 +265,81 @@ void addSpeedEntries({
     };
   }
 }
+
+int getUiPriorityByUuid(String characteristicUuid) {
+  final uuidToPriority = {
+    DistanceSensor.sensorCharacteristicUuid: DistanceSensor.staticUiPriority,
+    DistanceRightSensor.sensorCharacteristicUuid:
+        DistanceRightSensor.staticUiPriority,
+    OvertakingPredictionSensor.sensorCharacteristicUuid:
+        OvertakingPredictionSensor.staticUiPriority,
+    TemperatureSensor.sensorCharacteristicUuid:
+        TemperatureSensor.staticUiPriority,
+    HumiditySensor.sensorCharacteristicUuid: HumiditySensor.staticUiPriority,
+    AccelerationSensor.sensorCharacteristicUuid:
+        AccelerationSensor.staticUiPriority,
+    GPSSensor.sensorCharacteristicUuid: GPSSensor.staticUiPriority,
+    SurfaceClassificationSensor.sensorCharacteristicUuid:
+        SurfaceClassificationSensor.staticUiPriority,
+    SurfaceAnomalySensor.sensorCharacteristicUuid:
+        SurfaceAnomalySensor.staticUiPriority,
+    FinedustSensor.sensorCharacteristicUuid: FinedustSensor.staticUiPriority,
+  };
+
+  return uuidToPriority[characteristicUuid] ?? 999999;
+}
+
+class SensorEntry {
+  final String title;
+  final String? attribute;
+  final String characteristicUuid;
+
+  SensorEntry({
+    required this.title,
+    required this.attribute,
+    required this.characteristicUuid,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SensorEntry &&
+          runtimeType == other.runtimeType &&
+          title == other.title &&
+          attribute == other.attribute &&
+          characteristicUuid == other.characteristicUuid;
+
+  @override
+  int get hashCode =>
+      title.hashCode ^ attribute.hashCode ^ characteristicUuid.hashCode;
+}
+
+List<SensorEntry> getUniqueSortedSensorEntries(List<SensorData> sensorData) {
+  final uniqueEntries = <SensorEntry>{};
+  for (final data in sensorData) {
+    uniqueEntries.add(SensorEntry(
+      title: data.title,
+      attribute: data.attribute,
+      characteristicUuid: data.characteristicUuid,
+    ));
+  }
+
+  final entriesList = uniqueEntries.toList();
+  entriesList.sort((a, b) {
+    // Speed (gps with attribute 'speed') should always be last
+    final isSpeedA = a.title == 'gps' && a.attribute == 'speed';
+    final isSpeedB = b.title == 'gps' && b.attribute == 'speed';
+    
+    if (isSpeedA && !isSpeedB) return 1; // Speed goes after everything
+    if (!isSpeedA && isSpeedB) return -1; // Non-speed goes before speed
+    if (isSpeedA && isSpeedB) return 0; // Both are speed, keep order
+    
+    // For non-speed entries, sort by priority
+    final priorityA = getUiPriorityByUuid(a.characteristicUuid);
+    final priorityB = getUiPriorityByUuid(b.characteristicUuid);
+    return priorityA.compareTo(priorityB);
+  });
+
+  return entriesList;
+}
+

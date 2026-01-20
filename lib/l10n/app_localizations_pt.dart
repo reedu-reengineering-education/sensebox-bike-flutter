@@ -55,6 +55,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generalClose => 'Fechar';
 
   @override
+  String get reloadConfiguration => 'Recarregar configuração';
+
+  @override
   String get generalUpload => 'Enviar';
 
   @override
@@ -231,7 +234,8 @@ class AppLocalizationsPt extends AppLocalizations {
       'Sua posição atual será usada';
 
   @override
-  String get openSenseMapBoxSelectionNoBoxes => 'Nenhum senseBox disponível';
+  String get openSenseMapBoxSelectionNoBoxes =>
+      'Nenhum senseBox disponível ou configuração não carregada';
 
   @override
   String get openSenseMapBoxSelectionCreateHint =>
@@ -357,10 +361,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sensorFinedustPM1 => 'Material Particulado PM1';
 
   @override
-  String get sensorDistance => 'Distância de Ultrapassagem';
+  String get sensorDistance => 'Distância Esquerda';
 
   @override
-  String get sensorOvertaking => 'Manobra de Ultrapassagem';
+  String get sensorDistanceRight => 'Distância Direita';
+
+  @override
+  String get sensorOvertaking => 'Previsão de Ultrapassagem';
 
   @override
   String get sensorOvertakingShort => 'Ultrapassagem';
@@ -433,6 +440,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get campaignLoadError => 'Falha ao carregar a lista de campanhas.';
+
+  @override
+  String get boxConfigurationLoadError =>
+      'Falha ao carregar as configurações da caixa.';
 
   @override
   String get selectCampaign => 'Selecionar campanha';
