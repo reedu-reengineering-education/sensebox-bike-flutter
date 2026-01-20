@@ -687,5 +687,33 @@ void main() {
     test('handles empty list', () {
       expect(sortSensorTilesByCanonicalOrder([]), isEmpty);
     });
+
+    test('sorts unknown sensors alphabetically when not in canonical order', () {
+      final tiles = [
+        {'title': 'unknown_sensor_z', 'attribute': null},
+        {'title': 'unknown_sensor_a', 'attribute': null},
+        {'title': 'another_unknown', 'attribute': 'attr'},
+      ];
+
+      final sorted = sortSensorTilesByCanonicalOrder(tiles);
+
+      expect(sorted.length, 3);
+      expect(sorted[0]['title'], 'another_unknown');
+      expect(sorted[1]['title'], 'unknown_sensor_a');
+      expect(sorted[2]['title'], 'unknown_sensor_z');
+    });
+
+    test('sorts sensors with same canonical position alphabetically', () {
+      final tiles = [
+        {'title': 'temperature', 'attribute': null},
+        {'title': 'temperature', 'attribute': null},
+      ];
+
+      final sorted = sortSensorTilesByCanonicalOrder(tiles);
+
+      expect(sorted.length, 2);
+      expect(sorted[0]['title'], 'temperature');
+      expect(sorted[1]['title'], 'temperature');
+    });
   });
 }
