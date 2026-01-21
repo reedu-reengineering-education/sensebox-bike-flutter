@@ -11,7 +11,7 @@ import 'package:sensebox_bike/utils/opensensemap_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamController
 
 class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
-  final OpenSenseMapService _service = OpenSenseMapService();
+  final OpenSenseMapService _service;
   final ConfigurationBloc? _configurationBloc;
   bool _isAuthenticated = false;
   final ValueNotifier<bool> _isAuthenticatingNotifier =
@@ -59,8 +59,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  OpenSenseMapBloc({ConfigurationBloc? configurationBloc})
-      : _configurationBloc = configurationBloc {
+  OpenSenseMapBloc({
+    ConfigurationBloc? configurationBloc,
+    OpenSenseMapService? service,
+  })  : _configurationBloc = configurationBloc,
+        _service = service ?? OpenSenseMapService() {
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -73,9 +76,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       // First, check if we have a valid access token
       final isTokenValid = await _service.isCurrentAccessTokenValid();
       if (isTokenValid) {
-        // We have a valid token, no need to refresh
         _isAuthenticated = true;
         await loadSelectedSenseBox();
+        if (_selectedSenseBox == null) {
+          await _findAndSetCompatibleReplacement();
+        }
         notifyListeners();
         return;
       }
@@ -106,6 +111,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
           _service.resetPermanentDisable();
         }
         await loadSelectedSenseBox();
+        if (_selectedSenseBox == null) {
+          await _findAndSetCompatibleReplacement();
+        }
       } else {
         _isAuthenticated = false;
       }
@@ -117,10 +125,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-
-
-
-
   Future<void> loadSelectedSenseBox() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -128,7 +132,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       await prefs.remove('selectedSenseBox');
       _senseBoxController.add(null);
       _selectedSenseBox = null;
-
+      notifyListeners();
       return;
     }
 
@@ -153,20 +157,20 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
         await prefs.remove('selectedSenseBox');
         _senseBoxController.add(null);
         _selectedSenseBox = null;
-
-        WidgetsBinding.instance.addPostFrameCallback((_) async {
-          final senseBoxesJson = await fetchSenseBoxes(page: 0);
-          if (senseBoxesJson.isNotEmpty) {
-            final senseBoxes = _convertJsonToSenseBoxes(senseBoxesJson);
-            final compatibleBox = _findFirstCompatibleBox(senseBoxes);
-            if (compatibleBox != null) {
-              await setSelectedSenseBox(compatibleBox);
-            }
-          }
-        });
       }
     }
     notifyListeners();
+  }
+
+  Future<void> _findAndSetCompatibleReplacement() async {
+    final senseBoxesJson = await fetchSenseBoxes(page: 0);
+    if (senseBoxesJson.isNotEmpty) {
+      final senseBoxes = _convertJsonToSenseBoxes(senseBoxesJson);
+      final compatibleBox = _findFirstCompatibleBox(senseBoxes);
+      if (compatibleBox != null) {
+        await setSelectedSenseBox(compatibleBox);
+      }
+    }
   }
 
   @override
