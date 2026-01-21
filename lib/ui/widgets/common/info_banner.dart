@@ -36,59 +36,75 @@ class InfoBanner extends StatelessWidget {
     final theme = Theme.of(context);
     final hasUrl = url != null;
     
-    final effectivePadding = horizontalPadding != null
-        ? EdgeInsets.symmetric(
-            vertical: spacing / 4,
-            horizontal: horizontalPadding!,
-          )
-        : (outerPadding ?? const EdgeInsets.symmetric(
-            vertical: spacing / 4,
-            horizontal: spacing / 2,
-          ));
+    EdgeInsetsGeometry effectivePadding;
+    if (outerPadding != null) {
+      effectivePadding = outerPadding!;
+    } else if (horizontalPadding != null) {
+      effectivePadding = EdgeInsets.symmetric(
+        vertical: spacing / 4,
+        horizontal: horizontalPadding!,
+      );
+    } else {
+      effectivePadding = const EdgeInsets.symmetric(
+        vertical: spacing / 4,
+        horizontal: spacing / 2,
+      );
+    }
     
-    return Padding(
-      padding: effectivePadding,
-      child: InkWell(
-        onTap: hasUrl ? () => _openUrl(context) : null,
-        borderRadius: BorderRadius.circular(borderRadiusSmall),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(spacing),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(borderRadiusSmall),
-            border: Border.all(
-              color: color.withOpacity(0.3),
-              width: 1,
+    final content = Row(
+      children: [
+        Icon(
+          Icons.info_outline,
+          size: iconSize,
+          color: color,
+        ),
+        const SizedBox(width: spacing / 2),
+        Expanded(
+          child: Text(
+            text,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: iconSize,
-                color: color,
-              ),
-              const SizedBox(width: spacing / 2),
-              Expanded(
-                child: Text(
-                  text,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              if (hasUrl)
-                Icon(
-                  Icons.open_in_new,
-                  size: iconSize * 0.8,
-                  color: color,
-                ),
-            ],
+        ),
+        if (hasUrl)
+          Icon(
+            Icons.open_in_new,
+            size: iconSize * 0.8,
+            color: color,
           ),
+      ],
+    );
+
+    final container = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(spacing),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(borderRadiusSmall),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
         ),
       ),
+      child: hasUrl
+          ? Ink(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(borderRadiusSmall),
+              ),
+              child: InkWell(
+                onTap: () => _openUrl(context),
+                borderRadius: BorderRadius.circular(borderRadiusSmall),
+                child: content,
+              ),
+            )
+          : content,
+    );
+
+    return Padding(
+      padding: effectivePadding,
+      child: container,
     );
   }
 }

@@ -693,5 +693,5 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get loginForgotPasswordInfo =>
-      'Wenn du dein Passwort vergessen hast, gehe bitte zu openSenseMap, klicke auf \"Login\" und \"Vergessen\".';
+      'Wenn du dein Passwort vergessen hast, gehe bitte zu openSenseMap, klicke auf \"Anmelden\" und \"Vergessen?\".';
 }

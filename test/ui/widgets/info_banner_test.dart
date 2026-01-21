@@ -38,7 +38,8 @@ void main() {
     );
 
     expect(find.byIcon(Icons.open_in_new), findsNothing);
-    expect(find.byType(InkWell), findsOneWidget);
+    expect(find.byType(InkWell), findsNothing);
+    expect(find.byType(Ink), findsNothing);
   });
 
   testWidgets('InfoBanner with URL shows open icon and is tappable',
@@ -56,6 +57,7 @@ void main() {
 
     expect(find.text(testText), findsOneWidget);
     expect(find.byIcon(Icons.open_in_new), findsOneWidget);
+    expect(find.byType(Ink), findsOneWidget);
     expect(find.byType(InkWell), findsOneWidget);
 
     final inkWell = find.byType(InkWell);

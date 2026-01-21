@@ -1297,7 +1297,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginForgotPasswordInfo.
   ///
   /// In en, this message translates to:
-  /// **'If you forgot your password, please navigate to openSenseMap, click \"Login\" and \"Forgot it\".'**
+  /// **'If you forgot your password, please navigate to openSenseMap, click \"Login\" and \"Forgot it?\".'**
   String get loginForgotPasswordInfo;
 }
 

@@ -684,5 +684,5 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginForgotPasswordInfo =>
-      'If you forgot your password, please navigate to openSenseMap, click \"Login\" and \"Forgot it\".';
+      'If you forgot your password, please navigate to openSenseMap, click \"Login\" and \"Forgot it?\".';
 }
