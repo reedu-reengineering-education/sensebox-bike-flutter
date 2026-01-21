@@ -1281,6 +1281,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Track has no geolocation data and cannot be uploaded.'**
   String get errorTrackNoGeolocations;
+
+  /// No description provided for @openSenseMapInfoText.
+  ///
+  /// In en, this message translates to:
+  /// **'Your senseBox:bike data will be shared on openSenseMap, contributing to citizen science and environmental monitoring.'**
+  String get openSenseMapInfoText;
+
+  /// No description provided for @openSenseMapInfoLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit openSenseMap.org'**
+  String get openSenseMapInfoLink;
+
+  /// No description provided for @loginForgotPasswordInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'If you forgot your password, please navigate to openSenseMap, click \"Login\" and \"Forgot it\".'**
+  String get loginForgotPasswordInfo;
 }
 
 class _AppLocalizationsDelegate

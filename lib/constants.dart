@@ -17,6 +17,7 @@ class SharedPreferencesKeys {
 }
 
 const openSenseMapUrl = 'https://api.opensensemap.org';
+const openSenseMapWebsiteUrl = 'https://opensensemap.org/';
 const senseBoxBikePrivacyPolicyUrl =
     'https://sensebox.de/sensebox-bike-privacy-policy';
 const contactEmail = 'kontakt@reedu.de';
