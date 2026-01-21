@@ -1,16 +1,26 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
-import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
+class MockConfigurationBloc extends Mock implements ConfigurationBloc {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    registerFallbackValue(SenseBox(
+      sId: 'fallback',
+      name: 'Fallback',
+      exposure: 'outdoor',
+      sensors: [],
+    ));
+  });
 
   group('OpenSenseMapBloc', () {
     late OpenSenseMapBloc bloc;
@@ -120,6 +130,101 @@ void main() {
         expect(sensors.length, 2);
         expect(sensors[0]['title'], 'Temperature');
         expect(sensors[1]['title'], 'Rel. Humidity');
+      });
+    });
+
+    group('Box Compatibility', () {
+      late MockConfigurationBloc mockConfigurationBloc;
+
+      setUp(() {
+        mockConfigurationBloc = MockConfigurationBloc();
+      });
+
+      group('loadSelectedSenseBox() compatibility checking', () {
+        test('preserves compatible saved box when loading', () async {
+          SharedPreferences.setMockInitialValues({});
+          final bloc =
+              OpenSenseMapBloc(configurationBloc: mockConfigurationBloc);
+
+          final compatibleBox = SenseBox(
+            sId: 'saved-compatible',
+            name: 'Saved Compatible Box',
+            exposure: 'outdoor',
+            sensors: [
+              Sensor(title: 'Temperature', unit: '°C', sensorType: 'HDC1080'),
+            ],
+            grouptag: [],
+          );
+
+          await bloc.setSelectedSenseBox(compatibleBox);
+
+          final prefs = await SharedPreferences.getInstance();
+          final savedBoxJson = await prefs.getString('selectedSenseBox');
+          expect(savedBoxJson, isNotNull);
+
+          when(() => mockConfigurationBloc.isSenseBoxBikeCompatible(any()))
+              .thenReturn(true);
+
+          final savedBox = SenseBox.fromJson(jsonDecode(savedBoxJson!));
+          final isCompatible =
+              mockConfigurationBloc.isSenseBoxBikeCompatible(savedBox);
+
+          expect(isCompatible, true);
+          expect(savedBox.sId, 'saved-compatible');
+        });
+
+        test('identifies incompatible saved box', () async {
+          SharedPreferences.setMockInitialValues({});
+          final bloc =
+              OpenSenseMapBloc(configurationBloc: mockConfigurationBloc);
+
+          final incompatibleBox = SenseBox(
+            sId: 'saved-incompatible',
+            name: 'Saved Incompatible Box',
+            exposure: 'outdoor',
+            sensors: [
+              Sensor(title: 'Unknown Sensor', unit: '?', sensorType: 'UNKNOWN'),
+            ],
+            grouptag: [],
+          );
+
+          await bloc.setSelectedSenseBox(incompatibleBox);
+
+          final prefs = await SharedPreferences.getInstance();
+          final savedBoxJson = await prefs.getString('selectedSenseBox');
+          expect(savedBoxJson, isNotNull);
+
+          when(() => mockConfigurationBloc.isSenseBoxBikeCompatible(any()))
+              .thenReturn(false);
+
+          final savedBox = SenseBox.fromJson(jsonDecode(savedBoxJson!));
+          final isCompatible =
+              mockConfigurationBloc.isSenseBoxBikeCompatible(savedBox);
+
+          expect(isCompatible, false);
+        });
+
+        test('works when ConfigurationBloc is null', () async {
+          SharedPreferences.setMockInitialValues({});
+          final bloc = OpenSenseMapBloc();
+
+          final box = SenseBox(
+            sId: 'saved-box',
+            name: 'Saved Box',
+            exposure: 'outdoor',
+            sensors: [],
+            grouptag: [],
+          );
+
+          await bloc.setSelectedSenseBox(box);
+
+          final prefs = await SharedPreferences.getInstance();
+          final savedBoxJson = await prefs.getString('selectedSenseBox');
+          expect(savedBoxJson, isNotNull);
+
+          final savedBox = SenseBox.fromJson(jsonDecode(savedBoxJson!));
+          expect(savedBox.sId, 'saved-box');
+        });
       });
     });
   });

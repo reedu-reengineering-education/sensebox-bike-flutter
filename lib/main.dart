@@ -71,7 +71,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     _isarService = IsarService(isarProvider: IsarProvider());
     _bleBloc = BleBloc(_settingsBloc!);
     _configurationBloc = ConfigurationBloc();
-    _openSenseMapBloc = OpenSenseMapBloc();
+    _openSenseMapBloc = OpenSenseMapBloc(configurationBloc: _configurationBloc);
     _trackBloc = TrackBloc(_isarService!);
     _recordingBloc = RecordingBloc(_isarService!, _bleBloc!, _trackBloc!,
         _openSenseMapBloc!, _settingsBloc!);
