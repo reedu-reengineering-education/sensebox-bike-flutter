@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:isar_community/isar.dart';
 
 class GeolocationService {
@@ -58,6 +59,12 @@ class GeolocationService {
       // Pre-load sensor data for all geolocations
       for (final geo in geolocations) {
         await geo.sensorData.load();
+        final sensorDataList = geo.sensorData.toList();
+        sensorDataList.sort((a, b) => compareSensorsByCanonicalOrder(
+          a.title, a.attribute, b.title, b.attribute,
+        ));
+        geo.sensorData.clear();
+        geo.sensorData.addAll(sensorDataList);
       }
 
       return geolocations;

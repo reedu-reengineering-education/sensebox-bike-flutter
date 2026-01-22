@@ -8,6 +8,7 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/upload_error_classifier.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 /// Service responsible for uploading track data in chunks to handle large datasets
 /// and comply with API limitations (max 2500 points per chunk).
@@ -152,8 +153,14 @@ class ChunkedUploader {
           // Load sensor data for this geolocation point
           await geolocation.sensorData.load();
 
+          // Sort sensor data by canonical order to ensure consistent ordering
+          final sensorDataList = geolocation.sensorData.toList();
+          sensorDataList.sort((a, b) => compareSensorsByCanonicalOrder(
+            a.title, a.attribute, b.title, b.attribute,
+          ));
+
           // Group sensor data by sensor title (which acts as the sensor key)
-          for (final sensorData in geolocation.sensorData) {
+          for (final sensorData in sensorDataList) {
             final sensorKey = sensorData.title;
             if (!sensorDataForPoint.containsKey(sensorKey)) {
               sensorDataForPoint[sensorKey] = [];

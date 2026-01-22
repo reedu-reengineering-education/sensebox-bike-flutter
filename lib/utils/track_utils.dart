@@ -232,6 +232,7 @@ class UploadDataPreparer {
             sensorTitle == 'surface_anomaly') {
           // For multi-value sensors, we need to find all the individual sensors
           List<Sensor> individualSensors = [];
+          List<double> orderedValues = aggregatedValues;
 
           if (sensorTitle == 'finedust') {
             // Find all finedust sensors
@@ -246,6 +247,12 @@ class UploadDataPreparer {
                       s.title!.toLowerCase() == 'standing')
                   .toList(),
             );
+            // Reorder aggregatedValues to match sorted API sensors order
+            // Device order: [asphalt, compacted, paving, sett, standing]
+            // Canonical order: [asphalt, compacted, paving, sett, standing]
+            // They match, but we ensure consistency by mapping via canonical keys
+            orderedValues = _reorderSurfaceClassificationValues(
+              aggregatedValues, individualSensors);
           } else if (sensorTitle == 'overtaking') {
             // Find the Overtaking Manoeuvre sensor
             individualSensors = senseBox.sensors!
@@ -262,13 +269,13 @@ class UploadDataPreparer {
 
           // Create entries for each individual sensor
           for (int j = 0;
-              j < aggregatedValues.length && j < individualSensors.length;
+              j < orderedValues.length && j < individualSensors.length;
               j++) {
             final individualSensor = individualSensors[j];
             data['${individualSensor.id}_${geolocation.timestamp.toIso8601String()}'] =
                 {
               'sensor': individualSensor.id,
-              'value': aggregatedValues[j].toStringAsFixed(2),
+              'value': orderedValues[j].toStringAsFixed(2),
               'createdAt': geolocation.timestamp.toUtc().toIso8601String(),
               'location': {
                 'lat': geolocation.latitude,
@@ -329,5 +336,38 @@ class UploadDataPreparer {
         .where((sensor) =>
             sensor.title!.toLowerCase() == sensorTitle.toLowerCase())
         .firstOrNull;
+  }
+
+  List<double> _reorderSurfaceClassificationValues(
+      List<double> values, List<Sensor> sortedSensors) {
+    if (values.length != 5 || sortedSensors.length != 5) {
+      return values;
+    }
+
+    final reordered = List<double>.filled(5, 0.0);
+
+    for (int i = 0; i < sortedSensors.length; i++) {
+      final sensor = sortedSensors[i];
+      final apiTitle = (sensor.title ?? '').toLowerCase();
+      
+      int deviceIndex = -1;
+      if (apiTitle.contains('asphalt')) {
+        deviceIndex = 0;
+      } else if (apiTitle.contains('compacted')) {
+        deviceIndex = 1;
+      } else if (apiTitle.contains('paving')) {
+        deviceIndex = 2;
+      } else if (apiTitle.contains('sett')) {
+        deviceIndex = 3;
+      } else if (apiTitle == 'standing') {
+        deviceIndex = 4;
+      }
+
+      if (deviceIndex >= 0 && deviceIndex < values.length) {
+        reordered[i] = values[deviceIndex];
+      }
+    }
+
+    return reordered;
   }
 }
