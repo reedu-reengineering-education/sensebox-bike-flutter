@@ -684,4 +684,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorTrackNoGeolocations =>
       'Track has no geolocation data and cannot be uploaded.';
+
+  @override
+  String get openSenseMapInfoText =>
+      'Your senseBox:bike data will be shared on openSenseMap, contributing to citizen science and environmental monitoring.';
+
+  @override
+  String get openSenseMapInfoLink => 'Visit openSenseMap.org';
+
+  @override
+  String get loginForgotPasswordInfo =>
+      'If you forgot your password, please navigate to openSenseMap, click \"Login\" and \"Forgot it?\".';
 }

@@ -15,16 +15,53 @@ void main() {
       ),
     );
 
-    // Text is present
     expect(find.text(testText), findsOneWidget);
 
-    // Icon uses the default blue color
     final icon = tester.widget<Icon>(find.byIcon(Icons.info_outline));
     expect(icon.color, Colors.blue);
 
-    // Container has the expected background tint
     final container = tester.widget<Container>(find.byType(Container).first);
     final decoration = container.decoration as BoxDecoration;
     expect(decoration.color, Colors.blue.withOpacity(0.1));
+  });
+
+  testWidgets('InfoBanner without URL does not show open icon',
+      (WidgetTester tester) async {
+    const testText = 'Hint message';
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: InfoBanner(text: testText),
+        ),
+      ),
+    );
+
+    expect(find.byIcon(Icons.open_in_new), findsNothing);
+    expect(find.byType(InkWell), findsNothing);
+    expect(find.byType(Ink), findsNothing);
+  });
+
+  testWidgets('InfoBanner with URL shows open icon and is tappable',
+      (WidgetTester tester) async {
+    const testText = 'Click to open';
+    const testUrl = 'https://example.com';
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: InfoBanner(text: testText, url: testUrl),
+        ),
+      ),
+    );
+
+    expect(find.text(testText), findsOneWidget);
+    expect(find.byIcon(Icons.open_in_new), findsOneWidget);
+    expect(find.byType(Ink), findsOneWidget);
+    expect(find.byType(InkWell), findsOneWidget);
+
+    final inkWell = find.byType(InkWell);
+    await tester.tap(inkWell);
+    await tester.pump();
   });
 }

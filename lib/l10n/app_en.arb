@@ -271,5 +271,8 @@
     "trackFilterAll": "All",
     "trackFilterUnuploaded": "Not uploaded",
     "trackUploadRetryFailed": "Upload retry failed. Please try again.",
-    "errorTrackNoGeolocations": "Track has no geolocation data and cannot be uploaded."
+    "errorTrackNoGeolocations": "Track has no geolocation data and cannot be uploaded.",
+    "openSenseMapInfoText": "Your senseBox:bike data will be shared on openSenseMap, contributing to citizen science and environmental monitoring.",
+    "openSenseMapInfoLink": "Visit openSenseMap.org",
+    "loginForgotPasswordInfo": "If you forgot your password, please navigate to openSenseMap, click \"Login\" and \"Forgot it?\"."
 }

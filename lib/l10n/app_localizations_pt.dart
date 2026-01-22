@@ -690,4 +690,15 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get errorTrackNoGeolocations =>
       'Trajeto não possui dados de geolocalização e não pode ser enviado.';
+
+  @override
+  String get openSenseMapInfoText =>
+      'Os dados da sua senseBox:bike serão compartilhados no openSenseMap, contribuindo para a ciência cidadã e o monitoramento ambiental.';
+
+  @override
+  String get openSenseMapInfoLink => 'Visite openSenseMap.org';
+
+  @override
+  String get loginForgotPasswordInfo =>
+      'Se você esqueceu sua senha, navegue até o openSenseMap, clique em \"Login\" e \"Forgot it?\".';
 }
