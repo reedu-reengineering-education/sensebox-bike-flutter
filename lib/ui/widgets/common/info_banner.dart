@@ -35,7 +35,7 @@ class InfoBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasUrl = url != null;
-    
+
     EdgeInsetsGeometry effectivePadding;
     if (outerPadding != null) {
       effectivePadding = outerPadding!;
@@ -50,12 +50,12 @@ class InfoBanner extends StatelessWidget {
         horizontal: spacing / 2,
       );
     }
-    
+
     final content = Row(
       children: [
         Icon(
           Icons.info_outline,
-          size: iconSize,
+          size: iconSizeLarge,
           color: color,
         ),
         const SizedBox(width: spacing / 2),
@@ -71,7 +71,7 @@ class InfoBanner extends StatelessWidget {
         if (hasUrl)
           Icon(
             Icons.open_in_new,
-            size: iconSize * 0.8,
+            size: iconSizeLarge,
             color: color,
           ),
       ],
