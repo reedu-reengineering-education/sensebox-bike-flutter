@@ -3,6 +3,7 @@ import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:isar_community/isar.dart';
 
 class SensorService {
@@ -27,9 +28,15 @@ class SensorService {
   Future<List<SensorData>> getSensorDataByGeolocationId(
       int geolocationId) async {
     final isar = await isarProvider.getDatabase();
-    return await isar.sensorDatas.where().filter().geolocationData((q) {
+    final sensorData = await isar.sensorDatas.where().filter().geolocationData((q) {
       return q.idEqualTo(geolocationId);
     }).findAll();
+    
+    sensorData.sort((a, b) => compareSensorsByCanonicalOrder(
+      a.title, a.attribute, b.title, b.attribute,
+    ));
+    
+    return sensorData;
   }
 
   Future<List<SensorData>> getSensorDataByTrackId(int trackId) async {

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_batch.dart';
@@ -15,7 +16,7 @@ double getMinSensorValue(List<GeolocationData> data, String sensorType) {
   double minVal = double.infinity;
   for (GeolocationData data in data) {
     for (SensorData sensor in data.sensorData) {
-      if ('${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}' ==
+      if (buildCanonicalSensorKey(sensor.title, sensor.attribute) ==
           sensorType) {
         minVal = min(minVal, sensor.value);
       }
@@ -28,7 +29,7 @@ double getMaxSensorValue(List<GeolocationData> data, String sensorType) {
   double maxVal = double.negativeInfinity;
   for (GeolocationData data in data) {
     for (SensorData sensor in data.sensorData) {
-      if ('${sensor.title}${sensor.attribute == null ? '' : '_${sensor.attribute}'}' ==
+      if (buildCanonicalSensorKey(sensor.title, sensor.attribute) ==
           sensorType) {
         maxVal = max(maxVal, sensor.value);
       }
@@ -110,29 +111,6 @@ Color sensorColorForValue({
   }
 }
 
-List<String> order = [
-  'temperature',
-  'humidity',
-  'distance',
-  'overtaking',
-  'surface_classification_asphalt',
-  'surface_classification_compacted',
-  'surface_classification_paving',
-  'surface_classification_sett',
-  'surface_classification_standing',
-  'surface_anomaly',
-  'acceleration_x',
-  'acceleration_y',
-  'acceleration_z',
-  'finedust_pm1',
-  'finedust_pm2.5',
-  'finedust_pm4',
-  'finedust_pm10',
-  'gps_latitude',
-  'gps_longitude',
-  'gps_speed',
-];
-
 List<Map<String, String?>> buildSensorTiles(List<SensorData> sensorData) {
   List<Map<String, String?>> sensorTitles = sensorData
       .map((e) => {'title': e.title, 'attribute': e.attribute})
@@ -145,20 +123,11 @@ List<Map<String, String?>> buildSensorTiles(List<SensorData> sensorData) {
     );
   }).toList();
 
-  // Filter out surface_anomaly if the feature flag is enabled
   if (FeatureFlags.hideSurfaceAnomalySensor) {
     sensorTitles.removeWhere((sensor) => sensor['title'] == 'surface_anomaly');
   }
 
-  sensorTitles.sort((a, b) {
-    int indexA = order.indexOf(
-        '${a['title']}${a['attribute'] == null ? '' : '_${a['attribute']}'}');
-    int indexB = order.indexOf(
-        '${b['title']}${b['attribute'] == null ? '' : '_${b['attribute']}'}');
-    return indexA.compareTo(indexB);
-  });
-
-  return sensorTitles;
+  return sortSensorTilesByCanonicalOrder(sensorTitles);
 }
 
 String trackName(TrackData track, {String errorMessage = "No data available"}) {
@@ -174,9 +143,6 @@ String trackName(TrackData track, {String errorMessage = "No data available"}) {
   return '$trackStart - $trackEnd';
 }
 
-/// Extracts all unique sensor data from a list of geolocations.
-/// This function collects sensor data from all geolocations in a track,
-/// ensuring that all sensors available on the box during recording are represented.
 List<SensorData> getAllUniqueSensorData(List<GeolocationData> geolocations) {
   final allSensorData = <SensorData>{};
   for (final geolocation in geolocations) {
@@ -186,21 +152,19 @@ List<SensorData> getAllUniqueSensorData(List<GeolocationData> geolocations) {
 }
 
 String getFirstAvailableSensorType(List<SensorData> sensorData) {
-  if (sensorData.isEmpty) return 'distance';
+  const String defaultSensorType = 'distance';
 
-  final availableSensors = <String>{};
-  for (final sensor in sensorData) {
-    final sensorKey = sensor.attribute != null
-        ? '${sensor.title}_${sensor.attribute}'
-        : sensor.title;
-    availableSensors.add(sensorKey);
+  if (sensorData.isEmpty) return defaultSensorType;
+
+  final availableSensors = sensorData
+      .map((sensor) => buildCanonicalSensorKey(sensor.title, sensor.attribute))
+      .toSet();
+
+  if (availableSensors.contains(defaultSensorType)) {
+    return defaultSensorType;
   }
 
-  if (availableSensors.contains('distance')) {
-    return 'distance';
-  }
-
-  for (final sensorType in order) {
+  for (final sensorType in sensorOrder) {
     if (availableSensors.contains(sensorType)) {
       return sensorType;
     }
@@ -268,6 +232,7 @@ class UploadDataPreparer {
             sensorTitle == 'surface_anomaly') {
           // For multi-value sensors, we need to find all the individual sensors
           List<Sensor> individualSensors = [];
+          List<double> orderedValues = aggregatedValues;
 
           if (sensorTitle == 'finedust') {
             // Find all finedust sensors
@@ -275,12 +240,19 @@ class UploadDataPreparer {
                 .where((s) => s.title!.toLowerCase().contains('finedust'))
                 .toList();
           } else if (sensorTitle == 'surface_classification') {
-            // Find all surface classification sensors (including "Standing")
-            individualSensors = senseBox.sensors!
-                .where((s) =>
-                    s.title!.toLowerCase().contains('surface') ||
-                    s.title!.toLowerCase() == 'standing')
-                .toList();
+            individualSensors = sortApiSensorsByCanonicalOrder(
+              senseBox.sensors!
+                  .where((s) =>
+                      s.title!.toLowerCase().contains('surface') ||
+                      s.title!.toLowerCase() == 'standing')
+                  .toList(),
+            );
+            // Reorder aggregatedValues to match sorted API sensors order
+            // Device order: [asphalt, compacted, paving, sett, standing]
+            // Canonical order: [asphalt, compacted, paving, sett, standing]
+            // They match, but we ensure consistency by mapping via canonical keys
+            orderedValues = _reorderSurfaceClassificationValues(
+              aggregatedValues, individualSensors);
           } else if (sensorTitle == 'overtaking') {
             // Find the Overtaking Manoeuvre sensor
             individualSensors = senseBox.sensors!
@@ -297,13 +269,13 @@ class UploadDataPreparer {
 
           // Create entries for each individual sensor
           for (int j = 0;
-              j < aggregatedValues.length && j < individualSensors.length;
+              j < orderedValues.length && j < individualSensors.length;
               j++) {
             final individualSensor = individualSensors[j];
             data['${individualSensor.id}_${geolocation.timestamp.toIso8601String()}'] =
                 {
               'sensor': individualSensor.id,
-              'value': aggregatedValues[j].toStringAsFixed(2),
+              'value': orderedValues[j].toStringAsFixed(2),
               'createdAt': geolocation.timestamp.toUtc().toIso8601String(),
               'location': {
                 'lat': geolocation.latitude,
@@ -364,5 +336,38 @@ class UploadDataPreparer {
         .where((sensor) =>
             sensor.title!.toLowerCase() == sensorTitle.toLowerCase())
         .firstOrNull;
+  }
+
+  List<double> _reorderSurfaceClassificationValues(
+      List<double> values, List<Sensor> sortedSensors) {
+    if (values.length != 5 || sortedSensors.length != 5) {
+      return values;
+    }
+
+    final reordered = List<double>.filled(5, 0.0);
+
+    for (int i = 0; i < sortedSensors.length; i++) {
+      final sensor = sortedSensors[i];
+      final apiTitle = (sensor.title ?? '').toLowerCase();
+      
+      int deviceIndex = -1;
+      if (apiTitle.contains('asphalt')) {
+        deviceIndex = 0;
+      } else if (apiTitle.contains('compacted')) {
+        deviceIndex = 1;
+      } else if (apiTitle.contains('paving')) {
+        deviceIndex = 2;
+      } else if (apiTitle.contains('sett')) {
+        deviceIndex = 3;
+      } else if (apiTitle == 'standing') {
+        deviceIndex = 4;
+      }
+
+      if (deviceIndex >= 0 && deviceIndex < values.length) {
+        reordered[i] = values[deviceIndex];
+      }
+    }
+
+    return reordered;
   }
 }

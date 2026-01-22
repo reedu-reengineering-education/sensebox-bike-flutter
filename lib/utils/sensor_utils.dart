@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/sensebox.dart' as sensebox_model;
 import 'package:sensebox_bike/models/sensor_data.dart';
@@ -13,6 +14,92 @@ import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/finedust_sensor.dart';
+
+String buildCanonicalSensorKey(String title, String? attribute) {
+  return '${title}${attribute == null ? '' : '_${attribute}'}';
+}
+
+String getCanonicalKeyFromApiTitle(String apiTitle) {
+  final titleLower = apiTitle.toLowerCase();
+
+  if (titleLower.contains('asphalt')) {
+    return 'surface_classification_asphalt';
+  } else if (titleLower.contains('compacted')) {
+    return 'surface_classification_compacted';
+  } else if (titleLower.contains('paving')) {
+    return 'surface_classification_paving';
+  } else if (titleLower.contains('sett')) {
+    return 'surface_classification_sett';
+  } else if (titleLower == 'standing') {
+    return 'surface_classification_standing';
+  }
+
+  return '';
+}
+
+int compareSensorKeysByCanonicalOrder(String sensorKeyA, String sensorKeyB) {
+  final indexA = sensorOrder.indexOf(sensorKeyA);
+  final indexB = sensorOrder.indexOf(sensorKeyB);
+
+  if (indexA != -1 && indexB != -1) {
+    return indexA.compareTo(indexB);
+  }
+
+  if (indexA != -1) return -1;
+  if (indexB != -1) return 1;
+
+  return sensorKeyA.compareTo(sensorKeyB);
+}
+
+int compareSensorsByCanonicalOrder(
+  String titleA,
+  String? attributeA,
+  String titleB,
+  String? attributeB,
+) {
+  final keyA = buildCanonicalSensorKey(titleA, attributeA);
+  final keyB = buildCanonicalSensorKey(titleB, attributeB);
+  return compareSensorKeysByCanonicalOrder(keyA, keyB);
+}
+
+int _compareApiSensorsByCanonicalOrder(
+  String apiTitleA,
+  String apiTitleB,
+) {
+  final keyA = getCanonicalKeyFromApiTitle(apiTitleA);
+  final keyB = getCanonicalKeyFromApiTitle(apiTitleB);
+  
+  final canonicalComparison = compareSensorKeysByCanonicalOrder(keyA, keyB);
+  if (canonicalComparison != 0) {
+    return canonicalComparison;
+  }
+  
+  return apiTitleA.compareTo(apiTitleB);
+}
+
+List<sensebox_model.Sensor> sortApiSensorsByCanonicalOrder(List<sensebox_model.Sensor> sensors) {
+  final sorted = List<sensebox_model.Sensor>.from(sensors);
+  sorted.sort((a, b) =>
+      _compareApiSensorsByCanonicalOrder(a.title ?? '', b.title ?? ''));
+  return sorted;
+}
+
+List<Map<String, String?>> sortSensorTilesByCanonicalOrder(
+    List<Map<String, String?>> tiles) {
+  final sorted = List<Map<String, String?>>.from(tiles);
+  sorted.sort((a, b) {
+    final keyA = buildCanonicalSensorKey(a['title'] ?? '', a['attribute']);
+    final keyB = buildCanonicalSensorKey(b['title'] ?? '', b['attribute']);
+    
+    final canonicalComparison = compareSensorKeysByCanonicalOrder(keyA, keyB);
+    if (canonicalComparison != 0) {
+      return canonicalComparison;
+    }
+    
+    return keyA.compareTo(keyB);
+  });
+  return sorted;
+}
 
 String? getSearchKey(String key, String? attribute) {
   if (attribute != null) {
@@ -334,10 +421,26 @@ List<SensorEntry> getUniqueSortedSensorEntries(List<SensorData> sensorData) {
     if (!isSpeedA && isSpeedB) return -1; // Non-speed goes before speed
     if (isSpeedA && isSpeedB) return 0; // Both are speed, keep order
     
-    // For non-speed entries, sort by priority
+    // For non-speed entries, sort by priority first
     final priorityA = getUiPriorityByUuid(a.characteristicUuid);
     final priorityB = getUiPriorityByUuid(b.characteristicUuid);
-    return priorityA.compareTo(priorityB);
+    final priorityComparison = priorityA.compareTo(priorityB);
+    
+    if (priorityComparison != 0) {
+      return priorityComparison;
+    }
+    
+    final canonicalComparison = compareSensorsByCanonicalOrder(
+      a.title,
+      a.attribute,
+      b.title,
+      b.attribute,
+    );
+    if (canonicalComparison != 0) {
+      return canonicalComparison;
+    }
+    
+    return 0;
   });
 
   return entriesList;

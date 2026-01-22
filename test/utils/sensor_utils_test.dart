@@ -349,6 +349,133 @@ void main() {
       final entries = getUniqueSortedSensorEntries([]);
       expect(entries, isEmpty);
     });
+
+    test('sorts surface classification sensors in correct order', () {
+      final sensorData = [
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'sett'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'asphalt'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'standing'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'compacted'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'paving'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+      ];
+
+      final entries = getUniqueSortedSensorEntries(sensorData);
+
+      expect(entries.length, 5);
+      // Verify correct order: asphalt, compacted, paving, sett, standing
+      expect(entries[0].attribute, 'asphalt');
+      expect(entries[1].attribute, 'compacted');
+      expect(entries[2].attribute, 'paving');
+      expect(entries[3].attribute, 'sett');
+      expect(entries[4].attribute, 'standing');
+    });
+
+    test('sorts surface classification sensors correctly when mixed with other sensors',
+        () {
+      final sensorData = [
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'sett'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'temperature'
+          ..attribute = null
+          ..characteristicUuid = TemperatureSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'asphalt'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'humidity'
+          ..attribute = null
+          ..characteristicUuid = HumiditySensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'compacted'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'paving'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+        SensorData()
+          ..title = 'surface_classification'
+          ..attribute = 'standing'
+          ..characteristicUuid =
+              SurfaceClassificationSensor.sensorCharacteristicUuid,
+      ];
+
+      final entries = getUniqueSortedSensorEntries(sensorData);
+
+      expect(entries.length, 7);
+      // Temperature should come first (higher priority)
+      expect(entries[0].title, 'temperature');
+      // Humidity should come second
+      expect(entries[1].title, 'humidity');
+      // Surface sensors should follow in correct order: asphalt, compacted, paving, sett, standing
+      expect(entries[2].title, 'surface_classification');
+      expect(entries[2].attribute, 'asphalt');
+      expect(entries[3].title, 'surface_classification');
+      expect(entries[3].attribute, 'compacted');
+      expect(entries[4].title, 'surface_classification');
+      expect(entries[4].attribute, 'paving');
+      expect(entries[5].title, 'surface_classification');
+      expect(entries[5].attribute, 'sett');
+      expect(entries[6].title, 'surface_classification');
+      expect(entries[6].attribute, 'standing');
+    });
+
+    test('maintains surface sensor order regardless of input order', () {
+      // Test with different input orders
+      final orders = [
+        ['standing', 'sett', 'paving', 'compacted', 'asphalt'],
+        ['compacted', 'asphalt', 'sett', 'standing', 'paving'],
+        ['asphalt', 'compacted', 'paving', 'sett', 'standing'], // correct order
+      ];
+
+      for (final inputOrder in orders) {
+        final sensorData = inputOrder.map((attr) {
+          return SensorData()
+            ..title = 'surface_classification'
+            ..attribute = attr
+            ..characteristicUuid =
+                SurfaceClassificationSensor.sensorCharacteristicUuid;
+        }).toList();
+
+        final entries = getUniqueSortedSensorEntries(sensorData);
+
+        expect(entries.length, 5);
+        // Should always be sorted correctly regardless of input order
+        expect(entries[0].attribute, 'asphalt');
+        expect(entries[1].attribute, 'compacted');
+        expect(entries[2].attribute, 'paving');
+        expect(entries[3].attribute, 'sett');
+        expect(entries[4].attribute, 'standing');
+      }
+    });
   });
 
   group('getTranslatedTitleFromSensorKey', () {
@@ -390,6 +517,204 @@ void main() {
           ),
         ),
       );
+    });
+  });
+
+  group('buildCanonicalSensorKey', () {
+    test('builds key with title only when attribute is null', () {
+      expect(buildCanonicalSensorKey('temperature', null), 'temperature');
+    });
+
+    test('builds key with title and attribute', () {
+      expect(buildCanonicalSensorKey('finedust', 'pm1'), 'finedust_pm1');
+      expect(buildCanonicalSensorKey('surface_classification', 'asphalt'),
+          'surface_classification_asphalt');
+    });
+  });
+
+  group('getCanonicalKeyFromApiTitle', () {
+    test('maps surface sensor API titles to canonical keys', () {
+      expect(getCanonicalKeyFromApiTitle('Surface Asphalt'),
+          'surface_classification_asphalt');
+      expect(getCanonicalKeyFromApiTitle('Surface Compacted'),
+          'surface_classification_compacted');
+      expect(getCanonicalKeyFromApiTitle('Surface Paving'),
+          'surface_classification_paving');
+      expect(getCanonicalKeyFromApiTitle('Surface Sett'),
+          'surface_classification_sett');
+      expect(getCanonicalKeyFromApiTitle('Standing'),
+          'surface_classification_standing');
+    });
+
+    test('returns empty string for unknown titles', () {
+      expect(getCanonicalKeyFromApiTitle('Unknown Sensor'), '');
+      expect(getCanonicalKeyFromApiTitle('Temperature'), '');
+    });
+
+    test('handles case-insensitive matching', () {
+      expect(getCanonicalKeyFromApiTitle('SURFACE ASPHALT'),
+          'surface_classification_asphalt');
+      expect(getCanonicalKeyFromApiTitle('surface compacted'),
+          'surface_classification_compacted');
+    });
+  });
+
+  group('compareSensorsByCanonicalOrder', () {
+    test('sorts surface sensors correctly', () {
+      expect(
+          compareSensorsByCanonicalOrder('surface_classification', 'sett',
+              'surface_classification', 'asphalt'),
+          greaterThan(0));
+      expect(
+          compareSensorsByCanonicalOrder('surface_classification', 'asphalt',
+              'surface_classification', 'compacted'),
+          lessThan(0));
+      expect(
+          compareSensorsByCanonicalOrder('surface_classification', 'compacted',
+              'surface_classification', 'paving'),
+          lessThan(0));
+    });
+
+    test('sorts sensors without attributes correctly', () {
+      expect(
+          compareSensorsByCanonicalOrder('temperature', null, 'humidity', null),
+          lessThan(0));
+      expect(
+          compareSensorsByCanonicalOrder('humidity', null, 'temperature', null),
+          greaterThan(0));
+    });
+
+    test('returns 0 for same sensors', () {
+      expect(
+          compareSensorsByCanonicalOrder(
+              'temperature', null, 'temperature', null),
+          0);
+      expect(
+          compareSensorsByCanonicalOrder('surface_classification', 'asphalt',
+              'surface_classification', 'asphalt'),
+          0);
+    });
+  });
+
+
+  group('sortApiSensorsByCanonicalOrder', () {
+    test('sorts surface sensors in correct order', () {
+      final sensors = [
+        Sensor()..title = 'Surface Sett',
+        Sensor()..title = 'Surface Asphalt',
+        Sensor()..title = 'Standing',
+        Sensor()..title = 'Surface Compacted',
+        Sensor()..title = 'Surface Paving',
+      ];
+
+      final sorted = sortApiSensorsByCanonicalOrder(sensors);
+
+      expect(sorted.length, 5);
+      expect(sorted[0].title, 'Surface Asphalt');
+      expect(sorted[1].title, 'Surface Compacted');
+      expect(sorted[2].title, 'Surface Paving');
+      expect(sorted[3].title, 'Surface Sett');
+      expect(sorted[4].title, 'Standing');
+    });
+
+    test('returns new list without modifying original', () {
+      final sensors = [
+        Sensor()..title = 'Surface Sett',
+        Sensor()..title = 'Surface Asphalt',
+      ];
+
+      final sorted = sortApiSensorsByCanonicalOrder(sensors);
+
+      expect(sorted[0].title, 'Surface Asphalt');
+      expect(sensors[0].title, 'Surface Sett');
+    });
+
+    test('handles empty list', () {
+      expect(sortApiSensorsByCanonicalOrder([]), isEmpty);
+    });
+
+    test('sorts unknown sensors alphabetically', () {
+      final sensors = [
+        Sensor()..title = 'Unknown Sensor Z',
+        Sensor()..title = 'Unknown Sensor A',
+        Sensor()..title = 'Another Unknown',
+      ];
+
+      final sorted = sortApiSensorsByCanonicalOrder(sensors);
+
+      expect(sorted.length, 3);
+      expect(sorted[0].title, 'Another Unknown');
+      expect(sorted[1].title, 'Unknown Sensor A');
+      expect(sorted[2].title, 'Unknown Sensor Z');
+    });
+  });
+
+  group('sortSensorTilesByCanonicalOrder', () {
+    test('sorts sensor tiles in correct canonical order', () {
+      final tiles = [
+        {'title': 'gps', 'attribute': 'speed'},
+        {'title': 'temperature', 'attribute': null},
+        {'title': 'humidity', 'attribute': null},
+        {'title': 'surface_classification', 'attribute': 'sett'},
+        {'title': 'surface_classification', 'attribute': 'asphalt'},
+      ];
+
+      final sorted = sortSensorTilesByCanonicalOrder(tiles);
+
+      expect(sorted.length, 5);
+      expect(sorted[0]['title'], 'temperature');
+      expect(sorted[1]['title'], 'humidity');
+      expect(sorted[2]['title'], 'surface_classification');
+      expect(sorted[2]['attribute'], 'asphalt');
+      expect(sorted[3]['title'], 'surface_classification');
+      expect(sorted[3]['attribute'], 'sett');
+      expect(sorted[4]['title'], 'gps');
+      expect(sorted[4]['attribute'], 'speed');
+    });
+
+    test('returns new list without modifying original', () {
+      final tiles = [
+        {'title': 'gps', 'attribute': 'speed'},
+        {'title': 'temperature', 'attribute': null},
+      ];
+
+      final sorted = sortSensorTilesByCanonicalOrder(tiles);
+
+      expect(sorted[0]['title'], 'temperature');
+      expect(tiles[0]['title'], 'gps');
+    });
+
+    test('handles empty list', () {
+      expect(sortSensorTilesByCanonicalOrder([]), isEmpty);
+    });
+
+    test('sorts unknown sensors alphabetically when not in canonical order',
+        () {
+      final tiles = [
+        {'title': 'unknown_sensor_z', 'attribute': null},
+        {'title': 'unknown_sensor_a', 'attribute': null},
+        {'title': 'another_unknown', 'attribute': 'attr'},
+      ];
+
+      final sorted = sortSensorTilesByCanonicalOrder(tiles);
+
+      expect(sorted.length, 3);
+      expect(sorted[0]['title'], 'another_unknown');
+      expect(sorted[1]['title'], 'unknown_sensor_a');
+      expect(sorted[2]['title'], 'unknown_sensor_z');
+    });
+
+    test('sorts sensors with same canonical position alphabetically', () {
+      final tiles = [
+        {'title': 'temperature', 'attribute': null},
+        {'title': 'temperature', 'attribute': null},
+      ];
+
+      final sorted = sortSensorTilesByCanonicalOrder(tiles);
+
+      expect(sorted.length, 2);
+      expect(sorted[0]['title'], 'temperature');
+      expect(sorted[1]['title'], 'temperature');
     });
   });
 }
