@@ -1,16 +1,29 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:mocktail/mocktail.dart';
 
+class MockConfigurationBloc extends Mock implements ConfigurationBloc {}
+
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    registerFallbackValue(SenseBox(
+      sId: 'fallback',
+      name: 'Fallback',
+      exposure: 'outdoor',
+      sensors: [],
+    ));
+  });
 
   group('OpenSenseMapBloc', () {
     late OpenSenseMapBloc bloc;
@@ -120,6 +133,235 @@ void main() {
         expect(sensors.length, 2);
         expect(sensors[0]['title'], 'Temperature');
         expect(sensors[1]['title'], 'Rel. Humidity');
+      });
+    });
+
+    group('Box Compatibility', () {
+      late MockConfigurationBloc mockConfigurationBloc;
+
+      setUp(() {
+        mockConfigurationBloc = MockConfigurationBloc();
+      });
+
+      group('loadSelectedSenseBox() compatibility checking', () {
+        test('clears incompatible saved box from preferences', () async {
+          SharedPreferences.setMockInitialValues({});
+          final mockService = MockOpenSenseMapService();
+          final bloc = OpenSenseMapBloc(
+            configurationBloc: mockConfigurationBloc,
+            service: mockService,
+          );
+
+          final incompatibleBox = SenseBox(
+            sId: 'saved-incompatible',
+            name: 'Saved Incompatible Box',
+            exposure: 'outdoor',
+            sensors: [
+              Sensor(title: 'Unknown Sensor', unit: '?', sensorType: 'UNKNOWN'),
+            ],
+            grouptag: [],
+          );
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+              'selectedSenseBox', jsonEncode(incompatibleBox.toJson()));
+
+          when(() => mockConfigurationBloc.isSenseBoxBikeCompatible(any()))
+              .thenReturn(false);
+          when(() => mockService.isCurrentAccessTokenValid())
+              .thenAnswer((_) async => true);
+
+          await bloc.performAuthenticationCheck();
+
+          expect(bloc.selectedSenseBox, isNull);
+          final savedBoxJson = await prefs.getString('selectedSenseBox');
+          expect(savedBoxJson, isNull);
+        });
+
+        test('preserves compatible saved box when loading', () async {
+          SharedPreferences.setMockInitialValues({});
+          final mockService = MockOpenSenseMapService();
+          final bloc = OpenSenseMapBloc(
+            configurationBloc: mockConfigurationBloc,
+            service: mockService,
+          );
+
+          final compatibleBox = SenseBox(
+            sId: 'saved-compatible',
+            name: 'Saved Compatible Box',
+            exposure: 'outdoor',
+            sensors: [
+              Sensor(title: 'Temperature', unit: '°C', sensorType: 'HDC1080'),
+            ],
+            grouptag: [],
+          );
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+              'selectedSenseBox', jsonEncode(compatibleBox.toJson()));
+
+          when(() => mockConfigurationBloc.isSenseBoxBikeCompatible(any()))
+              .thenReturn(true);
+          when(() => mockService.isCurrentAccessTokenValid())
+              .thenAnswer((_) async => true);
+
+          await bloc.performAuthenticationCheck();
+
+          expect(bloc.selectedSenseBox?.sId, 'saved-compatible');
+        });
+
+        test('loads saved box when ConfigurationBloc is null', () async {
+          SharedPreferences.setMockInitialValues({});
+          final mockService = MockOpenSenseMapService();
+          final bloc = OpenSenseMapBloc(service: mockService);
+
+          final box = SenseBox(
+            sId: 'saved-box',
+            name: 'Saved Box',
+            exposure: 'outdoor',
+            sensors: [],
+            grouptag: [],
+          );
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('selectedSenseBox', jsonEncode(box.toJson()));
+
+          when(() => mockService.isCurrentAccessTokenValid())
+              .thenAnswer((_) async => true);
+
+          await bloc.performAuthenticationCheck();
+
+          expect(bloc.selectedSenseBox?.sId, 'saved-box');
+        });
+      });
+
+      group('login() compatibility checking', () {
+        test('selects first compatible box when multiple boxes available',
+            () async {
+          SharedPreferences.setMockInitialValues({});
+          final mockService = MockOpenSenseMapService();
+
+          final compatibleBox = SenseBox(
+            sId: 'compatible-1',
+            name: 'Compatible Box',
+            exposure: 'outdoor',
+            sensors: [
+              Sensor(title: 'Temperature', unit: '°C', sensorType: 'HDC1080'),
+            ],
+            grouptag: [],
+          );
+
+          final incompatibleBox = SenseBox(
+            sId: 'incompatible-1',
+            name: 'Incompatible Box',
+            exposure: 'outdoor',
+            sensors: [
+              Sensor(title: 'Unknown Sensor', unit: '?', sensorType: 'UNKNOWN'),
+            ],
+            grouptag: [],
+          );
+
+          when(() => mockConfigurationBloc.isSenseBoxBikeCompatible(any()))
+              .thenAnswer((invocation) {
+            final box = invocation.positionalArguments[0] as SenseBox;
+            return box.sId == 'compatible-1';
+          });
+
+          when(() => mockService.removeTokens()).thenAnswer((_) async => {});
+          when(() => mockService.login(any(), any())).thenAnswer((_) async => {
+                'data': {
+                  'user': {
+                    'boxes': ['compatible-1', 'incompatible-1']
+                  }
+                }
+              });
+          when(() => mockService.getSenseBoxes(page: 0))
+              .thenAnswer((_) async => [
+                    compatibleBox.toJson(),
+                    incompatibleBox.toJson(),
+                  ]);
+
+          final bloc = OpenSenseMapBloc(
+            configurationBloc: mockConfigurationBloc,
+            service: mockService,
+          );
+
+          await bloc.login('test@example.com', 'password');
+
+          expect(bloc.selectedSenseBox?.sId, 'compatible-1');
+          verify(() => mockConfigurationBloc.isSenseBoxBikeCompatible(any()))
+              .called(greaterThan(0));
+        });
+
+        test('does not select box when no compatible boxes available',
+            () async {
+          SharedPreferences.setMockInitialValues({});
+          final mockService = MockOpenSenseMapService();
+
+          final incompatibleBox = SenseBox(
+            sId: 'incompatible-1',
+            name: 'Incompatible Box',
+            exposure: 'outdoor',
+            sensors: [
+              Sensor(title: 'Unknown Sensor', unit: '?', sensorType: 'UNKNOWN'),
+            ],
+            grouptag: [],
+          );
+
+          when(() => mockConfigurationBloc.isSenseBoxBikeCompatible(any()))
+              .thenReturn(false);
+
+          when(() => mockService.removeTokens()).thenAnswer((_) async => {});
+          when(() => mockService.login(any(), any())).thenAnswer((_) async => {
+                'data': {
+                  'user': {
+                    'boxes': ['incompatible-1']
+                  }
+                }
+              });
+          when(() => mockService.getSenseBoxes(page: 0))
+              .thenAnswer((_) async => [incompatibleBox.toJson()]);
+
+          final bloc = OpenSenseMapBloc(
+            configurationBloc: mockConfigurationBloc,
+            service: mockService,
+          );
+
+          await bloc.login('test@example.com', 'password');
+
+          expect(bloc.selectedSenseBox, isNull);
+        });
+
+        test('falls back to first box when ConfigurationBloc is null',
+            () async {
+          SharedPreferences.setMockInitialValues({});
+          final mockService = MockOpenSenseMapService();
+
+          final box = SenseBox(
+            sId: 'box-1',
+            name: 'Test Box',
+            exposure: 'outdoor',
+            sensors: [],
+            grouptag: [],
+          );
+
+          when(() => mockService.removeTokens()).thenAnswer((_) async => {});
+          when(() => mockService.login(any(), any())).thenAnswer((_) async => {
+                'data': {
+                  'user': {
+                    'boxes': ['box-1']
+                  }
+                }
+              });
+          when(() => mockService.getSenseBoxes(page: 0))
+              .thenAnswer((_) async => [box.toJson()]);
+
+          final bloc = OpenSenseMapBloc(service: mockService);
+
+          await bloc.login('test@example.com', 'password');
+
+          expect(bloc.selectedSenseBox?.sId, 'box-1');
+        });
       });
     });
   });
