@@ -128,6 +128,25 @@ void main() {
       expect(find.text('GitHub issue'), findsOneWidget);
     });
 
+    testWidgets("is translated in French", (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget(const Locale('fr')));
+      await tester.pumpAndSettle();
+
+      // Scroll to make all sections visible
+      await tester.scrollUntilVisible(find.text('Ticket GitHub'), 500.0);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Paramètres'), findsOneWidget);
+      expect(find.text('Général'), findsOneWidget);
+      expect(find.text('Vibrer lors de la déconnexion'), findsOneWidget);
+      expect(find.text('Zones de confidentialité'), findsOneWidget);
+      expect(find.text('Autre'), findsOneWidget);
+      expect(find.text('À propos'), findsOneWidget);
+      expect(find.text('Aide ou retour ?'), findsOneWidget);
+      expect(find.text('E-mail'), findsOneWidget);
+      expect(find.text('Ticket GitHub'), findsOneWidget);
+    });
+
     testWidgets("login and logout buttons are translated in English",
         (WidgetTester tester) async {
       await tester.pumpWidget(buildTestWidget(const Locale('en')));
@@ -150,6 +169,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Entrar'), findsOneWidget);
+    });
+
+    testWidgets("login and logout buttons are translated in French",
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget(const Locale('fr')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Connexion'), findsOneWidget);
     });
   });
 }
