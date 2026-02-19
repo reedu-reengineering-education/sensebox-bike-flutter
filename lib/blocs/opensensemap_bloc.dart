@@ -62,10 +62,10 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   OpenSenseMapBloc({
     ConfigurationBloc? configurationBloc,
+    SettingsBloc? settingsBloc,
     OpenSenseMapService? service,
   })  : _configurationBloc = configurationBloc,
-        _service = service ?? OpenSenseMapService() {
-      : _service = OpenSenseMapService(settingsBloc: settingsBloc) {
+        _service = service ?? OpenSenseMapService(settingsBloc: settingsBloc) {
     WidgetsBinding.instance.addObserver(this);
   }
 
