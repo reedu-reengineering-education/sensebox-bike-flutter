@@ -289,6 +289,16 @@ class AppLocalizationsEn extends AppLocalizations {
       '• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording';
 
   @override
+  String get settingsApiUrl => 'API URL';
+
+  @override
+  String get settingsApiUrlHelper => 'Enter the API endpoint for data uploads';
+
+  @override
+  String get settingsApiUrlError =>
+      'Please enter a valid URL (e.g., https://api.opensensemap.org)';
+
+  @override
   String get settingsAbout => 'About';
 
   @override
