@@ -183,9 +183,9 @@ class SettingsScreen extends StatelessWidget {
           ? null
           : () => _handleLoginLogoutAction(
               context, isAuthenticated, openSenseMapBloc),
-      text: isAuthenticated
+        text: isAuthenticated
           ? AppLocalizations.of(context)!.generalLogout
-          : AppLocalizations.of(context)!.generalLogin,
+          : AppLocalizations.of(context)!.generalLoginOrRegister,
       width: 1,
     );
   }

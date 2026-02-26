@@ -59,6 +59,7 @@
     },
     "generalExport": "Exportieren",
     "generalLogin": "Anmelden",
+        "generalLoginOrRegister": "Anmelden oder Registrieren",
     "generalLogout": "Abmelden",
     "generalRegister": "Registrieren",
     "generalProceed": "Fortfahren",

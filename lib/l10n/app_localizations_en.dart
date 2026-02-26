@@ -89,6 +89,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalLogin => 'Login';
 
   @override
+  String get generalLoginOrRegister => 'Login or Register';
+
+  @override
   String get generalLogout => 'Logout';
 
   @override

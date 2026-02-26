@@ -91,6 +91,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generalLogin => 'Entrar';
 
   @override
+  String get generalLoginOrRegister => 'Entrar ou Registrar-se';
+
+  @override
   String get generalLogout => 'Sair';
 
   @override

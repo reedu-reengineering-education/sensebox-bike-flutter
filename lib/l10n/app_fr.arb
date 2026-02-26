@@ -58,6 +58,7 @@
   },
   "generalExport": "Exporter",
   "generalLogin": "Connexion",
+    "generalLoginOrRegister": "Connexion ou inscription",
   "generalLogout": "Déconnexion",
   "generalRegister": "S’inscrire",
   "generalProceed": "Continuer",

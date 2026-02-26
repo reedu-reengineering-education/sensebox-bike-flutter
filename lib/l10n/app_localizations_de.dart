@@ -89,6 +89,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalLogin => 'Anmelden';
 
   @override
+  String get generalLoginOrRegister => 'Anmelden oder Registrieren';
+
+  @override
   String get generalLogout => 'Abmelden';
 
   @override

@@ -152,7 +152,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget(const Locale('en')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Login'), findsOneWidget);
+      expect(find.text('Login or Register'), findsOneWidget);
     });
 
     testWidgets("login and logout buttons are translated in German",
@@ -160,7 +160,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget(const Locale('de')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Anmelden'), findsOneWidget);
+      expect(find.text('Anmelden oder Registrieren'), findsOneWidget);
     });
 
     testWidgets("login and logout buttons are translated in Portuguese",
@@ -168,7 +168,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget(const Locale('pt')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Entrar'), findsOneWidget);
+      expect(find.text('Entrar ou Registrar-se'), findsOneWidget);
     });
 
     testWidgets("login and logout buttons are translated in French",
@@ -176,7 +176,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget(const Locale('fr')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Connexion'), findsOneWidget);
+      expect(find.text('Connexion ou inscription'), findsOneWidget);
     });
   });
 }

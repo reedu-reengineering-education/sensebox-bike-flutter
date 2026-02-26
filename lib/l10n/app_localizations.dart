@@ -246,6 +246,12 @@ abstract class AppLocalizations {
   /// **'Login'**
   String get generalLogin;
 
+  /// No description provided for @generalLoginOrRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Login or Register'**
+  String get generalLoginOrRegister;
+
   /// No description provided for @generalLogout.
   ///
   /// In en, this message translates to:
