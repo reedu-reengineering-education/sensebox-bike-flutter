@@ -443,6 +443,8 @@ void main() {
                     UploadProgressOverlay.show(
                       context,
                       batchUploadService: mockService,
+                      isAuthenticated: true,
+                      hasSelectedBox: true,
                       onStartUpload: () {
                         // Simulate starting upload
                         progressController.add(const UploadProgress(
@@ -531,6 +533,8 @@ void main() {
                     UploadProgressOverlay.show(
                       context,
                       batchUploadService: mockService,
+                      isAuthenticated: true,
+                      hasSelectedBox: true,
                       onDismiss: () {
                         dismissCalled = true;
                       },
@@ -589,6 +593,8 @@ void main() {
                       context,
                       batchUploadService: mockService,
                       canUpload: false,
+                      isAuthenticated: false,
+                      hasSelectedBox: false,
                       onDismiss: () {
                         dismissed = true;
                       },
@@ -609,9 +615,9 @@ void main() {
 
       expect(UploadProgressOverlay.isShown, isTrue);
       expect(find.text('Upload not available'), findsOneWidget);
+      // Should show the not authenticated requirements message
       expect(
-        find.text(
-            'To upload your ride, log in to your openSenseMap account, select a senseBox, then open the track overview and tap the upload button in the top right.'),
+        find.textContaining('please login or register'),
         findsOneWidget,
       );
 
@@ -622,6 +628,173 @@ void main() {
       expect(dismissed, isTrue);
       expect(UploadProgressOverlay.isShown, isFalse);
 
+      progressController.close();
+    });
+
+    testWidgets('should show requirements dialog for unauthenticated user',
+        (WidgetTester tester) async {
+      late StreamController<UploadProgress> progressController;
+      late MockBatchUploadService mockService;
+      bool dismissed = false;
+
+      mockService = MockBatchUploadService();
+      progressController = StreamController<UploadProgress>.broadcast();
+      when(() => mockService.uploadProgressStream)
+          .thenAnswer((_) => progressController.stream);
+      when(() => mockService.currentProgress).thenReturn(null);
+
+      await tester.pumpWidget(
+        createLocalizedTestApp(
+          child: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: ElevatedButton(
+                  onPressed: () {
+                    UploadProgressOverlay.show(
+                      context,
+                      batchUploadService: mockService,
+                      canUpload: false,
+                      isAuthenticated: false,
+                      hasSelectedBox: false,
+                      onDismiss: () {
+                        dismissed = true;
+                      },
+                    );
+                  },
+                  child: const Text('Show Overlay'),
+                ),
+              );
+            },
+          ),
+          locale: const Locale('en'),
+        ),
+      );
+
+      await tester.tap(find.text('Show Overlay'));
+      await tester.pump();
+
+      expect(UploadProgressOverlay.isShown, isTrue);
+      expect(find.text('Upload not available'), findsOneWidget);
+      expect(
+        find.textContaining('please login or register'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Ok'));
+      await tester.pump();
+      expect(dismissed, isTrue);
+      expect(UploadProgressOverlay.isShown, isFalse);
+      progressController.close();
+    });
+
+    testWidgets('should show requirements dialog for missing box',
+        (WidgetTester tester) async {
+      late StreamController<UploadProgress> progressController;
+      late MockBatchUploadService mockService;
+      bool dismissed = false;
+
+      mockService = MockBatchUploadService();
+      progressController = StreamController<UploadProgress>.broadcast();
+      when(() => mockService.uploadProgressStream)
+          .thenAnswer((_) => progressController.stream);
+      when(() => mockService.currentProgress).thenReturn(null);
+
+      await tester.pumpWidget(
+        createLocalizedTestApp(
+          child: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: ElevatedButton(
+                  onPressed: () {
+                    UploadProgressOverlay.show(
+                      context,
+                      batchUploadService: mockService,
+                      canUpload: false,
+                      isAuthenticated: true,
+                      hasSelectedBox: false,
+                      onDismiss: () {
+                        dismissed = true;
+                      },
+                    );
+                  },
+                  child: const Text('Show Overlay'),
+                ),
+              );
+            },
+          ),
+          locale: const Locale('en'),
+        ),
+      );
+
+      await tester.tap(find.text('Show Overlay'));
+      await tester.pump();
+
+      expect(UploadProgressOverlay.isShown, isTrue);
+      expect(find.text('Upload not available'), findsOneWidget);
+      expect(
+        find.textContaining('please select or create a senseBox'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Ok'));
+      await tester.pump();
+      expect(dismissed, isTrue);
+      expect(UploadProgressOverlay.isShown, isFalse);
+      progressController.close();
+    });
+
+    testWidgets(
+        'should show requirements dialog for both authenticated and box present (should not show requirements)',
+        (WidgetTester tester) async {
+      late StreamController<UploadProgress> progressController;
+      late MockBatchUploadService mockService;
+      bool dismissed = false;
+
+      mockService = MockBatchUploadService();
+      progressController = StreamController<UploadProgress>.broadcast();
+      when(() => mockService.uploadProgressStream)
+          .thenAnswer((_) => progressController.stream);
+      when(() => mockService.currentProgress).thenReturn(null);
+
+      bool dismissCalled = false;
+
+      await tester.pumpWidget(
+        createLocalizedTestApp(
+          child: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: ElevatedButton(
+                  onPressed: () {
+                    UploadProgressOverlay.show(
+                      context,
+                      batchUploadService: mockService,
+                      canUpload: true,
+                      isAuthenticated: true,
+                      hasSelectedBox: true,
+                      onDismiss: () {
+                        dismissCalled = true;
+                      },
+                    );
+                  },
+                  child: const Text('Show Overlay'),
+                ),
+              );
+            },
+          ),
+          locale: const Locale('en'),
+        ),
+      );
+
+      await tester.tap(find.text('Show Overlay'));
+      await tester.pump();
+
+      // Should not show requirements dialog
+      expect(find.text('Upload not available'), findsNothing);
+      // Overlay should be shown, but confirmation dialog or progress modal will be shown instead
+      expect(UploadProgressOverlay.isShown, isTrue);
+      // Dismiss overlay by tapping cancel in confirmation dialog
+      await tester.tap(find.text('Cancel'));
+      await tester.pump();
+      expect(dismissCalled, isTrue);
+      expect(UploadProgressOverlay.isShown, isFalse);
       progressController.close();
     });
   });

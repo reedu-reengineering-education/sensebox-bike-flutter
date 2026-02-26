@@ -9,6 +9,14 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get uploadBlockNotAuthenticated =>
+      'Die aktuelle Fahrt wurde nicht automatisch hochgeladen. Du kannst sie trotzdem über die Track-Übersicht auf OpenSenseMap hochladen.\n\nUm deine Fahrt hochzuladen, melde dich bitte an oder registriere ein Konto auf der Einstellungsseite.';
+
+  @override
+  String get uploadBlockNoBox =>
+      'Die aktuelle Fahrt wurde nicht automatisch hochgeladen. Du kannst sie trotzdem über die Track-Übersicht auf OpenSenseMap hochladen.\n\nUm deine Fahrt hochzuladen, wähle oder erstelle bitte eine senseBox auf der Startseite.';
+
+  @override
   String get createBoxAddCustomTag => 'Eigene Gruppentags hinzufügen';
 
   @override

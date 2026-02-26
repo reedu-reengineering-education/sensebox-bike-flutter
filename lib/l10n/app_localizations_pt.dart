@@ -9,6 +9,14 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get uploadBlockNotAuthenticated =>
+      'O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o OpenSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, faça login ou registre uma conta na página de Configurações.';
+
+  @override
+  String get uploadBlockNoBox =>
+      'O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o OpenSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, selecione ou crie uma senseBox na página inicial.';
+
+  @override
   String get createBoxAddCustomTag =>
       'Adicionar etiqueta de grupo personalizada';
 

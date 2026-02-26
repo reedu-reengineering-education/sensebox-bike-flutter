@@ -1,4 +1,6 @@
 {
+    "uploadBlockNotAuthenticated": "Le trajet actuel n'a pas été téléversé automatiquement. Vous pouvez toujours l'envoyer sur OpenSenseMap depuis la page d'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez vous connecter ou créer un compte dans les paramètres.",
+    "uploadBlockNoBox": "Le trajet actuel n'a pas été téléversé automatiquement. Vous pouvez toujours l'envoyer sur OpenSenseMap depuis la page d'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez sélectionner ou créer une senseBox sur la page d'accueil.",
   "createBoxAddCustomTag": "Ajouter une étiquette de groupe personnalisée",
   "createBoxCustomTag": "Étiquette de groupe personnalisée",
   "createBoxCustomTagHelper": "Vous pouvez séparer les étiquettes par des virgules",
