@@ -75,14 +75,15 @@ void main() {
       await tester.pumpWidget(buildTestWidget(const Locale('en')));
       await tester.pumpAndSettle();
 
-      // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
-      await tester.pumpAndSettle();
-
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('General'), findsOneWidget);
       expect(find.text('Vibrate on disconnect'), findsOneWidget);
       expect(find.text('Privacy Zones'), findsOneWidget);
+
+      // Scroll to make all sections visible
+      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.pumpAndSettle();
+      
       expect(find.text('Other'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
       expect(find.text('Help or feedback?'), findsOneWidget);
@@ -95,14 +96,15 @@ void main() {
       await tester.pumpWidget(buildTestWidget(const Locale('de')));
       await tester.pumpAndSettle();
 
-      // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
-      await tester.pumpAndSettle();
-
       expect(find.text('Einstellungen'), findsOneWidget);
       expect(find.text('Allgemeine'), findsOneWidget);
       expect(find.text('Vibration bei Verbindungsabbruch'), findsOneWidget);
       expect(find.text('Privatzonen'), findsOneWidget);
+
+      // Scroll to make all sections visible
+      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.pumpAndSettle();
+      
       expect(find.text('Andere'), findsOneWidget);
       expect(find.text('Über die App'), findsOneWidget);
       expect(find.text('Hilfe oder Feedback?'), findsOneWidget);
@@ -114,14 +116,15 @@ void main() {
       await tester.pumpWidget(buildTestWidget(const Locale('pt')));
       await tester.pumpAndSettle();
 
-      // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
-      await tester.pumpAndSettle();
-
       expect(find.text('Configurações'), findsOneWidget);
       expect(find.text('Geral'), findsOneWidget);
       expect(find.text('Vibrar ao desconectar'), findsOneWidget);
       expect(find.text('Áreas de Privacidade'), findsOneWidget);
+
+      // Scroll to make all sections visible
+      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.pumpAndSettle();
+      
       expect(find.text('Outros'), findsOneWidget);
       expect(find.text('Sobre'), findsOneWidget);
       expect(find.text('Ajuda ou feedback?'), findsOneWidget);
@@ -133,14 +136,15 @@ void main() {
       await tester.pumpWidget(buildTestWidget(const Locale('fr')));
       await tester.pumpAndSettle();
 
-      // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('Ticket GitHub'), 500.0);
-      await tester.pumpAndSettle();
-
       expect(find.text('Paramètres'), findsOneWidget);
       expect(find.text('Général'), findsOneWidget);
       expect(find.text('Vibrer lors de la déconnexion'), findsOneWidget);
       expect(find.text('Zones de confidentialité'), findsOneWidget);
+
+      // Scroll to make all sections visible
+      await tester.scrollUntilVisible(find.text('Ticket GitHub'), 500.0);
+      await tester.pumpAndSettle();
+      
       expect(find.text('Autre'), findsOneWidget);
       expect(find.text('À propos'), findsOneWidget);
       expect(find.text('Aide ou retour ?'), findsOneWidget);
