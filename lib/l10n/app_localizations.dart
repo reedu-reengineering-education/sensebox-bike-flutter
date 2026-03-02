@@ -102,6 +102,12 @@ abstract class AppLocalizations {
     Locale('pt')
   ];
 
+  /// No description provided for @settingsKnowledgeBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge Base'**
+  String get settingsKnowledgeBase;
+
   /// No description provided for @uploadBlockNotAuthenticated.
   ///
   /// In en, this message translates to:

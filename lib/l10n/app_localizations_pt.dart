@@ -9,6 +9,9 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get settingsKnowledgeBase => 'Base de conhecimento';
+
+  @override
   String get uploadBlockNotAuthenticated =>
       'O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o OpenSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, faça login ou registre uma conta na página de Configurações.';
 

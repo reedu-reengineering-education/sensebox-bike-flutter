@@ -1,4 +1,5 @@
 {
+    "settingsKnowledgeBase": "Base de conhecimento",
         "uploadBlockNotAuthenticated": "O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o OpenSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, faça login ou registre uma conta na página de Configurações.",
         "uploadBlockNoBox": "O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o OpenSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, selecione ou crie uma senseBox na página inicial.",
     "createBoxAddCustomTag": "Adicionar etiqueta de grupo personalizada",

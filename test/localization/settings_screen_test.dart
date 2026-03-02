@@ -86,6 +86,7 @@ void main() {
       expect(find.text('Other'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
       expect(find.text('Help or feedback?'), findsOneWidget);
+      expect(find.text('Knowledge Base'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
     });

@@ -9,6 +9,9 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get settingsKnowledgeBase => 'Wissensdatenbank';
+
+  @override
   String get uploadBlockNotAuthenticated =>
       'Die aktuelle Fahrt wurde nicht automatisch hochgeladen. Du kannst sie trotzdem über die Track-Übersicht auf OpenSenseMap hochladen.\n\nUm deine Fahrt hochzuladen, melde dich bitte an oder registriere ein Konto auf der Einstellungsseite.';
 

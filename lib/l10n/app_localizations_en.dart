@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get settingsKnowledgeBase => 'Knowledge Base';
+
+  @override
   String get uploadBlockNotAuthenticated =>
       'Current ride was not automatically uploaded. You can still upload it to OpenSenseMap from the track overview page.\n\nTo upload your ride, please login or register an account on the Settings page.';
 

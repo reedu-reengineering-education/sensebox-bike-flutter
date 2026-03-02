@@ -24,8 +24,9 @@ const contactEmail = 'kontakt@reedu.de';
 const gitHubNewIssueUrl =
     'https://github.com/reedu-reengineering-education/sensebox-bike-flutter/issues/new/choose';
 const privacyPolicyUrl =
-    'https://opensensemap.org/privacy'; // URL for the privacy policy
-
+    'https://opensensemap.org/privacy';
+const knowledgeBaseUrl =
+    'https://docs.sensebox.de/docs/products/bike/app/download/';
 const githubDataBaseUrl =
     'https://raw.githubusercontent.com/reedu-reengineering-education/sensebox-bike-flutter/main/data';
 const campaignsPath = '/locations.json';

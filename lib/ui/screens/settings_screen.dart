@@ -451,6 +451,12 @@ class SettingsScreen extends StatelessWidget {
             context, AppLocalizations.of(context)!.settingsContact),
         _buildUrlTile(
           context,
+          icon: Icons.menu_book,
+          title: AppLocalizations.of(context)!.settingsKnowledgeBase,
+          url: knowledgeBaseUrl,
+        ),
+        _buildUrlTile(
+          context,
           icon: Icons.contact_mail,
           title: AppLocalizations.of(context)!.settingsEmail,
           url: 'mailto:$contactEmail?subject=senseBox:bike%20App',
