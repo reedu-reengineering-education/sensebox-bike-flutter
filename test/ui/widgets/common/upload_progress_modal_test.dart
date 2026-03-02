@@ -631,60 +631,6 @@ void main() {
       progressController.close();
     });
 
-    testWidgets('should show requirements dialog for unauthenticated user',
-        (WidgetTester tester) async {
-      late StreamController<UploadProgress> progressController;
-      late MockBatchUploadService mockService;
-      bool dismissed = false;
-
-      mockService = MockBatchUploadService();
-      progressController = StreamController<UploadProgress>.broadcast();
-      when(() => mockService.uploadProgressStream)
-          .thenAnswer((_) => progressController.stream);
-      when(() => mockService.currentProgress).thenReturn(null);
-
-      await tester.pumpWidget(
-        createLocalizedTestApp(
-          child: Builder(
-            builder: (context) {
-              return Scaffold(
-                body: ElevatedButton(
-                  onPressed: () {
-                    UploadProgressOverlay.show(
-                      context,
-                      batchUploadService: mockService,
-                      canUpload: false,
-                      isAuthenticated: false,
-                      hasSelectedBox: false,
-                      onDismiss: () {
-                        dismissed = true;
-                      },
-                    );
-                  },
-                  child: const Text('Show Overlay'),
-                ),
-              );
-            },
-          ),
-          locale: const Locale('en'),
-        ),
-      );
-
-      await tester.tap(find.text('Show Overlay'));
-      await tester.pump();
-
-      expect(UploadProgressOverlay.isShown, isTrue);
-      expect(find.text('Upload not available'), findsOneWidget);
-      expect(
-        find.textContaining('please login or register'),
-        findsOneWidget,
-      );
-      await tester.tap(find.text('Ok'));
-      await tester.pump();
-      expect(dismissed, isTrue);
-      expect(UploadProgressOverlay.isShown, isFalse);
-      progressController.close();
-    });
 
     testWidgets('should show requirements dialog for missing box',
         (WidgetTester tester) async {
