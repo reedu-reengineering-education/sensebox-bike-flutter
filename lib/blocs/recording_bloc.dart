@@ -181,6 +181,8 @@ class RecordingBloc with ChangeNotifier {
         _context!,
         batchUploadService: _batchUploadService!,
         canUpload: canUpload,
+        isAuthenticated: openSenseMapBloc.isAuthenticated,
+        hasSelectedBox: openSenseMapBloc.selectedSenseBox != null,
         onUploadComplete: () {
           _cleanupBatchUploadService();
           debugPrint('[RecordingBloc] Batch upload completed successfully');

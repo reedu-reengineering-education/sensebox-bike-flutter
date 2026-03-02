@@ -1,4 +1,7 @@
 {
+    "settingsKnowledgeBase": "Base de conhecimento",
+        "uploadBlockNotAuthenticated": "O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o openSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, faça login ou registre uma conta na página de Configurações.",
+        "uploadBlockNoBox": "O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o openSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, selecione ou crie uma senseBox na página inicial.",
     "createBoxAddCustomTag": "Adicionar etiqueta de grupo personalizada",
     "createBoxCustomTag": "Etiqueta de grupo personalizada",
     "createBoxCustomTagHelper": "Você pode separar etiquetas com vírgulas",
@@ -59,6 +62,7 @@
     },
     "generalExport": "Exportar",
     "generalLogin": "Entrar",
+        "generalLoginOrRegister": "Entrar ou Registrar-se",
     "generalLogout": "Sair",
     "generalRegister": "Registrar-se",
     "generalProceed": "Prosseguir",
@@ -275,5 +279,13 @@
     "errorTrackNoGeolocations": "Trajeto não possui dados de geolocalização e não pode ser enviado.",
     "openSenseMapInfoText": "Os dados da sua senseBox:bike serão compartilhados no openSenseMap, contribuindo para a ciência cidadã e o monitoramento ambiental.",
     "openSenseMapInfoLink": "Visite openSenseMap.org",
-    "loginForgotPasswordInfo": "Se você esqueceu sua senha, navegue até o openSenseMap, clique em \"Login\" e \"Forgot it?\"."
+    "loginForgotPasswordInfo": "Se você esqueceu sua senha, navegue até o openSenseMap, clique em \"Login\" e \"Forgot it?\".",
+    "trackStatusUploadFailedAt": "Falha no envio em {date}",
+    "@trackStatusUploadFailedAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    }
 }

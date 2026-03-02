@@ -448,10 +448,11 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     setState(() => _isUploading = true);
 
     try {
-      // Show upload progress modal
       UploadProgressOverlay.show(
         context,
         batchUploadService: batchUploadService,
+        isAuthenticated: openSenseMapBloc.isAuthenticated,
+        hasSelectedBox: openSenseMapBloc.selectedSenseBox != null,
         onUploadComplete: () {
           // Upload completed successfully
           setState(() => _isUploading = false);
