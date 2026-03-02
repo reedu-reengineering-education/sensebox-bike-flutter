@@ -279,5 +279,13 @@
     "errorTrackNoGeolocations": "Track hat keine Geolokationsdaten und kann nicht hochgeladen werden.",
     "openSenseMapInfoText": "Deine senseBox:bike-Daten werden auf openSenseMap geteilt und tragen zur Bürgerwissenschaft und Umweltüberwachung bei.",
     "openSenseMapInfoLink": "Besuche openSenseMap.org",
-    "loginForgotPasswordInfo": "Wenn du dein Passwort vergessen hast, gehe bitte zu openSenseMap, klicke auf \"Anmelden\" und \"Vergessen?\"."
+    "loginForgotPasswordInfo": "Wenn du dein Passwort vergessen hast, gehe bitte zu openSenseMap, klicke auf \"Anmelden\" und \"Vergessen?\".",
+    "trackStatusUploadFailedAt": "Upload fehlgeschlagen am {date}",
+    "@trackStatusUploadFailedAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    }
 }
