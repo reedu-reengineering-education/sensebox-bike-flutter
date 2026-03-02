@@ -247,6 +247,7 @@ class UploadProgressOverlay {
       }
       showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (dialogContext) => AlertDialog(
           title: Row(
             children: [
