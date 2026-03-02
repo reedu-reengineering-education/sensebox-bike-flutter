@@ -215,6 +215,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
 /// and manages its lifecycle automatically.
 class UploadProgressOverlay {
   static bool _isShown = false;
+  static BuildContext? _lastContext;
 
   /// Shows the upload progress modal
   static void show(
@@ -229,8 +230,8 @@ class UploadProgressOverlay {
     VoidCallback? onDismiss,
   }) {
     if (_isShown) return;
-
     _isShown = true;
+    _lastContext = context;
 
     if (!canUpload) {
       final localizations = AppLocalizations.of(context)!;
@@ -293,7 +294,16 @@ class UploadProgressOverlay {
 
   /// Hides the upload progress modal
   static void hide() {
-    _isShown = false;
+    if (_isShown) {
+      _isShown = false;
+      if (_lastContext != null) {
+        final navigator = Navigator.maybeOf(_lastContext!);
+        if (navigator != null && navigator.canPop()) {
+          navigator.pop();
+        }
+        _lastContext = null;
+      }
+    }
   }
 
   /// Whether the modal is currently shown
