@@ -1,7 +1,7 @@
 {
     "settingsKnowledgeBase": "Wissensdatenbank",
-    "uploadBlockNotAuthenticated": "Die aktuelle Fahrt wurde nicht automatisch hochgeladen. Du kannst sie trotzdem über die Track-Übersicht auf OpenSenseMap hochladen.\n\nUm deine Fahrt hochzuladen, melde dich bitte an oder registriere ein Konto auf der Einstellungsseite.",
-    "uploadBlockNoBox": "Die aktuelle Fahrt wurde nicht automatisch hochgeladen. Du kannst sie trotzdem über die Track-Übersicht auf OpenSenseMap hochladen.\n\nUm deine Fahrt hochzuladen, wähle oder erstelle bitte eine senseBox auf der Startseite.",
+    "uploadBlockNotAuthenticated": "Die aktuelle Fahrt wurde nicht automatisch hochgeladen. Du kannst sie trotzdem über die Track-Übersicht auf openSenseMap hochladen.\n\nUm deine Fahrt hochzuladen, melde dich bitte an oder registriere ein Konto auf der Einstellungsseite.",
+    "uploadBlockNoBox": "Die aktuelle Fahrt wurde nicht automatisch hochgeladen. Du kannst sie trotzdem über die Track-Übersicht auf openSenseMap hochladen.\n\nUm deine Fahrt hochzuladen, wähle oder erstelle bitte eine senseBox auf der Startseite.",
     "createBoxAddCustomTag": "Eigene Gruppentags hinzufügen",
     "createBoxCustomTag": "Eigener Gruppentag",
     "createBoxCustomTagHelper": "Du kannst Tags mit Kommas trennen",

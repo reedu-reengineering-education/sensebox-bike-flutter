@@ -13,11 +13,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get uploadBlockNotAuthenticated =>
-      'Le trajet actuel n\'a pas été téléversé automatiquement. Vous pouvez toujours l\'envoyer sur OpenSenseMap depuis la page d\'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez vous connecter ou créer un compte dans les paramètres.';
+      'Le trajet actuel n\'a pas été téléversé automatiquement. Vous pouvez toujours l\'envoyer sur openSenseMap depuis la page d\'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez vous connecter ou créer un compte dans les paramètres.';
 
   @override
   String get uploadBlockNoBox =>
-      'Le trajet actuel n\'a pas été téléversé automatiquement. Vous pouvez toujours l\'envoyer sur OpenSenseMap depuis la page d\'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez sélectionner ou créer une senseBox sur la page d\'accueil.';
+      'Le trajet actuel n\'a pas été téléversé automatiquement. Vous pouvez toujours l\'envoyer sur openSenseMap depuis la page d\'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez sélectionner ou créer une senseBox sur la page d\'accueil.';
 
   @override
   String get createBoxAddCustomTag =>

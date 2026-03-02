@@ -13,11 +13,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uploadBlockNotAuthenticated =>
-      'Current ride was not automatically uploaded. You can still upload it to OpenSenseMap from the track overview page.\n\nTo upload your ride, please login or register an account on the Settings page.';
+      'Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please login or register an account on the Settings page.';
 
   @override
   String get uploadBlockNoBox =>
-      'Current ride was not automatically uploaded. You can still upload it to OpenSenseMap from the track overview page.\n\nTo upload your ride, please select or create a senseBox on the Home page.';
+      'Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please select or create a senseBox on the Home page.';
 
   @override
   String get createBoxAddCustomTag => 'Add custom group tag';
