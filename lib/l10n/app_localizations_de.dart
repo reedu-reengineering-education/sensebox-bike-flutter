@@ -9,7 +9,7 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
-  String get settingsKnowledgeBase => 'Wissensdatenbank';
+  String get settingsKnowledgeBase => 'Hilfe';
 
   @override
   String get uploadBlockNotAuthenticated =>
