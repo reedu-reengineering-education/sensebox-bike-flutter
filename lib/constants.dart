@@ -26,7 +26,7 @@ const gitHubNewIssueUrl =
 const privacyPolicyUrl =
     'https://opensensemap.org/privacy';
 const knowledgeBaseUrl =
-    'https://docs.sensebox.de/docs/products/bike/app/download/';
+    'https://docs.sensebox.de/docs/products/bike/bike-overview';
 const githubDataBaseUrl =
     'https://raw.githubusercontent.com/reedu-reengineering-education/sensebox-bike-flutter/main/data';
 const campaignsPath = '/locations.json';
