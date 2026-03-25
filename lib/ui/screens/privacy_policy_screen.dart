@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sensebox_bike/app/app_router.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart'; // For translations
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/theme.dart';
-import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sensebox_bike/ui/widgets/common/checkbox_with_text.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -94,11 +95,9 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                   onPressed: (_isCheckboxChecked)
                       ? () async {
                           await _saveAcceptanceDate();
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const AppHome()),
-                          );
+                          if (context.mounted) {
+                            context.go(AppRoutes.home);
+                          }
                         }
                       : null,
                   child: Text(localizations.generalProceed),

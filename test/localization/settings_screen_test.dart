@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:mocktail/mocktail.dart';
@@ -60,10 +61,9 @@ void main() {
       locale: locale,
       child: MultiProvider(
         providers: [
-          ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
-          ChangeNotifierProvider<TrackBloc>.value(value: mockTrackBloc),
-          ChangeNotifierProvider<OpenSenseMapBloc>.value(
-              value: mockOpenSenseMapBloc),
+          BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
+          BlocProvider<TrackBloc>.value(value: mockTrackBloc),
+          BlocProvider<OpenSenseMapBloc>.value(value: mockOpenSenseMapBloc),
         ],
         child: const SettingsScreen(),
       ),

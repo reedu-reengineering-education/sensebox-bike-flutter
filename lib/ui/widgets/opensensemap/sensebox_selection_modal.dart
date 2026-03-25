@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -40,8 +40,8 @@ class _SenseBoxSelectionModal extends StatefulWidget {
 class _SenseBoxSelectionModalState extends State<_SenseBoxSelectionModal> {
   @override
   Widget build(BuildContext context) {
-    return Consumer<OpenSenseMapBloc>(
-      builder: (context, bloc, child) {
+    return BlocBuilder<OpenSenseMapBloc, OpenSenseMapState>(
+      builder: (context, state) {
         return SizedBox(
           height: MediaQuery.of(context).size.height * 0.8,
           child: Stack(

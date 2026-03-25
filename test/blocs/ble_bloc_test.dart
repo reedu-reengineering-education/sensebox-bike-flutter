@@ -8,7 +8,6 @@ import '../mocks.dart';
 void main() {
   group('BleBloc', () {
     late BleBloc bleBloc;
-    late MockSettingsBloc mockSettingsBloc;
 
     setUpAll(() {
       registerFallbackValue(MockBluetoothDevice());
@@ -16,77 +15,85 @@ void main() {
     });
 
     setUp(() {
-      mockSettingsBloc = MockSettingsBloc();
       bleBloc = MockBleBloc();
     });
 
-    tearDown(() {
-      bleBloc.dispose();
+    tearDown(() async {
+      await bleBloc.close();
     });
 
     group('Initialization', () {
       test('initializes with correct default values', () {
-        expect(bleBloc.isBluetoothEnabledNotifier.value, isFalse);
-        expect(bleBloc.isScanningNotifier.value, isFalse);
-        expect(bleBloc.isConnectingNotifier.value, isFalse);
-        expect(bleBloc.isReconnectingNotifier.value, isFalse);
-        expect(bleBloc.selectedDeviceNotifier.value, isNull);
-        expect(bleBloc.availableCharacteristics.value, isEmpty);
-        expect(bleBloc.characteristicStreamsVersion.value, equals(0));
-        expect(bleBloc.connectionErrorNotifier.value, isFalse);
+        expect(bleBloc.state.isBluetoothEnabled, isFalse);
+        expect(bleBloc.state.isScanning, isFalse);
+        expect(bleBloc.state.isConnecting, isFalse);
+        expect(bleBloc.state.isReconnecting, isFalse);
+        expect(bleBloc.state.selectedDevice, isNull);
+        expect(bleBloc.state.availableCharacteristics, isEmpty);
+        expect(bleBloc.state.characteristicStreamsVersion, equals(0));
+        expect(bleBloc.state.connectionError, isFalse);
         expect(bleBloc.isConnected, isFalse);
         expect(bleBloc.devicesList, isEmpty);
       });
     });
 
     group('Bluetooth Status', () {
-      test('updateBluetoothStatus updates notifier and notifies listeners', () {
-        bool listenerCalled = false;
-        bleBloc.addListener(() {
-          listenerCalled = true;
-        });
-
+      test('updateBluetoothStatus emits state transition', () async {
+        final states = <BleState>[];
+        final subscription = bleBloc.stream.listen(states.add);
         bleBloc.updateBluetoothStatus(true);
+        await Future<void>.delayed(Duration.zero);
 
-        expect(bleBloc.isBluetoothEnabledNotifier.value, isTrue);
-        expect(listenerCalled, isTrue);
+        expect(bleBloc.state.isBluetoothEnabled, isTrue);
+        expect(states, isNotEmpty);
+        expect(states.last.isBluetoothEnabled, isTrue);
+        await subscription.cancel();
       });
     });
 
     group('Connection State Management', () {
       test('resetConnectionError clears connection error state', () {
-        bleBloc.connectionErrorNotifier.value = true;
         bleBloc.resetConnectionError();
-        expect(bleBloc.connectionErrorNotifier.value, isFalse);
+        expect(bleBloc.state.connectionError, isFalse);
       });
-
-
     });
 
     group('Error Handling', () {
-      test('connectionErrorNotifier can be set and reset', () {
-        bleBloc.connectionErrorNotifier.value = true;
-        expect(bleBloc.connectionErrorNotifier.value, isTrue);
-        
+      test('resetConnectionError emits state transition', () async {
+        final states = <BleState>[];
+        final subscription = bleBloc.stream.listen(states.add);
+
         bleBloc.resetConnectionError();
-        expect(bleBloc.connectionErrorNotifier.value, isFalse);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(states, isNotEmpty);
+        expect(states.last.connectionError, isFalse);
+        await subscription.cancel();
       });
 
-      test('when initial BLE connection is started, if exception is thrown, reconnection continues seamlessly', () async {
-        expect(bleBloc.connectionErrorNotifier.value, isFalse);
-        expect(bleBloc.isConnectingNotifier.value, isFalse);
-        expect(bleBloc.selectedDeviceNotifier.value, isNull);
-        
+      test('connectionError can be reset', () {
+        bleBloc.resetConnectionError();
+        expect(bleBloc.state.connectionError, isFalse);
+      });
+
+      test(
+          'when initial BLE connection is started, if exception is thrown, reconnection continues seamlessly',
+          () async {
+        expect(bleBloc.state.connectionError, isFalse);
+        expect(bleBloc.state.isConnecting, isFalse);
+        expect(bleBloc.state.selectedDevice, isNull);
+
         final mockDevice = MockBluetoothDevice();
-        when(() => mockDevice.connect()).thenThrow(Exception('Connection failed'));
-        
+        when(() => mockDevice.connect())
+            .thenThrow(Exception('Connection failed'));
+
         final mockContext = FakeBuildContext();
-        
+
         await bleBloc.connectToDevice(mockDevice, mockContext);
-        
-        expect(bleBloc.connectionErrorNotifier.value, isFalse);
-        expect(bleBloc.isConnectingNotifier.value, isFalse);
-        expect(bleBloc.selectedDeviceNotifier.value, isNull);
+
+        expect(bleBloc.state.connectionError, isFalse);
+        expect(bleBloc.state.isConnecting, isFalse);
+        expect(bleBloc.state.selectedDevice, isNull);
         expect(bleBloc.isConnected, isFalse);
       });
     });
@@ -99,17 +106,16 @@ void main() {
       test('scanForNewDevices clears selected device', () {
         final mockDevice = MockBluetoothDevice();
         bleBloc.selectedDevice = mockDevice;
-        bleBloc.selectedDeviceNotifier.value = mockDevice;
-        
+
         bleBloc.scanForNewDevices();
-        
+
         expect(bleBloc.selectedDevice, isNull);
-        expect(bleBloc.selectedDeviceNotifier.value, isNull);
+        expect(bleBloc.state.selectedDevice, isNull);
       });
     });
   });
 }
 
 class MockBluetoothDevice extends Mock implements BluetoothDevice {}
-class FakeBuildContext extends Fake implements BuildContext {}
 
+class FakeBuildContext extends Fake implements BuildContext {}

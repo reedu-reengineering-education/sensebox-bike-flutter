@@ -1,10 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sensebox_bike/app/app_router.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/theme.dart';
-import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 
@@ -49,13 +50,11 @@ class TrackListItem extends StatelessWidget {
             child: hasGeolocations
                 ? ClickableTile(
                     onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TrackDetailScreen(
-                            track: track,
-                            onTrackUploaded: onTrackUpdated,
-                          ),
+                      await context.push(
+                        AppRoutes.trackDetail,
+                        extra: TrackDetailRouteData(
+                          track: track,
+                          onTrackUploaded: onTrackUpdated,
                         ),
                       );
                       onTrackUpdated?.call();

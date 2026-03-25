@@ -1,104 +1,103 @@
-import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SettingsBloc with ChangeNotifier {
-  // StreamController to manage settings updates
-  final StreamController<bool> _vibrateOnDisconnectController =
-      StreamController<bool>.broadcast();
-  final StreamController<List<String>> _privacyZonesController =
-      StreamController<List<String>>.broadcast();
-  final StreamController<bool> _directUploadModeController =
-      StreamController<bool>.broadcast();
+@immutable
+class SettingsState {
+  const SettingsState({
+    required this.vibrateOnDisconnect,
+    required this.privacyZones,
+    required this.directUploadMode,
+  });
 
-  bool _vibrateOnDisconnect = false;
-  List<String> _privacyZones = [];
-  bool _directUploadMode =
-      false; // false = post-ride upload, true = direct upload
+  final bool vibrateOnDisconnect;
+  final List<String> privacyZones;
+  final bool directUploadMode;
 
-  SettingsBloc() {
+  SettingsState copyWith({
+    bool? vibrateOnDisconnect,
+    List<String>? privacyZones,
+    bool? directUploadMode,
+  }) {
+    return SettingsState(
+      vibrateOnDisconnect: vibrateOnDisconnect ?? this.vibrateOnDisconnect,
+      privacyZones: privacyZones ?? this.privacyZones,
+      directUploadMode: directUploadMode ?? this.directUploadMode,
+    );
+  }
+}
+
+class SettingsBloc extends Cubit<SettingsState> {
+  SettingsBloc()
+      : super(const SettingsState(
+          vibrateOnDisconnect: false,
+          privacyZones: <String>[],
+          directUploadMode: false,
+        )) {
     _loadSettings();
   }
 
-  // Getter for the current "Vibrate on disconnect" value
-  bool get vibrateOnDisconnect => _vibrateOnDisconnect;
+  SettingsBloc.withState(super.initialState);
 
-  // Getter for the current privacy zones
-  List<String> get privacyZones => _privacyZones;
+  factory SettingsBloc.createForTest() {
+    return SettingsBloc.withState(
+      const SettingsState(
+        vibrateOnDisconnect: false,
+        privacyZones: <String>[],
+        directUploadMode: false,
+      ),
+    );
+  }
 
-  // Getter for the current upload mode
-  bool get directUploadMode => _directUploadMode;
+  bool get vibrateOnDisconnect => state.vibrateOnDisconnect;
+  List<String> get privacyZones => state.privacyZones;
+  bool get directUploadMode => state.directUploadMode;
 
-  // Stream for vibrateOnDisconnect updates
   Stream<bool> get vibrateOnDisconnectStream =>
-      _vibrateOnDisconnectController.stream;
+      stream.map((state) => state.vibrateOnDisconnect).distinct();
 
-  // Stream for privacy zones updates
-  Stream<List<String>> get privacyZonesStream => _privacyZonesController.stream;
+  Stream<List<String>> get privacyZonesStream =>
+      stream.map((state) => state.privacyZones).distinct(_sameList);
 
-  // Stream for upload mode updates
-  Stream<bool> get directUploadModeStream => _directUploadModeController.stream;
+  Stream<bool> get directUploadModeStream =>
+      stream.map((state) => state.directUploadMode).distinct();
 
-  // Load settings from Shared Preferences
   Future<void> _loadSettings() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    _vibrateOnDisconnect = prefs.getBool('vibrateOnDisconnect') ?? false;
-    _privacyZones = prefs.getStringList('privacyZones') ?? [];
-    _directUploadMode = prefs.getBool('directUploadMode') ?? false;
-
-    // Emit the values to the streams
-    _vibrateOnDisconnectController.add(_vibrateOnDisconnect);
-    _privacyZonesController.add(_privacyZones);
-    _directUploadModeController.add(_directUploadMode);
-
-    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        vibrateOnDisconnect: prefs.getBool('vibrateOnDisconnect') ?? false,
+        privacyZones: prefs.getStringList('privacyZones') ?? <String>[],
+        directUploadMode: prefs.getBool('directUploadMode') ?? false,
+      ),
+    );
   }
 
-  // Toggle the "Vibrate on disconnect" setting and save it
   Future<void> toggleVibrateOnDisconnect(bool value) async {
-    _vibrateOnDisconnect = value;
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('vibrateOnDisconnect', value);
-
-    // Emit the new value to the stream
-    _vibrateOnDisconnectController.add(_vibrateOnDisconnect);
-
-    notifyListeners();
+    if (isClosed) return;
+    emit(state.copyWith(vibrateOnDisconnect: value));
   }
 
-  // Set new privacy zones and save them
   Future<void> setPrivacyZones(List<String> zones) async {
-    _privacyZones = zones;
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList('privacyZones', zones);
-
-    // Emit the new privacy zones to the stream
-    _privacyZonesController.add(_privacyZones);
-
-    notifyListeners();
+    if (isClosed) return;
+    emit(state.copyWith(privacyZones: zones));
   }
 
-  // Toggle the upload mode setting and save it
   Future<void> toggleDirectUploadMode(bool value) async {
-    _directUploadMode = value;
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('directUploadMode', value);
-
-    // Emit the new value to the stream
-    _directUploadModeController.add(_directUploadMode);
-
-    notifyListeners();
+    if (isClosed) return;
+    emit(state.copyWith(directUploadMode: value));
   }
 
-  // Dispose the StreamController when no longer needed
-  @override
   void dispose() {
-    _vibrateOnDisconnectController.close();
-    _privacyZonesController.close();
-    _directUploadModeController.close();
-    super.dispose();
+    close();
   }
+
+  static bool _sameList(List<String> a, List<String> b) => listEquals(a, b);
 }

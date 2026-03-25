@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
@@ -60,8 +60,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   @override
   void initState() {
     super.initState();
-    isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
-    openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    isarService = context.read<TrackBloc>().isarService;
+    openSenseMapBloc = context.read<OpenSenseMapBloc>();
 
     // Initialize local track data
     _track = widget.track;
@@ -83,15 +83,15 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   bool _shouldHideUploadButton() {
-    final openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    final openSenseMapBloc = context.read<OpenSenseMapBloc>();
     final uploadEligible = openSenseMapBloc.hasAuthAndSelectedSenseBox;
 
     return !uploadEligible;
   }
 
   bool _shouldShowUploadHint() {
-    final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
-    final openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    final settingsBloc = context.read<SettingsBloc>();
+    final openSenseMapBloc = context.read<OpenSenseMapBloc>();
     final isPostRideMode = !settingsBloc.directUploadMode;
     final uploadEligible = openSenseMapBloc.hasAuthAndSelectedSenseBox;
 
@@ -324,7 +324,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
-
   Future<void> _shareFile(String filePath) async {
     final localization = AppLocalizations.of(context)!;
 
@@ -405,8 +404,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       final String csvFilePath;
 
       if (isOpenSourceMapCompatible) {
-        csvFilePath = await isarService
-            .exportTrackToCsvInOpenSenseMapFormat(_track.id);
+        csvFilePath =
+            await isarService.exportTrackToCsvInOpenSenseMapFormat(_track.id);
       } else {
         csvFilePath = await isarService.exportTrackToCsv(_track.id);
       }
@@ -517,7 +516,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       }
     }
   }
-
 
   Widget _buildAppBarTitle(TrackData track, bool hideUploadButton) {
     final theme = Theme.of(context);

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
@@ -16,7 +16,7 @@ class SenseBoxSelectionWidget extends StatefulWidget {
   });
 
   @override
-  _SenseBoxSelectionWidgetState createState() =>
+  State<SenseBoxSelectionWidget> createState() =>
       _SenseBoxSelectionWidgetState();
 }
 
@@ -205,8 +205,8 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<OpenSenseMapBloc>(
-      builder: (context, bloc, child) => _buildContent(context, bloc),
+    return BlocBuilder<OpenSenseMapBloc, OpenSenseMapState>(
+      builder: (context, state) => _buildContent(context, _bloc),
     );
   }
 

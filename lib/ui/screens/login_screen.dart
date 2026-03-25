@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/login.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/register.dart';
@@ -10,7 +10,7 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final OpenSenseMapBloc osemBloc = Provider.of<OpenSenseMapBloc>(context);
+    final osemBloc = context.read<OpenSenseMapBloc>();
 
     return Scaffold(
       appBar: AppBar(

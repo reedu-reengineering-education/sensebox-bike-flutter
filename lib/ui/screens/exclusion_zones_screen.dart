@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:mapbox_maps_flutter_draw/mapbox_maps_flutter_draw.dart';
 import 'package:provider/provider.dart';
@@ -19,9 +20,9 @@ class ExclusionZonesScreen extends StatefulWidget {
 class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
   @override
   Widget build(BuildContext context) {
-    final mapboxDrawController = Provider.of<MapboxDrawController>(context);
-    final settingsBloc = Provider.of<SettingsBloc>(context);
-    final geolocationBloc = Provider.of<GeolocationBloc>(context);
+    final mapboxDrawController = context.watch<MapboxDrawController>();
+    final settingsBloc = context.read<SettingsBloc>();
+    final geolocationBloc = context.read<GeolocationBloc>();
 
     void onMapCreated(MapboxMap controller) async {
       await mapboxDrawController.initialize(

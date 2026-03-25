@@ -1,4 +1,6 @@
-import 'package:provider/provider.dart';
+import 'dart:async';
+
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -34,7 +36,7 @@ class TracksScreenState extends State<TracksScreen> {
   int _currentPage = 0;
   bool _hasMoreTracks = true;
   bool _isLoading = false;
-  VoidCallback? _recordingListener;
+  StreamSubscription<bool>? _recordingSubscription;
   // Filter state
   bool _showOnlyUnuploaded = false;
 
@@ -42,10 +44,10 @@ class TracksScreenState extends State<TracksScreen> {
   void initState() {
     super.initState();
 
-    _isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
-    _recordingBloc = Provider.of<RecordingBloc>(context, listen: false);
-    _openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
-    _trackBloc = Provider.of<TrackBloc>(context, listen: false);
+    _isarService = context.read<TrackBloc>().isarService;
+    _recordingBloc = context.read<RecordingBloc>();
+    _openSenseMapBloc = context.read<OpenSenseMapBloc>();
+    _trackBloc = context.read<TrackBloc>();
 
     // Initialize batch upload service
     _batchUploadService = BatchUploadService(
@@ -55,21 +57,18 @@ class TracksScreenState extends State<TracksScreen> {
     );
 
     // Listen to recording state changes
-    _recordingListener = () {
+    _recordingSubscription = _recordingBloc.isRecordingStream.listen((_) {
       if (mounted) {
         _handleRefresh();
       }
-    };
-    _recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
+    });
 
     _fetchInitialTracks();
   }
 
   @override
   void dispose() {
-    if (_recordingListener != null) {
-      _recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
-    }
+    _recordingSubscription?.cancel();
     _scrollController.dispose();
     _batchUploadService.dispose();
     super.dispose();
@@ -184,7 +183,7 @@ class TracksScreenState extends State<TracksScreen> {
             ),
           ),
           Expanded(
-            child: RefreshIndicator(
+              child: RefreshIndicator(
                   color: Theme.of(context).colorScheme.primaryFixedDim,
                   onRefresh: _handleRefresh,
                   child: _displayedTracks.isEmpty

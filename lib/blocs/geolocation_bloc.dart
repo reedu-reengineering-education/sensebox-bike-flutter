@@ -1,6 +1,7 @@
 // File: lib/blocs/geolocation_bloc.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:flutter/foundation.dart';
@@ -14,7 +15,18 @@ import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/privacy_zone_checker.dart';
 import 'package:sensebox_bike/utils/geolocation_utils.dart';
 
-class GeolocationBloc with ChangeNotifier {
+@immutable
+class GeolocationState {
+  const GeolocationState({
+    required this.isListening,
+    required this.lastEmittedPosition,
+  });
+
+  final bool isListening;
+  final GeolocationData? lastEmittedPosition;
+}
+
+class GeolocationBloc extends Cubit<GeolocationState> {
   final StreamController<GeolocationData> _geolocationController =
       StreamController.broadcast();
   Stream<GeolocationData> get geolocationStream =>
@@ -33,18 +45,31 @@ class GeolocationBloc with ChangeNotifier {
   final RecordingBloc recordingBloc;
   final SettingsBloc settingsBloc;
 
-  GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc) {
+  GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc)
+      : super(const GeolocationState(
+          isListening: false,
+          lastEmittedPosition: null,
+        )) {
     _privacyZoneChecker.updatePrivacyZones(settingsBloc.privacyZones);
     _privacyZonesSubscription = settingsBloc.privacyZonesStream.listen((zones) {
       _privacyZoneChecker.updatePrivacyZones(zones);
     });
   }
 
+  void _emitState() {
+    if (!isClosed) {
+      emit(GeolocationState(
+        isListening: _isListening,
+        lastEmittedPosition: _lastEmittedPosition,
+      ));
+    }
+  }
+
   void startListening() async {
     if (_isListening) {
       return;
     }
-    
+
     try {
       await PermissionService.ensureLocationPermissionsGranted();
 
@@ -97,15 +122,17 @@ class GeolocationBloc with ChangeNotifier {
           _emitGeolocation(geolocationData);
         }
       });
-      
+
       _startStationaryLocationTimer();
       _isListening = true;
+      _emitState();
     } catch (e, stack) {
       _positionStreamSubscription?.cancel();
       _positionStreamSubscription = null;
       _stopStationaryLocationTimer();
       _isListening = false;
       ErrorService.handleError(e, stack);
+      _emitState();
     }
   }
 
@@ -137,17 +164,18 @@ class GeolocationBloc with ChangeNotifier {
 
   void _startStationaryLocationTimer() {
     _stopStationaryLocationTimer();
-    
+
     if (!recordingBloc.isRecording) {
       return;
     }
-    
-    _stationaryLocationTimer = Timer.periodic(const Duration(seconds: 20), (timer) async {
+
+    _stationaryLocationTimer =
+        Timer.periodic(const Duration(seconds: 20), (timer) async {
       if (!recordingBloc.isRecording) {
         _stopStationaryLocationTimer();
         return;
       }
-      
+
       if (_lastEmittedPosition != null) {
         final geolocationData = GeolocationData()
           ..latitude = _lastEmittedPosition!.latitude
@@ -172,11 +200,11 @@ class GeolocationBloc with ChangeNotifier {
       }
     });
   }
-  
+
   void _resetStationaryLocationTimer() {
     _startStationaryLocationTimer();
   }
-  
+
   void _stopStationaryLocationTimer() {
     _stationaryLocationTimer?.cancel();
     _stationaryLocationTimer = null;
@@ -188,6 +216,7 @@ class GeolocationBloc with ChangeNotifier {
     _stopStationaryLocationTimer();
     _lastEmittedPosition = null;
     _isListening = false;
+    _emitState();
   }
 
   GeolocationData _createGeolocationFromPosition(Position position) {
@@ -222,8 +251,7 @@ class GeolocationBloc with ChangeNotifier {
     return false;
   }
 
-  Future<bool> _saveGeolocationIfRecording(
-      GeolocationData geolocationData,
+  Future<bool> _saveGeolocationIfRecording(GeolocationData geolocationData,
       {bool allowFinalGeolocation = false}) async {
     if ((!recordingBloc.isRecording && !allowFinalGeolocation) ||
         recordingBloc.currentTrack == null) {
@@ -245,7 +273,7 @@ class GeolocationBloc with ChangeNotifier {
           ErrorService.handleError(e, stack);
         }
       }
-      
+
       return true;
     } catch (e) {
       geolocationData.id = 0;
@@ -255,7 +283,7 @@ class GeolocationBloc with ChangeNotifier {
 
   void _emitGeolocation(GeolocationData geolocationData) {
     _geolocationController.add(geolocationData);
-    notifyListeners();
+    _emitState();
   }
 
   Future<void> emitFinalGeolocation() async {
@@ -293,10 +321,14 @@ class GeolocationBloc with ChangeNotifier {
   }
 
   @override
-  void dispose() {
+  Future<void> close() async {
     _privacyZonesSubscription?.cancel();
     _privacyZoneChecker.dispose();
-    _geolocationController.close();
-    super.dispose();
+    await _geolocationController.close();
+    return super.close();
+  }
+
+  void dispose() {
+    unawaited(close());
   }
 }

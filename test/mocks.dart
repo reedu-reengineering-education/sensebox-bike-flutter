@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:mocktail/mocktail.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
@@ -44,36 +45,19 @@ class MockGeolocationService extends Mock implements GeolocationService {}
 class MockSensorService extends Mock implements SensorService {}
 
 class MockBleBloc extends Mock implements BleBloc {
-  final List<VoidCallback> _listeners = [];
-
-  @override
-  final ValueNotifier<bool> isBluetoothEnabledNotifier = ValueNotifier(false);
-
-  @override
-  final ValueNotifier<bool> isScanningNotifier = ValueNotifier(false);
-
-  @override
-  final ValueNotifier<bool> isConnectingNotifier = ValueNotifier(false);
-
-  @override
-  final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
-
-  @override
-  final ValueNotifier<BluetoothDevice?> selectedDeviceNotifier =
-      ValueNotifier(null);
-
-  @override
-  final ValueNotifier<List<BluetoothCharacteristic>> availableCharacteristics =
-      ValueNotifier([]);
-
-  @override
-  final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
-
-  @override
-  final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
-
-  @override
-  bool get isConnected => false;
+  BleState _state = const BleState(
+    isConnected: false,
+    isBluetoothEnabled: false,
+    isScanning: false,
+    isConnecting: false,
+    isReconnecting: false,
+    selectedDevice: null,
+    availableCharacteristics: <BluetoothCharacteristic>[],
+    characteristicStreamsVersion: 0,
+    connectionError: false,
+  );
+  final StreamController<BleState> _stateController =
+      StreamController<BleState>.broadcast();
 
   @override
   List<BluetoothDevice> get devicesList => [];
@@ -82,11 +66,31 @@ class MockBleBloc extends Mock implements BleBloc {
   Stream<List<BluetoothDevice>> get devicesListStream => Stream.value([]);
 
   @override
-  BluetoothDevice? get selectedDevice => selectedDeviceNotifier.value;
+  BleState get state => _state;
+
+  @override
+  Stream<BleState> get stream => _stateController.stream;
+
+  @override
+  bool get isConnected => _state.isConnected;
+
+  @override
+  BluetoothDevice? get selectedDevice => _state.selectedDevice;
 
   @override
   set selectedDevice(BluetoothDevice? device) {
-    selectedDeviceNotifier.value = device;
+    _state = BleState(
+      isConnected: _state.isConnected,
+      isBluetoothEnabled: _state.isBluetoothEnabled,
+      isScanning: _state.isScanning,
+      isConnecting: _state.isConnecting,
+      isReconnecting: _state.isReconnecting,
+      selectedDevice: device,
+      availableCharacteristics: _state.availableCharacteristics,
+      characteristicStreamsVersion: _state.characteristicStreamsVersion,
+      connectionError: _state.connectionError,
+    );
+    _stateController.add(_state);
   }
 
   @override
@@ -102,18 +106,38 @@ class MockBleBloc extends Mock implements BleBloc {
   @override
   Future<void> scanForNewDevices() async {
     selectedDevice = null;
-    selectedDeviceNotifier.value = null;
   }
 
   @override
   void resetConnectionError() {
-    connectionErrorNotifier.value = false;
+    _state = BleState(
+      isConnected: _state.isConnected,
+      isBluetoothEnabled: _state.isBluetoothEnabled,
+      isScanning: _state.isScanning,
+      isConnecting: _state.isConnecting,
+      isReconnecting: _state.isReconnecting,
+      selectedDevice: _state.selectedDevice,
+      availableCharacteristics: _state.availableCharacteristics,
+      characteristicStreamsVersion: _state.characteristicStreamsVersion,
+      connectionError: false,
+    );
+    _emitState();
   }
 
   @override
   void updateBluetoothStatus(bool isEnabled) {
-    isBluetoothEnabledNotifier.value = isEnabled;
-    notifyListeners();
+    _state = BleState(
+      isConnected: _state.isConnected,
+      isBluetoothEnabled: isEnabled,
+      isScanning: _state.isScanning,
+      isConnecting: _state.isConnecting,
+      isReconnecting: _state.isReconnecting,
+      selectedDevice: _state.selectedDevice,
+      availableCharacteristics: _state.availableCharacteristics,
+      characteristicStreamsVersion: _state.characteristicStreamsVersion,
+      connectionError: _state.connectionError,
+    );
+    _emitState();
   }
 
   @override
@@ -123,24 +147,18 @@ class MockBleBloc extends Mock implements BleBloc {
   Stream<List<double>> getCharacteristicStream(String characteristicUuid) =>
       Stream.value([]);
 
-  @override
-  void addListener(VoidCallback listener) {
-    _listeners.add(listener);
+  void _emitState() {
+    _stateController.add(_state);
   }
 
   @override
-  void removeListener(VoidCallback listener) {
-    _listeners.remove(listener);
+  Future<void> close() async {
+    await _stateController.close();
   }
 
   @override
-  void dispose() {}
-
-  @override
-  void notifyListeners() {
-    for (final listener in _listeners) {
-      listener();
-    }
+  void dispose() {
+    close();
   }
 
   ValueNotifier<bool> get permanentConnectionLossNotifier =>
@@ -154,6 +172,17 @@ class MockGeolocationBloc extends Mock implements GeolocationBloc {}
 class MockOpenSenseMapBloc extends Mock
     with ChangeNotifier
     implements OpenSenseMapBloc {
+  OpenSenseMapState _state = const OpenSenseMapState(
+    isAuthenticated: false,
+    isAuthenticating: false,
+    selectedSenseBox: null,
+    senseBoxes: <dynamic>[],
+  );
+  final StreamController<OpenSenseMapState> _stateController =
+      StreamController<OpenSenseMapState>.broadcast();
+  final StreamController<SenseBox?> _senseBoxController =
+      StreamController<SenseBox?>.broadcast();
+
   @override
   bool isAuthenticated = false;
 
@@ -164,19 +193,27 @@ class MockOpenSenseMapBloc extends Mock
   SenseBox? get selectedSenseBox => null;
 
   @override
-  Stream<SenseBox?> get senseBoxStream => Stream.value(null);
+  Stream<SenseBox?> get senseBoxStream => _senseBoxController.stream;
 
   @override
   List<dynamic> get senseBoxes => [];
 
   @override
+  OpenSenseMapState get state => _state;
+
+  @override
+  Stream<OpenSenseMapState> get stream => _stateController.stream;
+
+  @override
   Future<void> logout() async {
     isAuthenticated = false;
+    _emitState();
   }
 
   @override
   Future<void> markAuthenticationFailed() async {
     isAuthenticated = false;
+    _emitState();
   }
 
   @override
@@ -199,6 +236,26 @@ class MockOpenSenseMapBloc extends Mock
 
   @override
   Future<List> fetchSenseBoxes({int page = 0}) async => [];
+
+  void _emitState() {
+    _state = OpenSenseMapState(
+      isAuthenticated: isAuthenticated,
+      isAuthenticating: isAuthenticating,
+      selectedSenseBox: selectedSenseBox,
+      senseBoxes: senseBoxes,
+    );
+    _stateController.add(_state);
+  }
+
+  @override
+  Future<void> close() async {
+    await _senseBoxController.close();
+    await _stateController.close();
+  }
+
+  void emitSenseBox(SenseBox? senseBox) {
+    _senseBoxController.add(senseBox);
+  }
 }
 
 class TestableMockOpenSenseMapBloc extends MockOpenSenseMapBloc {
@@ -236,7 +293,7 @@ class TestableMockOpenSenseMapBloc extends MockOpenSenseMapBloc {
     }
     if (_fetchSenseBoxesResult != null) {
       _senseBoxes = _fetchSenseBoxesResult!;
-      notifyListeners();
+      _emitState();
       return _fetchSenseBoxesResult!;
     }
     return [];
@@ -245,28 +302,39 @@ class TestableMockOpenSenseMapBloc extends MockOpenSenseMapBloc {
 
 class MockConfigurationBloc extends Mock implements ConfigurationBloc {}
 
-class MockSettingsBloc extends Mock
-    with ChangeNotifier
-    implements SettingsBloc {}
+class MockSettingsBloc extends Mock implements SettingsBloc {}
 
 class MockRecordingBloc extends Mock implements RecordingBloc {
   bool _isRecording = false;
-  late final ValueNotifier<bool> _isRecordingNotifier;
+  final StreamController<bool> _isRecordingController =
+      StreamController<bool>.broadcast();
+  final StreamController<RecordingLifecycleEvent> _lifecycleController =
+      StreamController<RecordingLifecycleEvent>.broadcast();
 
-  MockRecordingBloc() {
-    _isRecordingNotifier = ValueNotifier<bool>(_isRecording);
-  }
+  MockRecordingBloc();
 
   @override
   bool get isRecording => _isRecording;
 
   void setRecording(bool value) {
     _isRecording = value;
-    _isRecordingNotifier.value = value;
+    _isRecordingController.add(value);
+    _lifecycleController.add(
+      value ? RecordingLifecycleEvent.started : RecordingLifecycleEvent.stopped,
+    );
   }
 
   @override
-  ValueNotifier<bool> get isRecordingNotifier => _isRecordingNotifier;
+  Stream<bool> get isRecordingStream => _isRecordingController.stream;
+
+  @override
+  Stream<RecordingLifecycleEvent> get lifecycleEvents =>
+      _lifecycleController.stream;
+
+  Future<void> closeRecordingStream() async {
+    await _isRecordingController.close();
+    await _lifecycleController.close();
+  }
 }
 
 class MockSensorBloc extends Mock implements SensorBloc {

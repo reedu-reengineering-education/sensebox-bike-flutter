@@ -1,12 +1,28 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
 
-class GeolocationMapBloc extends ChangeNotifier {
+@immutable
+class GeolocationMapState {
+  const GeolocationMapState({
+    required this.gpsBuffer,
+    required this.isRecording,
+    required this.latestLocation,
+    required this.isAuthenticated,
+  });
+
+  final List<GeolocationData> gpsBuffer;
+  final bool isRecording;
+  final GeolocationData? latestLocation;
+  final bool isAuthenticated;
+}
+
+class GeolocationMapBloc extends Cubit<GeolocationMapState> {
   // Dependencies
   final GeolocationBloc geolocationBloc;
   final RecordingBloc recordingBloc;
@@ -18,10 +34,10 @@ class GeolocationMapBloc extends ChangeNotifier {
   GeolocationData? _latestLocation;
   GeolocationData? _lastNotifiedLocation;
 
-  // Stream subscriptions and listeners
+  // Stream subscriptions
   StreamSubscription<GeolocationData>? _gpsSubscription;
-  VoidCallback? _recordingListener;
-  VoidCallback? _osemListener;
+  StreamSubscription<RecordingState>? _recordingSubscription;
+  StreamSubscription<OpenSenseMapState>? _osemSubscription;
 
   // Getters
   List<GeolocationData> get gpsBuffer => List.unmodifiable(_gpsBuffer);
@@ -34,42 +50,56 @@ class GeolocationMapBloc extends ChangeNotifier {
     required this.geolocationBloc,
     required this.recordingBloc,
     required this.osemBloc,
-  }) {
+  }) : super(const GeolocationMapState(
+          gpsBuffer: <GeolocationData>[],
+          isRecording: false,
+          latestLocation: null,
+          isAuthenticated: false,
+        )) {
     _initialize();
+  }
+
+  void _emitState() {
+    if (!isClosed) {
+      emit(GeolocationMapState(
+        gpsBuffer: List<GeolocationData>.unmodifiable(_gpsBuffer),
+        isRecording: _isRecording,
+        latestLocation: _latestLocation,
+        isAuthenticated: osemBloc.isAuthenticated,
+      ));
+    }
   }
 
   void _initialize() {
     _isRecording = recordingBloc.isRecording;
-    
+
     _setupRecordingListener();
     _setupGpsListener();
     _setupAuthenticationListener();
   }
 
   void _setupRecordingListener() {
-    _recordingListener = () {
-      final newRecordingState = recordingBloc.isRecording;
-
+    _recordingSubscription = recordingBloc.stream.listen((recordingState) {
+      final newRecordingState = recordingState.isRecording;
       if (_isRecording && !newRecordingState) {
         // Recording stopped - clear buffer
         _clearGpsBuffer();
       }
-      
+
       _isRecording = newRecordingState;
-      notifyListeners();
-    };
-    recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
+      _emitState();
+    });
   }
 
   void _setupGpsListener() {
-    _gpsSubscription = geolocationBloc.geolocationStream.listen(_onGpsDataReceived);
+    _gpsSubscription =
+        geolocationBloc.geolocationStream.listen(_onGpsDataReceived);
   }
 
   void _setupAuthenticationListener() {
-    _osemListener = () {
-      notifyListeners();
-    };
-    osemBloc.addListener(_osemListener!);
+    _osemSubscription = osemBloc.stream.listen((_) {
+      _emitState();
+    });
   }
 
   void _onGpsDataReceived(GeolocationData geoData) {
@@ -98,7 +128,7 @@ class GeolocationMapBloc extends ChangeNotifier {
       if (_isRecording) {
         _addToGpsBuffer(geoData);
       }
-      notifyListeners();
+      _emitState();
     }
   }
 
@@ -122,13 +152,14 @@ class GeolocationMapBloc extends ChangeNotifier {
   // Public methods
   void clearGpsBuffer() {
     _clearGpsBuffer();
-    notifyListeners();
+    _emitState();
   }
 
   // Map state queries
   bool get shouldShowTrack => _isRecording && _gpsBuffer.isNotEmpty;
-  bool get shouldShowCurrentLocation => !_isRecording && _latestLocation != null;
-  
+  bool get shouldShowCurrentLocation =>
+      !_isRecording && _latestLocation != null;
+
   // Get the last location for map navigation
   GeolocationData? get lastLocationForMap {
     if (_gpsBuffer.isNotEmpty) {
@@ -138,22 +169,18 @@ class GeolocationMapBloc extends ChangeNotifier {
   }
 
   @override
-  void dispose() {
+  Future<void> close() async {
     _cleanupSubscriptions();
-    _cleanupListeners();
-    super.dispose();
+    return super.close();
+  }
+
+  void dispose() {
+    unawaited(close());
   }
 
   void _cleanupSubscriptions() {
     _gpsSubscription?.cancel();
+    _recordingSubscription?.cancel();
+    _osemSubscription?.cancel();
   }
-
-  void _cleanupListeners() {
-    if (_recordingListener != null) {
-      recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
-    }
-    if (_osemListener != null) {
-      osemBloc.removeListener(_osemListener!);
-    }
-  }
-} 
+}

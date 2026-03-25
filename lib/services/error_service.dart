@@ -7,6 +7,8 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 class ErrorService {
   static final GlobalKey<ScaffoldMessengerState> scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
   static void reportToSentry(dynamic error, StackTrace stack) {
     logToConsole(error, stack);
     Sentry.captureException(error, stackTrace: stack);

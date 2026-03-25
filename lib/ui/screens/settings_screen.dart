@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:provider/provider.dart';
+import 'package:sensebox_bike/app/app_router.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
-import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
-import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
@@ -24,29 +24,43 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settingsBloc = Provider.of<SettingsBloc>(context);
-    final OpenSenseMapBloc openSenseMapBloc =
-        Provider.of<OpenSenseMapBloc>(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.generalSettings),
-      ),
-      body: ListView(
-        children: <Widget>[
-          _buildLoginLogoutSection(context, openSenseMapBloc),
-          _buildGeneralSettingsSection(context, settingsBloc),
-          _buildAccountManagementSection(context),
-          _buildOtherSection(context),
-          _buildHelpSection(context),
-        ],
-      ),
+    return BlocBuilder<OpenSenseMapBloc, OpenSenseMapState>(
+      builder: (context, openSenseMapState) {
+        final openSenseMapBloc = context.read<OpenSenseMapBloc>();
+        return BlocBuilder<SettingsBloc, SettingsState>(
+          builder: (context, settingsState) {
+            final settingsBloc = context.read<SettingsBloc>();
+            return Scaffold(
+              appBar: AppBar(
+                title: Text(AppLocalizations.of(context)!.generalSettings),
+              ),
+              body: ListView(
+                children: <Widget>[
+                  _buildLoginLogoutSection(
+                    context,
+                    openSenseMapBloc,
+                    openSenseMapState,
+                  ),
+                  _buildGeneralSettingsSection(
+                      context, settingsBloc, settingsState),
+                  _buildAccountManagementSection(context),
+                  _buildOtherSection(context),
+                  _buildHelpSection(context),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
   Widget _buildLoginLogoutSection(
-      BuildContext context, OpenSenseMapBloc openSenseMapBloc) {
-    final isAuthenticated = openSenseMapBloc.isAuthenticated;
+    BuildContext context,
+    OpenSenseMapBloc openSenseMapBloc,
+    OpenSenseMapState openSenseMapState,
+  ) {
+    final isAuthenticated = openSenseMapState.isAuthenticated;
 
     return _buildSettingsContainer(
       context,
@@ -84,11 +98,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildUserInfoRow(
-      BuildContext context,
-      bool isAuthenticated,
-      Map<String, dynamic>? userData,
-      OpenSenseMapBloc openSenseMapBloc) {
+  Widget _buildUserInfoRow(BuildContext context, bool isAuthenticated,
+      Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       spacing: 12,
@@ -117,10 +128,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAuthenticatedUserInfo(
-      BuildContext context,
-      Map<String, dynamic>? userData,
-      OpenSenseMapBloc openSenseMapBloc) {
+  Widget _buildAuthenticatedUserInfo(BuildContext context,
+      Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
     if (openSenseMapBloc.isAuthenticating) {
       return const CircularProgressIndicator();
     }
@@ -128,7 +137,7 @@ class SettingsScreen extends StatelessWidget {
     if (userData == null) {
       return const CircularProgressIndicator();
     }
-    
+
     return _buildUserDataDisplay(context, userData, openSenseMapBloc);
   }
 
@@ -238,7 +247,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildAccountManagementSection(BuildContext context) {
-    final isarService = Provider.of<TrackBloc>(context).isarService;
+    final isarService = context.read<TrackBloc>().isarService;
     final localizations = AppLocalizations.of(context)!;
 
     return StatefulBuilder(
@@ -331,76 +340,55 @@ class SettingsScreen extends StatelessWidget {
 
   // General Settings Section
   Widget _buildGeneralSettingsSection(
-      BuildContext context, SettingsBloc settingsBloc) {
-    final isarService = Provider.of<TrackBloc>(context).isarService;
+    BuildContext context,
+    SettingsBloc settingsBloc,
+    SettingsState settingsState,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(
             context, AppLocalizations.of(context)!.settingsGeneral),
-        StreamBuilder<bool>(
-          stream: settingsBloc.vibrateOnDisconnectStream,
-          initialData: settingsBloc.vibrateOnDisconnect,
-          builder: (context, snapshot) {
-            return ListTile(
-              leading: const Icon(Icons.vibration),
-              title: Text(
-                  AppLocalizations.of(context)!.settingsVibrateOnDisconnect),
-              trailing: Switch(
-                value: snapshot.data ?? false,
-                onChanged: (value) {
-                  settingsBloc.toggleVibrateOnDisconnect(value);
-                },
-              ),
-            );
-          },
+        ListTile(
+          leading: const Icon(Icons.vibration),
+          title:
+              Text(AppLocalizations.of(context)!.settingsVibrateOnDisconnect),
+          trailing: Switch(
+            value: settingsState.vibrateOnDisconnect,
+            onChanged: (value) {
+              settingsBloc.toggleVibrateOnDisconnect(value);
+            },
+          ),
         ),
-        StreamBuilder<bool>(
-          stream: settingsBloc.directUploadModeStream,
-          initialData: settingsBloc.directUploadMode,
-          builder: (context, snapshot) {
-            final isDirectUpload = snapshot.data ?? false;
-            final uploadModeText = isDirectUpload
-                ? AppLocalizations.of(context)!.settingsUploadModeDirect
-                : AppLocalizations.of(context)!.settingsUploadModePostRide;
-
-            return ListTile(
-              leading: const Icon(Icons.cloud_upload),
-              title: Text(AppLocalizations.of(context)!.settingsUploadMode),
-              subtitle: Text(
-                AppLocalizations.of(context)!
-                    .settingsUploadModeCurrent(uploadModeText),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-              onTap: () => _showUploadModeDialog(context, settingsBloc),
-            );
-          },
+        ListTile(
+          leading: const Icon(Icons.cloud_upload),
+          title: Text(AppLocalizations.of(context)!.settingsUploadMode),
+          subtitle: Text(
+            AppLocalizations.of(context)!.settingsUploadModeCurrent(
+              settingsState.directUploadMode
+                  ? AppLocalizations.of(context)!.settingsUploadModeDirect
+                  : AppLocalizations.of(context)!.settingsUploadModePostRide,
+            ),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+          onTap: () => _showUploadModeDialog(context, settingsBloc),
         ),
         ListTile(
           leading: const Icon(Icons.admin_panel_settings),
           title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => const ExclusionZonesScreen()),
-          ),
+          onTap: () => context.push(AppRoutes.exclusionZones),
           trailing: Badge.count(
-            count: settingsBloc.privacyZones.length,
+            count: settingsState.privacyZones.length,
             backgroundColor: Theme.of(context).iconTheme.color,
           ),
         ),
         ListTile(
           leading: const Icon(Icons.trending_up_outlined),
           title: Text(AppLocalizations.of(context)!.trackStatistics),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) =>
-                    TrackStatisticsScreen(isarService: isarService)),
-          ),
+          onTap: () => context.push(AppRoutes.trackStatistics),
         ),
       ],
     );

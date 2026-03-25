@@ -3,12 +3,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/track_status_info.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 
-class TrackBloc with ChangeNotifier {
+@immutable
+class TrackState {
+  const TrackState({required this.currentTrack});
+
+  final TrackData? currentTrack;
+}
+
+class TrackBloc extends Cubit<TrackState> {
   final IsarService isarService;
   TrackData? _currentTrack;
 
@@ -16,7 +24,13 @@ class TrackBloc with ChangeNotifier {
   final StreamController<TrackData?> _currentTrackController =
       StreamController<TrackData?>.broadcast();
 
-  TrackBloc(this.isarService);
+  TrackBloc(this.isarService) : super(const TrackState(currentTrack: null));
+
+  void _emitState() {
+    if (!isClosed) {
+      emit(TrackState(currentTrack: _currentTrack));
+    }
+  }
 
   TrackData? get currentTrack => _currentTrack;
 
@@ -25,7 +39,7 @@ class TrackBloc with ChangeNotifier {
 
   Future<int> startNewTrack({bool? isDirectUpload}) async {
     _currentTrack = TrackData();
-    
+
     // Set isDirectUpload - direct upload tracks should be marked as 1, regular tracks as 0
     // Default to true (direct upload) when parameter is not provided
     _currentTrack!.isDirectUpload = (isDirectUpload ?? true) ? 1 : 0;
@@ -35,7 +49,7 @@ class TrackBloc with ChangeNotifier {
     // Emit the new currentTrack value to the stream
     _currentTrackController.add(_currentTrack);
 
-    notifyListeners();
+    _emitState();
 
     return id;
   }
@@ -46,10 +60,8 @@ class TrackBloc with ChangeNotifier {
     // Emit the null value to the stream
     _currentTrackController.add(_currentTrack);
 
-    notifyListeners();
+    _emitState();
   }
-
-
 
   Color _getStatusColor(TrackStatus status, ThemeData theme) {
     switch (status) {
@@ -175,12 +187,16 @@ class TrackBloc with ChangeNotifier {
     track.lastUploadAttempt = DateTime.now();
 
     await isarService.trackService.updateTrack(track);
-    notifyListeners();
+    _emitState();
   }
 
   @override
+  Future<void> close() async {
+    await _currentTrackController.close();
+    return super.close();
+  }
+
   void dispose() {
-    _currentTrackController.close();
-    super.dispose();
+    unawaited(close());
   }
 }

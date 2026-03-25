@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sensebox_bike/app/app_router.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
@@ -185,12 +186,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
                             if (context.mounted &&
                                 isRegistrationSuccessful) {
-                              // Navigate to the home screen after successful login
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const AppHome()),
-                              );
+                              context.go(AppRoutes.home);
                             }
                           }
                         }),

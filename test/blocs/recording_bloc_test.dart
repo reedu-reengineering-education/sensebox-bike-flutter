@@ -1,12 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
-import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/blocs/track_bloc.dart';
-import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import '../mocks.dart';
 
@@ -16,7 +12,7 @@ class MockGeolocator extends Mock
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   late MockGeolocator mockGeolocator;
   late MockIsarService mockIsarService;
   late MockBleBloc mockBleBloc;
@@ -47,12 +43,50 @@ void main() {
     );
   });
 
-  tearDown(() {
-    recordingBloc.dispose();
+  tearDown(() async {
+    await recordingBloc.close();
+    await mockOpenSenseMapBloc.close();
+  });
+
+  group('RecordingBloc state transitions', () {
+    test('emits selectedSenseBox when OpenSenseMap selection changes',
+        () async {
+      final states = <RecordingState>[];
+      final subscription = recordingBloc.stream.listen(states.add);
+
+      mockOpenSenseMapBloc.emitSenseBox(SenseBox(
+        name: 'Test Box',
+        sId: 'sensebox-1',
+      ));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(states, isNotEmpty);
+      expect(states.last.selectedSenseBox?.id, 'sensebox-1');
+      await subscription.cancel();
+    });
+
+    test('emits state transitions for consecutive senseBox changes', () async {
+      final states = <RecordingState>[];
+      final subscription = recordingBloc.stream.listen(states.add);
+      mockOpenSenseMapBloc.emitSenseBox(SenseBox(
+        name: 'Box A',
+        sId: 'sensebox-a',
+      ));
+      mockOpenSenseMapBloc.emitSenseBox(SenseBox(
+        name: 'Box B',
+        sId: 'sensebox-b',
+      ));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(states, isNotEmpty);
+      expect(states.last.selectedSenseBox?.id, 'sensebox-b');
+      await subscription.cancel();
+    });
   });
 
   group('RecordingBloc.startRecording', () {
-    test('should not start recording if location permission is denied', () async {
+    test('should not start recording if location permission is denied',
+        () async {
       // Setup: location services disabled
       when(() => mockGeolocator.isLocationServiceEnabled())
           .thenAnswer((_) async => false);
@@ -65,7 +99,9 @@ void main() {
       verifyNever(() => mockTrackBloc.startNewTrack());
     });
 
-    test('should not start recording if location permission is denied after request', () async {
+    test(
+        'should not start recording if location permission is denied after request',
+        () async {
       // Setup: permission denied
       when(() => mockGeolocator.isLocationServiceEnabled())
           .thenAnswer((_) async => true);

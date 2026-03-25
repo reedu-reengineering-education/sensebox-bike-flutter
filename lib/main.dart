@@ -1,146 +1,95 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:mapbox_maps_flutter_draw/mapbox_maps_flutter_draw.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:sensebox_bike/blocs/ble_bloc.dart';
-import 'package:sensebox_bike/blocs/configuration_bloc.dart';
-import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
-import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
-import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/blocs/sensor_bloc.dart';
-import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/app/app_bloc_observer.dart';
+import 'package:sensebox_bike/app/app_dependencies.dart';
+import 'package:sensebox_bike/app/app_router.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
-import 'package:sensebox_bike/services/sensor_csv_logger_service.dart';
 import 'package:sensebox_bike/theme.dart';
-import 'package:sensebox_bike/ui/screens/initial_screen.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:sensebox_bike/l10n/app_localizations.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env", mergeWith: Platform.environment);
+  Bloc.observer = AppBlocObserver();
+  await dotenv.load(fileName: '.env', mergeWith: Platform.environment);
+  final dependencies = await AppDependencies.create();
 
   await SentryFlutter.init(
     (options) => options
       ..dsn = sentryDsn
       ..sampleRate = 1.0
-      // Disable sending request headers and IP for users
+      ..debug = false
+      ..diagnosticLevel = SentryLevel.warning
       ..sendDefaultPii = false,
-    appRunner: () => runApp(SentryWidget(child: SenseBoxBikeApp())),
+    appRunner: () => runApp(
+      SentryWidget(
+        child: SenseBoxBikeApp(dependencies: dependencies),
+      ),
+    ),
   );
 }
 
 class SenseBoxBikeApp extends StatefulWidget {
-  const SenseBoxBikeApp({super.key});
+  const SenseBoxBikeApp({
+    required this.dependencies,
+    super.key,
+  });
+
+  final AppDependencies dependencies;
 
   @override
   State<SenseBoxBikeApp> createState() => _SenseBoxBikeAppState();
 }
 
-class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
-  // Store blocs as static fields to ensure they're created only once
-  static SettingsBloc? _settingsBloc;
-  static IsarService? _isarService;
-  static BleBloc? _bleBloc;
-  static OpenSenseMapBloc? _openSenseMapBloc;
-  static TrackBloc? _trackBloc;
-  static RecordingBloc? _recordingBloc;
-  static GeolocationBloc? _geolocationBloc;
-  static SensorBloc? _sensorBloc;
-  static ConfigurationBloc? _configurationBloc;
-  static MapboxDrawController? _mapboxDrawController;
-  static StreamSubscription<Uri>? _appLinksSubscription;
-  static bool _isInitialized = false;
-
-  // Initialize all blocs and services once
-  static Future<void> _initializeBlocs() async {
-    if (_isInitialized) return; // Already initialized
-
-    _settingsBloc = SettingsBloc();
-    _isarService = IsarService(isarProvider: IsarProvider());
-    _bleBloc = BleBloc(_settingsBloc!);
-    _configurationBloc = ConfigurationBloc();
-    _openSenseMapBloc = OpenSenseMapBloc(configurationBloc: _configurationBloc);
-    _trackBloc = TrackBloc(_isarService!);
-    _recordingBloc = RecordingBloc(_isarService!, _bleBloc!, _trackBloc!,
-        _openSenseMapBloc!, _settingsBloc!);
-    _geolocationBloc =
-        GeolocationBloc(_isarService!, _recordingBloc!, _settingsBloc!);
-    _sensorBloc = SensorBloc(
-        _bleBloc!, _geolocationBloc!, _recordingBloc!, _settingsBloc!);
-    _mapboxDrawController = MapboxDrawController();
-
-    // Preload box configurations and campaigns
-    _configurationBloc!.loadAll().catchError((error) {
-      debugPrint('Failed to preload configurations: $error');
-    });
-
-    // Initialize CSV logger service (logging starts/stops with recording)
-    // Only initialize if not in release mode and enabled in .env file
-    if (!kReleaseMode) {
-      final enableLogging = dotenv.get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false').toLowerCase() == 'true';
-      if (enableLogging) {
-        final csvLogger = SensorCsvLoggerService();
-        await csvLogger.initialize();
-      }
-    }
-
-    _isInitialized = true;
-    debugPrint('Blocs initialized successfully');
-  }
+class _SenseBoxBikeAppState extends State<SenseBoxBikeApp>
+    with WidgetsBindingObserver {
+  late final StreamSubscription<Uri> _appLinksSubscription;
+  late final GoRouter _router;
 
   @override
   void initState() {
     super.initState();
-
-    // Initialize blocs if they haven't been initialized yet
-    if (!_isInitialized) {
-      _initializeBlocs().then((_) {
-        // Trigger authentication check after blocs are initialized
-        _openSenseMapBloc?.performAuthenticationCheck();
-      });
-    }
-
-    // Handle app links only once
-    if (_appLinksSubscription == null) {
-      final appLinks = AppLinks();
-      _appLinksSubscription = appLinks.uriLinkStream.listen((uri) async {
-        debugPrint('Received uri: $uri');
-        String action = uri.host;
-        if (action == "start") {
-          debugPrint('Connecting to device and starting recording');
-          final id = uri.queryParameters['id'];
-          if (id == null) {
-            debugPrint('No id provided');
-            return;
-          }
-
-          final fullId = "senseBox:bike [$id]";
-          debugPrint('Connecting to $fullId');
-          await _bleBloc!.connectToId(fullId, context);
-          await Future.delayed(const Duration(seconds: 2));
-          _recordingBloc!.startRecording();
-        }
-      });
-    }
+    WidgetsBinding.instance.addObserver(this);
+    _router = createAppRouter(isarService: widget.dependencies.isarService);
+    _initErrorHandlers();
+    widget.dependencies.openSenseMapBloc.performAuthenticationCheck();
+    _appLinksSubscription = AppLinks().uriLinkStream.listen(_handleIncomingUri);
   }
 
   @override
-  void dispose() {
-    // Clean up resources
-    _appLinksSubscription?.cancel();
-    super.dispose();
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      widget.dependencies.openSenseMapBloc.performAuthenticationCheck();
+    }
+  }
+
+  Future<void> _handleIncomingUri(Uri uri) async {
+    final action = uri.host;
+    if (action != 'start') {
+      return;
+    }
+
+    final id = uri.queryParameters['id'];
+    if (id == null) {
+      debugPrint('No device id provided in app link');
+      return;
+    }
+
+    final fullId = 'senseBox:bike [$id]';
+    await widget.dependencies.bleBloc.connectToId(fullId, context);
+    await Future<void>.delayed(const Duration(seconds: 2));
+    await widget.dependencies.recordingBloc.startRecording();
   }
 
   void _initErrorHandlers() {
@@ -149,8 +98,10 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
 
       SchedulerBinding.instance.addPostFrameCallback((_) {
         ErrorService.handleError(
-            details.exception, details.stack ?? StackTrace.empty,
-            sendToSentry: true);
+          details.exception,
+          details.stack ?? StackTrace.empty,
+          sendToSentry: true,
+        );
       });
     };
 
@@ -165,45 +116,49 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
   }
 
   @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _appLinksSubscription.cancel();
+    widget.dependencies.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    _initErrorHandlers();
-    
-    // Manipulations below are to make sure default Android status bar is visible
     final isDarkMode =
-        MediaQuery.of(context).platformBrightness == Brightness.dark;
+        WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+            Brightness.dark;
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent, // Transparent status bar
-        statusBarIconBrightness: isDarkMode
-            ? Brightness.light
-            : Brightness
-                .dark, // Light icons for dark mode, dark icons for light mode
-        statusBarBrightness: isDarkMode
-            ? Brightness.dark
-            : Brightness.light, // For iOS compatibility
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness:
+            isDarkMode ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDarkMode ? Brightness.dark : Brightness.light,
       ),
     );
-    
+
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: _settingsBloc!),
-        ChangeNotifierProvider.value(value: _trackBloc!),
-        ChangeNotifierProvider.value(value: _recordingBloc!),
-        ChangeNotifierProvider.value(value: _bleBloc!),
-        ChangeNotifierProvider.value(value: _geolocationBloc!),
-        ChangeNotifierProvider.value(value: _sensorBloc!),
-        ChangeNotifierProvider.value(value: _openSenseMapBloc!),
-        Provider.value(value: _configurationBloc!),
-        ChangeNotifierProvider.value(value: _mapboxDrawController!),
+        BlocProvider.value(value: widget.dependencies.settingsBloc),
+        BlocProvider.value(value: widget.dependencies.trackBloc),
+        BlocProvider.value(value: widget.dependencies.recordingBloc),
+        BlocProvider.value(value: widget.dependencies.bleBloc),
+        BlocProvider.value(value: widget.dependencies.geolocationBloc),
+        BlocProvider.value(value: widget.dependencies.sensorBloc),
+        BlocProvider.value(value: widget.dependencies.openSenseMapBloc),
+        Provider.value(value: widget.dependencies.configurationBloc),
+        ChangeNotifierProvider.value(
+          value: widget.dependencies.mapboxDrawController,
+        ),
       ],
-      child: MaterialApp(
+      child: MaterialApp.router(
         scaffoldMessengerKey: ErrorService.scaffoldKey,
         title: 'senseBox:bike',
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: lightTheme,
         darkTheme: darkTheme,
-        home: const InitialScreen(),
+        routerConfig: _router,
       ),
     );
   }

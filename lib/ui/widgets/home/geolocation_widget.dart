@@ -8,8 +8,9 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:provider/provider.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
@@ -28,6 +29,8 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   late PolylineAnnotationManager lineAnnotationManager;
   PolygonAnnotationManager? polygonAnnotationManager;
   StreamSubscription<List<String>>? _privacyZonesSubscription;
+  StreamSubscription<GeolocationMapState>? _mapStateSubscription;
+  Timer? _trackRenderDebounce;
 
   // Bloc
   late GeolocationMapBloc _mapBloc;
@@ -35,7 +38,16 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   // Constants
   static const double authenticatedMargin = 125;
   static const double unauthenticatedMargin = 75;
+  static const Duration _trackRenderDebounceDuration =
+      Duration(milliseconds: 300);
+  static const Duration _cameraUpdateInterval = Duration(milliseconds: 750);
+  static const double _cameraMinDistanceMeters = 3;
   bool _isVisible = true;
+  bool _isMapReady = false;
+  int _lastRenderedPointCount = 0;
+  DateTime? _lastCameraUpdateAt;
+  GeolocationData? _lastCameraLocation;
+  bool? _lastAuthStateForMargins;
 
   @override
   void initState() {
@@ -55,24 +67,47 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   }
 
   void _setupMapBlocListener() {
-    _mapBloc.addListener(_onMapBlocChanged);
+    _mapStateSubscription = _mapBloc.stream.listen(_onMapBlocChanged);
   }
 
-  void _onMapBlocChanged() {
+  void _onMapBlocChanged(GeolocationMapState state) {
     if (!mounted || !_isVisible) return;
-    
-    // Update map based on bloc state
-    if (_mapBloc.shouldShowTrack) {
-      _updateMapWithTrack();
-    } else if (_mapBloc.shouldShowCurrentLocation) {
-      _showCurrentLocation(_mapBloc.latestLocation!);
+
+    if (_lastAuthStateForMargins != state.isAuthenticated) {
+      _lastAuthStateForMargins = state.isAuthenticated;
+      _updateMapMargins();
     }
-    
-    // Update margins
-    _updateMapMargins();
+
+    // Recording path updates are expensive, so debounce redraws.
+    if (state.isRecording && state.gpsBuffer.isNotEmpty) {
+      if (state.gpsBuffer.length != _lastRenderedPointCount) {
+        _scheduleTrackRender();
+      }
+      return;
+    }
+
+    // Clear track once when recording stopped.
+    if (!state.isRecording &&
+        _lastRenderedPointCount > 0 &&
+        state.gpsBuffer.isEmpty) {
+      _lastRenderedPointCount = 0;
+      _clearTrackLine();
+    }
+
+    // Idle location camera updates are throttled to avoid jank.
+    if (!state.isRecording && state.latestLocation != null) {
+      _showCurrentLocation(state.latestLocation!);
+    }
+  }
+
+  void _scheduleTrackRender() {
+    _trackRenderDebounce?.cancel();
+    _trackRenderDebounce =
+        Timer(_trackRenderDebounceDuration, _updateMapWithTrack);
   }
 
   void _updateMapMargins() {
+    if (!_isMapReady) return;
     final isAuthenticated = _mapBloc.isAuthenticated;
 
     var logoAttributionMargins = EdgeInsets.only(
@@ -97,6 +132,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
   // Map Management
   void _clearTrackLine() {
+    if (!_isMapReady) return;
     lineAnnotationManager.deleteAll().catchError((e) {
       // Ignore errors when clearing track line
     });
@@ -104,7 +140,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
   // Map Update Methods
   void _updateMapWithTrack() async {
-    if (_mapBloc.gpsBuffer.isEmpty) return;
+    if (!_isMapReady || _mapBloc.gpsBuffer.isEmpty) return;
 
     try {
       _clearTrackLine();
@@ -112,7 +148,8 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
       if (points.isEmpty) return;
 
       await _drawTrackLine(points);
-      await _setCameraToLastLocation();
+      _lastRenderedPointCount = _mapBloc.gpsBuffer.length;
+      await _setCameraToLastLocation(force: true);
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);
     }
@@ -152,11 +189,11 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     await lineAnnotationManager.create(polyline);
   }
 
-  Future<void> _setCameraToLastLocation() async {
+  Future<void> _setCameraToLastLocation({bool force = false}) async {
     final lastLocation = _mapBloc.lastLocationForMap;
     if (lastLocation == null) return;
 
-    await _setCameraToLocation(lastLocation);
+    await _setCameraToLocation(lastLocation, force: force);
   }
 
   void _showCurrentLocation(GeolocationData geoData) async {
@@ -167,7 +204,31 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     }
   }
 
-  Future<void> _setCameraToLocation(GeolocationData location) async {
+  bool _shouldSkipCameraUpdate(GeolocationData location) {
+    final now = DateTime.now();
+    if (_lastCameraUpdateAt != null &&
+        now.difference(_lastCameraUpdateAt!) < _cameraUpdateInterval) {
+      return true;
+    }
+
+    if (_lastCameraLocation == null) {
+      return false;
+    }
+
+    final distance = geolocator.Geolocator.distanceBetween(
+      _lastCameraLocation!.latitude,
+      _lastCameraLocation!.longitude,
+      location.latitude,
+      location.longitude,
+    );
+    return distance < _cameraMinDistanceMeters;
+  }
+
+  Future<void> _setCameraToLocation(GeolocationData location,
+      {bool force = false}) async {
+    if (!_isMapReady) return;
+    if (!force && _shouldSkipCameraUpdate(location)) return;
+
     final cameraOptions = CameraOptions(
       center:
           Point(coordinates: Position(location.longitude, location.latitude)),
@@ -177,14 +238,17 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
     // Use setCamera instead of flyTo for immediate positioning
     await mapInstance?.setCamera(cameraOptions);
+    _lastCameraUpdateAt = DateTime.now();
+    _lastCameraLocation = location;
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _privacyZonesSubscription?.cancel();
-    _mapBloc.removeListener(_onMapBlocChanged);
-    _mapBloc.dispose();
+    _mapStateSubscription?.cancel();
+    _trackRenderDebounce?.cancel();
+    unawaited(_mapBloc.close());
     super.dispose();
   }
 
@@ -238,7 +302,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     try {
       lineAnnotationManager = await mapInstance!.annotations
           .createPolylineAnnotationManager(id: 'lineAnnotationManager');
-      
+
       // Store brightness before async operation to avoid context gap
       final isDark = Theme.of(context).brightness == Brightness.dark;
       lineAnnotationManager.setLineColor(
@@ -262,13 +326,15 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
           showAccuracyRing: true,
         ));
       }
+      _isMapReady = true;
+      _updateMapMargins();
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);
     }
   }
 
   void _setupPrivacyZonesListener() {
-    final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
+    final settingsBloc = context.read<SettingsBloc>();
     _privacyZonesSubscription = settingsBloc.privacyZonesStream.listen((zones) {
       if (mounted && mapInstance != null) {
         _updatePrivacyZones();
@@ -284,8 +350,8 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     try {
       if (mapInstance == null || polygonAnnotationManager == null) return;
 
-      final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
-      
+      final settingsBloc = context.read<SettingsBloc>();
+
       await polygonAnnotationManager!.deleteAll().catchError((e) {
         // Ignore errors when clearing privacy zones
       });
@@ -296,7 +362,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
         final polygon = Polygon.fromJson(jsonDecode(e));
         return PolygonAnnotationOptions(geometry: polygon);
       }).toList();
-      
+
       await polygonAnnotationManager!.createMulti(polygonOptions);
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);

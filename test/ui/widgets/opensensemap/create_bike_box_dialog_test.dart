@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mocktail/mocktail.dart';
@@ -37,7 +38,7 @@ void main() {
     setUp(() {
       mockConfigurationBloc = MockConfigurationBloc();
       mockOpenSenseMapBloc = MockOpenSenseMapBloc();
-      
+
       when(() => mockConfigurationBloc.boxConfigurations)
           .thenReturn([mockBoxConfiguration]);
       when(() => mockConfigurationBloc.campaigns).thenReturn(null);
@@ -100,12 +101,9 @@ void main() {
         child: Scaffold(
           body: MultiProvider(
             providers: [
-              ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                  value: mockOpenSenseMapBloc),
-              ChangeNotifierProvider<GeolocationBloc>.value(
-                  value: mockGeolocationBloc),
-              Provider<ConfigurationBloc>.value(
-                  value: mockConfigurationBloc),
+              BlocProvider<OpenSenseMapBloc>.value(value: mockOpenSenseMapBloc),
+              BlocProvider<GeolocationBloc>.value(value: mockGeolocationBloc),
+              Provider<ConfigurationBloc>.value(value: mockConfigurationBloc),
             ],
             child: CreateBikeBoxModal(
               boxConfigurations: mockConfigurationBloc.boxConfigurations,
@@ -131,8 +129,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ButtonWithLoader, 'Create'));
       await tester.pumpAndSettle();
-      verify(() => mockOpenSenseMapBloc.createSenseBoxBike(
-          any(), any(), any(),
+      verify(() => mockOpenSenseMapBloc.createSenseBoxBike(any(), any(), any(),
           mockBoxConfiguration, any(), ['foo', 'bar', 'baz'])).called(1);
     });
   });
@@ -350,12 +347,9 @@ void main() {
         child: Scaffold(
           body: MultiProvider(
             providers: [
-              ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                  value: mockOpenSenseMapBloc),
-              ChangeNotifierProvider<GeolocationBloc>.value(
-                  value: mockGeolocationBloc),
-              Provider<ConfigurationBloc>.value(
-                  value: mockConfigurationBloc),
+              BlocProvider<OpenSenseMapBloc>.value(value: mockOpenSenseMapBloc),
+              BlocProvider<GeolocationBloc>.value(value: mockGeolocationBloc),
+              Provider<ConfigurationBloc>.value(value: mockConfigurationBloc),
             ],
             child: CreateBikeBoxModal(
               boxConfigurations: mockConfigurationBloc.boxConfigurations,

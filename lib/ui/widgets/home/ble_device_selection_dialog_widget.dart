@@ -1,5 +1,6 @@
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/theme.dart';
@@ -89,9 +90,10 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                 final devices = snapshot.data;
 
                 if (devices == null || devices.isEmpty) {
-                  return ValueListenableBuilder<bool>(
-                    valueListenable: widget.bleBloc.isScanningNotifier,
-                    builder: (context, isScanning, child) {
+                  return BlocBuilder<BleBloc, BleState>(
+                    bloc: widget.bleBloc,
+                    builder: (context, bleState) {
+                      final isScanning = bleState.isScanning;
                       final colorScheme = Theme.of(context).colorScheme;
                       if (isScanning) {
                         return Center(

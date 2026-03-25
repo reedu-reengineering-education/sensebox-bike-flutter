@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sensebox_bike/app/app_router.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
@@ -23,8 +25,7 @@ class LoginForm extends StatefulWidget {
 class _LoginFormState extends State<LoginForm> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final GlobalKey<FormState> formKey =
-      GlobalKey<FormState>();
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -37,8 +38,7 @@ class _LoginFormState extends State<LoginForm> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
         padding: EdgeInsets.only(
-          bottom:
-              MediaQuery.of(context).viewInsets.bottom,
+          bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -48,9 +48,12 @@ class _LoginFormState extends State<LoginForm> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ValueListenableBuilder<bool>(
-                    valueListenable: widget.bloc.isAuthenticatingNotifier,
-                    builder: (context, isAuthenticating, child) {
+                  BlocBuilder<OpenSenseMapBloc, OpenSenseMapState>(
+                    bloc: widget.bloc,
+                    buildWhen: (previous, current) =>
+                        previous.isAuthenticating != current.isAuthenticating,
+                    builder: (context, osemState) {
+                      final isAuthenticating = osemState.isAuthenticating;
                       return Column(
                         children: [
                           EmailField(
@@ -96,13 +99,7 @@ class _LoginFormState extends State<LoginForm> {
 
                                       if (isLoginSuccessful &&
                                           context.mounted) {
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const AppHome(),
-                                          ),
-                                        );
+                                        context.go(AppRoutes.home);
                                       }
                                     }
                                   },

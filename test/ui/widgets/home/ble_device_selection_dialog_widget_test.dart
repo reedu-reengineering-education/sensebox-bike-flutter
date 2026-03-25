@@ -7,7 +7,9 @@ import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget
 import '../../../test_helpers.dart';
 
 class MockBleBloc extends Mock implements BleBloc {}
+
 class MockBluetoothDevice extends Mock implements BluetoothDevice {}
+
 class FakeBuildContext extends Fake implements BuildContext {}
 
 void main() {
@@ -15,15 +17,27 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(MockBluetoothDevice());
-    registerFallbackValue(FakeBuildContext()); 
+    registerFallbackValue(FakeBuildContext());
     initializeTestDependencies();
     disableProviderDebugChecks();
   });
 
   setUp(() {
     bleBloc = MockBleBloc();
+    when(() => bleBloc.stream)
+        .thenAnswer((_) => const Stream<BleState>.empty());
+    when(() => bleBloc.state).thenReturn(const BleState(
+      isConnected: false,
+      isBluetoothEnabled: true,
+      isScanning: false,
+      isConnecting: false,
+      isReconnecting: false,
+      selectedDevice: null,
+      availableCharacteristics: <BluetoothCharacteristic>[],
+      characteristicStreamsVersion: 0,
+      connectionError: false,
+    ));
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
-    when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
   });
 
   testWidgets('shows dialog title', (tester) async {
@@ -46,26 +60,34 @@ void main() {
   });
 
   testWidgets('shows scan error', (tester) async {
-
     await tester.pumpWidget(
       createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: Material(
-          child: DeviceSelectionSheet(
-          bleBloc: bleBloc,
-          initialScanError: 'Test error',
-        ),
-        )
-      ),
+          locale: const Locale('en'),
+          child: Material(
+            child: DeviceSelectionSheet(
+              bleBloc: bleBloc,
+              initialScanError: 'Test error',
+            ),
+          )),
     );
 
     expect(find.textContaining('Test error'), findsOneWidget);
   });
 
   testWidgets('shows loading spinner while scanning', (tester) async {
-    when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(true));
+    when(() => bleBloc.state).thenReturn(const BleState(
+      isConnected: false,
+      isBluetoothEnabled: true,
+      isScanning: true,
+      isConnecting: false,
+      isReconnecting: false,
+      selectedDevice: null,
+      availableCharacteristics: <BluetoothCharacteristic>[],
+      characteristicStreamsVersion: 0,
+      connectionError: false,
+    ));
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
-    
+
     await tester.pumpWidget(
       createLocalizedTestApp(
         locale: const Locale('en'),
@@ -80,9 +102,19 @@ void main() {
   });
 
   testWidgets('shows no devices found message', (tester) async {
-    when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
+    when(() => bleBloc.state).thenReturn(const BleState(
+      isConnected: false,
+      isBluetoothEnabled: true,
+      isScanning: false,
+      isConnecting: false,
+      isReconnecting: false,
+      selectedDevice: null,
+      availableCharacteristics: <BluetoothCharacteristic>[],
+      characteristicStreamsVersion: 0,
+      connectionError: false,
+    ));
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
-    
+
     await tester.pumpWidget(
       createLocalizedTestApp(
         locale: const Locale('en'),
@@ -93,13 +125,15 @@ void main() {
     );
 
     await tester.pump();
-    expect(find.textContaining('No senseBoxes found'), findsOneWidget); // Adjust to your localization
+    expect(find.textContaining('No senseBoxes found'),
+        findsOneWidget); // Adjust to your localization
   });
 
   testWidgets('shows list of devices and taps to connect', (tester) async {
     final device = MockBluetoothDevice();
     when(() => device.platformName).thenReturn('TestDevice');
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
+    when(() => bleBloc.devicesListStream)
+        .thenAnswer((_) => Stream.value([device]));
     bool connectCalled = false;
     when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {
       connectCalled = true;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -38,9 +39,21 @@ void main() {
 
     when(() => mockIsarService.trackService).thenReturn(mockTrackService);
     when(() => mockTrackBloc.isarService).thenReturn(mockIsarService);
+    when(() => mockTrackBloc.stream).thenAnswer((_) => const Stream.empty());
+    when(() => mockTrackBloc.state)
+        .thenReturn(const TrackState(currentTrack: null));
+
     when(() => mockRecordingBloc.isRecording).thenReturn(false);
-    when(() => mockRecordingBloc.isRecordingNotifier)
-        .thenReturn(ValueNotifier<bool>(false));
+    when(() => mockRecordingBloc.isRecordingStream)
+        .thenAnswer((_) => const Stream<bool>.empty());
+    when(() => mockRecordingBloc.stream)
+        .thenAnswer((_) => const Stream<RecordingState>.empty());
+    when(() => mockRecordingBloc.state).thenReturn(const RecordingState(
+      isRecording: false,
+      currentTrack: null,
+      selectedSenseBox: null,
+      lastRecordingStopTimestamp: null,
+    ));
   });
 
   Future<void> pumpTracksScreen(WidgetTester tester, Locale locale) async {
@@ -56,6 +69,14 @@ void main() {
     final mockOpenSenseMapBloc = MockOpenSenseMapBloc();
     when(() => mockOpenSenseMapBloc.openSenseMapService)
         .thenReturn(MockOpenSenseMapService());
+    when(() => mockOpenSenseMapBloc.stream)
+        .thenAnswer((_) => const Stream<OpenSenseMapState>.empty());
+    when(() => mockOpenSenseMapBloc.state).thenReturn(const OpenSenseMapState(
+      isAuthenticated: false,
+      isAuthenticating: false,
+      selectedSenseBox: null,
+      senseBoxes: <dynamic>[],
+    ));
 
     await tester.pumpWidget(
       MaterialApp(
@@ -64,13 +85,13 @@ void main() {
         locale: locale,
         home: MultiProvider(
           providers: [
-            ChangeNotifierProvider<TrackBloc>.value(
+            BlocProvider<TrackBloc>.value(
               value: mockTrackBloc,
             ),
-            ChangeNotifierProvider<RecordingBloc>.value(
+            BlocProvider<RecordingBloc>.value(
               value: mockRecordingBloc,
             ),
-            ChangeNotifierProvider<OpenSenseMapBloc>.value(
+            BlocProvider<OpenSenseMapBloc>.value(
               value: mockOpenSenseMapBloc,
             ),
           ],

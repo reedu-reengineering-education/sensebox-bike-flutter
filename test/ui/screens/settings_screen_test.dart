@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 
 void main() {
@@ -38,7 +38,7 @@ void main() {
       // Create a simple widget that just shows the upload mode option
       await tester.pumpWidget(
         MaterialApp(
-          home: ChangeNotifierProvider<SettingsBloc>.value(
+          home: BlocProvider<SettingsBloc>.value(
             value: settingsBloc,
             child: Scaffold(
               body: StreamBuilder<bool>(
@@ -91,7 +91,7 @@ void main() {
       // Create a simple widget that just shows the upload mode option
       await tester.pumpWidget(
         MaterialApp(
-          home: ChangeNotifierProvider<SettingsBloc>.value(
+          home: BlocProvider<SettingsBloc>.value(
             value: settingsBloc,
             child: Scaffold(
               body: StreamBuilder<bool>(
