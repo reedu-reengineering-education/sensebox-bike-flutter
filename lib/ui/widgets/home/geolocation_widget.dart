@@ -26,6 +26,8 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   // Map instances
   MapboxMap? mapInstance;
   late PolylineAnnotationManager lineAnnotationManager;
+  PolygonAnnotationManager? polygonAnnotationManager;
+  StreamSubscription<List<String>>? _privacyZonesSubscription;
 
   // Bloc
   late GeolocationMapBloc _mapBloc;
@@ -41,6 +43,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     WidgetsBinding.instance.addObserver(this);
     _initializeMapBloc();
     _setupMapBlocListener();
+    _setupPrivacyZonesListener();
   }
 
   void _initializeMapBloc() {
@@ -179,6 +182,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _privacyZonesSubscription?.cancel();
     _mapBloc.removeListener(_onMapBlocChanged);
     _mapBloc.dispose();
     super.dispose();
@@ -243,6 +247,12 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
       lineAnnotationManager.setLineEmissiveStrength(1);
       lineAnnotationManager.setLineCap(LineCap.ROUND);
 
+      polygonAnnotationManager = await mapInstance!.annotations
+          .createPolygonAnnotationManager(id: 'privacyZonesManager');
+      polygonAnnotationManager!.setFillColor(Colors.red.toARGB32());
+      polygonAnnotationManager!.setFillOpacity(0.5);
+      polygonAnnotationManager!.setFillEmissiveStrength(1);
+
       // Enable location puck if location permissions are granted
       final hasPermission =
           await PermissionService.isLocationPermissionGranted();
@@ -257,22 +267,37 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     }
   }
 
-  Future<void> _addPrivacyZones() async {
-    try {
-      final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
-      if (settingsBloc.privacyZones.isEmpty) return;
+  void _setupPrivacyZonesListener() {
+    final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
+    _privacyZonesSubscription = settingsBloc.privacyZonesStream.listen((zones) {
+      if (mounted && mapInstance != null) {
+        _updatePrivacyZones();
+      }
+    });
+  }
 
-      final polygonAnnotationManager =
-          await mapInstance!.annotations.createPolygonAnnotationManager();
-      polygonAnnotationManager.setFillColor(Colors.red.toARGB32());
-      polygonAnnotationManager.setFillOpacity(0.5);
-      polygonAnnotationManager.setFillEmissiveStrength(1);
+  Future<void> _addPrivacyZones() async {
+    await _updatePrivacyZones();
+  }
+
+  Future<void> _updatePrivacyZones() async {
+    try {
+      if (mapInstance == null || polygonAnnotationManager == null) return;
+
+      final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
+      
+      await polygonAnnotationManager!.deleteAll().catchError((e) {
+        // Ignore errors when clearing privacy zones
+      });
+
+      if (settingsBloc.privacyZones.isEmpty) return;
 
       final polygonOptions = settingsBloc.privacyZones.map((e) {
         final polygon = Polygon.fromJson(jsonDecode(e));
         return PolygonAnnotationOptions(geometry: polygon);
       }).toList();
-      polygonAnnotationManager.createMulti(polygonOptions);
+      
+      await polygonAnnotationManager!.createMulti(polygonOptions);
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);
     }

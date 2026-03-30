@@ -12,8 +12,13 @@ import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart
 class HumiditySensor extends Sensor {
   List<double> _latestValue = [0.0];
 
+  static int get staticUiPriority => 50;
+
   @override
-  get uiPriority => 20;
+  get uiPriority => staticUiPriority;
+
+  @override
+  Duration get lookbackWindow => const Duration(milliseconds: 1000);
 
   static const String sensorCharacteristicUuid =
       '772df7ec-8cdc-4ea9-86af-410abe0ba257';

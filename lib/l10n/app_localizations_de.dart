@@ -53,6 +53,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalClose => 'Schließen';
 
   @override
+  String get reloadConfiguration => 'Konfiguration neu laden';
+
+  @override
   String get generalUpload => 'Hochladen';
 
   @override
@@ -146,10 +149,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get openSenseMapLoginFailed => 'Anmeldung fehlgeschlagen';
 
   @override
-  String get openSenseMapRegisterName => 'Name';
+  String get openSenseMapRegisterName => 'Benutzername';
 
   @override
-  String get openSenseMapRegisterNameErrorEmpty => 'Name darf nicht leer sein';
+  String get openSenseMapRegisterNameErrorEmpty =>
+      'Benutzername darf nicht leer sein';
 
   @override
   String get openSenseMapRegisterPasswordConfirm => 'Passwort bestätigen';
@@ -221,7 +225,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get createBoxGeolocationCurrentPosition => 'Deine aktuelle Position wird verwendet';
 
   @override
-  String get openSenseMapBoxSelectionNoBoxes => 'Keine senseBox verfügbar';
+  String get openSenseMapBoxSelectionNoBoxes =>
+      'Keine senseBox verfügbar oder Konfiguration nicht geladen';
 
   @override
   String get openSenseMapBoxSelectionCreateHint => 'Erstelle eine mit dem \'+\' Button';
@@ -336,7 +341,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sensorFinedustPM1 => 'Feinstaub PM1';
 
   @override
-  String get sensorDistance => 'Überholabstand';
+  String get sensorDistance => 'Abstand Links';
+
+  @override
+  String get sensorDistanceRight => 'Abstand Rechts';
 
   @override
   String get sensorOvertaking => 'Überholmanöver';
@@ -414,6 +422,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get campaignLoadError => 'Die Liste der Kampagnen konnte nicht geladen werden.';
 
   @override
+  String get boxConfigurationLoadError =>
+      'Fehler beim Laden der Box-Konfigurationen.';
+
+  @override
   String get selectCampaign => 'Kampagne auswählen';
 
   @override
@@ -435,6 +447,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorNoSenseBoxSelected => 'Um den Upload von Sensordaten in die Cloud zu ermöglichen, melden Sie sich bitte in Ihrem openSenseMap-Konto an und wählen Sie die Box aus.';
 
   @override
+  String get trackUploadLoginSelectHint =>
+      'Bitte melde dich an und wähle eine senseBox zum Hochladen aus.';
+
+  @override
+  String get uploadRequirementsTitle => 'Upload nicht möglich';
+
+  @override
+  String get uploadPostRideRequirementsMessage =>
+      'Um deine Fahrt hochzuladen, melde dich bei deinem openSenseMap-Konto an, wähle eine senseBox aus und öffne dann die Track-Übersicht und tippe auf die Upload-Schaltfläche oben rechts.';
+
+  @override
   String get loginRequiredMessage => 'Anmelden um Sensordaten zu teilen';
 
   @override
@@ -447,7 +470,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorRegistrationFailed => 'Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es später erneut.';
 
   @override
-  String get errorBleConnectionFailed => 'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
+  String get errorReasonPrefix => 'Grund:';
+
+  @override
+  String get errorBleConnectionFailed =>
+      'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
 
   @override
   String get errorUploadFailed => 'Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
@@ -624,5 +651,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackUploadRetryFailed => 'Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut.';
 
   @override
-  String get errorTrackNoGeolocations => 'Track hat keine Geolokationsdaten und kann nicht hochgeladen werden.';
+  String get errorTrackNoGeolocations =>
+      'Track hat keine Geolokationsdaten und kann nicht hochgeladen werden.';
+
+  @override
+  String get openSenseMapInfoText =>
+      'Deine senseBox:bike-Daten werden auf openSenseMap geteilt und tragen zur Bürgerwissenschaft und Umweltüberwachung bei.';
+
+  @override
+  String get openSenseMapInfoLink => 'Besuche openSenseMap.org';
+
+  @override
+  String get loginForgotPasswordInfo =>
+      'Wenn du dein Passwort vergessen hast, gehe bitte zu openSenseMap, klicke auf \"Anmelden\" und \"Vergessen?\".';
 }

@@ -164,7 +164,6 @@ class RecordingBloc with ChangeNotifier {
     if (!settingsBloc.directUploadMode &&
         _batchUploadService != null &&
         trackToUpload != null &&
-        senseBoxForUpload != null &&
         _context != null) {
       _showUploadProgressModal(trackToUpload, senseBoxForUpload);
     } else {
@@ -176,8 +175,11 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  void _showUploadProgressModal(TrackData track, SenseBox senseBox) async {
+  void _showUploadProgressModal(TrackData track, SenseBox? senseBox) async {
     if (_context == null || _batchUploadService == null) return;
+
+    final canUpload =
+        senseBox != null && openSenseMapBloc.hasAuthAndSelectedSenseBox;
 
     try {
       await track.geolocations.load();
@@ -190,6 +192,7 @@ class RecordingBloc with ChangeNotifier {
       UploadProgressOverlay.show(
         _context!,
         batchUploadService: _batchUploadService!,
+        canUpload: canUpload,
         onUploadComplete: () {
           _cleanupBatchUploadService();
           debugPrint('[RecordingBloc] Batch upload completed successfully');
@@ -199,7 +202,7 @@ class RecordingBloc with ChangeNotifier {
           debugPrint('[RecordingBloc] Batch upload failed permanently');
         },
         onStartUpload: () {
-          _startBatchUpload(track, senseBox);
+          if (canUpload) _startBatchUpload(track, senseBox!);
         },
       );
     } catch (e, stack) {

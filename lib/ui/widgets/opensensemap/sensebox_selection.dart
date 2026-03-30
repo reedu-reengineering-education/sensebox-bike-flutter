@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/ui/widgets/common/error_message.dart';
 
 class SenseBoxSelectionWidget extends StatefulWidget {
-  const SenseBoxSelectionWidget({super.key});
+  final ConfigurationBloc configurationBloc;
+
+  const SenseBoxSelectionWidget({
+    super.key,
+    required this.configurationBloc,
+  });
 
   @override
   _SenseBoxSelectionWidgetState createState() =>
@@ -14,55 +21,38 @@ class SenseBoxSelectionWidget extends StatefulWidget {
 }
 
 class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
-  late OpenSenseMapBloc bloc;
+  static const _errorIcon = Icons.error_outline;
+  static const int _initialPage = 0;
+  
+  late final OpenSenseMapBloc _bloc;
   late ScrollController _scrollController;
-
-  int page = 0;
+  int page = _initialPage;
   bool isLoading = false;
   bool hasMore = true;
+  String? _fetchError;
 
   @override
   void initState() {
     super.initState();
-    bloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    _bloc = context.read<OpenSenseMapBloc>();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
 
-    if (bloc.senseBoxes.isEmpty) {
-      _fetchSenseBoxes();
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _bloc.senseBoxes.isEmpty) {
+        _resetPagination();
+        _fetchSenseBoxes();
+      }
+    });
   }
 
-  void _fetchSenseBoxes() {
-    if (isLoading || !hasMore) return;
-    setState(() {
-      isLoading = true;
-    });
-
-    bloc.fetchSenseBoxes(page: page).then((values) {
-      if (!mounted) return; // Ensure the widget is still in the tree
-
-      setState(() {
-        isLoading = false;
-        page++;
-
-        // Stop loading if no more senseBoxes are found
-        if (values.isEmpty) {
-          hasMore = false;
-        }
-      });
-    }).catchError((error) {
-      if (!mounted) return; // Ensure the widget is still in the tree
-
-      setState(() {
-        isLoading = false;
-      });
-      ErrorService.handleError(
-          'Error fetching senseBoxes: $error', StackTrace.current);
-    });
+  void _resetPagination() {
+    page = _initialPage;
+    hasMore = true;
   }
 
   void _onScroll() {
+    if (!_scrollController.hasClients) return;
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
       _fetchSenseBoxes();
@@ -75,101 +65,180 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<OpenSenseMapBloc>(
-      builder: (context, bloc, child) {
-        if (bloc.senseBoxes.isEmpty && isLoading) {
+  bool _isAuthenticationError(String error) {
+    return error.contains('Not authenticated') ||
+        error.contains('Authentication failed') ||
+        error.contains('No refresh token found') ||
+        error.contains('Refresh token is expired');
+  }
+
+  void _fetchSenseBoxes() {
+    if (isLoading || !hasMore) return;
+
+    setState(() {
+      isLoading = true;
+      _fetchError = null;
+    });
+
+    _bloc.fetchSenseBoxes(page: page).then((values) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+        page++;
+        if (values.isEmpty) {
+          hasMore = false;
+        }
+      });
+    }).catchError((error) {
+      if (!mounted) return;
+
+      if (_isAuthenticationError(error.toString())) {
+        _bloc.markAuthenticationFailed();
+      }
+
+      setState(() {
+        isLoading = false;
+        _fetchError = error.toString();
+      });
+      ErrorService.handleError(
+          'Error fetching senseBoxes: $error', StackTrace.current);
+    });
+  }
+
+  Widget _buildContent(BuildContext context, OpenSenseMapBloc bloc) {
+    final localizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final configurationBloc = widget.configurationBloc;
+
+    if (isLoading && bloc.senseBoxes.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_fetchError != null && bloc.senseBoxes.isEmpty) {
+      return ErrorMessage(
+        icon: _errorIcon,
+        title: localizations.openSenseMapBoxSelectionNoBoxes,
+        detail: _fetchError,
+      );
+    }
+
+    if (bloc.senseBoxes.isEmpty && !isLoading) {
+      return bloc.isAuthenticated
+          ? _buildEmptyState(localizations, theme, configurationBloc)
+          : ErrorMessage(
+              icon: _errorIcon,
+              title: localizations.openSenseMapBoxSelectionNoBoxes,
+              detail: 'Please login to view your senseBoxes',
+            );
+    }
+
+    return _buildBoxList(
+        context, bloc, localizations, theme, configurationBloc);
+  }
+
+  Widget _buildBoxList(
+      BuildContext context,
+      OpenSenseMapBloc bloc,
+      AppLocalizations localizations,
+      ThemeData theme,
+      ConfigurationBloc configurationBloc) {
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: bloc.senseBoxes.length + (isLoading ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == bloc.senseBoxes.length && isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (bloc.senseBoxes.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.directions_bike, size: 48),
-                const SizedBox(height: 16),
-                Text(
-                    AppLocalizations.of(context)!
-                        .openSenseMapBoxSelectionNoBoxes,
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Text(AppLocalizations.of(context)!
-                    .openSenseMapBoxSelectionCreateHint),
-              ],
-            ),
-          );
+        if (index == bloc.senseBoxes.length) {
+          return const SizedBox();
         }
 
-        return ListView.builder(
-          controller: _scrollController,
-          itemCount: bloc.senseBoxes.length + (isLoading ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == bloc.senseBoxes.length && isLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        final senseBox = SenseBox.fromJson(bloc.senseBoxes[index]);
+        final isSelected = senseBox.id == bloc.selectedSenseBox?.id;
+        final isSenseBoxBikeCompatible =
+            configurationBloc.isSenseBoxBikeCompatible(senseBox);
 
-            if (index == bloc.senseBoxes.length) {
-              return const SizedBox(); // End of list
-            }
-
-            final senseBox = SenseBox.fromJson(bloc.senseBoxes[index]);
-            final isSelected = senseBox.id == bloc.selectedSenseBox?.id;
-            final isSenseBoxBikeCompatible =
-                bloc.isSenseBoxBikeCompatible(senseBox);
-
-            return ListTile(
-              title: Text(senseBox.name ??
-                  AppLocalizations.of(context)!
-                      .openSenseMapBoxSelectionUnnamedBox),
-              subtitle: !isSenseBoxBikeCompatible
-                  ? Row(
-                      children: [
-                        Icon(
-                          Icons.warning,
-                          size: 12,
-                        ),
-                        SizedBox(width: 8),
-                        Text(AppLocalizations.of(context)!
-                            .openSenseMapBoxSelectionIncompatible),
-                      ],
+        return ListTile(
+          title: Text(senseBox.name ??
+              localizations.openSenseMapBoxSelectionUnnamedBox),
+          subtitle: !isSenseBoxBikeCompatible
+              ? Row(
+                  children: [
+                    const Icon(Icons.warning, size: 12),
+                    const SizedBox(width: 8),
+                    Text(localizations.openSenseMapBoxSelectionIncompatible),
+                  ],
+                )
+              : senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
+                  ? Wrap(
+                      spacing: 8,
+                      children: senseBox.grouptag!
+                          .map((tag) => Badge(
+                                label: Text(tag),
+                                backgroundColor: theme.iconTheme.color,
+                              ))
+                          .toList(),
                     )
-                  : senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
-                      ? Wrap(
-                          spacing: 8,
-                          children: senseBox.grouptag!
-                              .map((tag) => Badge(
-                                    label: Text(tag),
-                                    backgroundColor:
-                                        Theme.of(context).iconTheme.color,
-                                  ))
-                              .toList(),
-                        )
-                      : null,
-              trailing: isSelected
-                  ? Icon(Icons.check,
-                      color: Theme.of(context).colorScheme.primary)
                   : null,
-              enabled: isSenseBoxBikeCompatible,
-              onTap: isSenseBoxBikeCompatible
-                  ? () async {
-                      if (isSelected) {
-                        // Unselect the box if it's already selected
-                        await bloc.setSelectedSenseBox(null);
-                      } else {
-                        // Select the box
-                        await bloc.setSelectedSenseBox(senseBox);
-                      }
-                      if (context.mounted) {
-                        Navigator.pop(context); // Go back after selecting
-                      }
-                    }
-                  : null,
-            );
-          },
+          trailing: isSelected
+              ? Icon(Icons.check, color: theme.colorScheme.primary)
+              : null,
+          enabled: isSenseBoxBikeCompatible,
+          onTap: isSenseBoxBikeCompatible
+              ? () async {
+                  if (isSelected) {
+                    await bloc.setSelectedSenseBox(null);
+                  } else {
+                    await bloc.setSelectedSenseBox(senseBox);
+                  }
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                  }
+                }
+              : null,
         );
       },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<OpenSenseMapBloc>(
+      builder: (context, bloc, child) => _buildContent(context, bloc),
+    );
+  }
+
+  Widget _buildEmptyState(AppLocalizations localizations, ThemeData theme,
+      ConfigurationBloc configurationBloc) {
+    final isConfigurationLoaded = configurationBloc.boxConfigurations != null &&
+        !configurationBloc.isLoadingBoxConfigurations;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.directions_bike, size: 48),
+            const SizedBox(height: 16),
+            Text(localizations.openSenseMapBoxSelectionNoBoxes,
+                style: theme.textTheme.titleMedium,
+                textAlign: TextAlign.center),
+            if (isConfigurationLoaded) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: Text(
+                  localizations.openSenseMapBoxSelectionCreateHint,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

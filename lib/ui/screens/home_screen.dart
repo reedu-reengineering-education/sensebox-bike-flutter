@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
@@ -201,7 +202,8 @@ class _SenseBoxSelectionButton extends StatelessWidget {
                   : noBox
                       ? AppLocalizations.of(context)!.selectOrCreateBox
                       : selectedBox.name ?? '';
-              onTap = () => showSenseBoxSelection(context, osemBloc);
+              final configBloc = Provider.of<ConfigurationBloc>(context, listen: false);
+              onTap = () => showSenseBoxSelection(context, osemBloc, configBloc);
             }
 
             return InkWell(

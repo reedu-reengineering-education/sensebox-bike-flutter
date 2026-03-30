@@ -97,5 +97,10 @@ void main() {
       await pumpTracksScreen(tester, const Locale('pt'));
       expect(find.text('Seus trajetos'), findsOneWidget);
     });
+
+    testWidgets("is translated in French", (WidgetTester tester) async {
+      await pumpTracksScreen(tester, const Locale('fr'));
+      expect(find.text('Vos parcours'), findsOneWidget);
+    });
   });
 }

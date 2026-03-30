@@ -8,7 +8,9 @@ import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/common/email_field.dart';
 import 'package:sensebox_bike/ui/widgets/common/password_field.dart';
+import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/constants.dart';
 
 class LoginForm extends StatefulWidget {
   final OpenSenseMapBloc bloc;
@@ -61,6 +63,13 @@ class _LoginFormState extends State<LoginForm> {
                             enabled: !isAuthenticating,
                             validator: (context, value) =>
                                 passwordValidatorSimple(context, value),
+                          ),
+                          const CustomSpacer(),
+                          InfoBanner(
+                            text: AppLocalizations.of(context)!
+                                .loginForgotPasswordInfo,
+                            url: openSenseMapWebsiteUrl,
+                            horizontalPadding: 0,
                           ),
                           const CustomSpacer(),
                           ButtonWithLoader(

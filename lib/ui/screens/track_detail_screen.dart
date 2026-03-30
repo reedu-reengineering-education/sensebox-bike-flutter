@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
@@ -25,6 +26,7 @@ import 'package:sensebox_bike/ui/widgets/track/sensor_tile_list.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:intl/intl.dart';
 import 'package:sensebox_bike/ui/widgets/common/sensor_gradient_widget.dart';
+import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
 
 class TrackDetailScreen extends StatefulWidget {
   final TrackData track;
@@ -80,17 +82,29 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     super.dispose();
   }
 
+  bool _shouldHideUploadButton() {
+    final openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    final uploadEligible = openSenseMapBloc.hasAuthAndSelectedSenseBox;
+
+    return !uploadEligible;
+  }
+
+  bool _shouldShowUploadHint() {
+    final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
+    final openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    final isPostRideMode = !settingsBloc.directUploadMode;
+    final uploadEligible = openSenseMapBloc.hasAuthAndSelectedSenseBox;
+
+    return isPostRideMode && !uploadEligible && _track.uploaded != 1;
+  }
+
   Widget _buildUploadStatusSection() {
     final localizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     if (_track.isDirectUploadTrack && _track.lastUploadAttempt == null) {
       // For direct upload tracks
-      return Padding(
-        padding:
-            const EdgeInsets.symmetric(vertical: padding, horizontal: spacing),
-        child: _buildDirectUploadInfoMessage(localizations, theme),
-      );
+      return InfoBanner(text: localizations.trackDirectUploadInfo);
     } else if (_track.isUploaded || _track.uploadAttemptsCount == 0) {
       // If uploaded, show only status icon (not collapsible)
       return Padding(
@@ -310,40 +324,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
-  Widget _buildDirectUploadInfoMessage(
-      AppLocalizations localizations, ThemeData theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(spacing),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(borderRadiusSmall),
-        border: Border.all(
-          color: Colors.blue.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline,
-            size: iconSize,
-            color: Colors.blue,
-          ),
-          const SizedBox(width: spacing / 2),
-          Expanded(
-            child: Text(
-              localizations.trackDirectUploadInfo,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.blue,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _shareFile(String filePath) async {
     final localization = AppLocalizations.of(context)!;
@@ -451,22 +431,14 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   Future<void> _startUpload() async {
     final localizations = AppLocalizations.of(context)!;
 
-    // Check if user is authenticated
-    if (!openSenseMapBloc.isAuthenticated) {
+    final hasAuthAndBox = openSenseMapBloc.hasAuthAndSelectedSenseBox;
+    if (!hasAuthAndBox) {
+      final message = !openSenseMapBloc.isAuthenticated
+          ? localizations.uploadProgressAuthenticationError
+          : localizations.errorNoSenseBoxSelected;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(localizations.uploadProgressAuthenticationError),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
-
-    // Check if senseBox is selected
-    if (openSenseMapBloc.selectedSenseBox == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(localizations.errorNoSenseBoxSelected),
+          content: Text(message),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -547,9 +519,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
 
-
-
-  Widget _buildAppBarTitle(TrackData track) {
+  Widget _buildAppBarTitle(TrackData track, bool hideUploadButton) {
     final theme = Theme.of(context);
 
     return Row(
@@ -562,7 +532,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         ),
         const Spacer(),
         // Upload button - only show if track hasn't been uploaded
-        if (!_track.isUploaded)
+        if (!_track.isUploaded && !hideUploadButton)
           GestureDetector(
             onTap: _isUploading ? null : _startUpload,
             child: Container(
@@ -603,21 +573,25 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final hideUploadButton = _shouldHideUploadButton();
+    final localizations = AppLocalizations.of(context)!;
+
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: _buildAppBarTitle(_track)),
+        appBar: AppBar(title: _buildAppBarTitle(_track, hideUploadButton)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: _buildAppBarTitle(_track)),
+      appBar: AppBar(title: _buildAppBarTitle(_track, hideUploadButton)),
       body: SafeArea(
         minimum: const EdgeInsets.only(bottom: 8),
         child: Column(
           children: [
-            // Upload status section
             _buildUploadStatusSection(),
+            if (_shouldShowUploadHint())
+              InfoBanner(text: localizations.trackUploadLoginSelectHint),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),

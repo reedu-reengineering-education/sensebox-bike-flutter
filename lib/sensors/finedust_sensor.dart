@@ -16,8 +16,13 @@ class FinedustSensor extends Sensor {
   double _latestPM4 = 0.0;
   double _latestPM10 = 0.0;
 
+  static int get staticUiPriority => 80;
+
   @override
-  get uiPriority => 80;
+  get uiPriority => staticUiPriority;
+
+  @override
+  Duration get lookbackWindow => const Duration(milliseconds: 1000);
 
   static const String sensorCharacteristicUuid =
       '7e14e070-84ea-489f-b45a-e1317364b979';

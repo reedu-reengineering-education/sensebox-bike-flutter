@@ -15,8 +15,8 @@ void main() {
   });
 
   group('OvertakingPredictionSensor', () {
-    test('uiPriority returns 40', () {
-      expect(sensor.uiPriority, 40);
+    test('uiPriority returns 30', () {
+      expect(sensor.uiPriority, 30);
     });
 
     test('sensorCharacteristicUuid is correct', () {

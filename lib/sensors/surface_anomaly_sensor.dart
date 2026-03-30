@@ -12,8 +12,13 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 class SurfaceAnomalySensor extends Sensor {
   List<double> _latestAnomalyValue = [0.0];
 
+  static int get staticUiPriority => 60;
+
   @override
-  get uiPriority => 60;
+  get uiPriority => staticUiPriority;
+
+  @override
+  Duration get lookbackWindow => const Duration(milliseconds: 1000);
 
   static const String sensorCharacteristicUuid =
       'b944af10-f495-4560-968f-2f0d18cab523';

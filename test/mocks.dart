@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
@@ -14,17 +14,19 @@ import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/services/isar_service/sensor_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
-import 'package:sensebox_bike/services/tag_service.dart';
+import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class MockIsarProvider extends Mock implements IsarProvider {}
 
-class MockTagService extends Mock implements TagService {}
+class MockRemoteDataService extends Mock implements RemoteDataService {}
 
 class MockErrorService extends Mock implements ErrorService {}
 
@@ -194,24 +196,86 @@ class MockOpenSenseMapBloc extends Mock
 
   @override
   Future<Map<String, dynamic>?> get userData => Future.value(null);
+
+  @override
+  Future<List> fetchSenseBoxes({int page = 0}) async => [];
 }
+
+class TestableMockOpenSenseMapBloc extends MockOpenSenseMapBloc {
+  Future<List<dynamic>>? _fetchSenseBoxesFuture;
+  Exception? _fetchSenseBoxesError;
+  List<dynamic>? _fetchSenseBoxesResult;
+  List<dynamic> _senseBoxes = [];
+
+  void setFetchSenseBoxesFuture(Future<List<dynamic>> future) {
+    _fetchSenseBoxesFuture = future;
+  }
+
+  void setFetchSenseBoxesError(Exception error) {
+    _fetchSenseBoxesError = error;
+  }
+
+  void setFetchSenseBoxesResult(List<dynamic> result) {
+    _fetchSenseBoxesResult = result;
+  }
+
+  void setSenseBoxes(List<dynamic> boxes) {
+    _senseBoxes = boxes;
+  }
+
+  @override
+  List<dynamic> get senseBoxes => _senseBoxes;
+
+  @override
+  Future<List> fetchSenseBoxes({int page = 0}) async {
+    if (_fetchSenseBoxesError != null) {
+      throw _fetchSenseBoxesError!;
+    }
+    if (_fetchSenseBoxesFuture != null) {
+      return await _fetchSenseBoxesFuture!;
+    }
+    if (_fetchSenseBoxesResult != null) {
+      _senseBoxes = _fetchSenseBoxesResult!;
+      notifyListeners();
+      return _fetchSenseBoxesResult!;
+    }
+    return [];
+  }
+}
+
+class MockConfigurationBloc extends Mock implements ConfigurationBloc {}
 
 class MockSettingsBloc extends Mock
     with ChangeNotifier
     implements SettingsBloc {}
 
 class MockRecordingBloc extends Mock implements RecordingBloc {
-  @override
-  bool get isRecording => false;
+  bool _isRecording = false;
+  late final ValueNotifier<bool> _isRecordingNotifier;
+
+  MockRecordingBloc() {
+    _isRecordingNotifier = ValueNotifier<bool>(_isRecording);
+  }
 
   @override
-  ValueNotifier<bool> get isRecordingNotifier => ValueNotifier<bool>(false);
+  bool get isRecording => _isRecording;
+
+  void setRecording(bool value) {
+    _isRecording = value;
+    _isRecordingNotifier.value = value;
+  }
+
+  @override
+  ValueNotifier<bool> get isRecordingNotifier => _isRecordingNotifier;
 }
 
 class MockSensorBloc extends Mock implements SensorBloc {
-  @override
   Map<String, List<SensorData>> get sensorData => {};
 }
+
+class MockGeolocator extends Mock
+    with MockPlatformInterfaceMixin
+    implements geo.GeolocatorPlatform {}
 
 class MockSensor extends Mock implements sensors.Sensor {}
 
@@ -255,99 +319,4 @@ class TestTrackBuilder {
       ..timestamp = timestamp ?? DateTime.now()
       ..speed = speed ?? 0.0;
   }
-}
-
-// Mocks for webview_flutter
-
-class FakeWebViewPlatform extends WebViewPlatform {
-  @override
-  PlatformWebViewController createPlatformWebViewController(
-    PlatformWebViewControllerCreationParams params,
-  ) {
-    return FakeWebViewController(params);
-  }
-
-  @override
-  PlatformWebViewWidget createPlatformWebViewWidget(
-    PlatformWebViewWidgetCreationParams params,
-  ) {
-    return FakeWebViewWidget(params);
-  }
-
-  @override
-  PlatformWebViewCookieManager createPlatformCookieManager(
-    PlatformWebViewCookieManagerCreationParams params,
-  ) {
-    return FakeCookieManager(params);
-  }
-
-  @override
-  PlatformNavigationDelegate createPlatformNavigationDelegate(
-    PlatformNavigationDelegateCreationParams params,
-  ) {
-    return FakeNavigationDelegate(params);
-  }
-}
-
-class FakeWebViewController extends PlatformWebViewController {
-  FakeWebViewController(super.params) : super.implementation();
-
-  @override
-  Future<void> setJavaScriptMode(JavaScriptMode javaScriptMode) async {}
-
-  @override
-  Future<void> setBackgroundColor(Color color) async {}
-
-  @override
-  Future<void> setPlatformNavigationDelegate(
-    PlatformNavigationDelegate handler,
-  ) async {}
-
-  @override
-  Future<void> addJavaScriptChannel(
-      JavaScriptChannelParams javaScriptChannelParams) async {}
-
-  @override
-  Future<void> loadRequest(LoadRequestParams params) async {}
-
-  @override
-  Future<String?> currentUrl() async {
-    return 'https://www.google.com';
-  }
-}
-
-class FakeCookieManager extends PlatformWebViewCookieManager {
-  FakeCookieManager(super.params) : super.implementation();
-}
-
-class FakeWebViewWidget extends PlatformWebViewWidget {
-  FakeWebViewWidget(super.params) : super.implementation();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Text('Fake WebView Content', key: Key('FakeWebViewWidget'));
-  }
-}
-
-class FakeNavigationDelegate extends PlatformNavigationDelegate {
-  FakeNavigationDelegate(super.params) : super.implementation();
-
-  @override
-  Future<void> setOnNavigationRequest(
-    NavigationRequestCallback onNavigationRequest,
-  ) async {}
-
-  @override
-  Future<void> setOnPageFinished(PageEventCallback onPageFinished) async {}
-
-  @override
-  Future<void> setOnPageStarted(PageEventCallback onPageStarted) async {}
-
-  @override
-  Future<void> setOnProgress(ProgressCallback onProgress) async {}
-
-  @override
-  Future<void> setOnWebResourceError(
-    WebResourceErrorCallback onWebResourceError,
-  ) async {}
 }

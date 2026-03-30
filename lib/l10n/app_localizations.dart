@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_fr.dart';
 import 'app_localizations_pt.dart';
 
 // ignore_for_file: type=lint
@@ -94,6 +95,7 @@ abstract class AppLocalizations {
   static const List<Locale> supportedLocales = <Locale>[
     Locale('de'),
     Locale('en'),
+    Locale('fr'),
     Locale('pt')
   ];
 
@@ -180,6 +182,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get generalClose;
+
+  /// No description provided for @reloadConfiguration.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload configuration'**
+  String get reloadConfiguration;
 
   /// No description provided for @generalUpload.
   ///
@@ -340,13 +348,13 @@ abstract class AppLocalizations {
   /// No description provided for @openSenseMapRegisterName.
   ///
   /// In en, this message translates to:
-  /// **'Name'**
+  /// **'User Name'**
   String get openSenseMapRegisterName;
 
   /// No description provided for @openSenseMapRegisterNameErrorEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Name must not be empty'**
+  /// **'User name must not be empty'**
   String get openSenseMapRegisterNameErrorEmpty;
 
   /// No description provided for @openSenseMapRegisterPasswordConfirm.
@@ -490,7 +498,7 @@ abstract class AppLocalizations {
   /// No description provided for @openSenseMapBoxSelectionNoBoxes.
   ///
   /// In en, this message translates to:
-  /// **'No senseBoxes available'**
+  /// **'No senseBoxes available or configuration not loaded'**
   String get openSenseMapBoxSelectionNoBoxes;
 
   /// No description provided for @openSenseMapBoxSelectionCreateHint.
@@ -712,13 +720,19 @@ abstract class AppLocalizations {
   /// No description provided for @sensorDistance.
   ///
   /// In en, this message translates to:
-  /// **'Overtaking Distance'**
+  /// **'Distance Left'**
   String get sensorDistance;
+
+  /// No description provided for @sensorDistanceRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance Right'**
+  String get sensorDistanceRight;
 
   /// No description provided for @sensorOvertaking.
   ///
   /// In en, this message translates to:
-  /// **'Overtaking Manoeuvre'**
+  /// **'Overtaking Prediction'**
   String get sensorOvertaking;
 
   /// No description provided for @sensorOvertakingShort.
@@ -865,6 +879,12 @@ abstract class AppLocalizations {
   /// **'Failed to load list of campaigns.'**
   String get campaignLoadError;
 
+  /// No description provided for @boxConfigurationLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load box configurations.'**
+  String get boxConfigurationLoadError;
+
   /// No description provided for @selectCampaign.
   ///
   /// In en, this message translates to:
@@ -907,6 +927,24 @@ abstract class AppLocalizations {
   /// **'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.'**
   String get errorNoSenseBoxSelected;
 
+  /// No description provided for @trackUploadLoginSelectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in and select a senseBox to upload.'**
+  String get trackUploadLoginSelectHint;
+
+  /// No description provided for @uploadRequirementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload not available'**
+  String get uploadRequirementsTitle;
+
+  /// No description provided for @uploadPostRideRequirementsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'To upload your ride, log in to your openSenseMap account, select a senseBox, then open the track overview and tap the upload button in the top right.'**
+  String get uploadPostRideRequirementsMessage;
+
   /// No description provided for @loginRequiredMessage.
   ///
   /// In en, this message translates to:
@@ -930,6 +968,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Registration failed. Please check your credentials and try once again later.'**
   String get errorRegistrationFailed;
+
+  /// No description provided for @errorReasonPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason:'**
+  String get errorReasonPrefix;
 
   /// No description provided for @errorBleConnectionFailed.
   ///
@@ -1260,6 +1304,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Track has no geolocation data and cannot be uploaded.'**
   String get errorTrackNoGeolocations;
+
+  /// No description provided for @openSenseMapInfoText.
+  ///
+  /// In en, this message translates to:
+  /// **'Your senseBox:bike data will be shared on openSenseMap, contributing to citizen science and environmental monitoring.'**
+  String get openSenseMapInfoText;
+
+  /// No description provided for @openSenseMapInfoLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit openSenseMap.org'**
+  String get openSenseMapInfoLink;
+
+  /// No description provided for @loginForgotPasswordInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'If you forgot your password, please navigate to openSenseMap, click \"Login\" and \"Forgot it?\".'**
+  String get loginForgotPasswordInfo;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
@@ -1271,7 +1333,8 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['de', 'en', 'pt'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['de', 'en', 'fr', 'pt'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1282,9 +1345,14 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
 
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'de': return AppLocalizationsDe();
-    case 'en': return AppLocalizationsEn();
-    case 'pt': return AppLocalizationsPt();
+    case 'de':
+      return AppLocalizationsDe();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'fr':
+      return AppLocalizationsFr();
+    case 'pt':
+      return AppLocalizationsPt();
   }
 
   throw FlutterError(

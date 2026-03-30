@@ -60,25 +60,42 @@ class ErrorService {
         duration: Duration(seconds: 10)));
   }
 
-  static List<TextSpan> parseErrorWithFormatting(dynamic error, BuildContext context) {
+  static List<TextSpan> parseErrorWithFormatting(
+      dynamic error, BuildContext context) {
     final errorMessage = parseError(error, context);
     
     if (error is LoginError || error is RegistrationError) {
-      return _createBoldMessageWithDetails(errorMessage);
+      return _createBoldMessageWithDetails(errorMessage, context);
     }
     
     return [TextSpan(text: errorMessage)];
   }
 
-  static List<TextSpan> _createBoldMessageWithDetails(String errorMessage) {
+  static List<TextSpan> _createBoldMessageWithDetails(
+      String errorMessage, BuildContext context) {
     final parts = errorMessage.split('\n\n');
     if (parts.length == 1) {
-      return [TextSpan(text: errorMessage, style: TextStyle(fontWeight: FontWeight.bold))];
+      return [
+        TextSpan(
+            text: errorMessage,
+            style: const TextStyle(fontWeight: FontWeight.bold))
+      ];
     }
+    final detail = parts.sublist(1).join('\n\n').trim();
+    final reasonPrefix =
+        AppLocalizations.of(context)?.errorReasonPrefix ?? 'Reason:';
     
     return [
-      TextSpan(text: parts[0], style: TextStyle(fontWeight: FontWeight.bold)),
-      TextSpan(text: '\n\n${parts[1]}'),
+      TextSpan(
+          text: parts[0], style: const TextStyle(fontWeight: FontWeight.bold)),
+      if (detail.isNotEmpty)
+        TextSpan(
+          text: '\n\n$reasonPrefix $detail',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onError,
+          ),
+        ),
     ];
   }
 

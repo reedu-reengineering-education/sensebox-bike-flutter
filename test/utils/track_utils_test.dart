@@ -163,9 +163,9 @@ void main() {
   });
 
   group('getFirstAvailableSensorType', () {
-    test('returns temperature for empty sensor data', () {
+    test('returns distance for empty sensor data', () {
       final result = getFirstAvailableSensorType([]);
-      expect(result, 'temperature');
+      expect(result, 'distance');
     });
 
     test('returns temperature when temperature sensor is available', () {
@@ -181,7 +181,7 @@ void main() {
       expect(result, 'temperature');
     });
 
-    test('returns humidity when temperature is not available but humidity is', () {
+    test('returns distance when distance is available', () {
       final sensorData = [
         SensorData()
           ..characteristicUuid = 'humidity-uuid'
@@ -196,7 +196,7 @@ void main() {
       ];
 
       final result = getFirstAvailableSensorType(sensorData);
-      expect(result, 'humidity');
+      expect(result, 'distance');
     });
 
     test('returns distance when temperature and humidity are not available', () {
@@ -217,7 +217,7 @@ void main() {
       expect(result, 'distance');
     });
 
-    test('returns first sensor in order when multiple sensors are available', () {
+    test('returns distance when distance is available even with other sensors', () {
       final sensorData = [
         SensorData()
           ..characteristicUuid = 'humidity-uuid'
@@ -237,7 +237,7 @@ void main() {
       ];
 
       final result = getFirstAvailableSensorType(sensorData);
-      expect(result, 'temperature');
+      expect(result, 'distance');
     });
 
     test('handles sensors with attributes correctly', () {
@@ -484,23 +484,32 @@ void main() {
       expect(result, null);
     });
 
-    test('getSpeedSensorId returns correct speed sensor ID', () {
-      final speedSensor = Sensor()
-        ..id = 'speedSensorId'
-        ..title = 'Speed';
-      final senseBox = SenseBox(sensors: [speedSensor]);
+    test('prepareDataFromGroupedData skips speed entries when missing sensor',
+        () {
+      final temperatureSensor = Sensor()
+        ..id = 'tempSensorId'
+        ..title = 'Temperature';
+      final senseBox = SenseBox(sensors: [temperatureSensor]);
       final preparer = UploadDataPreparer(senseBox: senseBox);
+      final gpsBuffer = [
+        GeolocationData()
+          ..latitude = 10.0
+          ..longitude = 20.0
+          ..speed = 5.0
+          ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0),
+      ];
+      final groupedData = {
+        gpsBuffer[0]: {
+          'temperature': [20.0],
+        },
+      };
 
-      final result = preparer.getSpeedSensorId();
+      final result =
+          preparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
 
-      expect(result, 'speedSensorId');
-    });
-
-    test('getSpeedSensorId throws exception when speed sensor not found', () {
-      final senseBox = SenseBox(sensors: []);
-      final preparer = UploadDataPreparer(senseBox: senseBox);
-
-      expect(() => preparer.getSpeedSensorId(), throwsStateError);
+      expect(result.keys.where((k) => k.startsWith('speed_')), isEmpty);
+      expect(result.values.any((entry) => entry['sensor'] == 'tempSensorId'),
+          isTrue);
     });
 
     test(

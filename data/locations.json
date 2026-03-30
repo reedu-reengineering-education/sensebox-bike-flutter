@@ -1,5 +1,5 @@
 [
-    {
+      {
         "label": "Münster",
         "value": "muenster"
       },
@@ -22,5 +22,13 @@
       {
         "label": "Sao Paulo",
         "value": "saopaulo"
+      },
+      {
+        "label": "Heilbronn",
+        "value": "heilbronn"
+      },
+      {
+        "label": "Enschede",
+        "value": "enschede"
       }
 ]

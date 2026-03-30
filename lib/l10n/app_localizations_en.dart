@@ -53,6 +53,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalClose => 'Close';
 
   @override
+  String get reloadConfiguration => 'Reload configuration';
+
+  @override
   String get generalUpload => 'Upload';
 
   @override
@@ -146,10 +149,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openSenseMapLoginFailed => 'Login failed';
 
   @override
-  String get openSenseMapRegisterName => 'Name';
+  String get openSenseMapRegisterName => 'User Name';
 
   @override
-  String get openSenseMapRegisterNameErrorEmpty => 'Name must not be empty';
+  String get openSenseMapRegisterNameErrorEmpty =>
+      'User name must not be empty';
 
   @override
   String get openSenseMapRegisterPasswordConfirm => 'Confirm password';
@@ -221,7 +225,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createBoxGeolocationCurrentPosition => 'Your current position will be used';
 
   @override
-  String get openSenseMapBoxSelectionNoBoxes => 'No senseBoxes available';
+  String get openSenseMapBoxSelectionNoBoxes =>
+      'No senseBoxes available or configuration not loaded';
 
   @override
   String get openSenseMapBoxSelectionCreateHint => 'Create one using the \'+\' button';
@@ -336,10 +341,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sensorFinedustPM1 => 'Finedust PM1';
 
   @override
-  String get sensorDistance => 'Overtaking Distance';
+  String get sensorDistance => 'Distance Left';
 
   @override
-  String get sensorOvertaking => 'Overtaking Manoeuvre';
+  String get sensorDistanceRight => 'Distance Right';
+
+  @override
+  String get sensorOvertaking => 'Overtaking Prediction';
 
   @override
   String get sensorOvertakingShort => 'Overtaking';
@@ -414,6 +422,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get campaignLoadError => 'Failed to load list of campaigns.';
 
   @override
+  String get boxConfigurationLoadError => 'Failed to load box configurations.';
+
+  @override
   String get selectCampaign => 'Select campaign';
 
   @override
@@ -435,6 +446,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorNoSenseBoxSelected => 'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.';
 
   @override
+  String get trackUploadLoginSelectHint =>
+      'Log in and select a senseBox to upload.';
+
+  @override
+  String get uploadRequirementsTitle => 'Upload not available';
+
+  @override
+  String get uploadPostRideRequirementsMessage =>
+      'To upload your ride, log in to your openSenseMap account, select a senseBox, then open the track overview and tap the upload button in the top right.';
+
+  @override
   String get loginRequiredMessage => 'Please log in to share sensor data';
 
   @override
@@ -447,7 +469,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorRegistrationFailed => 'Registration failed. Please check your credentials and try once again later.';
 
   @override
-  String get errorBleConnectionFailed => 'Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
+  String get errorReasonPrefix => 'Reason:';
+
+  @override
+  String get errorBleConnectionFailed =>
+      'Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
 
   @override
   String get errorUploadFailed => 'Data upload failed. Please check your internet connection and try again.';
@@ -624,5 +650,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackUploadRetryFailed => 'Upload retry failed. Please try again.';
 
   @override
-  String get errorTrackNoGeolocations => 'Track has no geolocation data and cannot be uploaded.';
+  String get errorTrackNoGeolocations =>
+      'Track has no geolocation data and cannot be uploaded.';
+
+  @override
+  String get openSenseMapInfoText =>
+      'Your senseBox:bike data will be shared on openSenseMap, contributing to citizen science and environmental monitoring.';
+
+  @override
+  String get openSenseMapInfoLink => 'Visit openSenseMap.org';
+
+  @override
+  String get loginForgotPasswordInfo =>
+      'If you forgot your password, please navigate to openSenseMap, click \"Login\" and \"Forgot it?\".';
 }

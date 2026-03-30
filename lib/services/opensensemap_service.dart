@@ -11,8 +11,6 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/utils/opensensemap_utils.dart';
 
-enum SenseBoxBikeModel { classic, atrai }
-
 class RetryException implements Exception {
   final String message;
   final dynamic data;
@@ -433,20 +431,11 @@ class OpenSenseMapService {
     }
   }
 
-  Future<void> createSenseBoxBike(String name, double latitude,
-      double longitude, SenseBoxBikeModel model, String? selectedTag,
-      [List<String?>? additionalTags]) async {
+  Future<void> createSenseBoxBike(Map<String, dynamic> data) async {
     return _makeAuthenticatedRequest<void>(
       requestFn: (accessToken) => client.post(
         Uri.parse('$_baseUrl/boxes'),
-        body: jsonEncode(createSenseBoxBikeModel(
-          name,
-          latitude,
-          longitude,
-          model: model,
-          selectedTag: selectedTag,
-          additionalTags: additionalTags,
-        )),
+        body: jsonEncode(data),
         headers: {
           'Authorization': 'Bearer $accessToken',
           'Content-Type': 'application/json',
@@ -589,45 +578,4 @@ class OpenSenseMapService {
     );
   }
 
-// Define the available sensors for each model
-  final Map<SenseBoxBikeModel, List<dynamic>> sensors = {
-    SenseBoxBikeModel.classic: classicModelSensors,
-    SenseBoxBikeModel.atrai: atraiModelSensors,
-  };
-
-// Factory function
-  Map<String, dynamic> createSenseBoxBikeModel(
-    String name,
-    double longitude,
-    double latitude, {
-    List<String>? grouptags,
-    SenseBoxBikeModel model = SenseBoxBikeModel.classic,
-    String? selectedTag,
-    List<String?>? additionalTags = const [],
-  }) {
-    // Initialize the base grouptags
-    final List<String> baseGroupTags = grouptags ??
-        ['bike', model == SenseBoxBikeModel.classic ? 'classic' : 'atrai'];
-    // Add the selectedTag if it is not null
-    if (selectedTag != null && selectedTag.isNotEmpty) {
-      baseGroupTags.add(selectedTag);
-    }
-
-    final List<String> allTags = {
-      ...baseGroupTags,
-      ...?additionalTags?.whereType<String>(),
-    }.toList();
-
-    final baseProperties = {
-      'name': name,
-      'exposure': 'mobile',
-      'location': [latitude, longitude],
-      'grouptag': allTags,
-    };
-
-    return {
-      ...baseProperties,
-      'sensors': sensors[model]!,
-    };
-  }
 }

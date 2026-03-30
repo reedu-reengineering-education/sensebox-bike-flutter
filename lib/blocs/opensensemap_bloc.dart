@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
+import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
@@ -9,7 +11,8 @@ import 'package:sensebox_bike/utils/opensensemap_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamController
 
 class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
-  final OpenSenseMapService _service = OpenSenseMapService();
+  final OpenSenseMapService _service;
+  final ConfigurationBloc? _configurationBloc;
   bool _isAuthenticated = false;
   final ValueNotifier<bool> _isAuthenticatingNotifier =
       ValueNotifier<bool>(false);
@@ -25,6 +28,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   SenseBox? _selectedSenseBox;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   bool get isAuthenticated => _isAuthenticated;
+  bool get hasAuthAndSelectedSenseBox =>
+      _isAuthenticated && _selectedSenseBox != null;
   
   Future<Map<String, dynamic>?> get userData => _service.getUserData();
 
@@ -54,7 +59,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  OpenSenseMapBloc() {
+  OpenSenseMapBloc({
+    ConfigurationBloc? configurationBloc,
+    OpenSenseMapService? service,
+  })  : _configurationBloc = configurationBloc,
+        _service = service ?? OpenSenseMapService() {
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -67,9 +76,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       // First, check if we have a valid access token
       final isTokenValid = await _service.isCurrentAccessTokenValid();
       if (isTokenValid) {
-        // We have a valid token, no need to refresh
         _isAuthenticated = true;
         await loadSelectedSenseBox();
+        if (_selectedSenseBox == null) {
+          await _findAndSetCompatibleReplacement();
+        }
         notifyListeners();
         return;
       }
@@ -100,6 +111,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
           _service.resetPermanentDisable();
         }
         await loadSelectedSenseBox();
+        if (_selectedSenseBox == null) {
+          await _findAndSetCompatibleReplacement();
+        }
       } else {
         _isAuthenticated = false;
       }
@@ -111,10 +125,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-
-
-
-
   Future<void> loadSelectedSenseBox() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -122,7 +132,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       await prefs.remove('selectedSenseBox');
       _senseBoxController.add(null);
       _selectedSenseBox = null;
-
+      notifyListeners();
       return;
     }
 
@@ -132,14 +142,35 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _senseBoxController.add(null);
       _selectedSenseBox = null;
     } else {
-      final newSenseBox = SenseBox.fromJson(jsonDecode(selectedSenseBoxJson));
+      final savedSenseBox = SenseBox.fromJson(jsonDecode(selectedSenseBoxJson));
 
-      if (_selectedSenseBox?.id != newSenseBox.id) {
-        _senseBoxController.add(newSenseBox);
-        _selectedSenseBox = newSenseBox;
+      final configurationBloc = _configurationBloc;
+      final isCompatible = configurationBloc == null ||
+          configurationBloc.isSenseBoxBikeCompatible(savedSenseBox);
+
+      if (isCompatible) {
+        if (_selectedSenseBox?.id != savedSenseBox.id) {
+          _senseBoxController.add(savedSenseBox);
+          _selectedSenseBox = savedSenseBox;
+        }
+      } else {
+        await prefs.remove('selectedSenseBox');
+        _senseBoxController.add(null);
+        _selectedSenseBox = null;
       }
     }
     notifyListeners();
+  }
+
+  Future<void> _findAndSetCompatibleReplacement() async {
+    final senseBoxesJson = await fetchSenseBoxes(page: 0);
+    if (senseBoxesJson.isNotEmpty) {
+      final senseBoxes = _convertJsonToSenseBoxes(senseBoxesJson);
+      final compatibleBox = _findFirstCompatibleBox(senseBoxes);
+      if (compatibleBox != null) {
+        await setSelectedSenseBox(compatibleBox);
+      }
+    }
   }
 
   @override
@@ -160,9 +191,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       final responseData = await _service.register(name, email, password);
       
       _isAuthenticated = true;
-      _senseBoxes.clear();
-      _selectedSenseBox = null;
-      _senseBoxController.add(null);
+      _clearSenseBoxes();
       
       // User data is already saved by service.saveUserData()
 
@@ -200,18 +229,18 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
       // User data is already saved by service.saveUserData()
 
-      // Only fetch boxes if there are box IDs in the response
       final boxIds = extractBoxIds(responseData);
       if (boxIds.isNotEmpty) {
-        final senseBoxes = await fetchSenseBoxes(page: 0);
-        if (senseBoxes.isNotEmpty) {
-          await setSelectedSenseBox(SenseBox.fromJson(senseBoxes.first));
+        final senseBoxesJson = await fetchSenseBoxes(page: 0);
+        if (senseBoxesJson.isNotEmpty) {
+          final senseBoxes = _convertJsonToSenseBoxes(senseBoxesJson);
+          final compatibleBox = _findFirstCompatibleBox(senseBoxes);
+          if (compatibleBox != null) {
+            await setSelectedSenseBox(compatibleBox);
+          }
         }
       } else {
-        // No boxes in response, clear existing boxes
-        _senseBoxes.clear();
-        _selectedSenseBox = null;
-        _senseBoxController.add(null);
+        _clearSenseBoxes();
       }
 
       // Notify listeners after all data processing is complete
@@ -232,9 +261,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       await _service.logout();
       _isAuthenticated = false;
-      _senseBoxController.add(null);
-      _selectedSenseBox = null;
-      _senseBoxes.clear();
+      _clearSenseBoxes();
       notifyListeners();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
@@ -246,14 +273,22 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
 
   Future<void> createSenseBoxBike(
       String name,
-      double latitude,
       double longitude,
-      SenseBoxBikeModel model,
+      double latitude,
+      BoxConfiguration boxConfiguration,
       String? selectedTag,
       List<String?> additionalTags) async {
     try {
-      await _service.createSenseBoxBike(
-          name, latitude, longitude, model, selectedTag, additionalTags);
+      final model = buildSenseBoxBikeModel(
+        name,
+        longitude,
+        latitude,
+        boxConfiguration,
+        selectedTag,
+        additionalTags,
+      );
+      await _service.createSenseBoxBike(model);
+      await fetchSenseBoxes(page: 0);
     } catch (e, stack) {
       if (!_handleAuthenticationError(e)) {
         ErrorService.handleError(e, stack);
@@ -261,20 +296,39 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  bool isSenseBoxBikeCompatible(SenseBox sensebox) {
-    // check the sensor names if they are compatible with the SenseBoxBike
-    final validSensorNames = _service.sensors.values
-        .expand((sensorList) => sensorList.map((sensor) => sensor['title']))
-        .toSet()
-        .toList();
+  Map<String, dynamic> buildSenseBoxBikeModel(
+    String name,
+    double longitude,
+    double latitude,
+    BoxConfiguration boxConfiguration,
+    String? selectedTag,
+    List<String?> additionalTags,
+  ) {
+    final sensorsList = boxConfiguration.sensorsAsMap;
+    final defaultGrouptag = boxConfiguration.defaultGrouptag;
 
-    for (var sensor in sensebox.sensors!) {
-      if (!validSensorNames.contains(sensor.title)) {
-        return false;
-      }
+    final List<String> baseGroupTags = ['bike', defaultGrouptag];
+
+    if (selectedTag != null && selectedTag.isNotEmpty) {
+      baseGroupTags.add(selectedTag);
     }
 
-    return true;
+    final List<String> allTags = {
+      ...baseGroupTags,
+      ...additionalTags.whereType<String>(),
+    }.toList();
+
+    final baseProperties = {
+      'name': name,
+      'exposure': 'mobile',
+      'location': [longitude, latitude], // opensensemap expects [lon, lat]: https://docs.opensensemap.org/#api-Boxes-postNewBox
+      'grouptag': allTags,
+    };
+
+    return {
+      ...baseProperties,
+      'sensors': sensorsList,
+    };
   }
 
   Future<List> fetchSenseBoxes({int page = 0}) async {
@@ -288,6 +342,30 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _handleAuthenticationError(e);
       return [];
     }
+  }
+
+  List<SenseBox> _convertJsonToSenseBoxes(List<dynamic> senseBoxesJson) {
+    return senseBoxesJson.map((json) => SenseBox.fromJson(json)).toList();
+  }
+
+  void _clearSenseBoxes() {
+    _senseBoxes.clear();
+    _selectedSenseBox = null;
+    _senseBoxController.add(null);
+  }
+
+  SenseBox? _findFirstCompatibleBox(List<SenseBox> senseBoxes) {
+    final configurationBloc = _configurationBloc;
+    if (configurationBloc == null) {
+      return senseBoxes.isNotEmpty ? senseBoxes.first : null;
+    }
+
+    for (final senseBox in senseBoxes) {
+      if (configurationBloc.isSenseBoxBikeCompatible(senseBox)) {
+        return senseBox;
+      }
+    }
+    return null;
   }
 
   /// Helper method to check if an error is authentication-related and handle it

@@ -4,7 +4,6 @@ import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:isar_community/isar.dart';
 import 'package:sensebox_bike/utils/distance_calculation_utils.dart';
-import 'package:sensebox_bike/utils/geo_utils.dart';
 import 'package:simplify/simplify.dart';
 
 part 'track_data.g.dart';
