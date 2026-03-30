@@ -309,6 +309,17 @@ class AppLocalizationsFr extends AppLocalizations {
       '• Les données sont téléversées immédiatement dès leur collecte\n• Partage des données en temps réel (expérimental)\n• Nécessite une connexion internet stable\n• Peut utiliser plus de batterie pendant l’enregistrement';
 
   @override
+  String get settingsApiUrl => 'URL de l\'API';
+
+  @override
+  String get settingsApiUrlHelper =>
+      'Saisir le point de terminaison de l\'API pour les téléversements de données';
+
+  @override
+  String get settingsApiUrlError =>
+      'Veuillez saisir une URL valide (par ex., https://api.opensensemap.org)';
+
+  @override
   String get settingsAbout => 'À propos';
 
   @override

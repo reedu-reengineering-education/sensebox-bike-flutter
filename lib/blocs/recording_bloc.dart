@@ -128,7 +128,7 @@ class RecordingBloc with ChangeNotifier {
             onUploadFailed: _onDirectUploadFailed);
       } else {
         _batchUploadService = BatchUploadService(
-          openSenseMapService: OpenSenseMapService(),
+          openSenseMapService: openSenseMapBloc.openSenseMapService,
           trackService: isarService.trackService,
           openSenseMapBloc: openSenseMapBloc,
         );
