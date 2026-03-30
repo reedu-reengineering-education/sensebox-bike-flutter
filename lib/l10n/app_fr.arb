@@ -1,278 +1,290 @@
 {
-  "createBoxAddCustomTag": "Ajouter une étiquette de groupe personnalisée",
-  "createBoxCustomTag": "Étiquette de groupe personnalisée",
-  "createBoxCustomTagHelper": "Vous pouvez séparer les étiquettes par des virgules",
-  "@@locale": "fr",
-  "generalLoading": "Chargement...",
-  "generalError": "Erreur",
-  "generalErrorWithDescription": "Erreur : {error}",
-  "@generalErrorWithDescription": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "generalCancel": "Annuler",
-  "generalCreate": "Créer",
-  "generalOk": "OK",
-  "generalSave": "Enregistrer",
-  "generalDelete": "Supprimer",
-  "generalEdit": "Modifier",
-  "generalAdd": "Ajouter",
-  "generalClose": "Fermer",
-  "reloadConfiguration": "Recharger la configuration",
-  "generalUpload": "Téléverser",
-  "generalPrivacyZones": "Zones de confidentialité",
-  "generalSettings": "Paramètres",
-  "generalShare": "Partager",
-  "generalTrackDuration": "{hours} h {minutes} min",
-  "@generalTrackDuration": {
-    "placeholders": {
-      "hours": {
-        "type": "int"
-      },
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
-  "generalTrackDurationShort": "{hours}:{minutes} h",
-  "@generalTrackDurationShort": {
-    "placeholders": {
-      "hours": {
-        "type": "String"
-      },
-      "minutes": {
-        "type": "String"
-      }
-    }
-  },
-  "generalTrackDistance": "{distance} km",
-  "@generalTrackDistance": {
-    "placeholders": {
-      "distance": {
-        "type": "String"
-      }
-    }
-  },
-  "generalExport": "Exporter",
-  "generalLogin": "Connexion",
-  "generalLogout": "Déconnexion",
-  "generalRegister": "S’inscrire",
-  "generalProceed": "Continuer",
-  "homeBottomBarHome": "Accueil",
-  "homeBottomBarTracks": "Parcours",
-  "tracksAppBarSumTracks": "{count, plural, =0{Aucun parcours} =1{1 parcours} other{{count} parcours}}",
-  "tracksNoTracks": "Aucun parcours disponible",
-  "tracksTrackDeleted": "Parcours supprimé",
-  "openSenseMapLogin": "Se connecter avec openSenseMap",
-  "openSenseMapLoginDescription": "Connectez-vous pour partager vos données.",
-  "openSenseMapLogout": "Déconnexion",
-  "openSenseMapEmail": "E-mail",
-  "openSenseMapPassword": "Mot de passe",
-  "openSenseMapEmailErrorEmpty": "L’e-mail ne doit pas être vide",
-  "openSenseMapEmailErrorInvalid": "Adresse e-mail invalide",
-  "openSenseMapPasswordErrorEmpty": "Le mot de passe ne doit pas être vide",
-  "openSenseMapLoginFailed": "Échec de la connexion",
-  "openSenseMapRegisterName": "Nom d’utilisateur",
-  "openSenseMapRegisterNameErrorEmpty": "Le nom d’utilisateur ne doit pas être vide",
-  "openSenseMapRegisterPasswordConfirm": "Confirmer le mot de passe",
-  "openSenseMapRegisterPasswordConfirmErrorEmpty": "La confirmation du mot de passe ne doit pas être vide",
-  "openSenseMapRegisterPasswordErrorMismatch": "Les mots de passe ne correspondent pas",
-  "openSenseMapRegisterPasswordErrorCharacters": "Le mot de passe doit contenir au moins 8 caractères",
-  "openSenseMapRegisterFailed": "Échec de l’inscription",
-  "openSenesMapRegisterAcceptTermsPrefix": "J’accepte la",
-  "openSenseMapRegisterAcceptTermsPrivacy": "politique de confidentialité",
-  "openSenseMapRegisterAcceptTermsError": "Vous devez accepter la politique de confidentialité",
-  "connectionButtonConnect": "Connecter",
-  "connectionButtonDisconnect": "Déconnecter",
-  "connectionButtonConnecting": "Connexion...",
-  "connectionButtonReconnecting": "Reconnexion...",
-  "connectionButtonStart": "Démarrer",
-  "connectionButtonStop": "Arrêter",
-  "bleDeviceSelectTitle": "Touchez pour connecter",
-  "noBleDevicesFound": "Aucune senseBox trouvée. Assurez-vous que votre senseBox est chargée, touchez en dehors de cette fenêtre et réessayez.",
-  "selectOrCreateBox": "Sélectionner ou créer une senseBox:bike",
-  "createBoxTitle": "Créer une senseBox:bike",
-  "createBoxModel": "Modèle",
-  "createBoxModelErrorEmpty": "Veuillez sélectionner un modèle",
-  "createBoxName": "Nom",
-  "createBoxNameError": "Le nom doit comporter entre 2 et 50 caractères",
-  "createBoxGeolocationCurrentPosition": "Votre position actuelle sera utilisée",
-  "openSenseMapBoxSelectionNoBoxes": "Aucune senseBox disponible ou configuration non chargée",
-  "openSenseMapBoxSelectionCreateHint": "Créez-en une avec le bouton '+'",
-  "openSenseMapBoxSelectionUnnamedBox": "senseBox sans nom",
-  "openSenseMapBoxSelectionIncompatible": "Non compatible avec senseBox:bike",
-  "settingsGeneral": "Général",
-  "settingsOther": "Autre",
-  "settingsVibrateOnDisconnect": "Vibrer lors de la déconnexion",
-  "settingsUploadMode": "Mode de téléversement",
-  "settingsUploadModeDirect": "Téléversement direct (Bêta)",
-  "settingsUploadModePostRide": "Téléversement après trajet",
-  "settingsUploadModeDescription": "Choisissez quand téléverser vos données pendant l’enregistrement",
-  "settingsUploadModeCurrent": "Actuel : {mode}",
-  "@settingsUploadModeCurrent": {
-    "placeholders": {
-      "mode": {
-        "type": "String"
-      }
-    }
-  },
-  "settingsUploadModePostRideTitle": "Téléverser les données après l’arrêt de l’enregistrement",
-  "settingsUploadModePostRideDescription": "• Les données sont stockées localement pendant l’enregistrement\n• Le téléversement se fait en une seule fois à la fin\n• Plus fiable et stable\n• Utilise moins de batterie pendant l’enregistrement",
-  "settingsUploadModeDirectTitle": "Téléverser les données en temps réel pendant l’enregistrement (expérimental)",
-  "settingsUploadModeDirectDescription": "• Les données sont téléversées immédiatement dès leur collecte\n• Partage des données en temps réel (expérimental)\n• Nécessite une connexion internet stable\n• Peut utiliser plus de batterie pendant l’enregistrement",
-  "settingsAbout": "À propos",
-  "settingsPrivacyPolicy": "Politique de confidentialité",
-  "settingsVersion": "Version : {versionNumber}",
-  "@settingsVersion": {
-    "placeholders": {
-      "versionNumber": {
-        "type": "String"
-      }
-    }
-  },
-  "settingsContact": "Aide ou retour ?",
-  "settingsEmail": "E-mail",
-  "settingsGithub": "Ticket GitHub",
-  "privacyZonesStart": "Touchez la carte pour commencer à dessiner une zone. Touchez la coche pour terminer.",
-  "privacyZonesDelete": "Touchez une zone pour la supprimer. Touchez la coche pour terminer.",
-  "trackDetailsPermissionsError": "Permission refusée pour enregistrer le fichier dans le stockage externe.",
-  "trackDetailsFileSaved": "Fichier CSV enregistré dans le dossier Téléchargements.",
-  "trackDetailsExport": "Export CSV des données du parcours.",
-  "trackDetailsLoadingError": "Erreur lors du chargement du parcours.",
-  "trackDetailsNoTrackData": "Aucun parcours disponible.",
-  "trackDelete": "Supprimer le parcours",
-  "trackDeleteConfirmation": "Êtes-vous sûr de vouloir supprimer ce parcours ?",
-  "sensorTemperature": "Température",
-  "sensorHumidity": "Humidité relative",
-  "sensorFinedustPM10": "Particules fines PM10",
-  "sensorFinedustPM4": "Particules fines PM4",
-  "sensorFinedustPM25": "Particules fines PM2.5",
-  "sensorFinedustPM1": "Particules fines PM1",
-  "sensorDistance": "Distance gauche",
-  "sensorDistanceRight": "Distance droite",
-  "sensorOvertaking": "Prédiction de dépassement",
-  "sensorOvertakingShort": "Dépassement",
-  "sensorSurface": "Surface",
-  "sensorSurfaceAsphalt": "Surface asphalte",
-  "sensorSurfaceAsphaltShort": "Asphalte",
-  "sensorSurfaceSett": "Surface pavés",
-  "sensorSurfaceSettShort": "Pavés",
-  "sensorSurfaceCompacted": "Surface compactée",
-  "sensorSurfaceCompactedShort": "Compactée",
-  "sensorSurfacePaving": "Surface pavage",
-  "sensorSurfacePavingShort": "Pavage",
-  "sensorSurfaceStanding": "À l’arrêt",
-  "sensorSurfaceAnomaly": "Anomalie de surface",
-  "sensorSpeed": "Vitesse",
-  "sensorAccelerationX": "Accélération X",
-  "sensorAccelerationY": "Accélération Y",
-  "sensorAccelerationZ": "Accélération Z",
-  "sensorGPSLat": "Latitude GPS",
-  "sensorGPSLong": "Longitude GPS",
-  "sensorGPSSpeed": "Vitesse GPS",
-  "sensorGPSError": "Pas de signal GPS",
-  "sensorAcceleration": "Accélération",
-  "sensorFinedust": "Particules fines",
-  "sensorDistanceShort": "Distance",
-  "campaignLoadError": "Échec du chargement de la liste des campagnes.",
-  "boxConfigurationLoadError": "Échec du chargement des configurations de box.",
-  "selectCampaign": "Sélectionner une campagne",
-  "noCampaignsAvailable": "Aucune campagne disponible",
-  "loginScreenTitle": "Compte openSenseMap",
-  "connectionButtonEnableBluetooth": "Activer le Bluetooth",
-  "errorNoLocationAccess": "Les services de localisation sont désactivés ou l’accès est refusé. Pour enregistrer des parcours, veuillez activer la localisation et autoriser l’application à accéder à votre position dans les paramètres du téléphone.",
-  "errorNoScanAccess": "Pour vous connecter à la senseBox, autorisez l’application à rechercher des appareils à proximité dans les paramètres du téléphone.",
-  "errorNoSenseBoxSelected": "Pour permettre le téléversement des données des capteurs vers le cloud, veuillez vous connecter à votre compte openSenseMap et sélectionner la box.",
-  "trackUploadLoginSelectHint": "Connectez-vous et sélectionnez une senseBox pour téléverser.",
-  "uploadRequirementsTitle": "Téléversement indisponible",
-  "uploadPostRideRequirementsMessage": "Pour téléverser votre trajet, connectez-vous à votre compte openSenseMap, sélectionnez une senseBox, puis ouvrez l’aperçu du parcours et touchez le bouton de téléversement en haut à droite.",
-  "loginRequiredMessage": "Veuillez vous connecter pour partager les données des capteurs",
-  "errorExportDirectoryAccess": "Erreur lors de l’accès au dossier d’exportation. Assurez-vous que l’application dispose des permissions de stockage.",
-  "errorLoginFailed": "Échec de la connexion. Veuillez vérifier vos identifiants et réessayer plus tard.",
-  "errorRegistrationFailed": "Échec de l’inscription. Veuillez vérifier vos identifiants et réessayer plus tard.",
-  "errorReasonPrefix": "Raison :",
-  "errorBleConnectionFailed": "La connexion à la senseBox a été perdue. Assurez-vous que le Bluetooth est activé et que la senseBox est allumée.",
-  "errorUploadFailed": "Échec du téléversement des données. Veuillez vérifier votre connexion internet et réessayer.",
-  "errorPermanentAuthentication": "Échec permanent de l’authentification. Veuillez vous connecter pour téléverser les données.",
-  "selectCsvFormat": "Sélectionner le format CSV",
-  "regularCsv": "CSV standard",
-  "openSenseMapCsv": "CSV openSenseMap",
-  "settingsDeleteAllData": "Supprimer toutes les données",
-  "settingsDeleteAllDataConfirmation": "Voulez-vous vraiment supprimer toutes les données ? Cette action est irréversible.",
-  "settingsDeleteAllDataSuccess": "Toutes les données ont été supprimées avec succès.",
-  "settingsDeleteAllDataError": "Échec de la suppression de toutes les données. Veuillez réessayer.",
-  "accountManagement": "Gestion du compte",
-  "deleteAllHint": "Cela supprimera tous vos parcours de l’application.",
-  "generalConfirmation": "Confirmation",
-  "privacyPolicyAccept": "J’ai lu et j’accepte la politique de confidentialité.",
-  "trackNoGeolocations": "Aucune géolocalisation disponible pour ce parcours.",
-  "tracksAppBarTitle": "Vos parcours",
-  "loadMore": "Charger plus",
-  "tracksStatisticsTitle": "Statistiques des parcours",
-  "tracksStatisticsTotalData": "Données totales",
-  "tracksStatisticsThisWeek": "Cette semaine",
-  "tracksStatisticsRidesInfo": "trajets effectués",
-  "tracksStatisticsDistanceInfo": "distance parcourue",
-  "tracksStatisticsTimeInfo": "temps passé sur la route",
-  "trackStatistics": "Statistiques du parcours",
-  "uploadProgressTitle": "Progression du téléversement",
-  "uploadProgressPreparing": "Préparation du téléversement...",
-  "uploadProgressUploading": "Téléversement des données du parcours...",
-  "uploadProgressInfo": "Ne fermez pas l’application pendant le téléversement. Cela peut prendre un certain temps selon la longueur du parcours.\n\nSi vous souhaitez téléverser plus tard, vous pouvez le faire depuis l’écran d’aperçu des parcours.",
-  "uploadProgressRetrying": "Nouvelle tentative de téléversement...",
-  "uploadProgressCompleted": "Téléversement terminé avec succès",
-  "uploadProgressFailed": "Échec du téléversement",
-  "uploadProgressAuthenticationFailed": "Authentification requise",
-  "uploadProgressChunks": "{completed} sur {total, plural, =0{0 segments} =1{1 segment} other{{total} segments}} téléversés",
-  "@uploadProgressChunks": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "uploadProgressPercentage": "{percentage}% terminé",
-  "@uploadProgressPercentage": {
-    "placeholders": {
-      "percentage": {
-        "type": "int"
-      }
-    }
-  },
-  "uploadProgressAuthenticationError": "Veuillez vous connecter pour téléverser les données.",
-  "uploadProgressNetworkError": "Échec de la connexion réseau. Veuillez vérifier votre connexion internet et réessayer.",
-  "uploadProgressGenericError": "Échec du téléversement. Veuillez réessayer.",
-  "uploadConfirmTitle": "Téléverser les données du parcours",
-  "uploadConfirmMessage": "Voulez-vous téléverser les données de votre parcours maintenant ?",
-  "uploadConfirmUploadNow": "Téléverser",
-  "trackStatusUploaded": "Téléversé",
-  "trackStatusUploadedAt": "Téléversé le {date}",
-  "@trackStatusUploadedAt": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "trackStatusNotUploaded": "Non téléversé",
-  "trackStatusUploadFailed": "Échec du téléversement",
-  "trackStatusUploadFailedAt": "Échec le {date}",
-  "trackDirectUploadInfo": "Ces données de parcours ont été téléversées en temps réel pendant votre trajet. Si vous souhaitez les téléverser à nouveau, vous pouvez utiliser le bouton de téléversement ci-dessus.",
-  "trackUploadAttempts": "Tentatives de téléversement",
-  "trackLastAttempt": "Dernière tentative",
-  "trackStatus": "Statut",
-  "trackDirectUploadAuthFailed": "Ce parcours n’a pas pu être téléversé en temps réel car vous n’étiez pas connecté. Veuillez vous connecter et réessayer le téléversement.",
-  "trackFilterAll": "Tous",
-  "trackFilterUnuploaded": "Non téléversé",
-  "trackUploadRetryFailed": "La nouvelle tentative de téléversement a échoué. Veuillez réessayer.",
-  "errorTrackNoGeolocations": "Le parcours ne contient pas de données de géolocalisation et ne peut pas être téléversé.",
-  "openSenseMapInfoText": "Vos données senseBox:bike seront partagées sur openSenseMap, contribuant à la science citoyenne et à la surveillance environnementale.",
-  "openSenseMapInfoLink": "Visiter openSenseMap.org",
-  "loginForgotPasswordInfo": "Si vous avez oublié votre mot de passe, veuillez aller sur openSenseMap, cliquer sur \"Connexion\" puis sur \"Mot de passe oublié ?\"."
+ "settingsKnowledgeBase": "Base de connaissances",
+ "uploadBlockNotAuthenticated": "Le trajet actuel n'a pas été téléversé automatiquement. Vous pouvez toujours l'envoyer sur openSenseMap depuis la page d'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez vous connecter ou créer un compte dans les paramètres.",
+ "uploadBlockNoBox": "Le trajet actuel n'a pas été téléversé automatiquement. Vous pouvez toujours l'envoyer sur openSenseMap depuis la page d'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez sélectionner ou créer une senseBox sur la page d'accueil.",
+ "createBoxAddCustomTag": "Ajouter une étiquette de groupe personnalisée",
+ "createBoxCustomTag": "Étiquette de groupe personnalisée",
+ "createBoxCustomTagHelper": "Vous pouvez séparer les étiquettes par des virgules",
+ "@@locale": "fr",
+ "generalLoading": "Chargement...",
+ "generalError": "Erreur",
+ "generalErrorWithDescription": "Erreur : {error}",
+ "@generalErrorWithDescription": {
+ "placeholders": {
+ "error": {
+ "type": "String"
+ }
+ }
+ },
+ "generalCancel": "Annuler",
+ "generalCreate": "Créer",
+ "generalOk": "OK",
+ "generalSave": "Enregistrer",
+ "generalDelete": "Supprimer",
+ "generalEdit": "Modifier",
+ "generalAdd": "Ajouter",
+ "generalClose": "Fermer",
+ "reloadConfiguration": "Recharger la configuration",
+ "generalUpload": "Téléverser",
+ "generalPrivacyZones": "Zones de confidentialité",
+ "generalSettings": "Paramètres",
+ "generalShare": "Partager",
+ "generalTrackDuration": "{hours} h {minutes} min",
+ "@generalTrackDuration": {
+ "placeholders": {
+ "hours": {
+ "type": "int"
+ },
+ "minutes": {
+ "type": "int"
+ }
+ }
+ },
+ "generalTrackDurationShort": "{hours}:{minutes} h",
+ "@generalTrackDurationShort": {
+ "placeholders": {
+ "hours": {
+ "type": "String"
+ },
+ "minutes": {
+ "type": "String"
+ }
+ }
+ },
+ "generalTrackDistance": "{distance} km",
+ "@generalTrackDistance": {
+ "placeholders": {
+ "distance": {
+ "type": "String"
+ }
+ }
+ },
+ "generalExport": "Exporter",
+ "generalLogin": "Connexion",
+ "generalLoginOrRegister": "Connexion ou inscription",
+ "generalLogout": "Déconnexion",
+ "generalRegister": "S’inscrire",
+ "generalProceed": "Continuer",
+ "homeBottomBarHome": "Accueil",
+ "homeBottomBarTracks": "Parcours",
+ "tracksAppBarSumTracks": "{count, plural, =0{Aucun parcours} =1{1 parcours} other{{count} parcours}}",
+ "tracksNoTracks": "Aucun parcours disponible",
+ "tracksTrackDeleted": "Parcours supprimé",
+ "openSenseMapLogin": "Se connecter avec openSenseMap",
+ "openSenseMapLoginDescription": "Connectez-vous pour partager vos données.",
+ "openSenseMapLogout": "Déconnexion",
+ "openSenseMapEmail": "E-mail",
+ "openSenseMapPassword": "Mot de passe",
+ "openSenseMapEmailErrorEmpty": "L’e-mail ne doit pas être vide",
+ "openSenseMapEmailErrorInvalid": "Adresse e-mail invalide",
+ "openSenseMapPasswordErrorEmpty": "Le mot de passe ne doit pas être vide",
+ "openSenseMapLoginFailed": "Échec de la connexion",
+ "openSenseMapRegisterName": "Nom d’utilisateur",
+ "openSenseMapRegisterNameErrorEmpty": "Le nom d’utilisateur ne doit pas être vide",
+ "openSenseMapRegisterPasswordConfirm": "Confirmer le mot de passe",
+ "openSenseMapRegisterPasswordConfirmErrorEmpty": "La confirmation du mot de passe ne doit pas être vide",
+ "openSenseMapRegisterPasswordErrorMismatch": "Les mots de passe ne correspondent pas",
+ "openSenseMapRegisterPasswordErrorCharacters": "Le mot de passe doit contenir au moins 8 caractères",
+ "openSenseMapRegisterFailed": "Échec de l’inscription",
+ "openSenesMapRegisterAcceptTermsPrefix": "J’accepte la",
+ "openSenseMapRegisterAcceptTermsPrivacy": "politique de confidentialité",
+ "openSenseMapRegisterAcceptTermsError": "Vous devez accepter la politique de confidentialité",
+ "connectionButtonConnect": "Connecter",
+ "connectionButtonDisconnect": "Déconnecter",
+ "connectionButtonConnecting": "Connexion...",
+ "connectionButtonReconnecting": "Reconnexion...",
+ "connectionButtonStart": "Démarrer",
+ "connectionButtonStop": "Arrêter",
+ "bleDeviceSelectTitle": "Touchez pour connecter",
+ "noBleDevicesFound": "Aucune senseBox trouvée. Assurez-vous que votre senseBox est chargée, touchez en dehors de cette fenêtre et réessayez.",
+ "selectOrCreateBox": "Sélectionner ou créer une senseBox:bike",
+ "createBoxTitle": "Créer une senseBox:bike",
+ "createBoxModel": "Modèle",
+ "createBoxModelErrorEmpty": "Veuillez sélectionner un modèle",
+ "createBoxName": "Nom",
+ "createBoxNameError": "Le nom doit comporter entre 2 et 50 caractères",
+ "createBoxGeolocationCurrentPosition": "Votre position actuelle sera utilisée",
+ "openSenseMapBoxSelectionNoBoxes": "Aucune senseBox disponible ou configuration non chargée",
+ "openSenseMapBoxSelectionCreateHint": "Créez-en une avec le bouton '+'",
+ "openSenseMapBoxSelectionUnnamedBox": "senseBox sans nom",
+ "openSenseMapBoxSelectionIncompatible": "Non compatible avec senseBox:bike",
+ "settingsGeneral": "Général",
+ "settingsOther": "Autre",
+ "settingsVibrateOnDisconnect": "Vibrer lors de la déconnexion",
+ "settingsUploadMode": "Mode de téléversement",
+ "settingsUploadModeDirect": "Téléversement direct (Bêta)",
+ "settingsUploadModePostRide": "Téléversement après trajet",
+ "settingsUploadModeDescription": "Choisissez quand téléverser vos données pendant l’enregistrement",
+ "settingsUploadModeCurrent": "Actuel : {mode}",
+ "@settingsUploadModeCurrent": {
+ "placeholders": {
+ "mode": {
+ "type": "String"
+ }
+ }
+ },
+ "settingsUploadModePostRideTitle": "Téléverser les données après l’arrêt de l’enregistrement",
+ "settingsUploadModePostRideDescription": "• Les données sont stockées localement pendant l’enregistrement\n• Le téléversement se fait en une seule fois à la fin\n• Plus fiable et stable\n• Utilise moins de batterie pendant l’enregistrement",
+ "settingsUploadModeDirectTitle": "Téléverser les données en temps réel pendant l’enregistrement (expérimental)",
+ "settingsUploadModeDirectDescription": "• Les données sont téléversées immédiatement dès leur collecte\n• Partage des données en temps réel (expérimental)\n• Nécessite une connexion internet stable\n• Peut utiliser plus de batterie pendant l’enregistrement",
+ "settingsAbout": "À propos",
+ "settingsPrivacyPolicy": "Politique de confidentialité",
+ "settingsVersion": "Version : {versionNumber}",
+ "@settingsVersion": {
+ "placeholders": {
+ "versionNumber": {
+ "type": "String"
+ }
+ }
+ },
+ "settingsContact": "Aide ou retour ?",
+ "settingsEmail": "E-mail",
+ "settingsGithub": "Ticket GitHub",
+ "privacyZonesStart": "Touchez la carte pour commencer à dessiner une zone. Touchez la coche pour terminer.",
+ "privacyZonesDelete": "Touchez une zone pour la supprimer. Touchez la coche pour terminer.",
+ "trackDetailsPermissionsError": "Permission refusée pour enregistrer le fichier dans le stockage externe.",
+ "trackDetailsFileSaved": "Fichier CSV enregistré dans le dossier Téléchargements.",
+ "trackDetailsExport": "Export CSV des données du parcours.",
+ "trackDetailsLoadingError": "Erreur lors du chargement du parcours.",
+ "trackDetailsNoTrackData": "Aucun parcours disponible.",
+ "trackDelete": "Supprimer le parcours",
+ "trackDeleteConfirmation": "Êtes-vous sûr de vouloir supprimer ce parcours ?",
+ "sensorTemperature": "Température",
+ "sensorHumidity": "Humidité relative",
+ "sensorFinedustPM10": "Particules fines PM10",
+ "sensorFinedustPM4": "Particules fines PM4",
+ "sensorFinedustPM25": "Particules fines PM2.5",
+ "sensorFinedustPM1": "Particules fines PM1",
+ "sensorDistance": "Distance gauche",
+ "sensorDistanceRight": "Distance droite",
+ "sensorOvertaking": "Prédiction de dépassement",
+ "sensorOvertakingShort": "Dépassement",
+ "sensorSurface": "Surface",
+ "sensorSurfaceAsphalt": "Surface asphalte",
+ "sensorSurfaceAsphaltShort": "Asphalte",
+ "sensorSurfaceSett": "Surface pavés",
+ "sensorSurfaceSettShort": "Pavés",
+ "sensorSurfaceCompacted": "Surface compactée",
+ "sensorSurfaceCompactedShort": "Compactée",
+ "sensorSurfacePaving": "Surface pavage",
+ "sensorSurfacePavingShort": "Pavage",
+ "sensorSurfaceStanding": "À l’arrêt",
+ "sensorSurfaceAnomaly": "Anomalie de surface",
+ "sensorSpeed": "Vitesse",
+ "sensorAccelerationX": "Accélération X",
+ "sensorAccelerationY": "Accélération Y",
+ "sensorAccelerationZ": "Accélération Z",
+ "sensorGPSLat": "Latitude GPS",
+ "sensorGPSLong": "Longitude GPS",
+ "sensorGPSSpeed": "Vitesse GPS",
+ "sensorGPSError": "Pas de signal GPS",
+ "sensorAcceleration": "Accélération",
+ "sensorFinedust": "Particules fines",
+ "sensorDistanceShort": "Distance",
+ "campaignLoadError": "Échec du chargement de la liste des campagnes.",
+ "boxConfigurationLoadError": "Échec du chargement des configurations de box.",
+ "selectCampaign": "Sélectionner une campagne",
+ "noCampaignsAvailable": "Aucune campagne disponible",
+ "loginScreenTitle": "Compte openSenseMap",
+ "connectionButtonEnableBluetooth": "Activer le Bluetooth",
+ "errorNoLocationAccess": "Les services de localisation sont désactivés ou l’accès est refusé. Pour enregistrer des parcours, veuillez activer la localisation et autoriser l’application à accéder à votre position dans les paramètres du téléphone.",
+ "errorNoScanAccess": "Pour vous connecter à la senseBox, autorisez l’application à rechercher des appareils à proximité dans les paramètres du téléphone.",
+ "errorNoSenseBoxSelected": "Pour permettre le téléversement des données des capteurs vers le cloud, veuillez vous connecter à votre compte openSenseMap et sélectionner la box.",
+ "trackUploadLoginSelectHint": "Connectez-vous et sélectionnez une senseBox pour téléverser.",
+ "uploadRequirementsTitle": "Téléversement indisponible",
+ "uploadPostRideRequirementsMessage": "Pour téléverser votre trajet, connectez-vous à votre compte openSenseMap, sélectionnez une senseBox, puis ouvrez l’aperçu du parcours et touchez le bouton de téléversement en haut à droite.",
+ "loginRequiredMessage": "Veuillez vous connecter pour partager les données des capteurs",
+ "errorExportDirectoryAccess": "Erreur lors de l’accès au dossier d’exportation. Assurez-vous que l’application dispose des permissions de stockage.",
+ "errorLoginFailed": "Échec de la connexion. Veuillez vérifier vos identifiants et réessayer plus tard.",
+ "errorRegistrationFailed": "Échec de l’inscription. Veuillez vérifier vos identifiants et réessayer plus tard.",
+ "errorReasonPrefix": "Raison :",
+ "errorBleConnectionFailed": "La connexion à la senseBox a été perdue. Assurez-vous que le Bluetooth est activé et que la senseBox est allumée.",
+ "errorUploadFailed": "Échec du téléversement des données. Veuillez vérifier votre connexion internet et réessayer.",
+ "errorDirectUploadFailed": "L’envoi en temps réel a échoué en raison de problèmes de connectivité. Ne vous inquiétez pas : vos données ont été enregistrées localement. Après avoir arrêté l’enregistrement, vous pouvez téléverser la trace manuellement depuis l’écran d’aperçu des parcours.",
+ "errorPermanentAuthentication": "Échec permanent de l’authentification. Veuillez vous connecter pour téléverser les données.",
+ "selectCsvFormat": "Sélectionner le format CSV",
+ "regularCsv": "CSV standard",
+ "openSenseMapCsv": "CSV openSenseMap",
+ "settingsDeleteAllData": "Supprimer toutes les données",
+ "settingsDeleteAllDataConfirmation": "Voulez-vous vraiment supprimer toutes les données ? Cette action est irréversible.",
+ "settingsDeleteAllDataSuccess": "Toutes les données ont été supprimées avec succès.",
+ "settingsDeleteAllDataError": "Échec de la suppression de toutes les données. Veuillez réessayer.",
+ "accountManagement": "Gestion du compte",
+ "deleteAllHint": "Cela supprimera tous vos parcours de l’application.",
+ "generalConfirmation": "Confirmation",
+ "privacyPolicyAccept": "J’ai lu et j’accepte la politique de confidentialité.",
+ "trackNoGeolocations": "Aucune géolocalisation disponible pour ce parcours.",
+ "tracksAppBarTitle": "Vos parcours",
+ "loadMore": "Charger plus",
+ "tracksStatisticsTitle": "Statistiques des parcours",
+ "tracksStatisticsTotalData": "Données totales",
+ "tracksStatisticsThisWeek": "Cette semaine",
+ "tracksStatisticsRidesInfo": "trajets effectués",
+ "tracksStatisticsDistanceInfo": "distance parcourue",
+ "tracksStatisticsTimeInfo": "temps passé sur la route",
+ "trackStatistics": "Statistiques du parcours",
+ "uploadProgressTitle": "Progression du téléversement",
+ "uploadProgressPreparing": "Préparation du téléversement...",
+ "uploadProgressUploading": "Téléversement des données du parcours...",
+ "uploadProgressInfo": "Ne fermez pas l’application pendant le téléversement. Cela peut prendre un certain temps selon la longueur du parcours.\n\nSi vous souhaitez téléverser plus tard, vous pouvez le faire depuis l’écran d’aperçu des parcours.",
+ "uploadProgressRetrying": "Nouvelle tentative de téléversement...",
+ "uploadProgressCompleted": "Téléversement terminé avec succès",
+ "uploadProgressFailed": "Échec du téléversement",
+ "uploadProgressAuthenticationFailed": "Authentification requise",
+ "uploadProgressChunks": "{completed} sur {total, plural, =0{0 segments} =1{1 segment} other{{total} segments}} téléversés",
+ "@uploadProgressChunks": {
+ "placeholders": {
+ "completed": {
+ "type": "int"
+ },
+ "total": {
+ "type": "int"
+ }
+ }
+ },
+ "uploadProgressPercentage": "{percentage}% terminé",
+ "@uploadProgressPercentage": {
+ "placeholders": {
+ "percentage": {
+ "type": "int"
+ }
+ }
+ },
+ "uploadProgressAuthenticationError": "Veuillez vous connecter pour téléverser les données.",
+ "uploadProgressNetworkError": "Échec de la connexion réseau. Veuillez vérifier votre connexion internet et réessayer.",
+ "uploadProgressGenericError": "Échec du téléversement. Veuillez réessayer.",
+ "uploadConfirmTitle": "Téléverser les données du parcours",
+ "uploadConfirmMessage": "Voulez-vous téléverser les données de votre parcours maintenant ?",
+ "uploadConfirmUploadNow": "Téléverser",
+ "trackStatusUploaded": "Téléversé",
+ "trackStatusUploadedAt": "Téléversé le {date}",
+ "@trackStatusUploadedAt": {
+ "placeholders": {
+ "date": {
+ "type": "String"
+ }
+ }
+ },
+ "trackStatusNotUploaded": "Non téléversé",
+ "trackStatusUploadFailed": "Échec du téléversement",
+ "trackStatusUploadFailedAt": "Échec le {date}",
+ "@trackStatusUploadFailedAt": {
+ "placeholders": {
+ "date": {
+ "type": "Object"
+ }
+ }
+ },
+ "trackDirectUploadInfo": "Ces données de parcours ont été téléversées en temps réel pendant votre trajet. Si vous souhaitez les téléverser à nouveau, vous pouvez utiliser le bouton de téléversement ci-dessus.",
+ "trackUploadAttempts": "Tentatives de téléversement",
+ "trackLastAttempt": "Dernière tentative",
+ "trackStatus": "Statut",
+ "trackDirectUploadAuthFailed": "Ce parcours n’a pas pu être téléversé en temps réel car vous n’étiez pas connecté. Veuillez vous connecter et réessayer le téléversement.",
+ "trackFilterAll": "Tous",
+ "trackFilterUnuploaded": "Non téléversé",
+ "trackUploadRetryFailed": "La nouvelle tentative de téléversement a échoué. Veuillez réessayer.",
+ "errorTrackNoGeolocations": "Le parcours ne contient pas de données de géolocalisation et ne peut pas être téléversé.",
+ "openSenseMapInfoText": "Vos données senseBox:bike seront partagées sur openSenseMap, contribuant à la science citoyenne et à la surveillance environnementale.",
+ "openSenseMapInfoLink": "Visiter openSenseMap.org",
+ "loginForgotPasswordInfo": "Si vous avez oublié votre mot de passe, veuillez aller sur openSenseMap, cliquer sur \"Connexion\" puis sur \"Mot de passe oublié ?\"."
 }
