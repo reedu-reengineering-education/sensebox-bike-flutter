@@ -503,6 +503,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Data upload failed. Please check your internet connection and try again.';
 
   @override
+  String get errorDirectUploadFailed =>
+      'Real-time upload failed due to connectivity issues. Don\'t worry – your data has been saved locally. After stopping the recording, you can upload the track manually from the track overview.';
+
+  @override
   String get errorPermanentAuthentication =>
       'Authentication failed permanently. Please log in to upload data.';
 
