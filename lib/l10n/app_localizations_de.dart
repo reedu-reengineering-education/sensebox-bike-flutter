@@ -675,7 +675,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String trackStatusUploadFailedAt(Object date) {
-    return 'Upload failed on $date';
+    return 'Upload fehlgeschlagen am $date';
   }
 
   @override
