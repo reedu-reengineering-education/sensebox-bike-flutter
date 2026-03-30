@@ -13,9 +13,11 @@ import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection_modal.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/error_banner.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_widget_factory.dart';
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
@@ -23,95 +25,135 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<BleBloc, BleState>(
-      buildWhen: (previous, current) =>
-          previous.isConnected != current.isConnected ||
-          previous.selectedDevice != current.selectedDevice ||
-          previous.connectionError != current.connectionError,
-      builder: (context, bleState) {
-        final bleBloc = context.read<BleBloc>();
+    return BlocListener<RecordingBloc, RecordingState>(
+      listenWhen: (previous, current) =>
+          previous.pendingBatchUploadRequest?.createdAt !=
+          current.pendingBatchUploadRequest?.createdAt,
+      listener: (context, state) {
+        final request = state.pendingBatchUploadRequest;
+        if (request == null) {
+          return;
+        }
+
         final recordingBloc = context.read<RecordingBloc>();
-        final sensorBloc = context.read<SensorBloc>();
-        return Scaffold(
-          body: Column(
-            children: [
-              // Error banner with spacing
-              if (bleState.connectionError)
-                Column(
-                  children: [
-                    const SizedBox(height: 48),
-                    _ConnectionErrorBanner(bleBloc: bleBloc),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              // Main content
-              Expanded(
-                child: CustomScrollView(
-                  clipBehavior: Clip.none,
-                  slivers: [
-                    // SliverPersistentHeader with the map and floating buttons
-                    SliverPersistentHeader(
-                      delegate: _SliverAppBarDelegate(
-                        minHeight: MediaQuery.of(context).size.height * 0.33,
-                        maxHeight: MediaQuery.of(context).size.height *
-                            (bleState.isConnected ? 0.65 : 0.85),
-                        child: Stack(
-                          children: [
-                            const SizedBox(
-                              width: double.infinity,
-                              child: GeolocationMapWidget(), // The map
-                            ),
-                            const Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: _BottomGradient(),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: _FloatingButtons(
-                                    bleBloc: bleBloc,
-                                    recordingBloc: recordingBloc),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      pinned: true,
-                    ),
-                    SliverSafeArea(
-                      minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                      sliver: BlocBuilder<SensorBloc, SensorState>(
-                        builder: (context, _) {
-                          final device = bleState.selectedDevice;
-                          // Only show sensor area if device is connected and not in error state
-                          if (device == null || bleState.connectionError) {
-                            return SliverToBoxAdapter(child: SizedBox.shrink());
-                          }
+        final batchUploadService = recordingBloc.batchUploadService;
+        recordingBloc.clearBatchUploadRequest();
 
-                          // Check if there are actually any sensor widgets available
-                          final widgets = sensorBloc.getSensorWidgets();
-                          if (widgets.isEmpty) {
-                            // Connected but no sensor data available: show nothing
-                            return SliverToBoxAdapter(child: SizedBox.shrink());
-                          }
+        if (batchUploadService == null) {
+          return;
+        }
 
-                          // Connected and has sensor data: show sensor grid
-                          return _SensorGrid(sensorBloc: sensorBloc);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        UploadProgressOverlay.show(
+          context,
+          batchUploadService: batchUploadService,
+          canUpload: request.canUpload,
+          onUploadComplete: recordingBloc.onBatchUploadCompleted,
+          onUploadFailed: recordingBloc.onBatchUploadFailed,
+          onStartUpload: () {
+            if (request.canUpload) {
+              recordingBloc.startBatchUpload(request.track, request.senseBox);
+            }
+          },
         );
       },
+      child: BlocBuilder<BleBloc, BleState>(
+        buildWhen: (previous, current) =>
+            previous.isConnected != current.isConnected ||
+            previous.selectedDevice != current.selectedDevice ||
+            previous.connectionError != current.connectionError,
+        builder: (context, bleState) {
+          final bleBloc = context.read<BleBloc>();
+          final recordingBloc = context.read<RecordingBloc>();
+          final sensorBloc = context.read<SensorBloc>();
+          return Scaffold(
+            body: Column(
+              children: [
+                // Error banner with spacing
+                if (bleState.connectionError)
+                  Column(
+                    children: [
+                      const SizedBox(height: 48),
+                      _ConnectionErrorBanner(bleBloc: bleBloc),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                // Main content
+                Expanded(
+                  child: CustomScrollView(
+                    clipBehavior: Clip.none,
+                    slivers: [
+                      // SliverPersistentHeader with the map and floating buttons
+                      SliverPersistentHeader(
+                        delegate: _SliverAppBarDelegate(
+                          minHeight: MediaQuery.of(context).size.height * 0.33,
+                          maxHeight: MediaQuery.of(context).size.height *
+                              (bleState.isConnected ? 0.65 : 0.85),
+                          child: Stack(
+                            children: [
+                              const SizedBox(
+                                width: double.infinity,
+                                child: GeolocationMapWidget(), // The map
+                              ),
+                              const Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: _BottomGradient(),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: _FloatingButtons(
+                                      bleBloc: bleBloc,
+                                      recordingBloc: recordingBloc),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        pinned: true,
+                      ),
+                      SliverSafeArea(
+                        minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                        sliver: BlocBuilder<SensorBloc, SensorState>(
+                          builder: (context, _) {
+                            final device = bleState.selectedDevice;
+                            // Only show sensor area if device is connected and not in error state
+                            if (device == null || bleState.connectionError) {
+                              return SliverToBoxAdapter(
+                                  child: SizedBox.shrink());
+                            }
+
+                            // Check if there are actually any sensor widgets available
+                            final widgets = buildAvailableSensorWidgets(
+                              sensors: sensorBloc.sensors,
+                              availableCharacteristicUuids: bleState
+                                  .availableCharacteristics
+                                  .map((e) => e.uuid.toString())
+                                  .toSet(),
+                            );
+                            if (widgets.isEmpty) {
+                              // Connected but no sensor data available: show nothing
+                              return SliverToBoxAdapter(
+                                  child: SizedBox.shrink());
+                            }
+
+                            // Connected and has sensor data: show sensor grid
+                            return _SensorGrid(widgets: widgets);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -485,12 +527,11 @@ class _BottomGradient extends StatelessWidget {
 
 // Widget for the sensor grid
 class _SensorGrid extends StatelessWidget {
-  final SensorBloc sensorBloc;
-  const _SensorGrid({required this.sensorBloc});
+  final List<Widget> widgets;
+  const _SensorGrid({required this.widgets});
 
   @override
   Widget build(BuildContext context) {
-    final widgets = sensorBloc.getSensorWidgets();
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,

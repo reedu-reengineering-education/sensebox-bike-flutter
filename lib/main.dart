@@ -16,6 +16,7 @@ import 'package:sensebox_bike/app/app_router.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -147,6 +148,9 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp>
         BlocProvider.value(value: widget.dependencies.sensorBloc),
         BlocProvider.value(value: widget.dependencies.openSenseMapBloc),
         Provider.value(value: widget.dependencies.configurationBloc),
+        Provider<OpenSenseMapService>.value(
+          value: widget.dependencies.openSenseMapService,
+        ),
         ChangeNotifierProvider.value(
           value: widget.dependencies.mapboxDrawController,
         ),

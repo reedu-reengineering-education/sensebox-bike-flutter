@@ -14,8 +14,22 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
-import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
+
+@immutable
+class BatchUploadRequest {
+  const BatchUploadRequest({
+    required this.track,
+    required this.senseBox,
+    required this.canUpload,
+    required this.createdAt,
+  });
+
+  final TrackData track;
+  final SenseBox? senseBox;
+  final bool canUpload;
+  final DateTime createdAt;
+}
 
 @immutable
 class RecordingState {
@@ -24,12 +38,14 @@ class RecordingState {
     required this.currentTrack,
     required this.selectedSenseBox,
     required this.lastRecordingStopTimestamp,
+    required this.pendingBatchUploadRequest,
   });
 
   final bool isRecording;
   final TrackData? currentTrack;
   final SenseBox? selectedSenseBox;
   final DateTime? lastRecordingStopTimestamp;
+  final BatchUploadRequest? pendingBatchUploadRequest;
 }
 
 enum RecordingLifecycleEvent {
@@ -43,6 +59,7 @@ class RecordingBloc extends Cubit<RecordingState> {
   final TrackBloc trackBloc;
   final OpenSenseMapBloc openSenseMapBloc;
   final SettingsBloc settingsBloc;
+  final OpenSenseMapService openSenseMapService;
 
   bool _isRecording = false;
   TrackData? _currentTrack;
@@ -52,8 +69,10 @@ class RecordingBloc extends Cubit<RecordingState> {
   final StreamController<RecordingLifecycleEvent> _lifecycleController =
       StreamController<RecordingLifecycleEvent>.broadcast();
   StreamSubscription<BleState>? _bleStateSubscription;
+  StreamSubscription<SenseBox?>? _senseBoxSubscription;
 
   DateTime? _lastRecordingStopTimestamp;
+  BatchUploadRequest? _pendingBatchUploadRequest;
 
   bool get isRecording => _isRecording;
   Stream<bool> get isRecordingStream =>
@@ -64,18 +83,29 @@ class RecordingBloc extends Cubit<RecordingState> {
   TrackData? get currentTrack => _currentTrack;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   DateTime? get lastRecordingStopTimestamp => _lastRecordingStopTimestamp;
+  BatchUploadRequest? get pendingBatchUploadRequest =>
+      _pendingBatchUploadRequest;
 
-  RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
-      this.openSenseMapBloc, this.settingsBloc)
-      : super(const RecordingState(
+  RecordingBloc(
+    this.isarService,
+    this.bleBloc,
+    this.trackBloc,
+    this.openSenseMapBloc,
+    this.settingsBloc, {
+    required this.openSenseMapService,
+  }) : super(const RecordingState(
           isRecording: false,
           currentTrack: null,
           selectedSenseBox: null,
           lastRecordingStopTimestamp: null,
+          pendingBatchUploadRequest: null,
         )) {
-    openSenseMapBloc.senseBoxStream.listen(_onSenseBoxChanged).onError((error) {
-      ErrorService.handleError(error, StackTrace.current);
-    });
+    _senseBoxSubscription = openSenseMapBloc.senseBoxStream.listen(
+      _onSenseBoxChanged,
+      onError: (Object error, StackTrace stackTrace) {
+        ErrorService.handleError(error, stackTrace);
+      },
+    );
 
     // Stop recording on BLE connection error transitions.
     _bleStateSubscription = bleBloc.stream.listen((bleState) {
@@ -92,6 +122,7 @@ class RecordingBloc extends Cubit<RecordingState> {
         currentTrack: _currentTrack,
         selectedSenseBox: _selectedSenseBox,
         lastRecordingStopTimestamp: _lastRecordingStopTimestamp,
+        pendingBatchUploadRequest: _pendingBatchUploadRequest,
       ));
     }
   }
@@ -123,6 +154,7 @@ class RecordingBloc extends Cubit<RecordingState> {
 
     _isRecording = true;
     _lastRecordingStopTimestamp = null;
+    _pendingBatchUploadRequest = null;
     await trackBloc.startNewTrack(
         isDirectUpload: settingsBloc.directUploadMode);
 
@@ -139,12 +171,12 @@ class RecordingBloc extends Cubit<RecordingState> {
 
       if (settingsBloc.directUploadMode) {
         _directUploadService = DirectUploadService(
-            openSenseMapService: OpenSenseMapService(),
+            openSenseMapService: openSenseMapService,
             senseBox: _selectedSenseBox!,
             openSenseMapBloc: openSenseMapBloc);
       } else {
         _batchUploadService = BatchUploadService(
-          openSenseMapService: OpenSenseMapService(),
+          openSenseMapService: openSenseMapService,
           trackService: isarService.trackService,
           openSenseMapBloc: openSenseMapBloc,
         );
@@ -179,7 +211,7 @@ class RecordingBloc extends Cubit<RecordingState> {
     if (!settingsBloc.directUploadMode &&
         _batchUploadService != null &&
         trackToUpload != null) {
-      _showUploadProgressModal(trackToUpload, senseBoxForUpload);
+      _prepareBatchUploadRequest(trackToUpload, senseBoxForUpload);
     } else {
       // For direct upload mode, dispose the batch upload service
       _batchUploadService?.dispose();
@@ -189,7 +221,7 @@ class RecordingBloc extends Cubit<RecordingState> {
     _emitState();
   }
 
-  void _showUploadProgressModal(TrackData track, SenseBox? senseBox) async {
+  void _prepareBatchUploadRequest(TrackData track, SenseBox? senseBox) async {
     if (_batchUploadService == null) return;
 
     final canUpload =
@@ -202,54 +234,26 @@ class RecordingBloc extends Cubit<RecordingState> {
       if (geolocations.isEmpty) {
         throw TrackHasNoGeolocationsException(track.id);
       }
-
-      _showUploadOverlay(
+      _pendingBatchUploadRequest = BatchUploadRequest(
         track: track,
         senseBox: senseBox,
         canUpload: canUpload,
+        createdAt: DateTime.now().toUtc(),
       );
+      _emitState();
     } catch (e, stack) {
       debugPrint('[RecordingBloc] Error showing upload modal: $e');
       ErrorService.handleError(e, stack);
-      UploadProgressOverlay.hide();
       _cleanupBatchUploadService();
     }
   }
 
-  void _showUploadOverlay({
-    required TrackData track,
-    required SenseBox? senseBox,
-    required bool canUpload,
-  }) {
-    final context = ErrorService.navigatorKey.currentContext;
-    if (context == null || _batchUploadService == null) {
-      debugPrint(
-          '[RecordingBloc] Navigator context unavailable for upload modal');
-      _cleanupBatchUploadService();
-      return;
-    }
-
-    UploadProgressOverlay.show(
-      context,
-      batchUploadService: _batchUploadService!,
-      canUpload: canUpload,
-      onUploadComplete: () {
-        _cleanupBatchUploadService();
-        debugPrint('[RecordingBloc] Batch upload completed successfully');
-      },
-      onUploadFailed: () {
-        _cleanupBatchUploadService();
-        debugPrint('[RecordingBloc] Batch upload failed permanently');
-      },
-      onStartUpload: () {
-        if (canUpload) {
-          _startBatchUpload(track, senseBox);
-        }
-      },
-    );
+  void clearBatchUploadRequest() {
+    _pendingBatchUploadRequest = null;
+    _emitState();
   }
 
-  void _startBatchUpload(TrackData track, SenseBox? senseBox) async {
+  Future<void> startBatchUpload(TrackData track, SenseBox? senseBox) async {
     if (_batchUploadService == null) return;
     if (senseBox == null) return;
 
@@ -266,6 +270,16 @@ class RecordingBloc extends Cubit<RecordingState> {
     }
   }
 
+  void onBatchUploadCompleted() {
+    _cleanupBatchUploadService();
+    debugPrint('[RecordingBloc] Batch upload completed successfully');
+  }
+
+  void onBatchUploadFailed() {
+    _cleanupBatchUploadService();
+    debugPrint('[RecordingBloc] Batch upload failed permanently');
+  }
+
   void _cleanupBatchUploadService() {
     _batchUploadService?.dispose();
     _batchUploadService = null;
@@ -277,13 +291,11 @@ class RecordingBloc extends Cubit<RecordingState> {
   @override
   Future<void> close() async {
     await _bleStateSubscription?.cancel();
+    await _senseBoxSubscription?.cancel();
     _directUploadService?.dispose();
     _batchUploadService?.dispose();
 
     await _lifecycleController.close();
-
-    // Hide any open upload modal
-    UploadProgressOverlay.hide();
 
     return super.close();
   }

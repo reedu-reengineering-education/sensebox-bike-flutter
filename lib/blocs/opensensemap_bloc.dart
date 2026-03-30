@@ -8,8 +8,8 @@ import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
+import 'package:sensebox_bike/services/storage/selected_sensebox_storage.dart';
 import 'package:sensebox_bike/utils/opensensemap_utils.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Add for StreamController
 
 @immutable
 class OpenSenseMapState {
@@ -43,6 +43,7 @@ class OpenSenseMapState {
 class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
     with WidgetsBindingObserver {
   final OpenSenseMapService _service;
+  final SelectedSenseBoxStorage _selectedSenseBoxStorage;
   final ConfigurationBloc? _configurationBloc;
   bool _isAuthenticated = false;
   bool _isAuthenticating = false;
@@ -70,9 +71,7 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
     _senseBoxController.add(null);
     _senseBoxes.clear();
     await _service.removeTokens();
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('selectedSenseBox');
+    await _selectedSenseBoxStorage.clearSelectedSenseBox();
 
     _emitState();
   }
@@ -91,8 +90,11 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
   OpenSenseMapBloc({
     ConfigurationBloc? configurationBloc,
     OpenSenseMapService? service,
+    SelectedSenseBoxStorage? selectedSenseBoxStorage,
   })  : _configurationBloc = configurationBloc,
         _service = service ?? OpenSenseMapService(),
+        _selectedSenseBoxStorage = selectedSenseBoxStorage ??
+            SharedPreferencesSelectedSenseBoxStorage(),
         super(
           const OpenSenseMapState(
             isAuthenticated: false,
@@ -177,17 +179,16 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
   }
 
   Future<void> loadSelectedSenseBox() async {
-    final prefs = await SharedPreferences.getInstance();
-
     if (!_isAuthenticated) {
-      await prefs.remove('selectedSenseBox');
+      await _selectedSenseBoxStorage.clearSelectedSenseBox();
       _senseBoxController.add(null);
       _selectedSenseBox = null;
       _emitState();
       return;
     }
 
-    final selectedSenseBoxJson = prefs.getString('selectedSenseBox');
+    final selectedSenseBoxJson =
+        await _selectedSenseBoxStorage.loadSelectedSenseBoxJson();
 
     if (selectedSenseBoxJson == null) {
       _senseBoxController.add(null);
@@ -205,7 +206,7 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
           _selectedSenseBox = savedSenseBox;
         }
       } else {
-        await prefs.remove('selectedSenseBox');
+        await _selectedSenseBoxStorage.clearSelectedSenseBox();
         _senseBoxController.add(null);
         _selectedSenseBox = null;
       }
@@ -439,18 +440,17 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
   }
 
   Future<void> setSelectedSenseBox(SenseBox? senseBox) async {
-    final prefs = await SharedPreferences.getInstance();
-
     // Clear previous data before adding new senseBox
     _senseBoxController.add(null);
     if (senseBox == null) {
-      await prefs.remove('selectedSenseBox');
+      await _selectedSenseBoxStorage.clearSelectedSenseBox();
       _selectedSenseBox = null;
       _emitState();
       return;
     }
 
-    await prefs.setString('selectedSenseBox', jsonEncode(senseBox.toJson()));
+    await _selectedSenseBoxStorage
+        .saveSelectedSenseBoxJson(jsonEncode(senseBox.toJson()));
     _senseBoxController.add(senseBox); // Push selected senseBox to the stream
     _selectedSenseBox = senseBox;
     _emitState();

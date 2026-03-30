@@ -4,11 +4,14 @@ import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:sensebox_bike/services/opensensemap_service.dart';
 import '../mocks.dart';
 
 class MockGeolocator extends Mock
     with MockPlatformInterfaceMixin
     implements geo.GeolocatorPlatform {}
+
+class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +22,7 @@ void main() {
   late MockTrackBloc mockTrackBloc;
   late MockOpenSenseMapBloc mockOpenSenseMapBloc;
   late MockSettingsBloc mockSettingsBloc;
+  late MockOpenSenseMapService mockOpenSenseMapService;
   late RecordingBloc recordingBloc;
 
   setUp(() {
@@ -28,6 +32,7 @@ void main() {
     mockTrackBloc = MockTrackBloc();
     mockOpenSenseMapBloc = MockOpenSenseMapBloc();
     mockSettingsBloc = MockSettingsBloc();
+    mockOpenSenseMapService = MockOpenSenseMapService();
 
     geo.GeolocatorPlatform.instance = mockGeolocator;
 
@@ -40,6 +45,7 @@ void main() {
       mockTrackBloc,
       mockOpenSenseMapBloc,
       mockSettingsBloc,
+      openSenseMapService: mockOpenSenseMapService,
     );
   });
 

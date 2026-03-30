@@ -1,14 +1,16 @@
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/geolocation_map_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/services/opensensemap_service.dart';
 import '../mocks.dart';
+
+class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   group('GeolocationMapBloc', () {
     late GeolocationMapBloc bloc;
     late MockGeolocationBloc mockGeolocationBloc;
@@ -17,6 +19,7 @@ void main() {
     late MockIsarService mockIsarService;
     late MockTrackBloc mockTrackBloc;
     late MockSettingsBloc mockSettingsBloc;
+    late MockOpenSenseMapService mockOpenSenseMapService;
     late RecordingBloc recordingBloc;
 
     setUp(() {
@@ -26,11 +29,12 @@ void main() {
       mockIsarService = MockIsarService();
       mockTrackBloc = MockTrackBloc();
       mockSettingsBloc = MockSettingsBloc();
-      
+      mockOpenSenseMapService = MockOpenSenseMapService();
+
       // Setup mocks before creating RecordingBloc
       when(() => mockGeolocationBloc.geolocationStream)
           .thenAnswer((_) => Stream.empty());
-      
+
       // Create RecordingBloc with correct parameters
       recordingBloc = RecordingBloc(
         mockIsarService,
@@ -38,6 +42,7 @@ void main() {
         mockTrackBloc,
         mockOpenSenseMapBloc,
         mockSettingsBloc,
+        openSenseMapService: mockOpenSenseMapService,
       );
 
       bloc = GeolocationMapBloc(
@@ -85,4 +90,4 @@ void main() {
       });
     });
   });
-} 
+}

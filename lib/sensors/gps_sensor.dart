@@ -1,173 +1,44 @@
-import 'dart:async';
-
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/secrets.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:flutter/material.dart';
-import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
-import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
-import 'package:sensebox_bike/utils/sensor_utils.dart';
-import 'package:sensebox_bike/l10n/app_localizations.dart';
-
 
 class GPSSensor extends Sensor {
-  double _latestLat = 0.0;
-  double _latestLng = 0.0;
-
-  late final MapboxMap? mapInstance;
-  final Completer<void> _mapReadyCompleter = Completer<void>();
-
   static int get staticUiPriority => 60;
 
   @override
-  get uiPriority => staticUiPriority;
+  int get uiPriority => staticUiPriority;
 
   static const String sensorCharacteristicUuid =
       '8edf8ebb-1246-4329-928d-ee0c91db2389';
 
-  CircleAnnotationManager? circleAnnotationManager;
-
   GPSSensor(
-      BleBloc bleBloc, GeolocationBloc geolocationBloc,
-      RecordingBloc recordingBloc,
-      IsarService isarService)
-      : super(
-            sensorCharacteristicUuid,
-            "gps",
-            ['latitude', 'longitude', 'speed'],
-            bleBloc,
-            geolocationBloc,
-            recordingBloc,
-            isarService) {
-    // Set the access token for Mapbox
-    MapboxOptions.setAccessToken(mapboxAccessToken);
-  }
-
-  void _handleMapCreated(MapboxMap newMapInstance) {
-    // If a previous instance exists and is different, clean up if needed
-    if (mapInstance != null && mapInstance != newMapInstance) {
-      // Optionally: dispose or clean up old mapInstance here
-      debugPrint('Map instance recreated. Resetting state.');
-      // Reset the completer for the new map
-      if (!_mapReadyCompleter.isCompleted) {
-        _mapReadyCompleter.complete();
-      }
-    }
-    mapInstance = newMapInstance;
-    mapInstance!.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-    if (!_mapReadyCompleter.isCompleted) {
-      _mapReadyCompleter.complete();
-    }
-  }
-
-  @override
-  void onDataReceived(List<double> data) async {
-    super.onDataReceived(data); // Call the parent class to handle buffering
-
-    if (data.length >= 3) {
-      _latestLat = data[0];
-      _latestLng = data[1];
-
-      if (_latestLat == 0.0 && _latestLng == 0.0) {
-        return;
-      }
-
-      // Wait for mapInstance to be initialized
-      await _mapReadyCompleter.future;
-
-      if (circleAnnotationManager == null) {
-        debugPrint('Warning: circleAnnotationManager is not initialized.');
-        return;
-      }
-
-      try {
-        CircleAnnotationOptions option = CircleAnnotationOptions(
-          geometry: Point(coordinates: Position(_latestLng, _latestLat)),
-          circleColor: Colors.blue.value,
-          circleRadius: 8,
-          circleStrokeColor: Colors.white.value,
-          circleStrokeWidth: 2,
+    BleBloc bleBloc,
+    GeolocationBloc geolocationBloc,
+    RecordingBloc recordingBloc,
+    IsarService isarService,
+  ) : super(
+          sensorCharacteristicUuid,
+          'gps',
+          const ['latitude', 'longitude', 'speed'],
+          bleBloc,
+          geolocationBloc,
+          recordingBloc,
+          isarService,
         );
-
-        circleAnnotationManager!.deleteAll();
-
-        circleAnnotationManager!
-            .setCirclePitchAlignment(CirclePitchAlignment.MAP);
-        circleAnnotationManager!.setCircleEmissiveStrength(1);
-
-        // Create new annotations
-        circleAnnotationManager!.createMulti([option]);
-      } catch (e) {
-        debugPrint('Error updating circle annotations: $e');
-      }
-
-      if (mapInstance == null) {
-        debugPrint('Warning: mapInstance is not initialized yet.');
-        return;
-      }
-
-      await mapInstance!.flyTo(
-        CameraOptions(
-          zoom: 16.0,
-          pitch: 45,
-          center: Point(coordinates: Position(_latestLng, _latestLat)),
-        ),
-        MapAnimationOptions(
-          duration: 1000,
-        ),
-      );
-    }
-  }
 
   @override
   List<double> aggregateData(List<List<double>> valueBuffer) {
-    List<double> sumValues = [0.0, 0.0, 0.0];
-    int count = valueBuffer.length;
+    final sumValues = [0.0, 0.0, 0.0];
+    final count = valueBuffer.length;
 
-    for (var values in valueBuffer) {
+    for (final values in valueBuffer) {
       sumValues[0] += values[0];
       sumValues[1] += values[1];
       sumValues[2] += values[2];
     }
 
-    // Calculate the mean for x, y, and z
     return sumValues.map((value) => value / count).toList();
-  }
-
-  @override
-  Widget buildWidget() {
-    if (_latestLat == 0.0 && _latestLng == 0.0) {
-      return StreamBuilder<List<double>>(
-        stream: valueStream,
-        builder: (context, snapshot) {
-          return SensorCard(
-            icon: getSensorIcon(title),
-            color: getSensorColor(title),
-            title: 'GPS',
-            child: Center(
-              child: Text(AppLocalizations.of(context)!.sensorGPSError),
-            ),
-          );
-        },
-      );
-    }
-    return Card(
-      elevation: 1,
-      clipBehavior: Clip.hardEdge,
-      child: ReusableMapWidget(
-          logoMargins: const EdgeInsets.all(4),
-          attributionMargins: const EdgeInsets.all(4),
-          onStyleLoadedCallback: (mapInstance) async {
-            circleAnnotationManager ??=
-                await mapInstance.annotations.createCircleAnnotationManager();
-          },
-          onMapCreated: (mapInstance) async {
-            _handleMapCreated(mapInstance);
-          }),
-    );
   }
 }

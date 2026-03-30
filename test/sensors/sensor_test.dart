@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
@@ -19,8 +18,9 @@ void main() {
       recordingBloc.setRecording(true);
       geolocationBloc = MockGeolocationBloc();
       geoController = StreamController<GeolocationData>.broadcast();
-      when(() => geolocationBloc.geolocationStream).thenAnswer((_) => geoController.stream);
-      
+      when(() => geolocationBloc.geolocationStream)
+          .thenAnswer((_) => geoController.stream);
+
       sensor = TemperatureSensor(
         MockBleBloc(),
         geolocationBloc,
@@ -34,7 +34,8 @@ void main() {
       sensor.dispose();
     });
 
-    test('removes values after immediate aggregation for zero lookback sensors', () async {
+    test('removes values after immediate aggregation for zero lookback sensors',
+        () async {
       final geoTime = DateTime.utc(2024, 1, 1, 12, 0, 2);
       final geo = GeolocationData()
         ..id = 1
@@ -79,7 +80,8 @@ void main() {
       expect(sensor, isNotNull);
     });
 
-    test('aggregates only values with timestamp before geolocation time', () async {
+    test('aggregates only values with timestamp before geolocation time',
+        () async {
       final geoTime = DateTime.utc(2024, 1, 1, 12, 0, 2);
       final geo = GeolocationData()
         ..id = 1
@@ -101,7 +103,8 @@ void main() {
       expect(sensor, isNotNull);
     });
 
-    test('does not aggregate values with timestamp equal to geolocation time', () async {
+    test('does not aggregate values with timestamp equal to geolocation time',
+        () async {
       final geoTime = DateTime.utc(2024, 1, 1, 12, 0, 2);
       final geo = GeolocationData()
         ..id = 1
@@ -281,10 +284,5 @@ class _TestSingleValueSensor extends Sensor {
     final values = rawData.map((e) => e[0]).toList();
     final avg = values.reduce((a, b) => a + b) / values.length;
     return [avg];
-  }
-
-  @override
-  Widget buildWidget() {
-    return const SizedBox.shrink();
   }
 }

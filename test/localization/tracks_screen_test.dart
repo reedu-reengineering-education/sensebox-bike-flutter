@@ -53,6 +53,7 @@ void main() {
       currentTrack: null,
       selectedSenseBox: null,
       lastRecordingStopTimestamp: null,
+      pendingBatchUploadRequest: null,
     ));
   });
 

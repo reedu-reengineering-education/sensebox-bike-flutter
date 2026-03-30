@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mapbox_maps_flutter_draw/mapbox_maps_flutter_draw.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
@@ -13,7 +14,10 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
+import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/sensor_csv_logger_service.dart';
+import 'package:sensebox_bike/services/storage/selected_sensebox_storage.dart';
+import 'package:sensebox_bike/services/storage/settings_storage.dart';
 
 class AppDependencies {
   AppDependencies({
@@ -22,6 +26,7 @@ class AppDependencies {
     required this.bleBloc,
     required this.configurationBloc,
     required this.openSenseMapBloc,
+    required this.openSenseMapService,
     required this.trackBloc,
     required this.recordingBloc,
     required this.geolocationBloc,
@@ -34,6 +39,7 @@ class AppDependencies {
   final BleBloc bleBloc;
   final ConfigurationBloc configurationBloc;
   final OpenSenseMapBloc openSenseMapBloc;
+  final OpenSenseMapService openSenseMapService;
   final TrackBloc trackBloc;
   final RecordingBloc recordingBloc;
   final GeolocationBloc geolocationBloc;
@@ -41,12 +47,20 @@ class AppDependencies {
   final MapboxDrawController mapboxDrawController;
 
   static Future<AppDependencies> create() async {
-    final settingsBloc = SettingsBloc();
+    final prefs = SharedPreferences.getInstance();
+    final settingsBloc = SettingsBloc(
+      storage: SharedPreferencesSettingsStorage(prefs: prefs),
+    );
     final isarService = IsarService(isarProvider: IsarProvider());
     final bleBloc = BleBloc(settingsBloc);
     final configurationBloc = ConfigurationBloc();
-    final openSenseMapBloc =
-        OpenSenseMapBloc(configurationBloc: configurationBloc);
+    final openSenseMapService = OpenSenseMapService(prefs: prefs);
+    final openSenseMapBloc = OpenSenseMapBloc(
+      configurationBloc: configurationBloc,
+      service: openSenseMapService,
+      selectedSenseBoxStorage:
+          SharedPreferencesSelectedSenseBoxStorage(prefs: prefs),
+    );
     final trackBloc = TrackBloc(isarService);
     final recordingBloc = RecordingBloc(
       isarService,
@@ -54,6 +68,7 @@ class AppDependencies {
       trackBloc,
       openSenseMapBloc,
       settingsBloc,
+      openSenseMapService: openSenseMapService,
     );
     final geolocationBloc =
         GeolocationBloc(isarService, recordingBloc, settingsBloc);
@@ -82,6 +97,7 @@ class AppDependencies {
       bleBloc: bleBloc,
       configurationBloc: configurationBloc,
       openSenseMapBloc: openSenseMapBloc,
+      openSenseMapService: openSenseMapService,
       trackBloc: trackBloc,
       recordingBloc: recordingBloc,
       geolocationBloc: geolocationBloc,

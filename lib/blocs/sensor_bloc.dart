@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_right_sensor.dart';
@@ -236,25 +234,6 @@ class SensorBloc extends Cubit<SensorState> {
   }
 
   List<Sensor> get sensors => _sensors;
-
-  List<Widget> getSensorWidgets() {
-    final availableUuids = bleBloc.state.availableCharacteristics
-        .map((e) => e.uuid.toString())
-        .toSet();
-
-    final availableSensors = _sensors.where((sensor) {
-      if (FeatureFlags.hideSurfaceAnomalySensor &&
-          sensor.title == 'surface_anomaly') {
-        return false;
-      }
-      return availableUuids.contains(sensor.characteristicUuid);
-    }).toList();
-
-    availableSensors.sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
-    return availableSensors
-        .map<Widget>((sensor) => sensor.buildWidget())
-        .toList();
-  }
 
   @override
   Future<void> close() async {

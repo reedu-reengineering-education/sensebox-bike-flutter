@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sensebox_bike/services/storage/settings_storage.dart';
 
 @immutable
 class SettingsState {
@@ -28,8 +28,9 @@ class SettingsState {
 }
 
 class SettingsBloc extends Cubit<SettingsState> {
-  SettingsBloc()
-      : super(const SettingsState(
+  SettingsBloc({SettingsStorage? storage})
+      : _storage = storage ?? SharedPreferencesSettingsStorage(),
+        super(const SettingsState(
           vibrateOnDisconnect: false,
           privacyZones: <String>[],
           directUploadMode: false,
@@ -37,7 +38,12 @@ class SettingsBloc extends Cubit<SettingsState> {
     _loadSettings();
   }
 
-  SettingsBloc.withState(super.initialState);
+  SettingsBloc.withState(
+    super.initialState, {
+    SettingsStorage? storage,
+  }) : _storage = storage ?? SharedPreferencesSettingsStorage();
+
+  final SettingsStorage _storage;
 
   factory SettingsBloc.createForTest() {
     return SettingsBloc.withState(
@@ -46,6 +52,7 @@ class SettingsBloc extends Cubit<SettingsState> {
         privacyZones: <String>[],
         directUploadMode: false,
       ),
+      storage: InMemorySettingsStorage(),
     );
   }
 
@@ -63,34 +70,31 @@ class SettingsBloc extends Cubit<SettingsState> {
       stream.map((state) => state.directUploadMode).distinct();
 
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
+    final loaded = await _storage.load();
     if (isClosed) return;
     emit(
       state.copyWith(
-        vibrateOnDisconnect: prefs.getBool('vibrateOnDisconnect') ?? false,
-        privacyZones: prefs.getStringList('privacyZones') ?? <String>[],
-        directUploadMode: prefs.getBool('directUploadMode') ?? false,
+        vibrateOnDisconnect: loaded.vibrateOnDisconnect,
+        privacyZones: loaded.privacyZones,
+        directUploadMode: loaded.directUploadMode,
       ),
     );
   }
 
   Future<void> toggleVibrateOnDisconnect(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('vibrateOnDisconnect', value);
+    await _storage.setVibrateOnDisconnect(value);
     if (isClosed) return;
     emit(state.copyWith(vibrateOnDisconnect: value));
   }
 
   Future<void> setPrivacyZones(List<String> zones) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('privacyZones', zones);
+    await _storage.setPrivacyZones(zones);
     if (isClosed) return;
     emit(state.copyWith(privacyZones: zones));
   }
 
   Future<void> toggleDirectUploadMode(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('directUploadMode', value);
+    await _storage.setDirectUploadMode(value);
     if (isClosed) return;
     emit(state.copyWith(directUploadMode: value));
   }

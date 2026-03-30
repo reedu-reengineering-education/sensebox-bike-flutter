@@ -9,7 +9,6 @@ import 'package:sensebox_bike/models/timestamped_sensor_value.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:flutter/material.dart';
 import 'package:isar_community/isar.dart';
 
 abstract class Sensor {
@@ -37,6 +36,7 @@ abstract class Sensor {
   bool _isFlushing = false;
   bool _isListening = false;
   bool _isStartingListening = false;
+  List<double> _latestValue = const [];
 
   // Track pending aggregations (geolocations waiting for lookback window to close)
   // Key: geoId, Value: Completer that can be used to cancel the future
@@ -79,6 +79,7 @@ abstract class Sensor {
   );
 
   Stream<List<double>> get valueStream => _valueController.stream;
+  List<double> get latestValue => List<double>.unmodifiable(_latestValue);
 
   /// Stream that emits sensor values with their timestamps (used for aggregation)
   /// This stream uses the same timestamp that's used for aggregation window calculation
@@ -107,6 +108,10 @@ abstract class Sensor {
   }
 
   void onDataReceived(List<double> data) {
+    if (data.isNotEmpty) {
+      _latestValue = List<double>.from(data);
+    }
+
     if (data.isNotEmpty && recordingBloc.isRecording) {
       final sensorTimestamp = DateTime.now().toUtc();
       final timestampedValue = TimestampedSensorValue(
@@ -574,8 +579,6 @@ abstract class Sensor {
       _isFlushing = false;
     }
   }
-
-  Widget buildWidget();
 
   void dispose() {
     stopListening();
