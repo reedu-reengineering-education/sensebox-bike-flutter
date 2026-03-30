@@ -594,6 +594,24 @@ abstract class AppLocalizations {
   /// **'• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording'**
   String get settingsUploadModeDirectDescription;
 
+  /// No description provided for @settingsApiUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'API URL'**
+  String get settingsApiUrl;
+
+  /// No description provided for @settingsApiUrlHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the API endpoint for data uploads'**
+  String get settingsApiUrlHelper;
+
+  /// No description provided for @settingsApiUrlError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid URL (e.g., https://api.opensensemap.org)'**
+  String get settingsApiUrlError;
+
   /// No description provided for @settingsAbout.
   ///
   /// In en, this message translates to:
