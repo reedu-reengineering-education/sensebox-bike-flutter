@@ -1,4 +1,7 @@
 {
+    "settingsKnowledgeBase": "Knowledge Base",
+        "uploadBlockNotAuthenticated": "Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please login or register an account on the Settings page.",
+        "uploadBlockNoBox": "Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please select or create a senseBox on the Home page.",
     "createBoxAddCustomTag": "Add custom group tag",
     "createBoxCustomTag": "Custom group tag",
     "createBoxCustomTagHelper": "You can separate tags with commas",
@@ -58,6 +61,7 @@
     },
     "generalExport": "Export",
     "generalLogin": "Login",
+    "generalLoginOrRegister": "Login or Register",
     "generalLogout": "Logout",
     "generalRegister": "Register",
     "generalProceed": "Proceed",

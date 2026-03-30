@@ -102,6 +102,24 @@ abstract class AppLocalizations {
     Locale('pt')
   ];
 
+  /// No description provided for @settingsKnowledgeBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge Base'**
+  String get settingsKnowledgeBase;
+
+  /// No description provided for @uploadBlockNotAuthenticated.
+  ///
+  /// In en, this message translates to:
+  /// **'Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please login or register an account on the Settings page.'**
+  String get uploadBlockNotAuthenticated;
+
+  /// No description provided for @uploadBlockNoBox.
+  ///
+  /// In en, this message translates to:
+  /// **'Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please select or create a senseBox on the Home page.'**
+  String get uploadBlockNoBox;
+
   /// No description provided for @createBoxAddCustomTag.
   ///
   /// In en, this message translates to:
@@ -245,6 +263,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Login'**
   String get generalLogin;
+
+  /// No description provided for @generalLoginOrRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Login or Register'**
+  String get generalLoginOrRegister;
 
   /// No description provided for @generalLogout.
   ///
