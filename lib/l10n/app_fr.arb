@@ -1,7 +1,7 @@
 {
   "settingsKnowledgeBase": "Base de connaissances",
-    "uploadBlockNotAuthenticated": "Le trajet actuel n'a pas été téléversé automatiquement. Vous pouvez toujours l'envoyer sur openSenseMap depuis la page d'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez vous connecter ou créer un compte dans les paramètres.",
-    "uploadBlockNoBox": "Le trajet actuel n'a pas été téléversé automatiquement. Vous pouvez toujours l'envoyer sur openSenseMap depuis la page d'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez sélectionner ou créer une senseBox sur la page d'accueil.",
+  "uploadBlockNotAuthenticated": "Le trajet actuel n'a pas été téléversé automatiquement. Vous pouvez toujours l'envoyer sur openSenseMap depuis la page d'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez vous connecter ou créer un compte dans les paramètres.",
+  "uploadBlockNoBox": "Le trajet actuel n'a pas été téléversé automatiquement. Vous pouvez toujours l'envoyer sur openSenseMap depuis la page d'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez sélectionner ou créer une senseBox sur la page d'accueil.",
   "createBoxAddCustomTag": "Ajouter une étiquette de groupe personnalisée",
   "createBoxCustomTag": "Étiquette de groupe personnalisée",
   "createBoxCustomTagHelper": "Vous pouvez séparer les étiquettes par des virgules",
@@ -61,7 +61,7 @@
   },
   "generalExport": "Exporter",
   "generalLogin": "Connexion",
-    "generalLoginOrRegister": "Connexion ou inscription",
+  "generalLoginOrRegister": "Connexion ou inscription",
   "generalLogout": "Déconnexion",
   "generalRegister": "S’inscrire",
   "generalProceed": "Continuer",
@@ -200,6 +200,7 @@
   "errorReasonPrefix": "Raison :",
   "errorBleConnectionFailed": "La connexion à la senseBox a été perdue. Assurez-vous que le Bluetooth est activé et que la senseBox est allumée.",
   "errorUploadFailed": "Échec du téléversement des données. Veuillez vérifier votre connexion internet et réessayer.",
+  "errorDirectUploadFailed": "L’envoi en temps réel a échoué en raison de problèmes de connectivité. Ne vous inquiétez pas : vos données ont été enregistrées localement. Après avoir arrêté l’enregistrement, vous pouvez téléverser la trace manuellement depuis l’écran d’aperçu des parcours.",
   "errorPermanentAuthentication": "Échec permanent de l’authentification. Veuillez vous connecter pour téléverser les données.",
   "selectCsvFormat": "Sélectionner le format CSV",
   "regularCsv": "CSV standard",
@@ -267,6 +268,13 @@
   "trackStatusNotUploaded": "Non téléversé",
   "trackStatusUploadFailed": "Échec du téléversement",
   "trackStatusUploadFailedAt": "Échec le {date}",
+  "@trackStatusUploadFailedAt": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
   "trackDirectUploadInfo": "Ces données de parcours ont été téléversées en temps réel pendant votre trajet. Si vous souhaitez les téléverser à nouveau, vous pouvez utiliser le bouton de téléversement ci-dessus.",
   "trackUploadAttempts": "Tentatives de téléversement",
   "trackLastAttempt": "Dernière tentative",

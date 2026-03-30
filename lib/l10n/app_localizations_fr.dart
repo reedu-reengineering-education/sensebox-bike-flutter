@@ -528,6 +528,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Échec du téléversement des données. Veuillez vérifier votre connexion internet et réessayer.';
 
   @override
+  String get errorDirectUploadFailed =>
+      'L’envoi en temps réel a échoué en raison de problèmes de connectivité. Ne vous inquiétez pas : vos données ont été enregistrées localement. Après avoir arrêté l’enregistrement, vous pouvez téléverser la trace manuellement depuis l’écran d’aperçu des parcours.';
+
+  @override
   String get errorPermanentAuthentication =>
       'Échec permanent de l’authentification. Veuillez vous connecter pour téléverser les données.';
 

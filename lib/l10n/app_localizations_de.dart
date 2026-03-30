@@ -523,6 +523,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
 
   @override
+  String get errorDirectUploadFailed =>
+      'Der Echtzeit-Upload konnte aufgrund von Verbindungsproblemen nicht durchgeführt werden. Keine Sorge – deine Daten wurden lokal gespeichert. Nach Beenden der Aufzeichnung kannst du den Track in der Trackübersicht manuell hochladen.';
+
+  @override
   String get errorPermanentAuthentication =>
       'Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich an, um Daten hochzuladen.';
 

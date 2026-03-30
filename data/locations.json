@@ -1,5 +1,5 @@
 [
-    {
+      {
         "label": "Münster",
         "value": "muenster"
       },
@@ -26,5 +26,9 @@
       {
         "label": "Heilbronn",
         "value": "heilbronn"
+      },
+      {
+        "label": "Enschede",
+        "value": "enschede"
       }
 ]

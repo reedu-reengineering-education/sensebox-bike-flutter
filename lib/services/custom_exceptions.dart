@@ -52,6 +52,12 @@ class UploadFailureError implements Exception {
       'Data upload failed. Please check your internet connection and try again.';
 }
 
+class DirectUploadFailureError implements Exception {
+  @override
+  String toString() =>
+      'Real-time upload failed due to connectivity issues. Your data has been saved locally. After stopping the recording, you can upload the track manually from the track overview.';
+}
+
 class PermanentAuthenticationError implements Exception {
   final String? details;
 

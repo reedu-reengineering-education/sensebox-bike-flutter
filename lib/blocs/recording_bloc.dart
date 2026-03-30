@@ -60,6 +60,17 @@ class RecordingBloc with ChangeNotifier {
     }
   }
 
+  void _onDirectUploadFailed() {
+    if (_currentTrack != null) {
+      trackBloc.updateDirectUploadAuthFailure(_currentTrack!);
+      ErrorService.handleError(
+        DirectUploadFailureError(),
+        StackTrace.current,
+        sendToSentry: false,
+      );
+    }
+  }
+
 
 
   void setRecordingCallbacks({
@@ -113,7 +124,8 @@ class RecordingBloc with ChangeNotifier {
         _directUploadService = DirectUploadService(
             openSenseMapService: OpenSenseMapService(),
             senseBox: _selectedSenseBox!,
-            openSenseMapBloc: openSenseMapBloc);
+            openSenseMapBloc: openSenseMapBloc,
+            onUploadFailed: _onDirectUploadFailed);
       } else {
         _batchUploadService = BatchUploadService(
           openSenseMapService: OpenSenseMapService(),

@@ -521,6 +521,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.';
 
   @override
+  String get errorDirectUploadFailed =>
+      'O upload em tempo real falhou devido a problemas de conectividade. Não se preocupe – seus dados foram salvos localmente. Após parar a gravação, você pode enviar o trajeto manualmente na tela de visão geral dos trajetos.';
+
+  @override
   String get errorPermanentAuthentication =>
       'Falha permanente na autenticação. Por favor, faça login para enviar dados.';
 
