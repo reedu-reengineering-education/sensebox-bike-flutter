@@ -226,7 +226,12 @@ class ChunkedUploader {
       // Upload the prepared data with error handling
       try {
         debugPrint('length: ${uploadData.keys.length.toString()}');
-        await _openSenseMapService.uploadData(senseBox.id, uploadData);
+        await _openSenseMapService.uploadData(
+          senseBox.id,
+          uploadData,
+          useBoxAuth: senseBox.useAuth == true,
+          boxAccessToken: senseBox.accessToken,
+        );
       } catch (e, stackTrace) {
         _logError('Upload API failed',
             'API call failed for chunk $chunkIndex: $e', chunkIndex);

@@ -56,7 +56,7 @@ class OpenSenseMapService {
 
   String get _baseUrl {
     if (_settingsBloc != null) {
-      return _settingsBloc!.apiUrl;
+      return _settingsBloc.apiUrl;
     }
     return openSenseMapUrl;
   }
@@ -477,9 +477,49 @@ class OpenSenseMapService {
     );
   }
 
+  Future<Map<String, dynamic>> getUserBox(String boxId) async {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      requestFn: (accessToken) => client.get(
+        Uri.parse('$_baseUrl/users/me/boxes/$boxId'),
+        headers: {'Authorization': 'Bearer $accessToken'},
+      ),
+      successHandler: (response) {
+        try {
+          final responseData = safeJsonDecode(response.body);
+          if (responseData['data'] is Map<String, dynamic>) {
+            final data = responseData['data'] as Map<String, dynamic>;
+            if (data['box'] is Map<String, dynamic>) {
+              return data['box'] as Map<String, dynamic>;
+            }
+            // Some API responses return the box object directly in `data`.
+            if (data.containsKey('_id')) {
+              return data;
+            }
+          }
+          throw Exception('Unexpected user box response format');
+        } catch (e) {
+          throw Exception('Failed to parse user box response: $e');
+        }
+      },
+      errorMessage: 'Failed to load user box',
+    );
+  }
+
+  Future<String?> _refreshAndGetBoxAccessToken(String senseBoxId) async {
+    // Ensure user session is fresh before requesting box token data.
+    await getAccessToken();
+    final box = await getUserBox(senseBoxId);
+    return (box['access_token'] ?? box['accessToken'] ?? box['token'])
+        ?.toString();
+  }
+
 
   Future<void> uploadData(
-      String senseBoxId, Map<String, dynamic> sensorData) async {
+    String senseBoxId,
+    Map<String, dynamic> sensorData, {
+    bool useBoxAuth = false,
+    String? boxAccessToken,
+  }) async {
     List<dynamic> data = sensorData.values.toList();
 
     // Check if currently rate limited
@@ -503,16 +543,35 @@ class OpenSenseMapService {
 
     await r.retry(
       () async {
-        final accessToken = await getAccessToken();
-        if (accessToken == null) throw Exception('Not authenticated');
+        String? activeBoxAccessToken = boxAccessToken;
+        if (useBoxAuth) {
+          // Always prefer a fresh token from API, because locally cached box
+          // tokens can be stale after server-side rotation.
+          final refreshedToken = await _refreshAndGetBoxAccessToken(senseBoxId);
+          if (refreshedToken != null && refreshedToken.isNotEmpty) {
+            activeBoxAccessToken = refreshedToken;
+            boxAccessToken = refreshedToken;
+          }
+        }
+
+        if (useBoxAuth &&
+            (activeBoxAccessToken == null || activeBoxAccessToken.isEmpty)) {
+          throw Exception('Box authentication is enabled but no box token found');
+        }
+
+        final headers = <String, String>{
+          'Content-Type': 'application/json',
+        };
+        if (useBoxAuth) {
+          // openSenseMap expects the raw box access token in Authorization header
+          // (not "Bearer <token>") for measurement uploads with box auth.
+          headers['Authorization'] = activeBoxAccessToken!;
+        }
 
         final response = await client.post(
           Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
           body: jsonEncode(data),
-          headers: {
-            'Authorization': 'Bearer $accessToken',
-            'Content-Type': 'application/json',
-          },
+          headers: headers,
         ).timeout(const Duration(seconds: defaultTimeout));
         
         if (response.statusCode == 201) {
@@ -525,19 +584,25 @@ class OpenSenseMapService {
               StackTrace.current,
               sendToSentry: true);
 
-          // Use the same robust token refresh method
-          try {
-            final tokens = await refreshToken();
-            if (tokens != null) {
-              throw Exception('Token refreshed, retrying');
+          if (useBoxAuth) {
+            try {
+              await refreshToken();
+              final refreshedBoxToken =
+                  await _refreshAndGetBoxAccessToken(senseBoxId);
+              if (refreshedBoxToken == null || refreshedBoxToken.isEmpty) {
+                throw Exception('No refreshed box token available');
+              }
+              boxAccessToken = refreshedBoxToken;
+              throw Exception('Box token refreshed, retrying');
+            } catch (e) {
+              _isPermanentlyDisabled = true;
+              debugPrint(
+                  '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
+              throw Exception('Authentication failed - user needs to re-login');
             }
-            throw Exception('Token refresh failed');
-          } catch (e) {
-            // If refresh token fails, set permanent disable state - user needs to re-login
-            _isPermanentlyDisabled = true;
-            debugPrint(
-                '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
-            throw Exception('Authentication failed - user needs to re-login');
+          } else {
+            throw Exception(
+                'Upload unauthorized without box auth: ${response.statusCode}');
           }
         } else if (response.statusCode == 429) {
           ErrorService.handleError(
@@ -578,7 +643,7 @@ class OpenSenseMapService {
         final errorString = e.toString();
         return e is TooManyRequestsException ||
             errorString.contains('Server error') ||
-            errorString.contains('Token refreshed, retrying') ||
+            errorString.contains('Box token refreshed, retrying') ||
             e is SocketException || // Network connectivity issues
             e is HttpException || // HTTP protocol errors
             e is TimeoutException;

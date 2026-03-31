@@ -309,39 +309,78 @@ void main() {
             throwsException);
       });
 
-      test('automatically refreshes token when access token is expired',
-          () async {
-        // Set up expired access token but valid refresh token
-        await setExpiredTokens();
+      test('loads missing box token and uploads with box auth', () async {
+        await setValidTokens();
+        mockHTTPGETResponse(
+          '{"data": {"box": {"_id": "sensebox123", "useAuth": true, "access_token": "box-token-123"}}}',
+          200,
+        );
+        mockHTTPPOSTResponse('{"success": true}', 201);
 
-        // Set up mocks to handle both token refresh and upload requests
-        int callCount = 0;
+        await expectLater(
+          service.uploadData(
+            'sensebox123',
+            {"sensor1": "value1"},
+            useBoxAuth: true,
+          ),
+          completes,
+        );
+      });
+
+      test(
+          'loads missing box token when user box endpoint returns direct data shape',
+          () async {
+        await setValidTokens();
+        mockHTTPGETResponse(
+          '{"data": {"_id": "sensebox123", "useAuth": true, "access_token": "box-token-xyz"}}',
+          200,
+        );
+        mockHTTPPOSTResponse('{"success": true}', 201);
+
+        await expectLater(
+          service.uploadData(
+            'sensebox123',
+            {"sensor1": "value1"},
+            useBoxAuth: true,
+          ),
+          completes,
+        );
+      });
+
+      test('prefers fresh server box token over stale cached token', () async {
+        await setValidTokens();
+
+        when(() => mockHttpClient.get(
+              any(),
+              headers: any(named: 'headers'),
+            )).thenAnswer((_) async => http.Response(
+                  '{"data": {"box": {"_id": "sensebox123", "useAuth": true, "access_token": "fresh-token"}}}',
+                  200,
+                ));
+
         when(() => mockHttpClient.post(
               any(),
               headers: any(named: 'headers'),
               body: any(named: 'body'),
             )).thenAnswer((invocation) async {
-          callCount++;
-          final uri = invocation.positionalArguments[0] as Uri;
-          
-          if (uri.path.contains('/users/refresh-auth')) {
-            // Token refresh request
-            return http.Response(
-                '{"token": "$accessToken", "refreshToken": "new_refresh"}', 200);
-          } else if (uri.path.contains('/boxes/sensebox123/data')) {
-            // Data upload request
+          final headers =
+              invocation.namedArguments[#headers] as Map<String, String>;
+          final authHeader = headers['Authorization'];
+          if (authHeader == 'fresh-token') {
             return http.Response('{"success": true}', 201);
-          } else {
-            throw Exception('Unexpected request to ${uri.path}');
           }
+          return http.Response('{"message":"device access token not valid"}', 401);
         });
 
         await expectLater(
-            service.uploadData('sensebox123', {"sensor1": "value1"}),
-            completes);
-        
-        // Verify both requests were made
-        expect(callCount, 2);
+          service.uploadData(
+            'sensebox123',
+            {"sensor1": "value1"},
+            useBoxAuth: true,
+            boxAccessToken: 'stale-token',
+          ),
+          completes,
+        );
       });
     });
   });
