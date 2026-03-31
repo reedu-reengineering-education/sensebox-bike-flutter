@@ -9,6 +9,17 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get settingsKnowledgeBase => 'Knowledge Base';
+
+  @override
+  String get uploadBlockNotAuthenticated =>
+      'Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please login or register an account on the Settings page.';
+
+  @override
+  String get uploadBlockNoBox =>
+      'Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please select or create a senseBox on the Home page.';
+
+  @override
   String get createBoxAddCustomTag => 'Add custom group tag';
 
   @override
@@ -87,6 +98,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generalLogin => 'Login';
+
+  @override
+  String get generalLoginOrRegister => 'Login or Register';
 
   @override
   String get generalLogout => 'Logout';
@@ -511,6 +525,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorUploadFailed =>
       'Data upload failed. Please check your internet connection and try again.';
+
+  @override
+  String get errorDirectUploadFailed =>
+      'Real-time upload failed due to connectivity issues. Don\'t worry – your data has been saved locally. After stopping the recording, you can upload the track manually from the track overview.';
 
   @override
   String get errorPermanentAuthentication =>

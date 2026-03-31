@@ -184,9 +184,9 @@ class SettingsScreen extends StatelessWidget {
           ? null
           : () => _handleLoginLogoutAction(
               context, isAuthenticated, openSenseMapBloc),
-      text: isAuthenticated
+        text: isAuthenticated
           ? AppLocalizations.of(context)!.generalLogout
-          : AppLocalizations.of(context)!.generalLogin,
+          : AppLocalizations.of(context)!.generalLoginOrRegister,
       width: 1,
     );
   }
@@ -527,6 +527,12 @@ class SettingsScreen extends StatelessWidget {
       children: [
         _buildSectionHeader(
             context, AppLocalizations.of(context)!.settingsContact),
+        _buildUrlTile(
+          context,
+          icon: Icons.menu_book,
+          title: AppLocalizations.of(context)!.settingsKnowledgeBase,
+          url: knowledgeBaseUrl,
+        ),
         _buildUrlTile(
           context,
           icon: Icons.contact_mail,

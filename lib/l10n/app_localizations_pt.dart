@@ -9,6 +9,17 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get settingsKnowledgeBase => 'Base de conhecimento';
+
+  @override
+  String get uploadBlockNotAuthenticated =>
+      'O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o openSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, faça login ou registre uma conta na página de Configurações.';
+
+  @override
+  String get uploadBlockNoBox =>
+      'O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o openSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, selecione ou crie uma senseBox na página inicial.';
+
+  @override
   String get createBoxAddCustomTag =>
       'Adicionar etiqueta de grupo personalizada';
 
@@ -89,6 +100,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get generalLogin => 'Entrar';
+
+  @override
+  String get generalLoginOrRegister => 'Entrar ou Registrar-se';
 
   @override
   String get generalLogout => 'Sair';
@@ -516,6 +530,10 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get errorUploadFailed =>
       'Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.';
+
+  @override
+  String get errorDirectUploadFailed =>
+      'O upload em tempo real falhou devido a problemas de conectividade. Não se preocupe – seus dados foram salvos localmente. Após parar a gravação, você pode enviar o trajeto manualmente na tela de visão geral dos trajetos.';
 
   @override
   String get errorPermanentAuthentication =>

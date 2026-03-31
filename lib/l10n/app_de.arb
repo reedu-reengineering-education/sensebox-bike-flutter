@@ -1,4 +1,7 @@
 {
+    "settingsKnowledgeBase": "Hilfe",
+    "uploadBlockNotAuthenticated": "Die aktuelle Fahrt wurde nicht automatisch hochgeladen. Du kannst sie trotzdem über die Track-Übersicht auf openSenseMap hochladen.\n\nUm deine Fahrt hochzuladen, melde dich bitte an oder registriere ein Konto auf der Einstellungsseite.",
+    "uploadBlockNoBox": "Die aktuelle Fahrt wurde nicht automatisch hochgeladen. Du kannst sie trotzdem über die Track-Übersicht auf openSenseMap hochladen.\n\nUm deine Fahrt hochzuladen, wähle oder erstelle bitte eine senseBox auf der Startseite.",
     "createBoxAddCustomTag": "Eigene Gruppentags hinzufügen",
     "createBoxCustomTag": "Eigener Gruppentag",
     "createBoxCustomTagHelper": "Du kannst Tags mit Kommas trennen",
@@ -59,6 +62,7 @@
     },
     "generalExport": "Exportieren",
     "generalLogin": "Anmelden",
+        "generalLoginOrRegister": "Anmelden oder Registrieren",
     "generalLogout": "Abmelden",
     "generalRegister": "Registrieren",
     "generalProceed": "Fortfahren",
@@ -201,6 +205,7 @@
     "errorReasonPrefix": "Grund:",
     "errorBleConnectionFailed": "Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.",
     "errorUploadFailed": "Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+    "errorDirectUploadFailed": "Der Echtzeit-Upload konnte aufgrund von Verbindungsproblemen nicht durchgeführt werden. Keine Sorge – deine Daten wurden lokal gespeichert. Nach Beenden der Aufzeichnung kannst du den Track in der Trackübersicht manuell hochladen.",
     "errorPermanentAuthentication": "Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich an, um Daten hochzuladen.",
     "selectCsvFormat": "CSV-Format auswählen",
     "regularCsv": "Standard CSV",
@@ -279,5 +284,13 @@
     "errorTrackNoGeolocations": "Track hat keine Geolokationsdaten und kann nicht hochgeladen werden.",
     "openSenseMapInfoText": "Deine senseBox:bike-Daten werden auf openSenseMap geteilt und tragen zur Bürgerwissenschaft und Umweltüberwachung bei.",
     "openSenseMapInfoLink": "Besuche openSenseMap.org",
-    "loginForgotPasswordInfo": "Wenn du dein Passwort vergessen hast, gehe bitte zu openSenseMap, klicke auf \"Anmelden\" und \"Vergessen?\"."
+    "loginForgotPasswordInfo": "Wenn du dein Passwort vergessen hast, gehe bitte zu openSenseMap, klicke auf \"Anmelden\" und \"Vergessen?\".",
+    "trackStatusUploadFailedAt": "Upload fehlgeschlagen am {date}",
+    "@trackStatusUploadFailedAt": {
+        "placeholders": {
+            "date": {
+                "type": "Object"
+            }
+        }
+    }
 }

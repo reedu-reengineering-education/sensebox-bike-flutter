@@ -15,7 +15,7 @@ import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection_modal.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/ui/widgets/common/error_banner.dart';
+import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 
 // HomeScreen now delegates sections to smaller widgets
@@ -125,8 +125,9 @@ class _ConnectionErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ErrorBanner(
-      errorText: AppLocalizations.of(context)!.errorBleConnectionFailed,
+    return InfoBanner(
+      text: AppLocalizations.of(context)!.errorBleConnectionFailed,
+      color: Theme.of(context).colorScheme.info,
       onDismiss: () => bleBloc.resetConnectionError(),
     );
   }

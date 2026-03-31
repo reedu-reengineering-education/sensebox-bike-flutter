@@ -9,6 +9,7 @@ class InfoBanner extends StatelessWidget {
   final EdgeInsetsGeometry? outerPadding;
   final String? url;
   final double? horizontalPadding;
+  final VoidCallback? onDismiss;
 
   const InfoBanner({
     super.key,
@@ -17,6 +18,7 @@ class InfoBanner extends StatelessWidget {
     this.outerPadding,
     this.url,
     this.horizontalPadding,
+    this.onDismiss,
   });
 
   Future<void> _openUrl(BuildContext context) async {
@@ -51,7 +53,7 @@ class InfoBanner extends StatelessWidget {
       );
     }
 
-    final content = Row(
+    final textRow = Row(
       children: [
         Icon(
           Icons.info_outline,
@@ -77,6 +79,18 @@ class InfoBanner extends StatelessWidget {
       ],
     );
 
+    final closeButton = onDismiss != null
+        ? IconButton(
+            onPressed: onDismiss,
+            icon: Icon(Icons.close, color: color, size: iconSizeLarge),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 40,
+              minHeight: 40,
+            ),
+          )
+        : null;
+
     final container = Container(
       width: double.infinity,
       padding: const EdgeInsets.all(spacing),
@@ -89,17 +103,31 @@ class InfoBanner extends StatelessWidget {
         ),
       ),
       child: hasUrl
-          ? Ink(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(borderRadiusSmall),
-              ),
-              child: InkWell(
-                onTap: () => _openUrl(context),
-                borderRadius: BorderRadius.circular(borderRadiusSmall),
-                child: content,
-              ),
+          ? Row(
+              children: [
+                Expanded(
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(borderRadiusSmall),
+                    ),
+                    child: InkWell(
+                      onTap: () => _openUrl(context),
+                      borderRadius: BorderRadius.circular(borderRadiusSmall),
+                      child: textRow,
+                    ),
+                  ),
+                ),
+                if (closeButton != null) closeButton,
+              ],
             )
-          : content,
+          : (onDismiss != null
+              ? Row(
+                  children: [
+                    Expanded(child: textRow),
+                    closeButton!,
+                  ],
+                )
+              : textRow),
     );
 
     return Padding(

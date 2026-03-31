@@ -64,4 +64,30 @@ void main() {
     await tester.tap(inkWell);
     await tester.pump();
   });
+
+  testWidgets('InfoBanner with onDismiss shows close icon and triggers callback',
+      (WidgetTester tester) async {
+    const testText = 'Hint message';
+    bool dismissed = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: InfoBanner(
+            text: testText,
+            onDismiss: () {
+              dismissed = true;
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byIcon(Icons.close), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pump();
+
+    expect(dismissed, isTrue);
+  });
 }

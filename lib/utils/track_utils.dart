@@ -229,7 +229,8 @@ class UploadDataPreparer {
         if (sensorTitle == 'surface_classification' ||
             sensorTitle == 'finedust' ||
             sensorTitle == 'overtaking' ||
-            sensorTitle == 'surface_anomaly') {
+            sensorTitle == 'surface_anomaly' ||
+            sensorTitle == 'acceleration') {
           // For multi-value sensors, we need to find all the individual sensors
           List<Sensor> individualSensors = [];
           List<double> orderedValues = aggregatedValues;
@@ -264,6 +265,11 @@ class UploadDataPreparer {
             individualSensors = senseBox.sensors!
                 .where(
                     (s) => s.title!.toLowerCase().contains('surface anomaly'))
+                .toList();
+          } else if (sensorTitle == 'acceleration') {
+            // Find Acceleration X/Y/Z sensors (classic box)
+            individualSensors = senseBox.sensors!
+                .where((s) => s.title == 'Acceleration X' || s.title == 'Acceleration Y' || s.title == 'Acceleration Z')
                 .toList();
           }
 
