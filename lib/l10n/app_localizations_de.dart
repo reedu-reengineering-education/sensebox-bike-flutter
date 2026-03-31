@@ -306,6 +306,17 @@ class AppLocalizationsDe extends AppLocalizations {
       '• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen';
 
   @override
+  String get settingsApiUrl => 'API-URL';
+
+  @override
+  String get settingsApiUrlHelper =>
+      'Geben Sie den API-Endpunkt für Daten-Uploads ein';
+
+  @override
+  String get settingsApiUrlError =>
+      'Bitte geben Sie eine gültige URL ein (z.B. https://api.opensensemap.org)';
+
+  @override
   String get settingsAbout => 'Über die App';
 
   @override
