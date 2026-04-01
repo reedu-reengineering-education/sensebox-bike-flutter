@@ -14,9 +14,21 @@ class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 
 class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {
   @override
-  Future<void> uploadData(String senseBoxId, Map<String, dynamic> data) async {
+  Future<void> uploadData(
+    String senseBoxId,
+    Map<String, dynamic> data, {
+    bool? useBoxAuth,
+    String? boxAccessToken,
+  }) async {
     return super.noSuchMethod(
-      Invocation.method(#uploadData, [senseBoxId, data]),
+      Invocation.method(
+        #uploadData,
+        [senseBoxId, data],
+        {
+          #useBoxAuth: useBoxAuth,
+          #boxAccessToken: boxAccessToken,
+        },
+      ),
     );
   }
 }
@@ -68,14 +80,22 @@ void main() {
 
     void setupMockToThrow(dynamic error) {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
-      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
-          .thenThrow(error);
+      when(() => mockOpenSenseMapBloc.uploadData(
+            any(),
+            any(),
+            useBoxAuth: any(named: 'useBoxAuth'),
+            boxAccessToken: any(named: 'boxAccessToken'),
+          )).thenThrow(error);
     }
 
     void setupMockToSucceed() {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
-      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
-          .thenAnswer((_) async {});
+      when(() => mockOpenSenseMapBloc.uploadData(
+            any(),
+            any(),
+            useBoxAuth: any(named: 'useBoxAuth'),
+            boxAccessToken: any(named: 'boxAccessToken'),
+          )).thenAnswer((_) async {});
     }
 
     void disableAutoUpload() {
