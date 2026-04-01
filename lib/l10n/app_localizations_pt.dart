@@ -686,7 +686,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String trackStatusUploadFailedAt(Object date) {
-    return 'Falha no envio em $date';
+    return 'Envio falhou em $date';
   }
 
   @override
