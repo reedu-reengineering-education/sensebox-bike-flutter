@@ -11,6 +11,7 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/utils/opensensemap_utils.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 
 enum SenseBoxBikeModel { classic, atrai }
 
@@ -573,12 +574,16 @@ class OpenSenseMapService {
   }
 
   Future<void> uploadData(
-    String senseBoxId,
-    Map<String, dynamic> sensorData, {
-    String? boxAccessToken,
-  }) async {
+    SenseBox senseBox,
+    Map<String, dynamic> sensorData,
+  ) async {
+    final senseBoxId = senseBox.id?.toString();
+    if (senseBoxId == null || senseBoxId.isEmpty) {
+      throw Exception('SenseBox id is missing');
+    }
+
     List<dynamic> data = sensorData.values.toList();
-    String? activeBoxAccessToken = boxAccessToken;
+    String? activeBoxAccessToken = senseBox.accessToken;
 
     // Check if currently rate limited
     if (_isRateLimited) {

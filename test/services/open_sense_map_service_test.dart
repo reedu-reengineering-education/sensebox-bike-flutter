@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -64,6 +65,12 @@ void main() {
       prefs.setString('refreshToken', accessToken),
       prefs.setString('accessToken', expiredToken)
     ]);
+  }
+
+  SenseBox testSenseBox({String? accessTokenOverride}) {
+    return SenseBox()
+      ..sId = 'sensebox123'
+      ..accessToken = accessTokenOverride;
   }
 
   group('Authentication', () {
@@ -296,7 +303,7 @@ void main() {
         mockHTTPPOSTResponse('{"success": true}', 201);
 
         await expectLater(
-            service.uploadData('sensebox123', {"sensor1": "value1"}),
+            service.uploadData(testSenseBox(), {"sensor1": "value1"}),
             completes);
       });
 
@@ -313,7 +320,7 @@ void main() {
             )).thenAnswer((_) async => http.Response('Bad Request', 400));
 
         await expectLater(
-            service.uploadData('sensebox123', {"sensor1": "value1"}),
+            service.uploadData(testSenseBox(), {"sensor1": "value1"}),
             throwsException);
       });
 
@@ -327,7 +334,7 @@ void main() {
 
         await expectLater(
           service.uploadData(
-            'sensebox123',
+            testSenseBox(),
             {"sensor1": "value1"},
           ),
           completes,
@@ -346,7 +353,7 @@ void main() {
 
         await expectLater(
           service.uploadData(
-            'sensebox123',
+            testSenseBox(),
             {"sensor1": "value1"},
           ),
           completes,
@@ -388,9 +395,8 @@ void main() {
 
         await expectLater(
           service.uploadData(
-            'sensebox123',
+            testSenseBox(accessTokenOverride: 'stale-token'),
             {"sensor1": "value1"},
-            boxAccessToken: 'stale-token',
           ),
           completes,
         );

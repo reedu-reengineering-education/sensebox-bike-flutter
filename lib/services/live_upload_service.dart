@@ -171,9 +171,8 @@ class LiveUploadService {
   Future<void> uploadDataToOpenSenseMap(Map<String, dynamic> data) async {
     try {
       await openSenseMapService.uploadData(
-        senseBox.id,
+        senseBox,
         data,
-        boxAccessToken: senseBox.accessToken,
       );
     } catch (error, stack) {
       ErrorService.handleError(error, stack, sendToSentry: false);

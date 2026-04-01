@@ -227,9 +227,8 @@ class ChunkedUploader {
       try {
         debugPrint('length: ${uploadData.keys.length.toString()}');
         await _openSenseMapService.uploadData(
-          senseBox.id,
+          senseBox,
           uploadData,
-          boxAccessToken: senseBox.accessToken,
         );
       } catch (e, stackTrace) {
         _logError('Upload API failed',

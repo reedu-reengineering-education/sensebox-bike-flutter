@@ -405,20 +405,12 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<void> uploadData(
-    String senseBoxId,
-    Map<String, dynamic> data, {
-    String? boxAccessToken,
-  }) async {
+    SenseBox senseBox,
+    Map<String, dynamic> data,
+  ) async {
     try {
-      final selectedBoxForUpload =
-          (_selectedSenseBox?.id == senseBoxId) ? _selectedSenseBox : null;
-
       // Let the service handle all authentication logic including token refresh
-      await _service.uploadData(
-        senseBoxId,
-        data,
-        boxAccessToken: boxAccessToken ?? selectedBoxForUpload?.accessToken,
-      );
+      await _service.uploadData(senseBox, data);
 
       // If we get here, upload was successful and we're authenticated
       _isAuthenticated = true;

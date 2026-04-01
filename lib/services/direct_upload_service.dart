@@ -171,9 +171,8 @@ class DirectUploadService {
       }
 
       await openSenseMapBloc.uploadData(
-        senseBox.id,
+        senseBox,
         uploadData,
-        boxAccessToken: senseBox.accessToken,
       );
       _handleSuccessfulUpload(queueSnapshot);
       _mergeDuplicateBatchesInQueue();
@@ -273,9 +272,8 @@ class DirectUploadService {
       }
 
       await openSenseMapBloc.uploadData(
-        senseBox.id,
+        senseBox,
         data,
-        boxAccessToken: senseBox.accessToken,
       );
     } finally {
       _isUploading = false;
