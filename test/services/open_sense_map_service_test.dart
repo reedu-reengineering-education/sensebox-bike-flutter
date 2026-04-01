@@ -353,7 +353,7 @@ void main() {
         );
       });
 
-      test('prefers fresh server box token over stale cached token', () async {
+      test('refreshes box token after stale token gets 401', () async {
         await setValidTokens();
 
         when(() => mockHttpClient.get(
@@ -369,6 +369,14 @@ void main() {
               headers: any(named: 'headers'),
               body: any(named: 'body'),
             )).thenAnswer((invocation) async {
+          final uri = invocation.positionalArguments[0] as Uri;
+          if (uri.path.endsWith('/users/refresh-auth')) {
+            return http.Response(
+              '{"token": "$accessToken", "refreshToken": "$accessToken"}',
+              200,
+            );
+          }
+
           final headers =
               invocation.namedArguments[#headers] as Map<String, String>;
           final authHeader = headers['Authorization'];

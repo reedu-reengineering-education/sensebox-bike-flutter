@@ -55,8 +55,9 @@ class OpenSenseMapService {
   }
 
   String get _baseUrl {
-    if (_settingsBloc != null) {
-      return _settingsBloc.apiUrl;
+    final settingsBloc = _settingsBloc;
+    if (settingsBloc != null) {
+      return settingsBloc.apiUrl;
     }
     return openSenseMapUrl;
   }
@@ -477,7 +478,7 @@ class OpenSenseMapService {
     );
   }
 
-  Future<Map<String, dynamic>> getUserBox(String boxId) async {
+  Future<Map<String, dynamic>> _getUserBox(String boxId) async {
     return _makeAuthenticatedRequest<Map<String, dynamic>>(
       requestFn: (accessToken) => client.get(
         Uri.parse('$_baseUrl/users/me/boxes/$boxId'),
@@ -505,14 +506,71 @@ class OpenSenseMapService {
     );
   }
 
-  Future<String?> _refreshAndGetBoxAccessToken(String senseBoxId) async {
-    // Ensure user session is fresh before requesting box token data.
-    await getAccessToken();
-    final box = await getUserBox(senseBoxId);
-    return (box['access_token'] ?? box['accessToken'] ?? box['token'])
-        ?.toString();
+  Future<String?> _getBoxAccessToken(String senseBoxId) async {
+    final box = await _getUserBox(senseBoxId);
+    return box['access_token']?.toString();
   }
 
+  Future<String> _refreshUploadAuthorization(String senseBoxId) async {
+    try {
+      await refreshToken();
+      final refreshedBoxToken = await _getBoxAccessToken(senseBoxId);
+      if (refreshedBoxToken == null || refreshedBoxToken.isEmpty) {
+        throw Exception('No refreshed box token available');
+      }
+      return refreshedBoxToken;
+    } catch (e) {
+      _isPermanentlyDisabled = true;
+      debugPrint(
+          '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
+      throw Exception('Authentication failed - user needs to re-login');
+    }
+  }
+
+  Future<void> _attemptUploadOnce({
+    required String senseBoxId,
+    required List<dynamic> data,
+    required String tokenForRequest,
+  }) async {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Authorization': tokenForRequest,
+    };
+
+    final response = await client
+        .post(
+          Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
+          body: jsonEncode(data),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: defaultTimeout));
+
+    if (response.statusCode == 201) {
+      return;
+    }
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      final refreshedToken = await _refreshUploadAuthorization(senseBoxId);
+      throw RetryException('Box token refreshed, retrying', refreshedToken);
+    }
+
+    if (response.statusCode == 429) {
+      final retryAfter = response.headers['retry-after'];
+      final waitTime = retryAfter != null
+          ? int.tryParse(retryAfter) ?? defaultTimeout
+          : defaultTimeout * 2;
+
+      _isRateLimited = true;
+      _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
+      throw TooManyRequestsException(waitTime);
+    }
+
+    if (response.statusCode >= 500) {
+      throw RetryException('Server error ${response.statusCode}', null);
+    }
+
+    throw Exception('Client error ${response.statusCode}: ${response.body}');
+  }
 
   Future<void> uploadData(
     String senseBoxId,
@@ -520,6 +578,7 @@ class OpenSenseMapService {
     String? boxAccessToken,
   }) async {
     List<dynamic> data = sensorData.values.toList();
+    String? activeBoxAccessToken = boxAccessToken;
 
     // Check if currently rate limited
     if (_isRateLimited) {
@@ -540,109 +599,48 @@ class OpenSenseMapService {
       maxDelay: const Duration(seconds: 15),
     );
 
-    await r.retry(
-      () async {
-        String? activeBoxAccessToken = boxAccessToken;
-        // Always prefer a fresh token from API, because locally cached box
-        // tokens can be stale after server-side rotation.
-        final refreshedToken = await _refreshAndGetBoxAccessToken(senseBoxId);
-        if (refreshedToken != null && refreshedToken.isNotEmpty) {
-          activeBoxAccessToken = refreshedToken;
-          boxAccessToken = refreshedToken;
-        }
-
-        if (activeBoxAccessToken == null || activeBoxAccessToken.isEmpty) {
-          throw Exception('Box authentication token not found');
-        }
-
-        final headers = <String, String>{
-          'Content-Type': 'application/json',
-        };
-        // openSenseMap expects the raw box access token in Authorization header
-        // (not "Bearer <token>") for measurement uploads with box auth.
-        headers['Authorization'] = activeBoxAccessToken;
-
-        final response = await client.post(
-          Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
-          body: jsonEncode(data),
-          headers: headers,
-        ).timeout(const Duration(seconds: defaultTimeout));
-        
-        if (response.statusCode == 201) {
-          debugPrint(
-              '[OpenSenseMapService] Data uploaded successfully at ${DateTime.now()}');
-          return;
-        } else if (response.statusCode == 401 || response.statusCode == 403) {
-          ErrorService.handleError(
-              'Client error ${response.statusCode}: ${response.body}',
-              StackTrace.current,
-              sendToSentry: true);
-
+    try {
+      await r.retry(
+        () async {
           try {
-            await refreshToken();
-            final refreshedBoxToken =
-                await _refreshAndGetBoxAccessToken(senseBoxId);
-            if (refreshedBoxToken == null || refreshedBoxToken.isEmpty) {
-              throw Exception('No refreshed box token available');
+            if (activeBoxAccessToken?.isEmpty != false) {
+              activeBoxAccessToken = await _getBoxAccessToken(senseBoxId);
+              if (activeBoxAccessToken?.isEmpty != false) {
+                throw Exception('Box authentication token not found');
+              }
             }
-            boxAccessToken = refreshedBoxToken;
-            throw Exception('Box token refreshed, retrying');
-          } catch (e) {
-            _isPermanentlyDisabled = true;
-            debugPrint(
-                '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
-            throw Exception('Authentication failed - user needs to re-login');
+            await _attemptUploadOnce(
+                senseBoxId: senseBoxId,
+                data: data,
+                tokenForRequest: activeBoxAccessToken!);
+          } on RetryException catch (e) {
+            if (e.data is String && (e.data as String).isNotEmpty) {
+              activeBoxAccessToken = e.data as String;
+            }
+            rethrow;
           }
-        } else if (response.statusCode == 429) {
-          ErrorService.handleError(
-              'Client error ${response.statusCode}: ${response.body}',
-              StackTrace.current,
-              sendToSentry: true);
-          final retryAfter = response.headers['retry-after'];
-          final waitTime = retryAfter != null
-              ? int.tryParse(retryAfter) ?? defaultTimeout
-              : defaultTimeout * 2;
-
-          // Set rate limiting state
-          _isRateLimited = true;
-          _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
-
-          throw TooManyRequestsException(waitTime);
-        } else {
-          // All other errors (4xx and 5xx)
-          if (response.statusCode >= 500) {
-            // 5xx server errors - retry these
-            ErrorService.handleError(
-                'Server error ${response.statusCode}: ${response.body}',
-                StackTrace.current,
-                sendToSentry: true);
-            throw Exception('Server error ${response.statusCode} - retrying');
-          } else {
-            // 4xx client errors - don't retry these
-            ErrorService.handleError(
-                'Client error ${response.statusCode}: ${response.body}',
-                StackTrace.current,
-                sendToSentry: true);
-            throw Exception(
-                'Client error ${response.statusCode}: ${response.body}');
+        },
+        retryIf: (e) {
+          return e is TooManyRequestsException ||
+              e is RetryException ||
+              e is SocketException ||
+              e is HttpException ||
+              e is TimeoutException;
+        },
+        onRetry: (e) async {
+          if (e is TooManyRequestsException) {
+            await Future.delayed(Duration(seconds: e.retryAfter));
           }
-        }
-      },
-      retryIf: (e) {
-        final errorString = e.toString();
-        return e is TooManyRequestsException ||
-            errorString.contains('Server error') ||
-            errorString.contains('Box token refreshed, retrying') ||
-            e is SocketException || // Network connectivity issues
-            e is HttpException || // HTTP protocol errors
-            e is TimeoutException;
-      },
-      onRetry: (e) async {
-        if (e is TooManyRequestsException) {
-          await Future.delayed(Duration(seconds: e.retryAfter));
-        }
-      },
-    );
+        },
+      );
+    } catch (e, stackTrace) {
+      ErrorService.handleError(
+        'Upload failed after retries for box $senseBoxId: $e',
+        stackTrace,
+        sendToSentry: true,
+      );
+      rethrow;
+    }
   }
 
 }
