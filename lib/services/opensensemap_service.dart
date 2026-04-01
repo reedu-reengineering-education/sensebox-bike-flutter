@@ -25,6 +25,16 @@ class RetryException implements Exception {
   String toString() => message;
 }
 
+class UploadRetryException implements Exception {
+  final String message;
+  final String? refreshedBoxToken;
+
+  UploadRetryException(this.message, {this.refreshedBoxToken});
+
+  @override
+  String toString() => message;
+}
+
 class OpenSenseMapService {
   final http.Client client;
   final Future<SharedPreferences> _prefs;
@@ -512,6 +522,17 @@ class OpenSenseMapService {
     return box['access_token']?.toString();
   }
 
+  Future<String> _requireBoxToken(String senseBoxId, String? currentToken) async {
+    if (currentToken?.isNotEmpty == true) {
+      return currentToken!;
+    }
+    final fetchedToken = await _getBoxAccessToken(senseBoxId);
+    if (fetchedToken == null || fetchedToken.isEmpty) {
+      throw Exception('Box authentication token not found');
+    }
+    return fetchedToken;
+  }
+
   Future<String> _refreshUploadAuthorization(String senseBoxId) async {
     try {
       await refreshToken();
@@ -526,6 +547,27 @@ class OpenSenseMapService {
           '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
       throw Exception('Authentication failed - user needs to re-login');
     }
+  }
+
+  void _throwIfRateLimited() {
+    if (_isRateLimited) {
+      final remaining = _rateLimitUntil?.difference(DateTime.now());
+      if (remaining != null && !remaining.isNegative) {
+        throw TooManyRequestsException(remaining.inSeconds);
+      }
+      _isRateLimited = false;
+      _rateLimitUntil = null;
+    }
+  }
+
+  void _updateRateLimitFromResponse(http.Response response) {
+    final retryAfter = response.headers['retry-after'];
+    final waitTime = retryAfter != null
+        ? int.tryParse(retryAfter) ?? defaultTimeout
+        : defaultTimeout * 2;
+    _isRateLimited = true;
+    _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
+    throw TooManyRequestsException(waitTime);
   }
 
   Future<void> _attemptUploadOnce({
@@ -552,22 +594,18 @@ class OpenSenseMapService {
 
     if (response.statusCode == 401 || response.statusCode == 403) {
       final refreshedToken = await _refreshUploadAuthorization(senseBoxId);
-      throw RetryException('Box token refreshed, retrying', refreshedToken);
+      throw UploadRetryException(
+        'Box token refreshed, retrying',
+        refreshedBoxToken: refreshedToken,
+      );
     }
 
     if (response.statusCode == 429) {
-      final retryAfter = response.headers['retry-after'];
-      final waitTime = retryAfter != null
-          ? int.tryParse(retryAfter) ?? defaultTimeout
-          : defaultTimeout * 2;
-
-      _isRateLimited = true;
-      _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
-      throw TooManyRequestsException(waitTime);
+      _updateRateLimitFromResponse(response);
     }
 
     if (response.statusCode >= 500) {
-      throw RetryException('Server error ${response.statusCode}', null);
+      throw UploadRetryException('Server error ${response.statusCode}');
     }
 
     throw Exception('Client error ${response.statusCode}: ${response.body}');
@@ -585,17 +623,7 @@ class OpenSenseMapService {
     List<dynamic> data = sensorData.values.toList();
     String? activeBoxAccessToken = senseBox.accessToken;
 
-    // Check if currently rate limited
-    if (_isRateLimited) {
-      final remaining = _rateLimitUntil?.difference(DateTime.now());
-      if (remaining != null && !remaining.isNegative) {
-        throw TooManyRequestsException(remaining.inSeconds);
-      } else {
-        // Rate limit expired, reset state
-        _isRateLimited = false;
-        _rateLimitUntil = null;
-      }
-    }
+    _throwIfRateLimited();
 
     // API allows up to 6 requests per minute, so set maxAttempts and delays accordingly
     final r = RetryOptions(
@@ -608,26 +636,22 @@ class OpenSenseMapService {
       await r.retry(
         () async {
           try {
-            if (activeBoxAccessToken?.isEmpty != false) {
-              activeBoxAccessToken = await _getBoxAccessToken(senseBoxId);
-              if (activeBoxAccessToken?.isEmpty != false) {
-                throw Exception('Box authentication token not found');
-              }
-            }
+            activeBoxAccessToken =
+                await _requireBoxToken(senseBoxId, activeBoxAccessToken);
             await _attemptUploadOnce(
                 senseBoxId: senseBoxId,
                 data: data,
                 tokenForRequest: activeBoxAccessToken!);
-          } on RetryException catch (e) {
-            if (e.data is String && (e.data as String).isNotEmpty) {
-              activeBoxAccessToken = e.data as String;
+          } on UploadRetryException catch (e) {
+            if (e.refreshedBoxToken?.isNotEmpty == true) {
+              activeBoxAccessToken = e.refreshedBoxToken;
             }
             rethrow;
           }
         },
         retryIf: (e) {
           return e is TooManyRequestsException ||
-              e is RetryException ||
+              e is UploadRetryException ||
               e is SocketException ||
               e is HttpException ||
               e is TimeoutException;
