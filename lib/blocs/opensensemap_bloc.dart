@@ -407,7 +407,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   Future<void> uploadData(
     String senseBoxId,
     Map<String, dynamic> data, {
-    bool? useBoxAuth,
     String? boxAccessToken,
   }) async {
     try {
@@ -418,7 +417,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       await _service.uploadData(
         senseBoxId,
         data,
-        useBoxAuth: useBoxAuth ?? selectedBoxForUpload?.useAuth == true,
         boxAccessToken: boxAccessToken ?? selectedBoxForUpload?.accessToken,
       );
 

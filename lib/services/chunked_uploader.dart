@@ -229,7 +229,6 @@ class ChunkedUploader {
         await _openSenseMapService.uploadData(
           senseBox.id,
           uploadData,
-          useBoxAuth: senseBox.useAuth == true,
           boxAccessToken: senseBox.accessToken,
         );
       } catch (e, stackTrace) {

@@ -173,7 +173,6 @@ class LiveUploadService {
       await openSenseMapService.uploadData(
         senseBox.id,
         data,
-        useBoxAuth: senseBox.useAuth == true,
         boxAccessToken: senseBox.accessToken,
       );
     } catch (error, stack) {

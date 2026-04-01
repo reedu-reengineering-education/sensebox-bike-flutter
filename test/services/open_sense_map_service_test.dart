@@ -289,6 +289,10 @@ void main() {
     group('uploadData()', () {
       test('uploads sensor data successfully', () async {
         await setValidTokens();
+        mockHTTPGETResponse(
+          '{"data": {"box": {"_id": "sensebox123", "useAuth": true, "access_token": "box-token-123"}}}',
+          200,
+        );
         mockHTTPPOSTResponse('{"success": true}', 201);
 
         await expectLater(
@@ -298,6 +302,10 @@ void main() {
 
       test('throws exception on error', () async {
         await setValidTokens();
+        mockHTTPGETResponse(
+          '{"data": {"box": {"_id": "sensebox123", "useAuth": true, "access_token": "box-token-123"}}}',
+          200,
+        );
         when(() => mockHttpClient.post(
               any(),
               headers: any(named: 'headers'),
@@ -321,7 +329,6 @@ void main() {
           service.uploadData(
             'sensebox123',
             {"sensor1": "value1"},
-            useBoxAuth: true,
           ),
           completes,
         );
@@ -341,7 +348,6 @@ void main() {
           service.uploadData(
             'sensebox123',
             {"sensor1": "value1"},
-            useBoxAuth: true,
           ),
           completes,
         );
@@ -376,7 +382,6 @@ void main() {
           service.uploadData(
             'sensebox123',
             {"sensor1": "value1"},
-            useBoxAuth: true,
             boxAccessToken: 'stale-token',
           ),
           completes,

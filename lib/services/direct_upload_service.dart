@@ -173,7 +173,6 @@ class DirectUploadService {
       await openSenseMapBloc.uploadData(
         senseBox.id,
         uploadData,
-        useBoxAuth: senseBox.useAuth == true,
         boxAccessToken: senseBox.accessToken,
       );
       _handleSuccessfulUpload(queueSnapshot);
@@ -276,7 +275,6 @@ class DirectUploadService {
       await openSenseMapBloc.uploadData(
         senseBox.id,
         data,
-        useBoxAuth: senseBox.useAuth == true,
         boxAccessToken: senseBox.accessToken,
       );
     } finally {

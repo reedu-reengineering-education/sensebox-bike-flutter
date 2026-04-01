@@ -517,7 +517,6 @@ class OpenSenseMapService {
   Future<void> uploadData(
     String senseBoxId,
     Map<String, dynamic> sensorData, {
-    bool useBoxAuth = false,
     String? boxAccessToken,
   }) async {
     List<dynamic> data = sensorData.values.toList();
@@ -544,29 +543,24 @@ class OpenSenseMapService {
     await r.retry(
       () async {
         String? activeBoxAccessToken = boxAccessToken;
-        if (useBoxAuth) {
-          // Always prefer a fresh token from API, because locally cached box
-          // tokens can be stale after server-side rotation.
-          final refreshedToken = await _refreshAndGetBoxAccessToken(senseBoxId);
-          if (refreshedToken != null && refreshedToken.isNotEmpty) {
-            activeBoxAccessToken = refreshedToken;
-            boxAccessToken = refreshedToken;
-          }
+        // Always prefer a fresh token from API, because locally cached box
+        // tokens can be stale after server-side rotation.
+        final refreshedToken = await _refreshAndGetBoxAccessToken(senseBoxId);
+        if (refreshedToken != null && refreshedToken.isNotEmpty) {
+          activeBoxAccessToken = refreshedToken;
+          boxAccessToken = refreshedToken;
         }
 
-        if (useBoxAuth &&
-            (activeBoxAccessToken == null || activeBoxAccessToken.isEmpty)) {
-          throw Exception('Box authentication is enabled but no box token found');
+        if (activeBoxAccessToken == null || activeBoxAccessToken.isEmpty) {
+          throw Exception('Box authentication token not found');
         }
 
         final headers = <String, String>{
           'Content-Type': 'application/json',
         };
-        if (useBoxAuth) {
-          // openSenseMap expects the raw box access token in Authorization header
-          // (not "Bearer <token>") for measurement uploads with box auth.
-          headers['Authorization'] = activeBoxAccessToken!;
-        }
+        // openSenseMap expects the raw box access token in Authorization header
+        // (not "Bearer <token>") for measurement uploads with box auth.
+        headers['Authorization'] = activeBoxAccessToken;
 
         final response = await client.post(
           Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
@@ -584,25 +578,20 @@ class OpenSenseMapService {
               StackTrace.current,
               sendToSentry: true);
 
-          if (useBoxAuth) {
-            try {
-              await refreshToken();
-              final refreshedBoxToken =
-                  await _refreshAndGetBoxAccessToken(senseBoxId);
-              if (refreshedBoxToken == null || refreshedBoxToken.isEmpty) {
-                throw Exception('No refreshed box token available');
-              }
-              boxAccessToken = refreshedBoxToken;
-              throw Exception('Box token refreshed, retrying');
-            } catch (e) {
-              _isPermanentlyDisabled = true;
-              debugPrint(
-                  '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
-              throw Exception('Authentication failed - user needs to re-login');
+          try {
+            await refreshToken();
+            final refreshedBoxToken =
+                await _refreshAndGetBoxAccessToken(senseBoxId);
+            if (refreshedBoxToken == null || refreshedBoxToken.isEmpty) {
+              throw Exception('No refreshed box token available');
             }
-          } else {
-            throw Exception(
-                'Upload unauthorized without box auth: ${response.statusCode}');
+            boxAccessToken = refreshedBoxToken;
+            throw Exception('Box token refreshed, retrying');
+          } catch (e) {
+            _isPermanentlyDisabled = true;
+            debugPrint(
+                '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
+            throw Exception('Authentication failed - user needs to re-login');
           }
         } else if (response.statusCode == 429) {
           ErrorService.handleError(

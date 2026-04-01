@@ -17,7 +17,6 @@ class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {
   Future<void> uploadData(
     String senseBoxId,
     Map<String, dynamic> data, {
-    bool? useBoxAuth,
     String? boxAccessToken,
   }) async {
     return super.noSuchMethod(
@@ -25,7 +24,6 @@ class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {
         #uploadData,
         [senseBoxId, data],
         {
-          #useBoxAuth: useBoxAuth,
           #boxAccessToken: boxAccessToken,
         },
       ),
@@ -83,7 +81,6 @@ void main() {
       when(() => mockOpenSenseMapBloc.uploadData(
             any(),
             any(),
-            useBoxAuth: any(named: 'useBoxAuth'),
             boxAccessToken: any(named: 'boxAccessToken'),
           )).thenThrow(error);
     }
@@ -93,7 +90,6 @@ void main() {
       when(() => mockOpenSenseMapBloc.uploadData(
             any(),
             any(),
-            useBoxAuth: any(named: 'useBoxAuth'),
             boxAccessToken: any(named: 'boxAccessToken'),
           )).thenAnswer((_) async {});
     }
