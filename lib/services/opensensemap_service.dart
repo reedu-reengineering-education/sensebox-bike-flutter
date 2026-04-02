@@ -34,6 +34,13 @@ class ServerErrorException implements Exception {
   String toString() => 'Server error $statusCode';
 }
 
+class AuthException implements Exception {
+  final String? message;
+  AuthException([this.message]);
+  @override
+  String toString() => message ?? 'AuthException';
+}
+
 class OpenSenseMapService {
   final http.Client client;
   final Future<SharedPreferences> _prefs;
@@ -468,6 +475,10 @@ class OpenSenseMapService {
           final data = responseData['data'] as Map<String, dynamic>;
           if (data['box'] is Map<String, dynamic>) {
             return data['box'] as Map<String, dynamic>;
+          }
+          // Some API responses return the box object directly in `data`.
+          if (data.containsKey('_id')) {
+            return data;
           }
         }
         throw Exception('Unexpected user box response format');
