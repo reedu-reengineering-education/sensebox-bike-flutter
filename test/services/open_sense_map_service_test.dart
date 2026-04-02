@@ -324,21 +324,29 @@ void main() {
             throwsException);
       });
 
-      test('loads missing box token and uploads with box auth', () async {
+      test('loads missing box token and uses it as the Authorization header',
+          () async {
         await setValidTokens();
         mockHTTPGETResponse(
           '{"data": {"box": {"_id": "sensebox123", "useAuth": true, "access_token": "box-token-123"}}}',
           200,
         );
-        mockHTTPPOSTResponse('{"success": true}', 201);
 
-        await expectLater(
-          service.uploadData(
-            testSenseBox(),
-            {"sensor1": "value1"},
-          ),
-          completes,
-        );
+        Map<String, String>? capturedHeaders;
+        when(() => mockHttpClient.post(
+              any(),
+              headers: any(named: 'headers'),
+              body: any(named: 'body'),
+            )).thenAnswer((invocation) async {
+          capturedHeaders =
+              invocation.namedArguments[#headers] as Map<String, String>;
+          return http.Response('{"success": true}', 201);
+        });
+
+        await service.uploadData(testSenseBox(), {"sensor1": "value1"});
+
+        // Verify the box token (not the user Bearer token) was used.
+        expect(capturedHeaders?['Authorization'], equals('box-token-123'));
       });
 
       test(

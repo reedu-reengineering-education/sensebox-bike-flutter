@@ -535,29 +535,35 @@ class OpenSenseMapService {
 
   Future<String> _refreshUploadAuthorization(String senseBoxId) async {
     try {
-      await refreshToken();
       final refreshedBoxToken = await _getBoxAccessToken(senseBoxId);
       if (refreshedBoxToken == null || refreshedBoxToken.isEmpty) {
-        throw Exception('No refreshed box token available');
+        _isPermanentlyDisabled = true;
+        debugPrint(
+            '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
+        throw Exception('Authentication failed - user needs to re-login');
       }
       return refreshedBoxToken;
     } catch (e) {
-      _isPermanentlyDisabled = true;
-      debugPrint(
-          '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
-      throw Exception('Authentication failed - user needs to re-login');
+      final errorStr = e.toString();
+      if (errorStr.contains('Not authenticated') ||
+          errorStr.contains('Failed to refresh token') ||
+          errorStr.contains('No refresh token')) {
+        _isPermanentlyDisabled = true;
+        debugPrint(
+            '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
+      }
+      rethrow;
     }
   }
 
   void _throwIfRateLimited() {
-    if (_isRateLimited) {
-      final remaining = _rateLimitUntil?.difference(DateTime.now());
-      if (remaining != null && !remaining.isNegative) {
-        throw TooManyRequestsException(remaining.inSeconds);
-      }
-      _isRateLimited = false;
-      _rateLimitUntil = null;
+    if (!_isRateLimited) return;
+    final remaining = _rateLimitUntil?.difference(DateTime.now());
+    if (remaining != null && !remaining.isNegative) {
+      throw TooManyRequestsException(remaining.inSeconds);
     }
+    _isRateLimited = false;
+    _rateLimitUntil = null;
   }
 
   void _updateRateLimitFromResponse(http.Response response) {
@@ -645,6 +651,7 @@ class OpenSenseMapService {
           } on UploadRetryException catch (e) {
             if (e.refreshedBoxToken?.isNotEmpty == true) {
               activeBoxAccessToken = e.refreshedBoxToken;
+              senseBox.accessToken = e.refreshedBoxToken;
             }
             rethrow;
           }
