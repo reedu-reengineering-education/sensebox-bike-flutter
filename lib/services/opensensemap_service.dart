@@ -15,16 +15,6 @@ import 'package:sensebox_bike/models/sensebox.dart';
 
 enum SenseBoxBikeModel { classic, atrai }
 
-class RetryException implements Exception {
-  final String message;
-  final dynamic data;
-
-  RetryException(this.message, this.data);
-
-  @override
-  String toString() => message;
-}
-
 class UploadRetryException implements Exception {
   final String message;
   final String? refreshedBoxToken;
@@ -33,6 +23,15 @@ class UploadRetryException implements Exception {
 
   @override
   String toString() => message;
+}
+
+class ServerErrorException implements Exception {
+  final int statusCode;
+
+  ServerErrorException(this.statusCode);
+
+  @override
+  String toString() => 'Server error $statusCode';
 }
 
 class OpenSenseMapService {
@@ -285,11 +284,7 @@ class OpenSenseMapService {
       }
       return null;
     } catch (e) {
-      if (e.toString().contains('Not authenticated') ||
-          e.toString().contains('Authentication failed') ||
-          e.toString().contains('Failed to refresh token')) {
-        await _clearUserData();
-      }
+      if (e is AuthException) await _clearUserData();
       return null;
     }
   }
@@ -301,17 +296,12 @@ class OpenSenseMapService {
       return token;
     }
 
-    // Token is null or invalid - attempt to refresh automatically
     try {
       final tokens = await refreshToken();
-      if (tokens != null) {
-        return tokens['accessToken'];
-      }
+      return tokens['accessToken'];
     } catch (e) {
-      // Refresh failed - data is already cleared by refreshToken()
+      return null;
     }
-
-    return null;
   }
 
   bool _isTokenValid(String token) {
@@ -337,12 +327,11 @@ class OpenSenseMapService {
     return _isTokenValid(token);
   }
 
-  Future<Map<String, String>?> refreshToken() async {
+  Future<Map<String, String>> refreshToken() async {
     try {
-      // Check if refresh token exists
       final refreshToken = await getRefreshTokenFromPreferences();
       if (refreshToken == null) {
-        throw Exception('No refresh token found');
+        throw AuthException();
       }
 
       final response = await retry(
@@ -356,23 +345,20 @@ class OpenSenseMapService {
           if (response.statusCode == 200) {
             return response;
           } else if (response.statusCode == 429) {
-            throw RetryException(
-                'Rate limited (${response.statusCode})', response);
+            _updateRateLimitFromResponse(response);
           } else if (response.statusCode >= 500) {
-            throw RetryException(
-                'Server error (${response.statusCode})', response);
+            throw ServerErrorException(response.statusCode);
           } else {
             return response;
           }
         },
-        retryIf: (e) => e is RetryException,
+        retryIf: _isRetryableHttpError,
         maxAttempts: 3,
         delayFactor: const Duration(seconds: 1),
         maxDelay: const Duration(seconds: 5),
-        onRetry: (e) {
-          if (e is RetryException) {
-            debugPrint(
-                '[OpenSenseMapService] Retrying token refresh: ${e.message}');
+        onRetry: (e) async {
+          if (e is TooManyRequestsException) {
+            await Future.delayed(Duration(seconds: e.retryAfter));
           }
         },
       );
@@ -393,9 +379,8 @@ class OpenSenseMapService {
           throw Exception('Failed to parse token refresh response: $e');
         }
       } else {
-        // Token refresh failed - clear all cached data
         await _clearAllCachedData();
-        throw Exception('Token refresh failed: ${response.statusCode}');
+        throw AuthException('Token refresh failed: ${response.statusCode}');
       }
     } catch (e) {
       // Any error during refresh - clear all cached data
@@ -404,55 +389,32 @@ class OpenSenseMapService {
     }
   }
 
-
-  /// Clears all cached data when authentication fails
   Future<void> _clearAllCachedData() async {
-    // Clear tokens from SharedPreferences
     await removeTokens();
-
-    // Clear user data cache
     await _clearUserData();
-
-    debugPrint(
-        '[OpenSenseMapService] All cached data cleared due to authentication failure');
   }
 
-  /// Generic method to handle authenticated requests with automatic token refresh
-  ///
-  /// [requestFn] is a function that makes the HTTP request and returns the response
-  /// [successHandler] is a function that processes the successful response
-  /// [errorMessage] is the error message to show if the request fails after token refresh
   Future<T> _makeAuthenticatedRequest<T>({
     required Future<http.Response> Function(String accessToken) requestFn,
     required T Function(http.Response response) successHandler,
     required String errorMessage,
   }) async {
     final accessToken = await getAccessToken();
-    if (accessToken == null) throw Exception('Not authenticated');
+    if (accessToken == null) throw AuthException();
 
     final response = await requestFn(accessToken);
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return successHandler(response);
     } else if (response.statusCode == 401 || response.statusCode == 403) {
-      // Try to refresh token
-      try {
-        final tokens = await refreshToken();
-
-        final retryResponse = await requestFn(tokens!['accessToken']!);
-
-        if (retryResponse.statusCode == 200 ||
-            retryResponse.statusCode == 201) {
-          return successHandler(retryResponse);
-        } else {
-          throw Exception(
-              '$errorMessage after token refresh (${retryResponse.statusCode})');
-        }
-      } catch (refreshError) {
-        throw Exception('Failed to refresh token: $refreshError');
+      final tokens = await refreshToken();
+      final retryResponse = await requestFn(tokens['accessToken']!);
+      if (retryResponse.statusCode == 200 || retryResponse.statusCode == 201) {
+        return successHandler(retryResponse);
       }
+      _throwForStatus(retryResponse, errorMessage);
     } else {
-      throw Exception('$errorMessage: ${response.body}');
+      _throwForStatus(response, errorMessage);
     }
   }
 
@@ -496,22 +458,19 @@ class OpenSenseMapService {
         headers: {'Authorization': 'Bearer $accessToken'},
       ),
       successHandler: (response) {
+        dynamic responseData;
         try {
-          final responseData = safeJsonDecode(response.body);
-          if (responseData['data'] is Map<String, dynamic>) {
-            final data = responseData['data'] as Map<String, dynamic>;
-            if (data['box'] is Map<String, dynamic>) {
-              return data['box'] as Map<String, dynamic>;
-            }
-            // Some API responses return the box object directly in `data`.
-            if (data.containsKey('_id')) {
-              return data;
-            }
-          }
-          throw Exception('Unexpected user box response format');
+          responseData = safeJsonDecode(response.body);
         } catch (e) {
           throw Exception('Failed to parse user box response: $e');
         }
+        if (responseData['data'] is Map<String, dynamic>) {
+          final data = responseData['data'] as Map<String, dynamic>;
+          if (data['box'] is Map<String, dynamic>) {
+            return data['box'] as Map<String, dynamic>;
+          }
+        }
+        throw Exception('Unexpected user box response format');
       },
       errorMessage: 'Failed to load user box',
     );
@@ -522,7 +481,8 @@ class OpenSenseMapService {
     return box['access_token']?.toString();
   }
 
-  Future<String> _requireBoxToken(String senseBoxId, String? currentToken) async {
+  Future<String> _requireBoxToken(
+      String senseBoxId, String? currentToken) async {
     if (currentToken?.isNotEmpty == true) {
       return currentToken!;
     }
@@ -537,20 +497,12 @@ class OpenSenseMapService {
     try {
       final refreshedBoxToken = await _getBoxAccessToken(senseBoxId);
       if (refreshedBoxToken == null || refreshedBoxToken.isEmpty) {
-        _isPermanentlyDisabled = true;
-        debugPrint(
-            '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
-        throw Exception('Authentication failed - user needs to re-login');
+        throw AuthException();
       }
       return refreshedBoxToken;
     } catch (e) {
-      final errorStr = e.toString();
-      if (errorStr.contains('Not authenticated') ||
-          errorStr.contains('Failed to refresh token') ||
-          errorStr.contains('No refresh token')) {
+      if (e is AuthException) {
         _isPermanentlyDisabled = true;
-        debugPrint(
-            '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
       }
       rethrow;
     }
@@ -566,7 +518,7 @@ class OpenSenseMapService {
     _rateLimitUntil = null;
   }
 
-  void _updateRateLimitFromResponse(http.Response response) {
+  Never _updateRateLimitFromResponse(http.Response response) {
     final retryAfter = response.headers['retry-after'];
     final waitTime = retryAfter != null
         ? int.tryParse(retryAfter) ?? defaultTimeout
@@ -574,6 +526,24 @@ class OpenSenseMapService {
     _isRateLimited = true;
     _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
     throw TooManyRequestsException(waitTime);
+  }
+
+  bool _isRetryableHttpError(Object e) =>
+      e is TooManyRequestsException ||
+      e is ServerErrorException ||
+      e is SocketException ||
+      e is HttpException ||
+      e is TimeoutException;
+
+  bool _isRetryableUploadError(Object e) =>
+      _isRetryableHttpError(e) || e is UploadRetryException;
+
+  Never _throwForStatus(http.Response response, String context) {
+    if (response.statusCode == 429) _updateRateLimitFromResponse(response);
+    if (response.statusCode >= 500) {
+      throw ServerErrorException(response.statusCode);
+    }
+    throw Exception('$context (${response.statusCode}): ${response.body}');
   }
 
   Future<void> _attemptUploadOnce({
@@ -606,15 +576,7 @@ class OpenSenseMapService {
       );
     }
 
-    if (response.statusCode == 429) {
-      _updateRateLimitFromResponse(response);
-    }
-
-    if (response.statusCode >= 500) {
-      throw UploadRetryException('Server error ${response.statusCode}');
-    }
-
-    throw Exception('Client error ${response.statusCode}: ${response.body}');
+    _throwForStatus(response, 'Upload to box $senseBoxId failed');
   }
 
   Future<void> uploadData(
@@ -627,7 +589,7 @@ class OpenSenseMapService {
     }
 
     List<dynamic> data = sensorData.values.toList();
-    String? activeBoxAccessToken = senseBox.accessToken;
+    String? boxToken = senseBox.accessToken;
 
     _throwIfRateLimited();
 
@@ -642,27 +604,19 @@ class OpenSenseMapService {
       await r.retry(
         () async {
           try {
-            activeBoxAccessToken =
-                await _requireBoxToken(senseBoxId, activeBoxAccessToken);
+            boxToken = await _requireBoxToken(senseBoxId, boxToken);
             await _attemptUploadOnce(
                 senseBoxId: senseBoxId,
                 data: data,
-                tokenForRequest: activeBoxAccessToken!);
+                tokenForRequest: boxToken!);
           } on UploadRetryException catch (e) {
             if (e.refreshedBoxToken?.isNotEmpty == true) {
-              activeBoxAccessToken = e.refreshedBoxToken;
-              senseBox.accessToken = e.refreshedBoxToken;
+              boxToken = e.refreshedBoxToken;
             }
             rethrow;
           }
         },
-        retryIf: (e) {
-          return e is TooManyRequestsException ||
-              e is UploadRetryException ||
-              e is SocketException ||
-              e is HttpException ||
-              e is TimeoutException;
-        },
+        retryIf: _isRetryableUploadError,
         onRetry: (e) async {
           if (e is TooManyRequestsException) {
             await Future.delayed(Duration(seconds: e.retryAfter));

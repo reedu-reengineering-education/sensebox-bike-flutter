@@ -58,6 +58,13 @@ class DirectUploadFailureError implements Exception {
       'Real-time upload failed due to connectivity issues. Your data has been saved locally. After stopping the recording, you can upload the track manually from the track overview.';
 }
 
+class AuthException implements Exception {
+  final String? message;
+  AuthException([this.message]);
+  @override
+  String toString() => message ?? 'AuthException';
+}
+
 class PermanentAuthenticationError implements Exception {
   final String? details;
 
