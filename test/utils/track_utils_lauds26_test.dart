@@ -6,6 +6,8 @@ import 'package:sensebox_bike/utils/track_utils.dart';
 
 void main() {
   group('UploadDataPreparer LAUDS 26', () {
+    setUp(() => FeatureFlags.hideSurfaceAnomalySensor = true);
+
         test('handles distance sensors', () {
           final sensors = [
             Sensor()..id = '7'..title = 'Distance Left',
@@ -60,7 +62,6 @@ void main() {
 
     test('handles surface sensors when hideSurfaceAnomalySensor is false', () {
       FeatureFlags.hideSurfaceAnomalySensor = false;
-      addTearDown(() => FeatureFlags.hideSurfaceAnomalySensor = true);
 
       final sensors = [
         Sensor()..id = '9'..title = 'Surface Asphalt',
@@ -93,7 +94,6 @@ void main() {
     });
 
     test('excludes surface_anomaly when hideSurfaceAnomalySensor flag is enabled', () {
-      FeatureFlags.hideSurfaceAnomalySensor = true;
 
       final sensors = [
         Sensor()..id = '9'..title = 'Surface Asphalt',

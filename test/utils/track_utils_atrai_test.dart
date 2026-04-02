@@ -6,6 +6,8 @@ import 'package:sensebox_bike/utils/track_utils.dart';
 
 void main() {
   group('UploadDataPreparer ATRAI', () {
+    setUp(() => FeatureFlags.hideSurfaceAnomalySensor = true);
+
         test('handles distance sensor', () {
           final sensors = [
             Sensor()..id = '7'..title = 'Overtaking Distance',
@@ -54,7 +56,6 @@ void main() {
 
     test('handles surface sensors when hideSurfaceAnomalySensor is false', () {
       FeatureFlags.hideSurfaceAnomalySensor = false;
-      addTearDown(() => FeatureFlags.hideSurfaceAnomalySensor = true);
 
       final sensors = [
         Sensor()..id = '8'..title = 'Surface Asphalt',
@@ -86,8 +87,9 @@ void main() {
       expect(result.values.any((e) => e['sensor'] == '13'), isTrue);
     });
 
-    test('excludes surface_anomaly when hideSurfaceAnomalySensor flag is enabled', () {
-      FeatureFlags.hideSurfaceAnomalySensor = true;
+    test(
+        'excludes surface_anomaly when hideSurfaceAnomalySensor flag is enabled',
+        () {
 
       final sensors = [
         Sensor()..id = '8'..title = 'Surface Asphalt',
