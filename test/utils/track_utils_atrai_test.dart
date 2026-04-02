@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
@@ -51,7 +52,10 @@ void main() {
       expect(result.values.any((e) => e['sensor'] == '5'), isTrue);
     });
 
-    test('handles surface sensors', () {
+    test('handles surface sensors when hideSurfaceAnomalySensor is false', () {
+      FeatureFlags.hideSurfaceAnomalySensor = false;
+      addTearDown(() => FeatureFlags.hideSurfaceAnomalySensor = true);
+
       final sensors = [
         Sensor()..id = '8'..title = 'Surface Asphalt',
         Sensor()..id = '9'..title = 'Surface Sett',
@@ -80,6 +84,39 @@ void main() {
       expect(result.values.any((e) => e['sensor'] == '11'), isTrue);
       expect(result.values.any((e) => e['sensor'] == '12'), isTrue);
       expect(result.values.any((e) => e['sensor'] == '13'), isTrue);
+    });
+
+    test('excludes surface_anomaly when hideSurfaceAnomalySensor flag is enabled', () {
+      FeatureFlags.hideSurfaceAnomalySensor = true;
+
+      final sensors = [
+        Sensor()..id = '8'..title = 'Surface Asphalt',
+        Sensor()..id = '9'..title = 'Surface Sett',
+        Sensor()..id = '10'..title = 'Surface Compacted',
+        Sensor()..id = '11'..title = 'Surface Paving',
+        Sensor()..id = '12'..title = 'Standing',
+        Sensor()..id = '13'..title = 'Surface Anomaly',
+      ];
+      final senseBox = SenseBox(sensors: sensors);
+      final preparer = UploadDataPreparer(senseBox: senseBox);
+      final gpsBuffer = [GeolocationData()
+        ..latitude = 10.0
+        ..longitude = 20.0
+        ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0)];
+      final groupedData = {
+        gpsBuffer[0]: {
+          'surface_classification': [10.0, 15.0, 20.0, 25.0, 30.0],
+          'surface_anomaly': [35.0],
+        },
+      };
+      final result = preparer.prepareDataFromGroupedData(groupedData, gpsBuffer);
+      expect(result.length, 5,
+          reason: 'surface_anomaly should be excluded from the upload payload');
+      expect(result.values.any((e) => e['sensor'] == '13'), isFalse,
+          reason: 'Surface Anomaly sensor should not be reported');
+      // Surface classification sensors should still be present
+      expect(result.values.any((e) => e['sensor'] == '8'), isTrue);
+      expect(result.values.any((e) => e['sensor'] == '12'), isTrue);
     });
 
     test('handles overtaking sensor', () {
