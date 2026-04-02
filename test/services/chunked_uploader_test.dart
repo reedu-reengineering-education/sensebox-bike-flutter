@@ -11,6 +11,7 @@ class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 void main() {
   setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
+    registerFallbackValue(SenseBox());
   });
   
   group('ChunkedUploader', () {

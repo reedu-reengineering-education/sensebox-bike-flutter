@@ -11,17 +11,34 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/utils/opensensemap_utils.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/models/sensebox.dart';
 
 enum SenseBoxBikeModel { classic, atrai }
 
-class RetryException implements Exception {
+class UploadRetryException implements Exception {
   final String message;
-  final dynamic data;
+  final String? refreshedBoxToken;
 
-  RetryException(this.message, this.data);
+  UploadRetryException(this.message, {this.refreshedBoxToken});
 
   @override
   String toString() => message;
+}
+
+class ServerErrorException implements Exception {
+  final int statusCode;
+
+  ServerErrorException(this.statusCode);
+
+  @override
+  String toString() => 'Server error $statusCode';
+}
+
+class AuthException implements Exception {
+  final String? message;
+  AuthException([this.message]);
+  @override
+  String toString() => message ?? 'AuthException';
 }
 
 class OpenSenseMapService {
@@ -55,8 +72,9 @@ class OpenSenseMapService {
   }
 
   String get _baseUrl {
-    if (_settingsBloc != null) {
-      return _settingsBloc!.apiUrl;
+    final settingsBloc = _settingsBloc;
+    if (settingsBloc != null) {
+      return settingsBloc.apiUrl;
     }
     return openSenseMapUrl;
   }
@@ -273,11 +291,7 @@ class OpenSenseMapService {
       }
       return null;
     } catch (e) {
-      if (e.toString().contains('Not authenticated') ||
-          e.toString().contains('Authentication failed') ||
-          e.toString().contains('Failed to refresh token')) {
-        await _clearUserData();
-      }
+      if (e is AuthException) await _clearUserData();
       return null;
     }
   }
@@ -289,17 +303,12 @@ class OpenSenseMapService {
       return token;
     }
 
-    // Token is null or invalid - attempt to refresh automatically
     try {
       final tokens = await refreshToken();
-      if (tokens != null) {
-        return tokens['accessToken'];
-      }
+      return tokens['accessToken'];
     } catch (e) {
-      // Refresh failed - data is already cleared by refreshToken()
+      return null;
     }
-
-    return null;
   }
 
   bool _isTokenValid(String token) {
@@ -325,12 +334,11 @@ class OpenSenseMapService {
     return _isTokenValid(token);
   }
 
-  Future<Map<String, String>?> refreshToken() async {
+  Future<Map<String, String>> refreshToken() async {
     try {
-      // Check if refresh token exists
       final refreshToken = await getRefreshTokenFromPreferences();
       if (refreshToken == null) {
-        throw Exception('No refresh token found');
+        throw AuthException();
       }
 
       final response = await retry(
@@ -344,23 +352,20 @@ class OpenSenseMapService {
           if (response.statusCode == 200) {
             return response;
           } else if (response.statusCode == 429) {
-            throw RetryException(
-                'Rate limited (${response.statusCode})', response);
+            _updateRateLimitFromResponse(response);
           } else if (response.statusCode >= 500) {
-            throw RetryException(
-                'Server error (${response.statusCode})', response);
+            throw ServerErrorException(response.statusCode);
           } else {
             return response;
           }
         },
-        retryIf: (e) => e is RetryException,
+        retryIf: _isRetryableHttpError,
         maxAttempts: 3,
         delayFactor: const Duration(seconds: 1),
         maxDelay: const Duration(seconds: 5),
-        onRetry: (e) {
-          if (e is RetryException) {
-            debugPrint(
-                '[OpenSenseMapService] Retrying token refresh: ${e.message}');
+        onRetry: (e) async {
+          if (e is TooManyRequestsException) {
+            await Future.delayed(Duration(seconds: e.retryAfter));
           }
         },
       );
@@ -381,9 +386,8 @@ class OpenSenseMapService {
           throw Exception('Failed to parse token refresh response: $e');
         }
       } else {
-        // Token refresh failed - clear all cached data
         await _clearAllCachedData();
-        throw Exception('Token refresh failed: ${response.statusCode}');
+        throw AuthException('Token refresh failed: ${response.statusCode}');
       }
     } catch (e) {
       // Any error during refresh - clear all cached data
@@ -392,55 +396,32 @@ class OpenSenseMapService {
     }
   }
 
-
-  /// Clears all cached data when authentication fails
   Future<void> _clearAllCachedData() async {
-    // Clear tokens from SharedPreferences
     await removeTokens();
-
-    // Clear user data cache
     await _clearUserData();
-
-    debugPrint(
-        '[OpenSenseMapService] All cached data cleared due to authentication failure');
   }
 
-  /// Generic method to handle authenticated requests with automatic token refresh
-  ///
-  /// [requestFn] is a function that makes the HTTP request and returns the response
-  /// [successHandler] is a function that processes the successful response
-  /// [errorMessage] is the error message to show if the request fails after token refresh
   Future<T> _makeAuthenticatedRequest<T>({
     required Future<http.Response> Function(String accessToken) requestFn,
     required T Function(http.Response response) successHandler,
     required String errorMessage,
   }) async {
     final accessToken = await getAccessToken();
-    if (accessToken == null) throw Exception('Not authenticated');
+    if (accessToken == null) throw AuthException();
 
     final response = await requestFn(accessToken);
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return successHandler(response);
     } else if (response.statusCode == 401 || response.statusCode == 403) {
-      // Try to refresh token
-      try {
-        final tokens = await refreshToken();
-
-        final retryResponse = await requestFn(tokens!['accessToken']!);
-
-        if (retryResponse.statusCode == 200 ||
-            retryResponse.statusCode == 201) {
-          return successHandler(retryResponse);
-        } else {
-          throw Exception(
-              '$errorMessage after token refresh (${retryResponse.statusCode})');
-        }
-      } catch (refreshError) {
-        throw Exception('Failed to refresh token: $refreshError');
+      final tokens = await refreshToken();
+      final retryResponse = await requestFn(tokens['accessToken']!);
+      if (retryResponse.statusCode == 200 || retryResponse.statusCode == 201) {
+        return successHandler(retryResponse);
       }
+      _throwForStatus(retryResponse, errorMessage);
     } else {
-      throw Exception('$errorMessage: ${response.body}');
+      _throwForStatus(response, errorMessage);
     }
   }
 
@@ -477,22 +458,151 @@ class OpenSenseMapService {
     );
   }
 
+  Future<Map<String, dynamic>> _getUserBox(String boxId) async {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      requestFn: (accessToken) => client.get(
+        Uri.parse('$_baseUrl/users/me/boxes/$boxId'),
+        headers: {'Authorization': 'Bearer $accessToken'},
+      ),
+      successHandler: (response) {
+        dynamic responseData;
+        try {
+          responseData = safeJsonDecode(response.body);
+        } catch (e) {
+          throw Exception('Failed to parse user box response: $e');
+        }
+        if (responseData['data'] is Map<String, dynamic>) {
+          final data = responseData['data'] as Map<String, dynamic>;
+          if (data['box'] is Map<String, dynamic>) {
+            return data['box'] as Map<String, dynamic>;
+          }
+          // Some API responses return the box object directly in `data`.
+          if (data.containsKey('_id')) {
+            return data;
+          }
+        }
+        throw Exception('Unexpected user box response format');
+      },
+      errorMessage: 'Failed to load user box',
+    );
+  }
+
+  Future<String?> _getBoxAccessToken(String senseBoxId) async {
+    final box = await _getUserBox(senseBoxId);
+    return box['access_token']?.toString();
+  }
+
+  Future<String> _requireBoxToken(
+      String senseBoxId, String? currentToken) async {
+    if (currentToken?.isNotEmpty == true) {
+      return currentToken!;
+    }
+    final fetchedToken = await _getBoxAccessToken(senseBoxId);
+    if (fetchedToken == null || fetchedToken.isEmpty) {
+      throw Exception('Box authentication token not found');
+    }
+    return fetchedToken;
+  }
+
+  Future<String> _refreshUploadAuthorization(String senseBoxId) async {
+    try {
+      final refreshedBoxToken = await _getBoxAccessToken(senseBoxId);
+      if (refreshedBoxToken == null || refreshedBoxToken.isEmpty) {
+        throw AuthException();
+      }
+      return refreshedBoxToken;
+    } catch (e) {
+      if (e is AuthException) {
+        _isPermanentlyDisabled = true;
+      }
+      rethrow;
+    }
+  }
+
+  void _throwIfRateLimited() {
+    if (!_isRateLimited) return;
+    final remaining = _rateLimitUntil?.difference(DateTime.now());
+    if (remaining != null && !remaining.isNegative) {
+      throw TooManyRequestsException(remaining.inSeconds);
+    }
+    _isRateLimited = false;
+    _rateLimitUntil = null;
+  }
+
+  Never _updateRateLimitFromResponse(http.Response response) {
+    final retryAfter = response.headers['retry-after'];
+    final waitTime = retryAfter != null
+        ? int.tryParse(retryAfter) ?? defaultTimeout
+        : defaultTimeout * 2;
+    _isRateLimited = true;
+    _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
+    throw TooManyRequestsException(waitTime);
+  }
+
+  bool _isRetryableHttpError(Object e) =>
+      e is TooManyRequestsException ||
+      e is ServerErrorException ||
+      e is SocketException ||
+      e is HttpException ||
+      e is TimeoutException;
+
+  bool _isRetryableUploadError(Object e) =>
+      _isRetryableHttpError(e) || e is UploadRetryException;
+
+  Never _throwForStatus(http.Response response, String context) {
+    if (response.statusCode == 429) _updateRateLimitFromResponse(response);
+    if (response.statusCode >= 500) {
+      throw ServerErrorException(response.statusCode);
+    }
+    throw Exception('$context (${response.statusCode}): ${response.body}');
+  }
+
+  Future<void> _attemptUploadOnce({
+    required String senseBoxId,
+    required List<dynamic> data,
+    required String tokenForRequest,
+  }) async {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Authorization': tokenForRequest,
+    };
+
+    final response = await client
+        .post(
+          Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
+          body: jsonEncode(data),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: defaultTimeout));
+
+    if (response.statusCode == 201) {
+      return;
+    }
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      final refreshedToken = await _refreshUploadAuthorization(senseBoxId);
+      throw UploadRetryException(
+        'Box token refreshed, retrying',
+        refreshedBoxToken: refreshedToken,
+      );
+    }
+
+    _throwForStatus(response, 'Upload to box $senseBoxId failed');
+  }
 
   Future<void> uploadData(
-      String senseBoxId, Map<String, dynamic> sensorData) async {
-    List<dynamic> data = sensorData.values.toList();
-
-    // Check if currently rate limited
-    if (_isRateLimited) {
-      final remaining = _rateLimitUntil?.difference(DateTime.now());
-      if (remaining != null && !remaining.isNegative) {
-        throw TooManyRequestsException(remaining.inSeconds);
-      } else {
-        // Rate limit expired, reset state
-        _isRateLimited = false;
-        _rateLimitUntil = null;
-      }
+    SenseBox senseBox,
+    Map<String, dynamic> sensorData,
+  ) async {
+    final senseBoxId = senseBox.id?.toString();
+    if (senseBoxId == null || senseBoxId.isEmpty) {
+      throw Exception('SenseBox id is missing');
     }
+
+    List<dynamic> data = sensorData.values.toList();
+    String? boxToken = senseBox.accessToken;
+
+    _throwIfRateLimited();
 
     // API allows up to 6 requests per minute, so set maxAttempts and delays accordingly
     final r = RetryOptions(
@@ -501,94 +611,37 @@ class OpenSenseMapService {
       maxDelay: const Duration(seconds: 15),
     );
 
-    await r.retry(
-      () async {
-        final accessToken = await getAccessToken();
-        if (accessToken == null) throw Exception('Not authenticated');
-
-        final response = await client.post(
-          Uri.parse('$_baseUrl/boxes/$senseBoxId/data'),
-          body: jsonEncode(data),
-          headers: {
-            'Authorization': 'Bearer $accessToken',
-            'Content-Type': 'application/json',
-          },
-        ).timeout(const Duration(seconds: defaultTimeout));
-        
-        if (response.statusCode == 201) {
-          debugPrint(
-              '[OpenSenseMapService] Data uploaded successfully at ${DateTime.now()}');
-          return;
-        } else if (response.statusCode == 401 || response.statusCode == 403) {
-          ErrorService.handleError(
-              'Client error ${response.statusCode}: ${response.body}',
-              StackTrace.current,
-              sendToSentry: true);
-
-          // Use the same robust token refresh method
+    try {
+      await r.retry(
+        () async {
           try {
-            final tokens = await refreshToken();
-            if (tokens != null) {
-              throw Exception('Token refreshed, retrying');
+            boxToken = await _requireBoxToken(senseBoxId, boxToken);
+            await _attemptUploadOnce(
+                senseBoxId: senseBoxId,
+                data: data,
+                tokenForRequest: boxToken!);
+          } on UploadRetryException catch (e) {
+            if (e.refreshedBoxToken?.isNotEmpty == true) {
+              boxToken = e.refreshedBoxToken;
             }
-            throw Exception('Token refresh failed');
-          } catch (e) {
-            // If refresh token fails, set permanent disable state - user needs to re-login
-            _isPermanentlyDisabled = true;
-            debugPrint(
-                '[OpenSenseMapService] Authentication failed - service permanently disabled until re-login');
-            throw Exception('Authentication failed - user needs to re-login');
+            rethrow;
           }
-        } else if (response.statusCode == 429) {
-          ErrorService.handleError(
-              'Client error ${response.statusCode}: ${response.body}',
-              StackTrace.current,
-              sendToSentry: true);
-          final retryAfter = response.headers['retry-after'];
-          final waitTime = retryAfter != null
-              ? int.tryParse(retryAfter) ?? defaultTimeout
-              : defaultTimeout * 2;
-
-          // Set rate limiting state
-          _isRateLimited = true;
-          _rateLimitUntil = DateTime.now().add(Duration(seconds: waitTime));
-
-          throw TooManyRequestsException(waitTime);
-        } else {
-          // All other errors (4xx and 5xx)
-          if (response.statusCode >= 500) {
-            // 5xx server errors - retry these
-            ErrorService.handleError(
-                'Server error ${response.statusCode}: ${response.body}',
-                StackTrace.current,
-                sendToSentry: true);
-            throw Exception('Server error ${response.statusCode} - retrying');
-          } else {
-            // 4xx client errors - don't retry these
-            ErrorService.handleError(
-                'Client error ${response.statusCode}: ${response.body}',
-                StackTrace.current,
-                sendToSentry: true);
-            throw Exception(
-                'Client error ${response.statusCode}: ${response.body}');
+        },
+        retryIf: _isRetryableUploadError,
+        onRetry: (e) async {
+          if (e is TooManyRequestsException) {
+            await Future.delayed(Duration(seconds: e.retryAfter));
           }
-        }
-      },
-      retryIf: (e) {
-        final errorString = e.toString();
-        return e is TooManyRequestsException ||
-            errorString.contains('Server error') ||
-            errorString.contains('Token refreshed, retrying') ||
-            e is SocketException || // Network connectivity issues
-            e is HttpException || // HTTP protocol errors
-            e is TimeoutException;
-      },
-      onRetry: (e) async {
-        if (e is TooManyRequestsException) {
-          await Future.delayed(Duration(seconds: e.retryAfter));
-        }
-      },
-    );
+        },
+      );
+    } catch (e, stackTrace) {
+      ErrorService.handleError(
+        'Upload failed after retries for box $senseBoxId: $e',
+        stackTrace,
+        sendToSentry: true,
+      );
+      rethrow;
+    }
   }
 
 }

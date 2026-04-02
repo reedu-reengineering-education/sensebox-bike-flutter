@@ -3,10 +3,6 @@ import 'package:geolocator/geolocator.dart' as geolocator;
 // Tracks screen
 const tracksPerPage = 5;
 
-// LiveUploadService
-const maxRetries = 10;
-const retryPeriod = 2; // in minutes
-const premanentConnectivityFalurePeriod = 10; // in minutes
 const defaultTimeout = 30; // in seconds
 
 class SharedPreferencesKeys {
