@@ -59,7 +59,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
   @override
   void dispose() {
     _progressSubscription.cancel();
-    UploadProgressOverlay.hide();
+    UploadProgressOverlay._resetState();
     super.dispose();
   }
 
@@ -304,6 +304,13 @@ class UploadProgressOverlay {
         _lastContext = null;
       }
     }
+  }
+
+  /// Resets overlay state without navigating. Safe to call from dispose(),
+  /// where the widget tree is locked and Navigator.pop() is forbidden.
+  static void _resetState() {
+    _isShown = false;
+    _lastContext = null;
   }
 
   /// Whether the modal is currently shown
