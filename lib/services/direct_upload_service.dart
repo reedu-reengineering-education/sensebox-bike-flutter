@@ -170,7 +170,10 @@ class DirectUploadService {
         return;
       }
 
-      await openSenseMapBloc.uploadData(senseBox.id, uploadData);
+      await openSenseMapBloc.uploadData(
+        senseBox,
+        uploadData,
+      );
       _handleSuccessfulUpload(queueSnapshot);
       _mergeDuplicateBatchesInQueue();
       if (_canStartUpload()) {
@@ -268,7 +271,10 @@ class DirectUploadService {
         return;
       }
 
-      await openSenseMapBloc.uploadData(senseBox.id, data);
+      await openSenseMapBloc.uploadData(
+        senseBox,
+        data,
+      );
     } finally {
       _isUploading = false;
     }

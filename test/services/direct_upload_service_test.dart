@@ -14,15 +14,24 @@ class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 
 class MockOpenSenseMapBloc extends Mock implements OpenSenseMapBloc {
   @override
-  Future<void> uploadData(String senseBoxId, Map<String, dynamic> data) async {
+  Future<void> uploadData(
+    SenseBox senseBox,
+    Map<String, dynamic> data,
+  ) async {
     return super.noSuchMethod(
-      Invocation.method(#uploadData, [senseBoxId, data]),
+      Invocation.method(
+        #uploadData,
+        [senseBox, data],
+      ),
     );
   }
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() {
+    registerFallbackValue(SenseBox());
+  });
 
   group('DirectUploadService', () {
     late DirectUploadService service;
@@ -68,14 +77,18 @@ void main() {
 
     void setupMockToThrow(dynamic error) {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
-      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
-          .thenThrow(error);
+      when(() => mockOpenSenseMapBloc.uploadData(
+            any(),
+            any(),
+          )).thenThrow(error);
     }
 
     void setupMockToSucceed() {
       when(() => mockOpenSenseMapBloc.isAuthenticated).thenReturn(true);
-      when(() => mockOpenSenseMapBloc.uploadData(any(), any()))
-          .thenAnswer((_) async {});
+      when(() => mockOpenSenseMapBloc.uploadData(
+            any(),
+            any(),
+          )).thenAnswer((_) async {});
     }
 
     void disableAutoUpload() {
