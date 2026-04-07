@@ -81,7 +81,8 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byKey(const ValueKey('sensebox-loading-skeleton-item')),
+          findsWidgets);
 
       completer.complete([]);
       await tester.pumpAndSettle();

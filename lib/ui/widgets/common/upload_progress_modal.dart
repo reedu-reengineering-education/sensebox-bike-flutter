@@ -73,7 +73,6 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
         });
       },
     );
-
   }
 
   @override
@@ -158,7 +157,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
 
   Widget _buildConfirmationDialog(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    
+
     return AlertDialog(
       title: Text(AppLocalizations.of(context)!.uploadProgressTitle),
       content: Column(
@@ -258,6 +257,7 @@ class UploadProgressOverlay {
 
       showDialog(
         context: context,
+        useRootNavigator: true,
         builder: (dialogContext) => AlertDialog(
           title: Text(localizations.uploadRequirementsTitle, style: titleStyle),
           content: Text(localizations.uploadPostRideRequirementsMessage),
@@ -278,6 +278,7 @@ class UploadProgressOverlay {
 
     showDialog(
       context: context,
+      useRootNavigator: true,
       barrierDismissible: false,
       builder: (context) => UploadProgressModal(
         batchUploadService: batchUploadService,

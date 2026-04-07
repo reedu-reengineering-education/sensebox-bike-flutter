@@ -24,6 +24,7 @@ class ExportButton extends StatelessWidget {
           : () async {
               await showDialog(
                 context: context,
+                useRootNavigator: true,
                 builder: (context) => ExportOptionsDialog(
                   onExport: onExport,
                 ),

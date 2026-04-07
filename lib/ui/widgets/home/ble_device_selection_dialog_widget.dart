@@ -7,6 +7,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/empty_state_message.dart';
+import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
 
 void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
   Object? scanError;
@@ -17,18 +18,22 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
     scanError = e;
   }
 
-  final result = await showModalBottomSheet<bool>(
-      showDragHandle: true,
-      isScrollControlled: true,
-      context: context,
-      builder: (context) => (Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(
-              AppLocalizations.of(context)!.bleDeviceSelectTitle,
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            DeviceSelectionSheet(bleBloc: bleBloc, initialScanError: scanError),
-          ])));
+  final result = await showAppModalSheet<bool>(
+    context: context,
+    useRootNavigator: true,
+    scaleBackground: true,
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          AppLocalizations.of(context)!.bleDeviceSelectTitle,
+          style: Theme.of(context).textTheme.headlineSmall,
+          textAlign: TextAlign.center,
+        ),
+        DeviceSelectionSheet(bleBloc: bleBloc, initialScanError: scanError),
+      ],
+    ),
+  );
 
   if (result != true) {
     // User dismissed the sheet (cancel)

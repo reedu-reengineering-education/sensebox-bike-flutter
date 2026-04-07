@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -23,7 +26,7 @@ class SenseBoxSelectionWidget extends StatefulWidget {
 class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
   static const _errorIcon = Icons.error_outline;
   static const int _initialPage = 0;
-  
+
   late final OpenSenseMapBloc _bloc;
   late ScrollController _scrollController;
   int page = _initialPage;
@@ -112,7 +115,7 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     final configurationBloc = widget.configurationBloc;
 
     if (isLoading && bloc.senseBoxes.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildLoadingSkeleton(theme);
     }
 
     if (_fetchError != null && bloc.senseBoxes.isEmpty) {
@@ -187,15 +190,21 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
               : null,
           enabled: isSenseBoxBikeCompatible,
           onTap: isSenseBoxBikeCompatible
-              ? () async {
-                  if (isSelected) {
-                    await bloc.setSelectedSenseBox(null);
-                  } else {
-                    await bloc.setSelectedSenseBox(senseBox);
-                  }
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                  }
+              ? () {
+                  HapticFeedback.selectionClick();
+                  Navigator.pop(context);
+
+                  final targetBox = isSelected ? null : senseBox;
+                  unawaited(
+                    bloc.setSelectedSenseBox(targetBox).catchError(
+                          (error, stackTrace) => ErrorService.handleError(
+                            'Error selecting senseBox: $error',
+                            stackTrace is StackTrace
+                                ? stackTrace
+                                : StackTrace.current,
+                          ),
+                        ),
+                  );
                 }
               : null,
         );
@@ -239,6 +248,49 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLoadingSkeleton(ThemeData theme) {
+    final base = theme.colorScheme.surfaceContainerHighest;
+    final line = theme.colorScheme.onSurface.withValues(alpha: 0.10);
+
+    return ListView.separated(
+      itemCount: 6,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, _) {
+        return Container(
+          key: const ValueKey('sensebox-loading-skeleton-item'),
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: BoxDecoration(
+            color: base,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 14,
+                width: 180,
+                decoration: BoxDecoration(
+                  color: line,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                height: 10,
+                width: 120,
+                decoration: BoxDecoration(
+                  color: line,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
