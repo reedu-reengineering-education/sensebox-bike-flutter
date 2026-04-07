@@ -9,6 +9,7 @@ import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/services/storage/settings_storage.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 
 import '../test_helpers.dart';
@@ -47,11 +48,14 @@ void main() {
   setUp(() {
     mockIsarService = MockIsarService();
     mockTrackBloc = MockTrackBloc();
-    mockSettingsBloc = SettingsBloc();
+    mockSettingsBloc = SettingsBloc(storage: InMemorySettingsStorage());
     mockOpenSenseMapBloc = MockOpenSenseMapBloc();
 
     // Setup service mocks
     when(() => mockTrackBloc.isarService).thenReturn(mockIsarService);
+    when(() => mockTrackBloc.stream).thenAnswer((_) => const Stream.empty());
+    when(() => mockTrackBloc.state)
+        .thenReturn(const TrackState(currentTrack: null));
     when(() => mockIsarService.trackService.getAllTracks())
         .thenAnswer((_) async => [TrackData()]);
   });

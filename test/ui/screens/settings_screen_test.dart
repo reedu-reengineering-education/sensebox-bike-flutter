@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/services/storage/settings_storage.dart';
 
 void main() {
   group('SettingsScreen Upload Mode Tests', () {
@@ -26,7 +27,7 @@ void main() {
     });
 
     setUp(() {
-      settingsBloc = SettingsBloc();
+      settingsBloc = SettingsBloc(storage: InMemorySettingsStorage());
     });
 
     tearDown(() {
@@ -81,7 +82,7 @@ void main() {
       expect(find.text('Upload Mode'), findsOneWidget);
       expect(find.text('Choose when to upload your data during recording'),
           findsOneWidget);
-      
+
       // Verify default mode is displayed
       expect(find.textContaining('Current: Post-Ride Upload'), findsOneWidget);
     });
@@ -223,7 +224,7 @@ void main() {
         (WidgetTester tester) async {
       // Test the settings bloc directly
       final initialValue = settingsBloc.directUploadMode;
-      
+
       // Toggle to direct upload
       await settingsBloc.toggleDirectUploadMode(true);
       expect(settingsBloc.directUploadMode, true);
@@ -231,7 +232,7 @@ void main() {
       // Toggle back to post-ride
       await settingsBloc.toggleDirectUploadMode(false);
       expect(settingsBloc.directUploadMode, false);
-      
+
       // Toggle back to initial value
       await settingsBloc.toggleDirectUploadMode(initialValue);
       expect(settingsBloc.directUploadMode, initialValue);

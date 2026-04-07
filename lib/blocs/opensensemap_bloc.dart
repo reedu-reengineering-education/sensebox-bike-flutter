@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +6,8 @@ import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/services/opensensemap_auth_service.dart';
+import 'package:sensebox_bike/services/opensensemap_selection_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/storage/selected_sensebox_storage.dart';
 import 'package:sensebox_bike/utils/opensensemap_utils.dart';
@@ -43,7 +44,8 @@ class OpenSenseMapState {
 class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
     with WidgetsBindingObserver {
   final OpenSenseMapService _service;
-  final SelectedSenseBoxStorage _selectedSenseBoxStorage;
+  final OpenSenseMapAuthService _authService;
+  final OpenSenseMapSelectionService _selectionService;
   final ConfigurationBloc? _configurationBloc;
   bool _isAuthenticated = false;
   bool _isAuthenticating = false;
@@ -71,7 +73,7 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
     _senseBoxController.add(null);
     _senseBoxes.clear();
     await _service.removeTokens();
-    await _selectedSenseBoxStorage.clearSelectedSenseBox();
+    await _selectionService.clearSelectedSenseBox();
 
     _emitState();
   }
@@ -89,12 +91,14 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
 
   OpenSenseMapBloc({
     ConfigurationBloc? configurationBloc,
-    OpenSenseMapService? service,
-    SelectedSenseBoxStorage? selectedSenseBoxStorage,
+    required OpenSenseMapService service,
+    required SelectedSenseBoxStorage selectedSenseBoxStorage,
   })  : _configurationBloc = configurationBloc,
-        _service = service ?? OpenSenseMapService(),
-        _selectedSenseBoxStorage = selectedSenseBoxStorage ??
-            SharedPreferencesSelectedSenseBoxStorage(),
+        _service = service,
+        _authService = OpenSenseMapAuthService(service: service),
+        _selectionService = OpenSenseMapSelectionService(
+          selectedSenseBoxStorage: selectedSenseBoxStorage,
+        ),
         super(
           const OpenSenseMapState(
             isAuthenticated: false,
@@ -126,49 +130,12 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
     _emitState();
 
     try {
-      // First, check if we have a valid access token
-      final isTokenValid = await _service.isCurrentAccessTokenValid();
-      if (isTokenValid) {
-        _isAuthenticated = true;
+      _isAuthenticated = await _authService.authenticateFromStoredTokens();
+      if (_isAuthenticated) {
         await loadSelectedSenseBox();
         if (_selectedSenseBox == null) {
           await _findAndSetCompatibleReplacement();
         }
-        _emitState();
-        return;
-      }
-
-      // No valid access token, check if we have a refresh token
-      final refreshToken = await _service.getRefreshTokenFromPreferences();
-      if (refreshToken == null || refreshToken.isEmpty) {
-        // No refresh token exists, nothing to refresh
-        _isAuthenticated = false;
-        _emitState();
-        return;
-      }
-
-      // If service is permanently disabled, don't attempt refresh
-      if (_service.isPermanentlyDisabled) {
-        _isAuthenticated = false;
-        _emitState();
-        return;
-      }
-
-      // Attempt token refresh directly
-      final tokens = await _service.refreshToken();
-      final refreshSuccess = tokens != null;
-
-      if (refreshSuccess) {
-        _isAuthenticated = true;
-        if (_service.isPermanentlyDisabled) {
-          _service.resetPermanentDisable();
-        }
-        await loadSelectedSenseBox();
-        if (_selectedSenseBox == null) {
-          await _findAndSetCompatibleReplacement();
-        }
-      } else {
-        _isAuthenticated = false;
       }
     } catch (e) {
       _handleAuthenticationError(e);
@@ -179,36 +146,18 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
   }
 
   Future<void> loadSelectedSenseBox() async {
-    if (!_isAuthenticated) {
-      await _selectedSenseBoxStorage.clearSelectedSenseBox();
-      _senseBoxController.add(null);
-      _selectedSenseBox = null;
-      _emitState();
-      return;
-    }
+    final savedSenseBox = await _selectionService.loadSelectedSenseBox(
+      isAuthenticated: _isAuthenticated,
+      isCompatible: _isSenseBoxCompatible,
+    );
 
-    final selectedSenseBoxJson =
-        await _selectedSenseBoxStorage.loadSelectedSenseBoxJson();
-
-    if (selectedSenseBoxJson == null) {
+    if (savedSenseBox == null) {
       _senseBoxController.add(null);
       _selectedSenseBox = null;
     } else {
-      final savedSenseBox = SenseBox.fromJson(jsonDecode(selectedSenseBoxJson));
-
-      final configurationBloc = _configurationBloc;
-      final isCompatible = configurationBloc == null ||
-          configurationBloc.isSenseBoxBikeCompatible(savedSenseBox);
-
-      if (isCompatible) {
-        if (_selectedSenseBox?.id != savedSenseBox.id) {
-          _senseBoxController.add(savedSenseBox);
-          _selectedSenseBox = savedSenseBox;
-        }
-      } else {
-        await _selectedSenseBoxStorage.clearSelectedSenseBox();
-        _senseBoxController.add(null);
-        _selectedSenseBox = null;
+      if (_selectedSenseBox?.id != savedSenseBox.id) {
+        _senseBoxController.add(savedSenseBox);
+        _selectedSenseBox = savedSenseBox;
       }
     }
     _emitState();
@@ -217,8 +166,12 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
   Future<void> _findAndSetCompatibleReplacement() async {
     final senseBoxesJson = await fetchSenseBoxes(page: 0);
     if (senseBoxesJson.isNotEmpty) {
-      final senseBoxes = _convertJsonToSenseBoxes(senseBoxesJson);
-      final compatibleBox = _findFirstCompatibleBox(senseBoxes);
+      final senseBoxes =
+          _selectionService.convertJsonToSenseBoxes(senseBoxesJson);
+      final compatibleBox = _selectionService.findFirstCompatibleBox(
+        senseBoxes,
+        isCompatible: _isSenseBoxCompatible,
+      );
       if (compatibleBox != null) {
         await setSelectedSenseBox(compatibleBox);
       }
@@ -285,8 +238,12 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
       if (boxIds.isNotEmpty) {
         final senseBoxesJson = await fetchSenseBoxes(page: 0);
         if (senseBoxesJson.isNotEmpty) {
-          final senseBoxes = _convertJsonToSenseBoxes(senseBoxesJson);
-          final compatibleBox = _findFirstCompatibleBox(senseBoxes);
+          final senseBoxes =
+              _selectionService.convertJsonToSenseBoxes(senseBoxesJson);
+          final compatibleBox = _selectionService.findFirstCompatibleBox(
+            senseBoxes,
+            isCompatible: _isSenseBoxCompatible,
+          );
           if (compatibleBox != null) {
             await setSelectedSenseBox(compatibleBox);
           }
@@ -399,28 +356,18 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
     }
   }
 
-  List<SenseBox> _convertJsonToSenseBoxes(List<dynamic> senseBoxesJson) {
-    return senseBoxesJson.map((json) => SenseBox.fromJson(json)).toList();
-  }
-
   void _clearSenseBoxes() {
     _senseBoxes.clear();
     _selectedSenseBox = null;
     _senseBoxController.add(null);
   }
 
-  SenseBox? _findFirstCompatibleBox(List<SenseBox> senseBoxes) {
+  bool _isSenseBoxCompatible(SenseBox senseBox) {
     final configurationBloc = _configurationBloc;
     if (configurationBloc == null) {
-      return senseBoxes.isNotEmpty ? senseBoxes.first : null;
+      return true;
     }
-
-    for (final senseBox in senseBoxes) {
-      if (configurationBloc.isSenseBoxBikeCompatible(senseBox)) {
-        return senseBox;
-      }
-    }
-    return null;
+    return configurationBloc.isSenseBoxBikeCompatible(senseBox);
   }
 
   /// Helper method to check if an error is authentication-related and handle it
@@ -443,14 +390,13 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
     // Clear previous data before adding new senseBox
     _senseBoxController.add(null);
     if (senseBox == null) {
-      await _selectedSenseBoxStorage.clearSelectedSenseBox();
+      await _selectionService.clearSelectedSenseBox();
       _selectedSenseBox = null;
       _emitState();
       return;
     }
 
-    await _selectedSenseBoxStorage
-        .saveSelectedSenseBoxJson(jsonEncode(senseBox.toJson()));
+    await _selectionService.saveSelectedSenseBox(senseBox);
     _senseBoxController.add(senseBox); // Push selected senseBox to the stream
     _selectedSenseBox = senseBox;
     _emitState();

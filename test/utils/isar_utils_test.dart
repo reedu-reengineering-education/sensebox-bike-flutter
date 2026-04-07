@@ -2,8 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
+import 'package:sensebox_bike/services/storage/selected_sensebox_storage.dart';
 import 'package:sensebox_bike/utils/isar_utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   final geoData = GeolocationData()
@@ -42,7 +42,11 @@ void main() {
 
   group('organizeSensorData', () {
     test('returns correct map for sensor data list', () {
-      final sensorDataList = [tempSensorData, surfaceSensorData, overtakingSensorData];
+      final sensorDataList = [
+        tempSensorData,
+        surfaceSensorData,
+        overtakingSensorData
+      ];
       final result = organizeSensorData(sensorDataList);
 
       expect(result, {
@@ -145,7 +149,8 @@ void main() {
         ['humidity', '%'],
       ];
 
-      final rows = buildCsvRows(geolocationDataList, sensorDataByGeolocation, sensorTitles);
+      final rows = buildCsvRows(
+          geolocationDataList, sensorDataByGeolocation, sensorTitles);
 
       expect(rows, [
         [
@@ -192,7 +197,8 @@ void main() {
         ['temperature', '°C'],
       ];
 
-      final rows = buildCsvRows(geolocationDataList, sensorDataByGeolocation, sensorTitles);
+      final rows = buildCsvRows(
+          geolocationDataList, sensorDataByGeolocation, sensorTitles);
 
       expect(rows, [
         [
@@ -206,13 +212,15 @@ void main() {
   });
 
   group('getSelectedSenseBoxOrThrow', () {
+    late InMemorySelectedSenseBoxStorage storage;
+
     setUp(() {
-      SharedPreferences.setMockInitialValues({});
+      storage = InMemorySelectedSenseBoxStorage();
     });
 
     test('throws if no selectedSenseBox found', () async {
       expect(
-        () => getSelectedSenseBoxOrThrow(),
+        () => getSelectedSenseBoxOrThrow(storage),
         throwsA(predicate((e) =>
             e is Exception &&
             e.toString().contains('No selected senseBox found'))),
@@ -220,10 +228,11 @@ void main() {
     });
 
     test('throws if selectedSenseBox has no sensors', () async {
-      SharedPreferences.setMockInitialValues(
-          {'selectedSenseBox': '{"sensors":[], "grouptag": ["test"]}'});
+      await storage.saveSelectedSenseBoxJson(
+        '{"sensors":[], "grouptag": ["test"]}',
+      );
       expect(
-        () => getSelectedSenseBoxOrThrow(),
+        () => getSelectedSenseBoxOrThrow(storage),
         throwsA(predicate((e) =>
             e is Exception &&
             e.toString().contains('SenseBox has no sensors'))),
@@ -231,11 +240,10 @@ void main() {
     });
 
     test('returns SenseBox if present and has sensors', () async {
-      SharedPreferences.setMockInitialValues({
-        'selectedSenseBox':
-            '{"sensors":[{"id":"1","title":"Temperature","unit":"°C"}], "grouptag": ["test"]}'
-      });
-      final senseBox = await getSelectedSenseBoxOrThrow();
+      await storage.saveSelectedSenseBoxJson(
+        '{"sensors":[{"id":"1","title":"Temperature","unit":"°C"}], "grouptag": ["test"]}',
+      );
+      final senseBox = await getSelectedSenseBoxOrThrow(storage);
       expect(senseBox, isA<SenseBox>());
       expect(senseBox.sensors, isNotEmpty);
       expect(senseBox.sensors!.first.title, 'Temperature');
@@ -263,7 +271,8 @@ void main() {
       expect(result[4][1], 'standing');
     });
 
-    test('sorts sensors according to canonical order when mixed with other sensor types',
+    test(
+        'sorts sensors according to canonical order when mixed with other sensor types',
         () {
       final sensorTitles = {
         ['humidity', null],
@@ -285,7 +294,8 @@ void main() {
       expect(result[5][0], 'finedust');
     });
 
-    test('handles sensors not in canonical order by sorting alphabetically', () {
+    test('handles sensors not in canonical order by sorting alphabetically',
+        () {
       final sensorTitles = {
         ['unknown_sensor', null],
         ['temperature', null],

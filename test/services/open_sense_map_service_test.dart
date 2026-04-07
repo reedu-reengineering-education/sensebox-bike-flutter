@@ -8,14 +8,14 @@ class MockClient extends Mock implements http.Client {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   late OpenSenseMapService service;
   late MockClient mockHttpClient;
   late SharedPreferences prefs;
-  final String accessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjk5OTk5OTk5OTl9.test_signature';
+  final String accessToken =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjk5OTk5OTk5OTl9.test_signature';
   final String expiredToken =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyMzkwMjJ9.test_signature';
-
 
   setUpAll(() {
     registerFallbackValue(Uri());
@@ -25,7 +25,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
     mockHttpClient = MockClient();
-    
+
     service = OpenSenseMapService(
       client: mockHttpClient,
       prefs: Future.value(prefs),
@@ -36,20 +36,19 @@ void main() {
     await prefs.clear();
   });
 
-
   void mockHTTPPOSTResponse(String response, int code) {
     when(() => mockHttpClient.post(
-      any(),
-      headers: any(named: 'headers'),
-      body: any(named: 'body'),
-    )).thenAnswer((_) async => http.Response(response, code));
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        )).thenAnswer((_) async => http.Response(response, code));
   }
 
   void mockHTTPGETResponse(String response, int code) {
     when(() => mockHttpClient.get(
-      any(),
-      headers: any(named: 'headers'),
-    )).thenAnswer((_) async => http.Response(response, code));
+          any(),
+          headers: any(named: 'headers'),
+        )).thenAnswer((_) async => http.Response(response, code));
   }
 
   Future<void> setValidTokens() async {
@@ -80,7 +79,7 @@ void main() {
 
       test('throws exception on registration error', () async {
         mockHTTPPOSTResponse('{"message": "Email already exists"}', 400);
-        
+
         await expectLater(
             service.register('test', 'test@example.com', 'password'),
             throwsException);
@@ -103,7 +102,7 @@ void main() {
 
       test('throws exception on login error', () async {
         mockHTTPPOSTResponse('{"message": "Invalid credentials"}', 400);
-        
+
         await expectLater(
             service.login('test@example.com', 'password'), throwsException);
 
@@ -121,7 +120,7 @@ void main() {
         expect(prefs.getString('accessToken'), null);
         expect(prefs.getString('refreshToken'), null);
       });
-      
+
       test('completes successfully when no tokens stored', () async {
         await expectLater(service.logout(), completes);
       });
@@ -152,7 +151,7 @@ void main() {
         await setValidTokens();
         mockHTTPPOSTResponse(
             '{"token": "new_token", "refreshToken": "new_refresh"}', 200);
-        
+
         final tokens = await service.refreshToken();
 
         expect(tokens, isNotNull);
@@ -175,8 +174,27 @@ void main() {
 
         await expectLater(service.refreshToken(), throwsException);
       });
-    });
 
+      test('keeps cached tokens on transient server failure', () async {
+        await setValidTokens();
+        mockHTTPPOSTResponse('{"error":"temporary"}', 500);
+
+        await expectLater(service.refreshToken(), throwsException);
+
+        expect(prefs.getString('accessToken'), accessToken);
+        expect(prefs.getString('refreshToken'), accessToken);
+      });
+
+      test('clears cached tokens on definitive auth failure', () async {
+        await setValidTokens();
+        mockHTTPPOSTResponse('{"error":"invalid refresh token"}', 401);
+
+        await expectLater(service.refreshToken(), throwsException);
+
+        expect(prefs.getString('accessToken'), isNull);
+        expect(prefs.getString('refreshToken'), isNull);
+      });
+    });
   });
 
   group('API Operations', () {
@@ -259,8 +277,7 @@ void main() {
           if (callCount == 1) {
             return http.Response('Unauthorized', 401);
           } else {
-            return http.Response(
-                '{"data": {"boxes": [{"id": "box1"}]}}', 200);
+            return http.Response('{"data": {"boxes": [{"id": "box1"}]}}', 200);
           }
         });
 
@@ -269,7 +286,9 @@ void main() {
 
         final boxes = await service.getSenseBoxes();
 
-        expect(boxes, [{"id": "box1"}]);
+        expect(boxes, [
+          {"id": "box1"}
+        ]);
         expect(callCount, 2);
       });
 
@@ -323,11 +342,12 @@ void main() {
             )).thenAnswer((invocation) async {
           callCount++;
           final uri = invocation.positionalArguments[0] as Uri;
-          
+
           if (uri.path.contains('/users/refresh-auth')) {
             // Token refresh request
             return http.Response(
-                '{"token": "$accessToken", "refreshToken": "new_refresh"}', 200);
+                '{"token": "$accessToken", "refreshToken": "new_refresh"}',
+                200);
           } else if (uri.path.contains('/boxes/sensebox123/data')) {
             // Data upload request
             return http.Response('{"success": true}', 201);
@@ -339,7 +359,7 @@ void main() {
         await expectLater(
             service.uploadData('sensebox123', {"sensor1": "value1"}),
             completes);
-        
+
         // Verify both requests were made
         expect(callCount, 2);
       });
@@ -409,7 +429,7 @@ void main() {
     test('caches user data after successful API call', () async {
       await setValidTokens();
       mockHTTPGETResponse(
-        '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
+          '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
           200);
 
       final userData = await service.getUserData();
@@ -422,7 +442,7 @@ void main() {
     test('logout clears user data cache', () async {
       await setValidTokens();
       mockHTTPGETResponse(
-        '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
+          '{"data": {"me": {"name": "Test User", "email": "test@example.com"}}}',
           200);
 
       await service.getUserData();
@@ -433,7 +453,8 @@ void main() {
   });
 
   group('saveUserData', () {
-    test('saves user data from registration or login response format', () async {
+    test('saves user data from registration or login response format',
+        () async {
       final responseData = {
         'data': {
           'user': {

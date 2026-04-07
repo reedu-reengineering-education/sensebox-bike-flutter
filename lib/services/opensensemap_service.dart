@@ -21,6 +21,15 @@ class RetryException implements Exception {
   String toString() => message;
 }
 
+class RefreshTokenAuthException implements Exception {
+  RefreshTokenAuthException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 class OpenSenseMapService {
   static const String _baseUrl = openSenseMapUrl;
   final http.Client client;
@@ -48,6 +57,7 @@ class OpenSenseMapService {
   void resetPermanentDisable() {
     _isPermanentlyDisabled = false;
   }
+
   /// Validates and extracts tokens from response data
   /// Throws Exception if tokens are missing or empty
   Map<String, String> _validateAndExtractTokens(
@@ -173,7 +183,6 @@ class OpenSenseMapService {
     return null;
   }
 
-
   Future<void> _clearUserData() async {
     final prefs = await _prefs;
     await prefs.remove('userData');
@@ -222,12 +231,12 @@ class OpenSenseMapService {
 
   Future<Map<String, dynamic>?> getUserData() async {
     final cachedUserData = await _getCachedUserData();
-    
+
     // If we have cached data, return it immediately (no need to check token validity)
     if (cachedUserData != null) {
       return cachedUserData;
     }
-    
+
     // Check if we have a valid access token before making API call
     final accessToken = await getAccessToken();
     if (accessToken == null) {
@@ -317,7 +326,8 @@ class OpenSenseMapService {
       // Check if refresh token exists
       final refreshToken = await getRefreshTokenFromPreferences();
       if (refreshToken == null) {
-        throw Exception('No refresh token found');
+        await _clearAllCachedData();
+        throw RefreshTokenAuthException('No refresh token found');
       }
 
       final response = await retry(
@@ -368,17 +378,30 @@ class OpenSenseMapService {
           throw Exception('Failed to parse token refresh response: $e');
         }
       } else {
-        // Token refresh failed - clear all cached data
-        await _clearAllCachedData();
-        throw Exception('Token refresh failed: ${response.statusCode}');
+        // Only clear auth data on definitive auth failures.
+        if (response.statusCode == 400 ||
+            response.statusCode == 401 ||
+            response.statusCode == 403) {
+          await _clearAllCachedData();
+          throw RefreshTokenAuthException(
+            'Refresh token is expired: ${response.statusCode}',
+          );
+        }
+
+        throw Exception(
+          'Token refresh temporarily unavailable: ${response.statusCode}',
+        );
       }
+    } on RefreshTokenAuthException {
+      rethrow;
+    } on RetryException catch (e) {
+      // Retryable backend/rate-limit errors should not force logout.
+      throw Exception('Token refresh temporarily unavailable: ${e.message}');
     } catch (e) {
-      // Any error during refresh - clear all cached data
-      await _clearAllCachedData();
+      // Keep cached auth data on transient/network failures.
       rethrow;
     }
   }
-
 
   /// Clears all cached data when authentication fails
   Future<void> _clearAllCachedData() async {
@@ -464,7 +487,6 @@ class OpenSenseMapService {
     );
   }
 
-
   Future<void> uploadData(
       String senseBoxId, Map<String, dynamic> sensorData) async {
     List<dynamic> data = sensorData.values.toList();
@@ -501,7 +523,7 @@ class OpenSenseMapService {
             'Content-Type': 'application/json',
           },
         ).timeout(const Duration(seconds: defaultTimeout));
-        
+
         if (response.statusCode == 201) {
           debugPrint(
               '[OpenSenseMapService] Data uploaded successfully at ${DateTime.now()}');
@@ -577,5 +599,4 @@ class OpenSenseMapService {
       },
     );
   }
-
 }

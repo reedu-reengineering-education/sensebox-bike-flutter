@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:sensebox_bike/app/app_router.dart';
-import 'package:sensebox_bike/constants.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sensebox_bike/feature_flags.dart';
+import 'package:sensebox_bike/services/storage/privacy_policy_storage.dart';
 
 class InitialScreen extends StatefulWidget {
   const InitialScreen({super.key});
@@ -20,9 +20,8 @@ class _InitialScreenState extends State<InitialScreen> {
   }
 
   Future<void> _checkPrivacyPolicyAcceptance() async {
-    final prefs = await SharedPreferences.getInstance();
     final acceptedAt =
-        prefs.getString(SharedPreferencesKeys.privacyPolicyAcceptedAt);
+        await context.read<PrivacyPolicyStorage>().loadAcceptedAt();
 
     if (!context.mounted) return;
 

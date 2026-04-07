@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
+import 'package:sensebox_bike/services/storage/selected_sensebox_storage.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockConfigurationBloc extends Mock implements ConfigurationBloc {}
@@ -27,11 +27,16 @@ void main() {
 
   group('OpenSenseMapBloc', () {
     late OpenSenseMapBloc bloc;
+    late MockOpenSenseMapService mockService;
+    late InMemorySelectedSenseBoxStorage selectedSenseBoxStorage;
 
     setUp(() {
-      SharedPreferences.setMockInitialValues({});
-
-      bloc = OpenSenseMapBloc();
+      mockService = MockOpenSenseMapService();
+      selectedSenseBoxStorage = InMemorySelectedSenseBoxStorage();
+      bloc = OpenSenseMapBloc(
+        service: mockService,
+        selectedSenseBoxStorage: selectedSenseBoxStorage,
+      );
     });
 
     group('Initialization', () {
@@ -67,7 +72,6 @@ void main() {
         await bloc.setSelectedSenseBox(null);
         expect(bloc.selectedSenseBox, isNull);
       });
-
 
       test('should clear selected sensebox when not authenticated', () async {
         final testBox = SenseBox(
@@ -118,7 +122,7 @@ void main() {
         expect(model['name'], 'Test Box');
         expect(model['exposure'], 'mobile');
         expect(model['location'], [13.4050, 52.5200]);
-        
+
         final tags = model['grouptag'] as List;
         expect(tags, contains('bike'));
         expect(tags, contains('atrai'));
@@ -127,7 +131,7 @@ void main() {
         expect(tags, contains('bar'));
         expect(tags, contains('baz'));
         expect(tags.length, 6);
-        
+
         expect(model['sensors'], isA<List>());
         final sensors = model['sensors'] as List;
         expect(sensors.length, 2);
@@ -145,11 +149,12 @@ void main() {
 
       group('loadSelectedSenseBox() compatibility checking', () {
         test('clears incompatible saved box from preferences', () async {
-          SharedPreferences.setMockInitialValues({});
           final mockService = MockOpenSenseMapService();
+          final storage = InMemorySelectedSenseBoxStorage();
           final bloc = OpenSenseMapBloc(
             configurationBloc: mockConfigurationBloc,
             service: mockService,
+            selectedSenseBoxStorage: storage,
           );
 
           final incompatibleBox = SenseBox(
@@ -162,9 +167,9 @@ void main() {
             grouptag: [],
           );
 
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(
-              'selectedSenseBox', jsonEncode(incompatibleBox.toJson()));
+          await storage.saveSelectedSenseBoxJson(
+            jsonEncode(incompatibleBox.toJson()),
+          );
 
           when(() => mockConfigurationBloc.isSenseBoxBikeCompatible(any()))
               .thenReturn(false);
@@ -174,16 +179,17 @@ void main() {
           await bloc.performAuthenticationCheck();
 
           expect(bloc.selectedSenseBox, isNull);
-          final savedBoxJson = await prefs.getString('selectedSenseBox');
+          final savedBoxJson = await storage.loadSelectedSenseBoxJson();
           expect(savedBoxJson, isNull);
         });
 
         test('preserves compatible saved box when loading', () async {
-          SharedPreferences.setMockInitialValues({});
           final mockService = MockOpenSenseMapService();
+          final storage = InMemorySelectedSenseBoxStorage();
           final bloc = OpenSenseMapBloc(
             configurationBloc: mockConfigurationBloc,
             service: mockService,
+            selectedSenseBoxStorage: storage,
           );
 
           final compatibleBox = SenseBox(
@@ -196,9 +202,9 @@ void main() {
             grouptag: [],
           );
 
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(
-              'selectedSenseBox', jsonEncode(compatibleBox.toJson()));
+          await storage.saveSelectedSenseBoxJson(
+            jsonEncode(compatibleBox.toJson()),
+          );
 
           when(() => mockConfigurationBloc.isSenseBoxBikeCompatible(any()))
               .thenReturn(true);
@@ -211,9 +217,12 @@ void main() {
         });
 
         test('loads saved box when ConfigurationBloc is null', () async {
-          SharedPreferences.setMockInitialValues({});
           final mockService = MockOpenSenseMapService();
-          final bloc = OpenSenseMapBloc(service: mockService);
+          final storage = InMemorySelectedSenseBoxStorage();
+          final bloc = OpenSenseMapBloc(
+            service: mockService,
+            selectedSenseBoxStorage: storage,
+          );
 
           final box = SenseBox(
             sId: 'saved-box',
@@ -223,8 +232,7 @@ void main() {
             grouptag: [],
           );
 
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('selectedSenseBox', jsonEncode(box.toJson()));
+          await storage.saveSelectedSenseBoxJson(jsonEncode(box.toJson()));
 
           when(() => mockService.isCurrentAccessTokenValid())
               .thenAnswer((_) async => true);
@@ -238,8 +246,8 @@ void main() {
       group('login() compatibility checking', () {
         test('selects first compatible box when multiple boxes available',
             () async {
-          SharedPreferences.setMockInitialValues({});
           final mockService = MockOpenSenseMapService();
+          final storage = InMemorySelectedSenseBoxStorage();
 
           final compatibleBox = SenseBox(
             sId: 'compatible-1',
@@ -284,6 +292,7 @@ void main() {
           final bloc = OpenSenseMapBloc(
             configurationBloc: mockConfigurationBloc,
             service: mockService,
+            selectedSenseBoxStorage: storage,
           );
 
           await bloc.login('test@example.com', 'password');
@@ -295,8 +304,8 @@ void main() {
 
         test('does not select box when no compatible boxes available',
             () async {
-          SharedPreferences.setMockInitialValues({});
           final mockService = MockOpenSenseMapService();
+          final storage = InMemorySelectedSenseBoxStorage();
 
           final incompatibleBox = SenseBox(
             sId: 'incompatible-1',
@@ -325,6 +334,7 @@ void main() {
           final bloc = OpenSenseMapBloc(
             configurationBloc: mockConfigurationBloc,
             service: mockService,
+            selectedSenseBoxStorage: storage,
           );
 
           await bloc.login('test@example.com', 'password');
@@ -334,8 +344,8 @@ void main() {
 
         test('falls back to first box when ConfigurationBloc is null',
             () async {
-          SharedPreferences.setMockInitialValues({});
           final mockService = MockOpenSenseMapService();
+          final storage = InMemorySelectedSenseBoxStorage();
 
           final box = SenseBox(
             sId: 'box-1',
@@ -356,7 +366,10 @@ void main() {
           when(() => mockService.getSenseBoxes(page: 0))
               .thenAnswer((_) async => [box.toJson()]);
 
-          final bloc = OpenSenseMapBloc(service: mockService);
+          final bloc = OpenSenseMapBloc(
+            service: mockService,
+            selectedSenseBoxStorage: storage,
+          );
 
           await bloc.login('test@example.com', 'password');
 

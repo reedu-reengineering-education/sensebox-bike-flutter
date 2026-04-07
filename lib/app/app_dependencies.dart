@@ -16,12 +16,15 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/sensor_csv_logger_service.dart';
+import 'package:sensebox_bike/services/storage/privacy_policy_storage.dart';
 import 'package:sensebox_bike/services/storage/selected_sensebox_storage.dart';
 import 'package:sensebox_bike/services/storage/settings_storage.dart';
+import 'package:sensebox_bike/services/track_export_service.dart';
 
 class AppDependencies {
   AppDependencies({
     required this.settingsBloc,
+    required this.privacyPolicyStorage,
     required this.isarService,
     required this.bleBloc,
     required this.configurationBloc,
@@ -35,6 +38,7 @@ class AppDependencies {
   });
 
   final SettingsBloc settingsBloc;
+  final PrivacyPolicyStorage privacyPolicyStorage;
   final IsarService isarService;
   final BleBloc bleBloc;
   final ConfigurationBloc configurationBloc;
@@ -51,15 +55,23 @@ class AppDependencies {
     final settingsBloc = SettingsBloc(
       storage: SharedPreferencesSettingsStorage(prefs: prefs),
     );
-    final isarService = IsarService(isarProvider: IsarProvider());
+    final privacyPolicyStorage =
+        SharedPreferencesPrivacyPolicyStorage(prefs: prefs);
+    final selectedSenseBoxStorage =
+        SharedPreferencesSelectedSenseBoxStorage(prefs: prefs);
+    const trackExportService = TrackExportService();
+    final isarService = IsarService(
+      isarProvider: IsarProvider(),
+      selectedSenseBoxStorage: selectedSenseBoxStorage,
+      trackExportService: trackExportService,
+    );
     final bleBloc = BleBloc(settingsBloc);
     final configurationBloc = ConfigurationBloc();
     final openSenseMapService = OpenSenseMapService(prefs: prefs);
     final openSenseMapBloc = OpenSenseMapBloc(
       configurationBloc: configurationBloc,
       service: openSenseMapService,
-      selectedSenseBoxStorage:
-          SharedPreferencesSelectedSenseBoxStorage(prefs: prefs),
+      selectedSenseBoxStorage: selectedSenseBoxStorage,
     );
     final trackBloc = TrackBloc(isarService);
     final recordingBloc = RecordingBloc(
@@ -93,6 +105,7 @@ class AppDependencies {
 
     return AppDependencies(
       settingsBloc: settingsBloc,
+      privacyPolicyStorage: privacyPolicyStorage,
       isarService: isarService,
       bleBloc: bleBloc,
       configurationBloc: configurationBloc,

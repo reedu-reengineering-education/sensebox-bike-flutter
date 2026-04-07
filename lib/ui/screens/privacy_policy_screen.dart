@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:sensebox_bike/app/app_router.dart';
-import 'package:sensebox_bike/l10n/app_localizations.dart'; // For translations
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart'; // For translations
+import 'package:sensebox_bike/services/storage/privacy_policy_storage.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/checkbox_with_text.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class PrivacyPolicyScreen extends StatefulWidget {
@@ -22,10 +23,8 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
   late final WebViewController _controller;
 
   Future<void> _saveAcceptanceDate() async {
-    final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now().toIso8601String();
-
-    await prefs.setString(SharedPreferencesKeys.privacyPolicyAcceptedAt, now);
+    await context.read<PrivacyPolicyStorage>().saveAcceptedAt(now);
   }
 
   @override

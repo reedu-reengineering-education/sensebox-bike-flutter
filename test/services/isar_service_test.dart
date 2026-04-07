@@ -8,11 +8,12 @@ import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/services/storage/selected_sensebox_storage.dart';
+import 'package:sensebox_bike/services/track_export_service.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 import '../mocks.dart';
 import '../test_helpers.dart';
-
 
 void main() {
   const MethodChannel channel =
@@ -24,6 +25,7 @@ void main() {
   late GeolocationData geolocationData;
   late SensorData sensorData;
   late Directory tempDirectory;
+  late InMemorySelectedSenseBoxStorage selectedSenseBoxStorage;
 
   setUp(() async {
     initializeTestDependencies();
@@ -43,7 +45,12 @@ void main() {
     final mockIsarProvider = MockIsarProvider();
     when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
 
-    isarService = IsarService(isarProvider: mockIsarProvider);
+    selectedSenseBoxStorage = InMemorySelectedSenseBoxStorage();
+    isarService = IsarService(
+      isarProvider: mockIsarProvider,
+      selectedSenseBoxStorage: selectedSenseBoxStorage,
+      trackExportService: const TrackExportService(),
+    );
 
     await clearIsarDatabase(isar);
 
@@ -64,7 +71,9 @@ void main() {
       await sensorData.geolocationData.save();
     });
 
-    mockSenseBoxInSharedPreferences();
+    await selectedSenseBoxStorage.saveSelectedSenseBoxJson(
+      '{"name":"test-box","_id":"test-id","sensors":[{"_id":"test-temp-sensor","title":"Temperature","sensorType":"HDC1080 Temperature","unit":"°C"},{"_id":"test-speed-sensor","title":"Speed","sensorType":"GPS Speed","unit":"km/h"}]}',
+    );
   });
 
   tearDown(() async {
@@ -77,14 +86,14 @@ void main() {
     group('deleteAllData', () {
       test('successfully deletes all data from the database', () async {
         final tracksBefore = await isar.trackDatas.where().findAll();
-        final geolocationsBefore = await isar.geolocationDatas.where().findAll();
+        final geolocationsBefore =
+            await isar.geolocationDatas.where().findAll();
         final sensorsBefore = await isar.sensorDatas.where().findAll();
 
         expect(tracksBefore.length, equals(1));
         expect(geolocationsBefore.length, equals(1));
         expect(sensorsBefore.length, equals(1));
         await isarService.deleteAllData();
-
 
         final tracksAfter = await isar.trackDatas.where().findAll();
         final geolocationsAfter = await isar.geolocationDatas.where().findAll();
@@ -134,9 +143,9 @@ void main() {
           await sensorData2.geolocationData.save();
         });
 
-
         final tracksBefore = await isar.trackDatas.where().findAll();
-        final geolocationsBefore = await isar.geolocationDatas.where().findAll();
+        final geolocationsBefore =
+            await isar.geolocationDatas.where().findAll();
         final sensorsBefore = await isar.sensorDatas.where().findAll();
         expect(tracksBefore.length, equals(2));
         expect(geolocationsBefore.length, equals(2));
@@ -200,7 +209,7 @@ void main() {
 
       final csvContent = await file.readAsString();
       expect(csvContent.isNotEmpty, isTrue);
-      
+
       // Check that speed data is included with the correct sensor ID
       expect(csvContent.contains('test-speed-sensor'), isTrue);
       expect(csvContent.contains('15.50'), isTrue);
@@ -380,8 +389,7 @@ void main() {
         ..timestamp = DateTime.parse('2025-01-01T12:00:00');
 
       // Create GPS speed data using sensor_utils (as GeolocationBloc does)
-      final gpsSpeedData =
-            createGpsSpeedSensorData(mockGeoData);
+      final gpsSpeedData = createGpsSpeedSensorData(mockGeoData);
 
       // Verify it matches GPS sensor format
       expect(gpsSpeedData.title, equals('gps'));
@@ -446,5 +454,4 @@ void main() {
       );
     });
   });
-
 }

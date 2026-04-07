@@ -28,8 +28,8 @@ class SettingsState {
 }
 
 class SettingsBloc extends Cubit<SettingsState> {
-  SettingsBloc({SettingsStorage? storage})
-      : _storage = storage ?? SharedPreferencesSettingsStorage(),
+  SettingsBloc({required SettingsStorage storage})
+      : _storage = storage,
         super(const SettingsState(
           vibrateOnDisconnect: false,
           privacyZones: <String>[],
@@ -40,8 +40,8 @@ class SettingsBloc extends Cubit<SettingsState> {
 
   SettingsBloc.withState(
     super.initialState, {
-    SettingsStorage? storage,
-  }) : _storage = storage ?? SharedPreferencesSettingsStorage();
+    required SettingsStorage storage,
+  }) : _storage = storage;
 
   final SettingsStorage _storage;
 
