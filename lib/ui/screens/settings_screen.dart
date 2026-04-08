@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
@@ -26,8 +27,8 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingsBloc = Provider.of<SettingsBloc>(context);
-    final OpenSenseMapBloc openSenseMapBloc =
-        Provider.of<OpenSenseMapBloc>(context);
+    final OpenSenseMapBloc openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context);
+    final configurationBloc = Provider.of<ConfigurationBloc>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -333,6 +334,7 @@ class SettingsScreen extends StatelessWidget {
   // General Settings Section
   Widget _buildGeneralSettingsSection(
       BuildContext context, SettingsBloc settingsBloc) {
+    final configurationBloc = Provider.of<ConfigurationBloc>(context);
     final isarService = Provider.of<TrackBloc>(context).isarService;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,7 +382,7 @@ class SettingsScreen extends StatelessWidget {
             );
           },
         ),
-        _buildApiUrlSection(context, settingsBloc),
+        _buildApiUrlSection(context, settingsBloc, configurationBloc),
         ListTile(
           leading: const Icon(Icons.admin_panel_settings),
           title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
@@ -408,30 +410,38 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc) {
+  Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc, ConfigurationBloc configurationBloc) {
     return StatefulBuilder(
       builder: (context, setState) {
         final controller = TextEditingController(text: settingsBloc.apiUrl);
+        final apiUrls = configurationBloc.apiUrls;
+        final isLoading = configurationBloc.isLoadingApiUrls;
+        final error = configurationBloc.apiUrlsError;
 
-        return ListTile(
-          leading: const Icon(Icons.settings_ethernet_outlined),
-          title: Text(AppLocalizations.of(context)!.settingsApiUrl),
-          subtitle: Text(
-            AppLocalizations.of(context)!.settingsApiUrlHelper,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
-          onTap: () {
-            _showApiUrlDialog(context, settingsBloc, controller);
-          },
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.settings_ethernet_outlined),
+              title: Text(AppLocalizations.of(context)!.settingsApiUrl),
+              subtitle: Text(
+                settingsBloc.apiUrl,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              onTap: () {
+                _showApiUrlDialog(context, settingsBloc, controller, apiUrls: apiUrls, isLoading: isLoading, error: error, setState: setState);
+              },
+            ),
+          ],
         );
       },
     );
   }
 
-  void _showApiUrlDialog(BuildContext context, SettingsBloc settingsBloc,
-      TextEditingController controller) {
+  void _showApiUrlDialog(BuildContext context, SettingsBloc settingsBloc, TextEditingController controller, {List<String>? apiUrls, bool isLoading = false, String? error, void Function(void Function())? setState}) {
     final formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -439,7 +449,7 @@ class SettingsScreen extends StatelessWidget {
       builder: (context) => AlertDialog(
         contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
         content: SizedBox(
-          width: 300,
+          width: 320,
           child: Form(
             key: formKey,
             child: Column(
@@ -450,32 +460,55 @@ class SettingsScreen extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 16),
-                ApiUrlField(
-                  controller: controller,
-                  helperText:
-                      AppLocalizations.of(context)!.settingsApiUrlHelper,
-                  defaultValue: 'https://api.opensensemap.org',
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(AppLocalizations.of(context)!.generalCancel),
-                    ),
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: () async {
-                        if (formKey.currentState!.validate()) {
-                          await settingsBloc.setApiUrl(controller.text);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      child: Text(AppLocalizations.of(context)!.generalSave),
-                    ),
-                  ],
-                ),
+                if (isLoading)
+                  const CircularProgressIndicator()
+                else if (error != null)
+                  Text(error, style: TextStyle(color: Colors.red))
+                else if (apiUrls != null && apiUrls.isNotEmpty)
+                  DropdownFormField<String>(
+                    labelText: AppLocalizations.of(context)!.settingsApiUrl,
+                    items: apiUrls
+                        .map((url) => DropdownItem<String>(value: url, label: url))
+                        .toList(),
+                    initialValue: settingsBloc.apiUrl,
+                    onSaved: (value) {},
+                    validator: (value) => value == null || value.isEmpty ? AppLocalizations.of(context)!.settingsApiUrlHelper : null,
+                    onChanged: (value) async {
+                      if (value != null) {
+                        await settingsBloc.setApiUrl(value);
+                        if (setState != null) setState(() {});
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  )
+                else ...[
+                  ApiUrlField(
+                    controller: controller,
+                    helperText: AppLocalizations.of(context)!.settingsApiUrlHelper,
+                    defaultValue: 'https://api.opensensemap.org',
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(AppLocalizations.of(context)!.generalCancel),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () async {
+                          if (formKey.currentState!.validate()) {
+                            await settingsBloc.setApiUrl(controller.text);
+                            if (setState != null) setState(() {});
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        child: Text(AppLocalizations.of(context)!.generalSave),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
