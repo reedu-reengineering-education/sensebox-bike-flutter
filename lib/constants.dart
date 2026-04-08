@@ -12,7 +12,8 @@ class SharedPreferencesKeys {
   static const bool vibrateOnDisconnect = false;
 }
 
-// openSenseMapUrl removed; API URLs will be fetched remotely
+
+const standardOpenSenseMapApiUrl = 'https://api.opensensemap.org';
 const openSenseMapWebsiteUrl = 'https://opensensemap.org/';
 const senseBoxBikePrivacyPolicyUrl =
     'https://sensebox.de/sensebox-bike-privacy-policy';
