@@ -4,26 +4,46 @@ import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/constants.dart';
 
+
 class ConfigurationBloc {
   final RemoteDataService _remoteDataService;
 
   List<BoxConfiguration>? _boxConfigurations;
   List<Campaign>? _campaigns;
+  List<String>? _apiUrls;
   bool _isLoadingBoxConfigurations = false;
   bool _isLoadingCampaigns = false;
+  bool _isLoadingApiUrls = false;
   String? _boxConfigurationsError;
   String? _campaignsError;
+  String? _apiUrlsError;
   Set<String> _allSensorTitles = {};
 
   ConfigurationBloc({RemoteDataService? remoteDataService})
       : _remoteDataService = remoteDataService ?? RemoteDataService();
 
+
   List<BoxConfiguration>? get boxConfigurations => _boxConfigurations;
   List<Campaign>? get campaigns => _campaigns;
+  List<String>? get apiUrls => _apiUrls;
   bool get isLoadingBoxConfigurations => _isLoadingBoxConfigurations;
   bool get isLoadingCampaigns => _isLoadingCampaigns;
+  bool get isLoadingApiUrls => _isLoadingApiUrls;
   String? get boxConfigurationsError => _boxConfigurationsError;
   String? get campaignsError => _campaignsError;
+  String? get apiUrlsError => _apiUrlsError;
+  Future<void> loadApiUrls() async {
+    await _loadData(
+      url: apiUrlsUrl,
+      isAlreadyLoading: () => _isLoadingApiUrls,
+      isAlreadyLoaded: () => _apiUrls != null,
+      setLoading: (value) => _isLoadingApiUrls = value,
+      setError: (error) => _apiUrlsError = error,
+      setData: (data) => _apiUrls = (data as List<dynamic>).cast<String>(),
+      parseData: (data) => (data as List<dynamic>).cast<String>(),
+      dataTypeName: 'API URLs',
+    );
+  }
 
   BoxConfiguration? getBoxConfigurationById(String id) {
     if (_boxConfigurations == null) return null;
@@ -124,6 +144,7 @@ class ConfigurationBloc {
     await Future.wait([
       loadBoxConfigurations(),
       loadCampaigns(),
+      loadApiUrls(),
     ]);
   }
 

@@ -12,7 +12,7 @@ class SharedPreferencesKeys {
   static const bool vibrateOnDisconnect = false;
 }
 
-const openSenseMapUrl = 'https://api.opensensemap.org';
+// openSenseMapUrl removed; API URLs will be fetched remotely
 const openSenseMapWebsiteUrl = 'https://opensensemap.org/';
 const senseBoxBikePrivacyPolicyUrl =
     'https://sensebox.de/sensebox-bike-privacy-policy';
@@ -25,9 +25,13 @@ const knowledgeBaseUrl =
     'https://docs.sensebox.de/docs/products/bike/bike-overview';
 const githubDataBaseUrl =
     'https://raw.githubusercontent.com/reedu-reengineering-education/sensebox-bike-flutter/main/data';
+
+const apiUrlsPath = '/api_urls.json';
 const campaignsPath = '/locations.json';
 const boxConfigurationsPath = '/box_configurations.json';
 
+
+const apiUrlsUrl = '$githubDataBaseUrl$apiUrlsPath';
 const campaignsUrl = '$githubDataBaseUrl$campaignsPath';
 const boxConfigurationsUrl = '$githubDataBaseUrl$boxConfigurationsPath';
 
