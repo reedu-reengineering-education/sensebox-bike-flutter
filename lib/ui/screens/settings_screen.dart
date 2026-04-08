@@ -14,6 +14,7 @@ import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
 import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
+import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -31,11 +32,9 @@ class SettingsScreen extends StatelessWidget {
         return BlocBuilder<SettingsBloc, SettingsState>(
           builder: (context, settingsState) {
             final settingsBloc = context.read<SettingsBloc>();
-            return Scaffold(
-              appBar: AppBar(
-                title: Text(AppLocalizations.of(context)!.generalSettings),
-              ),
-              body: ListView(
+            return ScreenWrapper(
+              title: AppLocalizations.of(context)!.generalSettings,
+              child: ListView(
                 children: <Widget>[
                   _buildLoginLogoutSection(
                     context,
@@ -353,20 +352,6 @@ class SettingsScreen extends StatelessWidget {
               settingsBloc.toggleVibrateOnDisconnect(value);
             },
           ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.admin_panel_settings),
-          title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
-          onTap: () => context.push(AppRoutes.exclusionZones),
-          trailing: Badge.count(
-            count: settingsState.privacyZones.length,
-            backgroundColor: Theme.of(context).iconTheme.color,
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.trending_up_outlined),
-          title: Text(AppLocalizations.of(context)!.trackStatistics),
-          onTap: () => context.push(AppRoutes.trackStatistics),
         ),
       ],
     );

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sensebox_bike/app/app_router.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
@@ -60,13 +63,11 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    const CustomSpacer(),
                     if (!state.isAuthenticated) ...[
                       _buildLoginCallToAction(context),
                       const SizedBox(height: 8),
                     ],
-                    _buildUploadModeTile(context),
-                    const SizedBox(height: 8),
+                    _buildSettingsGrid(context),
                     Expanded(
                       child: SenseBoxSelectionWidget(
                           configurationBloc: widget.configurationBloc),
@@ -90,7 +91,7 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
   Widget _buildLoginCallToAction(BuildContext context) {
     return Material(
       color: loginRequiredColor,
-      borderRadius: BorderRadius.circular(borderRadiusSmall),
+      borderRadius: BorderRadius.circular(20),
       child: ListTile(
         leading: const Icon(Icons.login, color: loginRequiredTextColor),
         title: Text(
@@ -128,29 +129,136 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
     );
   }
 
+  Widget _buildSettingsGrid(BuildContext context) {
+    return Row(
+      spacing: 8,
+      children: [
+        Expanded(child: _buildUploadModeTile(context)),
+        Expanded(child: _buildPrivacyZonesTile(context)),
+      ],
+    );
+  }
+
   Widget _buildUploadModeTile(BuildContext context) {
     final settingsBloc = context.read<SettingsBloc>();
 
     return BlocBuilder<SettingsBloc, SettingsState>(
       builder: (context, settingsState) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
         final localizations = AppLocalizations.of(context)!;
         final currentMode = settingsState.directUploadMode
             ? localizations.settingsUploadModeDirect
             : localizations.settingsUploadModePostRide;
 
-        return Card(
-          margin: EdgeInsets.zero,
-          child: ListTile(
-            leading: const Icon(Icons.cloud_upload),
-            title: Text(localizations.settingsUploadMode),
-            subtitle: Text(
-              localizations.settingsUploadModeCurrent(currentMode),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
+        return InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _showUploadModeDialog(context, settingsBloc),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(20),
             ),
-            onTap: () => _showUploadModeDialog(context, settingsBloc),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(borderRadiusSmall),
+                  ),
+                  child: Icon(
+                    Icons.cloud_upload_outlined,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  localizations.settingsUploadMode,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  localizations.settingsUploadModeCurrent(currentMode),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPrivacyZonesTile(BuildContext context) {
+    return BlocBuilder<SettingsBloc, SettingsState>(
+      builder: (context, settingsState) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+        final localizations = AppLocalizations.of(context)!;
+        final zonesCount = settingsState.privacyZones.length;
+
+        return InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            context.push(AppRoutes.exclusionZones);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(borderRadiusSmall),
+                      ),
+                      child: Icon(
+                        Icons.admin_panel_settings_outlined,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const Spacer(),
+                    Badge.count(
+                      count: zonesCount,
+                      backgroundColor: colorScheme.primaryFixedDim,
+                      textColor: colorScheme.onPrimary,
+                    ),
+                  ],
+                ),
+                Text(
+                  localizations.generalPrivacyZones,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  localizations.privacyZoneDescription,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -160,92 +268,106 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
   void _showUploadModeDialog(BuildContext context, SettingsBloc settingsBloc) {
     final currentMode = settingsBloc.directUploadMode;
     final localizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     final screenSize = MediaQuery.of(context).size;
     final isLargeScreen = screenSize.width > 375;
 
-    showDialog(
+    showAppDialog(
       context: context,
       useRootNavigator: true,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(localizations.settingsUploadMode),
+        return AppAlertDialog(
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
+          title: Text(
+            localizations.settingsUploadMode,
+            style: theme.textTheme.headlineSmall,
+          ),
           titlePadding: isLargeScreen
-              ? const EdgeInsets.fromLTRB(24, 24, 24, 24)
-              : const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              ? const EdgeInsets.fromLTRB(24, 26, 24, 18)
+              : const EdgeInsets.fromLTRB(20, 22, 20, 16),
           contentPadding: EdgeInsets.zero,
+          actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
           content: SizedBox(
-            width: double.maxFinite,
-            height:
-                isLargeScreen ? null : MediaQuery.of(context).size.height * 0.6,
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(bottom: isLargeScreen ? 24.0 : 0.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioListTile<bool>(
-                      title: Text(localizations.settingsUploadModePostRide),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(localizations.settingsUploadModePostRideTitle),
-                          const SizedBox(height: 8),
-                          Text(
-                            localizations.settingsUploadModePostRideDescription,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                          ),
-                        ],
+            width: screenSize.width * 0.92,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+              ),
+              child: Scrollbar(
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RadioListTile<bool>(
+                        title: Text(localizations.settingsUploadModePostRide),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(localizations.settingsUploadModePostRideTitle),
+                            const SizedBox(height: 8),
+                            Text(
+                              localizations
+                                  .settingsUploadModePostRideDescription,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                        value: false,
+                        groupValue: currentMode,
+                        onChanged: (bool? value) {
+                          if (value != null) {
+                            settingsBloc.toggleDirectUploadMode(value);
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        isThreeLine: true,
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16.0),
                       ),
-                      value: false,
-                      groupValue: currentMode,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          settingsBloc.toggleDirectUploadMode(value);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                    const SizedBox(height: 16),
-                    RadioListTile<bool>(
-                      title: Text(localizations.settingsUploadModeDirect),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(localizations.settingsUploadModeDirectTitle),
-                          const SizedBox(height: 8),
-                          Text(
-                            localizations.settingsUploadModeDirectDescription,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                          ),
-                        ],
+                      const SizedBox(height: 16),
+                      RadioListTile<bool>(
+                        title: Text(localizations.settingsUploadModeDirect),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(localizations.settingsUploadModeDirectTitle),
+                            const SizedBox(height: 8),
+                            Text(
+                              localizations.settingsUploadModeDirectDescription,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                        value: true,
+                        groupValue: currentMode,
+                        onChanged: (bool? value) {
+                          if (value != null) {
+                            settingsBloc.toggleDirectUploadMode(value);
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        isThreeLine: true,
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16.0),
                       ),
-                      value: true,
-                      groupValue: currentMode,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          settingsBloc.toggleDirectUploadMode(value);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -302,7 +424,7 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
 
   Future<void> _showCreateSenseBoxDialog(BuildContext context) async {
     final configurationBloc = widget.configurationBloc;
-    return showDialog(
+    return showAppDialog(
       context: context,
       useRootNavigator: true,
       barrierDismissible: false,

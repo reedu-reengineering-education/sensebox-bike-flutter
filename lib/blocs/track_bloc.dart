@@ -115,13 +115,13 @@ class TrackBloc extends Cubit<TrackState> {
 
     bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     String style = isDarkMode ? 'dark-v11' : 'light-v11';
-    String lineColor = isDarkMode ? 'fff' : '111';
+    String lineColor = isDarkMode ? 'fff' : '221';
     String polyline = Uri.encodeComponent(encodedPolyline);
 
-    const double mapPreviewWidth = 140;
-    const double mapPreviewHeight = 140;
+    const double mapPreviewWidth = 280;
+    const double mapPreviewHeight = 280;
 
-    return 'https://api.mapbox.com/styles/v1/mapbox/$style/static/path-1+$lineColor-0.8($polyline)/auto/${mapPreviewWidth.toInt()}x${mapPreviewHeight.toInt()}';
+    return 'https://api.mapbox.com/styles/v1/mapbox/$style/static/path-3+$lineColor-0.8($polyline)/auto/${mapPreviewWidth.toInt()}x${mapPreviewHeight.toInt()}';
   }
 
   String formatTrackDate(DateTime timestamp) {

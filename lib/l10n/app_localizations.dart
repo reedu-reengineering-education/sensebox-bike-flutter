@@ -504,6 +504,12 @@ abstract class AppLocalizations {
   /// **'No senseBoxes available or configuration not loaded'**
   String get openSenseMapBoxSelectionNoBoxes;
 
+  /// No description provided for @openSenseMapBoxSelectionAvailableBoxes.
+  ///
+  /// In en, this message translates to:
+  /// **'Available senseBoxes'**
+  String get openSenseMapBoxSelectionAvailableBoxes;
+
   /// No description provided for @openSenseMapBoxSelectionCreateHint.
   ///
   /// In en, this message translates to:
@@ -629,6 +635,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'GitHub issue'**
   String get settingsGithub;
+
+  /// No description provided for @privacyZoneDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Areas where no data will be recorded'**
+  String get privacyZoneDescription;
 
   /// No description provided for @privacyZonesStart.
   ///

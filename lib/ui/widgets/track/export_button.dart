@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_options_dialog.dart';
 
@@ -22,7 +23,7 @@ class ExportButton extends StatelessWidget {
       onTap: isDisabled
           ? null
           : () async {
-              await showDialog(
+              await showAppDialog(
                 context: context,
                 useRootNavigator: true,
                 builder: (context) => ExportOptionsDialog(
@@ -43,7 +44,7 @@ class ExportButton extends StatelessWidget {
                   Icons.file_download,
                   size: 24,
                   color: isDisabled
-                      ? theme.colorScheme.onSurface.withOpacity(0.38)
+                      ? theme.colorScheme.onSurface.withValues(alpha: 0.38)
                       : theme.colorScheme.onSurface,
                 ),
         ),

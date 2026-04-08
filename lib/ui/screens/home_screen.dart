@@ -90,6 +90,14 @@ class HomeScreen extends StatelessWidget {
                                 child: GeolocationMapWidget(), // The map
                               ),
                               const Positioned(
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                child: _BottomGradient(
+                                  direction: AxisDirection.up,
+                                ),
+                              ),
+                              const Positioned(
                                 bottom: 0,
                                 left: 0,
                                 right: 0,
@@ -112,6 +120,7 @@ class HomeScreen extends StatelessWidget {
                         pinned: true,
                       ),
                       SliverSafeArea(
+                        top: false,
                         minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                         sliver: BlocBuilder<SensorBloc, SensorState>(
                           builder: (context, _) {
@@ -382,7 +391,10 @@ class _DisconnectButton extends StatelessWidget {
 
 // Bottom gradient widget
 class _BottomGradient extends StatelessWidget {
-  const _BottomGradient();
+  final AxisDirection direction;
+  final double height;
+  const _BottomGradient(
+      {this.direction = AxisDirection.down, this.height = 100});
 
   @override
   Widget build(BuildContext context) {
@@ -390,15 +402,19 @@ class _BottomGradient extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: direction == AxisDirection.down
+                ? Alignment.topCenter
+                : Alignment.bottomCenter,
+            end: direction == AxisDirection.down
+                ? Alignment.bottomCenter
+                : Alignment.topCenter,
             colors: [
               Theme.of(context).scaffoldBackgroundColor.withOpacity(0.0),
               Theme.of(context).scaffoldBackgroundColor,
             ],
           ),
         ),
-        height: 100,
+        height: height,
       ),
     );
   }

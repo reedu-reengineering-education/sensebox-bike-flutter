@@ -10,12 +10,6 @@ Color modalBarrierColor(ThemeData theme) {
       : Colors.black.withValues(alpha: 0.38);
 }
 
-Color modalSurfaceColor(ThemeData theme) {
-  return theme.brightness == Brightness.dark
-      ? theme.colorScheme.surfaceContainerHigh
-      : theme.colorScheme.surface;
-}
-
 Widget buildModalSheetSurface(
   BuildContext context,
   Widget child, {
@@ -28,20 +22,39 @@ Widget buildModalSheetSurface(
     color: Colors.transparent,
     child: Container(
       decoration: BoxDecoration(
-        color: modalSurfaceColor(theme),
+        color: theme.scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         border: Border(
           top: BorderSide(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+            color: theme.colorScheme.onSurface.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.14 : 0.08,
+            ),
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.32),
-            blurRadius: 24,
-            offset: const Offset(0, -6),
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.46 : 0.26,
+            ),
+            blurRadius: theme.brightness == Brightness.dark ? 30 : 24,
+            spreadRadius: theme.brightness == Brightness.dark ? 2 : 0,
+            offset: const Offset(0, -8),
           ),
+          if (theme.brightness == Brightness.dark)
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.03),
+              blurRadius: 2,
+              spreadRadius: -1,
+              offset: const Offset(0, 1),
+            ),
+          if (theme.brightness == Brightness.dark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.22),
+              blurRadius: 44,
+              spreadRadius: 4,
+              offset: const Offset(0, -12),
+            ),
         ],
       ),
       child: ClipRRect(

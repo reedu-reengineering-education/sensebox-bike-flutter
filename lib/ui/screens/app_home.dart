@@ -31,11 +31,26 @@ class AppHome extends StatelessWidget {
                 boxShadow: [
                   BoxShadow(
                     color: isDark
-                        ? const Color.fromARGB(255, 0, 0, 0)
+                        ? Colors.black.withValues(alpha: 0.34)
                         : Colors.black26,
-                    blurRadius: 32,
-                    offset: Offset(0, 8),
+                    blurRadius: isDark ? 22 : 32,
+                    spreadRadius: isDark ? -2 : 0,
+                    offset: const Offset(0, 8),
                   ),
+                  if (isDark)
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 42,
+                      spreadRadius: -12,
+                      offset: const Offset(0, 14),
+                    ),
+                  if (isDark)
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.04),
+                      blurRadius: 2,
+                      spreadRadius: -1,
+                      offset: const Offset(0, 1),
+                    ),
                 ],
               ),
               child: ClipRRect(

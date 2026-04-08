@@ -72,6 +72,7 @@ dependencies:
   retry: ^3.1.2
   dart_jsonwebtoken: ^2.12.1
   modal_bottom_sheet: ^3.0.0
+  google_fonts: ^8.0.2
 
 dev_dependencies:
   flutter_test:

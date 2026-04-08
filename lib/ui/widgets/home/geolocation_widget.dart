@@ -39,13 +39,16 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   static const double authenticatedMargin = 125;
   static const double unauthenticatedMargin = 75;
   static const Duration _trackRenderDebounceDuration =
-      Duration(milliseconds: 300);
-  static const Duration _cameraUpdateInterval = Duration(milliseconds: 750);
+      Duration(milliseconds: 1200);
+  static const Duration _cameraUpdateInterval = Duration(seconds: 2);
   static const double _cameraMinDistanceMeters = 3;
+  static const Duration _maxTrackRenderInterval = Duration(seconds: 3);
+  static const int _minNewPointsPerTrackRender = 3;
   bool _isVisible = true;
   bool _isMapReady = false;
   int _lastRenderedPointCount = 0;
   DateTime? _lastCameraUpdateAt;
+  DateTime? _lastTrackRenderAt;
   GeolocationData? _lastCameraLocation;
   bool? _lastAuthStateForMargins;
 
@@ -80,7 +83,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
     // Recording path updates are expensive, so debounce redraws.
     if (state.isRecording && state.gpsBuffer.isNotEmpty) {
-      if (state.gpsBuffer.length != _lastRenderedPointCount) {
+      if (_shouldRenderTrack(state.gpsBuffer.length)) {
         _scheduleTrackRender();
       }
       return;
@@ -91,6 +94,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
         _lastRenderedPointCount > 0 &&
         state.gpsBuffer.isEmpty) {
       _lastRenderedPointCount = 0;
+      _lastTrackRenderAt = null;
       _clearTrackLine();
     }
 
@@ -104,6 +108,17 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     _trackRenderDebounce?.cancel();
     _trackRenderDebounce =
         Timer(_trackRenderDebounceDuration, _updateMapWithTrack);
+  }
+
+  bool _shouldRenderTrack(int currentPointCount) {
+    final newPoints = currentPointCount - _lastRenderedPointCount;
+    if (newPoints <= 0) return false;
+    if (newPoints >= _minNewPointsPerTrackRender) return true;
+
+    final lastRenderAt = _lastTrackRenderAt;
+    if (lastRenderAt == null) return true;
+
+    return DateTime.now().difference(lastRenderAt) >= _maxTrackRenderInterval;
   }
 
   void _updateMapMargins() {
@@ -149,6 +164,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
       await _drawTrackLine(points);
       _lastRenderedPointCount = _mapBloc.gpsBuffer.length;
+      _lastTrackRenderAt = DateTime.now();
       await _setCameraToLastLocation(force: true);
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);

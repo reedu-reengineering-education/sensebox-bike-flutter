@@ -1,7 +1,7 @@
 import 'package:geolocator/geolocator.dart' as geolocator;
 
 // Tracks screen
-const tracksPerPage = 5;
+const tracksPerPage = 6;
 
 // LiveUploadService
 const maxRetries = 10;

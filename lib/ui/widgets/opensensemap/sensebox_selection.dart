@@ -127,13 +127,12 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     }
 
     if (bloc.senseBoxes.isEmpty && !isLoading) {
-      return bloc.isAuthenticated
-          ? _buildEmptyState(localizations, theme, configurationBloc)
-          : ErrorMessage(
-              icon: _errorIcon,
-              title: localizations.openSenseMapBoxSelectionNoBoxes,
-              detail: 'Please login to view your senseBoxes',
-            );
+      return _buildEmptyState(
+        localizations,
+        theme,
+        configurationBloc,
+        isAuthenticated: bloc.isAuthenticated,
+      );
     }
 
     return _buildBoxList(
@@ -219,10 +218,20 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     );
   }
 
-  Widget _buildEmptyState(AppLocalizations localizations, ThemeData theme,
-      ConfigurationBloc configurationBloc) {
+  Widget _buildEmptyState(
+    AppLocalizations localizations,
+    ThemeData theme,
+    ConfigurationBloc configurationBloc, {
+    required bool isAuthenticated,
+  }) {
     final isConfigurationLoaded = configurationBloc.boxConfigurations != null &&
         !configurationBloc.isLoadingBoxConfigurations;
+    final colorScheme = theme.colorScheme;
+    final hintText = !isAuthenticated
+        ? localizations.trackUploadLoginSelectHint
+        : (isConfigurationLoaded
+            ? localizations.openSenseMapBoxSelectionCreateHint
+            : null);
 
     return Center(
       child: Padding(
@@ -230,17 +239,29 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.directions_bike, size: 48),
+            Icon(
+              Icons.directions_bike,
+              size: 48,
+              color: colorScheme.onSurface,
+            ),
             const SizedBox(height: 16),
-            Text(localizations.openSenseMapBoxSelectionNoBoxes,
-                style: theme.textTheme.titleMedium,
-                textAlign: TextAlign.center),
-            if (isConfigurationLoaded) ...[
+            Text(
+              localizations.openSenseMapBoxSelectionNoBoxes,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (hintText != null) ...[
               const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Text(
-                  localizations.openSenseMapBoxSelectionCreateHint,
+                  hintText,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),

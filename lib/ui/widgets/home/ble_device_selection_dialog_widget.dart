@@ -25,9 +25,10 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
     builder: (context) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        SizedBox(height: spacing * 2),
         Text(
           AppLocalizations.of(context)!.bleDeviceSelectTitle,
-          style: Theme.of(context).textTheme.headlineSmall,
+          style: Theme.of(context).textTheme.headlineMedium,
           textAlign: TextAlign.center,
         ),
         DeviceSelectionSheet(bleBloc: bleBloc, initialScanError: scanError),
@@ -71,7 +72,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
 
     return Padding(
         padding: const EdgeInsets.only(
-            top: spacing * 4, bottom: spacing, left: spacing, right: spacing),
+            top: 0, bottom: spacing, left: spacing, right: spacing),
         child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.6,
             child: StreamBuilder<List<BluetoothDevice>>(

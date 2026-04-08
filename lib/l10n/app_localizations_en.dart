@@ -235,6 +235,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'No senseBoxes available or configuration not loaded';
 
   @override
+  String get openSenseMapBoxSelectionAvailableBoxes => 'Available senseBoxes';
+
+  @override
   String get openSenseMapBoxSelectionCreateHint =>
       'Create one using the \'+\' button';
 
@@ -307,6 +310,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsGithub => 'GitHub issue';
+
+  @override
+  String get privacyZoneDescription => 'Areas where no data will be recorded';
 
   @override
   String get privacyZonesStart =>

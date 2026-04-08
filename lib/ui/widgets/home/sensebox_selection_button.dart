@@ -77,7 +77,7 @@ class SenseBoxSelectionButton extends StatelessWidget {
                 constraints: const BoxConstraints(minHeight: 48),
                 decoration: BoxDecoration(
                   color: backgroundColor,
-                  borderRadius: BorderRadius.circular(borderRadiusSmall),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: borderColor,
                     width: 1.0,
@@ -93,81 +93,41 @@ class SenseBoxSelectionButton extends StatelessWidget {
                 ),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    if (showModeBadge) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: textColor.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: textColor.withValues(alpha: 0.22),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(modeIcon, size: 14, color: textColor),
-                            const SizedBox(width: 6),
-                            Text(
-                              modeLabel,
-                              style: textTheme.bodySmall?.copyWith(
+                    SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: Center(
+                        child: isAuthenticating
+                            ? const Loader(light: true)
+                            : Icon(
+                                icon,
                                 color: textColor,
-                                fontWeight: FontWeight.w600,
+                                size: 20,
                               ),
-                            ),
-                          ],
-                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 1,
-                        width: double.infinity,
-                        color: textColor.withValues(alpha: 0.2),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: Center(
-                            child: isAuthenticating
-                                ? const Loader(light: true)
-                                : Icon(
-                                    icon,
-                                    color: textColor,
-                                    size: 20,
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            label,
-                            style: textTheme.bodyLarge?.copyWith(
-                              color: textColor,
-                              fontWeight: FontWeight.w600,
-                              height: 1.2,
-                            ),
-                            maxLines: 3,
-                          ),
-                        ),
-                        if (isAuthenticated && !isAuthenticating && noBox)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Icon(Icons.arrow_forward,
-                                color: textColor, size: 16),
-                          ),
-                      ],
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: textColor,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                        maxLines: 3,
+                      ),
+                    ),
+                    if (isAuthenticated && !isAuthenticating && noBox)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Icon(Icons.arrow_forward,
+                            color: textColor, size: 16),
+                      ),
                   ],
                 ),
               ),

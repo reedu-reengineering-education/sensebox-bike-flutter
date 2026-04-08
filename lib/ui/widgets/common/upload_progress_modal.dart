@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_indicator.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_info_widget.dart';
 
@@ -158,7 +159,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
   Widget _buildConfirmationDialog(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    return AlertDialog(
+    return AppAlertDialog(
       title: Text(AppLocalizations.of(context)!.uploadProgressTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -183,7 +184,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
   }
 
   Widget _buildProgressDialog(BuildContext context, UploadProgress progress) {
-    return AlertDialog(
+    return AppAlertDialog(
       title: Text(AppLocalizations.of(context)!.uploadProgressTitle),
       contentPadding: EdgeInsets.zero,
       content: Column(
@@ -255,10 +256,10 @@ class UploadProgressOverlay {
             color: Theme.of(context).colorScheme.error,
           );
 
-      showDialog(
+      showAppDialog(
         context: context,
         useRootNavigator: true,
-        builder: (dialogContext) => AlertDialog(
+        builder: (dialogContext) => AppAlertDialog(
           title: Text(localizations.uploadRequirementsTitle, style: titleStyle),
           content: Text(localizations.uploadPostRideRequirementsMessage),
           actions: [
@@ -276,7 +277,7 @@ class UploadProgressOverlay {
       return;
     }
 
-    showDialog(
+    showAppDialog(
       context: context,
       useRootNavigator: true,
       barrierDismissible: false,

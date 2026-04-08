@@ -48,15 +48,20 @@ class SensorTileList extends StatelessWidget {
               sensorKey;
       final sensorTypeKey =
           '$sensorKey${attribute == null ? '' : '_$attribute'}';
+      final colorScheme = Theme.of(context).colorScheme;
       final cardColor = selectedSensorType == sensorTypeKey
-          ? getSensorColor(sensorKey).withOpacity(0.25)
-          : Theme.of(context).canvasColor;
+          ? Color.alphaBlend(
+              getSensorColor(sensorKey).withValues(alpha: 0.24),
+              colorScheme.surfaceContainerHigh,
+            )
+          : colorScheme.surfaceContainerHigh;
 
       return SensorTile(
         title: displayTitle,
         cardColor: cardColor,
         sensorColor: getSensorColor(sensorKey),
         sensorIcon: getSensorIcon(sensorKey),
+        isSelected: selectedSensorType == sensorTypeKey,
         onTap: () => onSensorTypeSelected(sensorTypeKey),
       );
     }).toList();

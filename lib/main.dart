@@ -128,8 +128,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp>
   @override
   Widget build(BuildContext context) {
     final isDarkMode =
-        WidgetsBinding.instance.platformDispatcher.platformBrightness ==
-            Brightness.dark;
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,

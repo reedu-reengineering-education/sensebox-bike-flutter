@@ -23,6 +23,9 @@ class GeolocationMapState {
 }
 
 class GeolocationMapBloc extends Cubit<GeolocationMapState> {
+  static const double _mapNotificationDistanceMeters = 3.0;
+  static const int _maxBufferedGpsPoints = 2000;
+
   // Dependencies
   final GeolocationBloc geolocationBloc;
   final RecordingBloc recordingBloc;
@@ -119,7 +122,7 @@ class GeolocationMapBloc extends Cubit<GeolocationMapState> {
         geoData.latitude,
         geoData.longitude,
       );
-      if (dist >= 1.0) {
+      if (dist >= _mapNotificationDistanceMeters) {
         shouldNotify = true;
       }
     }
@@ -136,13 +139,17 @@ class GeolocationMapBloc extends Cubit<GeolocationMapState> {
   void _addToGpsBuffer(GeolocationData geoData) {
     if (_isDuplicatePoint(geoData)) return;
     _gpsBuffer.add(geoData);
+    if (_gpsBuffer.length > _maxBufferedGpsPoints) {
+      _gpsBuffer.removeAt(0);
+    }
   }
 
   bool _isDuplicatePoint(GeolocationData geoData) {
-    return _gpsBuffer.any((point) =>
-        point.latitude == geoData.latitude &&
-        point.longitude == geoData.longitude &&
-        point.timestamp == geoData.timestamp);
+    if (_gpsBuffer.isEmpty) return false;
+    final lastPoint = _gpsBuffer.last;
+    return lastPoint.latitude == geoData.latitude &&
+        lastPoint.longitude == geoData.longitude &&
+        lastPoint.timestamp == geoData.timestamp;
   }
 
   void _clearGpsBuffer() {
