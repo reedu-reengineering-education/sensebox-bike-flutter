@@ -534,19 +534,6 @@ class BleBloc extends Cubit<BleState> {
     BluetoothDevice device,
     BuildContext context,
   ) async {
-    // Check if reconnection is already in progress
-    if (_isReconnecting) {
-      // If we've been trying for too long, reset and start fresh
-      if (_reconnectionAttempts >= _maxReconnectionAttempts) {
-        _isReconnecting = false;
-        _reconnectionAttempts = 0;
-        _hasVibrated = false;
-        _emitState();
-      } else {
-        return;
-      }
-    }
-
     _isReconnecting = true;
     _isInRetryMode = true;
 
