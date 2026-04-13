@@ -12,6 +12,7 @@ import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/api_url_field.dart';
+import 'package:sensebox_bike/ui/widgets/common/dropdown_form_field.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
@@ -20,6 +21,20 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 
 class SettingsScreen extends StatelessWidget {
+
+    TextStyle _getPrimaryTextStyle(BuildContext context) {
+      return TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: Theme.of(context).colorScheme.onTertiaryContainer,
+      );
+    }
+
+    TextStyle _getSecondaryTextStyle(BuildContext context) {
+      return TextStyle(
+        color: Theme.of(context).colorScheme.onTertiaryContainer,
+      );
+    }
   final Future<bool> Function(Uri url, {LaunchMode mode}) launchUrlFunction;
 
   const SettingsScreen({super.key, this.launchUrlFunction = launchUrl});
@@ -28,7 +43,6 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingsBloc = Provider.of<SettingsBloc>(context);
     final OpenSenseMapBloc openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context);
-    final configurationBloc = Provider.of<ConfigurationBloc>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -225,19 +239,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  TextStyle _getPrimaryTextStyle(BuildContext context) {
-    return TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
-      color: Theme.of(context).colorScheme.onTertiaryContainer,
-    );
-  }
-
-  TextStyle _getSecondaryTextStyle(BuildContext context) {
-    return TextStyle(
-      color: Theme.of(context).colorScheme.onTertiaryContainer,
-    );
-  }
 
   Widget _buildAccountManagementSection(BuildContext context) {
     final isarService = Provider.of<TrackBloc>(context).isarService;
@@ -413,27 +414,28 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc, ConfigurationBloc configurationBloc) {
     return StatefulBuilder(
       builder: (context, setState) {
-        final controller = TextEditingController(text: settingsBloc.apiUrl);
         final apiUrls = configurationBloc.apiUrls;
         final isLoading = configurationBloc.isLoadingApiUrls;
         final error = configurationBloc.apiUrlsError;
-
+        final controller = TextEditingController(text: settingsBloc.apiUrl);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ListTile(
-              leading: const Icon(Icons.settings_ethernet_outlined),
-              title: Text(AppLocalizations.of(context)!.settingsApiUrl),
-              subtitle: Text(
-                settingsBloc.apiUrl,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
+            Consumer<SettingsBloc>(
+              builder: (context, bloc, _) => ListTile(
+                leading: const Icon(Icons.settings_ethernet_outlined),
+                title: Text(AppLocalizations.of(context)!.settingsApiUrl),
+                subtitle: Text(
+                  bloc.apiUrl,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+                onTap: () {
+                  _showApiUrlDialog(context, bloc, controller, apiUrls: apiUrls, isLoading: isLoading, error: error, setState: setState);
+                },
               ),
-              onTap: () {
-                _showApiUrlDialog(context, settingsBloc, controller, apiUrls: apiUrls, isLoading: isLoading, error: error, setState: setState);
-              },
             ),
           ],
         );
@@ -471,15 +473,12 @@ class SettingsScreen extends StatelessWidget {
                         .map((url) => DropdownItem<String>(value: url, label: url))
                         .toList(),
                     initialValue: settingsBloc.apiUrl,
-                    onSaved: (value) {},
-                    validator: (value) => value == null || value.isEmpty ? AppLocalizations.of(context)!.settingsApiUrlHelper : null,
-                    onChanged: (value) async {
-                      if (value != null) {
+                    onSaved: (value) async {
+                      if (value != null && value != settingsBloc.apiUrl) {
                         await settingsBloc.setApiUrl(value);
-                        if (setState != null) setState(() {});
-                        Navigator.of(context).pop();
                       }
                     },
+                    validator: (value) => value == null || value.isEmpty ? AppLocalizations.of(context)!.settingsApiUrlHelper : null,
                   )
                 else ...[
                   ApiUrlField(
