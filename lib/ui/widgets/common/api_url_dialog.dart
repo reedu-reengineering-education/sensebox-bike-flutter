@@ -133,20 +133,20 @@ class _ApiUrlDialogState extends State<ApiUrlDialog> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: Text(tranlsations.generalCancel),
-                          ),
-                          const SizedBox(width: 8),
-                          TextButton(
-                            onPressed: selectedUrl == null || selectedUrl == settingsBloc.apiUrl
-                                ? null
-                                : () async {
-                                    await settingsBloc.setApiUrl(selectedUrl!);
-                                    Navigator.of(context).pop();
-                                  },
-                            child: Text(tranlsations.generalSave),
-                          ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: Text(tranlsations.generalCancel),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton(
+                              onPressed: selectedUrl == null || selectedUrl == settingsBloc.apiUrl
+                                  ? null
+                                  : () async {
+                                      await settingsBloc.setApiUrl(selectedUrl!);
+                                      Navigator.of(context).pop();
+                                    },
+                              child: Text(tranlsations.generalSave),
+                            ),
                         ],
                       ),
                     ],
@@ -162,20 +162,20 @@ class _ApiUrlDialogState extends State<ApiUrlDialog> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(tranlsations.generalCancel),
-                    ),
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: () async {
-                        if (formKey.currentState!.validate()) {
-                          formKey.currentState!.save();
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      child: Text(tranlsations.generalSave),
-                    ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(tranlsations.generalCancel),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: () async {
+                          if (formKey.currentState!.validate()) {
+                            formKey.currentState!.save();
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        child: Text(tranlsations.generalSave),
+                      ),
                   ],
                 ),
               ],
