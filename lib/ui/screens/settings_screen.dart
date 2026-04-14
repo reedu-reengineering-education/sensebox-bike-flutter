@@ -446,6 +446,7 @@ class SettingsScreen extends StatelessWidget {
     final formKey = GlobalKey<FormState>();
 
     String? selectedUrl = settingsBloc.apiUrl;
+    String? dropdownValue = (apiUrls != null && apiUrls.contains(selectedUrl)) ? selectedUrl : null;
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -490,7 +491,7 @@ class SettingsScreen extends StatelessWidget {
                     builder: (context, setState) => Column(
                       children: [
                         DropdownButtonFormField<String>(
-                          value: selectedUrl,
+                          value: dropdownValue,
                           decoration: InputDecoration(
                             labelText:
                                 AppLocalizations.of(context)!.settingsApiUrl,
@@ -519,15 +520,15 @@ class SettingsScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             TextButton(
                               onPressed: selectedUrl == null ||
-                                      selectedUrl == settingsBloc.apiUrl
-                                  ? null
-                                  : () async {
-                                      await settingsBloc
-                                          .setApiUrl(selectedUrl!);
-                                      Navigator.of(context).pop();
-                                    },
+                                  selectedUrl == settingsBloc.apiUrl
+                                ? null
+                                : () async {
+                                  await settingsBloc
+                                    .setApiUrl(selectedUrl!);
+                                  Navigator.of(context).pop();
+                                },
                               child: Text(
-                                  AppLocalizations.of(context)!.generalSave),
+                                AppLocalizations.of(context)!.generalSave),
                             ),
                           ],
                         ),
