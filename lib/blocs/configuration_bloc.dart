@@ -34,7 +34,7 @@ class ConfigurationBloc extends ChangeNotifier {
   String? get campaignsError => _campaignsError;
   String? get apiUrlsError => _apiUrlsError;
   Future<void> loadApiUrls() async {
-    await _loadData(
+    final result = await _loadData<List<String>>(
       url: apiUrlsUrl,
       isAlreadyLoading: () => _isLoadingApiUrls,
       isAlreadyLoaded: () => _apiUrls != null,
@@ -46,13 +46,10 @@ class ConfigurationBloc extends ChangeNotifier {
         _apiUrlsError = error;
         notifyListeners();
       },
-      setData: (data) {
-        _apiUrls = (data as List<dynamic>).cast<String>();
-        notifyListeners();
-      },
       parseData: (data) => (data as List<dynamic>).cast<String>(),
-      dataTypeName: 'API URLs',
     );
+    _apiUrls = result;
+    notifyListeners();
   }
 
   BoxConfiguration? getBoxConfigurationById(String id) {
@@ -75,19 +72,17 @@ class ConfigurationBloc extends ChangeNotifier {
     return null;
   }
 
-  Future<void> _loadData({
+  Future<T?> _loadData<T>({
     required String url,
     required bool Function() isAlreadyLoading,
     required bool Function() isAlreadyLoaded,
     required void Function(bool) setLoading,
     required void Function(String?) setError,
-    required void Function(dynamic) setData,
-    required dynamic Function(dynamic) parseData,
-    required String dataTypeName,
+    required T Function(dynamic) parseData,
     bool allowReload = false,
   }) async {
     if (isAlreadyLoading() || (!allowReload && isAlreadyLoaded())) {
-      return;
+      return null;
     }
 
     setLoading(true);
@@ -97,14 +92,14 @@ class ConfigurationBloc extends ChangeNotifier {
       final dynamic data = await _remoteDataService.fetchJson(url);
       if (data is List) {
         final parsed = parseData(data);
-        setData(parsed);
         setError(null);
+        return parsed;
       } else {
-        throw Exception('Invalid $dataTypeName format: Expected List');
+        throw Exception('Invalid data format: Expected List');
       }
     } catch (e) {
-      setError('Failed to load $dataTypeName: $e');
-      setData(null);
+      setError('Failed to load data: $e');
+      return null;
     } finally {
       setLoading(false);
     }
