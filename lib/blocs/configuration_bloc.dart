@@ -106,7 +106,7 @@ class ConfigurationBloc extends ChangeNotifier {
   }
 
   Future<void> loadBoxConfigurations() async {
-    await _loadData(
+    final result = await _loadData<List<BoxConfiguration>>(
       url: boxConfigurationsUrl,
       isAlreadyLoading: () => _isLoadingBoxConfigurations,
       isAlreadyLoaded: () => _boxConfigurations != null,
@@ -117,32 +117,27 @@ class ConfigurationBloc extends ChangeNotifier {
           _allSensorTitles = {};
         }
       },
-      setData: (data) {
-        _boxConfigurations = data as List<BoxConfiguration>?;
-        _updateAllSensorTitles();
-      },
       parseData: (data) => (data as List)
-          .map((item) =>
-              BoxConfiguration.fromJson(item as Map<String, dynamic>))
+          .map((item) => BoxConfiguration.fromJson(item as Map<String, dynamic>))
           .toList(),
-      dataTypeName: 'box configurations',
       allowReload: true,
     );
+    _boxConfigurations = result;
+    _updateAllSensorTitles();
   }
 
   Future<void> loadCampaigns() async {
-    await _loadData(
+    final result = await _loadData<List<Campaign>>(
       url: campaignsUrl,
       isAlreadyLoading: () => _isLoadingCampaigns,
       isAlreadyLoaded: () => _campaigns != null,
       setLoading: (value) => _isLoadingCampaigns = value,
       setError: (error) => _campaignsError = error,
-      setData: (data) => _campaigns = data as List<Campaign>?,
       parseData: (data) => (data as List)
           .map((item) => Campaign.fromJson(item as Map<String, dynamic>))
           .toList(),
-      dataTypeName: 'campaigns',
     );
+    _campaigns = result;
   }
 
   Future<void> loadAll() async {
