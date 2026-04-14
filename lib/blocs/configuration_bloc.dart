@@ -118,7 +118,8 @@ class ConfigurationBloc extends ChangeNotifier {
         }
       },
       parseData: (data) => (data as List)
-          .map((item) => BoxConfiguration.fromJson(item as Map<String, dynamic>))
+          .map(
+              (item) => BoxConfiguration.fromJson(item as Map<String, dynamic>))
           .toList(),
       allowReload: true,
     );
