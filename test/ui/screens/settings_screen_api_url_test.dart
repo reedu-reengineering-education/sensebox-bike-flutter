@@ -44,20 +44,22 @@ void main() {
     });
 
     testWidgets('shows and selects API URL from dropdown', (tester) async {
+      final openSenseMapBloc = OpenSenseMapBloc(configurationBloc: configurationBloc);
       await tester.pumpWidget(
         MultiProvider(
           providers: [
             ChangeNotifierProvider.value(value: settingsBloc),
-            Provider.value(value: configurationBloc),
+            ChangeNotifierProvider.value(value: configurationBloc),
+            ChangeNotifierProvider.value(value: openSenseMapBloc),
           ],
           child: const MaterialApp(home: SettingsScreen()),
         ),
       );
       await tester.pumpAndSettle();
 
-      // Tap API URL tile
-      expect(find.text('API URL'), findsOneWidget);
-      await tester.tap(find.text('API URL'));
+      // Tap Service URL tile
+      expect(find.text('Service URL'), findsOneWidget);
+      await tester.tap(find.text('Service URL'));
       await tester.pumpAndSettle();
 
       // Dropdown with API URLs should appear
@@ -75,19 +77,21 @@ void main() {
     testWidgets('falls back to manual entry if no API list', (tester) async {
       configurationBloc.apiUrls?.clear();
       // Optionally, if you want to simulate null, you could add a setter for apiUrls in ConfigurationBloc for testing, but clearing is usually enough.
+      final openSenseMapBloc = OpenSenseMapBloc(configurationBloc: configurationBloc);
       await tester.pumpWidget(
         MultiProvider(
           providers: [
             ChangeNotifierProvider.value(value: settingsBloc),
-            Provider.value(value: configurationBloc),
+            ChangeNotifierProvider.value(value: configurationBloc),
+            ChangeNotifierProvider.value(value: openSenseMapBloc),
           ],
           child: const MaterialApp(home: SettingsScreen()),
         ),
       );
       await tester.pumpAndSettle();
 
-      // Tap API URL tile
-      await tester.tap(find.text('API URL'));
+      // Tap Service URL tile
+      await tester.tap(find.text('Service URL'));
       await tester.pumpAndSettle();
 
       // Manual entry field should appear
