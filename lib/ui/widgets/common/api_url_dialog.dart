@@ -103,7 +103,7 @@ class _ApiUrlDialogState extends State<ApiUrlDialog> {
                   builder: (context, setState) => Column(
                     children: [
                       DropdownButtonFormField<String>(
-                          initialValue: dropdownValue,
+                        value: dropdownValue,
                           decoration: InputDecoration(
                             labelText: tranlsations.settingsApiUrl,
                           ),
