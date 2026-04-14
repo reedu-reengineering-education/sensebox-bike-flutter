@@ -53,7 +53,10 @@ void main() {
             ChangeNotifierProvider.value(value: configurationBloc),
             ChangeNotifierProvider.value(value: openSenseMapBloc),
           ],
-          child: const MaterialApp(home: SettingsScreen()),
+          child: ChangeNotifierProvider<ConfigurationBloc>.value(
+            value: configurationBloc,
+            child: const MaterialApp(home: SettingsScreen()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -86,7 +89,10 @@ void main() {
             ChangeNotifierProvider.value(value: configurationBloc),
             ChangeNotifierProvider.value(value: openSenseMapBloc),
           ],
-          child: const MaterialApp(home: SettingsScreen()),
+          child: ChangeNotifierProvider<ConfigurationBloc>.value(
+            value: configurationBloc,
+            child: const MaterialApp(home: SettingsScreen()),
+          ),
         ),
       );
       await tester.pumpAndSettle();

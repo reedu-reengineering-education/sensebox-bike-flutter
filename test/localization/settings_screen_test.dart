@@ -56,6 +56,7 @@ void main() {
   });
 
   Widget buildTestWidget(Locale locale) {
+    final configurationBloc = ConfigurationBloc();
     return createLocalizedTestApp(
       locale: locale,
       child: MultiProvider(
@@ -64,6 +65,7 @@ void main() {
           ChangeNotifierProvider<TrackBloc>.value(value: mockTrackBloc),
           ChangeNotifierProvider<OpenSenseMapBloc>.value(
               value: mockOpenSenseMapBloc),
+          ChangeNotifierProvider<ConfigurationBloc>.value(value: configurationBloc),
         ],
         child: const SettingsScreen(),
       ),
