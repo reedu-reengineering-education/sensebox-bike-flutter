@@ -445,8 +445,10 @@ class SettingsScreen extends StatelessWidget {
   void _showApiUrlDialog(BuildContext context, SettingsBloc settingsBloc, TextEditingController controller, {List<String>? apiUrls, bool isLoading = false, String? error, void Function(void Function())? setState}) {
     final formKey = GlobalKey<FormState>();
 
+    String? selectedUrl = settingsBloc.apiUrl;
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (context) => AlertDialog(
         contentPadding: const EdgeInsets.fromLTRB(0.0, 20.0, 0.0, 24.0),
         content: SizedBox(
@@ -464,24 +466,73 @@ class SettingsScreen extends StatelessWidget {
                 if (isLoading)
                   const CircularProgressIndicator()
                 else if (error != null)
-                  ErrorMessage(
-                    icon: Icons.cloud_off,
-                    title: AppLocalizations.of(context)!.settingsApiUrlLoadError,
-                    detail: error.isNotEmpty ? error : null,
+                  Column(
+                    children: [
+                      ErrorMessage(
+                        icon: Icons.cloud_off,
+                        title: AppLocalizations.of(context)!
+                            .settingsApiUrlLoadError,
+                        detail: error.isNotEmpty ? error : null,
+                      ),
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child:
+                              Text(AppLocalizations.of(context)!.generalClose),
+                        ),
+                      ),
+                    ],
                   )
                 else if (apiUrls != null && apiUrls.isNotEmpty)
-                  DropdownFormField<String>(
-                    labelText: AppLocalizations.of(context)!.settingsApiUrl,
-                    items: apiUrls
-                        .map((url) => DropdownItem<String>(value: url, label: url))
-                        .toList(),
-                    initialValue: settingsBloc.apiUrl,
-                    onSaved: (value) async {
-                      if (value != null && value != settingsBloc.apiUrl) {
-                        await settingsBloc.setApiUrl(value);
-                      }
-                    },
-                    validator: (value) => value == null || value.isEmpty ? AppLocalizations.of(context)!.settingsApiUrlHelper : null,
+                  StatefulBuilder(
+                    builder: (context, setState) => Column(
+                      children: [
+                        DropdownButtonFormField<String>(
+                          value: selectedUrl,
+                          decoration: InputDecoration(
+                            labelText:
+                                AppLocalizations.of(context)!.settingsApiUrl,
+                          ),
+                          items: apiUrls
+                              .map((url) => DropdownMenuItem<String>(
+                                    value: url,
+                                    child: Text(url),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedUrl = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: Text(
+                                  AppLocalizations.of(context)!.generalCancel),
+                            ),
+                            const SizedBox(width: 8),
+                            TextButton(
+                              onPressed: selectedUrl == null ||
+                                      selectedUrl == settingsBloc.apiUrl
+                                  ? null
+                                  : () async {
+                                      await settingsBloc
+                                          .setApiUrl(selectedUrl!);
+                                      Navigator.of(context).pop();
+                                    },
+                              child: Text(
+                                  AppLocalizations.of(context)!.generalSave),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   )
                 else ...[
                   ApiUrlField(
