@@ -44,7 +44,6 @@ class SettingsBloc with ChangeNotifier {
   // Stream for upload mode updates
   Stream<bool> get directUploadModeStream => _directUploadModeController.stream;
 
-
   // Load settings from Shared Preferences
   Future<void> _loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -57,7 +56,6 @@ class SettingsBloc with ChangeNotifier {
     _vibrateOnDisconnectController.add(_vibrateOnDisconnect);
     _privacyZonesController.add(_privacyZones);
     _directUploadModeController.add(_directUploadMode);
-
 
     notifyListeners();
   }
@@ -106,7 +104,6 @@ class SettingsBloc with ChangeNotifier {
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('apiUrl', value);
-
 
     notifyListeners();
   }
