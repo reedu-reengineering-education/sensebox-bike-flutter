@@ -66,7 +66,8 @@ class _ApiUrlDialogState extends State<ApiUrlDialog> {
               else if (error != null)
                 Column(
                   children: [
-                    Icon(Icons.cloud_off, color: Colors.red, size: 32),
+                    Icon(Icons.cloud_off,
+                        color: theme.colorScheme.error, size: 32),
                     const SizedBox(height: 8),
                     Text(
                       tranlsations.settingsApiUrlLoadError,
