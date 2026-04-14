@@ -10,12 +10,10 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
-import 'package:sensebox_bike/ui/widgets/common/api_url_field.dart';
-import 'package:sensebox_bike/ui/widgets/common/dropdown_form_field.dart';
+import 'package:sensebox_bike/ui/widgets/common/api_url_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
-import 'package:sensebox_bike/ui/widgets/common/error_message.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -442,130 +440,22 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showApiUrlDialog(BuildContext context, SettingsBloc settingsBloc, TextEditingController controller, {List<String>? apiUrls, bool isLoading = false, String? error, void Function(void Function())? setState}) {
-    final formKey = GlobalKey<FormState>();
-
-    String? selectedUrl = settingsBloc.apiUrl;
-    String? dropdownValue = (apiUrls != null && apiUrls.contains(selectedUrl)) ? selectedUrl : null;
+  void _showApiUrlDialog(BuildContext context, SettingsBloc settingsBloc,
+      TextEditingController controller,
+      {List<String>? apiUrls,
+      bool isLoading = false,
+      String? error,
+      void Function(void Function())? setState}) {
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => AlertDialog(
-        contentPadding: const EdgeInsets.fromLTRB(0.0, 20.0, 0.0, 24.0),
-        content: SizedBox(
-          width: 320,
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.settingsApiUrl,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 16),
-                if (isLoading)
-                  const CircularProgressIndicator()
-                else if (error != null)
-                  Column(
-                    children: [
-                      ErrorMessage(
-                        icon: Icons.cloud_off,
-                        title: AppLocalizations.of(context)!
-                            .settingsApiUrlLoadError,
-                        detail: error.isNotEmpty ? error : null,
-                      ),
-                      const SizedBox(height: 16),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child:
-                              Text(AppLocalizations.of(context)!.generalClose),
-                        ),
-                      ),
-                    ],
-                  )
-                else if (apiUrls != null && apiUrls.isNotEmpty)
-                  StatefulBuilder(
-                    builder: (context, setState) => Column(
-                      children: [
-                        DropdownButtonFormField<String>(
-                          value: dropdownValue,
-                          decoration: InputDecoration(
-                            labelText:
-                                AppLocalizations.of(context)!.settingsApiUrl,
-                          ),
-                          items: apiUrls
-                              .map((url) => DropdownMenuItem<String>(
-                                    value: url,
-                                    child: Text(url),
-                                  ))
-                              .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedUrl = value;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: Text(
-                                  AppLocalizations.of(context)!.generalCancel),
-                            ),
-                            const SizedBox(width: 8),
-                            TextButton(
-                              onPressed: selectedUrl == null ||
-                                  selectedUrl == settingsBloc.apiUrl
-                                ? null
-                                : () async {
-                                  await settingsBloc
-                                    .setApiUrl(selectedUrl!);
-                                  Navigator.of(context).pop();
-                                },
-                              child: Text(
-                                AppLocalizations.of(context)!.generalSave),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )
-                else ...[
-                  ApiUrlField(
-                    controller: controller,
-                    helperText: AppLocalizations.of(context)!.settingsApiUrlHelper,
-                    defaultValue: 'https://api.opensensemap.org',
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(AppLocalizations.of(context)!.generalCancel),
-                      ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () async {
-                          if (formKey.currentState!.validate()) {
-                            formKey.currentState!.save();
-                            Navigator.of(context).pop();
-                          }
-                        },
-                        child: Text(AppLocalizations.of(context)!.generalSave),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
+      builder: (context) => ApiUrlDialog(
+        settingsBloc: settingsBloc,
+        controller: controller,
+        apiUrls: apiUrls,
+        isLoading: isLoading,
+        error: error,
+        setState: setState,
       ),
     );
   }
