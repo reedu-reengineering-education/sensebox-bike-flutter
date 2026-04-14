@@ -9,6 +9,15 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get settingsApiUrlLoadError =>
+      'Não foi possível carregar as URLs de serviço disponíveis. A URL padrão será usada para o envio de dados. Para selecionar outra, certifique-se de que você está conectado à internet e reabra esta janela para recarregar as URLs de serviço.';
+
+  @override
+  String settingsApiUrlLoadErrorWithMessage(String error) {
+    return 'Não foi possível carregar as URLs de serviço disponíveis. A URL padrão será usada para o envio de dados. Erro: $error\nPara selecionar outra, certifique-se de que você está conectado à internet e reabra esta janela para recarregar as URLs de serviço.';
+  }
+
+  @override
   String get settingsKnowledgeBase => 'Base de conhecimento';
 
   @override
@@ -306,7 +315,7 @@ class AppLocalizationsPt extends AppLocalizations {
       '• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação';
 
   @override
-  String get settingsApiUrl => 'URL da API';
+  String get settingsApiUrl => 'URL do Serviço';
 
   @override
   String get settingsApiUrlHelper =>
@@ -686,7 +695,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String trackStatusUploadFailedAt(Object date) {
-    return 'Envio falhou em $date';
+    return 'Falha no envio em $date';
   }
 
   @override

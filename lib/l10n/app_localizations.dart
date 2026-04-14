@@ -102,6 +102,18 @@ abstract class AppLocalizations {
     Locale('pt')
   ];
 
+  /// No description provided for @settingsApiUrlLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load available service URLs. The default URL will be used for data upload. To select a different one, please check your internet connection and reopen this window to reload.'**
+  String get settingsApiUrlLoadError;
+
+  /// No description provided for @settingsApiUrlLoadErrorWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load available service URLs. The default URL will be used for data upload. Error: {error}\nTo select a different one, please check your internet connection and reopen this window to reload.'**
+  String settingsApiUrlLoadErrorWithMessage(String error);
+
   /// No description provided for @settingsKnowledgeBase.
   ///
   /// In en, this message translates to:
@@ -621,7 +633,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsApiUrl.
   ///
   /// In en, this message translates to:
-  /// **'API URL'**
+  /// **'Service URL'**
   String get settingsApiUrl;
 
   /// No description provided for @settingsApiUrlHelper.

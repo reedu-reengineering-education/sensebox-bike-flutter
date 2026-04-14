@@ -9,6 +9,15 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get settingsApiUrlLoadError =>
+      'Unable to load available service URLs. The default URL will be used for data upload. To select a different one, please check your internet connection and reopen this window to reload.';
+
+  @override
+  String settingsApiUrlLoadErrorWithMessage(String error) {
+    return 'Unable to load available service URLs. The default URL will be used for data upload. Error: $error\nTo select a different one, please check your internet connection and reopen this window to reload.';
+  }
+
+  @override
   String get settingsKnowledgeBase => 'Knowledge Base';
 
   @override
@@ -303,7 +312,7 @@ class AppLocalizationsEn extends AppLocalizations {
       '• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording';
 
   @override
-  String get settingsApiUrl => 'API URL';
+  String get settingsApiUrl => 'Service URL';
 
   @override
   String get settingsApiUrlHelper => 'Enter the API endpoint for data uploads';

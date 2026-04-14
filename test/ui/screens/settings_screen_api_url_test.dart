@@ -32,11 +32,11 @@ void main() {
       settingsBloc = SettingsBloc();
       configurationBloc = ConfigurationBloc();
       // Preload API URLs for test
-      configurationBloc
-        .._apiUrls = [
-          'https://api.opensensemap.org',
-          'https://staging.api.opensensemap.org',
-        ];
+      configurationBloc.apiUrls?.clear();
+      configurationBloc.apiUrls?.addAll([
+        'https://api.opensensemap.org',
+        'https://staging.api.opensensemap.org',
+      ]);
     });
 
     tearDown(() {
@@ -73,7 +73,8 @@ void main() {
     });
 
     testWidgets('falls back to manual entry if no API list', (tester) async {
-      configurationBloc._apiUrls = null;
+      configurationBloc.apiUrls?.clear();
+      // Optionally, if you want to simulate null, you could add a setter for apiUrls in ConfigurationBloc for testing, but clearing is usually enough.
       await tester.pumpWidget(
         MultiProvider(
           providers: [

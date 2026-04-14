@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/campaign.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
@@ -5,7 +6,7 @@ import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/constants.dart';
 
 
-class ConfigurationBloc {
+class ConfigurationBloc extends ChangeNotifier {
   final RemoteDataService _remoteDataService;
 
   List<BoxConfiguration>? _boxConfigurations;
@@ -37,9 +38,18 @@ class ConfigurationBloc {
       url: apiUrlsUrl,
       isAlreadyLoading: () => _isLoadingApiUrls,
       isAlreadyLoaded: () => _apiUrls != null,
-      setLoading: (value) => _isLoadingApiUrls = value,
-      setError: (error) => _apiUrlsError = error,
-      setData: (data) => _apiUrls = (data as List<dynamic>).cast<String>(),
+      setLoading: (value) {
+        _isLoadingApiUrls = value;
+        notifyListeners();
+      },
+      setError: (error) {
+        _apiUrlsError = error;
+        notifyListeners();
+      },
+      setData: (data) {
+        _apiUrls = (data as List<dynamic>).cast<String>();
+        notifyListeners();
+      },
       parseData: (data) => (data as List<dynamic>).cast<String>(),
       dataTypeName: 'API URLs',
     );

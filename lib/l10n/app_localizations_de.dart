@@ -9,6 +9,15 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get settingsApiUrlLoadError =>
+      'Die verfügbaren Service-URLs konnten nicht geladen werden. Für den Datenupload wird die Standard-URL verwendet. Um eine andere auszuwählen, stellen Sie bitte sicher, dass Sie mit dem Internet verbunden sind, und öffnen Sie dieses Fenster erneut, um die URLs neu zu laden.';
+
+  @override
+  String settingsApiUrlLoadErrorWithMessage(String error) {
+    return 'Die verfügbaren Service-URLs konnten nicht geladen werden. Für den Datenupload wird die Standard-URL verwendet. Fehler: $error\nUm eine andere auszuwählen, stellen Sie bitte sicher, dass Sie mit dem Internet verbunden sind, und öffnen Sie dieses Fenster erneut, um die URLs neu zu laden.';
+  }
+
+  @override
   String get settingsKnowledgeBase => 'Hilfe';
 
   @override
@@ -306,7 +315,7 @@ class AppLocalizationsDe extends AppLocalizations {
       '• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen';
 
   @override
-  String get settingsApiUrl => 'API-URL';
+  String get settingsApiUrl => 'Service-URL';
 
   @override
   String get settingsApiUrlHelper =>
