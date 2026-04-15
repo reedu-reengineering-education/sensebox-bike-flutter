@@ -76,7 +76,8 @@ class OpenSenseMapService {
     if (settingsBloc != null) {
       return settingsBloc.apiUrl;
     }
-    return openSenseMapUrl;
+    // Fallback to standard API URL if no SettingsBloc is provided
+    return standardOpenSenseMapApiUrl;
   }
 
   /// Validates and extracts tokens from response data

@@ -9,6 +9,25 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get settingsApiUrlLoadError => 'Unable to load service URLs.';
+
+  @override
+  String get settingsApiUrlLoadErrorDetails =>
+      'The default URL will be used for data upload. To select a different one, please check your internet connection and reopen this window.';
+
+  @override
+  String get settingsApiUrlEditManuallyHint =>
+      'You can still enter a custom service URL manually.';
+
+  @override
+  String get settingsApiUrlEditManually => 'Details & Custom URL';
+
+  @override
+  String settingsApiUrlLoadErrorWithMessage(String error) {
+    return 'Unable to load available service URLs. The default URL will be used for data upload. Error: $error\nTo select a different one, please check your internet connection and reopen this window to reload.';
+  }
+
+  @override
   String get settingsKnowledgeBase => 'Knowledge Base';
 
   @override
@@ -62,6 +81,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generalClose => 'Close';
+
+  @override
+  String get generalDetails => 'Details';
 
   @override
   String get reloadConfiguration => 'Reload configuration';
@@ -303,7 +325,7 @@ class AppLocalizationsEn extends AppLocalizations {
       '• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording';
 
   @override
-  String get settingsApiUrl => 'API URL';
+  String get settingsApiUrl => 'Service URL';
 
   @override
   String get settingsApiUrlHelper => 'Enter the API endpoint for data uploads';
@@ -311,6 +333,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsApiUrlError =>
       'Please enter a valid URL (e.g., https://api.opensensemap.org)';
+
+  @override
+  String get settingsApiUrlCustomOption => 'Custom Service URL';
 
   @override
   String get settingsAbout => 'About';

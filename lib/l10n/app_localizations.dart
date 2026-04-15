@@ -102,6 +102,36 @@ abstract class AppLocalizations {
     Locale('pt')
   ];
 
+  /// No description provided for @settingsApiUrlLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load service URLs.'**
+  String get settingsApiUrlLoadError;
+
+  /// No description provided for @settingsApiUrlLoadErrorDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'The default URL will be used for data upload. To select a different one, please check your internet connection and reopen this window.'**
+  String get settingsApiUrlLoadErrorDetails;
+
+  /// No description provided for @settingsApiUrlEditManuallyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can still enter a custom service URL manually.'**
+  String get settingsApiUrlEditManuallyHint;
+
+  /// No description provided for @settingsApiUrlEditManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Details & Custom URL'**
+  String get settingsApiUrlEditManually;
+
+  /// No description provided for @settingsApiUrlLoadErrorWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load available service URLs. The default URL will be used for data upload. Error: {error}\nTo select a different one, please check your internet connection and reopen this window to reload.'**
+  String settingsApiUrlLoadErrorWithMessage(String error);
+
   /// No description provided for @settingsKnowledgeBase.
   ///
   /// In en, this message translates to:
@@ -203,6 +233,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get generalClose;
+
+  /// No description provided for @generalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get generalDetails;
 
   /// No description provided for @reloadConfiguration.
   ///
@@ -621,7 +657,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsApiUrl.
   ///
   /// In en, this message translates to:
-  /// **'API URL'**
+  /// **'Service URL'**
   String get settingsApiUrl;
 
   /// No description provided for @settingsApiUrlHelper.
@@ -635,6 +671,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please enter a valid URL (e.g., https://api.opensensemap.org)'**
   String get settingsApiUrlError;
+
+  /// No description provided for @settingsApiUrlCustomOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Service URL'**
+  String get settingsApiUrlCustomOption;
 
   /// No description provided for @settingsAbout.
   ///

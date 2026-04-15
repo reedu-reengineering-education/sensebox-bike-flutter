@@ -32,7 +32,7 @@ void main() {
       );
 
       expect(find.byType(TextFormField), findsOneWidget);
-      expect(find.text('API URL'), findsOneWidget);
+      expect(find.text('Service URL'), findsOneWidget);
     });
 
     testWidgets('should display custom label text', (WidgetTester tester) async {

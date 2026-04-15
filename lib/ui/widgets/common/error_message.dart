@@ -28,21 +28,28 @@ class ErrorMessage extends StatelessWidget {
               color: theme.colorScheme.error,
             ),
             const SizedBox(height: 16),
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.error,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.left,
               ),
-              textAlign: TextAlign.center,
             ),
             if (detail != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Text(
                   detail!,
-                  style: theme.textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.error,
+                    fontWeight: FontWeight.normal,
+                  ),
+                  textAlign: TextAlign.left,
                 ),
               ),
             ],
