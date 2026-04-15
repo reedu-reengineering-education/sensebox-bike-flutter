@@ -1,4 +1,14 @@
 {
+  "settingsApiUrlLoadError": "Impossible de charger les URLs de service.",
+  "settingsApiUrlLoadErrorDetails": "L'URL par défaut sera utilisée pour l'envoi des données. Pour en choisir une autre, vérifiez votre connexion internet et rouvrez cette fenêtre.",
+  "settingsApiUrlEditManuallyHint": "Vous pouvez toujours saisir manuellement une URL de service personnalisée.",
+  "settingsApiUrlEditManually": "Détails & URL personnalisée",
+  "settingsApiUrlLoadErrorWithMessage": "Impossible de charger les URLs de service disponibles. L'URL par défaut sera utilisée pour l'envoi des données. Erreur : {error}\nPour en choisir une autre, veuillez vérifier votre connexion internet et rouvrir cette fenêtre pour recharger les URLs de service.",
+  "@settingsApiUrlLoadErrorWithMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "settingsKnowledgeBase": "Base de connaissances",
   "uploadBlockNotAuthenticated": "Le trajet actuel n'a pas été téléversé automatiquement. Vous pouvez toujours l'envoyer sur openSenseMap depuis la page d'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez vous connecter ou créer un compte dans les paramètres.",
   "uploadBlockNoBox": "Le trajet actuel n'a pas été téléversé automatiquement. Vous pouvez toujours l'envoyer sur openSenseMap depuis la page d'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez sélectionner ou créer une senseBox sur la page d'accueil.",
@@ -24,6 +34,7 @@
   "generalEdit": "Modifier",
   "generalAdd": "Ajouter",
   "generalClose": "Fermer",
+  "generalDetails": "Détails",
   "reloadConfiguration": "Recharger la configuration",
   "generalUpload": "Téléverser",
   "generalPrivacyZones": "Zones de confidentialité",
@@ -140,9 +151,10 @@
   "settingsContact": "Aide ou retour ?",
   "settingsEmail": "E-mail",
   "settingsGithub": "Ticket GitHub",
-  "settingsApiUrl": "URL de l'API",
+  "settingsApiUrl": "URL du service",
   "settingsApiUrlHelper": "Saisir le point de terminaison de l'API pour les téléversements de données",
   "settingsApiUrlError": "Veuillez saisir une URL valide (par ex., https://api.opensensemap.org)",
+  "settingsApiUrlCustomOption": "URL de service personnalisée",
   "privacyZonesStart": "Touchez la carte pour commencer à dessiner une zone. Touchez la coche pour terminer.",
   "privacyZonesDelete": "Touchez une zone pour la supprimer. Touchez la coche pour terminer.",
   "trackDetailsPermissionsError": "Permission refusée pour enregistrer le fichier dans le stockage externe.",

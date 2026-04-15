@@ -53,7 +53,8 @@ void main() {
       );
 
       expect(find.text('Error Title'), findsOneWidget);
-      expect(find.byType(Padding), findsNWidgets(1));
+      // There are always two Padding widgets: one for the title, one for the outer container
+      expect(find.byType(Padding), findsNWidgets(2));
     });
 
     testWidgets('displays error icon', (WidgetTester tester) async {

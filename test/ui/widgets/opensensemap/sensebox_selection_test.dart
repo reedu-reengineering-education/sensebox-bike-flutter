@@ -70,7 +70,8 @@ void main() {
               providers: [
                 BlocProvider<OpenSenseMapBloc>.value(
                     value: mockOpenSenseMapBloc),
-                Provider<ConfigurationBloc>.value(value: mockConfigurationBloc),
+                ChangeNotifierProvider<ConfigurationBloc>.value(
+                    value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,
@@ -101,7 +102,8 @@ void main() {
               providers: [
                 BlocProvider<OpenSenseMapBloc>.value(
                     value: mockOpenSenseMapBloc),
-                Provider<ConfigurationBloc>.value(value: mockConfigurationBloc),
+                ChangeNotifierProvider<ConfigurationBloc>.value(
+                    value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,
@@ -128,7 +130,8 @@ void main() {
               providers: [
                 BlocProvider<OpenSenseMapBloc>.value(
                     value: mockOpenSenseMapBloc),
-                Provider<ConfigurationBloc>.value(value: mockConfigurationBloc),
+                ChangeNotifierProvider<ConfigurationBloc>.value(
+                    value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,
@@ -172,7 +175,8 @@ void main() {
               providers: [
                 BlocProvider<OpenSenseMapBloc>.value(
                     value: mockOpenSenseMapBloc),
-                Provider<ConfigurationBloc>.value(value: mockConfigurationBloc),
+                ChangeNotifierProvider<ConfigurationBloc>.value(
+                    value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,

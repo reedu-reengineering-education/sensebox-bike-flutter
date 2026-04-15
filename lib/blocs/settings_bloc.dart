@@ -40,7 +40,7 @@ class SettingsBloc extends Cubit<SettingsState> {
             vibrateOnDisconnect: false,
             privacyZones: <String>[],
             directUploadMode: false,
-            apiUrl: openSenseMapUrl,
+            apiUrl: standardOpenSenseMapApiUrl,
           ),
         ) {
     _loadSettings();
@@ -59,7 +59,7 @@ class SettingsBloc extends Cubit<SettingsState> {
         vibrateOnDisconnect: false,
         privacyZones: <String>[],
         directUploadMode: false,
-        apiUrl: openSenseMapUrl,
+        apiUrl: standardOpenSenseMapApiUrl,
       ),
       storage: InMemorySettingsStorage(),
     );
@@ -68,7 +68,8 @@ class SettingsBloc extends Cubit<SettingsState> {
   bool get vibrateOnDisconnect => state.vibrateOnDisconnect;
   List<String> get privacyZones => state.privacyZones;
   bool get directUploadMode => state.directUploadMode;
-  String get apiUrl => state.apiUrl.isEmpty ? openSenseMapUrl : state.apiUrl;
+  String get apiUrl =>
+      state.apiUrl.isEmpty ? standardOpenSenseMapApiUrl : state.apiUrl;
 
   Stream<bool> get vibrateOnDisconnectStream =>
       stream.map((state) => state.vibrateOnDisconnect).distinct();
@@ -87,7 +88,8 @@ class SettingsBloc extends Cubit<SettingsState> {
         vibrateOnDisconnect: loaded.vibrateOnDisconnect,
         privacyZones: loaded.privacyZones,
         directUploadMode: loaded.directUploadMode,
-        apiUrl: loaded.apiUrl.isEmpty ? openSenseMapUrl : loaded.apiUrl,
+        apiUrl:
+            loaded.apiUrl.isEmpty ? standardOpenSenseMapApiUrl : loaded.apiUrl,
       ),
     );
   }
@@ -113,7 +115,8 @@ class SettingsBloc extends Cubit<SettingsState> {
   Future<void> setApiUrl(String value) async {
     await _storage.setApiUrl(value);
     if (isClosed) return;
-    emit(state.copyWith(apiUrl: value.isEmpty ? openSenseMapUrl : value));
+    emit(state.copyWith(
+        apiUrl: value.isEmpty ? standardOpenSenseMapApiUrl : value));
   }
 
   void dispose() {

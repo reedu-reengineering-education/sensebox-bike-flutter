@@ -119,7 +119,7 @@ void main() {
         expect(bloc.boxConfigurations, isNull);
         expect(bloc.boxConfigurationsError, isNotNull);
         expect(bloc.boxConfigurationsError,
-            contains('Failed to load box configurations'));
+          contains('Network error'));
         expect(bloc.isLoadingBoxConfigurations, false);
       });
 
@@ -132,7 +132,7 @@ void main() {
         expect(bloc.boxConfigurations, isNull);
         expect(bloc.boxConfigurationsError, isNotNull);
         expect(bloc.boxConfigurationsError,
-            contains('Invalid box configurations format'));
+          contains('Invalid data format'));
         expect(bloc.isLoadingBoxConfigurations, false);
       });
 

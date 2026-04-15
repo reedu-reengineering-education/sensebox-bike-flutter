@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sensebox_bike/app/app_router.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -10,7 +11,7 @@ import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
-import 'package:sensebox_bike/ui/widgets/common/api_url_field.dart';
+import 'package:sensebox_bike/ui/widgets/common/api_url_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
@@ -33,6 +34,7 @@ class SettingsScreen extends StatelessWidget {
         return BlocBuilder<SettingsBloc, SettingsState>(
           builder: (context, settingsState) {
             final settingsBloc = context.read<SettingsBloc>();
+            final configurationBloc = context.read<ConfigurationBloc>();
             return ScreenWrapper(
               title: AppLocalizations.of(context)!.generalSettings,
               child: ListView(
@@ -43,7 +45,11 @@ class SettingsScreen extends StatelessWidget {
                     openSenseMapState,
                   ),
                   _buildGeneralSettingsSection(
-                      context, settingsBloc, settingsState),
+                    context,
+                    settingsBloc,
+                    settingsState,
+                    configurationBloc,
+                  ),
                   _buildAccountManagementSection(context),
                   _buildOtherSection(context),
                   _buildHelpSection(context),
@@ -337,6 +343,7 @@ class SettingsScreen extends StatelessWidget {
     BuildContext context,
     SettingsBloc settingsBloc,
     SettingsState settingsState,
+    ConfigurationBloc configurationBloc,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,83 +376,68 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
         ),
-        _buildApiUrlSection(context, settingsBloc),
+        _buildApiUrlSection(context, settingsBloc, configurationBloc),
       ],
     );
   }
 
-  Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc) {
-    return StatefulBuilder(
-      builder: (context, setState) {
+  Widget _buildApiUrlSection(
+    BuildContext context,
+    SettingsBloc settingsBloc,
+    ConfigurationBloc configurationBloc,
+  ) {
+    return AnimatedBuilder(
+      animation: configurationBloc,
+      builder: (context, _) {
         final controller = TextEditingController(text: settingsBloc.apiUrl);
 
         return ListTile(
           leading: const Icon(Icons.settings_ethernet_outlined),
           title: Text(AppLocalizations.of(context)!.settingsApiUrl),
           subtitle: Text(
-            AppLocalizations.of(context)!.settingsApiUrlHelper,
+            settingsBloc.apiUrl,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
                 ),
           ),
-          onTap: () {
-            _showApiUrlDialog(context, settingsBloc, controller);
+          onTap: () async {
+            if (configurationBloc.apiUrls == null &&
+                !configurationBloc.isLoadingApiUrls) {
+              await configurationBloc.loadApiUrls();
+            }
+            if (!context.mounted) return;
+            _showApiUrlDialog(
+              context,
+              settingsBloc,
+              controller,
+              apiUrls: configurationBloc.apiUrls,
+              isLoading: configurationBloc.isLoadingApiUrls,
+              error: configurationBloc.apiUrlsError,
+            );
           },
         );
       },
     );
   }
 
-  void _showApiUrlDialog(BuildContext context, SettingsBloc settingsBloc,
-      TextEditingController controller) {
-    final formKey = GlobalKey<FormState>();
-
+  void _showApiUrlDialog(
+    BuildContext context,
+    SettingsBloc settingsBloc,
+    TextEditingController controller, {
+    List<String>? apiUrls,
+    bool isLoading = false,
+    String? error,
+  }) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
-        content: SizedBox(
-          width: 300,
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.settingsApiUrl,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 16),
-                ApiUrlField(
-                  controller: controller,
-                  helperText:
-                      AppLocalizations.of(context)!.settingsApiUrlHelper,
-                  defaultValue: 'https://api.opensensemap.org',
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(AppLocalizations.of(context)!.generalCancel),
-                    ),
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: () async {
-                        if (formKey.currentState!.validate()) {
-                          await settingsBloc.setApiUrl(controller.text);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      child: Text(AppLocalizations.of(context)!.generalSave),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+      barrierDismissible: true,
+      builder: (context) => ApiUrlDialog(
+        settingsBloc: settingsBloc,
+        controller: controller,
+        apiUrls: apiUrls,
+        isLoading: isLoading,
+        error: error,
       ),
     );
   }

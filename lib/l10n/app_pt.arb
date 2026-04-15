@@ -1,4 +1,14 @@
 {
+    "settingsApiUrlLoadError": "Não foi possível carregar as URLs de serviço.",
+    "settingsApiUrlLoadErrorDetails": "A URL padrão será usada para o envio de dados. Para selecionar outra, verifique sua conexão com a internet e reabra esta janela.",
+    "settingsApiUrlEditManuallyHint": "Você ainda pode inserir uma URL de serviço personalizada manualmente.",
+    "settingsApiUrlEditManually": "Detalhes & URL personalizada",
+    "settingsApiUrlLoadErrorWithMessage": "Não foi possível carregar as URLs de serviço disponíveis. A URL padrão será usada para o envio de dados. Erro: {error}\nPara selecionar outra, certifique-se de que você está conectado à internet e reabra esta janela para recarregar as URLs de serviço.",
+    "@settingsApiUrlLoadErrorWithMessage": {
+        "placeholders": {
+            "error": { "type": "String" }
+        }
+    },
     "settingsKnowledgeBase": "Base de conhecimento",
         "uploadBlockNotAuthenticated": "O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o openSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, faça login ou registre uma conta na página de Configurações.",
         "uploadBlockNoBox": "O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o openSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, selecione ou crie uma senseBox na página inicial.",
@@ -25,6 +35,7 @@
     "generalEdit": "Editar",
     "generalAdd": "Adicionar",
     "generalClose": "Fechar",
+    "generalDetails": "Detalhes",
     "reloadConfiguration": "Recarregar configuração",
     "generalUpload": "Enviar",
     "generalPrivacyZones": "Áreas de Privacidade",
@@ -128,9 +139,10 @@
     "settingsUploadModePostRideDescription": "• Os dados são armazenados localmente durante a gravação\n• O envio acontece de uma vez quando você terminar\n• Mais confiável e estável\n• Consome menos bateria durante a gravação",
     "settingsUploadModeDirectTitle": "Enviar dados em tempo real durante a gravação (experimental)",
     "settingsUploadModeDirectDescription": "• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação",
-    "settingsApiUrl": "URL da API",
+    "settingsApiUrl": "URL do Serviço",
     "settingsApiUrlHelper": "Digite o endpoint da API para uploads de dados",
     "settingsApiUrlError": "Por favor, digite uma URL válida (ex: https://api.opensensemap.org)",
+    "settingsApiUrlCustomOption": "URL de serviço personalizada",
     "settingsAbout": "Sobre",
     "settingsPrivacyPolicy": "Política de Privacidade",
     "settingsVersion": "Versão: {versionNumber}",
