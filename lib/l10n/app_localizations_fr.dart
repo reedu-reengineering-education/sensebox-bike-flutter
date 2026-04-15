@@ -10,7 +10,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settingsApiUrlLoadError =>
-      'Impossible de charger les URLs de service disponibles. L\'URL par défaut sera utilisée pour l\'envoi des données. Pour en choisir une autre, veuillez vérifier votre connexion internet et rouvrir cette fenêtre pour recharger les URLs de service.';
+      'Impossible de charger les URLs de service.';
+
+  @override
+  String get settingsApiUrlLoadErrorDetails =>
+      'L\'URL par défaut sera utilisée pour l\'envoi des données. Pour en choisir une autre, vérifiez votre connexion internet et rouvrez cette fenêtre.';
+
+  @override
+  String get settingsApiUrlEditManuallyHint =>
+      'Vous pouvez toujours saisir manuellement une URL de service personnalisée.';
+
+  @override
+  String get settingsApiUrlEditManually => 'Détails & URL personnalisée';
 
   @override
   String settingsApiUrlLoadErrorWithMessage(String error) {
@@ -73,6 +84,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get generalClose => 'Fermer';
+
+  @override
+  String get generalDetails => 'Détails';
 
   @override
   String get reloadConfiguration => 'Recharger la configuration';
@@ -327,6 +341,9 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settingsApiUrlError =>
       'Veuillez saisir une URL valide (par ex., https://api.opensensemap.org)';
+
+  @override
+  String get settingsApiUrlCustomOption => 'URL de service personnalisée';
 
   @override
   String get settingsAbout => 'À propos';

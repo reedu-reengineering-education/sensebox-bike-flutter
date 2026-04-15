@@ -10,7 +10,18 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settingsApiUrlLoadError =>
-      'Die verfügbaren Service-URLs konnten nicht geladen werden. Für den Datenupload wird die Standard-URL verwendet. Um eine andere auszuwählen, stellen Sie bitte sicher, dass Sie mit dem Internet verbunden sind, und öffnen Sie dieses Fenster erneut, um die URLs neu zu laden.';
+      'Service-URLs konnten nicht geladen werden.';
+
+  @override
+  String get settingsApiUrlLoadErrorDetails =>
+      'Für den Datenupload wird die Standard-URL verwendet. Um eine andere auszuwählen, bitte Internetverbindung prüfen und dieses Fenster erneut öffnen.';
+
+  @override
+  String get settingsApiUrlEditManuallyHint =>
+      'Sie können trotzdem eine benutzerdefinierte Service-URL manuell eingeben.';
+
+  @override
+  String get settingsApiUrlEditManually => 'Details & benutzerdefinierte URL';
 
   @override
   String settingsApiUrlLoadErrorWithMessage(String error) {
@@ -71,6 +82,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get generalClose => 'Schließen';
+
+  @override
+  String get generalDetails => 'Details';
 
   @override
   String get reloadConfiguration => 'Konfiguration neu laden';
@@ -324,6 +338,9 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settingsApiUrlError =>
       'Bitte geben Sie eine gültige URL ein (z.B. https://api.opensensemap.org)';
+
+  @override
+  String get settingsApiUrlCustomOption => 'Benutzerdefinierte Service-URL';
 
   @override
   String get settingsAbout => 'Über die App';

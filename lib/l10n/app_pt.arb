@@ -1,5 +1,8 @@
 {
-    "settingsApiUrlLoadError": "Não foi possível carregar as URLs de serviço disponíveis. A URL padrão será usada para o envio de dados. Para selecionar outra, certifique-se de que você está conectado à internet e reabra esta janela para recarregar as URLs de serviço.",
+    "settingsApiUrlLoadError": "Não foi possível carregar as URLs de serviço.",
+    "settingsApiUrlLoadErrorDetails": "A URL padrão será usada para o envio de dados. Para selecionar outra, verifique sua conexão com a internet e reabra esta janela.",
+    "settingsApiUrlEditManuallyHint": "Você ainda pode inserir uma URL de serviço personalizada manualmente.",
+    "settingsApiUrlEditManually": "Detalhes & URL personalizada",
     "settingsApiUrlLoadErrorWithMessage": "Não foi possível carregar as URLs de serviço disponíveis. A URL padrão será usada para o envio de dados. Erro: {error}\nPara selecionar outra, certifique-se de que você está conectado à internet e reabra esta janela para recarregar as URLs de serviço.",
     "@settingsApiUrlLoadErrorWithMessage": {
         "placeholders": {
@@ -32,6 +35,7 @@
     "generalEdit": "Editar",
     "generalAdd": "Adicionar",
     "generalClose": "Fechar",
+    "generalDetails": "Detalhes",
     "reloadConfiguration": "Recarregar configuração",
     "generalUpload": "Enviar",
     "generalPrivacyZones": "Áreas de Privacidade",
@@ -138,6 +142,7 @@
     "settingsApiUrl": "URL do Serviço",
     "settingsApiUrlHelper": "Digite o endpoint da API para uploads de dados",
     "settingsApiUrlError": "Por favor, digite uma URL válida (ex: https://api.opensensemap.org)",
+    "settingsApiUrlCustomOption": "URL de serviço personalizada",
     "settingsAbout": "Sobre",
     "settingsPrivacyPolicy": "Política de Privacidade",
     "settingsVersion": "Versão: {versionNumber}",

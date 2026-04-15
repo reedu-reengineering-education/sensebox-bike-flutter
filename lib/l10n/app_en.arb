@@ -1,5 +1,8 @@
 {
-    "settingsApiUrlLoadError": "Unable to load available service URLs. The default URL will be used for data upload. To select a different one, please check your internet connection and reopen this window to reload.",
+    "settingsApiUrlLoadError": "Unable to load service URLs.",
+    "settingsApiUrlLoadErrorDetails": "The default URL will be used for data upload. To select a different one, please check your internet connection and reopen this window.",
+    "settingsApiUrlEditManuallyHint": "You can still enter a custom service URL manually.",
+    "settingsApiUrlEditManually": "Details & Custom URL",
     "settingsApiUrlLoadErrorWithMessage": "Unable to load available service URLs. The default URL will be used for data upload. Error: {error}\nTo select a different one, please check your internet connection and reopen this window to reload.",
     "@settingsApiUrlLoadErrorWithMessage": {
         "placeholders": {
@@ -31,6 +34,7 @@
     "generalEdit": "Edit",
     "generalAdd": "Add",
     "generalClose": "Close",
+    "generalDetails": "Details",
     "reloadConfiguration": "Reload configuration",
     "generalUpload": "Upload",
     "generalPrivacyZones": "Privacy Zones",
@@ -137,6 +141,7 @@
     "settingsApiUrl": "Service URL",
     "settingsApiUrlHelper": "Enter the API endpoint for data uploads",
     "settingsApiUrlError": "Please enter a valid URL (e.g., https://api.opensensemap.org)",
+    "settingsApiUrlCustomOption": "Custom Service URL",
     "settingsAbout": "About",
     "settingsPrivacyPolicy": "Privacy Policy",
     "settingsVersion": "Version: {versionNumber}",

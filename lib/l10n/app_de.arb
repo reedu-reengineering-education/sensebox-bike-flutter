@@ -1,5 +1,8 @@
 {
-    "settingsApiUrlLoadError": "Die verfügbaren Service-URLs konnten nicht geladen werden. Für den Datenupload wird die Standard-URL verwendet. Um eine andere auszuwählen, stellen Sie bitte sicher, dass Sie mit dem Internet verbunden sind, und öffnen Sie dieses Fenster erneut, um die URLs neu zu laden.",
+    "settingsApiUrlLoadError": "Service-URLs konnten nicht geladen werden.",
+    "settingsApiUrlLoadErrorDetails": "Für den Datenupload wird die Standard-URL verwendet. Um eine andere auszuwählen, bitte Internetverbindung prüfen und dieses Fenster erneut öffnen.",
+    "settingsApiUrlEditManuallyHint": "Sie können trotzdem eine benutzerdefinierte Service-URL manuell eingeben.",
+    "settingsApiUrlEditManually": "Details & benutzerdefinierte URL",
     "settingsApiUrlLoadErrorWithMessage": "Die verfügbaren Service-URLs konnten nicht geladen werden. Für den Datenupload wird die Standard-URL verwendet. Fehler: {error}\nUm eine andere auszuwählen, stellen Sie bitte sicher, dass Sie mit dem Internet verbunden sind, und öffnen Sie dieses Fenster erneut, um die URLs neu zu laden.",
     "@settingsApiUrlLoadErrorWithMessage": {
         "placeholders": {
@@ -32,6 +35,7 @@
     "generalEdit": "Bearbeiten",
     "generalAdd": "Hinzufügen",
     "generalClose": "Schließen",
+    "generalDetails": "Details",
     "reloadConfiguration": "Konfiguration neu laden",
     "generalUpload": "Hochladen",
     "generalPrivacyZones": "Privatzonen",
@@ -138,6 +142,7 @@
     "settingsApiUrl": "Service-URL",
     "settingsApiUrlHelper": "Geben Sie den API-Endpunkt für Daten-Uploads ein",
     "settingsApiUrlError": "Bitte geben Sie eine gültige URL ein (z.B. https://api.opensensemap.org)",
+    "settingsApiUrlCustomOption": "Benutzerdefinierte Service-URL",
     "settingsAbout": "Über die App",
     "settingsPrivacyPolicy": "Datenschutz",
     "settingsVersion": "Version: {versionNumber}",
