@@ -134,6 +134,17 @@ class RecordingBloc extends Cubit<RecordingState> {
     }
   }
 
+  void _onDirectUploadFailed() {
+    if (_currentTrack != null) {
+      trackBloc.updateDirectUploadAuthFailure(_currentTrack!);
+      ErrorService.handleError(
+        DirectUploadFailureError(),
+        StackTrace.current,
+        sendToSentry: false,
+      );
+    }
+  }
+
   void _onSenseBoxChanged(SenseBox? senseBox) {
     _selectedSenseBox = senseBox;
     _emitState();
@@ -173,7 +184,8 @@ class RecordingBloc extends Cubit<RecordingState> {
         _directUploadService = DirectUploadService(
             openSenseMapService: openSenseMapService,
             senseBox: _selectedSenseBox!,
-            openSenseMapBloc: openSenseMapBloc);
+            openSenseMapBloc: openSenseMapBloc,
+            onUploadFailed: _onDirectUploadFailed);
       } else {
         _batchUploadService = BatchUploadService(
           openSenseMapService: openSenseMapService,

@@ -20,6 +20,8 @@ void main() {
   late Isar isar;
   late SensorService sensorService;
   late SensorData sensorData;
+  late int testGeolocationId;
+  late int testTrackId;
   late Directory tempDirectory;
 
   setUpAll(() {
@@ -57,12 +59,14 @@ void main() {
     await isar.writeTxn(() async {
       await isar.trackDatas.put(trackData);
     });
+    testTrackId = trackData.id;
 
     final geolocationData = createMockGeolocationData(trackData);
     await isar.writeTxn(() async {
       await isar.geolocationDatas.put(geolocationData);
       await geolocationData.track.save();
     });
+    testGeolocationId = geolocationData.id;
 
     sensorData = createMockSensorData(geolocationData);
     await isar.writeTxn(() async {
@@ -174,9 +178,8 @@ void main() {
 
     group('getSensorDataByGeolocationId', () {
       test('retrieves sensor data by geolocation ID', () async {
-        final geolocationId = sensorData.geolocationData.value?.id ?? -1;
         final sensors =
-            await sensorService.getSensorDataByGeolocationId(geolocationId);
+            await sensorService.getSensorDataByGeolocationId(testGeolocationId);
 
         expect(sensors.length, equals(1));
         expect(sensors.first.title, equals('temperature'));
@@ -190,8 +193,7 @@ void main() {
 
     group('getSensorDataByTrackId', () {
       test('retrieves sensor data by track ID', () async {
-        final trackId = sensorData.geolocationData.value?.track.value?.id ?? -1;
-        final sensors = await sensorService.getSensorDataByTrackId(trackId);
+        final sensors = await sensorService.getSensorDataByTrackId(testTrackId);
 
         expect(sensors.length, equals(1));
         expect(sensors.first.title, equals('temperature'));

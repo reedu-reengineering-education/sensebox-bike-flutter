@@ -102,6 +102,24 @@ abstract class AppLocalizations {
     Locale('pt')
   ];
 
+  /// No description provided for @settingsKnowledgeBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge Base'**
+  String get settingsKnowledgeBase;
+
+  /// No description provided for @uploadBlockNotAuthenticated.
+  ///
+  /// In en, this message translates to:
+  /// **'Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please login or register an account on the Settings page.'**
+  String get uploadBlockNotAuthenticated;
+
+  /// No description provided for @uploadBlockNoBox.
+  ///
+  /// In en, this message translates to:
+  /// **'Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please select or create a senseBox on the Home page.'**
+  String get uploadBlockNoBox;
+
   /// No description provided for @createBoxAddCustomTag.
   ///
   /// In en, this message translates to:
@@ -245,6 +263,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Login'**
   String get generalLogin;
+
+  /// No description provided for @generalLoginOrRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Login or Register'**
+  String get generalLoginOrRegister;
 
   /// No description provided for @generalLogout.
   ///
@@ -599,6 +623,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording'**
   String get settingsUploadModeDirectDescription;
+
+  /// No description provided for @settingsApiUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'API URL'**
+  String get settingsApiUrl;
+
+  /// No description provided for @settingsApiUrlHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the API endpoint for data uploads'**
+  String get settingsApiUrlHelper;
+
+  /// No description provided for @settingsApiUrlError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid URL (e.g., https://api.opensensemap.org)'**
+  String get settingsApiUrlError;
 
   /// No description provided for @settingsAbout.
   ///
@@ -1001,6 +1043,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Data upload failed. Please check your internet connection and try again.'**
   String get errorUploadFailed;
+
+  /// No description provided for @errorDirectUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time upload failed due to connectivity issues. Don\'t worry – your data has been saved locally. After stopping the recording, you can upload the track manually from the track overview.'**
+  String get errorDirectUploadFailed;
 
   /// No description provided for @errorPermanentAuthentication.
   ///

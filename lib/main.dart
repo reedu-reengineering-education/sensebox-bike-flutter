@@ -163,6 +163,17 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp>
         title: 'senseBox:bike',
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        localeResolutionCallback: (locale, supportedLocales) {
+          if (locale == null) return const Locale('en');
+
+          for (final supportedLocale in supportedLocales) {
+            if (supportedLocale.languageCode == locale.languageCode) {
+              return supportedLocale;
+            }
+          }
+
+          return const Locale('en');
+        },
         theme: lightTheme,
         darkTheme: darkTheme,
         routerConfig: _router,

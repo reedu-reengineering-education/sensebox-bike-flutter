@@ -10,6 +10,7 @@ import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
+import 'package:sensebox_bike/ui/widgets/common/api_url_field.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
@@ -194,7 +195,7 @@ class SettingsScreen extends StatelessWidget {
               context, isAuthenticated, openSenseMapBloc),
       text: isAuthenticated
           ? AppLocalizations.of(context)!.generalLogout
-          : AppLocalizations.of(context)!.generalLogin,
+          : AppLocalizations.of(context)!.generalLoginOrRegister,
       width: 1,
     );
   }
@@ -353,7 +354,99 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
         ),
+        ListTile(
+          leading: const Icon(Icons.cloud_upload),
+          title: Text(AppLocalizations.of(context)!.settingsUploadMode),
+          subtitle: Text(
+            settingsState.directUploadMode
+                ? AppLocalizations.of(context)!.settingsUploadModeDirect
+                : AppLocalizations.of(context)!.settingsUploadModePostRide,
+          ),
+          trailing: Switch(
+            value: settingsState.directUploadMode,
+            onChanged: (value) {
+              settingsBloc.toggleDirectUploadMode(value);
+            },
+          ),
+        ),
+        _buildApiUrlSection(context, settingsBloc),
       ],
+    );
+  }
+
+  Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc) {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        final controller = TextEditingController(text: settingsBloc.apiUrl);
+
+        return ListTile(
+          leading: const Icon(Icons.settings_ethernet_outlined),
+          title: Text(AppLocalizations.of(context)!.settingsApiUrl),
+          subtitle: Text(
+            AppLocalizations.of(context)!.settingsApiUrlHelper,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+          onTap: () {
+            _showApiUrlDialog(context, settingsBloc, controller);
+          },
+        );
+      },
+    );
+  }
+
+  void _showApiUrlDialog(BuildContext context, SettingsBloc settingsBloc,
+      TextEditingController controller) {
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
+        content: SizedBox(
+          width: 300,
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  AppLocalizations.of(context)!.settingsApiUrl,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 16),
+                ApiUrlField(
+                  controller: controller,
+                  helperText:
+                      AppLocalizations.of(context)!.settingsApiUrlHelper,
+                  defaultValue: 'https://api.opensensemap.org',
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(AppLocalizations.of(context)!.generalCancel),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: () async {
+                        if (formKey.currentState!.validate()) {
+                          await settingsBloc.setApiUrl(controller.text);
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: Text(AppLocalizations.of(context)!.generalSave),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -400,6 +493,12 @@ class SettingsScreen extends StatelessWidget {
       children: [
         _buildSectionHeader(
             context, AppLocalizations.of(context)!.settingsContact),
+        _buildUrlTile(
+          context,
+          icon: Icons.menu_book,
+          title: AppLocalizations.of(context)!.settingsKnowledgeBase,
+          url: knowledgeBaseUrl,
+        ),
         _buildUrlTile(
           context,
           icon: Icons.contact_mail,

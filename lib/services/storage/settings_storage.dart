@@ -5,11 +5,13 @@ class AppSettingsData {
     required this.vibrateOnDisconnect,
     required this.privacyZones,
     required this.directUploadMode,
+    required this.apiUrl,
   });
 
   final bool vibrateOnDisconnect;
   final List<String> privacyZones;
   final bool directUploadMode;
+  final String apiUrl;
 }
 
 abstract class SettingsStorage {
@@ -17,6 +19,7 @@ abstract class SettingsStorage {
   Future<void> setVibrateOnDisconnect(bool value);
   Future<void> setPrivacyZones(List<String> zones);
   Future<void> setDirectUploadMode(bool value);
+  Future<void> setApiUrl(String value);
 }
 
 class SharedPreferencesSettingsStorage implements SettingsStorage {
@@ -32,6 +35,7 @@ class SharedPreferencesSettingsStorage implements SettingsStorage {
       vibrateOnDisconnect: prefs.getBool('vibrateOnDisconnect') ?? false,
       privacyZones: prefs.getStringList('privacyZones') ?? const <String>[],
       directUploadMode: prefs.getBool('directUploadMode') ?? false,
+      apiUrl: prefs.getString('apiUrl') ?? '',
     );
   }
 
@@ -52,6 +56,12 @@ class SharedPreferencesSettingsStorage implements SettingsStorage {
     final prefs = await _prefs;
     await prefs.setBool('directUploadMode', value);
   }
+
+  @override
+  Future<void> setApiUrl(String value) async {
+    final prefs = await _prefs;
+    await prefs.setString('apiUrl', value);
+  }
 }
 
 class InMemorySettingsStorage implements SettingsStorage {
@@ -62,6 +72,7 @@ class InMemorySettingsStorage implements SettingsStorage {
               vibrateOnDisconnect: false,
               privacyZones: <String>[],
               directUploadMode: false,
+              apiUrl: '',
             );
 
   AppSettingsData _data;
@@ -75,6 +86,7 @@ class InMemorySettingsStorage implements SettingsStorage {
       vibrateOnDisconnect: value,
       privacyZones: _data.privacyZones,
       directUploadMode: _data.directUploadMode,
+      apiUrl: _data.apiUrl,
     );
   }
 
@@ -84,6 +96,7 @@ class InMemorySettingsStorage implements SettingsStorage {
       vibrateOnDisconnect: _data.vibrateOnDisconnect,
       privacyZones: zones,
       directUploadMode: _data.directUploadMode,
+      apiUrl: _data.apiUrl,
     );
   }
 
@@ -93,6 +106,17 @@ class InMemorySettingsStorage implements SettingsStorage {
       vibrateOnDisconnect: _data.vibrateOnDisconnect,
       privacyZones: _data.privacyZones,
       directUploadMode: value,
+      apiUrl: _data.apiUrl,
+    );
+  }
+
+  @override
+  Future<void> setApiUrl(String value) async {
+    _data = AppSettingsData(
+      vibrateOnDisconnect: _data.vibrateOnDisconnect,
+      privacyZones: _data.privacyZones,
+      directUploadMode: _data.directUploadMode,
+      apiUrl: value,
     );
   }
 }

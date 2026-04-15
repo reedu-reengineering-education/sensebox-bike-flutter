@@ -9,6 +9,17 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get settingsKnowledgeBase => 'Base de conhecimento';
+
+  @override
+  String get uploadBlockNotAuthenticated =>
+      'O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o openSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, faça login ou registre uma conta na página de Configurações.';
+
+  @override
+  String get uploadBlockNoBox =>
+      'O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o openSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, selecione ou crie uma senseBox na página inicial.';
+
+  @override
   String get createBoxAddCustomTag =>
       'Adicionar etiqueta de grupo personalizada';
 
@@ -89,6 +100,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get generalLogin => 'Entrar';
+
+  @override
+  String get generalLoginOrRegister => 'Entrar ou Registrar-se';
 
   @override
   String get generalLogout => 'Sair';
@@ -293,6 +307,17 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get settingsUploadModeDirectDescription =>
       '• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação';
+
+  @override
+  String get settingsApiUrl => 'URL da API';
+
+  @override
+  String get settingsApiUrlHelper =>
+      'Digite o endpoint da API para uploads de dados';
+
+  @override
+  String get settingsApiUrlError =>
+      'Por favor, digite uma URL válida (ex: https://api.opensensemap.org)';
 
   @override
   String get settingsAbout => 'Sobre';
@@ -513,6 +538,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.';
 
   @override
+  String get errorDirectUploadFailed =>
+      'O upload em tempo real falhou devido a problemas de conectividade. Não se preocupe – seus dados foram salvos localmente. Após parar a gravação, você pode enviar o trajeto manualmente na tela de visão geral dos trajetos.';
+
+  @override
   String get errorPermanentAuthentication =>
       'Falha permanente na autenticação. Por favor, faça login para enviar dados.';
 
@@ -663,7 +692,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String trackStatusUploadFailedAt(Object date) {
-    return 'Upload failed on $date';
+    return 'Envio falhou em $date';
   }
 
   @override

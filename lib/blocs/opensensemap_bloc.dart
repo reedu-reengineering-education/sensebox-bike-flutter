@@ -11,6 +11,7 @@ import 'package:sensebox_bike/services/opensensemap_selection_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/storage/selected_sensebox_storage.dart';
 import 'package:sensebox_bike/utils/opensensemap_utils.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 
 @immutable
 class OpenSenseMapState {
@@ -44,8 +45,8 @@ class OpenSenseMapState {
 class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
     with WidgetsBindingObserver {
   final OpenSenseMapService _service;
-  final OpenSenseMapAuthService _authService;
-  final OpenSenseMapSelectionService _selectionService;
+  late final OpenSenseMapAuthService _authService;
+  late final OpenSenseMapSelectionService _selectionService;
   final ConfigurationBloc? _configurationBloc;
   bool _isAuthenticated = false;
   bool _isAuthenticating = false;
@@ -91,14 +92,11 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
 
   OpenSenseMapBloc({
     ConfigurationBloc? configurationBloc,
-    required OpenSenseMapService service,
-    required SelectedSenseBoxStorage selectedSenseBoxStorage,
+    SettingsBloc? settingsBloc,
+    OpenSenseMapService? service,
+    SelectedSenseBoxStorage? selectedSenseBoxStorage,
   })  : _configurationBloc = configurationBloc,
-        _service = service,
-        _authService = OpenSenseMapAuthService(service: service),
-        _selectionService = OpenSenseMapSelectionService(
-          selectedSenseBoxStorage: selectedSenseBoxStorage,
-        ),
+        _service = service ?? OpenSenseMapService(settingsBloc: settingsBloc),
         super(
           const OpenSenseMapState(
             isAuthenticated: false,
@@ -107,6 +105,11 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
             senseBoxes: <dynamic>[],
           ),
         ) {
+    _authService = OpenSenseMapAuthService(service: _service);
+    _selectionService = OpenSenseMapSelectionService(
+      selectedSenseBoxStorage:
+          selectedSenseBoxStorage ?? SharedPreferencesSelectedSenseBoxStorage(),
+    );
     WidgetsBinding.instance.addObserver(this);
     _emitState();
   }
@@ -402,10 +405,13 @@ class OpenSenseMapBloc extends Cubit<OpenSenseMapState>
     _emitState();
   }
 
-  Future<void> uploadData(String senseBoxId, Map<String, dynamic> data) async {
+  Future<void> uploadData(
+    SenseBox senseBox,
+    Map<String, dynamic> data,
+  ) async {
     try {
       // Let the service handle all authentication logic including token refresh
-      await _service.uploadData(senseBoxId, data);
+      await _service.uploadData(senseBox, data);
 
       // If we get here, upload was successful and we're authenticated
       _isAuthenticated = true;

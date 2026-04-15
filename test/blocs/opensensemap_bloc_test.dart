@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
@@ -17,6 +19,20 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() {
+    const sharedPreferencesChannel =
+        MethodChannel('plugins.flutter.io/shared_preferences');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(sharedPreferencesChannel,
+            (MethodCall call) async {
+      if (call.method == 'getAll') {
+        return <String, dynamic>{};
+      }
+      if (call.method == 'setString') {
+        return true;
+      }
+      return null;
+    });
+
     registerFallbackValue(SenseBox(
       sId: 'fallback',
       name: 'Fallback',
@@ -49,6 +65,82 @@ void main() {
 
       test('should register as lifecycle observer', () {
         expect(bloc, isA<WidgetsBindingObserver>());
+      });
+    });
+
+    group('API URL Configuration', () {
+      test('should use default API URL when SettingsBloc has no custom URL',
+          () async {
+        final settingsBloc = SettingsBloc();
+        // Wait for settings to load
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        final blocWithDefaultSettings =
+            OpenSenseMapBloc(settingsBloc: settingsBloc);
+        expect(blocWithDefaultSettings, isA<OpenSenseMapBloc>());
+        expect(blocWithDefaultSettings.isAuthenticated, false);
+
+        // SettingsBloc should return default URL
+        expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
+
+        blocWithDefaultSettings.dispose();
+      });
+
+      test('should use custom API URL from SettingsBloc when stored', () async {
+        final settingsBloc = SettingsBloc();
+        // Wait for SettingsBloc to finish loading
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        const customUrl = 'https://custom-api.example.com';
+
+        // Set custom URL in settings
+        await settingsBloc.setApiUrl(customUrl);
+
+        final blocWithCustomSettings =
+            OpenSenseMapBloc(settingsBloc: settingsBloc);
+        expect(blocWithCustomSettings, isA<OpenSenseMapBloc>());
+
+        // SettingsBloc should return the custom URL
+        expect(settingsBloc.apiUrl, customUrl);
+
+        blocWithCustomSettings.dispose();
+        settingsBloc.dispose();
+      });
+
+      test('should persist API URL in shared preferences', () async {
+        final settingsBloc = SettingsBloc();
+        // Wait for initial load
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        const customUrl = 'https://test-api.example.com';
+
+        // Set custom URL
+        await settingsBloc.setApiUrl(customUrl);
+
+        // Create new SettingsBloc instance to simulate app restart
+        final newSettingsBloc = SettingsBloc();
+        await Future.delayed(
+            const Duration(milliseconds: 100)); // Wait for loading
+
+        // Should load the stored URL
+        expect(newSettingsBloc.apiUrl, customUrl);
+
+        settingsBloc.dispose();
+        newSettingsBloc.dispose();
+      });
+
+      test('should fallback to default when stored URL is empty', () async {
+        final settingsBloc = SettingsBloc();
+        // Wait for initial load
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // Set empty URL
+        await settingsBloc.setApiUrl('');
+
+        // Should return default URL
+        expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
+
+        settingsBloc.dispose();
       });
     });
 

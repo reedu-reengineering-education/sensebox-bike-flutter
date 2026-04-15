@@ -225,6 +225,11 @@ class UploadDataPreparer {
           continue;
         }
 
+        if (FeatureFlags.hideSurfaceAnomalySensor &&
+            sensorTitle == 'surface_anomaly') {
+          continue;
+        }
+
         // Handle multi-value sensors directly
         if (sensorTitle == 'surface_classification' ||
             sensorTitle == 'finedust' ||

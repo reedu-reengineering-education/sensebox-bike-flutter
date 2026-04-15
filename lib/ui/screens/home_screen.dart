@@ -1,9 +1,11 @@
 import 'dart:math';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
@@ -11,7 +13,7 @@ import 'package:sensebox_bike/ui/widgets/home/sensebox_selection_button.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/ui/widgets/common/error_banner.dart';
+import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_widget_factory.dart';
 
 // HomeScreen now delegates sections to smaller widgets
@@ -31,6 +33,7 @@ class HomeScreen extends StatelessWidget {
         }
 
         final recordingBloc = context.read<RecordingBloc>();
+        final openSenseMapState = context.read<OpenSenseMapBloc>().state;
         final batchUploadService = recordingBloc.batchUploadService;
         recordingBloc.clearBatchUploadRequest();
 
@@ -42,6 +45,8 @@ class HomeScreen extends StatelessWidget {
           context,
           batchUploadService: batchUploadService,
           canUpload: request.canUpload,
+          isAuthenticated: openSenseMapState.isAuthenticated,
+          hasSelectedBox: openSenseMapState.selectedSenseBox != null,
           onUploadComplete: recordingBloc.onBatchUploadCompleted,
           onUploadFailed: recordingBloc.onBatchUploadFailed,
           onStartUpload: () {
@@ -170,8 +175,9 @@ class _ConnectionErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ErrorBanner(
-      errorText: AppLocalizations.of(context)!.errorBleConnectionFailed,
+    return InfoBanner(
+      text: AppLocalizations.of(context)!.errorBleConnectionFailed,
+      color: Theme.of(context).colorScheme.info,
       onDismiss: () => bleBloc.resetConnectionError(),
     );
   }

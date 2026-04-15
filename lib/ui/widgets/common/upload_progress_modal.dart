@@ -7,30 +7,11 @@ import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_indicator.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_info_widget.dart';
 
-/// A modal bottom sheet that displays upload progress in real-time.
-///
-/// This modal slides up from the bottom when an upload starts and shows:
-/// - First: Confirmation dialog asking if user wants to upload
-/// - Then: Real-time progress updates from BatchUploadService
-/// - Progress bar and percentage
-/// - Status messages (preparing, uploading, retrying, completed, failed)
-/// - Retry button for failed uploads
-/// - Success confirmation
-/// - Error handling with user-friendly messages
 class UploadProgressModal extends StatefulWidget {
-  /// The batch upload service to monitor for progress
   final BatchUploadService batchUploadService;
-
-  /// Callback when upload completes successfully
   final VoidCallback? onUploadComplete;
-
-  /// Callback when upload fails permanently
   final VoidCallback? onUploadFailed;
-
-  /// Callback to start the upload (called when user confirms)
   final VoidCallback? onStartUpload;
-
-  /// Callback when modal is dismissed (e.g., user cancels)
   final VoidCallback? onDismiss;
 
   const UploadProgressModal({
@@ -55,13 +36,11 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
   void initState() {
     super.initState();
 
-    // Listen to upload progress
     _progressSubscription =
         widget.batchUploadService.uploadProgressStream.listen(
       _onProgressUpdate,
       onError: (error) {
         debugPrint('[UploadProgressModal] Stream error: $error');
-        // Handle stream errors by showing them in the modal
         setState(() {
           _currentProgress = UploadProgress(
             totalChunks: 0,
@@ -79,7 +58,7 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
   @override
   void dispose() {
     _progressSubscription.cancel();
-    UploadProgressOverlay.hide();
+    UploadProgressOverlay._resetState();
     super.dispose();
   }
 
@@ -235,20 +214,23 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
 /// and manages its lifecycle automatically.
 class UploadProgressOverlay {
   static bool _isShown = false;
+  static BuildContext? _lastContext;
 
   /// Shows the upload progress modal
   static void show(
     BuildContext context, {
     required BatchUploadService batchUploadService,
     bool canUpload = true,
+    required bool isAuthenticated,
+    required bool hasSelectedBox,
     VoidCallback? onUploadComplete,
     VoidCallback? onUploadFailed,
     VoidCallback? onStartUpload,
     VoidCallback? onDismiss,
   }) {
     if (_isShown) return;
-
     _isShown = true;
+    _lastContext = context;
 
     if (!canUpload) {
       final localizations = AppLocalizations.of(context)!;
@@ -256,17 +238,29 @@ class UploadProgressOverlay {
             color: Theme.of(context).colorScheme.error,
           );
 
+      String message;
+      if (!isAuthenticated) {
+        message = localizations.uploadBlockNotAuthenticated;
+      } else if (!hasSelectedBox) {
+        message = localizations.uploadBlockNoBox;
+      } else {
+        message = localizations.uploadPostRideRequirementsMessage;
+      }
+
       showAppDialog(
         context: context,
         useRootNavigator: true,
         builder: (dialogContext) => AppAlertDialog(
           title: Text(localizations.uploadRequirementsTitle, style: titleStyle),
-          content: Text(localizations.uploadPostRideRequirementsMessage),
+          content: Text(
+            message,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                hide();
+                UploadProgressOverlay.hide();
                 onDismiss?.call();
               },
               child: Text(localizations.generalOk),
@@ -284,7 +278,7 @@ class UploadProgressOverlay {
       builder: (context) => UploadProgressModal(
         batchUploadService: batchUploadService,
         onUploadComplete: () {
-          hide();
+          UploadProgressOverlay.hide();
           onUploadComplete?.call();
         },
         onUploadFailed: onUploadFailed,
@@ -296,7 +290,23 @@ class UploadProgressOverlay {
 
   /// Hides the upload progress modal
   static void hide() {
+    if (_isShown) {
+      _isShown = false;
+      if (_lastContext != null) {
+        final navigator = Navigator.maybeOf(_lastContext!);
+        if (navigator != null && navigator.canPop()) {
+          navigator.pop();
+        }
+        _lastContext = null;
+      }
+    }
+  }
+
+  /// Resets overlay state without navigating. Safe to call from dispose(),
+  /// where the widget tree is locked and Navigator.pop() is forbidden.
+  static void _resetState() {
     _isShown = false;
+    _lastContext = null;
   }
 
   /// Whether the modal is currently shown

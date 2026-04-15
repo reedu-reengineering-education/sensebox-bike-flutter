@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/storage/settings_storage.dart';
 
 @immutable
@@ -8,33 +9,40 @@ class SettingsState {
     required this.vibrateOnDisconnect,
     required this.privacyZones,
     required this.directUploadMode,
+    required this.apiUrl,
   });
 
   final bool vibrateOnDisconnect;
   final List<String> privacyZones;
   final bool directUploadMode;
+  final String apiUrl;
 
   SettingsState copyWith({
     bool? vibrateOnDisconnect,
     List<String>? privacyZones,
     bool? directUploadMode,
+    String? apiUrl,
   }) {
     return SettingsState(
       vibrateOnDisconnect: vibrateOnDisconnect ?? this.vibrateOnDisconnect,
       privacyZones: privacyZones ?? this.privacyZones,
       directUploadMode: directUploadMode ?? this.directUploadMode,
+      apiUrl: apiUrl ?? this.apiUrl,
     );
   }
 }
 
 class SettingsBloc extends Cubit<SettingsState> {
-  SettingsBloc({required SettingsStorage storage})
-      : _storage = storage,
-        super(const SettingsState(
-          vibrateOnDisconnect: false,
-          privacyZones: <String>[],
-          directUploadMode: false,
-        )) {
+  SettingsBloc({SettingsStorage? storage})
+      : _storage = storage ?? SharedPreferencesSettingsStorage(),
+        super(
+          const SettingsState(
+            vibrateOnDisconnect: false,
+            privacyZones: <String>[],
+            directUploadMode: false,
+            apiUrl: openSenseMapUrl,
+          ),
+        ) {
     _loadSettings();
   }
 
@@ -51,6 +59,7 @@ class SettingsBloc extends Cubit<SettingsState> {
         vibrateOnDisconnect: false,
         privacyZones: <String>[],
         directUploadMode: false,
+        apiUrl: openSenseMapUrl,
       ),
       storage: InMemorySettingsStorage(),
     );
@@ -59,6 +68,7 @@ class SettingsBloc extends Cubit<SettingsState> {
   bool get vibrateOnDisconnect => state.vibrateOnDisconnect;
   List<String> get privacyZones => state.privacyZones;
   bool get directUploadMode => state.directUploadMode;
+  String get apiUrl => state.apiUrl.isEmpty ? openSenseMapUrl : state.apiUrl;
 
   Stream<bool> get vibrateOnDisconnectStream =>
       stream.map((state) => state.vibrateOnDisconnect).distinct();
@@ -77,6 +87,7 @@ class SettingsBloc extends Cubit<SettingsState> {
         vibrateOnDisconnect: loaded.vibrateOnDisconnect,
         privacyZones: loaded.privacyZones,
         directUploadMode: loaded.directUploadMode,
+        apiUrl: loaded.apiUrl.isEmpty ? openSenseMapUrl : loaded.apiUrl,
       ),
     );
   }
@@ -97,6 +108,12 @@ class SettingsBloc extends Cubit<SettingsState> {
     await _storage.setDirectUploadMode(value);
     if (isClosed) return;
     emit(state.copyWith(directUploadMode: value));
+  }
+
+  Future<void> setApiUrl(String value) async {
+    await _storage.setApiUrl(value);
+    if (isClosed) return;
+    emit(state.copyWith(apiUrl: value.isEmpty ? openSenseMapUrl : value));
   }
 
   void dispose() {

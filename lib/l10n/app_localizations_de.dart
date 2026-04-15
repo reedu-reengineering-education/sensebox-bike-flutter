@@ -9,6 +9,17 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get settingsKnowledgeBase => 'Hilfe';
+
+  @override
+  String get uploadBlockNotAuthenticated =>
+      'Die aktuelle Fahrt wurde nicht automatisch hochgeladen. Du kannst sie trotzdem über die Track-Übersicht auf openSenseMap hochladen.\n\nUm deine Fahrt hochzuladen, melde dich bitte an oder registriere ein Konto auf der Einstellungsseite.';
+
+  @override
+  String get uploadBlockNoBox =>
+      'Die aktuelle Fahrt wurde nicht automatisch hochgeladen. Du kannst sie trotzdem über die Track-Übersicht auf openSenseMap hochladen.\n\nUm deine Fahrt hochzuladen, wähle oder erstelle bitte eine senseBox auf der Startseite.';
+
+  @override
   String get createBoxAddCustomTag => 'Eigene Gruppentags hinzufügen';
 
   @override
@@ -87,6 +98,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get generalLogin => 'Anmelden';
+
+  @override
+  String get generalLoginOrRegister => 'Anmelden oder Registrieren';
 
   @override
   String get generalLogout => 'Abmelden';
@@ -293,6 +307,17 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settingsUploadModeDirectDescription =>
       '• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen';
+
+  @override
+  String get settingsApiUrl => 'API-URL';
+
+  @override
+  String get settingsApiUrlHelper =>
+      'Geben Sie den API-Endpunkt für Daten-Uploads ein';
+
+  @override
+  String get settingsApiUrlError =>
+      'Bitte geben Sie eine gültige URL ein (z.B. https://api.opensensemap.org)';
 
   @override
   String get settingsAbout => 'Über die App';
@@ -515,6 +540,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
 
   @override
+  String get errorDirectUploadFailed =>
+      'Der Echtzeit-Upload konnte aufgrund von Verbindungsproblemen nicht durchgeführt werden. Keine Sorge – deine Daten wurden lokal gespeichert. Nach Beenden der Aufzeichnung kannst du den Track in der Trackübersicht manuell hochladen.';
+
+  @override
   String get errorPermanentAuthentication =>
       'Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich an, um Daten hochzuladen.';
 
@@ -667,7 +696,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String trackStatusUploadFailedAt(Object date) {
-    return 'Upload failed on $date';
+    return 'Upload fehlgeschlagen am $date';
   }
 
   @override

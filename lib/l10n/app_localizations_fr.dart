@@ -9,6 +9,15 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
+  String get settingsKnowledgeBase => 'Base de connaissances';
+
+  @override
+  String get uploadBlockNotAuthenticated =>
+      'Le trajet actuel n\'a pas été téléversé automatiquement. Vous pouvez toujours l\'envoyer sur openSenseMap depuis la page d\'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez vous connecter ou créer un compte dans les paramètres.';
+
+  @override
+  String get uploadBlockNoBox =>
+      'Le trajet actuel n\'a pas été téléversé automatiquement. Vous pouvez toujours l\'envoyer sur openSenseMap depuis la page d\'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez sélectionner ou créer une senseBox sur la page d\'accueil.';
   String get createBoxAddCustomTag =>
       'Ajouter une étiquette de groupe personnalisée';
 
@@ -89,6 +98,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get generalLogin => 'Connexion';
+
+  @override
+  String get generalLoginOrRegister => 'Connexion ou inscription';
 
   @override
   String get generalLogout => 'Déconnexion';
@@ -241,7 +253,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucune senseBox disponible ou configuration non chargée';
 
   @override
-  String get openSenseMapBoxSelectionAvailableBoxes => 'Available senseBoxes';
+  String get openSenseMapBoxSelectionAvailableBoxes => 'senseBoxes disponibles';
 
   @override
   String get openSenseMapBoxSelectionCreateHint =>
@@ -296,6 +308,17 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settingsUploadModeDirectDescription =>
       '• Les données sont téléversées immédiatement dès leur collecte\n• Partage des données en temps réel (expérimental)\n• Nécessite une connexion internet stable\n• Peut utiliser plus de batterie pendant l’enregistrement';
+
+  @override
+  String get settingsApiUrl => 'URL de l\'API';
+
+  @override
+  String get settingsApiUrlHelper =>
+      'Saisir le point de terminaison de l\'API pour les téléversements de données';
+
+  @override
+  String get settingsApiUrlError =>
+      'Veuillez saisir une URL valide (par ex., https://api.opensensemap.org)';
 
   @override
   String get settingsAbout => 'À propos';
@@ -518,6 +541,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get errorUploadFailed =>
       'Échec du téléversement des données. Veuillez vérifier votre connexion internet et réessayer.';
+
+  @override
+  String get errorDirectUploadFailed =>
+      'L’envoi en temps réel a échoué en raison de problèmes de connectivité. Ne vous inquiétez pas : vos données ont été enregistrées localement. Après avoir arrêté l’enregistrement, vous pouvez téléverser la trace manuellement depuis l’écran d’aperçu des parcours.';
 
   @override
   String get errorPermanentAuthentication =>
