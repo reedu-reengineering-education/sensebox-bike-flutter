@@ -38,6 +38,8 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get uploadBlockNoBox =>
       'Le trajet actuel n\'a pas été téléversé automatiquement. Vous pouvez toujours l\'envoyer sur openSenseMap depuis la page d\'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez sélectionner ou créer une senseBox sur la page d\'accueil.';
+
+  @override
   String get createBoxAddCustomTag =>
       'Ajouter une étiquette de groupe personnalisée';
 
@@ -276,7 +278,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucune senseBox disponible ou configuration non chargée';
 
   @override
-  String get openSenseMapBoxSelectionAvailableBoxes => 'senseBoxes disponibles';
+  String get openSenseMapBoxSelectionAvailableBoxes => 'Available senseBoxes';
 
   @override
   String get openSenseMapBoxSelectionCreateHint =>

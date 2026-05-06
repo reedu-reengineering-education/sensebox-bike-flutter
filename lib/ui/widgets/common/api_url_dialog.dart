@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/api_url_field.dart';
 
 class ApiUrlDialog extends StatefulWidget {
@@ -10,7 +11,6 @@ class ApiUrlDialog extends StatefulWidget {
   final List<String>? apiUrls;
   final bool isLoading;
   final String? error;
-  final void Function(void Function())? setState;
 
   const ApiUrlDialog({
     super.key,
@@ -19,7 +19,6 @@ class ApiUrlDialog extends StatefulWidget {
     this.apiUrls,
     this.isLoading = false,
     this.error,
-    this.setState,
   });
 
   @override
@@ -281,9 +280,9 @@ class _ApiUrlDialogState extends State<ApiUrlDialog> {
           child: Text(translations.generalCancel),
         ),
         FilledButton(
-          onPressed: () {
+          onPressed: () async {
             if (formKey.currentState!.validate()) {
-              formKey.currentState!.save();
+              await settingsBloc.setApiUrl(controller.text);
               Navigator.of(context).pop();
             }
           },
@@ -292,11 +291,10 @@ class _ApiUrlDialogState extends State<ApiUrlDialog> {
       ];
     }
 
-    return AlertDialog(
+    return AppAlertDialog(
       title: Text(translations.settingsApiUrl),
       content: content,
       actions: actions,
-      scrollable: true,
     );
   }
 }

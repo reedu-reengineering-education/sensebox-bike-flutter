@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:sensebox_bike/app/app_router.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
@@ -99,7 +97,7 @@ class _LoginFormState extends State<LoginForm> {
 
                                       if (isLoginSuccessful &&
                                           context.mounted) {
-                                        context.go(AppRoutes.home);
+                                        Navigator.of(context).pop();
                                       }
                                     }
                                   },

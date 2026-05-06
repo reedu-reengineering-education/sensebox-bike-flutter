@@ -11,6 +11,7 @@ import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/api_url_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
@@ -39,11 +40,11 @@ class SettingsScreen extends StatelessWidget {
               title: AppLocalizations.of(context)!.generalSettings,
               child: ListView(
                 children: <Widget>[
-                  _buildLoginLogoutSection(
-                    context,
-                    openSenseMapBloc,
-                    openSenseMapState,
-                  ),
+                  // _buildLoginLogoutSection(
+                  //   context,
+                  //   openSenseMapBloc,
+                  //   openSenseMapState,
+                  // ),
                   _buildGeneralSettingsSection(
                     context,
                     settingsBloc,
@@ -220,7 +221,6 @@ class SettingsScreen extends StatelessWidget {
     await showAppModalSheet(
       context: context,
       useRootNavigator: true,
-      scaleBackground: true,
       builder: (context) => contentBuilder(context),
     );
   }
@@ -361,21 +361,6 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
         ),
-        ListTile(
-          leading: const Icon(Icons.cloud_upload),
-          title: Text(AppLocalizations.of(context)!.settingsUploadMode),
-          subtitle: Text(
-            settingsState.directUploadMode
-                ? AppLocalizations.of(context)!.settingsUploadModeDirect
-                : AppLocalizations.of(context)!.settingsUploadModePostRide,
-          ),
-          trailing: Switch(
-            value: settingsState.directUploadMode,
-            onChanged: (value) {
-              settingsBloc.toggleDirectUploadMode(value);
-            },
-          ),
-        ),
         _buildApiUrlSection(context, settingsBloc, configurationBloc),
       ],
     );
@@ -429,9 +414,8 @@ class SettingsScreen extends StatelessWidget {
     bool isLoading = false,
     String? error,
   }) {
-    showDialog(
+    showAppDialog(
       context: context,
-      barrierDismissible: true,
       builder: (context) => ApiUrlDialog(
         settingsBloc: settingsBloc,
         controller: controller,

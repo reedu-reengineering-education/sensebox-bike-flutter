@@ -44,7 +44,7 @@ class SenseBoxSelectionButton extends StatelessWidget {
               backgroundColor = loginRequiredColor;
               textColor = loginRequiredTextColor;
               borderColor = loginRequiredColor;
-              icon = Icons.login;
+              icon = Icons.keyboard_arrow_up;
               label = AppLocalizations.of(context)!.loginRequiredMessage;
               final configBloc = context.read<ConfigurationBloc>();
               onTap = () => showSenseBoxManager(context, osemBloc, configBloc);
@@ -83,32 +83,32 @@ class SenseBoxSelectionButton extends StatelessWidget {
                     width: 1.0,
                     style: BorderStyle.solid,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.shadow.withOpacity(0.03),
-                      blurRadius: 1.5,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
+                  // boxShadow: [
+                  //   BoxShadow(
+                  //     color: colorScheme.shadow.withOpacity(0.03),
+                  //     blurRadius: 1.5,
+                  //     offset: const Offset(0, 1),
+                  //   ),
+                  // ],
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(
-                      height: 24,
-                      width: 24,
+                      height: 20,
+                      width: 20,
                       child: Center(
-                        child: isAuthenticating
-                            ? const Loader(light: true)
-                            : Icon(
-                                icon,
-                                color: textColor,
-                                size: 20,
-                              ),
-                      ),
+                          child: isAuthenticating
+                              ? const Loader(light: true)
+                              : null
+                          // disable icon for now
+                          // Icon(
+                          //     icon,
+                          //     color: textColor,
+                          //     size: 20,
+                          //   ),
+                          ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -124,7 +124,7 @@ class SenseBoxSelectionButton extends StatelessWidget {
                     ),
                     if (isAuthenticated && !isAuthenticating && noBox)
                       Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
                         child: Icon(Icons.arrow_forward,
                             color: textColor, size: 16),
                       ),

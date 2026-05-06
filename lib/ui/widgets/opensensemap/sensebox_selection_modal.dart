@@ -10,7 +10,6 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
-import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection.dart';
@@ -20,7 +19,6 @@ void showSenseBoxManager(BuildContext context, OpenSenseMapBloc bloc,
   showAppModalSheet(
     context: context,
     useRootNavigator: true,
-    scaleBackground: true,
     builder: (BuildContext context) {
       return _SenseBoxManagementModal(
         bloc: bloc,
@@ -55,6 +53,7 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
   Widget build(BuildContext context) {
     return BlocBuilder<OpenSenseMapBloc, OpenSenseMapState>(
       builder: (context, state) {
+        final openSenseMapBloc = context.read<OpenSenseMapBloc>();
         return SizedBox(
           height: MediaQuery.of(context).size.height * 0.8,
           child: Stack(
@@ -62,20 +61,25 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
+                  spacing: 12,
                   children: [
-                    if (!state.isAuthenticated) ...[
-                      _buildLoginCallToAction(context),
-                      const SizedBox(height: 8),
-                    ],
                     _buildSettingsGrid(context),
-                    Expanded(
-                      child: SenseBoxSelectionWidget(
-                          configurationBloc: widget.configurationBloc),
-                    ),
+                    state.isAuthenticated
+                        ? Expanded(
+                            child: buildLoginLogoutSection(
+                              context,
+                              openSenseMapBloc,
+                              state,
+                            ),
+                          )
+                        : buildLoginLogoutSection(
+                            context,
+                            openSenseMapBloc,
+                            state,
+                          ),
                   ],
                 ),
               ),
-              // Plus button or reload button at the bottom right corner
               Positioned(
                 bottom: 32,
                 right: 32,
@@ -88,44 +92,176 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
     );
   }
 
-  Widget _buildLoginCallToAction(BuildContext context) {
-    return Material(
-      color: loginRequiredColor,
-      borderRadius: BorderRadius.circular(20),
-      child: ListTile(
-        leading: const Icon(Icons.login, color: loginRequiredTextColor),
-        title: Text(
-          AppLocalizations.of(context)!.loginRequiredMessage,
-          style: const TextStyle(
-            color: loginRequiredTextColor,
-            fontWeight: FontWeight.w600,
+  Widget buildLoginLogoutSection(BuildContext context,
+      OpenSenseMapBloc openSenseMapBloc, OpenSenseMapState openSenseMapState) {
+    final isAuthenticated = openSenseMapState.isAuthenticated;
+
+    return buildSettingsContainer(
+      context,
+      isAuthenticated,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FutureBuilder<Map<String, dynamic>?>(
+            future: openSenseMapBloc.userData,
+            builder: (context, snapshot) {
+              return buildUserInfoRow(
+                  context, isAuthenticated, snapshot.data, openSenseMapBloc);
+            },
           ),
-        ),
-        trailing:
-            const Icon(Icons.arrow_forward, color: loginRequiredTextColor),
-        onTap: () => _showLoginModal(context),
+          const SizedBox(height: 16),
+          buildLoginLogoutButton(context, isAuthenticated, openSenseMapBloc),
+          const SizedBox(height: 8),
+          if (isAuthenticated)
+            Expanded(
+              child: SenseBoxSelectionWidget(
+                configurationBloc: widget.configurationBloc,
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  Future<void> _showLoginModal(BuildContext context) async {
-    await showAppModalSheet(
-      context: context,
-      useRootNavigator: true,
-      scaleBackground: false,
-      builder: (context) {
-        return SizedBox(
+  Widget buildSettingsContainer(BuildContext context, bool isAuthenticated,
+      {required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        color: isAuthenticated
+            ? Theme.of(context).colorScheme.tertiary
+            : loginRequiredColor,
+      ),
+      padding: const EdgeInsets.all(16),
+      child: child,
+    );
+  }
+
+  Widget buildUserInfoRow(BuildContext context, bool isAuthenticated,
+      Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        buildUserIcon(context),
+        const SizedBox(width: 12),
+        if (isAuthenticated)
+          buildAuthenticatedUserInfo(context, userData, openSenseMapBloc)
+        else
+          buildUnauthenticatedUserInfo(context),
+      ],
+    );
+  }
+
+  Widget buildUserIcon(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Theme.of(context).colorScheme.onTertiaryContainer.withAlpha(50),
+      ),
+      padding: const EdgeInsets.all(6),
+      child: Icon(
+        Icons.account_circle,
+        size: 28,
+        color: Theme.of(context).colorScheme.onTertiaryContainer,
+      ),
+    );
+  }
+
+  Widget buildAuthenticatedUserInfo(BuildContext context,
+      Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
+    if (openSenseMapBloc.isAuthenticating) {
+      return const CircularProgressIndicator();
+    }
+    if (userData == null) {
+      return const CircularProgressIndicator();
+    }
+    return buildUserDataDisplay(context, userData, openSenseMapBloc);
+  }
+
+  Widget buildUserDataDisplay(BuildContext context,
+      Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
+    final user = userData?['data']?['me'];
+    final email = user?['email'] ?? "No email";
+    final name = user?['name'] ?? "John Doe";
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          email,
+          style: getPrimaryTextStyle(context),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+        Text(
+          name,
+          style: getSecondaryTextStyle(context),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+      ],
+    );
+  }
+
+  Widget buildUnauthenticatedUserInfo(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context)!.openSenseMapLogin,
+          style: getPrimaryTextStyle(context),
+        ),
+        Text(
+          AppLocalizations.of(context)!.openSenseMapLoginDescription,
+          style: getSecondaryTextStyle(context),
+          softWrap: true,
+        ),
+      ],
+    );
+  }
+
+  Widget buildLoginLogoutButton(BuildContext context, bool isAuthenticated,
+      OpenSenseMapBloc openSenseMapBloc) {
+    return ButtonWithLoader(
+      inverted: Theme.of(context).brightness == Brightness.light,
+      isLoading: openSenseMapBloc.isAuthenticating,
+      onPressed: openSenseMapBloc.isAuthenticating
+          ? null
+          : () => handleLoginLogoutAction(
+              context, isAuthenticated, openSenseMapBloc),
+      text: isAuthenticated
+          ? AppLocalizations.of(context)!.generalLogout
+          : AppLocalizations.of(context)!.generalLoginOrRegister,
+      width: 1,
+    );
+  }
+
+  Future<void> handleLoginLogoutAction(BuildContext context,
+      bool isAuthenticated, OpenSenseMapBloc openSenseMapBloc) async {
+    if (isAuthenticated) {
+      await openSenseMapBloc.logout();
+    } else {
+      showAppModalSheet(
+        context: context,
+        useRootNavigator: true,
+        builder: (context) => SizedBox(
           height: MediaQuery.of(context).size.height * 0.9,
-          child: BlocListener<OpenSenseMapBloc, OpenSenseMapState>(
-            listenWhen: (previous, current) =>
-                !previous.isAuthenticated && current.isAuthenticated,
-            listener: (context, state) {
-              Navigator.of(context).pop();
-            },
-            child: const LoginScreen(),
-          ),
-        );
-      },
+          child: const LoginScreen(),
+        ),
+      );
+    }
+  }
+
+  TextStyle getPrimaryTextStyle(BuildContext context) {
+    return TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: Theme.of(context).colorScheme.onTertiaryContainer,
+    );
+  }
+
+  TextStyle getSecondaryTextStyle(BuildContext context) {
+    return TextStyle(
+      color: Theme.of(context).colorScheme.onTertiaryContainer,
     );
   }
 
@@ -393,12 +529,15 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
         !configurationBloc.isLoadingBoxConfigurations;
     final isLoading = configurationBloc.isLoadingBoxConfigurations;
     final localizations = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (isLoaded) {
       return FloatingActionButton(
         onPressed: () async {
           await _showCreateSenseBoxDialog(context);
         },
+        backgroundColor: colorScheme.onTertiaryContainer,
+        foregroundColor: colorScheme.tertiaryContainer,
         shape: const CircleBorder(),
         child: const Icon(Icons.add),
       );
@@ -422,12 +561,11 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
     }
   }
 
-  Future<void> _showCreateSenseBoxDialog(BuildContext context) async {
+  Future<Object> _showCreateSenseBoxDialog(BuildContext context) async {
     final configurationBloc = widget.configurationBloc;
-    return showAppDialog(
+    return showAppModalSheet(
       context: context,
       useRootNavigator: true,
-      barrierDismissible: false,
       builder: (context) {
         return CreateBikeBoxModal(
           boxConfigurations: configurationBloc.boxConfigurations,

@@ -127,15 +127,10 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp>
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode =
-        MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness:
-            isDarkMode ? Brightness.light : Brightness.dark,
-        statusBarBrightness: isDarkMode ? Brightness.dark : Brightness.light,
-      ),
+      (isDarkMode ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
+          .copyWith(statusBarColor: Colors.transparent),
     );
 
     return MultiProvider(
@@ -147,7 +142,8 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp>
         BlocProvider.value(value: widget.dependencies.geolocationBloc),
         BlocProvider.value(value: widget.dependencies.sensorBloc),
         BlocProvider.value(value: widget.dependencies.openSenseMapBloc),
-        Provider.value(value: widget.dependencies.configurationBloc),
+        ChangeNotifierProvider.value(
+            value: widget.dependencies.configurationBloc),
         Provider<OpenSenseMapService>.value(
           value: widget.dependencies.openSenseMapService,
         ),

@@ -5,7 +5,6 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/campaign.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/labeled_text_form_field.dart';
 import 'package:sensebox_bike/ui/widgets/common/dropdown_form_field.dart';
@@ -171,95 +170,112 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    return AppAlertDialog(
-      title: Text(
-        localizations.createBoxTitle,
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.isLoadingBoxConfigurations)
-                const CircularProgressIndicator()
-              else
-                _buildBoxConfigurationDropdown(context),
-              const SizedBox(height: 16),
-              LabeledTextFormField(
-                key: _nameKey,
-                labelText: localizations.createBoxName,
-                enabled: !_loading,
-                validator: (value) => boxNameValidator(context, value),
-              ),
-              const SizedBox(height: 16),
-              if (widget.isLoadingCampaigns)
-                const CircularProgressIndicator()
-              else
-                _buildCampaignDropdown(context),
-              const SizedBox(height: 4),
-              ExpansionTile(
-                title: Text(localizations.createBoxAddCustomTag),
-                initiallyExpanded: _customTagExpanded,
-                onExpansionChanged: _loading
-                    ? null
-                    : (expanded) {
-                        setState(() {
-                          _customTagExpanded = expanded;
-                        });
-                      },
-                shape: Border.all(color: Colors.transparent),
-                collapsedShape: Border.all(color: Colors.transparent),
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        child: Form(
+          key: _formKey,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextFormField(
-                          controller: _customTagController,
-                          enabled: !_loading,
-                          decoration: InputDecoration(
-                            labelText: localizations.createBoxCustomTag,
-                          ),
+                  Text(
+                    localizations.createBoxTitle,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  if (widget.isLoadingBoxConfigurations)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    _buildBoxConfigurationDropdown(context),
+                  const SizedBox(height: 16),
+                  LabeledTextFormField(
+                    key: _nameKey,
+                    labelText: localizations.createBoxName,
+                    enabled: !_loading,
+                    validator: (value) => boxNameValidator(context, value),
+                  ),
+                  const SizedBox(height: 16),
+                  if (widget.isLoadingCampaigns)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    _buildCampaignDropdown(context),
+                  const SizedBox(height: 4),
+                  ExpansionTile(
+                    title: Text(localizations.createBoxAddCustomTag),
+                    initiallyExpanded: _customTagExpanded,
+                    onExpansionChanged: _loading
+                        ? null
+                        : (expanded) {
+                            setState(() {
+                              _customTagExpanded = expanded;
+                            });
+                          },
+                    shape: Border.all(color: Colors.transparent),
+                    collapsedShape: Border.all(color: Colors.transparent),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextFormField(
+                              controller: _customTagController,
+                              enabled: !_loading,
+                              decoration: InputDecoration(
+                                labelText: localizations.createBoxCustomTag,
+                              ),
+                            ),
+                            Text(localizations.createBoxCustomTagHelper),
+                          ],
                         ),
-                        Text(localizations.createBoxCustomTagHelper),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          localizations.createBoxGeolocationCurrentPosition,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: _loading
+                            ? null
+                            : () {
+                                Navigator.of(context).pop();
+                              },
+                        child: Text(localizations.generalCancel),
+                      ),
+                      const SizedBox(width: 8),
+                      ButtonWithLoader(
+                        isLoading: _loading,
+                        onPressed: _loading ? null : _submitForm,
+                        text: localizations.generalCreate,
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Icon(Icons.info_outline),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child:
-                        Text(localizations.createBoxGeolocationCurrentPosition),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _loading
-              ? null
-              : () {
-                  Navigator.of(context).pop();
-                },
-          child: Text(localizations.generalCancel),
-        ),
-        ButtonWithLoader(
-          isLoading: _loading,
-          onPressed: _loading ? null : _submitForm,
-          text: localizations.generalCreate,
-        ),
-      ],
     );
   }
 }

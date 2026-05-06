@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:go_router/go_router.dart';
-import 'package:sensebox_bike/app/app_router.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
@@ -45,8 +43,7 @@ class _RegisterFormState extends State<RegisterForm> {
     setState(() {
       privacyPolicyError = isAccepted
           ? null
-          : AppLocalizations.of(context)!
-              .openSenseMapRegisterAcceptTermsError;
+          : AppLocalizations.of(context)!.openSenseMapRegisterAcceptTermsError;
     });
   }
 
@@ -102,8 +99,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Checkbox(
                           value: isAccepted,
@@ -142,8 +138,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     ),
                     if (privacyPolicyError != null)
                       Padding(
-                        padding: const EdgeInsets.only(
-                            left: 10.0),
+                        padding: const EdgeInsets.only(left: 10.0),
                         child: Text(
                           privacyPolicyError!,
                           style: TextStyle(
@@ -184,9 +179,8 @@ class _RegisterFormState extends State<RegisterForm> {
                                   RegistrationError(e), stack);
                             }
 
-                            if (context.mounted &&
-                                isRegistrationSuccessful) {
-                              context.go(AppRoutes.home);
+                            if (context.mounted && isRegistrationSuccessful) {
+                              Navigator.of(context).pop();
                             }
                           }
                         }),

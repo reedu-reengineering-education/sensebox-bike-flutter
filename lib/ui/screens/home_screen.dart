@@ -191,47 +191,61 @@ class _FloatingButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<BleBloc, BleState>(
-      builder: (context, bleState) {
-        final isReconnecting = bleState.isReconnecting;
-        final selectedDevice = bleState.selectedDevice;
-        // Show buttons if device is connected or if reconnecting
-        if (selectedDevice == null && !isReconnecting) {
-          return Column(
-            spacing: 12,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _ConnectButton(bleBloc: bleBloc),
-              // Always show sensebox selection button with different styling based on auth state
-              const SenseBoxSelectionButton(),
-            ],
-          );
-        } else {
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            spacing: 12,
-            children: [
-              Row(
-                spacing: 12,
-                children: [
-                  Expanded(
-                    child: _StartStopButton(
-                        recordingBloc: recordingBloc,
-                        isReconnecting: isReconnecting),
-                  ),
-                  Expanded(
-                    child: _DisconnectButton(
-                        bleBloc: bleBloc, recordingBloc: recordingBloc),
-                  ),
-                ],
-              ),
-              // Always show sensebox selection button with different styling based on auth state
-              const SenseBoxSelectionButton(),
-            ],
-          );
-        }
-      },
-    );
+    return Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: BlocBuilder<BleBloc, BleState>(
+              builder: (context, bleState) {
+                final isReconnecting = bleState.isReconnecting;
+                final selectedDevice = bleState.selectedDevice;
+                // Show buttons if device is connected or if reconnecting
+                if (selectedDevice == null && !isReconnecting) {
+                  return Column(
+                    spacing: 12,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _ConnectButton(bleBloc: bleBloc),
+                      // Always show sensebox selection button with different styling based on auth state
+                      const SenseBoxSelectionButton(),
+                    ],
+                  );
+                } else {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 12,
+                    children: [
+                      Row(
+                        spacing: 12,
+                        children: [
+                          Expanded(
+                            child: _StartStopButton(
+                                recordingBloc: recordingBloc,
+                                isReconnecting: isReconnecting),
+                          ),
+                          Expanded(
+                            child: _DisconnectButton(
+                                bleBloc: bleBloc, recordingBloc: recordingBloc),
+                          ),
+                        ],
+                      ),
+                      // Always show sensebox selection button with different styling based on auth state
+                      const SenseBoxSelectionButton(),
+                    ],
+                  );
+                }
+              },
+            )));
   }
 }
 

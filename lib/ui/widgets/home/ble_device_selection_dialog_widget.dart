@@ -21,7 +21,6 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
   final result = await showAppModalSheet<bool>(
     context: context,
     useRootNavigator: true,
-    scaleBackground: true,
     builder: (context) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [

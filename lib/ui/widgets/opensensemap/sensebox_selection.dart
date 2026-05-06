@@ -145,67 +145,77 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
       AppLocalizations localizations,
       ThemeData theme,
       ConfigurationBloc configurationBloc) {
+    final colorScheme = theme.colorScheme;
+    final onTileColor = colorScheme.onTertiaryContainer;
+
+    // Parse raw JSON list into SenseBox objects and filter incompatible boxes
+    final List<SenseBox> compatibleBoxes = bloc.senseBoxes
+        .map((e) => SenseBox.fromJson(e))
+        .where((b) => configurationBloc.isSenseBoxBikeCompatible(b))
+        .toList();
+
+    // If there are no compatible boxes and we're not currently loading, show empty state
+    if (compatibleBoxes.isEmpty && !isLoading) {
+      return _buildEmptyState(
+        localizations,
+        theme,
+        configurationBloc,
+        isAuthenticated: bloc.isAuthenticated,
+      );
+    }
+
     return ListView.builder(
       controller: _scrollController,
-      itemCount: bloc.senseBoxes.length + (isLoading ? 1 : 0),
+      itemCount: compatibleBoxes.length + (isLoading ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == bloc.senseBoxes.length && isLoading) {
+        if (index == compatibleBoxes.length && isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (index == bloc.senseBoxes.length) {
+        if (index == compatibleBoxes.length) {
           return const SizedBox();
         }
 
-        final senseBox = SenseBox.fromJson(bloc.senseBoxes[index]);
+        final senseBox = compatibleBoxes[index];
         final isSelected = senseBox.id == bloc.selectedSenseBox?.id;
-        final isSenseBoxBikeCompatible =
-            configurationBloc.isSenseBoxBikeCompatible(senseBox);
 
         return ListTile(
-          title: Text(senseBox.name ??
-              localizations.openSenseMapBoxSelectionUnnamedBox),
-          subtitle: !isSenseBoxBikeCompatible
-              ? Row(
-                  children: [
-                    const Icon(Icons.warning, size: 12),
-                    const SizedBox(width: 8),
-                    Text(localizations.openSenseMapBoxSelectionIncompatible),
-                  ],
+          title: Text(
+            senseBox.name ?? localizations.openSenseMapBoxSelectionUnnamedBox,
+            style: theme.textTheme.bodyLarge?.copyWith(color: onTileColor),
+          ),
+          subtitle: senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
+              ? Wrap(
+                  spacing: 8,
+                  children: senseBox.grouptag!
+                      .map((tag) => Badge(
+                            label: Text(tag),
+                            textColor: colorScheme.onTertiaryContainer,
+                            backgroundColor:
+                                colorScheme.onTertiaryContainer.withValues(
+                              alpha: 0.14,
+                            ),
+                          ))
+                      .toList(),
                 )
-              : senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
-                  ? Wrap(
-                      spacing: 8,
-                      children: senseBox.grouptag!
-                          .map((tag) => Badge(
-                                label: Text(tag),
-                                backgroundColor: theme.iconTheme.color,
-                              ))
-                          .toList(),
-                    )
-                  : null,
-          trailing: isSelected
-              ? Icon(Icons.check, color: theme.colorScheme.primary)
               : null,
-          enabled: isSenseBoxBikeCompatible,
-          onTap: isSenseBoxBikeCompatible
-              ? () {
-                  HapticFeedback.selectionClick();
-                  Navigator.pop(context);
+          trailing: isSelected ? Icon(Icons.check, color: onTileColor) : null,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            Navigator.pop(context);
 
-                  final targetBox = isSelected ? null : senseBox;
-                  unawaited(
-                    bloc.setSelectedSenseBox(targetBox).catchError(
-                          (error, stackTrace) => ErrorService.handleError(
-                            'Error selecting senseBox: $error',
-                            stackTrace is StackTrace
-                                ? stackTrace
-                                : StackTrace.current,
-                          ),
-                        ),
-                  );
-                }
-              : null,
+            final targetBox = isSelected ? null : senseBox;
+            unawaited(
+              bloc.setSelectedSenseBox(targetBox).catchError(
+                    (error, stackTrace) => ErrorService.handleError(
+                      'Error selecting senseBox: $error',
+                      stackTrace is StackTrace
+                          ? stackTrace
+                          : StackTrace.current,
+                    ),
+                  ),
+            );
+          },
         );
       },
     );
@@ -235,7 +245,7 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.symmetric(vertical: 24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -282,8 +292,8 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
       itemBuilder: (context, _) {
         return Container(
           key: const ValueKey('sensebox-loading-skeleton-item'),
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          // margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             color: base,
             borderRadius: BorderRadius.circular(12),

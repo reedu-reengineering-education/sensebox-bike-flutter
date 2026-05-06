@@ -36,8 +36,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   late GeolocationMapBloc _mapBloc;
 
   // Constants
-  static const double authenticatedMargin = 125;
-  static const double unauthenticatedMargin = 75;
+  static const double mapOrnamentBottomMargin = 155;
   static const Duration _trackRenderDebounceDuration =
       Duration(milliseconds: 1200);
   static const Duration _cameraUpdateInterval = Duration(seconds: 2);
@@ -50,7 +49,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   DateTime? _lastCameraUpdateAt;
   DateTime? _lastTrackRenderAt;
   GeolocationData? _lastCameraLocation;
-  bool? _lastAuthStateForMargins;
 
   @override
   void initState() {
@@ -75,11 +73,6 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
   void _onMapBlocChanged(GeolocationMapState state) {
     if (!mounted || !_isVisible) return;
-
-    if (_lastAuthStateForMargins != state.isAuthenticated) {
-      _lastAuthStateForMargins = state.isAuthenticated;
-      _updateMapMargins();
-    }
 
     // Recording path updates are expensive, so debounce redraws.
     if (state.isRecording && state.gpsBuffer.isNotEmpty) {
@@ -123,10 +116,9 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
   void _updateMapMargins() {
     if (!_isMapReady) return;
-    final isAuthenticated = _mapBloc.isAuthenticated;
 
     var logoAttributionMargins = EdgeInsets.only(
-      bottom: isAuthenticated ? authenticatedMargin : unauthenticatedMargin,
+      bottom: mapOrnamentBottomMargin,
       left: 8,
       right: 8,
     );
@@ -287,9 +279,8 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   }
 
   EdgeInsets _getMapMargins() {
-    final isAuthenticated = _mapBloc.isAuthenticated;
     return EdgeInsets.only(
-      bottom: isAuthenticated ? authenticatedMargin : unauthenticatedMargin,
+      bottom: mapOrnamentBottomMargin,
       left: 8,
       right: 8,
     );
