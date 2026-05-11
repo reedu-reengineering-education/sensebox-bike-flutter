@@ -1,29 +1,56 @@
+import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/campaign.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/constants.dart';
 
-class ConfigurationBloc {
+
+class ConfigurationBloc extends ChangeNotifier {
   final RemoteDataService _remoteDataService;
 
   List<BoxConfiguration>? _boxConfigurations;
   List<Campaign>? _campaigns;
+  List<String>? _apiUrls;
   bool _isLoadingBoxConfigurations = false;
   bool _isLoadingCampaigns = false;
+  bool _isLoadingApiUrls = false;
   String? _boxConfigurationsError;
   String? _campaignsError;
+  String? _apiUrlsError;
   Set<String> _allSensorTitles = {};
 
   ConfigurationBloc({RemoteDataService? remoteDataService})
       : _remoteDataService = remoteDataService ?? RemoteDataService();
 
+
   List<BoxConfiguration>? get boxConfigurations => _boxConfigurations;
   List<Campaign>? get campaigns => _campaigns;
+  List<String>? get apiUrls => _apiUrls;
   bool get isLoadingBoxConfigurations => _isLoadingBoxConfigurations;
   bool get isLoadingCampaigns => _isLoadingCampaigns;
+  bool get isLoadingApiUrls => _isLoadingApiUrls;
   String? get boxConfigurationsError => _boxConfigurationsError;
   String? get campaignsError => _campaignsError;
+  String? get apiUrlsError => _apiUrlsError;
+  Future<void> loadApiUrls() async {
+    final result = await _loadData<List<String>>(
+      url: apiUrlsUrl,
+      isAlreadyLoading: () => _isLoadingApiUrls,
+      isAlreadyLoaded: () => _apiUrls != null,
+      setLoading: (value) {
+        _isLoadingApiUrls = value;
+        notifyListeners();
+      },
+      setError: (error) {
+        _apiUrlsError = error;
+        notifyListeners();
+      },
+      parseData: (data) => (data as List<dynamic>).cast<String>(),
+    );
+    _apiUrls = result;
+    notifyListeners();
+  }
 
   BoxConfiguration? getBoxConfigurationById(String id) {
     if (_boxConfigurations == null) return null;
@@ -45,19 +72,17 @@ class ConfigurationBloc {
     return null;
   }
 
-  Future<void> _loadData({
+  Future<T?> _loadData<T>({
     required String url,
     required bool Function() isAlreadyLoading,
     required bool Function() isAlreadyLoaded,
     required void Function(bool) setLoading,
     required void Function(String?) setError,
-    required void Function(dynamic) setData,
-    required dynamic Function(dynamic) parseData,
-    required String dataTypeName,
+    required T Function(dynamic) parseData,
     bool allowReload = false,
   }) async {
     if (isAlreadyLoading() || (!allowReload && isAlreadyLoaded())) {
-      return;
+      return null;
     }
 
     setLoading(true);
@@ -67,21 +92,21 @@ class ConfigurationBloc {
       final dynamic data = await _remoteDataService.fetchJson(url);
       if (data is List) {
         final parsed = parseData(data);
-        setData(parsed);
         setError(null);
+        return parsed;
       } else {
-        throw Exception('Invalid $dataTypeName format: Expected List');
+        throw Exception('Invalid data format: Expected List');
       }
     } catch (e) {
-      setError('Failed to load $dataTypeName: $e');
-      setData(null);
+      setError('Failed to load data: $e');
+      return null;
     } finally {
       setLoading(false);
     }
   }
 
   Future<void> loadBoxConfigurations() async {
-    await _loadData(
+    final result = await _loadData<List<BoxConfiguration>>(
       url: boxConfigurationsUrl,
       isAlreadyLoading: () => _isLoadingBoxConfigurations,
       isAlreadyLoaded: () => _boxConfigurations != null,
@@ -92,38 +117,35 @@ class ConfigurationBloc {
           _allSensorTitles = {};
         }
       },
-      setData: (data) {
-        _boxConfigurations = data as List<BoxConfiguration>?;
-        _updateAllSensorTitles();
-      },
       parseData: (data) => (data as List)
-          .map((item) =>
-              BoxConfiguration.fromJson(item as Map<String, dynamic>))
+          .map(
+              (item) => BoxConfiguration.fromJson(item as Map<String, dynamic>))
           .toList(),
-      dataTypeName: 'box configurations',
       allowReload: true,
     );
+    _boxConfigurations = result;
+    _updateAllSensorTitles();
   }
 
   Future<void> loadCampaigns() async {
-    await _loadData(
+    final result = await _loadData<List<Campaign>>(
       url: campaignsUrl,
       isAlreadyLoading: () => _isLoadingCampaigns,
       isAlreadyLoaded: () => _campaigns != null,
       setLoading: (value) => _isLoadingCampaigns = value,
       setError: (error) => _campaignsError = error,
-      setData: (data) => _campaigns = data as List<Campaign>?,
       parseData: (data) => (data as List)
           .map((item) => Campaign.fromJson(item as Map<String, dynamic>))
           .toList(),
-      dataTypeName: 'campaigns',
     );
+    _campaigns = result;
   }
 
   Future<void> loadAll() async {
     await Future.wait([
       loadBoxConfigurations(),
       loadCampaigns(),
+      loadApiUrls(),
     ]);
   }
 

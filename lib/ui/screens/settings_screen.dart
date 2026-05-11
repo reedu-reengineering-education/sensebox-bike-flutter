@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
-import 'package:sensebox_bike/ui/widgets/common/api_url_field.dart';
+import 'package:sensebox_bike/ui/widgets/common/api_url_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
@@ -19,6 +19,20 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 
 class SettingsScreen extends StatelessWidget {
+
+    TextStyle _getPrimaryTextStyle(BuildContext context) {
+      return TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: Theme.of(context).colorScheme.onTertiaryContainer,
+      );
+    }
+
+    TextStyle _getSecondaryTextStyle(BuildContext context) {
+      return TextStyle(
+        color: Theme.of(context).colorScheme.onTertiaryContainer,
+      );
+    }
   final Future<bool> Function(Uri url, {LaunchMode mode}) launchUrlFunction;
 
   const SettingsScreen({super.key, this.launchUrlFunction = launchUrl});
@@ -26,8 +40,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingsBloc = Provider.of<SettingsBloc>(context);
-    final OpenSenseMapBloc openSenseMapBloc =
-        Provider.of<OpenSenseMapBloc>(context);
+    final OpenSenseMapBloc openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -38,7 +51,6 @@ class SettingsScreen extends StatelessWidget {
           _buildLoginLogoutSection(context, openSenseMapBloc),
           _buildGeneralSettingsSection(context, settingsBloc),
           _buildAccountManagementSection(context),
-          _buildOtherSection(context),
           _buildHelpSection(context),
         ],
       ),
@@ -224,19 +236,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  TextStyle _getPrimaryTextStyle(BuildContext context) {
-    return TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
-      color: Theme.of(context).colorScheme.onTertiaryContainer,
-    );
-  }
-
-  TextStyle _getSecondaryTextStyle(BuildContext context) {
-    return TextStyle(
-      color: Theme.of(context).colorScheme.onTertiaryContainer,
-    );
-  }
 
   Widget _buildAccountManagementSection(BuildContext context) {
     final isarService = Provider.of<TrackBloc>(context).isarService;
@@ -333,6 +332,7 @@ class SettingsScreen extends StatelessWidget {
   // General Settings Section
   Widget _buildGeneralSettingsSection(
       BuildContext context, SettingsBloc settingsBloc) {
+    final configurationBloc = Provider.of<ConfigurationBloc>(context);
     final isarService = Provider.of<TrackBloc>(context).isarService;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,7 +380,7 @@ class SettingsScreen extends StatelessWidget {
             );
           },
         ),
-        _buildApiUrlSection(context, settingsBloc),
+        _buildApiUrlSection(context, settingsBloc, configurationBloc),
         ListTile(
           leading: const Icon(Icons.admin_panel_settings),
           title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
@@ -408,115 +408,55 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc) {
+  Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc, ConfigurationBloc configurationBloc) {
     return StatefulBuilder(
       builder: (context, setState) {
+        final apiUrls = configurationBloc.apiUrls;
+        final isLoading = configurationBloc.isLoadingApiUrls;
+        final error = configurationBloc.apiUrlsError;
         final controller = TextEditingController(text: settingsBloc.apiUrl);
-
-        return ListTile(
-          leading: const Icon(Icons.settings_ethernet_outlined),
-          title: Text(AppLocalizations.of(context)!.settingsApiUrl),
-          subtitle: Text(
-            AppLocalizations.of(context)!.settingsApiUrlHelper,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Consumer<SettingsBloc>(
+              builder: (context, bloc, _) => ListTile(
+                leading: const Icon(Icons.settings_ethernet_outlined),
+                title: Text(AppLocalizations.of(context)!.settingsApiUrl),
+                subtitle: Text(
+                  bloc.apiUrl,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
-          ),
-          onTap: () {
-            _showApiUrlDialog(context, settingsBloc, controller);
-          },
+                onTap: () {
+                  _showApiUrlDialog(context, bloc, controller, apiUrls: apiUrls, isLoading: isLoading, error: error, setState: setState);
+                },
+              ),
+            ),
+          ],
         );
       },
     );
   }
 
   void _showApiUrlDialog(BuildContext context, SettingsBloc settingsBloc,
-      TextEditingController controller) {
-    final formKey = GlobalKey<FormState>();
-
+      TextEditingController controller,
+      {List<String>? apiUrls,
+      bool isLoading = false,
+      String? error,
+      void Function(void Function())? setState}) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
-        content: SizedBox(
-          width: 300,
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.settingsApiUrl,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 16),
-                ApiUrlField(
-                  controller: controller,
-                  helperText:
-                      AppLocalizations.of(context)!.settingsApiUrlHelper,
-                  defaultValue: 'https://api.opensensemap.org',
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(AppLocalizations.of(context)!.generalCancel),
-                    ),
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: () async {
-                        if (formKey.currentState!.validate()) {
-                          await settingsBloc.setApiUrl(controller.text);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      child: Text(AppLocalizations.of(context)!.generalSave),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+      barrierDismissible: true,
+      builder: (context) => ApiUrlDialog(
+        settingsBloc: settingsBloc,
+        controller: controller,
+        apiUrls: apiUrls,
+        isLoading: isLoading,
+        error: error,
+        setState: setState,
       ),
-    );
-  }
-
-  Widget _buildOtherSection(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
-
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionHeader(context, localizations.settingsOther),
-            ListTile(
-              leading: const Icon(Icons.info),
-              title: Text(localizations.settingsAbout),
-              subtitle: FutureBuilder(
-                future: PackageInfo.fromPlatform(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return Text(localizations.settingsVersion(
-                        '${snapshot.data!.version}+${snapshot.data!.buildNumber}'));
-                  } else {
-                    return Text(localizations.generalLoading);
-                  }
-                },
-              ),
-            ),
-            _buildUrlTile(
-              context,
-              icon: Icons.privacy_tip,
-              title: localizations.settingsPrivacyPolicy,
-              url: senseBoxBikePrivacyPolicyUrl,
-            )
-          ],
-        );
-      },
     );
   }
 

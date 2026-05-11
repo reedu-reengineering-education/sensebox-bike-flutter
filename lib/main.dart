@@ -196,7 +196,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
         ChangeNotifierProvider.value(value: _geolocationBloc!),
         ChangeNotifierProvider.value(value: _sensorBloc!),
         ChangeNotifierProvider.value(value: _openSenseMapBloc!),
-        Provider.value(value: _configurationBloc!),
+        ChangeNotifierProvider.value(value: _configurationBloc!),
         ChangeNotifierProvider.value(value: _mapboxDrawController!),
       ],
       child: MaterialApp(

@@ -9,6 +9,26 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
+  String get settingsApiUrlLoadError =>
+      'Impossible de charger les URLs de service.';
+
+  @override
+  String get settingsApiUrlLoadErrorDetails =>
+      'L\'URL par défaut sera utilisée pour l\'envoi des données. Pour en choisir une autre, vérifiez votre connexion internet et rouvrez cette fenêtre.';
+
+  @override
+  String get settingsApiUrlEditManuallyHint =>
+      'Vous pouvez toujours saisir manuellement une URL de service personnalisée.';
+
+  @override
+  String get settingsApiUrlEditManually => 'Détails & URL personnalisée';
+
+  @override
+  String settingsApiUrlLoadErrorWithMessage(String error) {
+    return 'Impossible de charger les URLs de service disponibles. L\'URL par défaut sera utilisée pour l\'envoi des données. Erreur : $error\nPour en choisir une autre, veuillez vérifier votre connexion internet et rouvrir cette fenêtre pour recharger les URLs de service.';
+  }
+
+  @override
   String get settingsKnowledgeBase => 'Base de connaissances';
 
   @override
@@ -64,6 +84,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get generalClose => 'Fermer';
+
+  @override
+  String get generalDetails => 'Détails';
 
   @override
   String get reloadConfiguration => 'Recharger la configuration';
@@ -309,7 +332,7 @@ class AppLocalizationsFr extends AppLocalizations {
       '• Les données sont téléversées immédiatement dès leur collecte\n• Partage des données en temps réel (expérimental)\n• Nécessite une connexion internet stable\n• Peut utiliser plus de batterie pendant l’enregistrement';
 
   @override
-  String get settingsApiUrl => 'URL de l\'API';
+  String get settingsApiUrl => 'URL du service';
 
   @override
   String get settingsApiUrlHelper =>
@@ -318,6 +341,9 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settingsApiUrlError =>
       'Veuillez saisir une URL valide (par ex., https://api.opensensemap.org)';
+
+  @override
+  String get settingsApiUrlCustomOption => 'URL de service personnalisée';
 
   @override
   String get settingsAbout => 'À propos';

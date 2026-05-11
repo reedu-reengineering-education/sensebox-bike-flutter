@@ -69,8 +69,8 @@ void main() {
               providers: [
                 ChangeNotifierProvider<OpenSenseMapBloc>.value(
                     value: mockOpenSenseMapBloc),
-                Provider<ConfigurationBloc>.value(
-                    value: mockConfigurationBloc),
+                ChangeNotifierProvider<ConfigurationBloc>.value(
+                  value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,
@@ -99,8 +99,8 @@ void main() {
               providers: [
                 ChangeNotifierProvider<OpenSenseMapBloc>.value(
                     value: mockOpenSenseMapBloc),
-                Provider<ConfigurationBloc>.value(
-                    value: mockConfigurationBloc),
+                ChangeNotifierProvider<ConfigurationBloc>.value(
+                  value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,
@@ -126,9 +126,9 @@ void main() {
             body: MultiProvider(
               providers: [
                 ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                    value: mockOpenSenseMapBloc),
-                Provider<ConfigurationBloc>.value(
-                    value: mockConfigurationBloc),
+                  value: mockOpenSenseMapBloc),
+                ChangeNotifierProvider<ConfigurationBloc>.value(
+                  value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,
@@ -171,9 +171,9 @@ void main() {
             body: MultiProvider(
               providers: [
                 ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                    value: mockOpenSenseMapBloc),
-                Provider<ConfigurationBloc>.value(
-                    value: mockConfigurationBloc),
+                  value: mockOpenSenseMapBloc),
+                ChangeNotifierProvider<ConfigurationBloc>.value(
+                  value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,

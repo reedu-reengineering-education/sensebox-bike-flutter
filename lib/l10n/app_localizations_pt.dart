@@ -9,6 +9,26 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get settingsApiUrlLoadError =>
+      'Não foi possível carregar as URLs de serviço.';
+
+  @override
+  String get settingsApiUrlLoadErrorDetails =>
+      'A URL padrão será usada para o envio de dados. Para selecionar outra, verifique sua conexão com a internet e reabra esta janela.';
+
+  @override
+  String get settingsApiUrlEditManuallyHint =>
+      'Você ainda pode inserir uma URL de serviço personalizada manualmente.';
+
+  @override
+  String get settingsApiUrlEditManually => 'Detalhes & URL personalizada';
+
+  @override
+  String settingsApiUrlLoadErrorWithMessage(String error) {
+    return 'Não foi possível carregar as URLs de serviço disponíveis. A URL padrão será usada para o envio de dados. Erro: $error\nPara selecionar outra, certifique-se de que você está conectado à internet e reabra esta janela para recarregar as URLs de serviço.';
+  }
+
+  @override
   String get settingsKnowledgeBase => 'Base de conhecimento';
 
   @override
@@ -64,6 +84,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get generalClose => 'Fechar';
+
+  @override
+  String get generalDetails => 'Detalhes';
 
   @override
   String get reloadConfiguration => 'Recarregar configuração';
@@ -306,7 +329,7 @@ class AppLocalizationsPt extends AppLocalizations {
       '• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação';
 
   @override
-  String get settingsApiUrl => 'URL da API';
+  String get settingsApiUrl => 'URL do Serviço';
 
   @override
   String get settingsApiUrlHelper =>
@@ -315,6 +338,9 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get settingsApiUrlError =>
       'Por favor, digite uma URL válida (ex: https://api.opensensemap.org)';
+
+  @override
+  String get settingsApiUrlCustomOption => 'URL de serviço personalizada';
 
   @override
   String get settingsAbout => 'Sobre';
@@ -686,7 +712,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String trackStatusUploadFailedAt(Object date) {
-    return 'Envio falhou em $date';
+    return 'Falha no envio em $date';
   }
 
   @override
