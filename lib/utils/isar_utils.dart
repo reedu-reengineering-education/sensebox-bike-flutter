@@ -106,7 +106,12 @@ List<String> buildCsvHeaders(List<List<String?>> sensorTitles) {
 Map<String, double?> organizeSensorData(List<SensorData> sensorDataList,{String separator = '%%'}) {
   final sensorMap = <String, double?>{};
 
-  for (var sensorData in sensorDataList) {
+  // Sort by id ascending so that the lower-id entry (saved first, i.e. phone
+  // GPS speed) deterministically stays under <title>%%<attribute> and the
+  // higher-id entry (BLE GPS speed, saved later) goes to sensor_<title>.
+  final sorted = List<SensorData>.from(sensorDataList)..sort((a, b) => a.id.compareTo(b.id));
+
+  for (var sensorData in sorted) {
     final key = '${sensorData.title}$separator${sensorData.attribute}';
     if (sensorMap.containsKey(key)) {
       // Duplicate key: store under sensor_<title> to preserve both values

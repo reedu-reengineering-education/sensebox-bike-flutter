@@ -73,6 +73,25 @@ void main() {
         'sensor_gps%%speed': 2.5,
       });
     });
+
+    test('is deterministic regardless of input order — lower id always wins primary key', () {
+      final lower = SensorData()
+        ..id = 10
+        ..title = 'gps'
+        ..attribute = 'speed'
+        ..value = 1.5;
+      final higher = SensorData()
+        ..id = 11
+        ..title = 'gps'
+        ..attribute = 'speed'
+        ..value = 2.5;
+      // Pass in reverse order to prove sorting is applied
+      final result = organizeSensorData([higher, lower]);
+      expect(result, {
+        'gps%%speed': 1.5,       // lower id → primary column
+        'sensor_gps%%speed': 2.5, // higher id → sensor_ column
+      });
+    });
   });
 
   group('collectSensorTitles', () {
