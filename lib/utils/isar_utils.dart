@@ -47,9 +47,16 @@ Set<List<String?>> collectSensorTitles(Map<int, List<SensorData>> sensorDataByGe
   const separator = '%%';
   final sensorTitlesSet = <String>{};
   for (var sensorData in sensorDataByGeolocation.values) {
+    final seenKeys = <String>{};
     for (var sensor in sensorData) {
-      sensorTitlesSet
-          .add('${sensor.title}$separator${sensor.attribute ?? ""}');
+      final key = '${sensor.title}$separator${sensor.attribute ?? ""}';
+      if (seenKeys.contains(key)) {
+        // Duplicate within this geolocation: add as sensor_<title> to avoid overwrite
+        sensorTitlesSet.add('sensor_${sensor.title}$separator${sensor.attribute ?? ""}');
+      } else {
+        seenKeys.add(key);
+        sensorTitlesSet.add(key);
+      }
     }
   }
   return sensorTitlesSet.map((str) {
@@ -100,8 +107,13 @@ Map<String, double?> organizeSensorData(List<SensorData> sensorDataList,{String 
   final sensorMap = <String, double?>{};
 
   for (var sensorData in sensorDataList) {
-    sensorMap['${sensorData.title}$separator${sensorData.attribute}'] =
-        sensorData.value;
+    final key = '${sensorData.title}$separator${sensorData.attribute}';
+    if (sensorMap.containsKey(key)) {
+      // Duplicate key: store under sensor_<title> to preserve both values
+      sensorMap['sensor_${sensorData.title}$separator${sensorData.attribute}'] = sensorData.value;
+    } else {
+      sensorMap[key] = sensorData.value;
+    }
   }
 
   return sensorMap;

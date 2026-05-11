@@ -55,6 +55,24 @@ void main() {
     test('returns empty map for empty list', () {
       expect(organizeSensorData([]), {});
     });
+
+    test('stores duplicate key under sensor_ prefix instead of overwriting', () {
+      final first = SensorData()
+        ..id = 10
+        ..title = 'gps'
+        ..attribute = 'speed'
+        ..value = 1.5;
+      final second = SensorData()
+        ..id = 11
+        ..title = 'gps'
+        ..attribute = 'speed'
+        ..value = 2.5;
+      final result = organizeSensorData([first, second]);
+      expect(result, {
+        'gps%%speed': 1.5,
+        'sensor_gps%%speed': 2.5,
+      });
+    });
   });
 
   group('collectSensorTitles', () {
@@ -77,6 +95,27 @@ void main() {
 
     test('returns empty set for empty map', () {
       expect(collectSensorTitles({}), <List<String?>>{});
+    });
+
+    test('adds sensor_ prefixed entry when a geolocation has duplicate (title, attribute)', () {
+      final gpsSpeed1 = SensorData()
+        ..id = 10
+        ..title = 'gps'
+        ..attribute = 'speed'
+        ..value = 1.5;
+      final gpsSpeed2 = SensorData()
+        ..id = 11
+        ..title = 'gps'
+        ..attribute = 'speed'
+        ..value = 2.5;
+      final Map<int, List<SensorData>> sensorDataByGeolocation = {
+        1: [gpsSpeed1, gpsSpeed2],
+      };
+      final result = collectSensorTitles(sensorDataByGeolocation);
+      expect(result, {
+        ['gps', 'speed'],
+        ['sensor_gps', 'speed'],
+      });
     });
   });
 

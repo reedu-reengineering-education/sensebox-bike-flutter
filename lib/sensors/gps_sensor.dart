@@ -37,7 +37,7 @@ class GPSSensor extends Sensor {
       IsarService isarService)
       : super(
             sensorCharacteristicUuid,
-            "gps",
+            "sensor_gps",
             ['latitude', 'longitude', 'speed'],
             bleBloc,
             geolocationBloc,
