@@ -130,25 +130,34 @@ List<List<String>> buildCsvRows(
   List<List<String?>> sensorTitles,
 ) {
   const separator = '%%';
-  return geolocationDataList.map((geoData) {
-    final sensorData = sensorDataByGeolocation[geoData.id] ?? [];
-    if (sensorData.isEmpty) return null;
-    final sensorMap = organizeSensorData(sensorData, separator: separator);
-    final values = sensorTitles.map((title) => sensorMap['${title[0]}$separator${title[1]}']).toList();
-    
+  return geolocationDataList
+      .map((geoData) {
+        final sensorData = sensorDataByGeolocation[geoData.id] ?? [];
+        if (sensorData.isEmpty) return null;
+        final sensorMap = organizeSensorData(sensorData, separator: separator);
+        final values = sensorTitles
+            .map((title) => MapEntry(
+                title[0], sensorMap['${title[0]}$separator${title[1]}']))
+            .toList();
+
         // Format timestamp as UTC ISO8601 string
         final timestampUtc = geoData.timestamp.isUtc
             ? geoData.timestamp
             : geoData.timestamp.toUtc();
         final timestampString = timestampUtc.toIso8601String();
-    
-    return [
+
+        return [
           timestampString,
-      geoData.latitude.toString(),
-      geoData.longitude.toString(),
-          ...values.map((value) =>
-              value?.toStringAsFixed(2) ??
-              ''), // format value to 2 decimal places
-    ];
-  }).whereType<List<String>>().toList();
+          geoData.latitude.toString(),
+          geoData.longitude.toString(),
+          ...values.map((entry) {
+            final isGps = entry.key?.toLowerCase() == 'sensor_gps';
+            return isGps
+                ? (entry.value?.toStringAsFixed(5) ?? '')
+                : (entry.value?.toStringAsFixed(2) ?? '');
+          }),
+        ];
+      })
+      .whereType<List<String>>()
+      .toList();
 }
