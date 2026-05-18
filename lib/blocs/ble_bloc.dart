@@ -14,7 +14,8 @@ import 'package:vibration/vibration.dart';
 const reconnectionDelay = Duration(seconds: 1);
 const deviceConnectTimeout = Duration(seconds: 10);
 const configurableReconnectionDelay = Duration(seconds: 1);
-const dataListeningTimeout = Duration(seconds: 4); 
+const dataListeningTimeout = Duration(seconds: 4);
+const bleConnectionMaxAttempts = 3; 
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
@@ -153,7 +154,6 @@ class BleBloc with ChangeNotifier {
     _resetReconnectionState();
 
 
-    
     notifyListeners();
   }
 
@@ -183,10 +183,11 @@ class BleBloc with ChangeNotifier {
         await stopScanning();
       }
 
-      await device.connect(license: License.free);
-
-      final success =
-          await _attemptConnectionWithRetries(device, context: context);
+      final success = await _attemptConnectionWithRetries(
+        device,
+        context: context,
+        maxAttempts: bleConnectionMaxAttempts,
+      );
       _isConnected = success;
 
       if (_isConnected) {
@@ -300,6 +301,10 @@ class BleBloc with ChangeNotifier {
     bool updateConnectionState = true,
   }) async {
     try {
+      if (!device.isConnected) {
+        await device.connect(license: License.free);
+      }
+
       _clearCharacteristicStreams();
 
       final services = await device.discoverServices();
@@ -388,10 +393,7 @@ class BleBloc with ChangeNotifier {
       await Future.delayed(configurableReconnectionDelay);
       
       try {
-        await device.connect(
-          license: License.free,
-          timeout: deviceConnectTimeout,
-        );
+        await device.connect(license: License.free);
       } catch (e) {
         // Don't throw - let the retry continue, next attempt might work
         return;
