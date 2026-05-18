@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:universal_ble/universal_ble.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
@@ -87,7 +87,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 SliverSafeArea(
                   minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                  sliver: ValueListenableBuilder<BluetoothDevice?>(
+                  sliver: ValueListenableBuilder<BleDevice?>(
                     valueListenable: bleBloc.selectedDeviceNotifier,
                     builder: (context, device, child) {
                       // Only show sensor area if device is connected and not in error state
