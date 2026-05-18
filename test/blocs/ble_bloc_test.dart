@@ -78,7 +78,8 @@ void main() {
         expect(bleBloc.selectedDeviceNotifier.value, isNull);
         
         final mockDevice = MockBluetoothDevice();
-        when(() => mockDevice.connect()).thenThrow(Exception('Connection failed'));
+        when(() => mockDevice.connect(license: License.free))
+            .thenThrow(Exception('Connection failed'));
         
         final mockContext = FakeBuildContext();
         

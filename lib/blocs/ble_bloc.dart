@@ -183,7 +183,7 @@ class BleBloc with ChangeNotifier {
         await stopScanning();
       }
 
-      await device.connect();
+      await device.connect(license: License.free);
 
       final success =
           await _attemptConnectionWithRetries(device, context: context);
@@ -388,7 +388,10 @@ class BleBloc with ChangeNotifier {
       await Future.delayed(configurableReconnectionDelay);
       
       try {
-        await device.connect(timeout: deviceConnectTimeout);
+        await device.connect(
+          license: License.free,
+          timeout: deviceConnectTimeout,
+        );
       } catch (e) {
         // Don't throw - let the retry continue, next attempt might work
         return;
