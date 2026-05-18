@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:universal_ble/universal_ble.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
@@ -7,14 +7,14 @@ import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget
 import '../../../test_helpers.dart';
 
 class MockBleBloc extends Mock implements BleBloc {}
-class MockBluetoothDevice extends Mock implements BluetoothDevice {}
+class MockBleDevice extends Mock implements BleDevice {}
 class FakeBuildContext extends Fake implements BuildContext {}
 
 void main() {
   late MockBleBloc bleBloc;
 
   setUpAll(() {
-    registerFallbackValue(MockBluetoothDevice());
+    registerFallbackValue(MockBleDevice());
     registerFallbackValue(FakeBuildContext()); 
     initializeTestDependencies();
     disableProviderDebugChecks();
@@ -97,8 +97,8 @@ void main() {
   });
 
   testWidgets('shows list of devices and taps to connect', (tester) async {
-    final device = MockBluetoothDevice();
-    when(() => device.platformName).thenReturn('TestDevice');
+    final device = MockBleDevice();
+    when(() => device.name).thenReturn('TestDevice');
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
     bool connectCalled = false;
     when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {

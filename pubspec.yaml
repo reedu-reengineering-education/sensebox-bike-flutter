@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_blue_plus: ^1.35.5
+  universal_ble: ^1.2.0
   geolocator: ^13.0.1
   provider: ^6.0.5
   path_provider: ^2.1.4
