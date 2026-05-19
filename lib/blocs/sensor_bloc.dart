@@ -39,8 +39,8 @@ class SensorBloc with ChangeNotifier {
     _initializeSensors();
 
     _selectedDeviceListener = () {
-      if (bleBloc.selectedDevice != null &&
-          bleBloc.selectedDevice!.isConnected) {
+      final device = bleBloc.selectedDeviceNotifier.value;
+      if (device != null && device.isConnected) {
         _startListening();
         if (!geolocationBloc.isListening) {
           geolocationBloc.startListening().catchError((error, stackTrace) {
