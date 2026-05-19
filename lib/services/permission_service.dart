@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 
 class PermissionService {
@@ -31,5 +33,22 @@ class PermissionService {
     }
     return permission == LocationPermission.always ||
         permission == LocationPermission.whileInUse;
+  }
+
+  /// Required on Android 14+ to start the GPS foreground service during recording.
+  static Future<void> ensureNotificationPermissionGranted() async {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+
+    final status = await Permission.notification.status;
+    if (status.isGranted) {
+      return;
+    }
+
+    final result = await Permission.notification.request();
+    if (!result.isGranted) {
+      throw NotificationPermissionDenied();
+    }
   }
 }

@@ -28,6 +28,8 @@ class HomeScreen extends StatelessWidget {
     final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
 
+    recordingBloc.setContext(context);
+
     return Scaffold(
       body: Column(
         children: [
@@ -320,6 +322,7 @@ class _FloatingButtons extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _StartStopButton(
+                            bleBloc: bleBloc,
                             recordingBloc: recordingBloc,
                             isReconnecting: isReconnecting),
                       ),
@@ -433,14 +436,19 @@ class _ConnectButton extends StatelessWidget {
 
 // Start/Stop button
 class _StartStopButton extends StatelessWidget {
+  final BleBloc bleBloc;
   final RecordingBloc recordingBloc;
   final bool isReconnecting;
-  const _StartStopButton(
-      {required this.recordingBloc, required this.isReconnecting});
+  const _StartStopButton({
+    required this.bleBloc,
+    required this.recordingBloc,
+    required this.isReconnecting,
+  });
 
   @override
   Widget build(BuildContext context) {
-    recordingBloc.setContext(context);
+    final canStartRecording =
+        recordingBloc.isRecording || bleBloc.isReadyForRecording;
 
     return FilledButton.icon(
       style: const ButtonStyle(
@@ -453,7 +461,7 @@ class _StartStopButton extends StatelessWidget {
           : AppLocalizations.of(context)!.connectionButtonStart),
       icon: Icon(
           recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
-      onPressed: isReconnecting
+      onPressed: isReconnecting || !canStartRecording
           ? null
           : () async {
               if (recordingBloc.isRecording) {

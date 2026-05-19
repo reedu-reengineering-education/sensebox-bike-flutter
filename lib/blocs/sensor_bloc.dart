@@ -19,6 +19,7 @@ import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
 import 'package:sensebox_bike/sensors/temperature_sensor.dart';
 import 'package:sensebox_bike/services/sensor_csv_logger_service.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 
 class SensorBloc with ChangeNotifier {
   final BleBloc bleBloc;
@@ -42,7 +43,9 @@ class SensorBloc with ChangeNotifier {
           bleBloc.selectedDevice!.isConnected) {
         _startListening();
         if (!geolocationBloc.isListening) {
-          geolocationBloc.startListening();
+          geolocationBloc.startListening().catchError((error, stackTrace) {
+            ErrorService.handleError(error, stackTrace);
+          });
         }
       } else {
         _stopListening();
@@ -106,10 +109,10 @@ class SensorBloc with ChangeNotifier {
     }
     
     if (!geolocationBloc.isListening) {
-      geolocationBloc.startListening();
+      await geolocationBloc.startListening();
     }
-    geolocationBloc.getCurrentLocationAndEmit().catchError((e) {
-    });
+
+    await geolocationBloc.getCurrentLocationAndEmit();
   }
 
   Future<void> _onRecordingStop() async {

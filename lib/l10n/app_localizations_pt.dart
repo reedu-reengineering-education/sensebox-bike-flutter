@@ -517,6 +517,18 @@ class AppLocalizationsPt extends AppLocalizations {
       'Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.';
 
   @override
+  String get errorNoNotificationAccess =>
+      'Para gravar seu percurso, permita notificações para este app. O Android precisa disso para manter o GPS ativo em segundo plano durante a gravação.';
+
+  @override
+  String get errorBleNotReadyForRecording =>
+      'A conexão com a senseBox não está estável o suficiente para iniciar a gravação. Aguarde até que a conexão esteja totalmente estabelecida e tente novamente.';
+
+  @override
+  String get errorGeolocationStartFailed =>
+      'Não foi possível iniciar o rastreamento de localização para gravação. Verifique se os serviços de localização e as notificações estão ativados e tente novamente.';
+
+  @override
   String get errorNoSenseBoxSelected =>
       'Para permitir o upload de dados do sensor para a nuvem, faça login na sua conta openSenseMap e selecione a caixa.';
 
@@ -551,10 +563,18 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get errorBleConnectionFailed =>
-      'A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.';
+      'A conexão com a senseBox foi perdida. Por favor, certifique-se de que a senseBox está ligada.';
 
   @override
   String get errorBleConnectionFailedTitle => 'Falha na conexão';
+
+  @override
+  String get errorBleConnectionAttemptFailedTitle =>
+      'Falha na tentativa de conexão';
+
+  @override
+  String get errorBleConnectionAttemptFailed =>
+      'Não foi possível conectar à senseBox.\n\n• Desligue e ligue a senseBox novamente\n• Verifique se a bateria está carregada\n• Aproxime-se do dispositivo e confira se o Bluetooth está ativado no telefone\n• Aguarde alguns segundos e tente conectar novamente';
 
   @override
   String get errorBleNoSensorData =>
@@ -589,6 +609,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get blePartialConnectionContinue => 'Continuar';
+
+  @override
+  String get recordingStoppedBleDisconnectTitle => 'Gravação interrompida';
+
+  @override
+  String get recordingStoppedBleDisconnectBody =>
+      'A conexão com a senseBox foi perdida durante o percurso. A gravação foi interrompida automaticamente. Os dados gravados até agora foram salvos.';
 
   @override
   String get errorBleInitialConnectionFailed =>

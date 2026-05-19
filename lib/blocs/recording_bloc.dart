@@ -12,6 +12,7 @@ import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
+import 'package:sensebox_bike/ui/widgets/home/ble_connection_dialogs.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 
 class RecordingBloc with ChangeNotifier {
@@ -28,8 +29,8 @@ class RecordingBloc with ChangeNotifier {
   DirectUploadService? _directUploadService;
   BatchUploadService? _batchUploadService;
 
-  VoidCallback? _onRecordingStart;
   VoidCallback? _onRecordingStop;
+  Future<void> Function()? _onRecordingStartAsync;
 
   // Context for showing upload modal
   BuildContext? _context;
@@ -54,10 +55,11 @@ class RecordingBloc with ChangeNotifier {
   }
 
   void _onBleConnectionError() {
-    if (_isRecording) {
-      // Stop recording will automatically trigger batch upload if needed
-      stopRecording();
+    if (!bleBloc.connectionErrorNotifier.value || !_isRecording) {
+      return;
     }
+
+    stopRecording(dueToBleDisconnect: true);
   }
 
   void _onDirectUploadFailed() {
@@ -74,10 +76,10 @@ class RecordingBloc with ChangeNotifier {
 
 
   void setRecordingCallbacks({
-    VoidCallback? onRecordingStart,
+    Future<void> Function()? onRecordingStart,
     VoidCallback? onRecordingStop,
   }) {
-    _onRecordingStart = onRecordingStart;
+    _onRecordingStartAsync = onRecordingStart;
     _onRecordingStop = onRecordingStop;
   }
 
@@ -95,54 +97,104 @@ class RecordingBloc with ChangeNotifier {
     if (_isRecording) return;
 
     try {
-      // Check location permissions before starting recording
       await PermissionService.ensureLocationPermissionsGranted();
-    } catch (e) {
-      // Don't start recording if location permissions are not granted
-      ErrorService.handleError(e, StackTrace.current);
+      await PermissionService.ensureNotificationPermissionGranted();
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
       notifyListeners();
       return;
     }
 
-    _isRecording = true;
-    _isRecordingNotifier.value = true;
-    _lastRecordingStopTimestamp = null;
-    await trackBloc.startNewTrack(isDirectUpload: settingsBloc.directUploadMode);
+    if (!bleBloc.isReadyForRecording) {
+      ErrorService.handleError(
+        BleNotReadyForRecording(),
+        StackTrace.current,
+        sendToSentry: false,
+      );
+      notifyListeners();
+      return;
+    }
 
-    _currentTrack = trackBloc.currentTrack;
+    DirectUploadService? directUploadService;
+    BatchUploadService? batchUploadService;
+    int? trackId;
 
     try {
+      trackId = await trackBloc.startNewTrack(
+        isDirectUpload: settingsBloc.directUploadMode,
+      );
+      _currentTrack = trackBloc.currentTrack;
+
       if (_selectedSenseBox == null && settingsBloc.directUploadMode) {
         await trackBloc.updateDirectUploadAuthFailure(_currentTrack!);
-        ErrorService.handleError(NoSenseBoxSelected(), StackTrace.current,
-            sendToSentry: false);
-        notifyListeners();
-        return;
+        throw NoSenseBoxSelected();
       }
 
       if (settingsBloc.directUploadMode) {
-        _directUploadService = DirectUploadService(
-            openSenseMapService: OpenSenseMapService(),
-            senseBox: _selectedSenseBox!,
-            openSenseMapBloc: openSenseMapBloc,
-            onUploadFailed: _onDirectUploadFailed);
+        directUploadService = DirectUploadService(
+          openSenseMapService: OpenSenseMapService(),
+          senseBox: _selectedSenseBox!,
+          openSenseMapBloc: openSenseMapBloc,
+          onUploadFailed: _onDirectUploadFailed,
+        );
       } else {
-        _batchUploadService = BatchUploadService(
+        batchUploadService = BatchUploadService(
           openSenseMapService: openSenseMapBloc.openSenseMapService,
           trackService: isarService.trackService,
           openSenseMapBloc: openSenseMapBloc,
         );
       }
 
-      _onRecordingStart?.call();
+      _isRecording = true;
+      _isRecordingNotifier.value = true;
+      _lastRecordingStopTimestamp = null;
+      _directUploadService = directUploadService;
+      _batchUploadService = batchUploadService;
+
+      if (_onRecordingStartAsync != null) {
+        await _onRecordingStartAsync!();
+      }
     } catch (e, stack) {
-      ErrorService.handleError(e, stack);
+      await _rollbackRecordingStart(
+        trackId: trackId ?? _currentTrack?.id,
+        directUploadService: directUploadService,
+        batchUploadService: batchUploadService,
+      );
+
+      ErrorService.handleError(
+        e,
+        stack,
+        sendToSentry: e is! NoSenseBoxSelected,
+      );
     }
 
     notifyListeners();
   }
 
-  Future<void> stopRecording() async {
+  Future<void> _rollbackRecordingStart({
+    int? trackId,
+    DirectUploadService? directUploadService,
+    BatchUploadService? batchUploadService,
+  }) async {
+    _isRecording = false;
+    _isRecordingNotifier.value = false;
+    _lastRecordingStopTimestamp = null;
+
+    directUploadService?.dispose();
+    batchUploadService?.dispose();
+    _directUploadService = null;
+    _batchUploadService = null;
+
+    final id = trackId ?? _currentTrack?.id;
+    if (id != null && id != 0) {
+      await isarService.trackService.deleteTrack(id);
+    }
+
+    _currentTrack = null;
+    trackBloc.endTrack();
+  }
+
+  Future<void> stopRecording({bool dueToBleDisconnect = false}) async {
     if (!_isRecording) return;
 
     _lastRecordingStopTimestamp = DateTime.now().toUtc();
@@ -160,19 +212,34 @@ class RecordingBloc with ChangeNotifier {
     _directUploadService = null;
     _currentTrack = null;
 
-    // Only show upload modal for batch upload mode (post-ride upload)
-    if (!settingsBloc.directUploadMode &&
+    final shouldShowUploadModal = !settingsBloc.directUploadMode &&
         _batchUploadService != null &&
         trackToUpload != null &&
-        _context != null) {
-      _showUploadProgressModal(trackToUpload, senseBoxForUpload);
-    } else {
-      // For direct upload mode, dispose the batch upload service
+        _context != null;
+
+    if (!shouldShowUploadModal) {
       _batchUploadService?.dispose();
       _batchUploadService = null;
     }
 
     notifyListeners();
+
+    if (dueToBleDisconnect) {
+      await _showRecordingStoppedDueToBleDialog();
+    }
+
+    if (shouldShowUploadModal && (_context?.mounted ?? false)) {
+      _showUploadProgressModal(trackToUpload, senseBoxForUpload);
+    }
+  }
+
+  Future<void> _showRecordingStoppedDueToBleDialog() async {
+    final context = _context;
+    if (context == null || !context.mounted) {
+      return;
+    }
+
+    await showRecordingStoppedDueToBleDialog(context);
   }
 
   void _showUploadProgressModal(TrackData track, SenseBox? senseBox) async {

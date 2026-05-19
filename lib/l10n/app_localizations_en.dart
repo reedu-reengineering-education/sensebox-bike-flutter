@@ -511,6 +511,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.';
 
   @override
+  String get errorNoNotificationAccess =>
+      'To record your ride, please allow notifications for this app. Android needs this to keep GPS running in the background during recording.';
+
+  @override
+  String get errorBleNotReadyForRecording =>
+      'The senseBox connection is not stable enough to start recording. Please wait until the connection is fully established and try again.';
+
+  @override
+  String get errorGeolocationStartFailed =>
+      'Could not start location tracking for recording. Please check that location services and notifications are enabled, then try again.';
+
+  @override
   String get errorNoSenseBoxSelected =>
       'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.';
 
@@ -545,10 +557,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorBleConnectionFailed =>
-      'Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.';
+      'Connection to the senseBox was lost. Please make sure the senseBox is powered on.';
 
   @override
   String get errorBleConnectionFailedTitle => 'Connection failed';
+
+  @override
+  String get errorBleConnectionAttemptFailedTitle =>
+      'Connection attempt failed';
+
+  @override
+  String get errorBleConnectionAttemptFailed =>
+      'Could not connect to the senseBox.\n\n• Turn the senseBox off and on\n• Make sure the battery is charged\n• Move closer to the device and check that Bluetooth is enabled on your phone\n• Wait a few seconds, then try connecting again';
 
   @override
   String get errorBleNoSensorData =>
@@ -583,6 +603,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get blePartialConnectionContinue => 'Continue';
+
+  @override
+  String get recordingStoppedBleDisconnectTitle => 'Recording stopped';
+
+  @override
+  String get recordingStoppedBleDisconnectBody =>
+      'The connection to the senseBox was lost during your ride. Recording has been stopped automatically. The data recorded so far has been saved.';
 
   @override
   String get errorBleInitialConnectionFailed =>

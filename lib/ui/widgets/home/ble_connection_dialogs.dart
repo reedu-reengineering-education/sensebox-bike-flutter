@@ -90,19 +90,39 @@ Future<void> handleBleConnectionResult({
   await showBleConnectionFailedDialog(context, result.failureReason);
 }
 
+Future<void> showRecordingStoppedDueToBleDialog(BuildContext context) {
+  final localizations = AppLocalizations.of(context)!;
+
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: Text(localizations.recordingStoppedBleDisconnectTitle),
+        content: Text(localizations.recordingStoppedBleDisconnectBody),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(localizations.generalOk),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 Future<void> showBleConnectionFailedDialog(
   BuildContext context,
   BleConnectionFailureReason? reason,
 ) {
   final localizations = AppLocalizations.of(context)!;
-  final message = bleConnectionFailureMessage(localizations, reason);
 
   return showDialog<void>(
     context: context,
     builder: (dialogContext) {
       return AlertDialog(
-        title: Text(localizations.errorBleConnectionFailedTitle),
-        content: Text(message),
+        title: Text(localizations.errorBleConnectionAttemptFailedTitle),
+        content: Text(localizations.errorBleConnectionAttemptFailed),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),

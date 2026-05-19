@@ -176,7 +176,7 @@ void main() {
     expect(find.text('Cancel'), findsOneWidget);
   });
 
-  testWidgets('shows connection timeout message on failed connect',
+  testWidgets('shows connection attempt failed dialog on failed connect',
       (tester) async {
     final device = MockBluetoothDevice();
     when(() => device.platformName).thenReturn('TestDevice');
@@ -209,10 +209,8 @@ void main() {
     await tester.tap(find.text('TestDevice'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Connection failed'), findsOneWidget);
-    expect(
-      find.textContaining('could not connect to the senseBox in time'),
-      findsOneWidget,
-    );
+    expect(find.text('Connection attempt failed'), findsOneWidget);
+    expect(find.textContaining('Turn the senseBox off and on'), findsOneWidget);
+    expect(find.textContaining('battery is charged'), findsOneWidget);
   });
 }

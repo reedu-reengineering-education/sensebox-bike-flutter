@@ -1,12 +1,12 @@
 // File: lib/blocs/geolocation_bloc.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:flutter/foundation.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
@@ -40,33 +40,29 @@ class GeolocationBloc with ChangeNotifier {
     });
   }
 
-  void startListening() async {
+  Future<void> startListening() async {
     if (_isListening) {
       return;
     }
-    
+
     try {
       await PermissionService.ensureLocationPermissionsGranted();
+      await PermissionService.ensureNotificationPermissionGranted();
 
       late LocationSettings locationSettings;
 
       if (defaultTargetPlatform == TargetPlatform.android) {
-        PermissionStatus status = await Permission.notification.request();
-        if (status.isGranted) {
-          locationSettings = AndroidSettings(
-              accuracy: LocationAccuracy.bestForNavigation,
-              distanceFilter: 0,
-              foregroundNotificationConfig: const ForegroundNotificationConfig(
-                  notificationText:
-                      "senseBox:bike will record your location in the background",
-                  notificationTitle: "Running in the background",
-                  enableWakeLock: true,
-                  notificationIcon: AndroidResource(
-                      name: "@mipmap/ic_stat_sensebox_bike_logo"),
-                  color: Colors.blue));
-        } else {
-          throw Exception('Notification permissions are denied');
-        }
+        locationSettings = AndroidSettings(
+            accuracy: LocationAccuracy.bestForNavigation,
+            distanceFilter: 0,
+            foregroundNotificationConfig: const ForegroundNotificationConfig(
+                notificationText:
+                    "senseBox:bike will record your location in the background",
+                notificationTitle: "Running in the background",
+                enableWakeLock: true,
+                notificationIcon: AndroidResource(
+                    name: "@mipmap/ic_stat_sensebox_bike_logo"),
+                color: Colors.blue));
       } else if (defaultTargetPlatform == TargetPlatform.iOS ||
           defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
@@ -77,27 +73,35 @@ class GeolocationBloc with ChangeNotifier {
           showBackgroundLocationIndicator: true,
           allowBackgroundLocationUpdates: true,
         );
+      } else {
+        locationSettings = const LocationSettings(
+          accuracy: LocationAccuracy.bestForNavigation,
+          distanceFilter: 0,
+        );
       }
 
       await _positionStreamSubscription?.cancel();
       _positionStreamSubscription =
           Geolocator.getPositionStream(locationSettings: locationSettings)
-              .listen((Position position) async {
-        final geolocationData = _createGeolocationFromPosition(position);
+              .listen(
+        (Position position) async {
+          final geolocationData = _createGeolocationFromPosition(position);
 
-        if (shouldSkipGeolocation(geolocationData)) {
-          return;
-        }
+          if (shouldSkipGeolocation(geolocationData)) {
+            return;
+          }
 
-        _lastEmittedPosition = geolocationData;
-        _resetStationaryLocationTimer();
+          _lastEmittedPosition = geolocationData;
+          _resetStationaryLocationTimer();
 
-        final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
-        if (shouldEmit) {
-          _emitGeolocation(geolocationData);
-        }
-      });
-      
+          final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
+          if (shouldEmit) {
+            _emitGeolocation(geolocationData);
+          }
+        },
+        onError: _handlePositionStreamError,
+      );
+
       _startStationaryLocationTimer();
       _isListening = true;
     } catch (e, stack) {
@@ -105,8 +109,17 @@ class GeolocationBloc with ChangeNotifier {
       _positionStreamSubscription = null;
       _stopStationaryLocationTimer();
       _isListening = false;
-      ErrorService.handleError(e, stack);
+      ErrorService.logToConsole(e, stack);
+      rethrow;
     }
+  }
+
+  void _handlePositionStreamError(Object error, StackTrace stack) {
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
+    _stopStationaryLocationTimer();
+    _isListening = false;
+    ErrorService.handleError(GeolocationStartFailed(error), stack);
   }
 
   // function to get the current location
