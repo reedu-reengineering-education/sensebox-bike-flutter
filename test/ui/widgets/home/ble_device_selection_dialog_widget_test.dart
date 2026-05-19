@@ -1,34 +1,35 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/models/ble_connection_phase.dart';
 import 'package:sensebox_bike/models/ble_connection_result.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
+import '../../../mocks.dart';
 import '../../../test_helpers.dart';
 
-class MockBleBloc extends Mock implements BleBloc {}
 class MockBluetoothDevice extends Mock implements BluetoothDevice {}
+
 class FakeBuildContext extends Fake implements BuildContext {}
 
 void main() {
   late MockBleBloc bleBloc;
-  late ValueNotifier<List<BluetoothDevice>> discoveredDevices;
 
   setUpAll(() {
     registerFallbackValue(MockBluetoothDevice());
-    registerFallbackValue(FakeBuildContext()); 
+    registerFallbackValue(FakeBuildContext());
     initializeTestDependencies();
     disableProviderDebugChecks();
   });
 
   setUp(() {
-    discoveredDevices = ValueNotifier([]);
     bleBloc = MockBleBloc();
-    when(() => bleBloc.discoveredDevicesNotifier).thenReturn(discoveredDevices);
-    when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
-    when(() => bleBloc.isConnectingNotifier)
-        .thenReturn(ValueNotifier(false));
+  });
+
+  tearDown(() {
+    bleBloc.dispose();
   });
 
   testWidgets('shows dialog title', (tester) async {
@@ -51,16 +52,15 @@ void main() {
   });
 
   testWidgets('shows scan error', (tester) async {
-
     await tester.pumpWidget(
       createLocalizedTestApp(
         locale: const Locale('en'),
         child: Material(
           child: DeviceSelectionSheet(
-          bleBloc: bleBloc,
-          initialScanError: 'Test error',
+            bleBloc: bleBloc,
+            initialScanError: 'Test error',
+          ),
         ),
-        )
       ),
     );
 
@@ -68,8 +68,8 @@ void main() {
   });
 
   testWidgets('shows loading spinner while scanning', (tester) async {
-    when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(true));
-    
+    bleBloc.isScanningNotifier.value = true;
+
     await tester.pumpWidget(
       createLocalizedTestApp(
         locale: const Locale('en'),
@@ -84,8 +84,6 @@ void main() {
   });
 
   testWidgets('shows no devices found message', (tester) async {
-    when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
-    
     await tester.pumpWidget(
       createLocalizedTestApp(
         locale: const Locale('en'),
@@ -102,8 +100,8 @@ void main() {
   testWidgets('shows list of devices and taps to connect', (tester) async {
     final device = MockBluetoothDevice();
     when(() => device.platformName).thenReturn('TestDevice');
-    discoveredDevices.value = [device];
-    bool connectCalled = false;
+    bleBloc.discoveredDevicesNotifier.value = [device];
+    var connectCalled = false;
     when(() => bleBloc.connectToDevice(device)).thenAnswer((_) async {
       connectCalled = true;
       return BleConnectionResult.fullSuccess();
@@ -122,16 +120,44 @@ void main() {
     expect(find.text('TestDevice'), findsOneWidget);
 
     await tapElement(find.text('TestDevice'), tester);
-    await tester.pumpAndSettle();
     expect(connectCalled, isTrue);
+  });
+
+  testWidgets('shows connecting spinner while connect is pending',
+      (tester) async {
+    final device = MockBluetoothDevice();
+    when(() => device.platformName).thenReturn('TestDevice');
+    bleBloc.discoveredDevicesNotifier.value = [device];
+
+    final connectCompleter = Completer<BleConnectionResult>();
+    when(() => bleBloc.connectToDevice(device)).thenAnswer((_) async {
+      return connectCompleter.future;
+    });
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: Material(
+          child: DeviceSelectionSheet(bleBloc: bleBloc),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('TestDevice'));
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    connectCompleter.complete(BleConnectionResult.fullSuccess());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('shows connection attempt failed dialog on failed connect',
       (tester) async {
     final device = MockBluetoothDevice();
     when(() => device.platformName).thenReturn('TestDevice');
-    when(() => bleBloc.startScanning()).thenAnswer((_) async {});
-    discoveredDevices.value = [device];
+    bleBloc.discoveredDevicesNotifier.value = [device];
     when(() => bleBloc.connectToDevice(device)).thenAnswer((_) async {
       return BleConnectionResult.failure(
         reason: BleConnectionFailureReason.connectionTimeout,
@@ -160,7 +186,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Connection attempt failed'), findsOneWidget);
-    expect(find.textContaining('Turn the senseBox off and on'), findsOneWidget);
-    expect(find.textContaining('battery is charged'), findsOneWidget);
+    expect(
+      find.textContaining('could not connect to the senseBox in time'),
+      findsOneWidget,
+    );
   });
 }
