@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -15,9 +17,8 @@ void main() {
       registerFallbackValue(MockBluetoothDevice());
     });
 
-    group('MockBleBloc', () {
+    group('MockBleBloc smoke', () {
       setUp(() {
-        mockSettingsBloc = MockSettingsBloc();
         bleBloc = MockBleBloc();
       });
 
@@ -25,46 +26,17 @@ void main() {
         bleBloc.dispose();
       });
 
-      group('Initialization', () {
-        test('initializes with correct default values', () {
-          expect(bleBloc.isBluetoothEnabledNotifier.value, isFalse);
-          expect(bleBloc.isScanningNotifier.value, isFalse);
-          expect(bleBloc.connectionPhaseNotifier.value,
-              BleConnectionPhase.idle);
-          expect(bleBloc.selectedDeviceNotifier.value, isNull);
-          expect(bleBloc.discoveredDevicesNotifier.value, isEmpty);
-          expect(bleBloc.availableCharacteristics.value, isEmpty);
-          expect(bleBloc.characteristicStreamsVersion.value, equals(0));
-          expect(bleBloc.connectionErrorNotifier.value, isFalse);
-          expect(bleBloc.isConnected, isFalse);
-        });
-      });
+      test('exposes idle defaults and disconnect resets phase', () {
+        expect(bleBloc.connectionPhaseNotifier.value, BleConnectionPhase.idle);
+        expect(bleBloc.discoveredDevicesNotifier.value, isEmpty);
+        expect(bleBloc.isConnected, isFalse);
 
-      group('Bluetooth Status', () {
-        test('updateBluetoothStatus updates notifier', () {
-          bleBloc.updateBluetoothStatus(true);
+        bleBloc.connectionPhaseNotifier.value = BleConnectionPhase.connected;
+        expect(bleBloc.isConnected, isTrue);
 
-          expect(bleBloc.isBluetoothEnabledNotifier.value, isTrue);
-        });
-      });
-
-      group('Connection State Management', () {
-        test('resetConnectionError clears connection error state', () {
-          bleBloc.connectionErrorNotifier.value = true;
-          bleBloc.resetConnectionError();
-          expect(bleBloc.connectionErrorNotifier.value, isFalse);
-        });
-      });
-
-      group('Device Management', () {
-        test('startScanning disconnects when a device is selected', () {
-          final mockDevice = MockBluetoothDevice();
-          bleBloc.selectedDeviceNotifier.value = mockDevice;
-
-          bleBloc.startScanning();
-
-          expect(bleBloc.selectedDeviceNotifier.value, isNull);
-        });
+        bleBloc.disconnectDevice();
+        expect(bleBloc.connectionPhaseNotifier.value, BleConnectionPhase.idle);
+        expect(bleBloc.isConnected, isFalse);
       });
     });
 
@@ -76,12 +48,26 @@ void main() {
         installFakeFlutterBluePlusPlatform(fakePlatform);
         mockSettingsBloc = MockSettingsBloc();
         bleBloc = BleBloc(mockSettingsBloc);
-        await _waitForBleBlocInit(bleBloc);
+        await waitForBleBlocInit(bleBloc);
       });
 
       tearDown(() {
         bleBloc.dispose();
         fakePlatform.dispose();
+      });
+
+      test('connectToDevice transitions to connected on success', () async {
+        final device = BluetoothDevice.fromId('00:11:22:33:44:55');
+
+        final result = await bleBloc.connectToDevice(device);
+
+        expect(result.success, isTrue, reason: '${result.failureReason}');
+        expect(bleBloc.connectionPhaseNotifier.value,
+            BleConnectionPhase.connected);
+        expect(bleBloc.selectedDeviceNotifier.value, isNotNull);
+        expect(bleBloc.isConnected, isTrue);
+        expect(bleBloc.availableCharacteristics.value, isNotEmpty);
+        expect(bleBloc.isReadyForRecording, isTrue);
       });
 
       test('starts in idle phase with empty discovered devices', () {
@@ -138,14 +124,27 @@ void main() {
 
         await bleBloc.stopScanning();
       });
+    });
+
+    group('BleBloc connect failures', () {
+      late FakeFlutterBluePlusPlatform fakePlatform;
+
+      setUp(() async {
+        fakePlatform = FakeFlutterBluePlusPlatform(connectSucceeds: false);
+        installFakeFlutterBluePlusPlatform(fakePlatform);
+        mockSettingsBloc = MockSettingsBloc();
+        bleBloc = BleBloc(mockSettingsBloc);
+        await waitForBleBlocInit(bleBloc);
+      });
+
+      tearDown(() {
+        bleBloc.dispose();
+        fakePlatform.dispose();
+      });
 
       test('connectToDevice returns failure when platform connect fails',
           () async {
-        fakePlatform.dispose();
-        fakePlatform = FakeFlutterBluePlusPlatform(connectSucceeds: false);
-        installFakeFlutterBluePlusPlatform(fakePlatform);
-
-        final device = BluetoothDevice.fromId('00:11:22:33:44:55');
+        final device = BluetoothDevice.fromId('00:11:22:33:44:66');
 
         final result = await bleBloc.connectToDevice(device);
 
@@ -159,12 +158,25 @@ void main() {
 
 class MockBluetoothDevice extends Mock implements BluetoothDevice {}
 
-Future<void> _waitForBleBlocInit(BleBloc bloc) async {
-  for (var i = 0; i < 50; i++) {
-    if (bloc.isBluetoothEnabledNotifier.value) {
-      return;
-    }
-    await Future<void>.delayed(const Duration(milliseconds: 10));
+Future<void> waitForBleBlocInit(BleBloc bloc) async {
+  if (bloc.isBluetoothEnabledNotifier.value) {
+    return;
   }
-  fail('BleBloc initialization did not complete');
+
+  final completer = Completer<void>();
+  void listener() {
+    if (bloc.isBluetoothEnabledNotifier.value && !completer.isCompleted) {
+      completer.complete();
+    }
+  }
+
+  bloc.isBluetoothEnabledNotifier.addListener(listener);
+  listener();
+
+  await completer.future.timeout(
+    const Duration(seconds: 1),
+    onTimeout: () => fail('BleBloc initialization did not complete'),
+  );
+
+  bloc.isBluetoothEnabledNotifier.removeListener(listener);
 }

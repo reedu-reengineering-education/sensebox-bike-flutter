@@ -115,10 +115,6 @@ class SensorBloc {
       directUploadService.enable();
     }
 
-    if (!geolocationBloc.isListening) {
-      await geolocationBloc.startListening();
-    }
-
     await geolocationBloc.getCurrentLocationAndEmit();
   }
 

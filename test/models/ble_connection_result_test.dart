@@ -38,5 +38,12 @@ void main() {
         BleConnectionFailureReason.connectionLost,
       );
     });
+
+    test('maps generic errors to bluetoothError', () {
+      expect(
+        BleConnectionResult.fromException(Exception('unknown gatt error')),
+        BleConnectionFailureReason.bluetoothError,
+      );
+    });
   });
 }

@@ -137,9 +137,6 @@ class BleBloc {
     _reconnectionListener?.cancel();
     _reconnectionListener = null;
     resetConnectionError();
-    if (_connectionPhase == BleConnectionPhase.reconnecting) {
-      _setConnectionPhase(BleConnectionPhase.idle);
-    }
   }
 
   Future<BleConnectionResult?> connectToId(String id) async {
@@ -199,10 +196,7 @@ class BleBloc {
         );
       }
 
-      final result = await _attemptSingleConnection(
-        device,
-        updateConnectionState: false,
-      );
+      final result = await _attemptSingleConnection(device);
 
       if (result.success) {
         _completeConnection(device);
@@ -241,10 +235,7 @@ class BleBloc {
     BleConnectionResult? lastResult;
 
     for (var attempt = 0; attempt < _maxReconnectionAttempts; attempt++) {
-      lastResult = await _attemptSingleConnection(
-        device,
-        updateConnectionState: false,
-      );
+      lastResult = await _attemptSingleConnection(device);
 
       if (lastResult.success) {
         return lastResult;
@@ -272,9 +263,8 @@ class BleBloc {
   }
 
   Future<BleConnectionResult> _attemptSingleConnection(
-    BluetoothDevice device, {
-    bool updateConnectionState = true,
-  }) async {
+    BluetoothDevice device,
+  ) async {
     try {
       if (!device.isConnected) {
         return BleConnectionResult.failure(
@@ -340,10 +330,6 @@ class BleBloc {
         );
       }
 
-      if (updateConnectionState) {
-        _userInitiatedDisconnect = false;
-        _setConnectionPhase(BleConnectionPhase.connected);
-      }
       return BleConnectionResult.fullSuccess();
     } catch (e) {
       return BleConnectionResult.failure(

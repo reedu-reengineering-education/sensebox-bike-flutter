@@ -75,12 +75,8 @@ class MockBleBloc extends Mock implements BleBloc {
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
 
   @override
-  bool get isConnected => false;
-
-  @override
-  Future<BleConnectionResult> connectToDevice(BluetoothDevice device) async {
-    return BleConnectionResult.fullSuccess();
-  }
+  bool get isConnected =>
+      connectionPhaseNotifier.value == BleConnectionPhase.connected;
 
   @override
   void disconnectDevice() {
@@ -115,7 +111,8 @@ class MockBleBloc extends Mock implements BleBloc {
   @override
   void dispose() {}
 
-  ValueNotifier<bool> get permanentConnectionLossNotifier =>
+  @override
+  final ValueNotifier<bool> permanentConnectionLossNotifier =
       ValueNotifier<bool>(false);
 }
 

@@ -60,7 +60,7 @@ Future<void> showBleConnectionFailedDialog(
   return showAppDialog(
     context: context,
     title: localizations.errorBleConnectionAttemptFailedTitle,
-    message: localizations.errorBleConnectionAttemptFailed,
+    message: bleConnectionFailureMessage(localizations, reason),
     type: AppDialogType.error,
   ).then((_) {});
 }
