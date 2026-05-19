@@ -104,7 +104,7 @@ void main() {
     when(() => device.platformName).thenReturn('TestDevice');
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
     bool connectCalled = false;
-    when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {
+    when(() => bleBloc.connectToDevice(device)).thenAnswer((_) async {
       connectCalled = true;
       return BleConnectionResult.fullSuccess();
     });
@@ -132,7 +132,7 @@ void main() {
     when(() => device.platformName).thenReturn('TestDevice');
     when(() => bleBloc.startScanning()).thenAnswer((_) async {});
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
-    when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {
+    when(() => bleBloc.connectToDevice(device)).thenAnswer((_) async {
       return BleConnectionResult.failure(
         reason: BleConnectionFailureReason.connectionTimeout,
       );
