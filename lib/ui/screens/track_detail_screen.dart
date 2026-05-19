@@ -42,7 +42,8 @@ class TrackDetailScreen extends StatefulWidget {
   State<TrackDetailScreen> createState() => _TrackDetailScreenState();
 }
 
-class _TrackDetailScreenState extends State<TrackDetailScreen> {
+class _TrackDetailScreenState extends State<TrackDetailScreen>
+    with WidgetsBindingObserver {
   late final IsarService isarService;
   late final OpenSenseMapBloc openSenseMapBloc;
   late final BatchUploadService batchUploadService;
@@ -52,6 +53,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   List<GeolocationData> _geolocations = [];
   List<SensorData> _sensorData = [];
   bool _isLoading = true;
+  bool _isLoadingSensor = false;
   int _loadRequestId = 0;
   // Local track data that can be updated
   late TrackData _track;
@@ -61,6 +63,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
     openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
 
@@ -79,11 +82,32 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   @override
   void dispose() {
-    _loadRequestId++;
+    WidgetsBinding.instance.removeObserver(this);
+    _cancelTrackDataLoad();
     _geolocations = [];
     _sensorData = [];
     batchUploadService.dispose();
     super.dispose();
+  }
+
+  void _cancelTrackDataLoad() {
+    _loadRequestId++;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      _cancelTrackDataLoad();
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed &&
+        _isLoading &&
+        _geolocations.isEmpty) {
+      _loadTrackData();
+    }
   }
 
   bool _shouldHideUploadButton() {
@@ -314,14 +338,24 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       }
 
       final geolocations = await isarService.geolocationService
-          .getGeolocationDataWithPreloadedSensors(_track.id);
+          .getGeolocationDataByTrackId(_track.id);
+      if (!mounted || requestId != _loadRequestId) return;
+
+      final sensorData = await isarService.geolocationService
+          .discoverAvailableSensorsFromGeolocations(geolocations);
+      if (!mounted || requestId != _loadRequestId) return;
+
+      final sensorType = getFirstAvailableSensorType(sensorData);
+      await isarService.sensorService
+          .attachSensorTypeToGeolocations(geolocations, sensorType);
       if (!mounted || requestId != _loadRequestId) return;
 
       setState(() {
         _geolocations = geolocations;
-        _sensorData = getAllUniqueSensorData(geolocations);
-        _sensorType = getFirstAvailableSensorType(_sensorData);
+        _sensorData = sensorData;
+        _sensorType = sensorType;
         _isLoading = false;
+        _isLoadingSensor = false;
       });
     } catch (e) {
       if (!mounted || requestId != _loadRequestId) return;
@@ -334,6 +368,34 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
+
+  Future<void> _onSensorTypeSelected(String type) async {
+    if (type == _sensorType) return;
+
+    final requestId = _loadRequestId;
+    setState(() {
+      _sensorType = type;
+      _isLoadingSensor = true;
+    });
+
+    try {
+      await isarService.sensorService
+          .attachSensorTypeToGeolocations(_geolocations, type);
+      if (!mounted || requestId != _loadRequestId) return;
+
+      setState(() {
+        _isLoadingSensor = false;
+      });
+    } catch (e) {
+      if (!mounted || requestId != _loadRequestId) return;
+
+      ErrorService.handleError(
+          'Error loading sensor data: $e', StackTrace.current);
+      setState(() {
+        _isLoadingSensor = false;
+      });
+    }
+  }
 
   Future<void> _shareFile(String filePath) async {
     final localization = AppLocalizations.of(context)!;
@@ -609,8 +671,21 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 child: Card.filled(
                   clipBehavior: Clip.hardEdge,
                   elevation: 4,
-                  child: TrajectoryWidget(
-                      geolocationData: _geolocations, sensorType: _sensorType),
+                  child: Stack(
+                    children: [
+                      TrajectoryWidget(
+                        geolocationData: _geolocations,
+                        sensorType: _sensorType,
+                      ),
+                      if (_isLoadingSensor)
+                        const ColoredBox(
+                          color: Color(0x66000000),
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -622,11 +697,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             SensorTileList(
               sensorData: _sensorData,
               selectedSensorType: _sensorType,
-              onSensorTypeSelected: (type) {
-                setState(() {
-                  _sensorType = type;
-                });
-              },
+              onSensorTypeSelected: _onSensorTypeSelected,
             ),
           ],
         ),
