@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/screens/home_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/services/permission_service.dart';
 
 class AppHome extends StatefulWidget {
   const AppHome({super.key});
@@ -29,6 +31,14 @@ class _AppHomeState extends State<AppHome> {
       const SettingsScreen(),
       const LoginScreen(),
     ];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      PermissionService.requestInitialLocationPermissions();
+    }
   }
 
   @override

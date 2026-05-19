@@ -54,7 +54,7 @@ void main() {
       );
     });
 
-    test('completes if permission is granted', () async {
+    test('completes if permission is granted on Android', () async {
       when(() => mockGeolocator.isLocationServiceEnabled())
           .thenAnswer((_) async => true);
       when(() => mockGeolocator.checkPermission())

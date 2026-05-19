@@ -4,10 +4,18 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 
 class PermissionService {
+  static bool get _isApplePlatform =>
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.macOS;
+
   static Future<void> ensureLocationPermissionsGranted() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
+    if (!await Geolocator.isLocationServiceEnabled()) {
       throw LocationPermissionDenied();
+    }
+
+    if (_isApplePlatform) {
+      await _ensureAlwaysLocationOnApple();
+      return;
     }
 
     LocationPermission permission = await Geolocator.checkPermission();
@@ -26,18 +34,29 @@ class PermissionService {
   /// iOS/macOS require "Always" location to keep GPS running with a locked screen.
   static Future<void> ensureLocationPermissionsForRecording() async {
     await ensureLocationPermissionsGranted();
+    await ensureNotificationPermissionGranted();
+  }
 
-    if (defaultTargetPlatform != TargetPlatform.iOS &&
-        defaultTargetPlatform != TargetPlatform.macOS) {
+  /// Called during first app setup (e.g. after accepting the privacy policy).
+  /// On iOS this shows "When In Use" first, then immediately prompts for "Always".
+  static Future<void> requestInitialLocationPermissions() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
       return;
     }
 
-    await _ensureAlwaysLocationOnApple();
+    if (_isApplePlatform) {
+      await _requestAppleLocationPermissions();
+      return;
+    }
+
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      await Geolocator.requestPermission();
+    }
   }
 
   static Future<bool> allowsBackgroundLocation() async {
-    if (defaultTargetPlatform != TargetPlatform.iOS &&
-        defaultTargetPlatform != TargetPlatform.macOS) {
+    if (!_isApplePlatform) {
       return isLocationPermissionGranted();
     }
 
@@ -46,8 +65,14 @@ class PermissionService {
   }
 
   static Future<bool> isLocationPermissionGranted() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return false;
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      return false;
+    }
+
+    if (_isApplePlatform) {
+      final permission = await _requestAppleLocationPermissions();
+      return permission == LocationPermission.always;
+    }
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -75,25 +100,36 @@ class PermissionService {
   }
 
   static Future<void> _ensureAlwaysLocationOnApple() async {
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.always) {
-      return;
+    final permission = await _requestAppleLocationPermissions();
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      throw LocationPermissionDenied();
     }
 
-    if (permission == LocationPermission.deniedForever) {
+    if (permission != LocationPermission.always) {
       throw LocationPermissionAlwaysRequired();
     }
+  }
 
-    final result = await Permission.locationAlways.request();
-    if (result.isGranted) {
-      return;
+  /// Requests "When In Use" if needed, then immediately prompts for "Always".
+  static Future<LocationPermission> _requestAppleLocationPermissions() async {
+    var permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
     }
 
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.always) {
-      return;
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return permission;
     }
 
-    throw LocationPermissionAlwaysRequired();
+    if (permission != LocationPermission.always) {
+      await Permission.locationAlways.request();
+      permission = await Geolocator.checkPermission();
+    }
+
+    return permission;
   }
 }
