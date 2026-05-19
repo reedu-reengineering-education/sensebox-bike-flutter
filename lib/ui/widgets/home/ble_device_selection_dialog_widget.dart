@@ -50,7 +50,6 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
 
   await handleBleConnectionResult(
     context: context,
-    bleBloc: bleBloc,
     device: attempt.device,
     result: attempt.result,
   );
@@ -78,8 +77,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
 
     setState(() => _isConnecting = true);
 
-    final result =
-        await widget.bleBloc.connectToDevice(device, context);
+    final result = await widget.bleBloc.connectToDevice(device);
 
     if (!mounted) return;
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/ble_connection_result.dart';
 import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
@@ -29,7 +28,6 @@ String bleConnectionFailureMessage(
 
 Future<void> handleBleConnectionResult({
   required BuildContext context,
-  required BleBloc bleBloc,
   required BluetoothDevice device,
   required BleConnectionResult result,
 }) async {

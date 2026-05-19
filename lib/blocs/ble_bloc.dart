@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/ble_connection_result.dart';
@@ -16,7 +15,7 @@ const configurableReconnectionDelay = Duration(seconds: 1);
 const _delayAfterDiscoverServices = Duration(milliseconds: 400);
 const _delayBetweenCharacteristicSubscriptions = Duration(milliseconds: 150);
 
-class BleBloc with ChangeNotifier {
+class BleBloc {
   final SettingsBloc settingsBloc;
 
   final ValueNotifier<bool> isBluetoothEnabledNotifier = ValueNotifier(false);
@@ -48,7 +47,6 @@ class BleBloc with ChangeNotifier {
   StreamSubscription<BluetoothAdapterState>? _adapterStateSubscription;
   StreamSubscription<List<ScanResult>>? _scanResultsSubscription;
   StreamSubscription<bool>? _isScanningSubscription;
-  StreamSubscription<List<ScanResult>>? _connectToIdScanSubscription;
   StreamSubscription<BluetoothConnectionState>? _reconnectionListener;
 
   final Map<String, StreamController<List<double>>> _characteristicStreams = {};
@@ -86,7 +84,6 @@ class BleBloc with ChangeNotifier {
   void updateBluetoothStatus(bool isEnabled) {
     if (isBluetoothEnabledNotifier.value != isEnabled) {
       isBluetoothEnabledNotifier.value = isEnabled;
-      notifyListeners();
     }
   }
 
@@ -136,8 +133,7 @@ class BleBloc with ChangeNotifier {
         devicesList.add(result.device);
       }
     }
-    _devicesListController.add(devicesList);
-    notifyListeners();
+    _devicesListController.add(List.from(devicesList));
   }
 
   void disconnectDevice() {
@@ -150,38 +146,50 @@ class BleBloc with ChangeNotifier {
     _reconnectionListener = null;
     resetConnectionError();
     _resetReconnectionState();
-    notifyListeners();
   }
 
-  Future<void> connectToId(String id, BuildContext context) async {
+  Future<BleConnectionResult?> connectToId(String id) async {
     resetConnectionError();
-    await _connectToIdScanSubscription?.cancel();
+    await stopScanning();
 
-    await FlutterBluePlus.startScan(withNames: [id]);
-    _connectToIdScanSubscription =
-        FlutterBluePlus.scanResults.listen((results) async {
-      for (final result in results) {
-        if (result.device.advName.toString() != id) {
+    try {
+      await FlutterBluePlus.startScan(
+        withNames: [id],
+        timeout: deviceConnectTimeout,
+      );
+
+      await for (final results
+          in FlutterBluePlus.scanResults.timeout(deviceConnectTimeout)) {
+        final device = _findScannedDevice(results, id);
+        if (device == null) {
           continue;
         }
 
-        await _connectToIdScanSubscription?.cancel();
-        _connectToIdScanSubscription = null;
         await stopScanning();
-        await connectToDevice(result.device, context);
-        break;
+        return connectToDevice(device);
       }
-    });
+    } on TimeoutException {
+      return null;
+    } finally {
+      await stopScanning();
+    }
+
+    return null;
   }
 
-  Future<BleConnectionResult> connectToDevice(
-    BluetoothDevice device,
-    BuildContext context,
-  ) async {
+  BluetoothDevice? _findScannedDevice(List<ScanResult> results, String id) {
+    for (final result in results) {
+      if (result.device.advName.toString() == id) {
+        return result.device;
+      }
+    }
+    return null;
+  }
+
+  Future<BleConnectionResult> connectToDevice(BluetoothDevice device) async {
     try {
       resetConnectionError();
       isConnectingNotifier.value = true;
-      notifyListeners();
 
       if (isScanningNotifier.value) {
         await stopScanning();
@@ -200,7 +208,7 @@ class BleBloc with ChangeNotifier {
       final result = await _attemptSingleConnection(device);
 
       if (result.success) {
-        _completeConnection(device, context);
+        _completeConnection(device);
       } else {
         await _disconnectDeviceSafe(device);
         _clearSelectedDevice();
@@ -219,12 +227,11 @@ class BleBloc with ChangeNotifier {
     } finally {
       isConnectingNotifier.value = false;
       _isInRetryMode = false;
-      notifyListeners();
     }
   }
 
-  void _completeConnection(BluetoothDevice device, BuildContext context) {
-    _handleDeviceReconnection(device, context);
+  void _completeConnection(BluetoothDevice device) {
+    _handleDeviceReconnection(device);
     selectedDevice = device;
     selectedDeviceNotifier.value = device;
     _isConnected = true;
@@ -233,7 +240,6 @@ class BleBloc with ChangeNotifier {
 
   Future<BleConnectionResult> _reconnectWithRetries(
     BluetoothDevice device,
-    BuildContext context,
   ) async {
     _isInRetryMode = true;
     BleConnectionResult? lastResult;
@@ -271,7 +277,7 @@ class BleBloc with ChangeNotifier {
     }
 
     _isInRetryMode = false;
-    _handleConnectionError(context: context);
+    _handlePermanentConnectionLoss();
 
     return lastResult ??
         BleConnectionResult.failure(reason: BleConnectionFailureReason.noData);
@@ -407,7 +413,6 @@ class BleBloc with ChangeNotifier {
   void _markConnected() {
     _isConnected = true;
     _userInitiatedDisconnect = false;
-    notifyListeners();
   }
 
   Future<bool> _prepareForRetry(BluetoothDevice device) async {
@@ -450,10 +455,7 @@ class BleBloc with ChangeNotifier {
     return null;
   }
 
-  void _handleDeviceReconnection(
-    BluetoothDevice device,
-    BuildContext context,
-  ) {
+  void _handleDeviceReconnection(BluetoothDevice device) {
     _reconnectionListener?.cancel();
 
     _userInitiatedDisconnect = false;
@@ -470,7 +472,7 @@ class BleBloc with ChangeNotifier {
             isReconnectingNotifier.value = true;
 
             try {
-              _startReconnectionProcess(device, context);
+              _startReconnectionProcess(device);
             } catch (e) {
               _isReconnecting = false;
               isReconnectingNotifier.value = false;
@@ -483,14 +485,11 @@ class BleBloc with ChangeNotifier {
     });
 
     _reconnectionListener?.onError((error) {
-      _handleConnectionError(context: context);
+      _handlePermanentConnectionLoss();
     });
   }
 
-  void _startReconnectionProcess(
-    BluetoothDevice device,
-    BuildContext context,
-  ) async {
+  void _startReconnectionProcess(BluetoothDevice device) async {
     if (_isReconnecting) {
       if (_reconnectionAttempts >= _maxReconnectionAttempts) {
         _isReconnecting = false;
@@ -510,7 +509,7 @@ class BleBloc with ChangeNotifier {
       _hasVibrated = true;
     }
 
-    final result = await _reconnectWithRetries(device, context);
+    final result = await _reconnectWithRetries(device);
 
     if (result.success) {
       _isConnected = true;
@@ -522,17 +521,15 @@ class BleBloc with ChangeNotifier {
       isReconnectingNotifier.value = false;
       _isReconnecting = false;
       _isInRetryMode = false;
-
-      notifyListeners();
     }
 
     if (!result.success &&
         _reconnectionAttempts >= _maxReconnectionAttempts) {
-      _handleConnectionError(context: context);
+      _handlePermanentConnectionLoss();
     }
   }
 
-  void _handleConnectionError({required BuildContext context}) {
+  void _handlePermanentConnectionLoss() {
     _clearSelectedDevice();
     connectionErrorNotifier.value = true;
 
@@ -547,8 +544,6 @@ class BleBloc with ChangeNotifier {
     _hasVibrated = false;
     isReconnectingNotifier.value = false;
     isConnectingNotifier.value = false;
-
-    notifyListeners();
   }
 
   void resetConnectionError() {
@@ -558,7 +553,6 @@ class BleBloc with ChangeNotifier {
     _reconnectionListener = null;
 
     _resetReconnectionState();
-    notifyListeners();
   }
 
   void _resetReconnectionState() {
@@ -622,10 +616,8 @@ class BleBloc with ChangeNotifier {
     return parsedValues;
   }
 
-  @override
   void dispose() {
     _adapterStateSubscription?.cancel();
-    _connectToIdScanSubscription?.cancel();
     _cancelScanSubscriptions();
     _reconnectionListener?.cancel();
     _devicesListController.close();
@@ -638,7 +630,6 @@ class BleBloc with ChangeNotifier {
     availableCharacteristics.dispose();
     characteristicStreamsVersion.dispose();
     connectionErrorNotifier.dispose();
-    super.dispose();
   }
 
   Future<void> requestEnableBluetooth() async {

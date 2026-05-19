@@ -131,7 +131,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
 
           final fullId = "senseBox:bike [$id]";
           debugPrint('Connecting to $fullId');
-          await _bleBloc!.connectToId(fullId, context);
+          await _bleBloc!.connectToId(fullId);
           await Future.delayed(const Duration(seconds: 2));
           _recordingBloc!.startRecording();
         }
@@ -192,7 +192,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
         ChangeNotifierProvider.value(value: _settingsBloc!),
         ChangeNotifierProvider.value(value: _trackBloc!),
         ChangeNotifierProvider.value(value: _recordingBloc!),
-        ChangeNotifierProvider.value(value: _bleBloc!),
+        Provider<BleBloc>.value(value: _bleBloc!),
         ChangeNotifierProvider.value(value: _geolocationBloc!),
         ChangeNotifierProvider.value(value: _sensorBloc!),
         ChangeNotifierProvider.value(value: _openSenseMapBloc!),

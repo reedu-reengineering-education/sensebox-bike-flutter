@@ -45,8 +45,6 @@ class MockGeolocationService extends Mock implements GeolocationService {}
 class MockSensorService extends Mock implements SensorService {}
 
 class MockBleBloc extends Mock implements BleBloc {
-  final List<VoidCallback> _listeners = [];
-
   @override
   final ValueNotifier<bool> isBluetoothEnabledNotifier = ValueNotifier(false);
 
@@ -91,8 +89,7 @@ class MockBleBloc extends Mock implements BleBloc {
   }
 
   @override
-  Future<BleConnectionResult> connectToDevice(
-      BluetoothDevice device, BuildContext context) async {
+  Future<BleConnectionResult> connectToDevice(BluetoothDevice device) async {
     return BleConnectionResult.fullSuccess();
   }
 
@@ -117,7 +114,6 @@ class MockBleBloc extends Mock implements BleBloc {
   @override
   void updateBluetoothStatus(bool isEnabled) {
     isBluetoothEnabledNotifier.value = isEnabled;
-    notifyListeners();
   }
 
   @override
@@ -128,24 +124,7 @@ class MockBleBloc extends Mock implements BleBloc {
       Stream.value([]);
 
   @override
-  void addListener(VoidCallback listener) {
-    _listeners.add(listener);
-  }
-
-  @override
-  void removeListener(VoidCallback listener) {
-    _listeners.remove(listener);
-  }
-
-  @override
   void dispose() {}
-
-  @override
-  void notifyListeners() {
-    for (final listener in _listeners) {
-      listener();
-    }
-  }
 
   ValueNotifier<bool> get permanentConnectionLossNotifier =>
       ValueNotifier<bool>(false);

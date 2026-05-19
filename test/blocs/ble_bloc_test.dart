@@ -40,16 +40,10 @@ void main() {
     });
 
     group('Bluetooth Status', () {
-      test('updateBluetoothStatus updates notifier and notifies listeners', () {
-        bool listenerCalled = false;
-        bleBloc.addListener(() {
-          listenerCalled = true;
-        });
-
+      test('updateBluetoothStatus updates notifier', () {
         bleBloc.updateBluetoothStatus(true);
 
         expect(bleBloc.isBluetoothEnabledNotifier.value, isTrue);
-        expect(listenerCalled, isTrue);
       });
     });
 
