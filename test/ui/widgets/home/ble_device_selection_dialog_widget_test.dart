@@ -13,6 +13,7 @@ class FakeBuildContext extends Fake implements BuildContext {}
 
 void main() {
   late MockBleBloc bleBloc;
+  late ValueNotifier<List<BluetoothDevice>> discoveredDevices;
 
   setUpAll(() {
     registerFallbackValue(MockBluetoothDevice());
@@ -22,8 +23,9 @@ void main() {
   });
 
   setUp(() {
+    discoveredDevices = ValueNotifier([]);
     bleBloc = MockBleBloc();
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
+    when(() => bleBloc.discoveredDevicesNotifier).thenReturn(discoveredDevices);
     when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
     when(() => bleBloc.isConnectingNotifier)
         .thenReturn(ValueNotifier(false));
@@ -67,7 +69,6 @@ void main() {
 
   testWidgets('shows loading spinner while scanning', (tester) async {
     when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(true));
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
     
     await tester.pumpWidget(
       createLocalizedTestApp(
@@ -84,7 +85,6 @@ void main() {
 
   testWidgets('shows no devices found message', (tester) async {
     when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
     
     await tester.pumpWidget(
       createLocalizedTestApp(
@@ -96,13 +96,13 @@ void main() {
     );
 
     await tester.pump();
-    expect(find.textContaining('No senseBoxes found'), findsOneWidget); // Adjust to your localization
+    expect(find.textContaining('No senseBoxes found'), findsOneWidget);
   });
 
   testWidgets('shows list of devices and taps to connect', (tester) async {
     final device = MockBluetoothDevice();
     when(() => device.platformName).thenReturn('TestDevice');
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
+    discoveredDevices.value = [device];
     bool connectCalled = false;
     when(() => bleBloc.connectToDevice(device)).thenAnswer((_) async {
       connectCalled = true;
@@ -131,7 +131,7 @@ void main() {
     final device = MockBluetoothDevice();
     when(() => device.platformName).thenReturn('TestDevice');
     when(() => bleBloc.startScanning()).thenAnswer((_) async {});
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
+    discoveredDevices.value = [device];
     when(() => bleBloc.connectToDevice(device)).thenAnswer((_) async {
       return BleConnectionResult.failure(
         reason: BleConnectionFailureReason.connectionTimeout,

@@ -17,6 +17,7 @@ import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/models/ble_connection_phase.dart';
 import 'package:sensebox_bike/models/ble_connection_result.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
@@ -58,8 +59,16 @@ class MockBleBloc extends Mock implements BleBloc {
   final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
 
   @override
+  final ValueNotifier<BleConnectionPhase> connectionPhaseNotifier =
+      ValueNotifier(BleConnectionPhase.idle);
+
+  @override
   final ValueNotifier<BluetoothDevice?> selectedDeviceNotifier =
       ValueNotifier(null);
+
+  @override
+  final ValueNotifier<List<BluetoothDevice>> discoveredDevicesNotifier =
+      ValueNotifier([]);
 
   @override
   final ValueNotifier<List<BluetoothCharacteristic>> availableCharacteristics =
@@ -75,33 +84,19 @@ class MockBleBloc extends Mock implements BleBloc {
   bool get isConnected => false;
 
   @override
-  List<BluetoothDevice> get devicesList => [];
-
-  @override
-  Stream<List<BluetoothDevice>> get devicesListStream => Stream.value([]);
-
-  @override
-  BluetoothDevice? get selectedDevice => selectedDeviceNotifier.value;
-
-  @override
-  set selectedDevice(BluetoothDevice? device) {
-    selectedDeviceNotifier.value = device;
-  }
-
-  @override
   Future<BleConnectionResult> connectToDevice(BluetoothDevice device) async {
     return BleConnectionResult.fullSuccess();
   }
 
   @override
   void disconnectDevice() {
-    selectedDevice = null;
     selectedDeviceNotifier.value = null;
+    connectionPhaseNotifier.value = BleConnectionPhase.idle;
   }
 
   @override
   Future<void> startScanning() async {
-    if (selectedDevice != null) {
+    if (selectedDeviceNotifier.value != null) {
       disconnectDevice();
     }
   }

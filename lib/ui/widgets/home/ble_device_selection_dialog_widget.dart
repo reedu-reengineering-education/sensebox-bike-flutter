@@ -109,37 +109,20 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
             top: spacing * 4, bottom: spacing, left: spacing, right: spacing),
         child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.6,
-            child: StreamBuilder<List<BluetoothDevice>>(
-              stream: widget.bleBloc.devicesListStream,
-              builder: (context, snapshot) {
+            child: ValueListenableBuilder<List<BluetoothDevice>>(
+              valueListenable: widget.bleBloc.discoveredDevicesNotifier,
+              builder: (context, devices, child) {
                 final colorScheme = Theme.of(context).colorScheme;
 
-                if (snapshot.connectionState == ConnectionState.waiting &&
-                    !snapshot.hasData) {
-                  return Center(
-                      child: CircularProgressIndicator(
-                          color: colorScheme.primaryFixedDim));
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text("Stream Error: ${snapshot.error.toString()}"),
-                  );
-                }
-
-                final devices = snapshot.data;
-
-                if (devices == null || devices.isEmpty) {
+                if (devices.isEmpty) {
                   return ValueListenableBuilder<bool>(
                     valueListenable: widget.bleBloc.isScanningNotifier,
                     builder: (context, isScanning, child) {
-                      final colorScheme = Theme.of(context).colorScheme;
                       if (isScanning) {
                         return Center(
                             child: CircularProgressIndicator(
                                 color: colorScheme.primaryFixedDim));
                       } else {
-                        // Not scanning, and no devices found.
                         return EmptyStateMessage(
                           icon: Icons.sensors_off_outlined,
                           message: localizations.noBleDevicesFound,
