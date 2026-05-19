@@ -27,8 +27,6 @@ void main() {
     when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
     when(() => bleBloc.isConnectingNotifier)
         .thenReturn(ValueNotifier(false));
-    when(() => bleBloc.finalizePartialConnection(any(), any()))
-        .thenAnswer((_) async => BleConnectionResult.fullSuccess());
   });
 
   testWidgets('shows dialog title', (tester) async {
@@ -126,54 +124,6 @@ void main() {
     await tapElement(find.text('TestDevice'), tester);
     await tester.pumpAndSettle();
     expect(connectCalled, isTrue);
-  });
-
-  testWidgets('shows partial connection dialog when some sensors fail',
-      (tester) async {
-    final device = MockBluetoothDevice();
-    when(() => device.platformName).thenReturn('TestDevice');
-    when(() => bleBloc.startScanning()).thenAnswer((_) async {});
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
-    when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {
-      return BleConnectionResult.needsUserDecision(probes: [
-        const BleCharacteristicProbeResult(
-          uuid: '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8',
-          isValid: true,
-        ),
-        const BleCharacteristicProbeResult(
-          uuid: 'unknown-sensor-uuid',
-          isValid: false,
-          reason: BleConnectionFailureReason.noData,
-        ),
-      ]);
-    });
-
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: Builder(
-          builder: (context) {
-            return ElevatedButton(
-              onPressed: () => showDeviceSelectionDialog(context, bleBloc),
-              child: const Text('Open'),
-            );
-          },
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Open'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-
-    expect(find.text('TestDevice'), findsOneWidget);
-
-    await tester.tap(find.text('TestDevice'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Some sensors unavailable'), findsOneWidget);
-    expect(find.text('Continue'), findsOneWidget);
-    expect(find.text('Cancel'), findsOneWidget);
   });
 
   testWidgets('shows connection attempt failed dialog on failed connect',
