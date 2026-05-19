@@ -19,6 +19,37 @@ String buildCanonicalSensorKey(String title, String? attribute) {
   return '${title}${attribute == null ? '' : '_${attribute}'}';
 }
 
+/// Parses a canonical sensor key back into title and attribute components.
+({String title, String? attribute}) parseCanonicalSensorKey(String sensorTypeKey) {
+  for (final key in sensorOrder) {
+    if (key == sensorTypeKey) {
+      return _splitKnownSensorOrderKey(key);
+    }
+  }
+
+  return (title: sensorTypeKey, attribute: null);
+}
+
+({String title, String? attribute}) _splitKnownSensorOrderKey(String key) {
+  const knownPrefixes = <({String prefix, String title})>[
+    (prefix: 'surface_classification_', title: 'surface_classification'),
+    (prefix: 'finedust_', title: 'finedust'),
+    (prefix: 'acceleration_', title: 'acceleration'),
+    (prefix: 'gps_', title: 'gps'),
+  ];
+
+  for (final entry in knownPrefixes) {
+    if (key.startsWith(entry.prefix)) {
+      return (
+        title: entry.title,
+        attribute: key.substring(entry.prefix.length),
+      );
+    }
+  }
+
+  return (title: key, attribute: null);
+}
+
 String getCanonicalKeyFromApiTitle(String apiTitle) {
   final titleLower = apiTitle.toLowerCase();
 

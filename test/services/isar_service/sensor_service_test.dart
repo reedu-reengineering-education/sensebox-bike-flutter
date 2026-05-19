@@ -204,5 +204,42 @@ void main() {
         expect(sensors.isEmpty, isTrue);
       });
     });
+
+    group('attachSensorTypeToGeolocations', () {
+      test('attaches only the selected sensor type to each geolocation', () async {
+        final humiditySensor = SensorData()
+          ..title = 'humidity'
+          ..value = 60.0
+          ..attribute = null
+          ..characteristicUuid = 'humidity-uuid'
+          ..geolocationData.value = await isar.geolocationDatas.get(testGeolocationId);
+
+        await isar.writeTxn(() async {
+          await isar.sensorDatas.put(humiditySensor);
+          await humiditySensor.geolocationData.save();
+        });
+
+        final geolocations = await isar.geolocationDatas.where().findAll();
+        for (final geo in geolocations) {
+          geo.sensorData.clear();
+        }
+
+        await sensorService.attachSensorTypeToGeolocations(
+          geolocations,
+          'humidity',
+        );
+
+        expect(geolocations.first.sensorData.length, equals(1));
+        expect(geolocations.first.sensorData.first.title, equals('humidity'));
+
+        await sensorService.attachSensorTypeToGeolocations(
+          geolocations,
+          'temperature',
+        );
+
+        expect(geolocations.first.sensorData.length, equals(1));
+        expect(geolocations.first.sensorData.first.title, equals('temperature'));
+      });
+    });
   });
 }
