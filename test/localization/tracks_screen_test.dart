@@ -67,7 +67,7 @@ void main() {
             ChangeNotifierProvider<TrackBloc>.value(
               value: mockTrackBloc,
             ),
-            ChangeNotifierProvider<RecordingBloc>.value(
+            Provider<RecordingBloc>.value(
               value: mockRecordingBloc,
             ),
             ChangeNotifierProvider<OpenSenseMapBloc>.value(

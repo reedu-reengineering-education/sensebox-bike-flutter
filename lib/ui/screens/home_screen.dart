@@ -18,19 +18,50 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 
+import 'package:sensebox_bike/ui/widgets/home/recording_ui.dart';
+
 // HomeScreen now delegates sections to smaller widgets
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final bool isMapActive;
 
   const HomeScreen({super.key, this.isMapActive = true});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  RecordingBloc? _recordingBloc;
+  bool _recordingUiBound = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_recordingUiBound) {
+      return;
+    }
+
+    _recordingUiBound = true;
+    _recordingBloc = context.read<RecordingBloc>();
+    bindRecordingUiCallbacks(
+      context,
+      context.read<OpenSenseMapBloc>(),
+      _recordingBloc!,
+    );
+  }
+
+  @override
+  void dispose() {
+    _recordingUiBound = false;
+    _recordingBloc?.clearUiCallbacks();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final BleBloc bleBloc = Provider.of<BleBloc>(context);
     final RecordingBloc recordingBloc = context.read<RecordingBloc>();
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
-
-    recordingBloc.setContext(context);
 
     return Scaffold(
       body: Column(
@@ -66,7 +97,7 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         SizedBox(
                           width: double.infinity,
-                          child: GeolocationMapWidget(isActive: isMapActive),
+                          child: GeolocationMapWidget(isActive: widget.isMapActive),
                         ),
                         const Positioned(
                           bottom: 0,

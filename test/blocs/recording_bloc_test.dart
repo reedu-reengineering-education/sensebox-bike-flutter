@@ -1,21 +1,28 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
-import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/blocs/track_bloc.dart';
-import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/models/ble_connection_phase.dart';
+import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/batch_upload_service.dart';
+import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import '../mocks.dart';
+import '../test_helpers.dart';
 
 class MockGeolocator extends Mock
     with MockPlatformInterfaceMixin
     implements geo.GeolocatorPlatform {}
 
+class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    initializeTestDependencies();
+  });
   
   late MockGeolocator mockGeolocator;
   late MockIsarService mockIsarService;
@@ -172,6 +179,96 @@ void main() {
 
       // Assert
       expect(recordingBloc.isRecording, isFalse);
+    });
+  });
+
+  group('RecordingBloc UI callbacks', () {
+    test('invokes onRecordingStoppedDueToBle when stopping due to disconnect',
+        () async {
+      var called = false;
+      recordingBloc.setUiCallbacks(
+        onRecordingStoppedDueToBle: () async {
+          called = true;
+        },
+      );
+      recordingBloc.isRecordingNotifier.value = true;
+
+      await recordingBloc.stopRecording(dueToBleDisconnect: true);
+
+      expect(called, isTrue);
+      expect(recordingBloc.isRecording, isFalse);
+    });
+
+    test('clearUiCallbacks prevents onRecordingStoppedDueToBle', () async {
+      var called = false;
+      recordingBloc.setUiCallbacks(
+        onRecordingStoppedDueToBle: () async {
+          called = true;
+        },
+      );
+      recordingBloc.clearUiCallbacks();
+      recordingBloc.isRecordingNotifier.value = true;
+
+      await recordingBloc.stopRecording(dueToBleDisconnect: true);
+
+      expect(called, isFalse);
+    });
+
+    test('ble connection error stops recording and invokes disconnect callback',
+        () async {
+      var called = false;
+      recordingBloc.setUiCallbacks(
+        onRecordingStoppedDueToBle: () async {
+          called = true;
+        },
+      );
+      recordingBloc.isRecordingNotifier.value = true;
+
+      mockBleBloc.connectionErrorNotifier.value = true;
+
+      expect(recordingBloc.isRecording, isFalse);
+      expect(called, isTrue);
+    });
+
+    test('invokes onBatchUploadPrompt after batch-mode recording stops',
+        () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+      final mockOpenSenseMapService = MockOpenSenseMapService();
+      when(() => mockOpenSenseMapBloc.openSenseMapService)
+          .thenReturn(mockOpenSenseMapService);
+      when(() => mockGeolocator.isLocationServiceEnabled())
+          .thenAnswer((_) async => true);
+      when(() => mockGeolocator.checkPermission())
+          .thenAnswer((_) async => geo.LocationPermission.whileInUse);
+      when(() => mockBleBloc.isReadyForRecording).thenReturn(true);
+      when(() => mockTrackBloc.startNewTrack(
+            isDirectUpload: any(named: 'isDirectUpload'),
+          )).thenAnswer((_) async => 1);
+      final track = TrackData()..id = 1;
+      when(() => mockTrackBloc.currentTrack).thenReturn(track);
+
+      var promptCalled = false;
+      recordingBloc.setUiCallbacks(
+        onBatchUploadPrompt: ({
+          required track,
+          required senseBox,
+          required batchUploadService,
+          required onFinished,
+        }) async {
+          promptCalled = true;
+          batchUploadService.dispose();
+          onFinished();
+        },
+      );
+
+      await recordingBloc.startRecording();
+      expect(recordingBloc.isRecording, isTrue);
+
+      await recordingBloc.stopRecording();
+
+      expect(promptCalled, isTrue);
     });
   });
 }

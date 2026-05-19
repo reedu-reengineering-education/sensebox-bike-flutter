@@ -102,7 +102,7 @@ void main() {
             providers: [
               ChangeNotifierProvider<OpenSenseMapBloc>.value(
                   value: mockOpenSenseMapBloc),
-              ChangeNotifierProvider<GeolocationBloc>.value(
+              Provider<GeolocationBloc>.value(
                   value: mockGeolocationBloc),
                 ChangeNotifierProvider<ConfigurationBloc>.value(
                   value: mockConfigurationBloc),
@@ -352,7 +352,7 @@ void main() {
             providers: [
               ChangeNotifierProvider<OpenSenseMapBloc>.value(
                   value: mockOpenSenseMapBloc),
-              ChangeNotifierProvider<GeolocationBloc>.value(
+              Provider<GeolocationBloc>.value(
                   value: mockGeolocationBloc),
                 ChangeNotifierProvider<ConfigurationBloc>.value(
                   value: mockConfigurationBloc),

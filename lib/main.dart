@@ -80,8 +80,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
         _openSenseMapBloc!, _settingsBloc!);
     _geolocationBloc =
         GeolocationBloc(_isarService!, _recordingBloc!, _settingsBloc!);
-    _sensorBloc = SensorBloc(
-        _bleBloc!, _geolocationBloc!, _recordingBloc!, _settingsBloc!);
+    _sensorBloc = SensorBloc(_bleBloc!, _geolocationBloc!, _recordingBloc!);
     _mapboxDrawController = MapboxDrawController();
 
     // Preload box configurations and campaigns
@@ -191,10 +190,10 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
       providers: [
         ChangeNotifierProvider.value(value: _settingsBloc!),
         ChangeNotifierProvider.value(value: _trackBloc!),
-        ChangeNotifierProvider.value(value: _recordingBloc!),
+        Provider<RecordingBloc>.value(value: _recordingBloc!),
         Provider<BleBloc>.value(value: _bleBloc!),
-        ChangeNotifierProvider.value(value: _geolocationBloc!),
-        ChangeNotifierProvider.value(value: _sensorBloc!),
+        Provider<GeolocationBloc>.value(value: _geolocationBloc!),
+        Provider<SensorBloc>.value(value: _sensorBloc!),
         ChangeNotifierProvider.value(value: _openSenseMapBloc!),
         ChangeNotifierProvider.value(value: _configurationBloc!),
         ChangeNotifierProvider.value(value: _mapboxDrawController!),
