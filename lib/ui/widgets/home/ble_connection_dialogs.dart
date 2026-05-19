@@ -4,7 +4,6 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/ble_connection_result.dart';
 import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
-import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 String bleConnectionFailureMessage(
   AppLocalizations localizations,
@@ -28,26 +27,6 @@ String bleConnectionFailureMessage(
   }
 }
 
-Future<bool> showBlePartialConnectionDialog(
-  BuildContext context,
-  BleConnectionResult result,
-) {
-  final localizations = AppLocalizations.of(context)!;
-  final failedNames = result.failedUuids
-      .map(getSensorDisplayNameByUuid)
-      .toSet()
-      .join(', ');
-
-  return showAppDialog(
-    context: context,
-    title: localizations.blePartialConnectionTitle,
-    message: localizations.blePartialConnectionBody(failedNames),
-    type: AppDialogType.confirmation,
-    cancelLabel: localizations.blePartialConnectionCancel,
-    confirmLabel: localizations.blePartialConnectionContinue,
-  ).then((value) => value ?? false);
-}
-
 Future<void> handleBleConnectionResult({
   required BuildContext context,
   required BleBloc bleBloc,
@@ -55,20 +34,6 @@ Future<void> handleBleConnectionResult({
   required BleConnectionResult result,
 }) async {
   if (result.success) {
-    return;
-  }
-
-  if (result.needsUserDecision) {
-    if (!context.mounted) return;
-
-    final shouldContinue = await showBlePartialConnectionDialog(context, result);
-    if (!context.mounted) return;
-
-    if (shouldContinue) {
-      await bleBloc.finalizePartialConnection(device, context);
-    } else {
-      bleBloc.disconnectDevice();
-    }
     return;
   }
 

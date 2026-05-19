@@ -74,9 +74,6 @@ class MockBleBloc extends Mock implements BleBloc {
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
 
   @override
-  List<String> failedCharacteristicUuids = [];
-
-  @override
   bool get isConnected => false;
 
   @override
@@ -95,12 +92,6 @@ class MockBleBloc extends Mock implements BleBloc {
 
   @override
   Future<BleConnectionResult> connectToDevice(
-      BluetoothDevice device, BuildContext context) async {
-    return BleConnectionResult.fullSuccess();
-  }
-
-  @override
-  Future<BleConnectionResult> finalizePartialConnection(
       BluetoothDevice device, BuildContext context) async {
     return BleConnectionResult.fullSuccess();
   }
