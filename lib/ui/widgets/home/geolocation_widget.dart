@@ -15,7 +15,9 @@ import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 
 class GeolocationMapWidget extends StatefulWidget {
-  const GeolocationMapWidget({super.key});
+  final bool isActive;
+
+  const GeolocationMapWidget({super.key, this.isActive = true});
 
   @override
   State<GeolocationMapWidget> createState() => _GeolocationMapWidgetState();
@@ -197,6 +199,12 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.isActive) {
+      return const SizedBox.expand(
+        child: ColoredBox(color: Colors.transparent),
+      );
+    }
+
     final margins = _getMapMargins();
 
     return ReusableMapWidget(

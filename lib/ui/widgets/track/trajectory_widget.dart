@@ -6,7 +6,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
-import '../../../secrets.dart'; 
+import '../../../secrets.dart';
 
 class TrajectoryWidget extends StatefulWidget {
   final List<GeolocationData> geolocationData;
@@ -23,9 +23,12 @@ class TrajectoryWidget extends StatefulWidget {
 }
 
 class _TrajectoryWidgetState extends State<TrajectoryWidget> {
-  late MapboxMap mapInstance;
+  MapboxMap? _mapInstance;
+  bool _mapReady = false;
+  bool _disposed = false;
   double? minSensorValue;
   double? maxSensorValue;
+  late List<GeolocationData> _mapGeolocations;
 
   static const String lineSourceId = "lineSource";
   static const String lineLayerBGId = "line_layer_bg";
@@ -35,9 +38,8 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   @override
   void initState() {
     super.initState();
-    // Set the access token for Mapbox
     MapboxOptions.setAccessToken(mapboxAccessToken);
-
+    _mapGeolocations = downsampleGeolocationsForMapDisplay(widget.geolocationData);
     _updateSensorRange();
   }
 
@@ -46,16 +48,33 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.sensorType != widget.sensorType ||
         oldWidget.geolocationData != widget.geolocationData) {
+      _mapGeolocations =
+          downsampleGeolocationsForMapDisplay(widget.geolocationData);
       _updateSensorRange();
       addLayer();
     }
   }
 
+  @override
+  void dispose() {
+    _disposed = true;
+    _cleanupMap();
+    super.dispose();
+  }
+
+  bool get _canUseMap => mounted && !_disposed && _mapReady && _mapInstance != null;
+
   void _updateSensorRange() {
-    minSensorValue =
-        getMinSensorValue(widget.geolocationData, widget.sensorType);
-    maxSensorValue =
-        getMaxSensorValue(widget.geolocationData, widget.sensorType);
+    minSensorValue = getMinSensorValue(_mapGeolocations, widget.sensorType);
+    maxSensorValue = getMaxSensorValue(_mapGeolocations, widget.sensorType);
+  }
+
+  Future<void> _cleanupMap() async {
+    final map = _mapInstance;
+    if (map == null) return;
+    await _removeLayersAndSources(map);
+    _mapReady = false;
+    _mapInstance = null;
   }
 
   Future<void> _removeLayersAndSources(MapboxMap map) async {
@@ -83,6 +102,8 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   }
 
   Future<void> _addBackgroundLineLayer() async {
+    if (!_canUseMap) return;
+
     final features = _buildFeatures();
     final lineSource = GeoJsonSource(
       id: lineSourceId,
@@ -90,8 +111,9 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     );
 
     try {
-      await mapInstance.style.addSource(lineSource);
-      await mapInstance.style.addLayer(LineLayer(
+      await _mapInstance!.style.addSource(lineSource);
+      if (!_canUseMap) return;
+      await _mapInstance!.style.addLayer(LineLayer(
         id: lineLayerBGId,
         sourceId: lineSourceId,
         lineColor: Theme.of(context).brightness == Brightness.dark
@@ -107,22 +129,19 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   }
 
   List<Object> get _sensorColorStops {
-    // Special handling for distance sensor - if value is 0.0, color should be grey
     if (widget.sensorType == 'distance') {
       if (minSensorValue == 0.0) {
-        // Range includes 0 - 0 is grey, >0 follows red->orange->green
         return [
           0.0,
           'grey',
-          maxSensorValue! * 0.33, // 1/3 of max = red
+          maxSensorValue! * 0.33,
           'red',
-          maxSensorValue! * 0.66, // 2/3 of max = orange
+          maxSensorValue! * 0.66,
           'orange',
           maxSensorValue!,
           'green'
         ];
       } else {
-        // Range doesn't include 0 - normal red->orange->green gradient
         return [
           minSensorValue!,
           'red',
@@ -134,7 +153,6 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
       }
     }
 
-    // Default behavior for other sensors
     return [
       minSensorValue!,
       'green',
@@ -166,25 +184,26 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     ];
   }
 
-
   Future<void> _addLineLayer() async {
+    if (!_canUseMap) return;
+
     try {
       final features = _buildFeatures();
       final source = GeoJsonSource(
         id: sensorSourceId,
         data: jsonEncode({"type": "FeatureCollection", "features": features}),
       );
-      await mapInstance.style.addSource(source);
+      await _mapInstance!.style.addSource(source);
+      if (!_canUseMap) return;
 
       if (minSensorValue == maxSensorValue) {
-        // For overtaking distnance sensor values, don't set grey for 0 value
         final allowGray = !(widget.sensorType == 'distance');
         final color = sensorColorForValue(
             value: minSensorValue!,
             min: minSensorValue!,
             max: maxSensorValue!,
             allowGray: allowGray);
-        await mapInstance.style.addLayer(LineLayer(
+        await _mapInstance!.style.addLayer(LineLayer(
           id: sensorLayerId,
           sourceId: sensorSourceId,
           lineColor: color.value,
@@ -193,8 +212,7 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
           lineEmissiveStrength: 1,
         ));
       } else {
-        // Multiple values: use color expression
-        await mapInstance.style.addLayer(LineLayer(
+        await _mapInstance!.style.addLayer(LineLayer(
           id: sensorLayerId,
           sourceId: sensorSourceId,
           lineColorExpression: _sensorColorExpression().cast<Object>(),
@@ -209,14 +227,13 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   }
 
   List<Map<String, dynamic>> _buildFeatures() {
-    if (widget.geolocationData.isEmpty) return [];
-    // Check if all points are the same
-    final first = widget.geolocationData.first;
-    final allSame = widget.geolocationData.every(
+    if (_mapGeolocations.isEmpty) return [];
+    final first = _mapGeolocations.first;
+    final allSame = _mapGeolocations.every(
         (g) => g.latitude == first.latitude && g.longitude == first.longitude);
 
     if (allSame) {
-      const offset = 0.000005; // Add a tiny offset to the second point
+      const offset = 0.000005;
 
       return [
         {
@@ -238,10 +255,9 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
       ];
     }
 
-    // Default: build features as usual
-    return List.generate(widget.geolocationData.length - 1, (index) {
-      final current = widget.geolocationData[index];
-      final next = widget.geolocationData[index + 1];
+    return List.generate(_mapGeolocations.length - 1, (index) {
+      final current = _mapGeolocations[index];
+      final next = _mapGeolocations[index + 1];
       return {
         "type": "Feature",
         "properties": {
@@ -262,23 +278,27 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   }
 
   Future<void> _fitCameraToTrajectory() async {
+    if (!_canUseMap) return;
+
     try {
-      final bounds = await mapInstance.cameraForCoordinateBounds(
-        calculateBounds(widget.geolocationData),
+      final bounds = await _mapInstance!.cameraForCoordinateBounds(
+        calculateBounds(_mapGeolocations),
         MbxEdgeInsets(top: 16, left: 32, right: 32, bottom: 16),
         0,
         0,
         null,
         null,
       );
-      await mapInstance.flyTo(bounds, MapAnimationOptions(duration: 1000));
+      if (!_canUseMap) return;
+      await _mapInstance!.flyTo(bounds, MapAnimationOptions(duration: 1000));
     } catch (e) {
       debugPrint("Error fitting camera to bounds: $e");
     }
   }
 
   Future<void> addLayer() async {
-    // If sensor values are not available, return early
+    if (!_canUseMap) return;
+
     if (minSensorValue == double.infinity ||
         maxSensorValue == double.negativeInfinity) {
       debugPrint(
@@ -286,9 +306,13 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
       );
       return;
     }
-    await _removeLayersAndSources(mapInstance);
+
+    await _removeLayersAndSources(_mapInstance!);
+    if (!_canUseMap) return;
     await _addBackgroundLineLayer();
+    if (!_canUseMap) return;
     await _addLineLayer();
+    if (!_canUseMap) return;
     await _fitCameraToTrajectory();
   }
 
@@ -298,14 +322,17 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
       logoMargins: const EdgeInsets.all(4),
       attributionMargins: const EdgeInsets.all(4),
       onMapCreated: (mapInstance) async {
-        this.mapInstance = mapInstance;
+        if (_disposed) return;
+
+        _mapInstance = mapInstance;
+        _mapReady = true;
         await mapInstance.scaleBar
             .updateSettings(ScaleBarSettings(enabled: false));
         await mapInstance.location.updateSettings(LocationComponentSettings(
           enabled: true,
           showAccuracyRing: true,
         ));
-        addLayer(); 
+        await addLayer();
       },
     );
   }
