@@ -515,6 +515,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie bitte die Standortdienste und erlauben Sie der App in den Telefoneinstellungen den Zugriff auf Ihren Standort.';
 
   @override
+  String get errorNoBackgroundLocationAccess =>
+      'Um Fahrten bei gesperrtem Bildschirm aufzuzeichnen, setzen Sie die Standortberechtigung für diese App in den Telefoneinstellungen auf \"Immer\".';
+
+  @override
   String get errorNoScanAccess =>
       'Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.';
 

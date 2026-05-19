@@ -203,6 +203,7 @@
     "loginScreenTitle": "openSenseMap Account",
     "connectionButtonEnableBluetooth": "Enable Bluetooth",
     "errorNoLocationAccess": "Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.",
+    "errorNoBackgroundLocationAccess": "To record rides while the screen is locked, set location permission to \"Always\" for this app in the phone settings.",
     "errorNoScanAccess": "To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.",
     "errorNoNotificationAccess": "To record your ride, please allow notifications for this app. Android needs this to keep GPS running in the background during recording.",
     "errorBleNotReadyForRecording": "The senseBox connection is not stable enough to start recording. Please wait until the connection is fully established and try again.",

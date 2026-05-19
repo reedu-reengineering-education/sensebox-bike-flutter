@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
-import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_indicator.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_info_widget.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 
 class UploadProgressModal extends StatefulWidget {
   final BatchUploadService batchUploadService;
@@ -138,14 +138,15 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
 
   Widget _buildConfirmationDialog(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    
-    return AlertDialog(
-      title: Text(AppLocalizations.of(context)!.uploadProgressTitle),
+
+    return AppDialog(
+      type: AppDialogType.info,
+      title: localizations.uploadProgressTitle,
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(localizations.uploadConfirmMessage),
+          AppDialog.messageContent(context, localizations.uploadConfirmMessage),
           const SizedBox(height: 16),
           const UploadInfoWidget(),
         ],
@@ -164,17 +165,12 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
   }
 
   Widget _buildProgressDialog(BuildContext context, UploadProgress progress) {
-    return AlertDialog(
-      title: Text(AppLocalizations.of(context)!.uploadProgressTitle),
-      contentPadding: EdgeInsets.zero,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          UploadProgressIndicator(
-            progress: progress,
-            compact: false,
-          ),
-        ],
+    return AppDialog(
+      type: AppDialogType.info,
+      title: AppLocalizations.of(context)!.uploadProgressTitle,
+      content: UploadProgressIndicator(
+        progress: progress,
+        compact: false,
       ),
       actions: _buildActions(context, progress),
     );
@@ -235,9 +231,6 @@ class UploadProgressOverlay {
 
     if (!canUpload) {
       final localizations = AppLocalizations.of(context)!;
-      final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
-        color: Theme.of(context).colorScheme.primary,
-      );
       String message;
       if (!isAuthenticated) {
         message = localizations.uploadBlockNotAuthenticated;
@@ -246,34 +239,16 @@ class UploadProgressOverlay {
       } else {
         message = localizations.uploadPostRideRequirementsMessage;
       }
-      showDialog(
+      showAppDialog(
         context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.info_outline,
-                  color: Theme.of(context).colorScheme.info, size: 28),
-              const SizedBox(width: 8),
-              Expanded(child: Text(localizations.uploadRequirementsTitle, style: titleStyle)),
-            ],
-          ),
-          content: Text(
-            message,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                UploadProgressOverlay.hide();
-                onDismiss?.call();
-              },
-              child: Text(localizations.generalOk),
-            ),
-          ],
-        ),
-      );
+        title: localizations.uploadRequirementsTitle,
+        message: message,
+        type: AppDialogType.info,
+        confirmLabel: localizations.generalOk,
+      ).then((_) {
+        UploadProgressOverlay.hide();
+        onDismiss?.call();
+      });
       return;
     }
     showDialog(

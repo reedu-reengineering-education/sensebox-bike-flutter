@@ -25,6 +25,7 @@ class ErrorService {
 
     if (!kDebugMode) {
       if (error is LocationPermissionDenied ||
+          error is LocationPermissionAlwaysRequired ||
           error is LoginError ||
           error is RegistrationError ||
           error is ScanPermissionDenied ||
@@ -112,6 +113,9 @@ class ErrorService {
     if (error is LocationPermissionDenied) {
       return localizations?.errorNoLocationAccess ??
           'Location services are disabled or access is denied. Please enable location services and allow the app to access your location in the phone settings.';
+    } else if (error is LocationPermissionAlwaysRequired) {
+      return localizations?.errorNoBackgroundLocationAccess ??
+          'Background location access is required to record rides while the screen is locked. Please set location permission to "Always" for this app in the phone settings.';
     } else if (error is ScanPermissionDenied) {
       return localizations?.errorNoScanAccess ??
           'Please allow the app to scan nearby devices in the phone settings.';

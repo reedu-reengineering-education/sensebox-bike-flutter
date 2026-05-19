@@ -7,6 +7,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 
 const double kMapPreviewWidth = 140;
 const double kMapPreviewHeight = 140;
@@ -86,29 +87,14 @@ class TrackListItem extends StatelessWidget {
 
   Future<bool?> _confirmDismiss(
       BuildContext context, AppLocalizations localizations, ThemeData theme) {
-    return showDialog<bool>(
+    return showAppDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(localizations.trackDelete),
-          content: Text(localizations.trackDeleteConfirmation),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(localizations.generalCancel),
-            ),
-            FilledButton(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(
-                  theme.colorScheme.error,
-                ),
-              ),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(localizations.generalDelete),
-            ),
-          ],
-        );
-      },
+      title: localizations.trackDelete,
+      message: localizations.trackDeleteConfirmation,
+      type: AppDialogType.destructiveConfirmation,
+      cancelLabel: localizations.generalCancel,
+      confirmLabel: localizations.generalDelete,
+      confirmIsDestructive: true,
     );
   }
 

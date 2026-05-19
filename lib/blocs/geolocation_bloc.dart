@@ -65,13 +65,15 @@ class GeolocationBloc with ChangeNotifier {
                 color: Colors.blue));
       } else if (defaultTargetPlatform == TargetPlatform.iOS ||
           defaultTargetPlatform == TargetPlatform.macOS) {
+        final allowBackground =
+            await PermissionService.allowsBackgroundLocation();
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.bestForNavigation,
           distanceFilter: 0,
           activityType: ActivityType.fitness,
           pauseLocationUpdatesAutomatically: false,
-          showBackgroundLocationIndicator: true,
-          allowBackgroundLocationUpdates: true,
+          showBackgroundLocationIndicator: allowBackground,
+          allowBackgroundLocationUpdates: allowBackground,
         );
       } else {
         locationSettings = const LocationSettings(

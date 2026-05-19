@@ -513,6 +513,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Os serviços de localização estão desativados ou o acesso é negado. Para gravar faixas, ative os serviços de localização e permita que a aplicação aceda à sua localização nas definições do telefone.';
 
   @override
+  String get errorNoBackgroundLocationAccess =>
+      'Para gravar percursos com o ecrã bloqueado, defina a permissão de localização como \"Sempre\" para esta aplicação nas definições do telefone.';
+
+  @override
   String get errorNoScanAccess =>
       'Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.';
 
