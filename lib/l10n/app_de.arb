@@ -220,6 +220,8 @@
     "errorBleNoSensorData": "Keine Sensordaten empfangen. Ist die senseBox eingeschaltet und läuft die richtige Firmware?",
     "errorBleInvalidSensorData": "Sensordaten sind ungültig (nur Nullen). Bitte starten Sie die senseBox neu.",
     "errorBleIncompatibleDevice": "Dieses Gerät scheint keine kompatible senseBox zu sein.",
+    "errorBleConnectionTimeout": "Die Verbindung zur senseBox hat zu lange gedauert. Gehen Sie näher an das Gerät, stellen Sie sicher, dass es eingeschaltet ist, warten Sie einige Sekunden und versuchen Sie es erneut.",
+    "errorBleConnectionLost": "Die Bluetooth-Verbindung wurde während der Einrichtung unterbrochen. Das Gerät ist möglicherweise außer Reichweite oder beschäftigt. Bitte erneut versuchen.",
     "blePartialConnectionTitle": "Einige Sensoren nicht verfügbar",
     "blePartialConnectionBody": "Folgende Sensoren haben keine gültigen Daten gesendet: {sensorNames}. Sie können mit den verbleibenden Sensoren verbinden oder abbrechen.",
     "@blePartialConnectionBody": {

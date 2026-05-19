@@ -1,8 +1,12 @@
+import 'dart:typed_data';
+
 enum BleConnectionFailureReason {
   noService,
   noCharacteristics,
   noData,
   invalidData,
+  connectionTimeout,
+  connectionLost,
   bluetoothError,
 }
 
@@ -88,4 +92,24 @@ class BleConnectionResult {
     }
     return BleConnectionFailureReason.invalidData;
   }
+
+  static BleConnectionFailureReason fromException(Object error) {
+    final message = error.toString().toLowerCase();
+    if (message.contains('timeout')) {
+      return BleConnectionFailureReason.connectionTimeout;
+    }
+    if (message.contains('disconnected') ||
+        (message.contains('connection') && message.contains('lost'))) {
+      return BleConnectionFailureReason.connectionLost;
+    }
+    return BleConnectionFailureReason.bluetoothError;
+  }
+}
+
+/// Returns true when a BLE notify/read payload looks like real sensor data.
+bool isValidBleCharacteristicPayload(Uint8List data) {
+  if (data.isEmpty || data.length < 4) {
+    return false;
+  }
+  return !data.every((byte) => byte == 0);
 }

@@ -10,12 +10,12 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/models/ble_connection_result.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:vibration/vibration.dart';
 
-const reconnectionDelay = Duration(seconds: 1);
 const deviceConnectTimeout = Duration(seconds: 10);
 const configurableReconnectionDelay = Duration(seconds: 1);
-const dataListeningTimeout = Duration(seconds: 4); 
+const dataListeningProbeTimeout = Duration(seconds: 3); 
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
@@ -45,11 +45,11 @@ class BleBloc with ChangeNotifier {
   bool _isInRetryMode = false;
   int _reconnectionAttempts = 0;
   bool _hasVibrated = false;
+  static const int _maxInitialConnectionAttempts = 1;
   static const int _maxReconnectionAttempts = 10;
   
   StreamSubscription<BluetoothConnectionState>? _reconnectionListener;
 
-  BluetoothDevice? _pendingConnectionDevice;
   BluetoothService? _pendingSenseBoxService;
   List<String> _pendingValidUuids = [];
 
@@ -82,6 +82,10 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> startScanning() async {
+    if (_hasDeviceConnection()) {
+      disconnectDevice();
+    }
+
     isScanningNotifier.value = true;
 
     try {
@@ -91,17 +95,7 @@ class BleBloc with ChangeNotifier {
       throw ScanPermissionDenied();
     }
 
-    FlutterBluePlus.scanResults.listen((results) {
-      devicesList.clear();
-      for (ScanResult result in results) {
-        if (result.device.platformName.startsWith("senseBox")) {
-          devicesList.add(result.device);
-        }
-      }
-      _devicesListController.add(devicesList);
-      notifyListeners();
-    });
-
+    FlutterBluePlus.scanResults.listen(_onScanResults);
     FlutterBluePlus.isScanning.listen((scanning) {
       isScanningNotifier.value = scanning;
     });
@@ -112,42 +106,27 @@ class BleBloc with ChangeNotifier {
     isScanningNotifier.value = false;
   }
 
-  Future<void> scanForNewDevices() async {
-    // Clear all existing state before scanning
-    disconnectDevice();
-    
+  bool _hasDeviceConnection() {
+    return selectedDevice != null ||
+        _isConnected ||
+        _pendingSenseBoxService != null;
+  }
 
-    
-    isScanningNotifier.value = true;
-
-    try {
-      await FlutterBluePlus.startScan(timeout: deviceConnectTimeout);
-    } catch (e) {
-      isScanningNotifier.value = false;
-      throw ScanPermissionDenied();
-    }
-
-    FlutterBluePlus.scanResults.listen((results) {
-      devicesList.clear();
-      for (ScanResult result in results) {
-        if (result.device.platformName.startsWith("senseBox")) {
-          devicesList.add(result.device);
-        }
+  void _onScanResults(List<ScanResult> results) {
+    devicesList.clear();
+    for (final result in results) {
+      if (result.device.platformName.startsWith('senseBox')) {
+        devicesList.add(result.device);
       }
-      _devicesListController.add(devicesList);
-      notifyListeners();
-    });
-
-    FlutterBluePlus.isScanning.listen((scanning) {
-      isScanningNotifier.value = scanning;
-    });
+    }
+    _devicesListController.add(devicesList);
+    notifyListeners();
   }
 
   void disconnectDevice() {
     _userInitiatedDisconnect = true;
     _isInRetryMode = false;
     selectedDevice?.disconnect();
-    _pendingConnectionDevice?.disconnect();
     _isConnected = false;
     selectedDevice = null;
     selectedDeviceNotifier.value = null;
@@ -190,18 +169,28 @@ class BleBloc with ChangeNotifier {
         await stopScanning();
       }
 
-      await device.connect();
+      try {
+        await device.connect(timeout: deviceConnectTimeout);
+      } catch (e) {
+        await _disconnectDeviceSafe(device);
+        selectedDevice = null;
+        selectedDeviceNotifier.value = null;
+        _isConnected = false;
+        return BleConnectionResult.failure(
+          reason: BleConnectionResult.fromException(e),
+        );
+      }
 
       final result = await _attemptConnectionWithRetries(
         device,
         context: context,
+        maxAttempts: _maxInitialConnectionAttempts,
         autoAcceptPartial: false,
       );
 
       if (result.success) {
         _completeConnection(device, context);
       } else if (result.needsUserDecision) {
-        _pendingConnectionDevice = device;
         _isConnected = false;
         selectedDevice = null;
         selectedDeviceNotifier.value = null;
@@ -222,7 +211,7 @@ class BleBloc with ChangeNotifier {
       _isConnected = false;
 
       return BleConnectionResult.failure(
-        reason: BleConnectionFailureReason.bluetoothError,
+        reason: BleConnectionResult.fromException(e),
       );
     } finally {
       isConnectingNotifier.value = false;
@@ -242,14 +231,14 @@ class BleBloc with ChangeNotifier {
     }
 
     try {
-      final validUuids = _pendingValidUuids.map((u) => u.toLowerCase()).toSet();
+      final validUuids = _pendingValidUuids.toSet();
       final characteristics = _pendingSenseBoxService!.characteristics
-          .where((c) => validUuids.contains(c.uuid.toString().toLowerCase()))
+          .where((c) => validUuids.contains(_characteristicUuid(c)))
           .toList();
 
       failedCharacteristicUuids = _pendingSenseBoxService!.characteristics
-          .map((c) => c.uuid.toString())
-          .where((uuid) => !validUuids.contains(uuid.toLowerCase()))
+          .map(_characteristicUuid)
+          .where((uuid) => !validUuids.contains(uuid))
           .toList();
 
       await _applyConnection(device, characteristics);
@@ -281,7 +270,7 @@ class BleBloc with ChangeNotifier {
     required int maxAttempts,
     required bool isReconnection,
     required bool autoAcceptPartial,
-    required Future<void> Function(BluetoothDevice) prepareForRetry,
+    required Future<bool> Function(BluetoothDevice) prepareForRetry,
     required void Function(
             {required BuildContext context, bool isInitialConnection})
         handleError,
@@ -308,7 +297,7 @@ class BleBloc with ChangeNotifier {
           );
         } catch (e) {
           result = BleConnectionResult.failure(
-            reason: BleConnectionFailureReason.bluetoothError,
+            reason: BleConnectionResult.fromException(e),
           );
         }
 
@@ -325,21 +314,23 @@ class BleBloc with ChangeNotifier {
         }
 
         if (attempt < maxAttempts - 1) {
-          try {
-            await prepareForRetry(device);
-          } catch (e) {
-            // Continue with next attempt anyway
+          final reconnected = await _tryPrepareForRetry(prepareForRetry, device);
+          if (!reconnected) {
+            lastResult = BleConnectionResult.failure(
+              reason: BleConnectionFailureReason.connectionTimeout,
+            );
           }
         }
       } catch (e) {
         lastResult = BleConnectionResult.failure(
-          reason: BleConnectionFailureReason.bluetoothError,
+          reason: BleConnectionResult.fromException(e),
         );
         if (attempt < maxAttempts - 1) {
-          try {
-            await prepareForRetry(device);
-          } catch (e) {
-            // Continue with next attempt anyway
+          final reconnected = await _tryPrepareForRetry(prepareForRetry, device);
+          if (!reconnected) {
+            lastResult = BleConnectionResult.failure(
+              reason: BleConnectionFailureReason.connectionTimeout,
+            );
           }
         }
       }
@@ -373,12 +364,29 @@ class BleBloc with ChangeNotifier {
     );
   }
 
+  Future<bool> _tryPrepareForRetry(
+    Future<bool> Function(BluetoothDevice) prepareForRetry,
+    BluetoothDevice device,
+  ) async {
+    try {
+      return await prepareForRetry(device);
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<BleConnectionResult> _attemptSingleConnection(
     BluetoothDevice device, {
     bool updateConnectionState = true,
     bool autoAcceptPartial = false,
   }) async {
     try {
+      if (!device.isConnected) {
+        return BleConnectionResult.failure(
+          reason: BleConnectionFailureReason.connectionTimeout,
+        );
+      }
+
       _clearCharacteristicStreams();
 
       final services = await device.discoverServices();
@@ -388,10 +396,8 @@ class BleBloc with ChangeNotifier {
         );
       }
 
-      BluetoothService senseBoxService;
-      try {
-        senseBoxService = _findSenseBoxService(services);
-      } catch (e) {
+      final senseBoxService = _findSenseBoxService(services);
+      if (senseBoxService == null) {
         return BleConnectionResult.failure(
           reason: BleConnectionFailureReason.noService,
         );
@@ -408,49 +414,40 @@ class BleBloc with ChangeNotifier {
       final invalidProbes = probes.where((p) => !p.isValid).toList();
 
       if (validProbes.isEmpty) {
+        if (!device.isConnected) {
+          return BleConnectionResult.failure(
+            reason: BleConnectionFailureReason.connectionLost,
+            probes: probes,
+          );
+        }
         return BleConnectionResult.failure(
           reason: BleConnectionResult.aggregateFailureReason(probes),
           probes: probes,
         );
       }
 
-      final validUuids =
-          validProbes.map((p) => p.uuid.toLowerCase()).toSet();
+      final validUuids = validProbes.map((p) => p.uuid).toSet();
       final validCharacteristics = senseBoxService.characteristics
-          .where((c) => validUuids.contains(c.uuid.toString().toLowerCase()))
+          .where((c) => validUuids.contains(_characteristicUuid(c)))
           .toList();
 
-      if (invalidProbes.isEmpty) {
-        failedCharacteristicUuids = [];
-        await _applyConnection(device, validCharacteristics);
-        if (updateConnectionState) {
-          _isConnected = true;
-          _userInitiatedDisconnect = false;
-          notifyListeners();
-        }
-        return BleConnectionResult.fullSuccess(probes: probes);
-      }
-
-      if (autoAcceptPartial) {
+      if (invalidProbes.isEmpty || autoAcceptPartial) {
         failedCharacteristicUuids =
             invalidProbes.map((p) => p.uuid).toList();
         await _applyConnection(device, validCharacteristics);
         if (updateConnectionState) {
-          _isConnected = true;
-          _userInitiatedDisconnect = false;
-          notifyListeners();
+          _markConnected();
         }
         return BleConnectionResult.fullSuccess(probes: probes);
       }
 
-      _pendingConnectionDevice = device;
       _pendingSenseBoxService = senseBoxService;
       _pendingValidUuids = validProbes.map((p) => p.uuid).toList();
 
       return BleConnectionResult.needsUserDecision(probes: probes);
     } catch (e) {
       return BleConnectionResult.failure(
-        reason: BleConnectionFailureReason.bluetoothError,
+        reason: BleConnectionResult.fromException(e),
       );
     }
   }
@@ -460,8 +457,15 @@ class BleBloc with ChangeNotifier {
   ) async {
     // Probe sequentially: parallel notify on many characteristics often
     // fails on BLE stacks even when the device is sending data.
+    final characteristicsToProbe = senseBoxService.characteristics
+        .where(
+          (c) => knownSensorCharacteristicUuids
+              .contains(_characteristicUuid(c)),
+        )
+        .toList();
+
     final results = <BleCharacteristicProbeResult>[];
-    for (final characteristic in senseBoxService.characteristics) {
+    for (final characteristic in characteristicsToProbe) {
       results.add(await _probeCharacteristic(characteristic));
     }
     return results;
@@ -470,7 +474,7 @@ class BleBloc with ChangeNotifier {
   Future<BleCharacteristicProbeResult> _probeCharacteristic(
     BluetoothCharacteristic characteristic,
   ) async {
-    final uuid = characteristic.uuid.toString().toLowerCase();
+    final uuid = _characteristicUuid(characteristic);
     final dataReceivedCompleter = Completer<bool>();
     Uint8List? receivedData;
 
@@ -486,7 +490,7 @@ class BleBloc with ChangeNotifier {
 
       await Future.any([
         dataReceivedCompleter.future,
-        Future.delayed(dataListeningTimeout),
+        Future.delayed(dataListeningProbeTimeout),
       ]);
 
       if (receivedData == null && characteristic.properties.read) {
@@ -516,15 +520,11 @@ class BleBloc with ChangeNotifier {
       );
     }
 
-    if (!_validateReceivedData(receivedData!)) {
-      final allZeros =
-          receivedData!.isNotEmpty && receivedData!.every((byte) => byte == 0);
+    if (!isValidBleCharacteristicPayload(receivedData!)) {
       return BleCharacteristicProbeResult(
         uuid: uuid,
         isValid: false,
-        reason: allZeros
-            ? BleConnectionFailureReason.invalidData
-            : BleConnectionFailureReason.invalidData,
+        reason: BleConnectionFailureReason.invalidData,
       );
     }
 
@@ -552,33 +552,37 @@ class BleBloc with ChangeNotifier {
   }
 
   void _clearPendingConnection() {
-    _pendingConnectionDevice = null;
     _pendingSenseBoxService = null;
     _pendingValidUuids = [];
   }
 
-  /// Prepares device for retry by disconnecting and reconnecting
-  Future<void> _prepareForRetry(BluetoothDevice device) async {
+  static String _characteristicUuid(BluetoothCharacteristic characteristic) {
+    return characteristic.uuid.toString().toLowerCase();
+  }
+
+  void _markConnected() {
+    _isConnected = true;
+    _userInitiatedDisconnect = false;
+    notifyListeners();
+  }
+
+  /// Disconnects and reconnects before the next connection attempt.
+  Future<bool> _prepareForRetry(BluetoothDevice device) async {
     try {
-      // Disconnect device (catch any disconnect exceptions)
       try {
         await device.disconnect();
       } catch (e) {
-        // Continue anyway, device might already be disconnected
+        // Device may already be disconnected
       }
 
       await Future.delayed(configurableReconnectionDelay);
-      
-      try {
-        await device.connect(timeout: deviceConnectTimeout);
-      } catch (e) {
-        // Don't throw - let the retry continue, next attempt might work
-        return;
-      }
 
+      await device.connect(timeout: deviceConnectTimeout);
       await Future.delayed(configurableReconnectionDelay);
+
+      return device.isConnected;
     } catch (e) {
-      // Don't throw - let reconnection continue with next attempt
+      return false;
     }
   }
 
@@ -594,11 +598,13 @@ class BleBloc with ChangeNotifier {
     _characteristicStreams.clear();
   }
 
-  BluetoothService _findSenseBoxService(List<BluetoothService> services) {
-    return services.firstWhere(
-      (service) => service.uuid == senseBoxServiceUUID,
-      orElse: () => throw Exception('senseBox service not found'),
-    );
+  BluetoothService? _findSenseBoxService(List<BluetoothService> services) {
+    for (final service in services) {
+      if (service.uuid == senseBoxServiceUUID) {
+        return service;
+      }
+    }
+    return null;
   }
 
 
@@ -758,26 +764,9 @@ class BleBloc with ChangeNotifier {
 
 
 
-  bool _validateReceivedData(Uint8List data) {
-    if (data.isEmpty) {
-      return false;
-    }
-    
-    bool allZeros = data.every((byte) => byte == 0);
-    if (allZeros) {
-      return false;
-    }
-    
-    if (data.length < 4) {
-      return false;
-    }
-    
-    return true;
-  }
-
   Future<void> _listenToCharacteristic(
       BluetoothCharacteristic characteristic) async {
-    final uuid = characteristic.uuid.toString();
+    final uuid = _characteristicUuid(characteristic);
 
     await _characteristicSubscriptions[uuid]?.cancel();
     _characteristicSubscriptions.remove(uuid);
@@ -803,13 +792,17 @@ class BleBloc with ChangeNotifier {
 
 
 
+  bool hasCharacteristicStream(String characteristicUuid) {
+    return _characteristicStreams
+        .containsKey(characteristicUuid.toLowerCase());
+  }
+
   Stream<List<double>> getCharacteristicStream(String characteristicUuid) {
-    if (!_characteristicStreams.containsKey(characteristicUuid)) {
-      throw Exception(
-          'Characteristic stream not found for UUID: $characteristicUuid. '
-          'The characteristic may not be available yet or the device may not be connected.');
+    final uuid = characteristicUuid.toLowerCase();
+    if (!_characteristicStreams.containsKey(uuid)) {
+      throw BleCharacteristicStreamNotFoundException(characteristicUuid);
     }
-    return _characteristicStreams[characteristicUuid]!.stream;
+    return _characteristicStreams[uuid]!.stream;
   }
 
   List<double> _parseData(Uint8List value) {

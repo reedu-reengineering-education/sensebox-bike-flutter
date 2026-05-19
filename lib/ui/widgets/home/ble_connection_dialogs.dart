@@ -17,6 +17,10 @@ String bleConnectionFailureMessage(
       return localizations.errorBleNoSensorData;
     case BleConnectionFailureReason.invalidData:
       return localizations.errorBleInvalidSensorData;
+    case BleConnectionFailureReason.connectionTimeout:
+      return localizations.errorBleConnectionTimeout;
+    case BleConnectionFailureReason.connectionLost:
+      return localizations.errorBleConnectionLost;
     case BleConnectionFailureReason.bluetoothError:
     case null:
       return localizations.errorBleConnectionFailed;

@@ -175,4 +175,44 @@ void main() {
     expect(find.text('Continue'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
   });
+
+  testWidgets('shows connection timeout message on failed connect',
+      (tester) async {
+    final device = MockBluetoothDevice();
+    when(() => device.platformName).thenReturn('TestDevice');
+    when(() => bleBloc.startScanning()).thenAnswer((_) async {});
+    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
+    when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {
+      return BleConnectionResult.failure(
+        reason: BleConnectionFailureReason.connectionTimeout,
+      );
+    });
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: Builder(
+          builder: (context) {
+            return ElevatedButton(
+              onPressed: () => showDeviceSelectionDialog(context, bleBloc),
+              child: const Text('Open'),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.text('TestDevice'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connection failed'), findsOneWidget);
+    expect(
+      find.textContaining('could not connect to the senseBox in time'),
+      findsOneWidget,
+    );
+  });
 }

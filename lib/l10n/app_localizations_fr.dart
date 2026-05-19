@@ -576,6 +576,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Cet appareil ne semble pas être une senseBox compatible.';
 
   @override
+  String get errorBleConnectionTimeout =>
+      'Le téléphone n\'a pas pu se connecter à la senseBox à temps. Approchez-vous de l\'appareil, vérifiez qu\'il est allumé, attendez quelques secondes et réessayez.';
+
+  @override
+  String get errorBleConnectionLost =>
+      'La connexion Bluetooth a été interrompue pendant la configuration des capteurs. L\'appareil est peut-être hors de portée ou occupé. Veuillez réessayer.';
+
+  @override
   String get blePartialConnectionTitle => 'Certains capteurs indisponibles';
 
   @override

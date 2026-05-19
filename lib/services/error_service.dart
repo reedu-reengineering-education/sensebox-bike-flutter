@@ -19,6 +19,10 @@ class ErrorService {
       Sentry.captureException(error, stackTrace: stack);
     }
 
+    if (error is BleCharacteristicStreamNotFoundException) {
+      return;
+    }
+
     if (!kDebugMode) {
       if (error is LocationPermissionDenied ||
           error is LoginError ||

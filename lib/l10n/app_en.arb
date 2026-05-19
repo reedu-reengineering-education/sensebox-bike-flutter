@@ -218,6 +218,8 @@
     "errorBleNoSensorData": "No sensor data received. Is the senseBox powered on and running the correct firmware?",
     "errorBleInvalidSensorData": "Sensor data looks invalid (all zeros). Try restarting the senseBox.",
     "errorBleIncompatibleDevice": "This device does not appear to be a compatible senseBox.",
+    "errorBleConnectionTimeout": "The phone could not connect to the senseBox in time. Move closer to the device, make sure it is powered on, wait a few seconds, and try again.",
+    "errorBleConnectionLost": "The Bluetooth connection dropped while setting up the sensors. The device may be out of range, busy, or reconnecting. Try again.",
     "blePartialConnectionTitle": "Some sensors unavailable",
     "blePartialConnectionBody": "The following sensors did not send valid data: {sensorNames}. You can connect with the remaining sensors or cancel.",
     "@blePartialConnectionBody": {

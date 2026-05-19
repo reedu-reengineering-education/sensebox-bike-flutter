@@ -78,13 +78,13 @@ void main() {
         expect(bleBloc.devicesListStream, isA<Stream<List<dynamic>>>());
       });
 
-      test('scanForNewDevices clears selected device', () {
+      test('startScanning disconnects when a device is selected', () {
         final mockDevice = MockBluetoothDevice();
         bleBloc.selectedDevice = mockDevice;
         bleBloc.selectedDeviceNotifier.value = mockDevice;
-        
-        bleBloc.scanForNewDevices();
-        
+
+        bleBloc.startScanning();
+
         expect(bleBloc.selectedDevice, isNull);
         expect(bleBloc.selectedDeviceNotifier.value, isNull);
       });

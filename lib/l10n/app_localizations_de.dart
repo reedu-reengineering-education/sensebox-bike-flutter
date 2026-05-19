@@ -571,6 +571,14 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dieses Gerät scheint keine kompatible senseBox zu sein.';
 
   @override
+  String get errorBleConnectionTimeout =>
+      'Die Verbindung zur senseBox hat zu lange gedauert. Gehen Sie näher an das Gerät, stellen Sie sicher, dass es eingeschaltet ist, warten Sie einige Sekunden und versuchen Sie es erneut.';
+
+  @override
+  String get errorBleConnectionLost =>
+      'Die Bluetooth-Verbindung wurde während der Einrichtung unterbrochen. Das Gerät ist möglicherweise außer Reichweite oder beschäftigt. Bitte erneut versuchen.';
+
+  @override
   String get blePartialConnectionTitle => 'Einige Sensoren nicht verfügbar';
 
   @override

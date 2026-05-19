@@ -353,6 +353,10 @@ void addSpeedEntries({
   }
 }
 
+/// BLE characteristic UUIDs the app can subscribe to for sensor data.
+Set<String> get knownSensorCharacteristicUuids =>
+    _uuidToSensorTitle.keys.map((uuid) => uuid.toLowerCase()).toSet();
+
 const Map<String, String> _uuidToSensorTitle = {
   DistanceSensor.sensorCharacteristicUuid: 'distance',
   DistanceRightSensor.sensorCharacteristicUuid: 'distance_right',

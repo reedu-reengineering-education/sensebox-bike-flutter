@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/models/ble_connection_result.dart';
 
@@ -65,6 +67,44 @@ void main() {
       expect(result.failedUuids, ['failed-uuid']);
       expect(result.needsUserDecision, isTrue);
       expect(result.success, isFalse);
+    });
+  });
+
+  group('BleConnectionResult.fromException', () {
+    test('maps timeout errors to connectionTimeout', () {
+      expect(
+        BleConnectionResult.fromException(
+          Exception('[FBP] connection timeout'),
+        ),
+        BleConnectionFailureReason.connectionTimeout,
+      );
+    });
+
+    test('maps disconnect errors to connectionLost', () {
+      expect(
+        BleConnectionResult.fromException(
+          Exception('device disconnected'),
+        ),
+        BleConnectionFailureReason.connectionLost,
+      );
+    });
+  });
+
+  group('isValidBleCharacteristicPayload', () {
+    test('returns false for empty or short payloads', () {
+      expect(isValidBleCharacteristicPayload(Uint8List(0)), isFalse);
+      expect(isValidBleCharacteristicPayload(Uint8List(3)), isFalse);
+    });
+
+    test('returns false for all-zero payloads', () {
+      expect(isValidBleCharacteristicPayload(Uint8List(8)), isFalse);
+    });
+
+    test('returns true for non-zero payload with at least 4 bytes', () {
+      expect(
+        isValidBleCharacteristicPayload(Uint8List.fromList([0, 0, 0, 1])),
+        isTrue,
+      );
     });
   });
 }

@@ -69,6 +69,17 @@ class PermanentAuthenticationError implements Exception {
       : 'Authentication failed permanently. Data upload is stopped but all data is stored locally. Please log in again to continue uploading data.';
 }
 
+class BleCharacteristicStreamNotFoundException implements Exception {
+  final String characteristicUuid;
+
+  BleCharacteristicStreamNotFoundException(this.characteristicUuid);
+
+  @override
+  String toString() =>
+      'Characteristic stream not found for UUID: $characteristicUuid. '
+      'The characteristic may not be available yet or the device may not be connected.';
+}
+
 class TrackHasNoGeolocationsException implements Exception {
   final int? trackId;
 

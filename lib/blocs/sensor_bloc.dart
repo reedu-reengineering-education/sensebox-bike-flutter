@@ -175,7 +175,16 @@ class SensorBloc with ChangeNotifier {
     }
     _isStartingListening = true;
     try {
+      final availableUuids = bleBloc.availableCharacteristics.value
+          .map((c) => c.uuid.toString().toLowerCase())
+          .toSet();
+
       for (var sensor in _sensors) {
+        final uuid = sensor.characteristicUuid.toLowerCase();
+        if (!availableUuids.contains(uuid) ||
+            !bleBloc.hasCharacteristicStream(uuid)) {
+          continue;
+        }
         await sensor.startListening();
       }
     } finally {
