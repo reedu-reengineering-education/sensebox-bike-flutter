@@ -203,6 +203,7 @@
   "loginScreenTitle": "Compte openSenseMap",
   "connectionButtonEnableBluetooth": "Activer le Bluetooth",
   "errorNoLocationAccess": "Les services de localisation sont désactivés ou l’accès est refusé. Pour enregistrer des parcours, veuillez activer la localisation et autoriser l’application à accéder à votre position dans les paramètres du téléphone.",
+  "errorNoBackgroundLocationAccess": "Pour enregistrer des trajets lorsque l’écran est verrouillé, définissez l’autorisation de localisation sur « Toujours » pour cette application dans les paramètres du téléphone.",
   "errorNoScanAccess": "Pour vous connecter à la senseBox, autorisez l’application à rechercher des appareils à proximité dans les paramètres du téléphone.",
   "errorNoNotificationAccess": "Pour enregistrer votre trajet, autorisez les notifications pour cette application. Android en a besoin pour maintenir le GPS actif en arrière-plan pendant l'enregistrement.",
   "errorBleNotReadyForRecording": "La connexion à la senseBox n'est pas assez stable pour démarrer l'enregistrement. Attendez que la connexion soit entièrement établie, puis réessayez.",

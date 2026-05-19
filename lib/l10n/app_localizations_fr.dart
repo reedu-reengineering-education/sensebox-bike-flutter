@@ -519,6 +519,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Les services de localisation sont désactivés ou l’accès est refusé. Pour enregistrer des parcours, veuillez activer la localisation et autoriser l’application à accéder à votre position dans les paramètres du téléphone.';
 
   @override
+  String get errorNoBackgroundLocationAccess =>
+      'Pour enregistrer des trajets lorsque l’écran est verrouillé, définissez l’autorisation de localisation sur « Toujours » pour cette application dans les paramètres du téléphone.';
+
+  @override
   String get errorNoScanAccess =>
       'Pour vous connecter à la senseBox, autorisez l’application à rechercher des appareils à proximité dans les paramètres du téléphone.';
 

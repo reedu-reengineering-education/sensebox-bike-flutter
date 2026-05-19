@@ -507,6 +507,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.';
 
   @override
+  String get errorNoBackgroundLocationAccess =>
+      'To record rides while the screen is locked, set location permission to \"Always\" for this app in the phone settings.';
+
+  @override
   String get errorNoScanAccess =>
       'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.';
 

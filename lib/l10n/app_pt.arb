@@ -205,6 +205,7 @@
     "loginScreenTitle": "openSenseMap Conta",
     "connectionButtonEnableBluetooth": "Ativar Bluetooth",
     "errorNoLocationAccess": "Os serviços de localização estão desativados ou o acesso é negado. Para gravar faixas, ative os serviços de localização e permita que a aplicação aceda à sua localização nas definições do telefone.",
+    "errorNoBackgroundLocationAccess": "Para gravar percursos com o ecrã bloqueado, defina a permissão de localização como \"Sempre\" para esta aplicação nas definições do telefone.",
     "errorNoScanAccess": "Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.",
     "errorNoNotificationAccess": "Para gravar seu percurso, permita notificações para este app. O Android precisa disso para manter o GPS ativo em segundo plano durante a gravação.",
     "errorBleNotReadyForRecording": "A conexão com a senseBox não está estável o suficiente para iniciar a gravação. Aguarde até que a conexão esteja totalmente estabelecida e tente novamente.",

@@ -1002,6 +1002,12 @@ abstract class AppLocalizations {
   /// **'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.'**
   String get errorNoLocationAccess;
 
+  /// No description provided for @errorNoBackgroundLocationAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'To record rides while the screen is locked, set location permission to \"Always\" for this app in the phone settings.'**
+  String get errorNoBackgroundLocationAccess;
+
   /// No description provided for @errorNoScanAccess.
   ///
   /// In en, this message translates to:

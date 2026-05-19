@@ -3,6 +3,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/ble_connection_result.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 String bleConnectionFailureMessage(
@@ -37,27 +38,13 @@ Future<bool> showBlePartialConnectionDialog(
       .toSet()
       .join(', ');
 
-  return showDialog<bool>(
+  return showAppDialog(
     context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: Text(localizations.blePartialConnectionTitle),
-        content: Text(
-          localizations.blePartialConnectionBody(failedNames),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(localizations.blePartialConnectionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(localizations.blePartialConnectionContinue),
-          ),
-        ],
-      );
-    },
+    title: localizations.blePartialConnectionTitle,
+    message: localizations.blePartialConnectionBody(failedNames),
+    type: AppDialogType.confirmation,
+    cancelLabel: localizations.blePartialConnectionCancel,
+    confirmLabel: localizations.blePartialConnectionContinue,
   ).then((value) => value ?? false);
 }
 
@@ -93,22 +80,12 @@ Future<void> handleBleConnectionResult({
 Future<void> showRecordingStoppedDueToBleDialog(BuildContext context) {
   final localizations = AppLocalizations.of(context)!;
 
-  return showDialog<void>(
+  return showAppDialog(
     context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: Text(localizations.recordingStoppedBleDisconnectTitle),
-        content: Text(localizations.recordingStoppedBleDisconnectBody),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(localizations.generalOk),
-          ),
-        ],
-      );
-    },
-  );
+    title: localizations.recordingStoppedBleDisconnectTitle,
+    message: localizations.recordingStoppedBleDisconnectBody,
+    type: AppDialogType.info,
+  ).then((_) {});
 }
 
 Future<void> showBleConnectionFailedDialog(
@@ -117,19 +94,10 @@ Future<void> showBleConnectionFailedDialog(
 ) {
   final localizations = AppLocalizations.of(context)!;
 
-  return showDialog<void>(
+  return showAppDialog(
     context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: Text(localizations.errorBleConnectionAttemptFailedTitle),
-        content: Text(localizations.errorBleConnectionAttemptFailed),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(localizations.generalOk),
-          ),
-        ],
-      );
-    },
-  );
+    title: localizations.errorBleConnectionAttemptFailedTitle,
+    message: localizations.errorBleConnectionAttemptFailed,
+    type: AppDialogType.error,
+  ).then((_) {});
 }

@@ -13,6 +13,12 @@ class LocationPermissionDenied implements Exception {
       'Location services are disabled or access is denied. Please enable location services and allow the app to access your location in the phone settings.';
 }
 
+class LocationPermissionAlwaysRequired implements Exception {
+  @override
+  String toString() =>
+      'Background location access is required to record rides while the screen is locked. Please set location permission to "Always" for this app in the phone settings.';
+}
+
 class ScanPermissionDenied implements Exception {
   @override
   String toString() =>
