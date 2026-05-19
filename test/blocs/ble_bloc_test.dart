@@ -29,8 +29,6 @@ void main() {
         test('initializes with correct default values', () {
           expect(bleBloc.isBluetoothEnabledNotifier.value, isFalse);
           expect(bleBloc.isScanningNotifier.value, isFalse);
-          expect(bleBloc.isConnectingNotifier.value, isFalse);
-          expect(bleBloc.isReconnectingNotifier.value, isFalse);
           expect(bleBloc.connectionPhaseNotifier.value,
               BleConnectionPhase.idle);
           expect(bleBloc.selectedDeviceNotifier.value, isNull);

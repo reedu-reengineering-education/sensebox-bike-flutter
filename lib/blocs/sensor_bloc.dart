@@ -1,12 +1,13 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/feature_flags.dart';
+import 'package:sensebox_bike/models/ble_connection_phase.dart';
 import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_right_sensor.dart';
@@ -18,96 +19,102 @@ import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
 import 'package:sensebox_bike/sensors/temperature_sensor.dart';
+import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/sensor_csv_logger_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 
-class SensorBloc with ChangeNotifier {
+typedef _SensorFactory = Sensor Function(
+  BleBloc bleBloc,
+  GeolocationBloc geolocationBloc,
+  RecordingBloc recordingBloc,
+  IsarService isarService,
+);
+
+class SensorBloc {
+  static const _sensorFactories = <_SensorFactory>[
+    TemperatureSensor.new,
+    HumiditySensor.new,
+    DistanceSensor.new,
+    DistanceRightSensor.new,
+    SurfaceClassificationSensor.new,
+    AccelerationSensor.new,
+    OvertakingPredictionSensor.new,
+    SurfaceAnomalySensor.new,
+    FinedustSensor.new,
+    GPSSensor.new,
+  ];
+
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
   final RecordingBloc recordingBloc;
-  final SettingsBloc settingsBloc;
   final List<Sensor> _sensors = [];
-  late final VoidCallback _characteristicsListener;
-  late final VoidCallback _characteristicStreamsVersionListener;
-  late final VoidCallback _selectedDeviceListener;
-  late final VoidCallback _recordingListener;
-  List<String> _lastCharacteristicUuids = [];
+
+  late final VoidCallback _connectionPhaseListener;
   bool _isStartingListening = false;
 
-  SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc,
-      this.settingsBloc) {
-    _initializeSensors();
+  SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc) {
+    final isarService = geolocationBloc.isarService;
+    for (final factory in _sensorFactories) {
+      _sensors.add(factory(bleBloc, geolocationBloc, recordingBloc, isarService));
+    }
 
-    _selectedDeviceListener = () {
-      final device = bleBloc.selectedDeviceNotifier.value;
-      if (device != null && device.isConnected) {
-        _startListening();
-        if (!geolocationBloc.isListening) {
-          geolocationBloc.startListening().catchError((error, stackTrace) {
-            ErrorService.handleError(error, stackTrace);
-          });
-        }
-      } else {
-        _stopListening();
-        geolocationBloc.stopListening();
-      }
-      notifyListeners();
+    _connectionPhaseListener = () {
+      unawaited(_applyConnectionPhase(bleBloc.connectionPhaseNotifier.value));
     };
 
-    _characteristicsListener = () {
-      final currentUuids = bleBloc.availableCharacteristics.value
-          .map((e) => e.uuid.toString())
-          .toList();
-      if (!_listEqualsUnordered(_lastCharacteristicUuids, currentUuids)) {
-        _lastCharacteristicUuids = List.from(currentUuids);
-        _restartAllSensors();
-      }
-    };
-
-    _characteristicStreamsVersionListener = () {
-      _restartAllSensors();
-    };
-
-    _recordingListener = () {
-      if (!recordingBloc.isRecording) {
-        _flushAllSensorBuffers();
-      }
-    };
-    recordingBloc.isRecordingNotifier.addListener(_recordingListener);
     recordingBloc.setRecordingCallbacks(
       onRecordingStart: _onRecordingStart,
       onRecordingStop: _onRecordingStop,
     );
 
-    bleBloc.selectedDeviceNotifier.addListener(_selectedDeviceListener);
-    bleBloc.availableCharacteristics.addListener(_characteristicsListener);
-    bleBloc.characteristicStreamsVersion
-        .addListener(_characteristicStreamsVersionListener);
+    bleBloc.connectionPhaseNotifier.addListener(_connectionPhaseListener);
+    _connectionPhaseListener();
+  }
+
+  Set<String> get _availableCharacteristicUuids =>
+      bleBloc.availableCharacteristics.value
+          .map((characteristic) => characteristic.uuid.toString().toLowerCase())
+          .toSet();
+
+  Future<void> _applyConnectionPhase(BleConnectionPhase phase) async {
+    if (phase == BleConnectionPhase.idle) {
+      await _stopListening();
+      geolocationBloc.stopListening();
+      return;
+    }
+
+    if (phase != BleConnectionPhase.connected) {
+      return;
+    }
+
+    if (!geolocationBloc.isListening) {
+      geolocationBloc.startListening().catchError(
+            (error, stackTrace) =>
+                ErrorService.handleError(error, stackTrace),
+          );
+    }
+
+    await _stopListening();
+    await _startListening();
   }
 
   Future<void> _onRecordingStart() async {
-    _clearAllSensorBuffersForNewRecording();
-    
-    if (!kReleaseMode) {
-      final envValue =
-          dotenv.get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false');
-      final enableLogging = envValue.toLowerCase() == 'true';
-      if (enableLogging) {
-        final csvLogger = SensorCsvLoggerService();
-        csvLogger.startLogging(_sensors);
-      }
+    for (final sensor in _sensors) {
+      sensor.clearBuffersForNewRecording();
     }
-    
+
+    if (_isCsvLoggingEnabled) {
+      SensorCsvLoggerService().startLogging(_sensors);
+    }
+
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
-
       for (final sensor in _sensors) {
         sensor.setDirectUploadService(directUploadService);
       }
-
       directUploadService.enable();
     }
-    
+
     if (!geolocationBloc.isListening) {
       await geolocationBloc.startListening();
     }
@@ -116,73 +123,39 @@ class SensorBloc with ChangeNotifier {
   }
 
   Future<void> _onRecordingStop() async {
-    // Stop CSV logging (only in debug mode if enabled in .env)
-    if (!kReleaseMode) {
-      final enableLogging = dotenv
-              .get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false')
-              .toLowerCase() ==
-          'true';
-      if (enableLogging) {
-        final csvLogger = SensorCsvLoggerService();
-        await csvLogger.stopLogging();
-      }
+    if (_isCsvLoggingEnabled) {
+      await SensorCsvLoggerService().stopLogging();
     }
-    
+
     final directUploadService = recordingBloc.directUploadService;
     if (directUploadService != null) {
       await directUploadService.uploadRemainingBufferedData();
       directUploadService.disable();
     }
+
+    await geolocationBloc.emitFinalGeolocation();
   }
 
-  bool _listEqualsUnordered(List<String> a, List<String> b) {
-    final aSorted = List<String>.from(a)..sort();
-    final bSorted = List<String>.from(b)..sort();
-    return aSorted.length == bSorted.length &&
-        aSorted.every((element) => bSorted.contains(element));
-  }
-
-  void _initializeSensors() {
-    final isarService = geolocationBloc.isarService;
-
-    _sensors.add(TemperatureSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
-    _sensors.add(
-        HumiditySensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
-    _sensors.add(
-        DistanceSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
-    _sensors.add(
-        DistanceRightSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
-    _sensors.add(SurfaceClassificationSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
-    _sensors.add(AccelerationSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
-    _sensors.add(OvertakingPredictionSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
-    _sensors.add(SurfaceAnomalySensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
-    _sensors.add(
-        FinedustSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
-    _sensors
-        .add(GPSSensor(
-        bleBloc, geolocationBloc, recordingBloc, isarService));
+  bool get _isCsvLoggingEnabled {
+    if (kReleaseMode) {
+      return false;
+    }
+    return dotenv
+            .get('ENABLE_SENSOR_CSV_LOGGING', fallback: 'false')
+            .toLowerCase() ==
+        'true';
   }
 
   Future<void> _startListening() async {
     if (_isStartingListening) {
       return;
     }
+
     _isStartingListening = true;
     try {
-      final availableUuids = bleBloc.availableCharacteristics.value
-          .map((c) => c.uuid.toString().toLowerCase())
-          .toSet();
+      final availableUuids = _availableCharacteristicUuids;
 
-      for (var sensor in _sensors) {
+      for (final sensor in _sensors) {
         final uuid = sensor.characteristicUuid.toLowerCase();
         if (!availableUuids.contains(uuid) ||
             !bleBloc.hasCharacteristicStream(uuid)) {
@@ -196,65 +169,40 @@ class SensorBloc with ChangeNotifier {
   }
 
   Future<void> _stopListening() async {
-    for (var sensor in _sensors) {
+    for (final sensor in _sensors) {
       await sensor.stopListening();
-    }
-  }
-
-  Future<void> _restartAllSensors() async {
-    await _stopListening();
-    await _startListening();
-  }
-
-  Future<void> _flushAllSensorBuffers() async {
-    await geolocationBloc.emitFinalGeolocation();
-  }
-
-
-  void _clearAllSensorBuffersForNewRecording() {
-    for (var sensor in _sensors) {
-      sensor.clearBuffersForNewRecording();
     }
   }
 
   List<Sensor> get sensors => _sensors;
 
   List<Widget> getSensorWidgets() {
-    final availableUuids = bleBloc.availableCharacteristics.value
-        .map((e) => e.uuid.toString())
-        .toSet();
+    final availableUuids = _availableCharacteristicUuids;
 
     final availableSensors = _sensors.where((sensor) {
       if (FeatureFlags.hideSurfaceAnomalySensor &&
           sensor.title == 'surface_anomaly') {
         return false;
       }
-      return availableUuids.contains(sensor.characteristicUuid);
+      return availableUuids.contains(sensor.characteristicUuid.toLowerCase());
     }).toList();
 
     availableSensors.sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
     return availableSensors
-        .map<Widget>((sensor) => sensor.buildWidget())
+        .map((sensor) => sensor.buildWidget())
         .toList();
   }
 
-  @override
   void dispose() {
-    bleBloc.selectedDeviceNotifier.removeListener(_selectedDeviceListener);
-    bleBloc.availableCharacteristics.removeListener(_characteristicsListener);
-    bleBloc.characteristicStreamsVersion
-        .removeListener(_characteristicStreamsVersionListener);
-    recordingBloc.isRecordingNotifier.removeListener(_recordingListener);
-    
-    _stopListening().catchError((e, stackTrace) {
-      debugPrint('Error during sensor cleanup: $e');
+    bleBloc.connectionPhaseNotifier.removeListener(_connectionPhaseListener);
+
+    _stopListening().catchError((error, stackTrace) {
+      debugPrint('Error during sensor cleanup: $error');
       debugPrintStack(stackTrace: stackTrace);
     });
-    
+
     for (final sensor in _sensors) {
       sensor.dispose();
     }
-    
-    super.dispose();
   }
 }

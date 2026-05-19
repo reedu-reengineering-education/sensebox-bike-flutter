@@ -53,12 +53,6 @@ class MockBleBloc extends Mock implements BleBloc {
   final ValueNotifier<bool> isScanningNotifier = ValueNotifier(false);
 
   @override
-  final ValueNotifier<bool> isConnectingNotifier = ValueNotifier(false);
-
-  @override
-  final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
-
-  @override
   final ValueNotifier<BleConnectionPhase> connectionPhaseNotifier =
       ValueNotifier(BleConnectionPhase.idle);
 

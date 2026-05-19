@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:sensebox_bike/models/ble_connection_phase.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
@@ -27,7 +27,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final BleBloc bleBloc = Provider.of<BleBloc>(context);
-    final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
+    final RecordingBloc recordingBloc = context.read<RecordingBloc>();
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
 
     recordingBloc.setContext(context);
@@ -91,24 +91,31 @@ class HomeScreen extends StatelessWidget {
                 ),
                 SliverSafeArea(
                   minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                  sliver: ValueListenableBuilder<BluetoothDevice?>(
-                    valueListenable: bleBloc.selectedDeviceNotifier,
-                    builder: (context, device, child) {
-                      // Only show sensor area if device is connected and not in error state
-                      if (device == null ||
-                          bleBloc.connectionErrorNotifier.value) {
-                        return SliverToBoxAdapter(child: SizedBox.shrink());
+                  sliver: ValueListenableBuilder<BleConnectionPhase>(
+                    valueListenable: bleBloc.connectionPhaseNotifier,
+                    builder: (context, phase, child) {
+                      if (phase != BleConnectionPhase.connected) {
+                        return const SliverToBoxAdapter(
+                            child: SizedBox.shrink());
                       }
 
-                      // Check if there are actually any sensor widgets available
-                      final widgets = sensorBloc.getSensorWidgets();
-                      if (widgets.isEmpty) {
-                        // Connected but no sensor data available: show nothing
-                        return SliverToBoxAdapter(child: SizedBox.shrink());
-                      }
+                      return ValueListenableBuilder<int>(
+                        valueListenable: bleBloc.characteristicStreamsVersion,
+                        builder: (context, _, child) {
+                          if (bleBloc.connectionErrorNotifier.value) {
+                            return const SliverToBoxAdapter(
+                                child: SizedBox.shrink());
+                          }
 
-                      // Connected and has sensor data: show sensor grid
-                      return _SensorGrid(sensorBloc: sensorBloc);
+                          final widgets = sensorBloc.getSensorWidgets();
+                          if (widgets.isEmpty) {
+                            return const SliverToBoxAdapter(
+                                child: SizedBox.shrink());
+                          }
+
+                          return _SensorGrid(sensorBloc: sensorBloc);
+                        },
+                      );
                     },
                   ),
                 ),
@@ -297,13 +304,13 @@ class _FloatingButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.isReconnectingNotifier,
-      builder: (context, isReconnecting, child) {
+    return ValueListenableBuilder<BleConnectionPhase>(
+      valueListenable: bleBloc.connectionPhaseNotifier,
+      builder: (context, phase, child) {
+        final isReconnecting = phase == BleConnectionPhase.reconnecting;
         return ValueListenableBuilder(
           valueListenable: bleBloc.selectedDeviceNotifier,
           builder: (context, selectedDevice, child) {
-            // Show buttons if device is connected or if reconnecting
             if (selectedDevice == null && !isReconnecting) {
               return Column(
                 spacing: 12,
@@ -353,9 +360,10 @@ class _ConnectButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.isConnectingNotifier,
-      builder: (context, isConnecting, child) {
+    return ValueListenableBuilder<BleConnectionPhase>(
+      valueListenable: bleBloc.connectionPhaseNotifier,
+      builder: (context, phase, child) {
+        final isConnecting = phase == BleConnectionPhase.connecting;
         return ValueListenableBuilder<bool>(
           valueListenable: bleBloc.isBluetoothEnabledNotifier,
           builder: (context, isBluetoothEnabled, child) {
@@ -449,29 +457,33 @@ class _StartStopButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canStartRecording =
-        recordingBloc.isRecording || bleBloc.isReadyForRecording;
+    return ValueListenableBuilder<bool>(
+      valueListenable: recordingBloc.isRecordingNotifier,
+      builder: (context, isRecording, child) {
+        final canStartRecording =
+            isRecording || bleBloc.isReadyForRecording;
 
-    return FilledButton.icon(
-      style: const ButtonStyle(
-        padding: WidgetStatePropertyAll(
-          EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        ),
-      ),
-      label: Text(recordingBloc.isRecording
-          ? AppLocalizations.of(context)!.connectionButtonStop
-          : AppLocalizations.of(context)!.connectionButtonStart),
-      icon: Icon(
-          recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
-      onPressed: isReconnecting || !canStartRecording
-          ? null
-          : () async {
-              if (recordingBloc.isRecording) {
-                await recordingBloc.stopRecording();
-              } else {
-                await recordingBloc.startRecording();
-              }
-            },
+        return FilledButton.icon(
+          style: const ButtonStyle(
+            padding: WidgetStatePropertyAll(
+              EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            ),
+          ),
+          label: Text(isRecording
+              ? AppLocalizations.of(context)!.connectionButtonStop
+              : AppLocalizations.of(context)!.connectionButtonStart),
+          icon: Icon(isRecording ? Icons.stop : Icons.fiber_manual_record),
+          onPressed: isReconnecting || !canStartRecording
+              ? null
+              : () async {
+                  if (isRecording) {
+                    await recordingBloc.stopRecording();
+                  } else {
+                    await recordingBloc.startRecording();
+                  }
+                },
+        );
+      },
     );
   }
 }
@@ -484,9 +496,10 @@ class _DisconnectButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.isReconnectingNotifier,
-      builder: (context, isReconnecting, child) {
+    return ValueListenableBuilder<BleConnectionPhase>(
+      valueListenable: bleBloc.connectionPhaseNotifier,
+      builder: (context, phase, child) {
+        final isReconnecting = phase == BleConnectionPhase.reconnecting;
         return OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,

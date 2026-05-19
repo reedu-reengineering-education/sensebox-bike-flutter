@@ -3,6 +3,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/models/ble_connection_phase.dart';
 import 'package:sensebox_bike/models/ble_connection_result.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import '../../../test_helpers.dart';
@@ -27,8 +28,8 @@ void main() {
     bleBloc = MockBleBloc();
     when(() => bleBloc.discoveredDevicesNotifier).thenReturn(discoveredDevices);
     when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
-    when(() => bleBloc.isConnectingNotifier)
-        .thenReturn(ValueNotifier(false));
+    when(() => bleBloc.connectionPhaseNotifier)
+        .thenReturn(ValueNotifier(BleConnectionPhase.idle));
   });
 
   testWidgets('shows dialog title', (tester) async {
