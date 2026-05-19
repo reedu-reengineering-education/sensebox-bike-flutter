@@ -85,6 +85,29 @@ CoordinateBounds calculateBounds(List<GeolocationData> geolocations,
   );
 }
 
+/// Reduces map rendering cost for long tracks while preserving start/end.
+List<GeolocationData> downsampleGeolocationsForMapDisplay(
+  List<GeolocationData> geolocations, {
+  int maxPoints = maxMapTrajectoryPoints,
+}) {
+  if (geolocations.length <= maxPoints) {
+    return geolocations;
+  }
+
+  final step = geolocations.length / maxPoints;
+  final sampled = <GeolocationData>[];
+  for (var i = 0; i < maxPoints; i++) {
+    sampled.add(geolocations[(i * step).floor()]);
+  }
+
+  final last = geolocations.last;
+  if (sampled.last.id != last.id) {
+    sampled[sampled.length - 1] = last;
+  }
+
+  return sampled;
+}
+
 Color sensorColorForValue({
   required double value,
   required double min,

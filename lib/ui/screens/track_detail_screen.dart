@@ -52,6 +52,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   List<GeolocationData> _geolocations = [];
   List<SensorData> _sensorData = [];
   bool _isLoading = true;
+  int _loadRequestId = 0;
   // Local track data that can be updated
   late TrackData _track;
 
@@ -78,6 +79,9 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   @override
   void dispose() {
+    _loadRequestId++;
+    _geolocations = [];
+    _sensorData = [];
     batchUploadService.dispose();
     super.dispose();
   }
@@ -296,12 +300,14 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   Future<void> _loadTrackData() async {
+    final requestId = ++_loadRequestId;
+
     try {
-      // Refresh track metadata from database to get updated upload status
       final refreshedTrack =
           await isarService.trackService.getTrackById(_track.id);
+      if (!mounted || requestId != _loadRequestId) return;
+
       if (refreshedTrack != null) {
-        // Update the local _track with fresh data
         _track.uploaded = refreshedTrack.uploaded;
         _track.uploadAttempts = refreshedTrack.uploadAttempts;
         _track.lastUploadAttempt = refreshedTrack.lastUploadAttempt;
@@ -309,6 +315,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
       final geolocations = await isarService.geolocationService
           .getGeolocationDataWithPreloadedSensors(_track.id);
+      if (!mounted || requestId != _loadRequestId) return;
+
       setState(() {
         _geolocations = geolocations;
         _sensorData = getAllUniqueSensorData(geolocations);
@@ -316,6 +324,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted || requestId != _loadRequestId) return;
+
       ErrorService.handleError(
           'Error loading track data: $e', StackTrace.current);
       setState(() {

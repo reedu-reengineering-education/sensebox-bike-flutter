@@ -18,25 +18,17 @@ class _AppHomeState extends State<AppHome> {
   final GlobalKey<TracksScreenState> _tracksScreenKey =
       GlobalKey<TracksScreenState>();
 
-  late final List<Widget> _pages;
-
-  @override
-  void initState() {
-    super.initState();
-    _pages = [
-      const HomeScreen(),
-      TracksScreen(key: _tracksScreenKey),
-      const SettingsScreen(),
-      const LoginScreen(),
-    ];
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
-        children: _pages,
+        children: [
+          HomeScreen(isMapActive: _selectedIndex == 0),
+          TracksScreen(key: _tracksScreenKey),
+          const SettingsScreen(),
+          const LoginScreen(),
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -55,11 +47,10 @@ class _AppHomeState extends State<AppHome> {
             onDestinationSelected: (value) {
               setState(() {
                 _selectedIndex = value;
-                // Refresh tracks when navigating to tracks tab
-                if (value == 1) {
-                  _tracksScreenKey.currentState?.refreshTracks();
-                }
               });
+              if (value == 1) {
+                _tracksScreenKey.currentState?.refreshTracks();
+              }
             },
             selectedIndex: _selectedIndex,
             destinations: [

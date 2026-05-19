@@ -30,8 +30,7 @@ class ReusableMapWidget extends StatefulWidget {
 
 class _ReusableMapWidgetState extends State<ReusableMapWidget>
     with WidgetsBindingObserver {
-  late MapboxMap mapInstance;
-  AppLifecycleState? _lastLifecycleState;
+  MapboxMap? _mapInstance;
 
   @override
   void initState() {
@@ -55,7 +54,6 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    _lastLifecycleState = state;
     if (state == AppLifecycleState.resumed) {
       // When app comes to foreground, update map style
       _updateMapStyle();
@@ -64,11 +62,11 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget>
 
   void _updateMapStyle() {
     // Use Theme.of(context).brightness for current theme
-    if (!mounted) return;
+    if (!mounted || _mapInstance == null) return;
     String style =
         Theme.of(context).brightness == Brightness.dark ? "night" : "day";
     try {
-      mapInstance.style
+      _mapInstance!.style
           .setStyleImportConfigProperty("basemap", "lightPreset", style);
     } catch (e) {
       debugPrint('Error setting style property: $e');
@@ -79,6 +77,7 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget>
   void dispose() {
     // Remove observer when widget is disposed
     WidgetsBinding.instance.removeObserver(this);
+    _mapInstance = null;
     super.dispose();
   }
 
@@ -88,12 +87,13 @@ class _ReusableMapWidgetState extends State<ReusableMapWidget>
       styleUri: 'mapbox://styles/felixaetem/cm20uojq2004201o132dw50nl',
       onStyleLoadedListener: (styleLoadedEventData) {
         _updateMapStyle();
-        if (widget.onStyleLoadedCallback != null) {
+        final mapInstance = _mapInstance;
+        if (mapInstance != null && widget.onStyleLoadedCallback != null) {
           widget.onStyleLoadedCallback!(mapInstance);
         }
       },
       onMapCreated: (mapInstance) {
-        this.mapInstance = mapInstance;
+        _mapInstance = mapInstance;
 
         // Apply passed or default camera options
         if (widget.initialCameraOptions != null) {

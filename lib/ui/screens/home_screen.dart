@@ -20,7 +20,9 @@ import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final bool isMapActive;
+
+  const HomeScreen({super.key, this.isMapActive = true});
 
   @override
   Widget build(BuildContext context) {
@@ -62,9 +64,9 @@ class HomeScreen extends StatelessWidget {
                         (bleBloc.isConnected ? 0.65 : 0.85),
                     child: Stack(
                       children: [
-                        const SizedBox(
+                        SizedBox(
                           width: double.infinity,
-                          child: GeolocationMapWidget(), // The map
+                          child: GeolocationMapWidget(isActive: isMapActive),
                         ),
                         const Positioned(
                           bottom: 0,
