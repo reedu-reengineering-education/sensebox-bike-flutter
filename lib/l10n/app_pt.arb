@@ -216,6 +216,22 @@
     "errorRegistrationFailed": "Erro no registro. Verifique suas credenciais e tente novamente mais tarde.",
     "errorReasonPrefix": "Motivo:",
     "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.",
+    "errorBleConnectionFailedTitle": "Falha na conexão",
+    "errorBleNoSensorData": "Nenhum dado do sensor recebido. A senseBox está ligada e com o firmware correto?",
+    "errorBleInvalidSensorData": "Os dados do sensor parecem inválidos (todos zeros). Tente reiniciar a senseBox.",
+    "errorBleIncompatibleDevice": "Este dispositivo não parece ser uma senseBox compatível.",
+    "blePartialConnectionTitle": "Alguns sensores indisponíveis",
+    "blePartialConnectionBody": "Os seguintes sensores não enviaram dados válidos: {sensorNames}. Pode conectar com os sensores restantes ou cancelar.",
+    "@blePartialConnectionBody": {
+        "placeholders": {
+            "sensorNames": {
+                "type": "String"
+            }
+        }
+    },
+    "blePartialConnectionCancel": "Cancelar",
+    "blePartialConnectionContinue": "Continuar",
+    "errorBleInitialConnectionFailed": "Não foi possível conectar à senseBox. Por favor, tente novamente.",
     "errorUploadFailed": "Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.",
     "errorDirectUploadFailed": "O upload em tempo real falhou devido a problemas de conectividade. Não se preocupe – seus dados foram salvos localmente. Após parar a gravação, você pode enviar o trajeto manualmente na tela de visão geral dos trajetos.",
     "errorPermanentAuthentication": "Falha permanente na autenticação. Por favor, faça login para enviar dados.",

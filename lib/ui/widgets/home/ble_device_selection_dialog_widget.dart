@@ -6,6 +6,18 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/empty_state_message.dart';
+import 'package:sensebox_bike/models/ble_connection_result.dart';
+import 'package:sensebox_bike/ui/widgets/home/ble_connection_dialogs.dart';
+
+class BleDeviceConnectionAttempt {
+  final BluetoothDevice device;
+  final BleConnectionResult result;
+
+  const BleDeviceConnectionAttempt({
+    required this.device,
+    required this.result,
+  });
+}
 
 void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
   Object? scanError;
@@ -16,7 +28,7 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
     scanError = e;
   }
 
-  final result = await showModalBottomSheet<bool>(
+  final attempt = await showModalBottomSheet<BleDeviceConnectionAttempt?>(
       showDragHandle: true,
       isScrollControlled: true,
       context: context,
@@ -29,10 +41,19 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
             DeviceSelectionSheet(bleBloc: bleBloc, initialScanError: scanError),
           ])));
 
-  if (result != true) {
-    // User dismissed the sheet (cancel)
+  if (attempt == null) {
     bleBloc.stopScanning();
+    return;
   }
+
+  if (!context.mounted) return;
+
+  await handleBleConnectionResult(
+    context: context,
+    bleBloc: bleBloc,
+    device: attempt.device,
+    result: attempt.result,
+  );
 }
 
 class DeviceSelectionSheet extends StatefulWidget {
@@ -50,6 +71,28 @@ class DeviceSelectionSheet extends StatefulWidget {
 }
 
 class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
+  bool _isConnecting = false;
+
+  Future<void> _onDeviceTap(BluetoothDevice device) async {
+    if (_isConnecting) return;
+
+    setState(() => _isConnecting = true);
+
+    final result =
+        await widget.bleBloc.connectToDevice(device, context);
+
+    if (!mounted) return;
+
+    setState(() => _isConnecting = false);
+
+    if (!mounted) return;
+
+    Navigator.pop(
+      context,
+      BleDeviceConnectionAttempt(device: device, result: result),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
@@ -108,6 +151,14 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                   );
                 }
 
+                if (_isConnecting) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: colorScheme.primaryFixedDim,
+                    ),
+                  );
+                }
+
                 return ListView.separated(
                   separatorBuilder: (context, index) =>
                       CustomDivider(showDivider: true),
@@ -119,10 +170,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                         : "(Unknown)";
                     return ClickableTile(
                       child: Text(deviceName),
-                      onTap: () {
-                        widget.bleBloc.connectToDevice(device, context);
-                        Navigator.pop(context, true);
-                      },
+                      onTap: () => _onDeviceTap(device),
                     );
                   },
                 );

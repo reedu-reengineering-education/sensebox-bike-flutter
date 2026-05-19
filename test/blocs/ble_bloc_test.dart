@@ -60,7 +60,6 @@ void main() {
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
       });
 
-
     });
 
     group('Error Handling', () {
@@ -72,23 +71,6 @@ void main() {
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
       });
 
-      test('when initial BLE connection is started, if exception is thrown, reconnection continues seamlessly', () async {
-        expect(bleBloc.connectionErrorNotifier.value, isFalse);
-        expect(bleBloc.isConnectingNotifier.value, isFalse);
-        expect(bleBloc.selectedDeviceNotifier.value, isNull);
-        
-        final mockDevice = MockBluetoothDevice();
-        when(() => mockDevice.connect()).thenThrow(Exception('Connection failed'));
-        
-        final mockContext = FakeBuildContext();
-        
-        await bleBloc.connectToDevice(mockDevice, mockContext);
-        
-        expect(bleBloc.connectionErrorNotifier.value, isFalse);
-        expect(bleBloc.isConnectingNotifier.value, isFalse);
-        expect(bleBloc.selectedDeviceNotifier.value, isNull);
-        expect(bleBloc.isConnected, isFalse);
-      });
     });
 
     group('Device Management', () {

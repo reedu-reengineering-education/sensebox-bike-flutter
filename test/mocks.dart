@@ -17,6 +17,7 @@ import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/models/ble_connection_result.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
 import 'package:sensebox_bike/models/track_data.dart';
@@ -73,6 +74,9 @@ class MockBleBloc extends Mock implements BleBloc {
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
 
   @override
+  List<String> failedCharacteristicUuids = [];
+
+  @override
   bool get isConnected => false;
 
   @override
@@ -90,8 +94,16 @@ class MockBleBloc extends Mock implements BleBloc {
   }
 
   @override
-  Future<void> connectToDevice(
-      BluetoothDevice device, BuildContext context) async {}
+  Future<BleConnectionResult> connectToDevice(
+      BluetoothDevice device, BuildContext context) async {
+    return BleConnectionResult.fullSuccess();
+  }
+
+  @override
+  Future<BleConnectionResult> finalizePartialConnection(
+      BluetoothDevice device, BuildContext context) async {
+    return BleConnectionResult.fullSuccess();
+  }
 
   @override
   void disconnectDevice() {}

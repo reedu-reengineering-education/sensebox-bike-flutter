@@ -1068,6 +1068,60 @@ abstract class AppLocalizations {
   /// **'Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.'**
   String get errorBleConnectionFailed;
 
+  /// No description provided for @errorBleConnectionFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed'**
+  String get errorBleConnectionFailedTitle;
+
+  /// No description provided for @errorBleNoSensorData.
+  ///
+  /// In en, this message translates to:
+  /// **'No sensor data received. Is the senseBox powered on and running the correct firmware?'**
+  String get errorBleNoSensorData;
+
+  /// No description provided for @errorBleInvalidSensorData.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensor data looks invalid (all zeros). Try restarting the senseBox.'**
+  String get errorBleInvalidSensorData;
+
+  /// No description provided for @errorBleIncompatibleDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device does not appear to be a compatible senseBox.'**
+  String get errorBleIncompatibleDevice;
+
+  /// No description provided for @blePartialConnectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Some sensors unavailable'**
+  String get blePartialConnectionTitle;
+
+  /// No description provided for @blePartialConnectionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The following sensors did not send valid data: {sensorNames}. You can connect with the remaining sensors or cancel.'**
+  String blePartialConnectionBody(String sensorNames);
+
+  /// No description provided for @blePartialConnectionCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get blePartialConnectionCancel;
+
+  /// No description provided for @blePartialConnectionContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get blePartialConnectionContinue;
+
+  /// No description provided for @errorBleInitialConnectionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to the senseBox. Please try again.'**
+  String get errorBleInitialConnectionFailed;
+
   /// No description provided for @errorUploadFailed.
   ///
   /// In en, this message translates to:

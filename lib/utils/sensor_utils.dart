@@ -353,6 +353,27 @@ void addSpeedEntries({
   }
 }
 
+const Map<String, String> _uuidToSensorTitle = {
+  DistanceSensor.sensorCharacteristicUuid: 'distance',
+  DistanceRightSensor.sensorCharacteristicUuid: 'distance_right',
+  OvertakingPredictionSensor.sensorCharacteristicUuid: 'overtaking',
+  TemperatureSensor.sensorCharacteristicUuid: 'temperature',
+  HumiditySensor.sensorCharacteristicUuid: 'humidity',
+  AccelerationSensor.sensorCharacteristicUuid: 'acceleration',
+  GPSSensor.sensorCharacteristicUuid: 'gps',
+  SurfaceClassificationSensor.sensorCharacteristicUuid: 'surface_classification',
+  SurfaceAnomalySensor.sensorCharacteristicUuid: 'surface_anomaly',
+  FinedustSensor.sensorCharacteristicUuid: 'finedust',
+};
+
+String getSensorDisplayNameByUuid(String characteristicUuid) {
+  final title = _uuidToSensorTitle[characteristicUuid];
+  if (title == null) {
+    return characteristicUuid;
+  }
+  return title.replaceAll('_', ' ');
+}
+
 int getUiPriorityByUuid(String characteristicUuid) {
   final uuidToPriority = {
     DistanceSensor.sensorCharacteristicUuid: DistanceSensor.staticUiPriority,

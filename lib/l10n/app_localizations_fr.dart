@@ -561,6 +561,39 @@ class AppLocalizationsFr extends AppLocalizations {
       'La connexion à la senseBox a été perdue. Assurez-vous que le Bluetooth est activé et que la senseBox est allumée.';
 
   @override
+  String get errorBleConnectionFailedTitle => 'Échec de la connexion';
+
+  @override
+  String get errorBleNoSensorData =>
+      'Aucune donnée capteur reçue. La senseBox est-elle allumée et la firmware correcte ?';
+
+  @override
+  String get errorBleInvalidSensorData =>
+      'Les données capteur semblent invalides (tout à zéro). Essayez de redémarrer la senseBox.';
+
+  @override
+  String get errorBleIncompatibleDevice =>
+      'Cet appareil ne semble pas être une senseBox compatible.';
+
+  @override
+  String get blePartialConnectionTitle => 'Certains capteurs indisponibles';
+
+  @override
+  String blePartialConnectionBody(String sensorNames) {
+    return 'Les capteurs suivants n\'ont pas envoyé de données valides : $sensorNames. Vous pouvez vous connecter avec les capteurs restants ou annuler.';
+  }
+
+  @override
+  String get blePartialConnectionCancel => 'Annuler';
+
+  @override
+  String get blePartialConnectionContinue => 'Continuer';
+
+  @override
+  String get errorBleInitialConnectionFailed =>
+      'Impossible de se connecter à la senseBox. Veuillez réessayer.';
+
+  @override
   String get errorUploadFailed =>
       'Échec du téléversement des données. Veuillez vérifier votre connexion internet et réessayer.';
 
