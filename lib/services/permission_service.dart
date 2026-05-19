@@ -69,15 +69,11 @@ class PermissionService {
       return false;
     }
 
+    final permission = await Geolocator.checkPermission();
     if (_isApplePlatform) {
-      final permission = await _requestAppleLocationPermissions();
       return permission == LocationPermission.always;
     }
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
     return permission == LocationPermission.always ||
         permission == LocationPermission.whileInUse;
   }
