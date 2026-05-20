@@ -33,6 +33,7 @@ class RecordingBloc {
   Future<void> Function()? _onRecordingStop;
   Future<void> Function()? _onRecordingStartAsync;
   StreamSubscription<SenseBox?>? _senseBoxSubscription;
+  late final VoidCallback _bleReconnectingListener;
 
   BuildContext? _context;
   DateTime? _lastRecordingStopTimestamp;
@@ -54,6 +55,16 @@ class RecordingBloc {
     });
 
     bleBloc.connectionErrorNotifier.addListener(_onBleConnectionError);
+    _bleReconnectingListener = _onBleReconnecting;
+    bleBloc.isReconnectingNotifier.addListener(_bleReconnectingListener);
+  }
+
+  void _onBleReconnecting() {
+    if (!bleBloc.isReconnectingNotifier.value || !isRecording) {
+      return;
+    }
+
+    stopRecording(dueToBleDisconnect: false);
   }
 
   void _onBleConnectionError() {
@@ -305,6 +316,7 @@ class RecordingBloc {
   void dispose() {
     _senseBoxSubscription?.cancel();
     bleBloc.connectionErrorNotifier.removeListener(_onBleConnectionError);
+    bleBloc.isReconnectingNotifier.removeListener(_bleReconnectingListener);
     _directUploadService?.dispose();
     _batchUploadService?.dispose();
     _isRecordingNotifier.dispose();

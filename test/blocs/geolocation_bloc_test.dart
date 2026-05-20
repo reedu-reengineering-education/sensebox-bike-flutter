@@ -214,7 +214,7 @@ void main() {
       });
 
       test(
-          'should not emit geolocations when not recording even if outside privacy zone',
+          'should emit geolocations for map preview when not recording outside privacy zone',
           () async {
         await testGeolocationWithPrivacyZone(
           geolocationBloc: geolocationBloc,
@@ -225,7 +225,7 @@ void main() {
           lat: testLat2,
           lng: testLng2,
           zones: [createSquarePrivacyZone(testLat1, testLng1, defaultZoneSize)],
-          shouldEmit: false,
+          shouldEmit: true,
           shouldSave: false,
         );
       });

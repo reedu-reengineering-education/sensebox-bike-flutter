@@ -311,6 +311,10 @@ abstract class Sensor {
       });
       
       _geoSubscription = geolocationBloc.geolocationStream.listen((geo) async {
+        if (!recordingBloc.isRecording && geo.id == 0) {
+          return;
+        }
+
         final geoId = geo.id;
         final isRecording = recordingBloc.isRecording;
 

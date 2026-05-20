@@ -80,6 +80,9 @@ class MockBleBloc extends Mock implements BleBloc {
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
 
   @override
+  final ValueNotifier<bool> isReadyForRecordingNotifier = ValueNotifier(false);
+
+  @override
   List<String> failedCharacteristicUuids = [];
 
   @override

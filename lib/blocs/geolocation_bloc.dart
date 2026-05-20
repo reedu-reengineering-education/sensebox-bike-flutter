@@ -189,8 +189,12 @@ class GeolocationBloc {
       _startStationaryLocationTimer();
     }
 
-    final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
-    if (shouldEmit) {
+    if (recordingBloc.isRecording && recordingBloc.currentTrack != null) {
+      final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
+      if (shouldEmit) {
+        _emitGeolocation(geolocationData);
+      }
+    } else {
       _emitGeolocation(geolocationData);
     }
   }

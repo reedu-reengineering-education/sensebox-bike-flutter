@@ -130,9 +130,10 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
 
           final fullId = "senseBox:bike [$id]";
           debugPrint('Connecting to $fullId');
-          await _bleBloc!.connectToId(fullId, context);
-          await Future.delayed(const Duration(seconds: 2));
-          _recordingBloc!.startRecording();
+          final result = await _bleBloc!.connectToId(fullId, context);
+          if (result?.success == true && context.mounted) {
+            await _recordingBloc!.startRecording();
+          }
         }
       });
     }

@@ -55,37 +55,43 @@ class HomeScreen extends StatelessWidget {
               clipBehavior: Clip.none,
               slivers: [
                 // SliverPersistentHeader with the map and floating buttons
-                SliverPersistentHeader(
-                  delegate: _SliverAppBarDelegate(
-                    minHeight: MediaQuery.of(context).size.height * 0.33,
-                    maxHeight: MediaQuery.of(context).size.height *
-                        (bleBloc.isConnected ? 0.65 : 0.85),
-                    child: Stack(
-                      children: [
-                        const SizedBox(
-                          width: double.infinity,
-                          child: GeolocationMapWidget(), // The map
+                ValueListenableBuilder<BluetoothDevice?>(
+                  valueListenable: bleBloc.selectedDeviceNotifier,
+                  builder: (context, device, child) {
+                    return SliverPersistentHeader(
+                      delegate: _SliverAppBarDelegate(
+                        minHeight: MediaQuery.of(context).size.height * 0.33,
+                        maxHeight: MediaQuery.of(context).size.height *
+                            (device != null ? 0.65 : 0.85),
+                        child: Stack(
+                          children: [
+                            const SizedBox(
+                              width: double.infinity,
+                              child: GeolocationMapWidget(),
+                            ),
+                            const Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: _BottomGradient(),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: _FloatingButtons(
+                                    bleBloc: bleBloc,
+                                    recordingBloc: recordingBloc),
+                              ),
+                            ),
+                          ],
                         ),
-                        const Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: _BottomGradient(),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: _FloatingButtons(
-                                bleBloc: bleBloc, recordingBloc: recordingBloc),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pinned: true,
+                      ),
+                      pinned: true,
+                    );
+                  },
                 ),
                 SliverSafeArea(
                   minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
@@ -434,28 +440,34 @@ class _StartStopButton extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: recordingBloc.isRecordingNotifier,
       builder: (context, isRecording, child) {
-        final canStartRecording = isRecording || bleBloc.isReadyForRecording;
+        return ValueListenableBuilder<bool>(
+          valueListenable: bleBloc.isReadyForRecordingNotifier,
+          builder: (context, _, child) {
+            final canStartRecording =
+                isRecording || bleBloc.isReadyForRecording;
 
-        return FilledButton.icon(
-          style: const ButtonStyle(
-            padding: WidgetStatePropertyAll(
-              EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            ),
-          ),
-          label: Text(isRecording
-              ? AppLocalizations.of(context)!.connectionButtonStop
-              : AppLocalizations.of(context)!.connectionButtonStart),
-          icon: Icon(
-              isRecording ? Icons.stop : Icons.fiber_manual_record),
-          onPressed: isReconnecting || !canStartRecording
-              ? null
-              : () async {
-                  if (isRecording) {
-                    await recordingBloc.stopRecording();
-                  } else {
-                    await recordingBloc.startRecording();
-                  }
-                },
+            return FilledButton.icon(
+              style: const ButtonStyle(
+                padding: WidgetStatePropertyAll(
+                  EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                ),
+              ),
+              label: Text(isRecording
+                  ? AppLocalizations.of(context)!.connectionButtonStop
+                  : AppLocalizations.of(context)!.connectionButtonStart),
+              icon: Icon(
+                  isRecording ? Icons.stop : Icons.fiber_manual_record),
+              onPressed: isReconnecting || !canStartRecording
+                  ? null
+                  : () async {
+                      if (isRecording) {
+                        await recordingBloc.stopRecording();
+                      } else {
+                        await recordingBloc.startRecording();
+                      }
+                    },
+            );
+          },
         );
       },
     );
@@ -542,25 +554,30 @@ class _SensorAreaSliver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<BluetoothDevice?>(
-      valueListenable: bleBloc.selectedDeviceNotifier,
-      builder: (context, device, child) {
-        if (device == null || bleBloc.connectionErrorNotifier.value) {
-          return const SliverToBoxAdapter(child: SizedBox.shrink());
-        }
+    return ValueListenableBuilder<bool>(
+      valueListenable: bleBloc.connectionErrorNotifier,
+      builder: (context, connectionError, child) {
+        return ValueListenableBuilder<BluetoothDevice?>(
+          valueListenable: bleBloc.selectedDeviceNotifier,
+          builder: (context, device, child) {
+            if (device == null || connectionError) {
+              return const SliverToBoxAdapter(child: SizedBox.shrink());
+            }
 
-        return ValueListenableBuilder<List<BluetoothCharacteristic>>(
-          valueListenable: bleBloc.availableCharacteristics,
-          builder: (context, characteristics, child) {
-            return ValueListenableBuilder<int>(
-              valueListenable: bleBloc.characteristicStreamsVersion,
-              builder: (context, _, child) {
-                final widgets = sensorBloc.getSensorWidgets();
-                if (widgets.isEmpty) {
-                  return const SliverToBoxAdapter(child: SizedBox.shrink());
-                }
+            return ValueListenableBuilder<List<BluetoothCharacteristic>>(
+              valueListenable: bleBloc.availableCharacteristics,
+              builder: (context, characteristics, child) {
+                return ValueListenableBuilder<int>(
+                  valueListenable: bleBloc.characteristicStreamsVersion,
+                  builder: (context, _, child) {
+                    final widgets = sensorBloc.getSensorWidgets();
+                    if (widgets.isEmpty) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
 
-                return _SensorGrid(sensorBloc: sensorBloc);
+                    return _SensorGrid(sensorBloc: sensorBloc);
+                  },
+                );
               },
             );
           },

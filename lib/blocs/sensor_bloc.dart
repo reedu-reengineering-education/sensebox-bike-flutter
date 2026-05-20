@@ -123,6 +123,14 @@ class SensorBloc {
       await directUploadService.uploadRemainingBufferedData();
       directUploadService.disable();
     }
+
+    if (bleBloc.selectedDevice != null &&
+        bleBloc.selectedDevice!.isConnected) {
+      if (geolocationBloc.isListening) {
+        geolocationBloc.stopListening();
+      }
+      await geolocationBloc.startListening();
+    }
   }
 
   bool _listEqualsUnordered(List<String> a, List<String> b) {

@@ -30,8 +30,10 @@ class BleBloc {
       ValueNotifier([]);
   final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
+  final ValueNotifier<bool> isReadyForRecordingNotifier = ValueNotifier(false);
 
   List<String> failedCharacteristicUuids = [];
+  late final VoidCallback _readyForRecordingDependencyListener;
   final StreamController<List<BluetoothDevice>> _devicesListController =
       StreamController.broadcast();
   Stream<List<BluetoothDevice>> get devicesListStream =>
@@ -73,12 +75,26 @@ class BleBloc {
   }
 
   BleBloc(this.settingsBloc) {
+    _readyForRecordingDependencyListener = _syncReadyForRecordingNotifier;
+    selectedDeviceNotifier.addListener(_readyForRecordingDependencyListener);
+    availableCharacteristics.addListener(_readyForRecordingDependencyListener);
+    connectionErrorNotifier.addListener(_readyForRecordingDependencyListener);
+    isReconnectingNotifier.addListener(_readyForRecordingDependencyListener);
+    isConnectingNotifier.addListener(_readyForRecordingDependencyListener);
+
     FlutterBluePlus.setLogLevel(LogLevel.error);
     FlutterBluePlus.adapterState.listen((state) {
       updateBluetoothStatus(state == BluetoothAdapterState.on);
     });
 
     _initializeBluetoothStatus();
+  }
+
+  void _syncReadyForRecordingNotifier() {
+    final ready = isReadyForRecording;
+    if (isReadyForRecordingNotifier.value != ready) {
+      isReadyForRecordingNotifier.value = ready;
+    }
   }
 
   Future<void> _initializeBluetoothStatus() async {
@@ -159,6 +175,7 @@ class BleBloc {
   void _clearSelectedDevice() {
     _setSelectedDevice(null);
     _isConnected = false;
+    _syncReadyForRecordingNotifier();
   }
 
   void _invalidateCharacteristicStreams() {
@@ -201,10 +218,12 @@ class BleBloc {
     resetConnectionError();
   }
 
-  Future<void> connectToId(String id, BuildContext context) async {
+  Future<BleConnectionResult?> connectToId(String id, BuildContext context) async {
     resetConnectionError();
 
     await _cancelConnectToIdScanSubscription();
+    final resultCompleter = Completer<BleConnectionResult?>();
+
     await FlutterBluePlus.startScan(withNames: [id], timeout: deviceConnectTimeout);
 
     _connectToIdTimeout = Timer(deviceConnectTimeout, () async {
@@ -214,25 +233,37 @@ class BleBloc {
       } catch (_) {
         // Scan may already be stopped.
       }
+      if (!resultCompleter.isCompleted) {
+        resultCompleter.complete(null);
+      }
     });
 
     _connectToIdScanSubscription =
         FlutterBluePlus.scanResults.listen((results) async {
       for (ScanResult result in results) {
-        if (result.device.advName.toString() == id) {
-          _connectToIdTimeout?.cancel();
-          _connectToIdTimeout = null;
-          await _cancelConnectToIdScanSubscription();
-          try {
-            await FlutterBluePlus.stopScan();
-          } catch (_) {
-            // Scan may already be stopped.
-          }
-          await connectToDevice(result.device, context);
-          break;
+        if (result.device.advName.toString() != id) {
+          continue;
         }
+
+        _connectToIdTimeout?.cancel();
+        _connectToIdTimeout = null;
+        await _cancelConnectToIdScanSubscription();
+        try {
+          await FlutterBluePlus.stopScan();
+        } catch (_) {
+          // Scan may already be stopped.
+        }
+
+        final connectionResult =
+            await connectToDevice(result.device, context);
+        if (!resultCompleter.isCompleted) {
+          resultCompleter.complete(connectionResult);
+        }
+        break;
       }
     });
+
+    return resultCompleter.future;
   }
 
   Future<BleConnectionResult> connectToDevice(
@@ -332,6 +363,7 @@ class BleBloc {
     _setSelectedDevice(device);
     _isConnected = true;
     _userInitiatedDisconnect = false;
+    _syncReadyForRecordingNotifier();
   }
 
   Future<BleConnectionResult> _runConnectionAttempt(
@@ -364,6 +396,7 @@ class BleBloc {
 
       if (attempt > 0) {
         _isConnected = false;
+        _syncReadyForRecordingNotifier();
       }
 
       lastResult = await _runConnectionAttempt(
@@ -530,6 +563,7 @@ class BleBloc {
     if (subscribed.isNotEmpty) {
       characteristicStreamsVersion.value++;
     }
+    _syncReadyForRecordingNotifier();
     return subscribed;
   }
 
@@ -553,6 +587,7 @@ class BleBloc {
   void _markConnected() {
     _isConnected = true;
     _userInitiatedDisconnect = false;
+    _syncReadyForRecordingNotifier();
   }
 
   /// Disconnects and reconnects before the next connection attempt.
@@ -741,6 +776,12 @@ class BleBloc {
   }
 
   void dispose() {
+    selectedDeviceNotifier.removeListener(_readyForRecordingDependencyListener);
+    availableCharacteristics.removeListener(_readyForRecordingDependencyListener);
+    connectionErrorNotifier.removeListener(_readyForRecordingDependencyListener);
+    isReconnectingNotifier.removeListener(_readyForRecordingDependencyListener);
+    isConnectingNotifier.removeListener(_readyForRecordingDependencyListener);
+
     _reconnectionListener?.cancel();
     _cancelScanSubscriptions();
     _cancelConnectToIdScanSubscription();
@@ -754,6 +795,7 @@ class BleBloc {
     availableCharacteristics.dispose();
     characteristicStreamsVersion.dispose();
     connectionErrorNotifier.dispose();
+    isReadyForRecordingNotifier.dispose();
   }
 
   Future<void> requestEnableBluetooth() async {
