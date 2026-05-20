@@ -86,7 +86,18 @@ class PermissionService {
     }
 
     try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        return;
+      }
+
       await requestInitialLocationPermissions();
+
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        // User dismissed the prompt; offer again on a future launch.
+        return;
+      }
+
       await prefs.setString(
         SharedPreferencesKeys.initialLocationPermissionsRequestedAt,
         DateTime.now().toIso8601String(),

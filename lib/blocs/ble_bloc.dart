@@ -63,9 +63,15 @@ class BleBloc {
 
   bool get isConnected => _isConnected;
 
+  /// True while a partial connection is live but the user has not confirmed
+  /// via the blocking dialog yet.
+  bool get isAwaitingPartialConnectionAcceptance =>
+      _pendingSenseBoxService != null;
+
   bool get isReadyForRecording {
     final device = selectedDevice;
     return _isConnected &&
+        !isAwaitingPartialConnectionAcceptance &&
         device != null &&
         device.isConnected &&
         !_isReconnecting &&
@@ -296,7 +302,10 @@ class BleBloc {
       if (result.success) {
         _completeConnection(device, context);
       } else if (result.needsUserDecision) {
-        _clearSelectedDevice();
+        // Preview: show device + live sensor data, but block recording until
+        // the user accepts via the partial-connection dialog.
+        _setSelectedDevice(device);
+        _syncReadyForRecordingNotifier();
       } else {
         await _disconnectDeviceSafe(device);
         _clearSelectedDevice();

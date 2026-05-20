@@ -59,10 +59,16 @@ Future<void> handleBleConnectionResult({
   }
 
   if (result.needsUserDecision) {
-    if (!context.mounted) return;
+    if (!context.mounted) {
+      bleBloc.disconnectDevice();
+      return;
+    }
 
     final shouldContinue = await showBlePartialConnectionDialog(context, result);
-    if (!context.mounted) return;
+    if (!context.mounted) {
+      bleBloc.disconnectDevice();
+      return;
+    }
 
     if (shouldContinue) {
       final finalizeResult =

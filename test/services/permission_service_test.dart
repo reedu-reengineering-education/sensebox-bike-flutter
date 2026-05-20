@@ -194,6 +194,27 @@ void main() {
       );
     });
 
+    test('does not record request when user still has denied permission',
+        () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+
+      when(() => mockGeolocator.isLocationServiceEnabled())
+          .thenAnswer((_) async => true);
+      when(() => mockGeolocator.checkPermission())
+          .thenAnswer((_) async => geo.LocationPermission.denied);
+      when(() => mockGeolocator.requestPermission())
+          .thenAnswer((_) async => geo.LocationPermission.denied);
+
+      await PermissionService.requestInitialLocationPermissionsIfNeeded();
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.containsKey(
+            SharedPreferencesKeys.initialLocationPermissionsRequestedAt),
+        isFalse,
+      );
+    });
+
     test('does nothing on Android', () async {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
 
