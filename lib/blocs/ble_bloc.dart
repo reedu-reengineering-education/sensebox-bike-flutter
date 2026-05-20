@@ -414,15 +414,34 @@ class BleBloc with ChangeNotifier {
         );
       }
 
-      failedCharacteristicUuids = knownCharacteristics
-          .map(_characteristicUuid)
-          .where((uuid) => !subscribed.any((c) => _characteristicUuid(c) == uuid))
-          .toList();
+      final subscribedUuids =
+          subscribed.map(_characteristicUuid).toSet();
+
+      final probes = knownCharacteristics.map((characteristic) {
+        final uuid = _characteristicUuid(characteristic);
+        final isValid = subscribedUuids.contains(uuid);
+        return BleCharacteristicProbeResult(
+          uuid: uuid,
+          isValid: isValid,
+          reason: isValid ? null : BleConnectionFailureReason.noData,
+        );
+      }).toList();
+
+      failedCharacteristicUuids =
+          probes.where((probe) => !probe.isValid).map((probe) => probe.uuid).toList();
+
+      if (subscribed.isNotEmpty &&
+          failedCharacteristicUuids.isNotEmpty &&
+          !autoAcceptPartial) {
+        _pendingSenseBoxService = senseBoxService;
+        _pendingValidUuids = subscribed.map(_characteristicUuid).toList();
+        return BleConnectionResult.needsUserDecision(probes: probes);
+      }
 
       if (updateConnectionState) {
         _markConnected();
       }
-      return BleConnectionResult.fullSuccess();
+      return BleConnectionResult.fullSuccess(probes: probes);
     } catch (e) {
       return BleConnectionResult.failure(
         reason: BleConnectionResult.fromException(e),

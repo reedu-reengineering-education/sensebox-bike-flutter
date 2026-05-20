@@ -31,11 +31,6 @@ class _AppHomeState extends State<AppHome> {
       const SettingsScreen(),
       const LoginScreen(),
     ];
-  }
-
-  @override
-  void initState() {
-    super.initState();
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       PermissionService.requestInitialLocationPermissions();
     }

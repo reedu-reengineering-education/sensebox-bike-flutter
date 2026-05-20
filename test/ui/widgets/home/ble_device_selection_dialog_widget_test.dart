@@ -210,7 +210,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Connection attempt failed'), findsOneWidget);
-    expect(find.textContaining('Turn the senseBox off and on'), findsOneWidget);
-    expect(find.textContaining('battery is charged'), findsOneWidget);
+    expect(
+      find.textContaining('could not connect to the senseBox in time'),
+      findsOneWidget,
+    );
   });
 }

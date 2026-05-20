@@ -65,7 +65,17 @@ Future<void> handleBleConnectionResult({
     if (!context.mounted) return;
 
     if (shouldContinue) {
-      await bleBloc.finalizePartialConnection(device, context);
+      final finalizeResult =
+          await bleBloc.finalizePartialConnection(device, context);
+      if (!context.mounted) return;
+
+      if (!finalizeResult.success) {
+        bleBloc.disconnectDevice();
+        await showBleConnectionFailedDialog(
+          context,
+          finalizeResult.failureReason,
+        );
+      }
     } else {
       bleBloc.disconnectDevice();
     }
@@ -97,7 +107,7 @@ Future<void> showBleConnectionFailedDialog(
   return showAppDialog(
     context: context,
     title: localizations.errorBleConnectionAttemptFailedTitle,
-    message: localizations.errorBleConnectionAttemptFailed,
+    message: bleConnectionFailureMessage(localizations, reason),
     type: AppDialogType.error,
   ).then((_) {});
 }

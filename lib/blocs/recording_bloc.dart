@@ -98,7 +98,6 @@ class RecordingBloc with ChangeNotifier {
 
     try {
       await PermissionService.ensureLocationPermissionsForRecording();
-      await PermissionService.ensureNotificationPermissionGranted();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
       notifyListeners();
