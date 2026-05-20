@@ -24,9 +24,9 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final BleBloc bleBloc = Provider.of<BleBloc>(context);
-    final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
-    final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
+    final BleBloc bleBloc = context.read<BleBloc>();
+    final RecordingBloc recordingBloc = context.read<RecordingBloc>();
+    final SensorBloc sensorBloc = context.read<SensorBloc>();
 
     recordingBloc.setContext(context);
 
@@ -447,29 +447,33 @@ class _StartStopButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canStartRecording =
-        recordingBloc.isRecording || bleBloc.isReadyForRecording;
+    return ValueListenableBuilder<bool>(
+      valueListenable: recordingBloc.isRecordingNotifier,
+      builder: (context, isRecording, child) {
+        final canStartRecording = isRecording || bleBloc.isReadyForRecording;
 
-    return FilledButton.icon(
-      style: const ButtonStyle(
-        padding: WidgetStatePropertyAll(
-          EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        ),
-      ),
-      label: Text(recordingBloc.isRecording
-          ? AppLocalizations.of(context)!.connectionButtonStop
-          : AppLocalizations.of(context)!.connectionButtonStart),
-      icon: Icon(
-          recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
-      onPressed: isReconnecting || !canStartRecording
-          ? null
-          : () async {
-              if (recordingBloc.isRecording) {
-                await recordingBloc.stopRecording();
-              } else {
-                await recordingBloc.startRecording();
-              }
-            },
+        return FilledButton.icon(
+          style: const ButtonStyle(
+            padding: WidgetStatePropertyAll(
+              EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            ),
+          ),
+          label: Text(isRecording
+              ? AppLocalizations.of(context)!.connectionButtonStop
+              : AppLocalizations.of(context)!.connectionButtonStart),
+          icon: Icon(
+              isRecording ? Icons.stop : Icons.fiber_manual_record),
+          onPressed: isReconnecting || !canStartRecording
+              ? null
+              : () async {
+                  if (isRecording) {
+                    await recordingBloc.stopRecording();
+                  } else {
+                    await recordingBloc.startRecording();
+                  }
+                },
+        );
+      },
     );
   }
 }
@@ -485,26 +489,33 @@ class _DisconnectButton extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: bleBloc.isReconnectingNotifier,
       builder: (context, isReconnecting, child) {
-        return OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          ),
-          icon: isReconnecting
-              ? const Icon(Icons.bluetooth_searching)
-              : const Icon(Icons.bluetooth_disabled),
-          label: isReconnecting
-              ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
-              : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
-          onPressed: isReconnecting
-              ? null
-              : () async {
-                  // Stop recording if active before disconnecting
-                  if (recordingBloc.isRecording) {
-                    await recordingBloc.stopRecording();
-                  }
-                  bleBloc.disconnectDevice();
-                },
+        return ValueListenableBuilder<bool>(
+          valueListenable: recordingBloc.isRecordingNotifier,
+          builder: (context, isRecording, child) {
+            return OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              ),
+              icon: isReconnecting
+                  ? const Icon(Icons.bluetooth_searching)
+                  : const Icon(Icons.bluetooth_disabled),
+              label: isReconnecting
+                  ? Text(AppLocalizations.of(context)!
+                      .connectionButtonReconnecting)
+                  : Text(AppLocalizations.of(context)!
+                      .connectionButtonDisconnect),
+              onPressed: isReconnecting
+                  ? null
+                  : () async {
+                      if (isRecording) {
+                        await recordingBloc.stopRecording();
+                      }
+                      bleBloc.disconnectDevice();
+                    },
+            );
+          },
         );
       },
     );

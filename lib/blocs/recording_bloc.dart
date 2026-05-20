@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -15,28 +17,27 @@ import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_connection_dialogs.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 
-class RecordingBloc with ChangeNotifier {
+class RecordingBloc {
   final BleBloc bleBloc;
   final IsarService isarService;
   final TrackBloc trackBloc;
   final OpenSenseMapBloc openSenseMapBloc;
   final SettingsBloc settingsBloc;
 
-  bool _isRecording = false;
   TrackData? _currentTrack;
   SenseBox? _selectedSenseBox;
   final ValueNotifier<bool> _isRecordingNotifier = ValueNotifier<bool>(false);
   DirectUploadService? _directUploadService;
   BatchUploadService? _batchUploadService;
 
-  VoidCallback? _onRecordingStop;
+  Future<void> Function()? _onRecordingStop;
   Future<void> Function()? _onRecordingStartAsync;
+  StreamSubscription<SenseBox?>? _senseBoxSubscription;
 
-  // Context for showing upload modal
   BuildContext? _context;
   DateTime? _lastRecordingStopTimestamp;
 
-  bool get isRecording => _isRecording;
+  bool get isRecording => _isRecordingNotifier.value;
 
   ValueNotifier<bool> get isRecordingNotifier => _isRecordingNotifier;
 
@@ -46,16 +47,17 @@ class RecordingBloc with ChangeNotifier {
 
   RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
       this.openSenseMapBloc, this.settingsBloc) {
-    openSenseMapBloc.senseBoxStream.listen(_onSenseBoxChanged).onError((error) {
+    _senseBoxSubscription =
+        openSenseMapBloc.senseBoxStream.listen(_onSenseBoxChanged);
+    _senseBoxSubscription?.onError((error) {
       ErrorService.handleError(error, StackTrace.current);
     });
 
-    // Listen to BLE connection errors and stop recording
     bleBloc.connectionErrorNotifier.addListener(_onBleConnectionError);
   }
 
   void _onBleConnectionError() {
-    if (!bleBloc.connectionErrorNotifier.value || !_isRecording) {
+    if (!bleBloc.connectionErrorNotifier.value || !isRecording) {
       return;
     }
 
@@ -73,34 +75,33 @@ class RecordingBloc with ChangeNotifier {
     }
   }
 
-
-
   void setRecordingCallbacks({
     Future<void> Function()? onRecordingStart,
-    VoidCallback? onRecordingStop,
+    Future<void> Function()? onRecordingStop,
   }) {
     _onRecordingStartAsync = onRecordingStart;
     _onRecordingStop = onRecordingStop;
   }
 
-  /// Sets the context for showing upload modals
   void setContext(BuildContext context) {
     _context = context;
   }
 
   void _onSenseBoxChanged(SenseBox? senseBox) {
     _selectedSenseBox = senseBox;
-    notifyListeners();
+  }
+
+  void _setRecordingState(bool recording) {
+    _isRecordingNotifier.value = recording;
   }
 
   Future<void> startRecording() async {
-    if (_isRecording) return;
+    if (isRecording) return;
 
     try {
       await PermissionService.ensureLocationPermissionsForRecording();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
-      notifyListeners();
       return;
     }
 
@@ -110,7 +111,6 @@ class RecordingBloc with ChangeNotifier {
         StackTrace.current,
         sendToSentry: false,
       );
-      notifyListeners();
       return;
     }
 
@@ -144,8 +144,7 @@ class RecordingBloc with ChangeNotifier {
         );
       }
 
-      _isRecording = true;
-      _isRecordingNotifier.value = true;
+      _setRecordingState(true);
       _lastRecordingStopTimestamp = null;
       _directUploadService = directUploadService;
       _batchUploadService = batchUploadService;
@@ -166,8 +165,6 @@ class RecordingBloc with ChangeNotifier {
         sendToSentry: e is! NoSenseBoxSelected,
       );
     }
-
-    notifyListeners();
   }
 
   Future<void> _rollbackRecordingStart({
@@ -175,8 +172,7 @@ class RecordingBloc with ChangeNotifier {
     DirectUploadService? directUploadService,
     BatchUploadService? batchUploadService,
   }) async {
-    _isRecording = false;
-    _isRecordingNotifier.value = false;
+    _setRecordingState(false);
     _lastRecordingStopTimestamp = null;
 
     directUploadService?.dispose();
@@ -194,22 +190,20 @@ class RecordingBloc with ChangeNotifier {
   }
 
   Future<void> stopRecording({bool dueToBleDisconnect = false}) async {
-    if (!_isRecording) return;
+    if (!isRecording) return;
 
     _lastRecordingStopTimestamp = DateTime.now().toUtc();
+    _setRecordingState(false);
 
-    _isRecording = false;
-    _isRecordingNotifier.value = false;
-    _onRecordingStop?.call();
+    await _onRecordingStop?.call();
 
-    // Store current track and sensebox for upload
     final trackToUpload = _currentTrack;
     final senseBoxForUpload = _selectedSenseBox;
 
-    // Clean up services and handle post-ride upload if needed
     _directUploadService?.dispose();
     _directUploadService = null;
     _currentTrack = null;
+    trackBloc.endTrack();
 
     final shouldShowUploadModal = !settingsBloc.directUploadMode &&
         _batchUploadService != null &&
@@ -221,14 +215,12 @@ class RecordingBloc with ChangeNotifier {
       _batchUploadService = null;
     }
 
-    notifyListeners();
-
     if (dueToBleDisconnect) {
       await _showRecordingStoppedDueToBleDialog();
     }
 
     if (shouldShowUploadModal && (_context?.mounted ?? false)) {
-      _showUploadProgressModal(trackToUpload, senseBoxForUpload);
+      await _showUploadProgressModal(trackToUpload, senseBoxForUpload);
     }
   }
 
@@ -241,14 +233,20 @@ class RecordingBloc with ChangeNotifier {
     await showRecordingStoppedDueToBleDialog(context);
   }
 
-  void _showUploadProgressModal(TrackData track, SenseBox? senseBox) async {
-    if (_context == null || _batchUploadService == null) return;
+  Future<void> _showUploadProgressModal(
+    TrackData track,
+    SenseBox? senseBox,
+  ) async {
+    final context = _context;
+    if (context == null || _batchUploadService == null) return;
 
     final canUpload =
         senseBox != null && openSenseMapBloc.hasAuthAndSelectedSenseBox;
 
     try {
       await track.geolocations.load();
+      if (!context.mounted) return;
+
       final geolocations = track.geolocations.toList();
 
       if (geolocations.isEmpty) {
@@ -256,7 +254,7 @@ class RecordingBloc with ChangeNotifier {
       }
 
       UploadProgressOverlay.show(
-        _context!,
+        context,
         batchUploadService: _batchUploadService!,
         canUpload: canUpload,
         isAuthenticated: openSenseMapBloc.isAuthenticated,
@@ -270,7 +268,8 @@ class RecordingBloc with ChangeNotifier {
           debugPrint('[RecordingBloc] Batch upload failed permanently');
         },
         onStartUpload: () {
-          if (canUpload) _startBatchUpload(track, senseBox!);
+          final box = senseBox;
+          if (canUpload && box != null) _startBatchUpload(track, box);
         },
       );
     } catch (e, stack) {
@@ -281,14 +280,12 @@ class RecordingBloc with ChangeNotifier {
     }
   }
 
-  void _startBatchUpload(TrackData track, SenseBox senseBox) async {
+  Future<void> _startBatchUpload(TrackData track, SenseBox senseBox) async {
     if (_batchUploadService == null) return;
 
     try {
       await _batchUploadService!.uploadTrack(track, senseBox);
     } catch (e, stack) {
-      // Log error but don't prevent recording from stopping
-      // The modal will show the error state and allow retry
       ErrorService.handleError(
         'Batch upload failed after recording stop: $e',
         stack,
@@ -296,6 +293,7 @@ class RecordingBloc with ChangeNotifier {
       );
     }
   }
+
   void _cleanupBatchUploadService() {
     _batchUploadService?.dispose();
     _batchUploadService = null;
@@ -304,16 +302,12 @@ class RecordingBloc with ChangeNotifier {
   DirectUploadService? get directUploadService => _directUploadService;
   BatchUploadService? get batchUploadService => _batchUploadService;
 
-  @override
   void dispose() {
+    _senseBoxSubscription?.cancel();
     bleBloc.connectionErrorNotifier.removeListener(_onBleConnectionError);
     _directUploadService?.dispose();
     _batchUploadService?.dispose();
     _isRecordingNotifier.dispose();
-
-    // Hide any open upload modal
     UploadProgressOverlay.hide();
-
-    super.dispose();
   }
 }
