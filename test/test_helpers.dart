@@ -11,11 +11,14 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:isar_community/isar.dart';
 import 'package:provider/provider.dart';
+import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'mocks.dart';
 
 /// Initializes common test dependencies
 void initializeTestDependencies() {
@@ -253,8 +256,10 @@ void setupMockGeolocator(dynamic mockGeolocator, double lat, double lng,
 
 /// Sets up recording mode for tests
 /// Requires MockRecordingBloc and MockIsarService from mocks.dart
-void setupRecordingMode(dynamic recordingBloc, dynamic isarService) {
-  when(() => isarService.geolocationService.saveGeolocationData(any()))
+void setupRecordingMode(MockRecordingBloc recordingBloc, MockIsarService isarService) {
+  when(() => isarService.mockGeolocationService.saveGeolocationData(any()))
+      .thenAnswer((_) async => 1);
+  when(() => isarService.mockSensorService.saveSensorData(any()))
       .thenAnswer((_) async => 1);
   recordingBloc.setRecording(true);
   when(() => recordingBloc.currentTrack).thenReturn(createMockTrackData());
@@ -274,11 +279,11 @@ const Duration mediumDelay = Duration(milliseconds: 50);
 /// Helper function to test geolocation filtering with privacy zones
 /// This function sets up privacy zones, mocks a position, and verifies emission/saving behavior
 Future<void> testGeolocationWithPrivacyZone({
-  required dynamic geolocationBloc,
+  required GeolocationBloc geolocationBloc,
   required StreamController<List<String>> privacyZonesController,
   required List<GeolocationData> emittedGeolocations,
   required dynamic mockGeolocator,
-  required dynamic mockIsarService,
+  required MockIsarService mockIsarService,
   required double lat,
   required double lng,
   required List<String> zones,
@@ -302,10 +307,11 @@ Future<void> testGeolocationWithPrivacyZone({
   }
 
   if (shouldSave) {
-    verify(() => mockIsarService.geolocationService.saveGeolocationData(any()))
+    verify(() =>
+            mockIsarService.mockGeolocationService.saveGeolocationData(any()))
         .called(1);
   } else {
-    verifyNever(
-        () => mockIsarService.geolocationService.saveGeolocationData(any()));
+    verifyNever(() =>
+        mockIsarService.mockGeolocationService.saveGeolocationData(any()));
   }
 }

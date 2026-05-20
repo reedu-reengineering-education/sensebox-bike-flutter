@@ -33,9 +33,17 @@ class MockErrorService extends Mock implements ErrorService {}
 
 class MockIsarService extends Mock implements IsarService {
   final MockTrackService mockTrackService = MockTrackService();
+  final MockGeolocationService mockGeolocationService = MockGeolocationService();
+  final MockSensorService mockSensorService = MockSensorService();
 
   @override
   TrackService get trackService => mockTrackService;
+
+  @override
+  GeolocationService get geolocationService => mockGeolocationService;
+
+  @override
+  SensorService get sensorService => mockSensorService;
 }
 
 class MockTrackService extends Mock implements TrackService {}

@@ -193,7 +193,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
         ChangeNotifierProvider.value(value: _trackBloc!),
         ChangeNotifierProvider.value(value: _recordingBloc!),
         ChangeNotifierProvider.value(value: _bleBloc!),
-        ChangeNotifierProvider.value(value: _geolocationBloc!),
+        Provider<GeolocationBloc>.value(value: _geolocationBloc!),
         ChangeNotifierProvider.value(value: _sensorBloc!),
         ChangeNotifierProvider.value(value: _openSenseMapBloc!),
         ChangeNotifierProvider.value(value: _configurationBloc!),
