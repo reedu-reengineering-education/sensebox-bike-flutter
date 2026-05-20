@@ -13,6 +13,8 @@ void main() {
   late Isar isar;
   late GeolocationService geolocationService;
   late GeolocationData geolocationData;
+  late TrackData trackData;
+  late int testTrackId;
   late Directory tempDirectory;
 
   setUp(() async {
@@ -29,10 +31,11 @@ void main() {
 
     await clearIsarDatabase(isar);
 
-    final trackData = createMockTrackData();
+    trackData = createMockTrackData();
     await isar.writeTxn(() async {
       await isar.trackDatas.put(trackData);
     });
+    testTrackId = trackData.id;
 
     geolocationData = createMockGeolocationData(trackData);
     await isar.writeTxn(() async {
@@ -67,7 +70,7 @@ void main() {
       });
 
       test('deletes multiple geolocations from the database', () async {
-        final geolocationData2 = GeolocationData()
+        final geolocationData2 = createMockGeolocationData(trackData)
           ..latitude = 48.8566
           ..longitude = 2.3522
           ..timestamp = DateTime.now().toUtc()
@@ -75,6 +78,7 @@ void main() {
 
         await isar.writeTxn(() async {
           await isar.geolocationDatas.put(geolocationData2);
+          await geolocationData2.track.save();
         });
 
         // Verify that multiple geolocation records exist before deletion
@@ -109,18 +113,8 @@ void main() {
 
     group('getGeolocationDataByTrackId', () {
       test('retrieves geolocation data by track ID', () async {
-        final trackData = TrackData();
-        await isar.writeTxn(() async {
-          await isar.trackDatas.put(trackData);
-        });
-
-        geolocationData.track.value = trackData;
-        await isar.writeTxn(() async {
-          await geolocationData.track.save();
-        });
-
         final geolocations =
-            await geolocationService.getGeolocationDataByTrackId(trackData.id);
+            await geolocationService.getGeolocationDataByTrackId(testTrackId);
 
         expect(geolocations.length, equals(1));
         expect(geolocations.first.latitude, equals(52.5200));

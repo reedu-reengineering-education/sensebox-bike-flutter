@@ -191,8 +191,7 @@ void main() {
           .thenAnswer((_) => geoController.stream);
 
       isarService = MockIsarService();
-      sensorService = MockSensorService();
-      when(() => isarService.sensorService).thenReturn(sensorService);
+      sensorService = isarService.mockSensorService;
       when(() => sensorService.saveSensorDataBatch(any()))
           .thenAnswer((_) async {});
     });

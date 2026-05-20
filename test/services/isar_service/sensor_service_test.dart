@@ -15,8 +15,6 @@ import '../../test_helpers.dart';
 void main() {
   const MethodChannel channel =
       MethodChannel('plugins.flutter.io/path_provider');
-  late MockIsarService mockIsarService;
-  late MockSensorService mockSensorService;
   late Isar isar;
   late SensorService sensorService;
   late SensorData sensorData;
@@ -33,24 +31,12 @@ void main() {
 
     tempDirectory = Directory.systemTemp.createTempSync();
     mockPathProvider(tempDirectory.path);
-    
-    mockIsarService = MockIsarService();
-    mockSensorService = MockSensorService();
-
-    // Mock the sensorService in IsarService
-    when(() => mockIsarService.sensorService).thenReturn(mockSensorService);
-
-    // Mock the saveSensorData method to return a Future<int>
-    when(() => mockSensorService.saveSensorData(any()))
-        .thenAnswer((_) async => 1);
 
     isar = await initializeInMemoryIsar();
 
-    // Mock IsarProvider to return the in-memory Isar instance
     final mockIsarProvider = MockIsarProvider();
     when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
 
-    // Initialize SensorService with the mocked IsarProvider
     sensorService = SensorService(isarProvider: mockIsarProvider);
 
     await clearIsarDatabase(isar);
@@ -126,14 +112,18 @@ void main() {
       test(
           'should store data for SurfaceAnomalySensor when feature flag is enabled',
           () async {
-        FeatureFlags.hideSurfaceAnomalySensor = true; // Enable the feature flag
-        final sensorData = SensorData()
+        FeatureFlags.hideSurfaceAnomalySensor = true;
+        final mockSensorService = MockSensorService();
+        when(() => mockSensorService.saveSensorData(any()))
+            .thenAnswer((_) async => 1);
+
+        final surfaceSensorData = SensorData()
           ..title = 'surface_anomaly'
           ..value = 1.23
           ..attribute = 'anomaly_level'
           ..characteristicUuid = '1234-5678-9012-3456';
 
-        await mockSensorService.saveSensorData(sensorData);
+        await mockSensorService.saveSensorData(surfaceSensorData);
 
         final capturedData =
             verify(() => mockSensorService.saveSensorData(captureAny()))

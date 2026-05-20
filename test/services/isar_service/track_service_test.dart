@@ -171,20 +171,24 @@ group('TrackService', () {
           await isar.trackDatas.putAll([trackData2, trackData3]);
         });
 
+        final trackId1 = trackData.id;
+        final trackId2 = trackData2.id;
+        final trackId3 = trackData3.id;
+
         // Verify all tracks start as not uploaded
-        expect(trackData.isUploaded, isFalse);
-        expect(trackData2.isUploaded, isFalse);
-        expect(trackData3.isUploaded, isFalse);
+        expect((await isar.trackDatas.get(trackId1))!.isUploaded, isFalse);
+        expect((await isar.trackDatas.get(trackId2))!.isUploaded, isFalse);
+        expect((await isar.trackDatas.get(trackId3))!.isUploaded, isFalse);
 
         // Mark all tracks as uploaded
-        await trackService.markTrackAsUploaded(trackData.id);
-        await trackService.markTrackAsUploaded(trackData2.id);
-        await trackService.markTrackAsUploaded(trackData3.id);
+        await trackService.markTrackAsUploaded(trackId1);
+        await trackService.markTrackAsUploaded(trackId2);
+        await trackService.markTrackAsUploaded(trackId3);
 
         // Verify all tracks are now marked as uploaded
-        final updatedTrack1 = await isar.trackDatas.get(trackData.id);
-        final updatedTrack2 = await isar.trackDatas.get(trackData2.id);
-        final updatedTrack3 = await isar.trackDatas.get(trackData3.id);
+        final updatedTrack1 = await isar.trackDatas.get(trackId1);
+        final updatedTrack2 = await isar.trackDatas.get(trackId2);
+        final updatedTrack3 = await isar.trackDatas.get(trackId3);
 
         expect(updatedTrack1!.isUploaded, isTrue);
         expect(updatedTrack2!.isUploaded, isTrue);

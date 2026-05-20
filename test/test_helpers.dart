@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -74,9 +75,11 @@ Future<void> tapElement(
 
 Future<Isar> initializeInMemoryIsar() async {
   await Isar.initializeIsarCore(download: true);
-  return await Isar.open(
+  final directory = Directory.systemTemp.createTempSync('isar_test_');
+  return Isar.open(
     [TrackDataSchema, GeolocationDataSchema, SensorDataSchema],
-    directory: '',
+    directory: directory.path,
+    inspector: false,
   );
 }
 
