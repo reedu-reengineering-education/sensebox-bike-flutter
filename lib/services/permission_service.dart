@@ -1,20 +1,24 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 
 class PermissionService {
   static bool get _isApplePlatform =>
       defaultTargetPlatform == TargetPlatform.iOS ||
       defaultTargetPlatform == TargetPlatform.macOS;
 
-  static Future<void> ensureLocationPermissionsGranted() async {
+  /// Foreground map/GPS usage: While In Use or Always is sufficient.
+  static Future<void> ensureForegroundLocationPermissionsGranted() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       throw LocationPermissionDenied();
     }
 
     if (_isApplePlatform) {
-      await _ensureAlwaysLocationOnApple();
+      await _ensureForegroundLocationOnApple();
       return;
     }
 
@@ -31,9 +35,23 @@ class PermissionService {
     }
   }
 
-  /// iOS/macOS require "Always" location to keep GPS running with a locked screen.
+  /// Backwards-compatible alias for foreground location checks.
+  static Future<void> ensureLocationPermissionsGranted() async {
+    await ensureForegroundLocationPermissionsGranted();
+  }
+
+  /// Recording/background tracking: Always on iOS, notification on Android 14+.
   static Future<void> ensureLocationPermissionsForRecording() async {
-    await ensureLocationPermissionsGranted();
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      throw LocationPermissionDenied();
+    }
+
+    if (_isApplePlatform) {
+      await _ensureAlwaysLocationOnApple();
+    } else {
+      await ensureForegroundLocationPermissionsGranted();
+    }
+
     await ensureNotificationPermissionGranted();
   }
 
@@ -55,6 +73,29 @@ class PermissionService {
     }
   }
 
+  /// Requests initial iOS location permissions once per install.
+  static Future<void> requestInitialLocationPermissionsIfNeeded() async {
+    if (!_isApplePlatform) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.containsKey(
+        SharedPreferencesKeys.initialLocationPermissionsRequestedAt)) {
+      return;
+    }
+
+    try {
+      await requestInitialLocationPermissions();
+      await prefs.setString(
+        SharedPreferencesKeys.initialLocationPermissionsRequestedAt,
+        DateTime.now().toIso8601String(),
+      );
+    } catch (e, stack) {
+      ErrorService.logToConsole(e, stack);
+    }
+  }
+
   static Future<bool> allowsBackgroundLocation() async {
     if (!_isApplePlatform) {
       return isLocationPermissionGranted();
@@ -70,10 +111,6 @@ class PermissionService {
     }
 
     final permission = await Geolocator.checkPermission();
-    if (_isApplePlatform) {
-      return permission == LocationPermission.always;
-    }
-
     return permission == LocationPermission.always ||
         permission == LocationPermission.whileInUse;
   }
@@ -92,6 +129,19 @@ class PermissionService {
     final result = await Permission.notification.request();
     if (!result.isGranted) {
       throw NotificationPermissionDenied();
+    }
+  }
+
+  static Future<void> _ensureForegroundLocationOnApple() async {
+    var permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      throw LocationPermissionDenied();
     }
   }
 

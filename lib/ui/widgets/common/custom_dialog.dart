@@ -20,6 +20,7 @@ Future<bool?> showCustomDialog({
     type: type == DialogType.error
         ? AppDialogType.error
         : AppDialogType.confirmation,
+    barrierDismissible: true,
     cancelLabel:
         type == DialogType.confirmation ? localizations.generalCancel : null,
   );

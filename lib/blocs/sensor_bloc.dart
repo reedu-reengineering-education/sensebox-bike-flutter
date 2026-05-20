@@ -108,10 +108,10 @@ class SensorBloc with ChangeNotifier {
       directUploadService.enable();
     }
     
-    if (!geolocationBloc.isListening) {
-      await geolocationBloc.startListening();
+    if (geolocationBloc.isListening) {
+      geolocationBloc.stopListening();
     }
-
+    await geolocationBloc.startListening();
     await geolocationBloc.getCurrentLocationAndEmit();
   }
 

@@ -46,23 +46,30 @@ class GeolocationBloc with ChangeNotifier {
     }
 
     try {
-      await PermissionService.ensureLocationPermissionsGranted();
-      await PermissionService.ensureNotificationPermissionGranted();
+      await PermissionService.ensureForegroundLocationPermissionsGranted();
 
       late LocationSettings locationSettings;
 
       if (defaultTargetPlatform == TargetPlatform.android) {
-        locationSettings = AndroidSettings(
+        if (recordingBloc.isRecording) {
+          await PermissionService.ensureNotificationPermissionGranted();
+          locationSettings = AndroidSettings(
+              accuracy: LocationAccuracy.bestForNavigation,
+              distanceFilter: 0,
+              foregroundNotificationConfig: const ForegroundNotificationConfig(
+                  notificationText:
+                      "senseBox:bike will record your location in the background",
+                  notificationTitle: "Running in the background",
+                  enableWakeLock: true,
+                  notificationIcon: AndroidResource(
+                      name: "@mipmap/ic_stat_sensebox_bike_logo"),
+                  color: Colors.blue));
+        } else {
+          locationSettings = AndroidSettings(
             accuracy: LocationAccuracy.bestForNavigation,
             distanceFilter: 0,
-            foregroundNotificationConfig: const ForegroundNotificationConfig(
-                notificationText:
-                    "senseBox:bike will record your location in the background",
-                notificationTitle: "Running in the background",
-                enableWakeLock: true,
-                notificationIcon: AndroidResource(
-                    name: "@mipmap/ic_stat_sensebox_bike_logo"),
-                color: Colors.blue));
+          );
+        }
       } else if (defaultTargetPlatform == TargetPlatform.iOS ||
           defaultTargetPlatform == TargetPlatform.macOS) {
         final allowBackground =
@@ -126,7 +133,7 @@ class GeolocationBloc with ChangeNotifier {
 
   // function to get the current location
   Future<Position> getCurrentLocation() async {
-    await PermissionService.ensureLocationPermissionsGranted();
+    await PermissionService.ensureForegroundLocationPermissionsGranted();
 
     return Geolocator.getCurrentPosition();
   }

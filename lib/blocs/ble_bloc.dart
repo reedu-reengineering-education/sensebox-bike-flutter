@@ -49,6 +49,9 @@ class BleBloc with ChangeNotifier {
   static const int _maxReconnectionAttempts = 10;
   
   StreamSubscription<BluetoothConnectionState>? _reconnectionListener;
+  StreamSubscription<List<ScanResult>>? _scanResultsSubscription;
+  StreamSubscription<bool>? _isScanningSubscription;
+  StreamSubscription<List<ScanResult>>? _connectToIdScanSubscription;
 
   BluetoothService? _pendingSenseBoxService;
   List<String> _pendingValidUuids = [];
@@ -106,14 +109,29 @@ class BleBloc with ChangeNotifier {
       throw ScanPermissionDenied();
     }
 
-    FlutterBluePlus.scanResults.listen(_onScanResults);
-    FlutterBluePlus.isScanning.listen((scanning) {
+    await _cancelScanSubscriptions();
+    _scanResultsSubscription =
+        FlutterBluePlus.scanResults.listen(_onScanResults);
+    _isScanningSubscription = FlutterBluePlus.isScanning.listen((scanning) {
       isScanningNotifier.value = scanning;
     });
   }
 
+  Future<void> _cancelScanSubscriptions() async {
+    await _scanResultsSubscription?.cancel();
+    _scanResultsSubscription = null;
+    await _isScanningSubscription?.cancel();
+    _isScanningSubscription = null;
+  }
+
+  Future<void> _cancelConnectToIdScanSubscription() async {
+    await _connectToIdScanSubscription?.cancel();
+    _connectToIdScanSubscription = null;
+  }
+
   Future<void> stopScanning() async {
     await FlutterBluePlus.stopScan();
+    await _cancelScanSubscriptions();
     isScanningNotifier.value = false;
   }
 
@@ -155,11 +173,14 @@ class BleBloc with ChangeNotifier {
 
   Future<void> connectToId(String id, BuildContext context) async {
     resetConnectionError();
-    
+
+    await _cancelConnectToIdScanSubscription();
     await FlutterBluePlus.startScan(withNames: [id]);
-    FlutterBluePlus.scanResults.listen((results) async {
+    _connectToIdScanSubscription =
+        FlutterBluePlus.scanResults.listen((results) async {
       for (ScanResult result in results) {
         if (result.device.advName.toString() == id) {
+          await _cancelConnectToIdScanSubscription();
           await connectToDevice(result.device, context);
           break;
         }
@@ -751,6 +772,8 @@ class BleBloc with ChangeNotifier {
   @override
   void dispose() {
     _reconnectionListener?.cancel();
+    _cancelScanSubscriptions();
+    _cancelConnectToIdScanSubscription();
     _devicesListController.close();
     _clearCharacteristicStreams();
     selectedDeviceNotifier.dispose();

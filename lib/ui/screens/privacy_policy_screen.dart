@@ -5,6 +5,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sensebox_bike/ui/widgets/common/checkbox_with_text.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
+import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -94,6 +95,9 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                   onPressed: (_isCheckboxChecked)
                       ? () async {
                           await _saveAcceptanceDate();
+                          await PermissionService
+                              .requestInitialLocationPermissionsIfNeeded();
+                          if (!context.mounted) return;
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(

@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/screens/home_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
@@ -31,9 +32,7 @@ class _AppHomeState extends State<AppHome> {
       const SettingsScreen(),
       const LoginScreen(),
     ];
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      PermissionService.requestInitialLocationPermissions();
-    }
+    unawaited(PermissionService.requestInitialLocationPermissionsIfNeeded());
   }
 
   @override

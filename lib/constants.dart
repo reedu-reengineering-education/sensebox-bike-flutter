@@ -7,6 +7,8 @@ const defaultTimeout = 30; // in seconds
 
 class SharedPreferencesKeys {
   static const String privacyPolicyAcceptedAt = 'privacyPolicyAcceptedAt';
+  static const String initialLocationPermissionsRequestedAt =
+      'initialLocationPermissionsRequestedAt';
   static const String privacyZones = 'privacyZones';
   static const String selectedSenseBox = 'selectedSenseBox';
   static const bool vibrateOnDisconnect = false;
