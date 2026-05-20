@@ -61,15 +61,16 @@ class GeolocationBloc {
       _startStationaryLocationTimer();
       _isListening = true;
     } catch (e, stack) {
-      _tearDownListening();
+      await _tearDownListening();
       ErrorService.logToConsole(e, stack);
       rethrow;
     }
   }
 
   void _handlePositionStreamError(Object error, StackTrace stack) {
-    _tearDownListening();
-    ErrorService.handleError(GeolocationStartFailed(error), stack);
+    unawaited(_tearDownListening().then((_) {
+      ErrorService.handleError(GeolocationStartFailed(error), stack);
+    }));
   }
 
   Future<Position> getCurrentLocation() async {
@@ -118,13 +119,13 @@ class GeolocationBloc {
     _stationaryLocationTimer = null;
   }
 
-  void stopListening() {
-    _tearDownListening();
+  Future<void> stopListening() async {
+    await _tearDownListening();
     _lastEmittedPosition = null;
   }
 
-  void _tearDownListening() {
-    _positionStreamSubscription?.cancel();
+  Future<void> _tearDownListening() async {
+    await _positionStreamSubscription?.cancel();
     _positionStreamSubscription = null;
     _stopStationaryLocationTimer();
     _isListening = false;
@@ -307,7 +308,7 @@ class GeolocationBloc {
   }
 
   void dispose() {
-    stopListening();
+    unawaited(stopListening());
     _privacyZonesSubscription?.cancel();
     _privacyZoneChecker.dispose();
     _geolocationController.close();

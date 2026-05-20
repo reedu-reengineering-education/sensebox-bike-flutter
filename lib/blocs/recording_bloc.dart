@@ -37,6 +37,7 @@ class RecordingBloc {
 
   BuildContext? _context;
   DateTime? _lastRecordingStopTimestamp;
+  bool _isStoppingRecording = false;
 
   bool get isRecording => _isRecordingNotifier.value;
 
@@ -64,7 +65,7 @@ class RecordingBloc {
       return;
     }
 
-    stopRecording(dueToBleDisconnect: false);
+    _stopRecordingSafely(dueToBleDisconnect: false);
   }
 
   void _onBleConnectionError() {
@@ -72,7 +73,23 @@ class RecordingBloc {
       return;
     }
 
-    stopRecording(dueToBleDisconnect: true);
+    _stopRecordingSafely(dueToBleDisconnect: true);
+  }
+
+  void _stopRecordingSafely({required bool dueToBleDisconnect}) {
+    if (!isRecording || _isStoppingRecording) {
+      return;
+    }
+
+    _isStoppingRecording = true;
+    unawaited(
+      stopRecording(dueToBleDisconnect: dueToBleDisconnect)
+          .catchError((error, stackTrace) {
+        ErrorService.handleError(error, stackTrace);
+      }).whenComplete(() {
+        _isStoppingRecording = false;
+      }),
+    );
   }
 
   void _onDirectUploadFailed() {

@@ -345,11 +345,18 @@ class BleBloc {
 
       failedCharacteristicUuids = _pendingSenseBoxService!.characteristics
           .map(_characteristicUuid)
-          .where((uuid) => !validUuids.contains(uuid))
+          .where(
+            (uuid) =>
+                knownSensorCharacteristicUuids.contains(uuid) &&
+                !validUuids.contains(uuid),
+          )
           .toList();
 
-      final subscribed = await _applyConnection(device, characteristics);
+      final subscribed = _characteristicsAlreadySubscribed(characteristics)
+          ? characteristics
+          : await _applyConnection(device, characteristics);
       if (subscribed.isEmpty) {
+        _clearPendingConnection();
         return BleConnectionResult.failure(
           reason: BleConnectionFailureReason.noData,
         );
@@ -361,10 +368,26 @@ class BleBloc {
       return BleConnectionResult.fullSuccess();
     } catch (e) {
       await _disconnectDeviceSafe(device);
+      _clearPendingConnection();
       return BleConnectionResult.failure(
         reason: BleConnectionFailureReason.bluetoothError,
       );
     }
+  }
+
+  bool _characteristicsAlreadySubscribed(
+    List<BluetoothCharacteristic> characteristics,
+  ) {
+    if (characteristics.isEmpty) {
+      return false;
+    }
+
+    final activeUuids =
+        availableCharacteristics.value.map(_characteristicUuid).toSet();
+    return characteristics.every(
+      (characteristic) =>
+          activeUuids.contains(_characteristicUuid(characteristic)),
+    );
   }
 
   void _completeConnection(BluetoothDevice device, BuildContext context) {

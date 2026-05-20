@@ -46,7 +46,7 @@ class SensorBloc {
         }
       } else {
         _stopListening();
-        geolocationBloc.stopListening();
+        unawaited(geolocationBloc.stopListening());
       }
     };
 
@@ -107,7 +107,7 @@ class SensorBloc {
     }
 
     if (geolocationBloc.isListening) {
-      geolocationBloc.stopListening();
+      await geolocationBloc.stopListening();
     }
     await geolocationBloc.startListening();
     await geolocationBloc.getCurrentLocationAndEmit();
