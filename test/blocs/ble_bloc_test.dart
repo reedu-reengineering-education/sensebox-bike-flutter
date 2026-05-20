@@ -8,7 +8,6 @@ import '../mocks.dart';
 void main() {
   group('BleBloc', () {
     late BleBloc bleBloc;
-    late MockSettingsBloc mockSettingsBloc;
 
     setUpAll(() {
       registerFallbackValue(MockBluetoothDevice());
@@ -16,7 +15,6 @@ void main() {
     });
 
     setUp(() {
-      mockSettingsBloc = MockSettingsBloc();
       bleBloc = MockBleBloc();
     });
 
@@ -35,21 +33,14 @@ void main() {
         expect(bleBloc.characteristicStreamsVersion.value, equals(0));
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
         expect(bleBloc.isConnected, isFalse);
-        expect(bleBloc.devicesList, isEmpty);
       });
     });
 
     group('Bluetooth Status', () {
-      test('updateBluetoothStatus updates notifier and notifies listeners', () {
-        bool listenerCalled = false;
-        bleBloc.addListener(() {
-          listenerCalled = true;
-        });
-
+      test('updateBluetoothStatus updates notifier', () {
         bleBloc.updateBluetoothStatus(true);
 
         expect(bleBloc.isBluetoothEnabledNotifier.value, isTrue);
-        expect(listenerCalled, isTrue);
       });
     });
 
@@ -59,18 +50,6 @@ void main() {
         bleBloc.resetConnectionError();
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
       });
-
-    });
-
-    group('Error Handling', () {
-      test('connectionErrorNotifier can be set and reset', () {
-        bleBloc.connectionErrorNotifier.value = true;
-        expect(bleBloc.connectionErrorNotifier.value, isTrue);
-        
-        bleBloc.resetConnectionError();
-        expect(bleBloc.connectionErrorNotifier.value, isFalse);
-      });
-
     });
 
     group('Device Management', () {
@@ -93,5 +72,5 @@ void main() {
 }
 
 class MockBluetoothDevice extends Mock implements BluetoothDevice {}
-class FakeBuildContext extends Fake implements BuildContext {}
 
+class FakeBuildContext extends Fake implements BuildContext {}
