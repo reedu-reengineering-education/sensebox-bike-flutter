@@ -89,25 +89,9 @@ class HomeScreen extends StatelessWidget {
                 ),
                 SliverSafeArea(
                   minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                  sliver: ValueListenableBuilder<BluetoothDevice?>(
-                    valueListenable: bleBloc.selectedDeviceNotifier,
-                    builder: (context, device, child) {
-                      // Only show sensor area if device is connected and not in error state
-                      if (device == null ||
-                          bleBloc.connectionErrorNotifier.value) {
-                        return SliverToBoxAdapter(child: SizedBox.shrink());
-                      }
-
-                      // Check if there are actually any sensor widgets available
-                      final widgets = sensorBloc.getSensorWidgets();
-                      if (widgets.isEmpty) {
-                        // Connected but no sensor data available: show nothing
-                        return SliverToBoxAdapter(child: SizedBox.shrink());
-                      }
-
-                      // Connected and has sensor data: show sensor grid
-                      return _SensorGrid(sensorBloc: sensorBloc);
-                    },
+                  sliver: _SensorAreaSliver(
+                    bleBloc: bleBloc,
+                    sensorBloc: sensorBloc,
                   ),
                 ),
               ],
@@ -542,6 +526,46 @@ class _BottomGradient extends StatelessWidget {
         ),
         height: 100,
       ),
+    );
+  }
+}
+
+// Rebuilds when the device, characteristics, or BLE streams change.
+class _SensorAreaSliver extends StatelessWidget {
+  final BleBloc bleBloc;
+  final SensorBloc sensorBloc;
+
+  const _SensorAreaSliver({
+    required this.bleBloc,
+    required this.sensorBloc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<BluetoothDevice?>(
+      valueListenable: bleBloc.selectedDeviceNotifier,
+      builder: (context, device, child) {
+        if (device == null || bleBloc.connectionErrorNotifier.value) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+
+        return ValueListenableBuilder<List<BluetoothCharacteristic>>(
+          valueListenable: bleBloc.availableCharacteristics,
+          builder: (context, characteristics, child) {
+            return ValueListenableBuilder<int>(
+              valueListenable: bleBloc.characteristicStreamsVersion,
+              builder: (context, _, child) {
+                final widgets = sensorBloc.getSensorWidgets();
+                if (widgets.isEmpty) {
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                }
+
+                return _SensorGrid(sensorBloc: sensorBloc);
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
