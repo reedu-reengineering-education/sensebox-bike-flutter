@@ -34,49 +34,6 @@ void main() {
         .thenAnswer((_) async => permission);
   }
 
-  group('isLocationAccessSufficient', () {
-    test('requires always on iOS-like platforms', () {
-      expect(
-        isLocationAccessSufficient(
-          geo.LocationPermission.always,
-          requiresAlways: true,
-        ),
-        isTrue,
-      );
-      expect(
-        isLocationAccessSufficient(
-          geo.LocationPermission.whileInUse,
-          requiresAlways: true,
-        ),
-        isFalse,
-      );
-    });
-
-    test('accepts whileInUse on Android-like platforms', () {
-      expect(
-        isLocationAccessSufficient(
-          geo.LocationPermission.whileInUse,
-          requiresAlways: false,
-        ),
-        isTrue,
-      );
-      expect(
-        isLocationAccessSufficient(
-          geo.LocationPermission.always,
-          requiresAlways: false,
-        ),
-        isTrue,
-      );
-      expect(
-        isLocationAccessSufficient(
-          geo.LocationPermission.denied,
-          requiresAlways: false,
-        ),
-        isFalse,
-      );
-    });
-  });
-
   group('PermissionService.ensureLocationPermissionsGranted', () {
     test('throws if location services are disabled', () async {
       mockLocationServicesEnabled(enabled: false);
@@ -188,24 +145,6 @@ void main() {
           completes,
         );
         verifyNever(() => mockGeolocator.requestPermission());
-      });
-
-      test('throws when permission stays whileInUse', () async {
-        mockLocationServicesEnabled(enabled: true);
-        mockCheckPermission(geo.LocationPermission.whileInUse);
-        when(() => mockGeolocator.requestPermission())
-            .thenAnswer((_) async => geo.LocationPermission.whileInUse);
-
-        await expectLater(
-          PermissionService.ensureLocationPermissionsGranted(),
-          throwsA(isA<LocationPermissionDenied>()),
-        );
-      });
-    });
-
-    group('on macOS', () {
-      setUp(() {
-        debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
       });
 
       test('throws when permission stays whileInUse', () async {

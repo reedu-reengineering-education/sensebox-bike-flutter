@@ -1,14 +1,10 @@
-import 'package:flutter/foundation.dart';
+import 'package:sensebox_bike/services/location_permission_platform.dart';
 
 const _iosMessage =
-    'Location services are disabled or access is denied. To record rides in the background, select "Always" for location access in your phone settings.';
+    'Location services are disabled or access is denied. To record rides in the background, select "Always" for location access in your device settings.';
 
 const _androidMessage =
-    'Location services are disabled or access is denied. To record tracks, enable location services and allow location access in your phone settings.';
-
-bool get requiresAlwaysLocationPermission =>
-    defaultTargetPlatform == TargetPlatform.iOS ||
-    defaultTargetPlatform == TargetPlatform.macOS;
+    'Location services are disabled or access is denied. To record tracks, enable location services and allow location access in your device settings.';
 
 String locationPermissionDeniedMessage() {
   if (requiresAlwaysLocationPermission) {

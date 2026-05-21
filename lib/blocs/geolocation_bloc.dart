@@ -67,8 +67,7 @@ class GeolocationBloc with ChangeNotifier {
         } else {
           throw Exception('Notification permissions are denied');
         }
-      } else if (defaultTargetPlatform == TargetPlatform.iOS ||
-          defaultTargetPlatform == TargetPlatform.macOS) {
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.bestForNavigation,
           distanceFilter: 0,

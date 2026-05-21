@@ -1,8 +1,8 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
-import 'package:sensebox_bike/services/location_permission_messages.dart';
+import 'package:sensebox_bike/services/location_permission_platform.dart';
 
-bool isLocationAccessSufficient(
+bool _isLocationAccessSufficient(
   LocationPermission permission, {
   required bool requiresAlways,
 }) {
@@ -44,7 +44,7 @@ class PermissionService {
     }
 
     final permission = await _resolveLocationPermission();
-    if (!isLocationAccessSufficient(
+    if (!_isLocationAccessSufficient(
       permission,
       requiresAlways: requiresAlwaysLocationPermission,
     )) {
@@ -57,7 +57,7 @@ class PermissionService {
     if (!serviceEnabled) return false;
 
     final permission = await _resolveLocationPermission();
-    return isLocationAccessSufficient(
+    return _isLocationAccessSufficient(
       permission,
       requiresAlways: requiresAlwaysLocationPermission,
     );

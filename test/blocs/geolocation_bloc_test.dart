@@ -606,26 +606,5 @@ void main() {
         expect(result, false);
       });
     });
-
-    group('macOS platform - same as iOS', () {
-      test('should skip if less than 1 second has passed', () {
-        debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
-
-        final now = DateTime.now().toUtc();
-        final lastPosition = createGeolocation(timestamp: now);
-        final currentPosition = createGeolocation(
-          timestamp: now.add(const Duration(milliseconds: 500)),
-        );
-
-        final result = geolocationBloc.shouldSkipGeolocation(
-          currentPosition,
-          lastEmittedPosition: lastPosition,
-        );
-
-        expect(result, true);
-
-        debugDefaultTargetPlatformOverride = null;
-      });
-    });
   });
 }

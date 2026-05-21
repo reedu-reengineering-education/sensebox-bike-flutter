@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/location_permission_messages.dart';
+import 'package:sensebox_bike/services/location_permission_platform.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
