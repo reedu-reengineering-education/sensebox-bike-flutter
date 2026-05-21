@@ -104,7 +104,7 @@ class ErrorService {
 
     if (error is LocationPermissionDenied) {
       return localizations?.errorNoLocationAccess ??
-          'Location services are disabled or access is denied. Please enable location services and allow the app to access your location in the phone settings.';
+          'Location services are disabled or access is denied. On iOS, "Always" location access is required to record rides in the background. Please enable location services and select "Always" in the phone settings.';
     } else if (error is ScanPermissionDenied) {
       return localizations?.errorNoScanAccess ??
           'Please allow the app to scan nearby devices in the phone settings.';
