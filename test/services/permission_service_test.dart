@@ -18,10 +18,12 @@ void main() {
     mockGeolocator = MockGeolocator();
     geo.GeolocatorPlatform.instance = mockGeolocator;
     originalPlatform = debugDefaultTargetPlatformOverride;
+    PermissionService.debugIosAlwaysPermissionRequest = null;
   });
 
   tearDown(() {
     debugDefaultTargetPlatformOverride = originalPlatform;
+    PermissionService.debugIosAlwaysPermissionRequest = null;
   });
 
   void mockLocationServicesEnabled({required bool enabled}) {
@@ -104,35 +106,44 @@ void main() {
       test('completes when permission escalates from denied to always',
           () async {
         mockLocationServicesEnabled(enabled: true);
-        mockCheckPermission(geo.LocationPermission.denied);
 
-        var requestCount = 0;
-        when(() => mockGeolocator.requestPermission()).thenAnswer((_) async {
-          requestCount++;
-          if (requestCount == 1) {
-            return geo.LocationPermission.whileInUse;
+        var checkCount = 0;
+        when(() => mockGeolocator.checkPermission()).thenAnswer((_) async {
+          checkCount++;
+          if (checkCount == 1) {
+            return geo.LocationPermission.denied;
           }
           return geo.LocationPermission.always;
         });
-
-        await expectLater(
-          PermissionService.ensureLocationPermissionsGranted(),
-          completes,
-        );
-        verify(() => mockGeolocator.requestPermission()).called(2);
-      });
-
-      test('completes when existing whileInUse escalates to always', () async {
-        mockLocationServicesEnabled(enabled: true);
-        mockCheckPermission(geo.LocationPermission.whileInUse);
         when(() => mockGeolocator.requestPermission())
-            .thenAnswer((_) async => geo.LocationPermission.always);
+            .thenAnswer((_) async => geo.LocationPermission.whileInUse);
+        PermissionService.debugIosAlwaysPermissionRequest = () async {};
 
         await expectLater(
           PermissionService.ensureLocationPermissionsGranted(),
           completes,
         );
         verify(() => mockGeolocator.requestPermission()).called(1);
+      });
+
+      test('completes when existing whileInUse escalates to always', () async {
+        mockLocationServicesEnabled(enabled: true);
+
+        var checkCount = 0;
+        when(() => mockGeolocator.checkPermission()).thenAnswer((_) async {
+          checkCount++;
+          if (checkCount == 1) {
+            return geo.LocationPermission.whileInUse;
+          }
+          return geo.LocationPermission.always;
+        });
+        PermissionService.debugIosAlwaysPermissionRequest = () async {};
+
+        await expectLater(
+          PermissionService.ensureLocationPermissionsGranted(),
+          completes,
+        );
+        verifyNever(() => mockGeolocator.requestPermission());
       });
 
       test('completes when permission is already always without requesting',
@@ -150,8 +161,7 @@ void main() {
       test('throws when permission stays whileInUse', () async {
         mockLocationServicesEnabled(enabled: true);
         mockCheckPermission(geo.LocationPermission.whileInUse);
-        when(() => mockGeolocator.requestPermission())
-            .thenAnswer((_) async => geo.LocationPermission.whileInUse);
+        PermissionService.debugIosAlwaysPermissionRequest = () async {};
 
         await expectLater(
           PermissionService.ensureLocationPermissionsGranted(),
@@ -202,8 +212,7 @@ void main() {
       test('returns false if permission stays whileInUse', () async {
         mockLocationServicesEnabled(enabled: true);
         mockCheckPermission(geo.LocationPermission.whileInUse);
-        when(() => mockGeolocator.requestPermission())
-            .thenAnswer((_) async => geo.LocationPermission.whileInUse);
+        PermissionService.debugIosAlwaysPermissionRequest = () async {};
 
         final result = await PermissionService.isLocationPermissionGranted();
         expect(result, isFalse);
@@ -211,13 +220,20 @@ void main() {
 
       test('returns true when whileInUse escalates to always', () async {
         mockLocationServicesEnabled(enabled: true);
-        mockCheckPermission(geo.LocationPermission.whileInUse);
-        when(() => mockGeolocator.requestPermission())
-            .thenAnswer((_) async => geo.LocationPermission.always);
+
+        var checkCount = 0;
+        when(() => mockGeolocator.checkPermission()).thenAnswer((_) async {
+          checkCount++;
+          if (checkCount == 1) {
+            return geo.LocationPermission.whileInUse;
+          }
+          return geo.LocationPermission.always;
+        });
+        PermissionService.debugIosAlwaysPermissionRequest = () async {};
 
         final result = await PermissionService.isLocationPermissionGranted();
         expect(result, isTrue);
-        verify(() => mockGeolocator.requestPermission()).called(1);
+        verifyNever(() => mockGeolocator.requestPermission());
       });
 
       test('returns true when permission is already always', () async {

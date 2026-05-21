@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/location_permission_platform.dart';
 
@@ -14,6 +16,9 @@ bool _isLocationAccessSufficient(
 }
 
 class PermissionService {
+  @visibleForTesting
+  static Future<void> Function()? debugIosAlwaysPermissionRequest;
+
   static Future<LocationPermission> _resolveLocationPermission() async {
     var permission = await Geolocator.checkPermission();
 
@@ -31,10 +36,19 @@ class PermissionService {
 
     if (requiresAlwaysLocationPermission &&
         permission == LocationPermission.whileInUse) {
-      permission = await Geolocator.requestPermission();
+      await _requestIosAlwaysLocationPermission();
+      permission = await Geolocator.checkPermission();
     }
 
     return permission;
+  }
+
+  static Future<void> _requestIosAlwaysLocationPermission() async {
+    if (debugIosAlwaysPermissionRequest != null) {
+      await debugIosAlwaysPermissionRequest!();
+      return;
+    }
+    await Permission.locationAlways.request();
   }
 
   static Future<void> ensureLocationPermissionsGranted() async {
