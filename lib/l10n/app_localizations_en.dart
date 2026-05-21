@@ -503,8 +503,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Enable Bluetooth';
 
   @override
-  String get errorNoLocationAccess =>
-      'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.';
+  String get errorNoLocationAccessIos =>
+      'Location services are disabled or access is denied. To record rides in the background, select \"Always\" for location access in your phone settings.';
+
+  @override
+  String get errorNoLocationAccessAndroid =>
+      'Location services are disabled or access is denied. To record tracks, enable location services and allow location access in your phone settings.';
 
   @override
   String get errorNoScanAccess =>

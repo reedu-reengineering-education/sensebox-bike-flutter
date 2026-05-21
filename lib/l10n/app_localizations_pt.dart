@@ -509,8 +509,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Ativar Bluetooth';
 
   @override
-  String get errorNoLocationAccess =>
-      'Os serviços de localização estão desativados ou o acesso é negado. Para gravar faixas, ative os serviços de localização e permita que a aplicação aceda à sua localização nas definições do telefone.';
+  String get errorNoLocationAccessIos =>
+      'Os serviços de localização estão desativados ou o acesso é negado. Para gravar percursos em segundo plano, selecione \"Sempre\" para o acesso à localização nas definições do telefone.';
+
+  @override
+  String get errorNoLocationAccessAndroid =>
+      'Os serviços de localização estão desativados ou o acesso é negado. Para gravar percursos, ative os serviços de localização e permita o acesso à localização nas definições do telefone.';
 
   @override
   String get errorNoScanAccess =>

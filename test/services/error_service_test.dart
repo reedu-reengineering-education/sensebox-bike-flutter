@@ -23,19 +23,46 @@ void main() {
         ));
       }
 
-      testWidgets('returns correct message for LocationPermissionDenied',
+      testWidgets('returns iOS message for LocationPermissionDenied',
           (WidgetTester tester) async {
-        await initializeContext(tester);
+        final originalPlatform = debugDefaultTargetPlatformOverride;
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        try {
+          await initializeContext(tester);
 
-        final message = ErrorService.parseError(
-          LocationPermissionDenied(),
-          mockContext,
-        );
+          final message = ErrorService.parseError(
+            LocationPermissionDenied(),
+            mockContext,
+          );
 
-        expect(
-          message,
-          'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.',
-        );
+          expect(
+            message,
+            AppLocalizations.of(mockContext)!.errorNoLocationAccessIos,
+          );
+        } finally {
+          debugDefaultTargetPlatformOverride = originalPlatform;
+        }
+      });
+
+      testWidgets('returns Android message for LocationPermissionDenied',
+          (WidgetTester tester) async {
+        final originalPlatform = debugDefaultTargetPlatformOverride;
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        try {
+          await initializeContext(tester);
+
+          final message = ErrorService.parseError(
+            LocationPermissionDenied(),
+            mockContext,
+          );
+
+          expect(
+            message,
+            AppLocalizations.of(mockContext)!.errorNoLocationAccessAndroid,
+          );
+        } finally {
+          debugDefaultTargetPlatformOverride = originalPlatform;
+        }
       });
 
       testWidgets('returns correct message for ScanPermissionDenied',
@@ -154,38 +181,48 @@ void main() {
     group('showUserFeedback', () {
       testWidgets('displays SnackBar with correct message',
           (WidgetTester tester) async {
-        // Create a test widget with a ScaffoldMessenger
-        await tester.pumpWidget(MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          scaffoldMessengerKey: ErrorService.scaffoldKey,
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    ErrorService.showUserFeedback(LocationPermissionDenied());
-                  },
-                  child: const Text('Trigger Error'),
-                );
-              },
+        final originalPlatform = debugDefaultTargetPlatformOverride;
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        try {
+          late BuildContext context;
+          await tester.pumpWidget(MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            scaffoldMessengerKey: ErrorService.scaffoldKey,
+            home: Scaffold(
+              body: Builder(
+                builder: (builderContext) {
+                  context = builderContext;
+                  return ElevatedButton(
+                    onPressed: () {
+                      ErrorService.showUserFeedback(
+                        LocationPermissionDenied(),
+                      );
+                    },
+                    child: const Text('Trigger Error'),
+                  );
+                },
+              ),
             ),
-          ),
-        ));
+          ));
 
-        // Tap the button to trigger the error
-        await tester.tap(find.text('Trigger Error'));
-        await tester.pump();
+          final expectedMessage =
+              AppLocalizations.of(context)!.errorNoLocationAccessAndroid;
 
-        // Verify that the SnackBar is displayed with the correct message
-        // The SnackBar uses RichText, so we need to find it by RichText widget
-        expect(
-          find.byWidgetPredicate(
-            (widget) => widget is RichText && 
-            widget.text.toPlainText() == 'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.',
-          ),
-          findsOneWidget,
-        );
+          await tester.tap(find.text('Trigger Error'));
+          await tester.pump();
+
+          expect(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is RichText &&
+                  widget.text.toPlainText() == expectedMessage,
+            ),
+            findsOneWidget,
+          );
+        } finally {
+          debugDefaultTargetPlatformOverride = originalPlatform;
+        }
       });
     });
   });
