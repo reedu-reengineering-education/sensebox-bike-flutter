@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/services/ble/ble_client.dart';
 import 'package:sensebox_bike/services/ble/connection_events.dart';
-import 'package:sensebox_bike/services/ble/flutter_blue_plus_ble_client.dart';
+import 'package:sensebox_bike/services/ble/reactive_ble_client.dart';
 import 'package:sensebox_bike/services/ble/sensebox_connection_manager.dart';
 import 'package:sensebox_bike/services/ble/sensebox_data_service.dart';
 import 'package:sensebox_bike/services/ble/sensebox_device.dart';
@@ -51,7 +51,7 @@ class BleBloc with ChangeNotifier {
     BleClient? bleClient,
     SenseBoxConnectionManager? connectionManager,
     SenseBoxDataService? dataService,
-  }) : _bleClient = bleClient ?? FlutterBluePlusBleClient() {
+  }) : _bleClient = bleClient ?? ReactiveBleClient() {
     _dataService = dataService ?? SenseBoxDataService(_bleClient);
     _connectionManager = connectionManager ??
         SenseBoxConnectionManager(
