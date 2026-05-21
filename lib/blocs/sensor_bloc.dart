@@ -38,8 +38,7 @@ class SensorBloc with ChangeNotifier {
     _initializeSensors();
 
     _selectedDeviceListener = () {
-      if (bleBloc.selectedDevice != null &&
-          bleBloc.selectedDevice!.isConnected) {
+      if (bleBloc.selectedDevice != null && bleBloc.isConnected) {
         _startListening();
         if (!geolocationBloc.isListening) {
           geolocationBloc.startListening();
@@ -53,7 +52,7 @@ class SensorBloc with ChangeNotifier {
 
     _characteristicsListener = () {
       final currentUuids = bleBloc.availableCharacteristics.value
-          .map((e) => e.uuid.toString())
+          .map((e) => e.characteristicUuid)
           .toList();
       if (!_listEqualsUnordered(_lastCharacteristicUuids, currentUuids)) {
         _lastCharacteristicUuids = List.from(currentUuids);
@@ -209,7 +208,7 @@ class SensorBloc with ChangeNotifier {
 
   List<Widget> getSensorWidgets() {
     final availableUuids = bleBloc.availableCharacteristics.value
-        .map((e) => e.uuid.toString())
+        .map((e) => e.characteristicUuid)
         .toSet();
 
     final availableSensors = _sensors.where((sensor) {

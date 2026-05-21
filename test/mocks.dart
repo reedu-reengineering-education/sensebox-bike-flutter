@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:sensebox_bike/services/ble/ble_client.dart';
+import 'package:sensebox_bike/services/ble/sensebox_device.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -59,11 +60,11 @@ class MockBleBloc extends Mock implements BleBloc {
   final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
 
   @override
-  final ValueNotifier<BluetoothDevice?> selectedDeviceNotifier =
+  final ValueNotifier<SenseBoxDevice?> selectedDeviceNotifier =
       ValueNotifier(null);
 
   @override
-  final ValueNotifier<List<BluetoothCharacteristic>> availableCharacteristics =
+  final ValueNotifier<List<BleCharacteristicRef>> availableCharacteristics =
       ValueNotifier([]);
 
   @override
@@ -76,22 +77,18 @@ class MockBleBloc extends Mock implements BleBloc {
   bool get isConnected => false;
 
   @override
-  List<BluetoothDevice> get devicesList => [];
+  Stream<List<SenseBoxDevice>> get devicesListStream => Stream.value([]);
 
   @override
-  Stream<List<BluetoothDevice>> get devicesListStream => Stream.value([]);
+  SenseBoxDevice? get selectedDevice => selectedDeviceNotifier.value;
 
   @override
-  BluetoothDevice? get selectedDevice => selectedDeviceNotifier.value;
-
-  @override
-  set selectedDevice(BluetoothDevice? device) {
+  set selectedDevice(SenseBoxDevice? device) {
     selectedDeviceNotifier.value = device;
   }
 
   @override
-  Future<void> connectToDevice(
-      BluetoothDevice device, BuildContext context) async {}
+  Future<void> connectToDevice(SenseBoxDevice device) async {}
 
   @override
   void disconnectDevice() {}

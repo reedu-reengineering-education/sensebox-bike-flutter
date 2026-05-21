@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/services/ble/sensebox_device.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import '../../../test_helpers.dart';
 
 class MockBleBloc extends Mock implements BleBloc {}
-class MockBluetoothDevice extends Mock implements BluetoothDevice {}
-class FakeBuildContext extends Fake implements BuildContext {}
 
 void main() {
   late MockBleBloc bleBloc;
 
   setUpAll(() {
-    registerFallbackValue(MockBluetoothDevice());
-    registerFallbackValue(FakeBuildContext()); 
+    registerFallbackValue(
+      const SenseBoxDevice(id: 'device-1', displayName: 'senseBox:bike [abc]'),
+    );
     initializeTestDependencies();
     disableProviderDebugChecks();
   });
@@ -46,16 +45,15 @@ void main() {
   });
 
   testWidgets('shows scan error', (tester) async {
-
     await tester.pumpWidget(
       createLocalizedTestApp(
         locale: const Locale('en'),
         child: Material(
           child: DeviceSelectionSheet(
-          bleBloc: bleBloc,
-          initialScanError: 'Test error',
+            bleBloc: bleBloc,
+            initialScanError: 'Test error',
+          ),
         ),
-        )
       ),
     );
 
@@ -65,7 +63,7 @@ void main() {
   testWidgets('shows loading spinner while scanning', (tester) async {
     when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(true));
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
-    
+
     await tester.pumpWidget(
       createLocalizedTestApp(
         locale: const Locale('en'),
@@ -82,7 +80,7 @@ void main() {
   testWidgets('shows no devices found message', (tester) async {
     when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
-    
+
     await tester.pumpWidget(
       createLocalizedTestApp(
         locale: const Locale('en'),
@@ -93,15 +91,18 @@ void main() {
     );
 
     await tester.pump();
-    expect(find.textContaining('No senseBoxes found'), findsOneWidget); // Adjust to your localization
+    expect(find.textContaining('No senseBoxes found'), findsOneWidget);
   });
 
   testWidgets('shows list of devices and taps to connect', (tester) async {
-    final device = MockBluetoothDevice();
-    when(() => device.platformName).thenReturn('TestDevice');
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
-    bool connectCalled = false;
-    when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {
+    const device = SenseBoxDevice(
+      id: 'device-1',
+      displayName: 'TestDevice',
+    );
+    when(() => bleBloc.devicesListStream)
+        .thenAnswer((_) => Stream.value([device]));
+    var connectCalled = false;
+    when(() => bleBloc.connectToDevice(device)).thenAnswer((_) async {
       connectCalled = true;
     });
 
