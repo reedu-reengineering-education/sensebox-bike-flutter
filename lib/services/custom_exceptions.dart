@@ -1,3 +1,5 @@
+import 'package:sensebox_bike/services/location_permission_messages.dart';
+
 class TooManyRequestsException implements Exception {
   final int retryAfter;
 
@@ -9,8 +11,7 @@ class TooManyRequestsException implements Exception {
 
 class LocationPermissionDenied implements Exception {
   @override
-  String toString() =>
-      'Location services are disabled or access is denied. On iOS, "Always" location access is required to record rides in the background. Please enable location services and select "Always" in the phone settings.';
+  String toString() => locationPermissionDeniedMessage();
 }
 
 class ScanPermissionDenied implements Exception {

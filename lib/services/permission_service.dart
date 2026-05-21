@@ -1,11 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sensebox_bike/services/location_permission_messages.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 
 class PermissionService {
   static bool get _requiresAlwaysLocation =>
-      defaultTargetPlatform == TargetPlatform.iOS ||
-      defaultTargetPlatform == TargetPlatform.macOS;
+      requiresAlwaysLocationPermission;
 
   static bool _isPermissionGranted(LocationPermission permission) {
     if (_requiresAlwaysLocation) {
