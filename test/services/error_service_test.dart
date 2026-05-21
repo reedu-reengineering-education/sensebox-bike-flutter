@@ -27,35 +27,42 @@ void main() {
           (WidgetTester tester) async {
         final originalPlatform = debugDefaultTargetPlatformOverride;
         debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        try {
+          await initializeContext(tester);
 
-        await initializeContext(tester);
+          final message = ErrorService.parseError(
+            LocationPermissionDenied(),
+            mockContext,
+          );
 
-        final message = ErrorService.parseError(
-          LocationPermissionDenied(),
-          mockContext,
-        );
-
-        expect(message, AppLocalizations.of(mockContext)!.errorNoLocationAccessIos);
-        debugDefaultTargetPlatformOverride = originalPlatform;
+          expect(
+            message,
+            AppLocalizations.of(mockContext)!.errorNoLocationAccessIos,
+          );
+        } finally {
+          debugDefaultTargetPlatformOverride = originalPlatform;
+        }
       });
 
       testWidgets('returns Android message for LocationPermissionDenied',
           (WidgetTester tester) async {
         final originalPlatform = debugDefaultTargetPlatformOverride;
         debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        try {
+          await initializeContext(tester);
 
-        await initializeContext(tester);
+          final message = ErrorService.parseError(
+            LocationPermissionDenied(),
+            mockContext,
+          );
 
-        final message = ErrorService.parseError(
-          LocationPermissionDenied(),
-          mockContext,
-        );
-
-        expect(
-          message,
-          AppLocalizations.of(mockContext)!.errorNoLocationAccessAndroid,
-        );
-        debugDefaultTargetPlatformOverride = originalPlatform;
+          expect(
+            message,
+            AppLocalizations.of(mockContext)!.errorNoLocationAccessAndroid,
+          );
+        } finally {
+          debugDefaultTargetPlatformOverride = originalPlatform;
+        }
       });
 
       testWidgets('returns correct message for ScanPermissionDenied',
@@ -176,42 +183,46 @@ void main() {
           (WidgetTester tester) async {
         final originalPlatform = debugDefaultTargetPlatformOverride;
         debugDefaultTargetPlatformOverride = TargetPlatform.android;
-
-        late BuildContext context;
-        await tester.pumpWidget(MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          scaffoldMessengerKey: ErrorService.scaffoldKey,
-          home: Scaffold(
-            body: Builder(
-              builder: (builderContext) {
-                context = builderContext;
-                return ElevatedButton(
-                  onPressed: () {
-                    ErrorService.showUserFeedback(LocationPermissionDenied());
-                  },
-                  child: const Text('Trigger Error'),
-                );
-              },
+        try {
+          late BuildContext context;
+          await tester.pumpWidget(MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            scaffoldMessengerKey: ErrorService.scaffoldKey,
+            home: Scaffold(
+              body: Builder(
+                builder: (builderContext) {
+                  context = builderContext;
+                  return ElevatedButton(
+                    onPressed: () {
+                      ErrorService.showUserFeedback(
+                        LocationPermissionDenied(),
+                      );
+                    },
+                    child: const Text('Trigger Error'),
+                  );
+                },
+              ),
             ),
-          ),
-        ));
+          ));
 
-        final expectedMessage =
-            AppLocalizations.of(context)!.errorNoLocationAccessAndroid;
+          final expectedMessage =
+              AppLocalizations.of(context)!.errorNoLocationAccessAndroid;
 
-        await tester.tap(find.text('Trigger Error'));
-        await tester.pump();
+          await tester.tap(find.text('Trigger Error'));
+          await tester.pump();
 
-        expect(
-          find.byWidgetPredicate(
-            (widget) =>
-                widget is RichText &&
-                widget.text.toPlainText() == expectedMessage,
-          ),
-          findsOneWidget,
-        );
-        debugDefaultTargetPlatformOverride = originalPlatform;
+          expect(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is RichText &&
+                  widget.text.toPlainText() == expectedMessage,
+            ),
+            findsOneWidget,
+          );
+        } finally {
+          debugDefaultTargetPlatformOverride = originalPlatform;
+        }
       });
     });
   });

@@ -81,8 +81,8 @@ void main() {
     test('throws if location services are disabled', () async {
       mockLocationServicesEnabled(enabled: false);
 
-      expect(
-        () => PermissionService.ensureLocationPermissionsGranted(),
+      await expectLater(
+        PermissionService.ensureLocationPermissionsGranted(),
         throwsA(isA<LocationPermissionDenied>()),
       );
     });
@@ -93,8 +93,8 @@ void main() {
       when(() => mockGeolocator.requestPermission())
           .thenAnswer((_) async => geo.LocationPermission.denied);
 
-      expect(
-        () => PermissionService.ensureLocationPermissionsGranted(),
+      await expectLater(
+        PermissionService.ensureLocationPermissionsGranted(),
         throwsA(isA<LocationPermissionDenied>()),
       );
     });
@@ -196,8 +196,8 @@ void main() {
         when(() => mockGeolocator.requestPermission())
             .thenAnswer((_) async => geo.LocationPermission.whileInUse);
 
-        expect(
-          () => PermissionService.ensureLocationPermissionsGranted(),
+        await expectLater(
+          PermissionService.ensureLocationPermissionsGranted(),
           throwsA(isA<LocationPermissionDenied>()),
         );
       });
@@ -214,8 +214,8 @@ void main() {
         when(() => mockGeolocator.requestPermission())
             .thenAnswer((_) async => geo.LocationPermission.whileInUse);
 
-        expect(
-          () => PermissionService.ensureLocationPermissionsGranted(),
+        await expectLater(
+          PermissionService.ensureLocationPermissionsGranted(),
           throwsA(isA<LocationPermissionDenied>()),
         );
       });
