@@ -1,7 +1,7 @@
 import 'dart:math';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/ble_connection_state.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -87,23 +87,23 @@ class HomeScreen extends StatelessWidget {
                 ),
                 SliverSafeArea(
                   minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                  sliver: ValueListenableBuilder<BluetoothDevice?>(
-                    valueListenable: bleBloc.selectedDeviceNotifier,
-                    builder: (context, device, child) {
-                      // Only show sensor area if device is connected and not in error state
-                      if (device == null ||
+                  sliver: ValueListenableBuilder<BleConnectionState>(
+                    valueListenable: bleBloc.connectionStateNotifier,
+                    builder: (context, connectionState, child) {
+                      if (connectionState != BleConnectionState.connected ||
                           bleBloc.connectionErrorNotifier.value) {
-                        return SliverToBoxAdapter(child: SizedBox.shrink());
+                        return const SliverToBoxAdapter(
+                          child: SizedBox.shrink(),
+                        );
                       }
 
-                      // Check if there are actually any sensor widgets available
                       final widgets = sensorBloc.getSensorWidgets();
                       if (widgets.isEmpty) {
-                        // Connected but no sensor data available: show nothing
-                        return SliverToBoxAdapter(child: SizedBox.shrink());
+                        return const SliverToBoxAdapter(
+                          child: SizedBox.shrink(),
+                        );
                       }
 
-                      // Connected and has sensor data: show sensor grid
                       return _SensorGrid(sensorBloc: sensorBloc);
                     },
                   ),
@@ -293,48 +293,50 @@ class _FloatingButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.isReconnectingNotifier,
-      builder: (context, isReconnecting, child) {
-        return ValueListenableBuilder(
-          valueListenable: bleBloc.selectedDeviceNotifier,
-          builder: (context, selectedDevice, child) {
-            // Show buttons if device is connected or if reconnecting
-            if (selectedDevice == null && !isReconnecting) {
-              return Column(
-                spacing: 12,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _ConnectButton(bleBloc: bleBloc),
-                  // Always show sensebox selection button with different styling based on auth state
-                  _SenseBoxSelectionButton(),
-                ],
-              );
-            } else {
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                spacing: 12,
-                children: [
-                  Row(
-                    spacing: 12,
-                    children: [
-                      Expanded(
-                        child: _StartStopButton(
-                            recordingBloc: recordingBloc,
-                            isReconnecting: isReconnecting),
-                      ),
-                      Expanded(
-                        child: _DisconnectButton(
-                            bleBloc: bleBloc, recordingBloc: recordingBloc),
-                      ),
-                    ],
+    return ValueListenableBuilder<BleConnectionState>(
+      valueListenable: bleBloc.connectionStateNotifier,
+      builder: (context, connectionState, child) {
+        final showConnectedControls =
+          connectionState != BleConnectionState.disconnected;
+
+        final isBusy = connectionState == BleConnectionState.reconnecting ||
+            connectionState == BleConnectionState.waitingForData ||
+            connectionState == BleConnectionState.connecting;
+
+        if (!showConnectedControls) {
+          return Column(
+            spacing: 12,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _ConnectButton(bleBloc: bleBloc),
+              _SenseBoxSelectionButton(),
+            ],
+          );
+        }
+
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          spacing: 12,
+          children: [
+            Row(
+              spacing: 12,
+              children: [
+                Expanded(
+                  child: _StartStopButton(
+                    recordingBloc: recordingBloc,
+                    isReconnecting: isBusy,
                   ),
-                  // Always show sensebox selection button with different styling based on auth state
-                  _SenseBoxSelectionButton(),
-                ],
-              );
-            }
-          },
+                ),
+                Expanded(
+                  child: _DisconnectButton(
+                    bleBloc: bleBloc,
+                    recordingBloc: recordingBloc,
+                  ),
+                ),
+              ],
+            ),
+            _SenseBoxSelectionButton(),
+          ],
         );
       },
     );
@@ -474,18 +476,22 @@ class _DisconnectButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.isReconnectingNotifier,
-      builder: (context, isReconnecting, child) {
+    return ValueListenableBuilder<BleConnectionState>(
+      valueListenable: bleBloc.connectionStateNotifier,
+      builder: (context, connectionState, child) {
+        final isReconnecting = connectionState == BleConnectionState.reconnecting;
+        final isWaitingForData =
+            connectionState == BleConnectionState.waitingForData;
+
         return OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           ),
-          icon: isReconnecting
+          icon: (isReconnecting || isWaitingForData)
               ? const Icon(Icons.bluetooth_searching)
               : const Icon(Icons.bluetooth_disabled),
-          label: isReconnecting
+          label: (isReconnecting || isWaitingForData)
               ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
               : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
           onPressed: isReconnecting

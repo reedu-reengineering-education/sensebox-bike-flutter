@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/ble_connection_state.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -51,11 +52,22 @@ class RecordingBloc with ChangeNotifier {
 
     // Listen to BLE connection errors and stop recording
     bleBloc.connectionErrorNotifier.addListener(_onBleConnectionError);
+    bleBloc.connectionStateNotifier.addListener(_onBleConnectionStateChanged);
   }
 
   void _onBleConnectionError() {
     if (_isRecording) {
       // Stop recording will automatically trigger batch upload if needed
+      stopRecording();
+    }
+  }
+
+  void _onBleConnectionStateChanged() {
+    if (!_isRecording) {
+      return;
+    }
+
+    if (bleBloc.connectionStateNotifier.value != BleConnectionState.connected) {
       stopRecording();
     }
   }
@@ -204,7 +216,7 @@ class RecordingBloc with ChangeNotifier {
           debugPrint('[RecordingBloc] Batch upload failed permanently');
         },
         onStartUpload: () {
-          if (canUpload) _startBatchUpload(track, senseBox!);
+          if (canUpload) _startBatchUpload(track, senseBox);
         },
       );
     } catch (e, stack) {
@@ -241,6 +253,7 @@ class RecordingBloc with ChangeNotifier {
   @override
   void dispose() {
     bleBloc.connectionErrorNotifier.removeListener(_onBleConnectionError);
+    bleBloc.connectionStateNotifier.removeListener(_onBleConnectionStateChanged);
     _directUploadService?.dispose();
     _batchUploadService?.dispose();
     _isRecordingNotifier.dispose();

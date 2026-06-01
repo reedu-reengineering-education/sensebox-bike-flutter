@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import '../../../test_helpers.dart';
+import '../../../mocks.dart';
 
 class MockBleBloc extends Mock implements BleBloc {}
-class MockBluetoothDevice extends Mock implements BluetoothDevice {}
-class FakeBuildContext extends Fake implements BuildContext {}
 
 void main() {
   late MockBleBloc bleBloc;

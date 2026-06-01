@@ -17,12 +17,17 @@ import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/ble_connection_state.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
+class MockBluetoothDevice extends Mock implements BluetoothDevice {}
+
+class FakeBuildContext extends Fake implements BuildContext {}
 
 class MockIsarProvider extends Mock implements IsarProvider {}
 
@@ -57,6 +62,10 @@ class MockBleBloc extends Mock implements BleBloc {
 
   @override
   final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
+
+  @override
+  final ValueNotifier<BleConnectionState> connectionStateNotifier =
+      ValueNotifier(BleConnectionState.disconnected);
 
   @override
   final ValueNotifier<BluetoothDevice?> selectedDeviceNotifier =

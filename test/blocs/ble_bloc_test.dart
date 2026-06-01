@@ -1,14 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import '../mocks.dart';
 
 void main() {
   group('BleBloc', () {
     late BleBloc bleBloc;
-    late MockSettingsBloc mockSettingsBloc;
 
     setUpAll(() {
       registerFallbackValue(MockBluetoothDevice());
@@ -16,7 +13,6 @@ void main() {
     });
 
     setUp(() {
-      mockSettingsBloc = MockSettingsBloc();
       bleBloc = MockBleBloc();
     });
 
@@ -110,6 +106,5 @@ void main() {
   });
 }
 
-class MockBluetoothDevice extends Mock implements BluetoothDevice {}
-class FakeBuildContext extends Fake implements BuildContext {}
+
 

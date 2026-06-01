@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/ble_connection_state.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
@@ -29,6 +30,7 @@ class SensorBloc with ChangeNotifier {
   late final VoidCallback _characteristicsListener;
   late final VoidCallback _characteristicStreamsVersionListener;
   late final VoidCallback _selectedDeviceListener;
+  late final VoidCallback _connectionStateListener;
   late final VoidCallback _recordingListener;
   List<String> _lastCharacteristicUuids = [];
   bool _isStartingListening = false;
@@ -38,8 +40,11 @@ class SensorBloc with ChangeNotifier {
     _initializeSensors();
 
     _selectedDeviceListener = () {
-      if (bleBloc.selectedDevice != null &&
-          bleBloc.selectedDevice!.isConnected) {
+      final hasConnectedDevice =
+          bleBloc.selectedDevice != null &&
+          bleBloc.connectionStateNotifier.value == BleConnectionState.connected;
+
+      if (hasConnectedDevice) {
         _startListening();
         if (!geolocationBloc.isListening) {
           geolocationBloc.startListening();
@@ -50,6 +55,8 @@ class SensorBloc with ChangeNotifier {
       }
       notifyListeners();
     };
+
+    _connectionStateListener = _selectedDeviceListener;
 
     _characteristicsListener = () {
       final currentUuids = bleBloc.availableCharacteristics.value
@@ -77,6 +84,7 @@ class SensorBloc with ChangeNotifier {
     );
 
     bleBloc.selectedDeviceNotifier.addListener(_selectedDeviceListener);
+    bleBloc.connectionStateNotifier.addListener(_connectionStateListener);
     bleBloc.availableCharacteristics.addListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .addListener(_characteristicStreamsVersionListener);
@@ -229,6 +237,7 @@ class SensorBloc with ChangeNotifier {
   @override
   void dispose() {
     bleBloc.selectedDeviceNotifier.removeListener(_selectedDeviceListener);
+    bleBloc.connectionStateNotifier.removeListener(_connectionStateListener);
     bleBloc.availableCharacteristics.removeListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .removeListener(_characteristicStreamsVersionListener);
