@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/ble_connection_state.dart';
 import '../mocks.dart';
 
 void main() {
@@ -24,8 +25,10 @@ void main() {
       test('initializes with correct default values', () {
         expect(bleBloc.isBluetoothEnabledNotifier.value, isFalse);
         expect(bleBloc.isScanningNotifier.value, isFalse);
-        expect(bleBloc.isConnectingNotifier.value, isFalse);
-        expect(bleBloc.isReconnectingNotifier.value, isFalse);
+        expect(
+          bleBloc.connectionStateNotifier.value,
+          equals(BleConnectionState.disconnected),
+        );
         expect(bleBloc.selectedDeviceNotifier.value, isNull);
         expect(bleBloc.availableCharacteristics.value, isEmpty);
         expect(bleBloc.characteristicStreamsVersion.value, equals(0));
@@ -70,7 +73,6 @@ void main() {
 
       test('when initial BLE connection is started, if exception is thrown, reconnection continues seamlessly', () async {
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
-        expect(bleBloc.isConnectingNotifier.value, isFalse);
         expect(bleBloc.selectedDeviceNotifier.value, isNull);
         
         final mockDevice = MockBluetoothDevice();
@@ -81,7 +83,6 @@ void main() {
         await bleBloc.connectToDevice(mockDevice, mockContext);
         
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
-        expect(bleBloc.isConnectingNotifier.value, isFalse);
         expect(bleBloc.selectedDeviceNotifier.value, isNull);
         expect(bleBloc.isConnected, isFalse);
       });

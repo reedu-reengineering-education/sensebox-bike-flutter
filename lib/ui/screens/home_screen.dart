@@ -350,13 +350,13 @@ class _ConnectButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.isConnectingNotifier,
-      builder: (context, isConnecting, child) {
+    return ValueListenableBuilder<BleConnectionState>(
+      valueListenable: bleBloc.connectionStateNotifier,
+      builder: (context, connectionState, child) {
         return ValueListenableBuilder<bool>(
           valueListenable: bleBloc.isBluetoothEnabledNotifier,
           builder: (context, isBluetoothEnabled, child) {
-            if (isConnecting) {
+            if (connectionState == BleConnectionState.connecting) {
               return Align(
                 alignment: Alignment.center,
                 child: SizedBox(
