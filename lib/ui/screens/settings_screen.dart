@@ -40,11 +40,11 @@ class SettingsScreen extends StatelessWidget {
               title: AppLocalizations.of(context)!.generalSettings,
               child: ListView(
                 children: <Widget>[
-                  // _buildLoginLogoutSection(
-                  //   context,
-                  //   openSenseMapBloc,
-                  //   openSenseMapState,
-                  // ),
+                  _buildLoginLogoutSection(
+                    context,
+                    openSenseMapBloc,
+                    openSenseMapState,
+                  ),
                   _buildGeneralSettingsSection(
                     context,
                     settingsBloc,

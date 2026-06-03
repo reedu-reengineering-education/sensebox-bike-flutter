@@ -75,4 +75,7 @@ const List<String> sensorOrder = [
   'gps_latitude',
   'gps_longitude',
   'gps_speed',
+  'sensor_gps_latitude',
+  'sensor_gps_longitude',
+  'sensor_gps_speed',
 ];
