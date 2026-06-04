@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
+import 'package:sensebox_bike/ble/ble_scanner.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
-import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:vibration/vibration.dart';
 
@@ -30,11 +30,10 @@ class BleBloc with ChangeNotifier {
   final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
 
-  final List<BluetoothDevice> devicesList = [];
-  final StreamController<List<BluetoothDevice>> _devicesListController =
-      StreamController.broadcast();
+  late final BleScanner _scanner;
+  List<BluetoothDevice> get devicesList => _scanner.devicesList;
   Stream<List<BluetoothDevice>> get devicesListStream =>
-      _devicesListController.stream;
+      _scanner.devicesListStream;
 
   BluetoothDevice? selectedDevice;
   bool _isConnected = false;
@@ -54,6 +53,8 @@ class BleBloc with ChangeNotifier {
   bool get isConnected => _isConnected;
 
   BleBloc(this.settingsBloc) {
+    _scanner = BleScanner(isScanningNotifier: isScanningNotifier);
+
     FlutterBluePlus.setLogLevel(LogLevel.error);
     FlutterBluePlus.adapterState.listen((state) {
       updateBluetoothStatus(state == BluetoothAdapterState.on);
@@ -75,66 +76,14 @@ class BleBloc with ChangeNotifier {
     }
   }
 
-  Future<void> startScanning() async {
-    isScanningNotifier.value = true;
+  Future<void> startScanning() => _scanner.startScanning();
 
-    try {
-      await FlutterBluePlus.startScan(timeout: deviceConnectTimeout);
-    } catch (e) {
-      isScanningNotifier.value = false;
-      throw ScanPermissionDenied();
-    }
-
-    FlutterBluePlus.scanResults.listen((results) {
-      devicesList.clear();
-      for (ScanResult result in results) {
-        if (result.device.platformName.startsWith("senseBox")) {
-          devicesList.add(result.device);
-        }
-      }
-      _devicesListController.add(devicesList);
-      notifyListeners();
-    });
-
-    FlutterBluePlus.isScanning.listen((scanning) {
-      isScanningNotifier.value = scanning;
-    });
-  }
-
-  Future<void> stopScanning() async {
-    await FlutterBluePlus.stopScan();
-    isScanningNotifier.value = false;
-  }
+  Future<void> stopScanning() => _scanner.stopScanning();
 
   Future<void> scanForNewDevices() async {
     // Clear all existing state before scanning
     disconnectDevice();
-    
-
-    
-    isScanningNotifier.value = true;
-
-    try {
-      await FlutterBluePlus.startScan(timeout: deviceConnectTimeout);
-    } catch (e) {
-      isScanningNotifier.value = false;
-      throw ScanPermissionDenied();
-    }
-
-    FlutterBluePlus.scanResults.listen((results) {
-      devicesList.clear();
-      for (ScanResult result in results) {
-        if (result.device.platformName.startsWith("senseBox")) {
-          devicesList.add(result.device);
-        }
-      }
-      _devicesListController.add(devicesList);
-      notifyListeners();
-    });
-
-    FlutterBluePlus.isScanning.listen((scanning) {
-      isScanningNotifier.value = scanning;
-    });
+    await _scanner.startScanning();
   }
 
   void disconnectDevice() {
@@ -158,17 +107,16 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> connectToId(String id, BuildContext context) async {
+    await _connectToBox(id, context);
+  }
+
+  Future<void> _connectToBox(String name, BuildContext context) async {
     resetConnectionError();
-    
-    await FlutterBluePlus.startScan(withNames: [id]);
-    FlutterBluePlus.scanResults.listen((results) async {
-      for (ScanResult result in results) {
-        if (result.device.advName.toString() == id) {
-          await connectToDevice(result.device, context);
-          break;
-        }
-      }
-    });
+
+    await _scanner.scanForBox(
+      name: name,
+      onDeviceFound: (device) => connectToDevice(device, context),
+    );
   }
 
   Future<void> connectToDevice(
@@ -653,7 +601,7 @@ class BleBloc with ChangeNotifier {
   @override
   void dispose() {
     _reconnectionListener?.cancel();
-    _devicesListController.close();
+    _scanner.dispose();
     _clearCharacteristicStreams();
     selectedDeviceNotifier.dispose();
     isBluetoothEnabledNotifier.dispose();
