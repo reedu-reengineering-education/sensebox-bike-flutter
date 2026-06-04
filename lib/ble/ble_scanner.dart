@@ -5,7 +5,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 
 const _senseBoxDeviceNamePrefix = 'senseBox';
-const _scanTimeout = Duration(seconds: 5);
+const _scanTimeout = Duration(seconds: 10);
 
 class BleScanner {
   BleScanner({required this.isScanningNotifier});
