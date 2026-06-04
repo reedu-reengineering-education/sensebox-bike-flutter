@@ -81,7 +81,6 @@ class BleBloc with ChangeNotifier {
   Future<void> stopScanning() => _scanner.stopScanning();
 
   Future<void> scanForNewDevices() async {
-    // Clear all existing state before scanning
     disconnectDevice();
     await _scanner.startScanning();
   }
@@ -97,12 +96,7 @@ class BleBloc with ChangeNotifier {
     _reconnectionListener?.cancel();
     _reconnectionListener = null;
     resetConnectionError();
-    
-    // Ensure reconnection state is fully reset
     _resetReconnectionState();
-
-
-    
     notifyListeners();
   }
 

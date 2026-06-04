@@ -6,6 +6,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/empty_state_message.dart';
+import 'package:sensebox_bike/ui/widgets/common/surface_outlined_icon_button.dart';
 
 void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
   Object? scanError;
@@ -33,24 +34,22 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
                 initialScanError: scanError,
               ),
               Padding(
-                padding: const EdgeInsets.only(
+                padding: EdgeInsets.only(
                   left: spacing,
                   right: spacing,
-                  bottom: spacing,
+                  top: spacing,
+                  bottom: spacing * 2 +
+                      MediaQuery.of(sheetContext).viewPadding.bottom,
                 ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () async {
-                      await bleBloc.stopScanning();
-                      if (sheetContext.mounted) {
-                        Navigator.pop(sheetContext, false);
-                      }
-                    },
-                    child: Text(
-                      AppLocalizations.of(sheetContext)!.generalCancel,
-                    ),
-                  ),
+                child: SurfaceOutlinedIconButton(
+                  icon: Icons.close,
+                  label: AppLocalizations.of(sheetContext)!.generalCancel,
+                  onPressed: () async {
+                    await bleBloc.stopScanning();
+                    if (sheetContext.mounted) {
+                      Navigator.pop(sheetContext, false);
+                    }
+                  },
                 ),
               ),
             ],

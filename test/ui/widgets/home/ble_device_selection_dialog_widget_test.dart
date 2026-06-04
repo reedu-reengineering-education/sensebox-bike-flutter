@@ -93,7 +93,7 @@ void main() {
     );
 
     await tester.pump();
-    expect(find.textContaining('No senseBoxes found'), findsOneWidget); // Adjust to your localization
+    expect(find.textContaining('No senseBoxes found'), findsOneWidget);
   });
 
   testWidgets('shows list of devices and taps to connect', (tester) async {

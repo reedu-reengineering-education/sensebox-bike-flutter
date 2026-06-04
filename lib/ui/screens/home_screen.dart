@@ -11,6 +11,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
+import 'package:sensebox_bike/ui/widgets/common/surface_outlined_icon_button.dart';
 import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection_modal.dart';
@@ -466,7 +467,6 @@ class _StartStopButton extends StatelessWidget {
   }
 }
 
-// Disconnect button
 class _DisconnectButton extends StatelessWidget {
   final BleBloc bleBloc;
   final RecordingBloc recordingBloc;
@@ -477,21 +477,16 @@ class _DisconnectButton extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: bleBloc.isReconnectingNotifier,
       builder: (context, isReconnecting, child) {
-        return OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          ),
+        return SurfaceOutlinedIconButton(
           icon: isReconnecting
-              ? const Icon(Icons.bluetooth_searching)
-              : const Icon(Icons.bluetooth_disabled),
+              ? Icons.bluetooth_searching
+              : Icons.bluetooth_disabled,
           label: isReconnecting
-              ? Text(AppLocalizations.of(context)!.connectionButtonReconnecting)
-              : Text(AppLocalizations.of(context)!.connectionButtonDisconnect),
+              ? AppLocalizations.of(context)!.connectionButtonReconnecting
+              : AppLocalizations.of(context)!.connectionButtonDisconnect,
           onPressed: isReconnecting
               ? null
               : () async {
-                  // Stop recording if active before disconnecting
                   if (recordingBloc.isRecording) {
                     await recordingBloc.stopRecording();
                   }
