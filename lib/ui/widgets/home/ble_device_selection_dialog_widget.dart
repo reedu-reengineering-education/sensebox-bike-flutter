@@ -16,22 +16,48 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
     scanError = e;
   }
 
-  final result = await showModalBottomSheet<bool>(
+  final selected = await showModalBottomSheet<bool>(
       showDragHandle: true,
       isScrollControlled: true,
       context: context,
-      builder: (context) => (Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(
-              AppLocalizations.of(context)!.bleDeviceSelectTitle,
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            DeviceSelectionSheet(bleBloc: bleBloc, initialScanError: scanError),
-          ])));
+      builder: (sheetContext) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppLocalizations.of(sheetContext)!.bleDeviceSelectTitle,
+                style: Theme.of(sheetContext).textTheme.headlineSmall,
+                textAlign: TextAlign.center,
+              ),
+              DeviceSelectionSheet(
+                bleBloc: bleBloc,
+                initialScanError: scanError,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: spacing,
+                  right: spacing,
+                  bottom: spacing,
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () async {
+                      await bleBloc.stopScanning();
+                      if (sheetContext.mounted) {
+                        Navigator.pop(sheetContext, false);
+                      }
+                    },
+                    child: Text(
+                      AppLocalizations.of(sheetContext)!.generalCancel,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ));
 
-  if (result != true) {
-    // User dismissed the sheet (cancel)
-    bleBloc.stopScanning();
+  if (selected != true) {
+    await bleBloc.stopScanning();
   }
 }
 
@@ -98,7 +124,6 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                             child: CircularProgressIndicator(
                                 color: colorScheme.primaryFixedDim));
                       } else {
-                        // Not scanning, and no devices found.
                         return EmptyStateMessage(
                           icon: Icons.sensors_off_outlined,
                           message: localizations.noBleDevicesFound,

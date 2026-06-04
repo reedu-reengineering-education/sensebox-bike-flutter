@@ -159,7 +159,6 @@ class BleBloc with ChangeNotifier {
       _isInRetryMode = false;
       notifyListeners();
     }
-    
   }
 
   Future<bool> _executeConnectionAttempts(
