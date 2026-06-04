@@ -28,6 +28,7 @@
     },
 
     "generalCancel": "Abbrechen",
+    "generalRetry": "Erneut versuchen",
     "generalCreate": "Erstellen",
     "generalOk": "Ok",
     "generalSave": "Speichern",

@@ -192,6 +192,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get generalCancel;
 
+  /// No description provided for @generalRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get generalRetry;
+
   /// No description provided for @generalCreate.
   ///
   /// In en, this message translates to:

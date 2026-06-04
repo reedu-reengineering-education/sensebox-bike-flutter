@@ -53,7 +53,7 @@ void main() {
         child: Material(
           child: DeviceSelectionSheet(
           bleBloc: bleBloc,
-          initialScanError: 'Test error',
+          scanError: 'Test error',
         ),
         )
       ),

@@ -62,6 +62,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalCancel => 'Cancel';
 
   @override
+  String get generalRetry => 'Retry';
+
+  @override
   String get generalCreate => 'Create';
 
   @override

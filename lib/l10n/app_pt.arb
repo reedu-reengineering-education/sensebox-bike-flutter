@@ -28,6 +28,7 @@
     },
 
     "generalCancel": "Cancelar",
+    "generalRetry": "Tentar novamente",
     "generalCreate": "Criar",
     "generalOk": "Ok",
     "generalSave": "Salvar",

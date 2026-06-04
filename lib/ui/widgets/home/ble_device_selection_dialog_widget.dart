@@ -9,65 +9,119 @@ import 'package:sensebox_bike/ui/widgets/common/empty_state_message.dart';
 import 'package:sensebox_bike/ui/widgets/common/surface_outlined_icon_button.dart';
 
 void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
-  Object? scanError;
-
-  try {
-    await bleBloc.startScanning();
-  } catch (e) {
-    scanError = e;
-  }
-
   final selected = await showModalBottomSheet<bool>(
-      showDragHandle: true,
-      isScrollControlled: true,
-      context: context,
-      builder: (sheetContext) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                AppLocalizations.of(sheetContext)!.bleDeviceSelectTitle,
-                style: Theme.of(sheetContext).textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              DeviceSelectionSheet(
-                bleBloc: bleBloc,
-                initialScanError: scanError,
-              ),
-              Padding(
-                padding: EdgeInsets.only(
-                  left: spacing,
-                  right: spacing,
-                  top: spacing,
-                  bottom: spacing * 2 +
-                      MediaQuery.of(sheetContext).viewPadding.bottom,
-                ),
-                child: SurfaceOutlinedIconButton(
-                  icon: Icons.close,
-                  label: AppLocalizations.of(sheetContext)!.generalCancel,
-                  onPressed: () async {
-                    await bleBloc.stopScanning();
-                    if (sheetContext.mounted) {
-                      Navigator.pop(sheetContext, false);
-                    }
-                  },
-                ),
-              ),
-            ],
-          ));
+    showDragHandle: true,
+    isScrollControlled: true,
+    context: context,
+    builder: (sheetContext) => _BleDeviceSelectionBottomSheet(
+      bleBloc: bleBloc,
+    ),
+  );
 
   if (selected != true) {
     await bleBloc.stopScanning();
   }
 }
 
+class _BleDeviceSelectionBottomSheet extends StatefulWidget {
+  final BleBloc bleBloc;
+
+  const _BleDeviceSelectionBottomSheet({required this.bleBloc});
+
+  @override
+  State<_BleDeviceSelectionBottomSheet> createState() =>
+      _BleDeviceSelectionBottomSheetState();
+}
+
+class _BleDeviceSelectionBottomSheetState
+    extends State<_BleDeviceSelectionBottomSheet> {
+  Object? _scanError;
+  bool _showRetry = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startScan();
+  }
+
+  Future<void> _startScan() async {
+    try {
+      await widget.bleBloc.startScanning();
+      if (mounted) {
+        setState(() => _scanError = null);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _scanError = e);
+      }
+    }
+  }
+
+  void _onShowRetryChanged(bool showRetry) {
+    if (_showRetry != showRetry) {
+      setState(() => _showRetry = showRetry);
+    }
+  }
+
+  bool get _useRetryButton => _scanError != null || _showRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          localizations.bleDeviceSelectTitle,
+          style: Theme.of(context).textTheme.headlineSmall,
+          textAlign: TextAlign.center,
+        ),
+        DeviceSelectionSheet(
+          bleBloc: widget.bleBloc,
+          scanError: _scanError,
+          onShowRetryChanged: _onShowRetryChanged,
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            left: spacing,
+            right: spacing,
+            top: spacing,
+            bottom: spacing * 2 + MediaQuery.of(context).viewPadding.bottom,
+          ),
+          child: SurfaceOutlinedIconButton(
+            icon: _useRetryButton ? Icons.refresh : Icons.close,
+            label: _useRetryButton
+                ? localizations.generalRetry
+                : localizations.generalCancel,
+            onPressed: () async {
+              if (_useRetryButton) {
+                setState(() => _scanError = null);
+                await _startScan();
+              } else {
+                await widget.bleBloc.stopScanning();
+                if (context.mounted) {
+                  Navigator.pop(context, false);
+                }
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class DeviceSelectionSheet extends StatefulWidget {
   final BleBloc bleBloc;
-  final Object? initialScanError;
+  final Object? scanError;
+  final ValueChanged<bool>? onShowRetryChanged;
 
   const DeviceSelectionSheet({
     super.key,
     required this.bleBloc,
-    this.initialScanError,
+    this.scanError,
+    this.onShowRetryChanged,
   });
 
   @override
@@ -75,62 +129,128 @@ class DeviceSelectionSheet extends StatefulWidget {
 }
 
 class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
+  bool? _lastReportedRetry;
+
+  void _reportShowRetry(bool showRetry) {
+    if (_lastReportedRetry == showRetry) {
+      return;
+    }
+    _lastReportedRetry = showRetry;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      widget.onShowRetryChanged?.call(showRetry);
+    });
+  }
+
+  bool _shouldShowRetry({
+    required bool isScanning,
+    required AsyncSnapshot<List<BluetoothDevice>> snapshot,
+  }) {
+    if (widget.scanError != null) {
+      return true;
+    }
+    if (snapshot.hasError) {
+      return true;
+    }
+    if (snapshot.connectionState == ConnectionState.waiting &&
+        !snapshot.hasData) {
+      return false;
+    }
+    final devices = snapshot.data;
+    if (devices == null || devices.isEmpty) {
+      return !isScanning;
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    if (widget.initialScanError != null) {
-      return Center(
-        child: Text(
-          widget.initialScanError.toString(),
-          style: TextStyle(color: Theme.of(context).colorScheme.error),
+    if (widget.scanError != null) {
+      _reportShowRetry(true);
+      return Padding(
+        padding: const EdgeInsets.only(
+          top: spacing * 4,
+          bottom: spacing,
+          left: spacing,
+          right: spacing,
+        ),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Center(
+            child: Text(
+              widget.scanError.toString(),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
         ),
       );
     }
 
     return Padding(
-        padding: const EdgeInsets.only(
-            top: spacing * 4, bottom: spacing, left: spacing, right: spacing),
-        child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.6,
-            child: StreamBuilder<List<BluetoothDevice>>(
+      padding: const EdgeInsets.only(
+        top: spacing * 4,
+        bottom: spacing,
+        left: spacing,
+        right: spacing,
+      ),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: ListenableBuilder(
+          listenable: widget.bleBloc.isScanningNotifier,
+          builder: (context, _) {
+            return StreamBuilder<List<BluetoothDevice>>(
               stream: widget.bleBloc.devicesListStream,
               builder: (context, snapshot) {
                 final colorScheme = Theme.of(context).colorScheme;
+                final isScanning = widget.bleBloc.isScanningNotifier.value;
+
+                _reportShowRetry(
+                  _shouldShowRetry(isScanning: isScanning, snapshot: snapshot),
+                );
 
                 if (snapshot.connectionState == ConnectionState.waiting &&
-                    !snapshot.hasData) {
-                  return Center(
+                !snapshot.hasData) {
+              return Center(
+                child: CircularProgressIndicator(
+                  color: colorScheme.primaryFixedDim,
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  "Stream Error: ${snapshot.error.toString()}",
+                  style: TextStyle(color: colorScheme.error),
+                ),
+              );
+            }
+
+            final devices = snapshot.data;
+
+            if (devices == null || devices.isEmpty) {
+              return ValueListenableBuilder<bool>(
+                valueListenable: widget.bleBloc.isScanningNotifier,
+                builder: (context, isScanning, child) {
+                  final colorScheme = Theme.of(context).colorScheme;
+                  if (isScanning) {
+                    return Center(
                       child: CircularProgressIndicator(
-                          color: colorScheme.primaryFixedDim));
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text("Stream Error: ${snapshot.error.toString()}"),
+                        color: colorScheme.primaryFixedDim,
+                      ),
+                    );
+                  }
+                  return EmptyStateMessage(
+                    icon: Icons.sensors_off_outlined,
+                    message: localizations.noBleDevicesFound,
                   );
-                }
-
-                final devices = snapshot.data;
-
-                if (devices == null || devices.isEmpty) {
-                  return ValueListenableBuilder<bool>(
-                    valueListenable: widget.bleBloc.isScanningNotifier,
-                    builder: (context, isScanning, child) {
-                      final colorScheme = Theme.of(context).colorScheme;
-                      if (isScanning) {
-                        return Center(
-                            child: CircularProgressIndicator(
-                                color: colorScheme.primaryFixedDim));
-                      } else {
-                        return EmptyStateMessage(
-                          icon: Icons.sensors_off_outlined,
-                          message: localizations.noBleDevicesFound,
-                        );
-                      }
-                    },
-                  );
-                }
+                },
+              );
+            }
 
                 return ListView.separated(
                   separatorBuilder: (context, index) =>
@@ -151,6 +271,10 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                   },
                 );
               },
-            )));
+            );
+          },
+        ),
+      ),
+    );
   }
 }

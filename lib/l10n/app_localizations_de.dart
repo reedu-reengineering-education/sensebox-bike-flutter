@@ -63,6 +63,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalCancel => 'Abbrechen';
 
   @override
+  String get generalRetry => 'Erneut versuchen';
+
+  @override
   String get generalCreate => 'Erstellen';
 
   @override

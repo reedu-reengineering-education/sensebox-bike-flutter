@@ -27,6 +27,7 @@
         }
     },
     "generalCancel": "Cancel",
+    "generalRetry": "Retry",
     "generalCreate": "Create",
     "generalOk": "Ok",
     "generalSave": "Save",
