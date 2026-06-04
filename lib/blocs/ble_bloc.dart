@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
+import 'package:sensebox_bike/ble/ble_adapter.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/ble/ble_scanner.dart';
@@ -31,6 +32,7 @@ class BleBloc with ChangeNotifier {
   final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
 
+  late final BleAdapter _adapter;
   late final BleScanner _scanner;
   List<BluetoothDevice> get devicesList => _scanner.devicesList;
   Stream<List<BluetoothDevice>> get devicesListStream =>
@@ -53,20 +55,15 @@ class BleBloc with ChangeNotifier {
   bool get isConnected => _isConnected;
 
   BleBloc(this.settingsBloc) {
+    _adapter = BleAdapter();
     _scanner = BleScanner(isScanningNotifier: isScanningNotifier);
 
-    FlutterBluePlus.setLogLevel(LogLevel.error);
-    FlutterBluePlus.adapterState.listen((state) {
-      updateBluetoothStatus(state == BluetoothAdapterState.on);
-    });
-
-    _initializeBluetoothStatus();
+    _adapter.configure();
+    _refreshBluetoothEnabledStatus();
   }
 
-  Future<void> _initializeBluetoothStatus() async {
-    BluetoothAdapterState currentState =
-        await FlutterBluePlus.adapterState.first;
-    updateBluetoothStatus(currentState == BluetoothAdapterState.on);
+  Future<void> _refreshBluetoothEnabledStatus() async {
+    updateBluetoothStatus(await _adapter.isEnabled());
   }
 
   void updateBluetoothStatus(bool isEnabled) {
@@ -518,6 +515,7 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> requestEnableBluetooth() async {
-    return FlutterBluePlus.turnOn();
+    await _adapter.requestEnable();
+    await _refreshBluetoothEnabledStatus();
   }
 }
