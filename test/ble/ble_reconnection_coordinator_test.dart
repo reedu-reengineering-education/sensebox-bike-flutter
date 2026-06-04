@@ -84,6 +84,28 @@ void main() {
       expect(isReconnectingNotifier.value, isFalse);
     });
 
+    test('reconnects when vibrate on disconnect setting is enabled', () async {
+      vibrateOnDisconnect = true;
+      var reconnectCalls = 0;
+
+      coordinator.attach(
+        device,
+        shouldIgnoreDisconnect: () => false,
+        onLinkLost: () {},
+        runReconnectSessions: (_) async {
+          reconnectCalls++;
+          return true;
+        },
+        onReconnectSucceeded: () {},
+        onListenerError: (_, __) async {},
+      );
+
+      connectionStateController.add(BluetoothConnectionState.disconnected);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(reconnectCalls, 1);
+    });
+
     test('ignores disconnect while shouldIgnoreDisconnect is true', () async {
       var reconnectCalls = 0;
 

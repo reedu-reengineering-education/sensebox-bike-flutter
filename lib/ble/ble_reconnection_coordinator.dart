@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/ble/ble_constants.dart';
-import 'package:vibration/vibration.dart';
+import 'package:sensebox_bike/utils/device_vibration.dart';
 
 /// Watches [BluetoothDevice.connectionState] and runs reconnect attempts after
 /// unexpected disconnects.
@@ -77,16 +77,24 @@ class BleReconnectionCoordinator {
 
     _reconnectionInProgress = true;
     isReconnectingNotifier.value = true;
-
-    if (!_hasVibrated && _getVibrateOnDisconnect()) {
-      Vibration.vibrate();
-      _hasVibrated = true;
-    }
+    await _maybeVibrateOnDisconnect();
 
     final success = await runReconnectSessions(device);
     if (success) {
       reset();
       onReconnectSucceeded();
+    }
+  }
+
+  Future<void> _maybeVibrateOnDisconnect() async {
+    if (_hasVibrated || !_getVibrateOnDisconnect()) {
+      return;
+    }
+    _hasVibrated = true;
+    try {
+      await vibrateDisconnectFeedback();
+    } catch (_) {
+      // Haptics are best-effort; reconnect must continue.
     }
   }
 
