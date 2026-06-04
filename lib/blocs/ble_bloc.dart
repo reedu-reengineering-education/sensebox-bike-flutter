@@ -2,9 +2,10 @@ import 'dart:async';
 
 import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/ble/ble_scanner.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
@@ -46,9 +47,8 @@ class BleBloc with ChangeNotifier {
   
   StreamSubscription<BluetoothConnectionState>? _reconnectionListener;
 
-  final Map<String, StreamController<List<double>>> _characteristicStreams = {};
-  final Map<String, StreamSubscription<List<int>>>
-      _characteristicSubscriptions = {};
+  final BleCharacteristicStreams characteristicStreams =
+      BleCharacteristicStreams();
 
   bool get isConnected => _isConnected;
 
@@ -241,7 +241,7 @@ class BleBloc with ChangeNotifier {
     bool updateConnectionState = true,
   }) async {
     try {
-      _clearCharacteristicStreams();
+      characteristicStreams.clear();
 
       final services = await device.discoverServices();
       if (services.isEmpty) {
@@ -250,7 +250,7 @@ class BleBloc with ChangeNotifier {
 
       BluetoothService? senseBoxService;
       try {
-        senseBoxService = _findSenseBoxService(services);
+        senseBoxService = findSenseBoxService(services);
       } catch (e) {
         return false;
       }
@@ -285,12 +285,11 @@ class BleBloc with ChangeNotifier {
       }
 
       if (dataReceived && receivedData != null) {
-        bool isDataMeaningful = _validateReceivedData(receivedData!);
+        final isDataMeaningful = isValidCharacteristicPayload(receivedData!);
 
         if (isDataMeaningful) {
-          for (var characteristic in senseBoxService.characteristics) {
-            await _listenToCharacteristic(characteristic);
-          }
+          await characteristicStreams
+              .subscribeAll(senseBoxService.characteristics);
 
           availableCharacteristics.value = senseBoxService.characteristics;
           characteristicStreamsVersion.value++;
@@ -340,27 +339,6 @@ class BleBloc with ChangeNotifier {
       // Don't throw - let reconnection continue with next attempt
     }
   }
-
-  void _clearCharacteristicStreams() {
-    for (var subscription in _characteristicSubscriptions.values) {
-      subscription.cancel();
-    }
-    _characteristicSubscriptions.clear();
-    
-    for (var controller in _characteristicStreams.values) {
-      controller.close();
-    }
-    _characteristicStreams.clear();
-  }
-
-  BluetoothService _findSenseBoxService(List<BluetoothService> services) {
-    return services.firstWhere(
-      (service) => service.uuid == senseBoxServiceUUID,
-      orElse: () => throw Exception('senseBox service not found'),
-    );
-  }
-
-
 
   void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
     _reconnectionListener?.cancel();
@@ -482,7 +460,7 @@ class BleBloc with ChangeNotifier {
       _reconnectionListener = null;
 
       // Clear characteristic streams
-      _clearCharacteristicStreams();
+      characteristicStreams.clear();
 
       // Reset reconnection state
       _isReconnecting = false;
@@ -525,77 +503,11 @@ class BleBloc with ChangeNotifier {
 
 
 
-  bool _validateReceivedData(Uint8List data) {
-    if (data.isEmpty) {
-      return false;
-    }
-    
-    bool allZeros = data.every((byte) => byte == 0);
-    if (allZeros) {
-      return false;
-    }
-    
-    if (data.length < 4) {
-      return false;
-    }
-    
-    return true;
-  }
-
-  Future<void> _listenToCharacteristic(
-      BluetoothCharacteristic characteristic) async {
-    final uuid = characteristic.uuid.toString();
-
-    await _characteristicSubscriptions[uuid]?.cancel();
-    _characteristicSubscriptions.remove(uuid);
-
-    if (_characteristicStreams.containsKey(uuid)) {
-      await _characteristicStreams[uuid]?.close();
-      _characteristicStreams.remove(uuid);
-    }
-
-    final controller = StreamController<List<double>>.broadcast();
-    _characteristicStreams[uuid] = controller;
-
-    await characteristic.setNotifyValue(true);
-    final subscription = characteristic.onValueReceived.listen((value) {
-      if (!controller.isClosed) {
-        List<double> parsedData = _parseData(Uint8List.fromList(value));
-
-        controller.add(parsedData);
-      }
-    });
-    _characteristicSubscriptions[uuid] = subscription;
-  }
-
-
-
-  Stream<List<double>> getCharacteristicStream(String characteristicUuid) {
-    if (!_characteristicStreams.containsKey(characteristicUuid)) {
-      throw Exception(
-          'Characteristic stream not found for UUID: $characteristicUuid. '
-          'The characteristic may not be available yet or the device may not be connected.');
-    }
-    return _characteristicStreams[characteristicUuid]!.stream;
-  }
-
-  List<double> _parseData(Uint8List value) {
-    // This method will convert the incoming data to a list of doubles
-    List<double> parsedValues = [];
-    for (int i = 0; i < value.length; i += 4) {
-      if (i + 4 <= value.length) {
-        parsedValues.add(
-            ByteData.sublistView(value, i, i + 4).getFloat32(0, Endian.little));
-      }
-    }
-    return parsedValues;
-  }
-
   @override
   void dispose() {
     _reconnectionListener?.cancel();
     _scanner.dispose();
-    _clearCharacteristicStreams();
+    characteristicStreams.clear();
     selectedDeviceNotifier.dispose();
     isBluetoothEnabledNotifier.dispose();
     isScanningNotifier.dispose();

@@ -16,6 +16,7 @@ import 'package:sensebox_bike/services/isar_service/sensor_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
@@ -42,6 +43,12 @@ class MockTrackService extends Mock implements TrackService {}
 class MockGeolocationService extends Mock implements GeolocationService {}
 
 class MockSensorService extends Mock implements SensorService {}
+
+class _EmptyBleCharacteristicStreams extends BleCharacteristicStreams {
+  @override
+  Stream<List<double>> characteristicStream(String characteristicUuid) =>
+      Stream.value([]);
+}
 
 class MockBleBloc extends Mock implements BleBloc {
   final List<VoidCallback> _listeners = [];
@@ -120,8 +127,8 @@ class MockBleBloc extends Mock implements BleBloc {
   Future<void> requestEnableBluetooth() async {}
 
   @override
-  Stream<List<double>> getCharacteristicStream(String characteristicUuid) =>
-      Stream.value([]);
+  final BleCharacteristicStreams characteristicStreams =
+      _EmptyBleCharacteristicStreams();
 
   @override
   void addListener(VoidCallback listener) {
