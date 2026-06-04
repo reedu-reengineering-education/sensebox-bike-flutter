@@ -1,22 +1,21 @@
 import 'dart:async';
 
-import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/ble/ble_adapter.dart';
-import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
+import 'package:sensebox_bike/ble/ble_connection_session.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/ble/ble_scanner.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:vibration/vibration.dart';
 
 const reconnectionDelay = Duration(seconds: 1);
 const deviceConnectTimeout = Duration(seconds: 10);
 const configurableReconnectionDelay = Duration(seconds: 1);
-const dataListeningTimeout = Duration(seconds: 4); 
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
@@ -34,6 +33,7 @@ class BleBloc with ChangeNotifier {
 
   late final BleAdapter _adapter;
   late final BleScanner _scanner;
+  final BleConnectionSession _connectionSession = const BleConnectionSession();
   List<BluetoothDevice> get devicesList => _scanner.devicesList;
   Stream<List<BluetoothDevice>> get devicesListStream =>
       _scanner.devicesListStream;
@@ -54,12 +54,17 @@ class BleBloc with ChangeNotifier {
 
   bool get isConnected => _isConnected;
 
-  BleBloc(this.settingsBloc) {
+  BleBloc(
+    this.settingsBloc, {
+    bool initializePlatformBle = true,
+  }) {
     _adapter = BleAdapter();
     _scanner = BleScanner(isScanningNotifier: isScanningNotifier);
 
-    _adapter.configure();
-    _refreshBluetoothEnabledStatus();
+    if (initializePlatformBle) {
+      _adapter.configure();
+      _refreshBluetoothEnabledStatus();
+    }
   }
 
   Future<void> _refreshBluetoothEnabledStatus() async {
@@ -78,22 +83,52 @@ class BleBloc with ChangeNotifier {
   Future<void> stopScanning() => _scanner.stopScanning();
 
   Future<void> scanForNewDevices() async {
-    disconnectDevice();
+    disconnectDevice(userInitiated: true);
     await _scanner.startScanning();
   }
 
-  void disconnectDevice() {
-    _userInitiatedDisconnect = true;
-    _isInRetryMode = false;
-    selectedDevice?.disconnect();
+  Future<void> disconnectDevice({
+    BluetoothDevice? device,
+    bool userInitiated = false,
+    bool showConnectionError = false,
+  }) async {
+    if (userInitiated) {
+      _userInitiatedDisconnect = true;
+      _isInRetryMode = false;
+    }
+
+    final target = device ?? selectedDevice;
+    if (target != null) {
+      try {
+        await target.disconnect();
+      } catch (_) {
+        // Device may already be disconnected.
+      }
+    }
+
     _isConnected = false;
     selectedDevice = null;
     selectedDeviceNotifier.value = null;
     availableCharacteristics.value = [];
+    characteristicStreams.clear();
+
     _reconnectionListener?.cancel();
     _reconnectionListener = null;
-    resetConnectionError();
-    _resetReconnectionState();
+
+    if (showConnectionError) {
+      _userInitiatedDisconnect = false;
+      connectionErrorNotifier.value = true;
+      _isReconnecting = false;
+      _isInRetryMode = false;
+      _reconnectionAttempts = 0;
+      _hasVibrated = false;
+      isReconnectingNotifier.value = false;
+      isConnectingNotifier.value = false;
+    } else {
+      resetConnectionError();
+      _resetReconnectionState();
+    }
+
     notifyListeners();
   }
 
@@ -133,18 +168,13 @@ class BleBloc with ChangeNotifier {
         
         selectedDevice = device;
         selectedDeviceNotifier.value = selectedDevice;
-      } else {
-        selectedDevice = null;
-        selectedDeviceNotifier.value = null;
       }
-    } catch (e) {
-      ErrorService.handleError(e, StackTrace.current);
-      
-      selectedDevice = null;
-      selectedDeviceNotifier.value = null;
-      _isConnected = false;
-      
-      _handleConnectionError(context: context, isInitialConnection: true);
+    } catch (e, stack) {
+      await disconnectDevice(device: device, showConnectionError: true);
+      ErrorService.reportToSentry(
+        BleConnectionFailed(BleConnectionFailurePhase.initialConnect, e),
+        stack,
+      );
     } finally {
       isConnectingNotifier.value = false;
       _isInRetryMode = false;
@@ -156,13 +186,10 @@ class BleBloc with ChangeNotifier {
     BluetoothDevice device,
     BuildContext? context, {
     required int maxAttempts,
-    required bool isReconnection,
+    required BleConnectionFailurePhase failurePhase,
     required Future<bool> Function(BluetoothDevice, BuildContext?)
         attemptConnection,
     required Future<void> Function(BluetoothDevice) prepareForRetry,
-    required void Function(
-            {required BuildContext context, bool isInitialConnection})
-        handleError,
   }) async {
     _isInRetryMode = true;
 
@@ -203,10 +230,11 @@ class BleBloc with ChangeNotifier {
     }
 
     _isInRetryMode = false;
-
-    if (context != null) {
-      handleError(context: context, isInitialConnection: !isReconnection);
-    }
+    ErrorService.reportToSentry(
+      BleConnectionFailed(failurePhase),
+      StackTrace.current,
+    );
+    await disconnectDevice(device: device, showConnectionError: true);
     return false;
   }
 
@@ -214,113 +242,51 @@ class BleBloc with ChangeNotifier {
     BluetoothDevice device, {
     BuildContext? context,
     int maxAttempts = 5,
-    bool isReconnection = false,
   }) async {
     return _executeConnectionAttempts(
       device,
       context,
       maxAttempts: maxAttempts,
-      isReconnection: isReconnection,
+      failurePhase: BleConnectionFailurePhase.initialConnect,
       attemptConnection: (device, context) => _attemptSingleConnection(
         device,
-        context,
         updateConnectionState: true,
       ),
       prepareForRetry: _prepareForRetry,
-      handleError: _handleConnectionError,
     );
   }
 
-  /// Attempts a single connection without retries
   Future<bool> _attemptSingleConnection(
-    BluetoothDevice device,
-    BuildContext? context, {
+    BluetoothDevice device, {
     bool updateConnectionState = true,
   }) async {
-    try {
-      characteristicStreams.clear();
+    final result = await _connectionSession.establish(
+      device,
+      streams: characteristicStreams,
+    );
 
-      final services = await device.discoverServices();
-      if (services.isEmpty) {
-        return false;
-      }
-
-      BluetoothService? senseBoxService;
-      try {
-        senseBoxService = findSenseBoxService(services);
-      } catch (e) {
-        return false;
-      }
-
-      if (senseBoxService.characteristics.isEmpty) {
-        return false;
-      }
-
-      final firstCharacteristic = senseBoxService.characteristics.first;
-
-      bool dataReceived = false;
-      final dataReceivedCompleter = Completer<bool>();
-
-      await firstCharacteristic.setNotifyValue(true);
-      Uint8List? receivedData;
-      final subscription = firstCharacteristic.onValueReceived.listen((value) {
-        if (!dataReceivedCompleter.isCompleted) {
-          receivedData = Uint8List.fromList(value);
-          dataReceived = true;
-          dataReceivedCompleter.complete(true);
-        }
-      });
-
-      try {
-        await Future.any([
-          dataReceivedCompleter.future,
-          Future.delayed(dataListeningTimeout),
-        ]);
-      } finally {
-        subscription.cancel();
-        await firstCharacteristic.setNotifyValue(false);
-      }
-
-      if (dataReceived && receivedData != null) {
-        final isDataMeaningful = isValidCharacteristicPayload(receivedData!);
-
-        if (isDataMeaningful) {
-          await characteristicStreams
-              .subscribeAll(senseBoxService.characteristics);
-
-          availableCharacteristics.value = senseBoxService.characteristics;
-          characteristicStreamsVersion.value++;
-
-          if (updateConnectionState) {
-            _isConnected = true;
-            _userInitiatedDisconnect = false;
-              
-            notifyListeners();
-          }
-
-          return true;
-        } else {
-          return false;
-        }
-      } else if (dataReceived && receivedData == null) {
-        return false;
-      } else {
-        return false;
-      }
-    } catch (e) {
+    if (!result.success) {
+      await disconnectDevice(device: device);
       return false;
     }
+
+    availableCharacteristics.value = result.characteristics;
+    characteristicStreamsVersion.value++;
+
+    if (updateConnectionState) {
+      _isConnected = true;
+      _userInitiatedDisconnect = false;
+      notifyListeners();
+    }
+
+    return true;
   }
 
   /// Prepares device for retry by disconnecting and reconnecting
   Future<void> _prepareForRetry(BluetoothDevice device) async {
     try {
       // Disconnect device (catch any disconnect exceptions)
-      try {
-        await device.disconnect();
-      } catch (e) {
-        // Continue anyway, device might already be disconnected
-      }
+      await disconnectDevice(device: device);
 
       await Future.delayed(configurableReconnectionDelay);
       
@@ -369,7 +335,11 @@ class BleBloc with ChangeNotifier {
     });
 
     _reconnectionListener?.onError((error) {
-      _handleConnectionError(context: context, isInitialConnection: false);
+      ErrorService.reportToSentry(
+        BleConnectionFailed(BleConnectionFailurePhase.reconnection, error),
+        StackTrace.current,
+      );
+      unawaited(disconnectDevice(device: device, showConnectionError: true));
     });
   }
 
@@ -404,17 +374,15 @@ class BleBloc with ChangeNotifier {
       device,
       context,
       maxAttempts: _maxReconnectionAttempts,
-      isReconnection: true,
+      failurePhase: BleConnectionFailurePhase.reconnection,
       attemptConnection: (device, context) async {
         _reconnectionAttempts++;
         return _attemptSingleConnection(
           device,
-          context,
           updateConnectionState: false,
         );
       },
       prepareForRetry: _prepareForRetry,
-      handleError: _handleConnectionError,
     );
 
     if (success) {
@@ -424,56 +392,15 @@ class BleBloc with ChangeNotifier {
       _reconnectionAttempts = 0;
       isReconnectingNotifier.value = false;
       _isReconnecting = false;
-      _isInRetryMode = false; 
+      _isInRetryMode = false;
 
       notifyListeners();
     }
-
-    // Only handle permanent connection failure if max attempts reached
-    if (!_isConnected && _reconnectionAttempts >= _maxReconnectionAttempts) {
-      _handleConnectionError(context: context, isInitialConnection: false);
-    }
-  }
-
-  void _handleConnectionError(
-      {required BuildContext context, bool isInitialConnection = false}) {
-    if (isInitialConnection) {
-      selectedDeviceNotifier.value = null;
-      _isConnected = false;
-      _userInitiatedDisconnect = false;
-      _resetReconnectionState();
-      isConnectingNotifier.value = false; 
-      connectionErrorNotifier.value = false; // Reset connection error state
-    } else {
-      // Max reconnection attempts reached - handle as permanent connection failure
-      // Reset state and notify connection error
-      selectedDevice = null;
-      selectedDeviceNotifier.value = null;
-      _isConnected = false;
-      connectionErrorNotifier.value = true;
-      
-      // Cancel any ongoing reconnection listener
-      _reconnectionListener?.cancel();
-      _reconnectionListener = null;
-
-      // Clear characteristic streams
-      characteristicStreams.clear();
-
-      // Reset reconnection state
-      _isReconnecting = false;
-      _isInRetryMode = false;
-      _reconnectionAttempts = 0;
-      _hasVibrated = false;
-      isReconnectingNotifier.value = false;
-      isConnectingNotifier.value = false;
-    }
-
-    notifyListeners();
   }
 
   void resetConnectionError() {
     connectionErrorNotifier.value = false;
-    
+
     // Cancel any ongoing reconnection listener
     _reconnectionListener?.cancel();
     _reconnectionListener = null;

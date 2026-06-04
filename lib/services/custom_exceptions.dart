@@ -19,6 +19,19 @@ class ScanPermissionDenied implements Exception {
       'Please allow the current app to scan nearby devices in the phone settings.';
 }
 
+enum BleConnectionFailurePhase { initialConnect, reconnection }
+
+class BleConnectionFailed implements Exception {
+  final BleConnectionFailurePhase phase;
+  final Object? cause;
+
+  BleConnectionFailed(this.phase, [this.cause]);
+
+  @override
+  String toString() =>
+      'BLE connection failed (${phase.name})${cause != null ? ': $cause' : ''}';
+}
+
 class LoginError implements Exception {
   Object? error;
   LoginError(this.error);

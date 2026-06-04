@@ -36,16 +36,16 @@ class HomeScreen extends StatelessWidget {
           ValueListenableBuilder<bool>(
             valueListenable: bleBloc.connectionErrorNotifier,
             builder: (context, error, child) {
-              if (error == true) {
-                return Column(
-                  children: [
-                    const SizedBox(height: 48),
-                    _ConnectionErrorBanner(bleBloc: bleBloc),
-                    const SizedBox(height: 16),
-                  ],
-                );
+              if (error != true) {
+                return const SizedBox.shrink();
               }
-              return const SizedBox.shrink();
+              return Column(
+                children: [
+                  const SizedBox(height: 48),
+                  _ConnectionErrorBanner(bleBloc: bleBloc),
+                  const SizedBox(height: 16),
+                ],
+              );
             },
           ),
           // Main content
@@ -490,7 +490,7 @@ class _DisconnectButton extends StatelessWidget {
                   if (recordingBloc.isRecording) {
                     await recordingBloc.stopRecording();
                   }
-                  bleBloc.disconnectDevice();
+                  bleBloc.disconnectDevice(userInitiated: true);
                 },
         );
       },

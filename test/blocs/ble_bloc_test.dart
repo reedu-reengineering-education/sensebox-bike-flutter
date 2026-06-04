@@ -11,6 +11,7 @@ void main() {
     late MockSettingsBloc mockSettingsBloc;
 
     setUpAll(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
       registerFallbackValue(MockBluetoothDevice());
       registerFallbackValue(FakeBuildContext());
     });
@@ -72,22 +73,23 @@ void main() {
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
       });
 
-      test('when initial BLE connection is started, if exception is thrown, reconnection continues seamlessly', () async {
-        expect(bleBloc.connectionErrorNotifier.value, isFalse);
-        expect(bleBloc.isConnectingNotifier.value, isFalse);
-        expect(bleBloc.selectedDeviceNotifier.value, isNull);
-        
+      test('shows connection error when device.connect throws on initial connect',
+          () async {
+        final realBleBloc = BleBloc(
+          mockSettingsBloc,
+          initializePlatformBle: false,
+        );
+        addTearDown(realBleBloc.dispose);
+
         final mockDevice = MockBluetoothDevice();
         when(() => mockDevice.connect()).thenThrow(Exception('Connection failed'));
-        
-        final mockContext = FakeBuildContext();
-        
-        await bleBloc.connectToDevice(mockDevice, mockContext);
-        
-        expect(bleBloc.connectionErrorNotifier.value, isFalse);
-        expect(bleBloc.isConnectingNotifier.value, isFalse);
-        expect(bleBloc.selectedDeviceNotifier.value, isNull);
-        expect(bleBloc.isConnected, isFalse);
+
+        await realBleBloc.connectToDevice(mockDevice, FakeBuildContext());
+
+        expect(realBleBloc.connectionErrorNotifier.value, isTrue);
+        expect(realBleBloc.isConnectingNotifier.value, isFalse);
+        expect(realBleBloc.selectedDeviceNotifier.value, isNull);
+        expect(realBleBloc.isConnected, isFalse);
       });
     });
 

@@ -101,7 +101,11 @@ class MockBleBloc extends Mock implements BleBloc {
       BluetoothDevice device, BuildContext context) async {}
 
   @override
-  void disconnectDevice() {}
+  Future<void> disconnectDevice({
+    BluetoothDevice? device,
+    bool userInitiated = false,
+    bool showConnectionError = false,
+  }) async {}
 
   @override
   Future<void> startScanning() async {}

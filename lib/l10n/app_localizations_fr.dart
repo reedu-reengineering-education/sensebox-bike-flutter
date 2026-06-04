@@ -558,7 +558,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get errorBleConnectionFailed =>
-      'La connexion à la senseBox a été perdue. Assurez-vous que le Bluetooth est activé et que la senseBox est allumée.';
+      'La connexion à la senseBox a échoué. Assurez-vous que le Bluetooth est activé et que la senseBox est allumée et entièrement démarrée.';
 
   @override
   String get errorUploadFailed =>
