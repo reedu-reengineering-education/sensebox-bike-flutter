@@ -4,8 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
-
-const bleConnectionSessionProbeTimeout = Duration(seconds: 4);
+import 'package:sensebox_bike/ble/ble_constants.dart';
 
 class BleConnectionSessionResult {
   final bool success;

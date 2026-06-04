@@ -105,6 +105,7 @@ class MockBleBloc extends Mock implements BleBloc {
     BluetoothDevice? device,
     bool userInitiated = false,
     bool showConnectionError = false,
+    bool linkOnly = false,
   }) async {}
 
   @override

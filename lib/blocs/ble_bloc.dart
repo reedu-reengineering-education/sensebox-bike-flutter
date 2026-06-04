@@ -5,6 +5,7 @@ import 'package:sensebox_bike/ble/ble_adapter.dart';
 import 'package:sensebox_bike/ble/ble_connection_session.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/ble/ble_scanner.dart';
+import 'package:sensebox_bike/ble/ble_session_retry_runner.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -12,10 +13,6 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:vibration/vibration.dart';
-
-const reconnectionDelay = Duration(seconds: 1);
-const deviceConnectTimeout = Duration(seconds: 10);
-const configurableReconnectionDelay = Duration(seconds: 1);
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
@@ -34,6 +31,8 @@ class BleBloc with ChangeNotifier {
   late final BleAdapter _adapter;
   late final BleScanner _scanner;
   final BleConnectionSession _connectionSession = const BleConnectionSession();
+  final BleSessionRetryRunner _sessionRetryRunner =
+      const BleSessionRetryRunner();
   List<BluetoothDevice> get devicesList => _scanner.devicesList;
   Stream<List<BluetoothDevice>> get devicesListStream =>
       _scanner.devicesListStream;
@@ -91,6 +90,7 @@ class BleBloc with ChangeNotifier {
     BluetoothDevice? device,
     bool userInitiated = false,
     bool showConnectionError = false,
+    bool linkOnly = false,
   }) async {
     if (userInitiated) {
       _userInitiatedDisconnect = true;
@@ -107,10 +107,16 @@ class BleBloc with ChangeNotifier {
     }
 
     _isConnected = false;
-    selectedDevice = null;
-    selectedDeviceNotifier.value = null;
     availableCharacteristics.value = [];
     characteristicStreams.clear();
+
+    if (linkOnly) {
+      notifyListeners();
+      return;
+    }
+
+    selectedDevice = null;
+    selectedDeviceNotifier.value = null;
 
     _reconnectionListener?.cancel();
     _reconnectionListener = null;
@@ -159,8 +165,7 @@ class BleBloc with ChangeNotifier {
 
       await device.connect();
 
-      final success =
-          await _attemptConnectionWithRetries(device, context: context);
+      final success = await _attemptConnectionWithRetries(device);
       _isConnected = success;
 
       if (_isConnected) {
@@ -182,78 +187,35 @@ class BleBloc with ChangeNotifier {
     }
   }
 
-  Future<bool> _executeConnectionAttempts(
-    BluetoothDevice device,
-    BuildContext? context, {
-    required int maxAttempts,
-    required BleConnectionFailurePhase failurePhase,
-    required Future<bool> Function(BluetoothDevice, BuildContext?)
-        attemptConnection,
-    required Future<void> Function(BluetoothDevice) prepareForRetry,
+  Future<bool> _attemptConnectionWithRetries(
+    BluetoothDevice device, {
+    int maxAttempts = 5,
   }) async {
-    _isInRetryMode = true;
+    return _sessionRetryRunner.run(
+      device: device,
+      maxAttempts: maxAttempts,
+      onEnterRetryMode: () => _isInRetryMode = true,
+      onExitRetryMode: () => _isInRetryMode = false,
+      onBetweenAttempts: (_) => _isConnected = false,
+      attemptSession: (_, __) =>
+          _attemptSingleConnection(device, updateConnectionState: true),
+      prepareForRetry: _prepareForRetry,
+      onExhausted: () => _onSessionRetriesExhausted(
+        device,
+        BleConnectionFailurePhase.initialConnect,
+      ),
+    );
+  }
 
-    for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      if (attempt > 0) {
-        _isConnected = false;
-      }
-
-      try {
-        bool success = false;
-        try {
-          success = await attemptConnection(device, context);
-        } catch (e) {
-          success = false;
-        }
-
-        if (success) {
-          _isInRetryMode = false;
-          return true;
-        }
-
-        if (attempt < maxAttempts - 1) {
-          try {
-            await prepareForRetry(device);
-          } catch (e) {
-            // Continue with next attempt anyway
-          }
-        }
-      } catch (e) {
-        if (attempt < maxAttempts - 1) {
-          try {
-            await prepareForRetry(device);
-          } catch (e) {
-            // Continue with next attempt anyway
-          }
-        }
-      }
-    }
-
-    _isInRetryMode = false;
+  Future<void> _onSessionRetriesExhausted(
+    BluetoothDevice device,
+    BleConnectionFailurePhase failurePhase,
+  ) async {
     ErrorService.reportToSentry(
       BleConnectionFailed(failurePhase),
       StackTrace.current,
     );
     await disconnectDevice(device: device, showConnectionError: true);
-    return false;
-  }
-
-  Future<bool> _attemptConnectionWithRetries(
-    BluetoothDevice device, {
-    BuildContext? context,
-    int maxAttempts = 5,
-  }) async {
-    return _executeConnectionAttempts(
-      device,
-      context,
-      maxAttempts: maxAttempts,
-      failurePhase: BleConnectionFailurePhase.initialConnect,
-      attemptConnection: (device, context) => _attemptSingleConnection(
-        device,
-        updateConnectionState: true,
-      ),
-      prepareForRetry: _prepareForRetry,
-    );
   }
 
   Future<bool> _attemptSingleConnection(
@@ -266,7 +228,7 @@ class BleBloc with ChangeNotifier {
     );
 
     if (!result.success) {
-      await disconnectDevice(device: device);
+      await disconnectDevice(device: device, linkOnly: true);
       return false;
     }
 
@@ -282,26 +244,11 @@ class BleBloc with ChangeNotifier {
     return true;
   }
 
-  /// Prepares device for retry by disconnecting and reconnecting
-  Future<void> _prepareForRetry(BluetoothDevice device) async {
-    try {
-      // Disconnect device (catch any disconnect exceptions)
-      await disconnectDevice(device: device);
-
-      await Future.delayed(configurableReconnectionDelay);
-      
-      try {
-        await device.connect(timeout: deviceConnectTimeout);
-      } catch (e) {
-        // Don't throw - let the retry continue, next attempt might work
-        return;
-      }
-
-      await Future.delayed(configurableReconnectionDelay);
-    } catch (e) {
-      // Don't throw - let reconnection continue with next attempt
-    }
-  }
+  Future<void> _prepareForRetry(BluetoothDevice device) =>
+      _sessionRetryRunner.prepareDeviceLink(
+        device,
+        disconnect: () => disconnectDevice(device: device, linkOnly: true),
+      );
 
   void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
     _reconnectionListener?.cancel();
@@ -363,19 +310,19 @@ class BleBloc with ChangeNotifier {
     }
 
     _isReconnecting = true;
-    _isInRetryMode = true;
 
     if (!_hasVibrated && settingsBloc.vibrateOnDisconnect) {
       Vibration.vibrate();
       _hasVibrated = true;
     }
 
-    final success = await _executeConnectionAttempts(
-      device,
-      context,
+    final success = await _sessionRetryRunner.run(
+      device: device,
       maxAttempts: _maxReconnectionAttempts,
-      failurePhase: BleConnectionFailurePhase.reconnection,
-      attemptConnection: (device, context) async {
+      onEnterRetryMode: () => _isInRetryMode = true,
+      onExitRetryMode: () => _isInRetryMode = false,
+      onBetweenAttempts: (_) => _isConnected = false,
+      attemptSession: (_, __) async {
         _reconnectionAttempts++;
         return _attemptSingleConnection(
           device,
@@ -383,6 +330,10 @@ class BleBloc with ChangeNotifier {
         );
       },
       prepareForRetry: _prepareForRetry,
+      onExhausted: () => _onSessionRetriesExhausted(
+        device,
+        BleConnectionFailurePhase.reconnection,
+      ),
     );
 
     if (success) {

@@ -73,6 +73,27 @@ void main() {
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
       });
 
+      test('linkOnly disconnect keeps selected device and reconnecting state',
+          () async {
+        final realBleBloc = BleBloc(
+          mockSettingsBloc,
+          initializePlatformBle: false,
+        );
+        addTearDown(realBleBloc.dispose);
+
+        final mockDevice = MockBluetoothDevice();
+        when(() => mockDevice.disconnect()).thenAnswer((_) async {});
+        realBleBloc.selectedDevice = mockDevice;
+        realBleBloc.selectedDeviceNotifier.value = mockDevice;
+        realBleBloc.isReconnectingNotifier.value = true;
+
+        await realBleBloc.disconnectDevice(device: mockDevice, linkOnly: true);
+
+        expect(realBleBloc.selectedDevice, mockDevice);
+        expect(realBleBloc.selectedDeviceNotifier.value, mockDevice);
+        expect(realBleBloc.isReconnectingNotifier.value, isTrue);
+      });
+
       test('shows connection error when device.connect throws on initial connect',
           () async {
         final realBleBloc = BleBloc(
