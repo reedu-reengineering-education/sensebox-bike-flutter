@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 import 'package:sensebox_bike/ble/ble_adapter.dart';
 import 'package:sensebox_bike/ble/ble_connection_session.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
+import 'package:sensebox_bike/ble/ble_constants.dart';
+import 'package:sensebox_bike/ble/ble_reconnection_coordinator.dart';
 import 'package:sensebox_bike/ble/ble_scanner.dart';
 import 'package:sensebox_bike/ble/ble_session_retry_runner.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
@@ -12,7 +14,6 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:vibration/vibration.dart';
 
 class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
@@ -30,6 +31,7 @@ class BleBloc with ChangeNotifier {
 
   late final BleAdapter _adapter;
   late final BleScanner _scanner;
+  late final BleReconnectionCoordinator _reconnectionCoordinator;
   final BleConnectionSession _connectionSession = const BleConnectionSession();
   final BleSessionRetryRunner _sessionRetryRunner =
       const BleSessionRetryRunner();
@@ -39,14 +41,8 @@ class BleBloc with ChangeNotifier {
 
   BluetoothDevice? selectedDevice;
   bool _isConnected = false;
-  bool _isReconnecting = false;
   bool _userInitiatedDisconnect = false;
   bool _isInRetryMode = false;
-  int _reconnectionAttempts = 0;
-  bool _hasVibrated = false;
-  static const int _maxReconnectionAttempts = 10;
-  
-  StreamSubscription<BluetoothConnectionState>? _reconnectionListener;
 
   final BleCharacteristicStreams characteristicStreams =
       BleCharacteristicStreams();
@@ -59,6 +55,10 @@ class BleBloc with ChangeNotifier {
   }) {
     _adapter = BleAdapter();
     _scanner = BleScanner(isScanningNotifier: isScanningNotifier);
+    _reconnectionCoordinator = BleReconnectionCoordinator(
+      isReconnectingNotifier: isReconnectingNotifier,
+      getVibrateOnDisconnect: () => settingsBloc.vibrateOnDisconnect,
+    );
 
     if (initializePlatformBle) {
       _adapter.configure();
@@ -118,21 +118,16 @@ class BleBloc with ChangeNotifier {
     selectedDevice = null;
     selectedDeviceNotifier.value = null;
 
-    _reconnectionListener?.cancel();
-    _reconnectionListener = null;
+    _reconnectionCoordinator.detach();
 
     if (showConnectionError) {
       _userInitiatedDisconnect = false;
       connectionErrorNotifier.value = true;
-      _isReconnecting = false;
       _isInRetryMode = false;
-      _reconnectionAttempts = 0;
-      _hasVibrated = false;
-      isReconnectingNotifier.value = false;
+      _reconnectionCoordinator.reset();
       isConnectingNotifier.value = false;
     } else {
       resetConnectionError();
-      _resetReconnectionState();
     }
 
     notifyListeners();
@@ -169,8 +164,7 @@ class BleBloc with ChangeNotifier {
       _isConnected = success;
 
       if (_isConnected) {
-        _handleDeviceReconnection(device, context);
-        
+        _attachReconnectionListener(device);
         selectedDevice = device;
         selectedDeviceNotifier.value = selectedDevice;
       }
@@ -189,7 +183,7 @@ class BleBloc with ChangeNotifier {
 
   Future<bool> _attemptConnectionWithRetries(
     BluetoothDevice device, {
-    int maxAttempts = 5,
+    int maxAttempts = bleInitialConnectMaxAttempts,
   }) async {
     return _sessionRetryRunner.run(
       device: device,
@@ -250,80 +244,41 @@ class BleBloc with ChangeNotifier {
         disconnect: () => disconnectDevice(device: device, linkOnly: true),
       );
 
-  void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
-    _reconnectionListener?.cancel();
-    
+  void _attachReconnectionListener(BluetoothDevice device) {
     _userInitiatedDisconnect = false;
-    _hasVibrated = false;
-    _reconnectionAttempts = 0;
-
-    _reconnectionListener = device.connectionState.listen((state) async {
-      try {
-        if (state == BluetoothConnectionState.disconnected &&
-            !_userInitiatedDisconnect &&
-            !_isInRetryMode) {
-          if (!_isReconnecting) {
-            _isConnected = false;
-            isReconnectingNotifier.value = true;
-
-            // Start the actual reconnection process
-            try {
-              _startReconnectionProcess(device, context);
-            } catch (e) {
-              // Reset state if reconnection process fails to start
-              _isReconnecting = false;
-              isReconnectingNotifier.value = false;
-            }
-          }
-        }
-      } catch (e) {
-        // Don't throw - let the reconnection process handle it
-      }
-    });
-
-    _reconnectionListener?.onError((error) {
-      ErrorService.reportToSentry(
-        BleConnectionFailed(BleConnectionFailurePhase.reconnection, error),
-        StackTrace.current,
-      );
-      unawaited(disconnectDevice(device: device, showConnectionError: true));
-    });
+    _reconnectionCoordinator.attach(
+      device,
+      shouldIgnoreDisconnect: () =>
+          _userInitiatedDisconnect || _isInRetryMode,
+      onLinkLost: () {
+        _isConnected = false;
+        isReconnectingNotifier.value = true;
+      },
+      runReconnectSessions: _runReconnectionSessions,
+      onReconnectSucceeded: () {
+        _isConnected = true;
+        _userInitiatedDisconnect = false;
+        notifyListeners();
+      },
+      onListenerError: (device, error) async {
+        ErrorService.reportToSentry(
+          BleConnectionFailed(BleConnectionFailurePhase.reconnection, error),
+          StackTrace.current,
+        );
+        await disconnectDevice(device: device, showConnectionError: true);
+      },
+    );
   }
 
-  void _startReconnectionProcess(
-    BluetoothDevice device,
-    BuildContext context,
-  ) async {
-
-    
-    // Check if reconnection is already in progress
-    if (_isReconnecting) {
-      // If we've been trying for too long, reset and start fresh
-      if (_reconnectionAttempts >= _maxReconnectionAttempts) {
-        _isReconnecting = false;
-        _reconnectionAttempts = 0;
-        _hasVibrated = false;
-        isReconnectingNotifier.value = false;
-      } else {
-        return;
-      }
-    }
-
-    _isReconnecting = true;
-
-    if (!_hasVibrated && settingsBloc.vibrateOnDisconnect) {
-      Vibration.vibrate();
-      _hasVibrated = true;
-    }
-
-    final success = await _sessionRetryRunner.run(
+  Future<bool> _runReconnectionSessions(BluetoothDevice device) {
+    return _sessionRetryRunner.run(
       device: device,
-      maxAttempts: _maxReconnectionAttempts,
+      maxAttempts: bleMaxReconnectionAttempts,
       onEnterRetryMode: () => _isInRetryMode = true,
       onExitRetryMode: () => _isInRetryMode = false,
       onBetweenAttempts: (_) => _isConnected = false,
       attemptSession: (_, __) async {
-        _reconnectionAttempts++;
+        _reconnectionCoordinator.recordAttempt();
         return _attemptSingleConnection(
           device,
           updateConnectionState: false,
@@ -335,52 +290,19 @@ class BleBloc with ChangeNotifier {
         BleConnectionFailurePhase.reconnection,
       ),
     );
-
-    if (success) {
-      _isConnected = true;
-      _userInitiatedDisconnect = false;
-      _hasVibrated = false;
-      _reconnectionAttempts = 0;
-      isReconnectingNotifier.value = false;
-      _isReconnecting = false;
-      _isInRetryMode = false;
-
-      notifyListeners();
-    }
   }
 
   void resetConnectionError() {
     connectionErrorNotifier.value = false;
-
-    // Cancel any ongoing reconnection listener
-    _reconnectionListener?.cancel();
-    _reconnectionListener = null;
-
-    // Reset reconnection state
-    _isReconnecting = false;
+    _reconnectionCoordinator.detach();
+    _reconnectionCoordinator.reset();
     _isInRetryMode = false;
-    _reconnectionAttempts = 0;
-    _hasVibrated = false;
-    isReconnectingNotifier.value = false;
-    
     notifyListeners();
   }
-
-  void _resetReconnectionState() {
-    _isReconnecting = false;
-    _isInRetryMode = false;
-    _reconnectionAttempts = 0;
-    _hasVibrated = false;
-
-    isReconnectingNotifier.value = false;
-    notifyListeners();
-  }
-
-
 
   @override
   void dispose() {
-    _reconnectionListener?.cancel();
+    _reconnectionCoordinator.detach();
     _scanner.dispose();
     characteristicStreams.clear();
     selectedDeviceNotifier.dispose();
