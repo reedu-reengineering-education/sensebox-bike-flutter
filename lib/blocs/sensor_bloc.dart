@@ -5,7 +5,7 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/feature_flags.dart';
+import 'package:sensebox_bike/blocs/sensor_availability.dart';
 import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_right_sensor.dart';
@@ -224,13 +224,10 @@ class SensorBloc with ChangeNotifier {
           characteristic.uuid.toString(),
       };
 
-  List<Sensor> get availableSensors => _sensors.where((sensor) {
-        if (FeatureFlags.hideSurfaceAnomalySensor &&
-            sensor.title == 'surface_anomaly') {
-          return false;
-        }
-        return _characteristicUuids.contains(sensor.characteristicUuid);
-      }).toList();
+  List<Sensor> get availableSensors => filterAvailableSensors(
+        _sensors,
+        _characteristicUuids,
+      );
 
   @override
   void dispose() {
