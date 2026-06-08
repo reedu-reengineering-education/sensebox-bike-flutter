@@ -2,12 +2,11 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
-
-class MockBluetoothCharacteristic extends Mock implements BluetoothCharacteristic {}
+import 'package:sensebox_bike/ble/ble_uuids.dart';
+import 'mock_ble_platform.dart';
 
 Uint8List float32Bytes(List<double> values) {
   final byteData = ByteData(values.length * 4);
@@ -17,26 +16,37 @@ Uint8List float32Bytes(List<double> values) {
   return byteData.buffer.asUint8List();
 }
 
+BleCharacteristicRef characteristicRef(String uuid) {
+  return BleCharacteristicRef(
+    deviceId: 'AA:BB:CC:DD:EE:01',
+    serviceUuid: senseBoxServiceUuid,
+    characteristicUuid: BleUuid(uuid),
+  );
+}
+
 void main() {
   setUpAll(() {
-    registerFallbackValue(MockBluetoothCharacteristic());
+    registerFallbackValue(
+      BleCharacteristicRef(
+        deviceId: 'AA:BB:CC:DD:EE:01',
+        serviceUuid: senseBoxServiceUuid,
+        characteristicUuid: BleUuid('11111111-2222-3333-4444-555555555555'),
+      ),
+    );
   });
 
   group('BleCharacteristicStreams', () {
+    late MockBlePlatform platform;
     late BleCharacteristicStreams streams;
-    late MockBluetoothCharacteristic characteristic;
     late StreamController<List<int>> notifyController;
     const uuid = '11111111-2222-3333-4444-555555555555';
 
     setUp(() {
-      streams = BleCharacteristicStreams();
-      characteristic = MockBluetoothCharacteristic();
+      platform = MockBlePlatform();
+      streams = BleCharacteristicStreams(platform: platform);
       notifyController = StreamController<List<int>>.broadcast();
 
-      when(() => characteristic.uuid).thenReturn(Guid.fromString(uuid));
-      when(() => characteristic.setNotifyValue(any()))
-          .thenAnswer((_) async => true);
-      when(() => characteristic.onValueReceived)
+      when(() => platform.subscribeToCharacteristic(any()))
           .thenAnswer((_) => notifyController.stream);
     });
 
@@ -56,10 +66,10 @@ void main() {
       );
     });
 
-    test('subscribe enables notify and emits parsed values', () async {
-      await streams.subscribe(characteristic);
+    test('subscribe emits parsed values from platform stream', () async {
+      await streams.subscribe(characteristicRef(uuid));
 
-      verify(() => characteristic.setNotifyValue(true)).called(1);
+      verify(() => platform.subscribeToCharacteristic(any())).called(1);
 
       final values = <List<double>>[];
       final subscription =
@@ -76,7 +86,7 @@ void main() {
     });
 
     test('resubscribe replaces prior stream for the same uuid', () async {
-      await streams.subscribe(characteristic);
+      await streams.subscribe(characteristicRef(uuid));
 
       final firstValues = <List<double>>[];
       final firstSubscription =
@@ -84,7 +94,7 @@ void main() {
       notifyController.add(float32Bytes([1.0]));
       await Future<void>.delayed(Duration.zero);
 
-      await streams.subscribe(characteristic);
+      await streams.subscribe(characteristicRef(uuid));
 
       final secondValues = <List<double>>[];
       streams.characteristicStream(uuid).listen(secondValues.add);
@@ -102,7 +112,7 @@ void main() {
     });
 
     test('clear removes subscriptions and closes streams', () async {
-      await streams.subscribe(characteristic);
+      await streams.subscribe(characteristicRef(uuid));
       await streams.clear();
 
       expect(streams.subscribedCharacteristicUuids, isEmpty);
@@ -113,16 +123,24 @@ void main() {
     });
 
     test('subscribeAll subscribes every characteristic', () async {
-      final second = MockBluetoothCharacteristic();
       const secondUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
       final secondNotify = StreamController<List<int>>.broadcast();
 
-      when(() => second.uuid).thenReturn(Guid.fromString(secondUuid));
-      when(() => second.setNotifyValue(any())).thenAnswer((_) async => true);
-      when(() => second.onValueReceived)
-          .thenAnswer((_) => secondNotify.stream);
+      when(() => platform.subscribeToCharacteristic(any())).thenAnswer(
+        (invocation) {
+          final ref =
+              invocation.positionalArguments[0] as BleCharacteristicRef;
+          if (ref.uuidString == secondUuid) {
+            return secondNotify.stream;
+          }
+          return notifyController.stream;
+        },
+      );
 
-      await streams.subscribeAll([characteristic, second]);
+      await streams.subscribeAll([
+        characteristicRef(uuid),
+        characteristicRef(secondUuid),
+      ]);
 
       expect(
         streams.subscribedCharacteristicUuids.toSet(),

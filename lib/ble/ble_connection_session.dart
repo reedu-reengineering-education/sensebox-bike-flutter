@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/ble/ble_constants.dart';
+import 'package:sensebox_bike/ble/ble_device.dart';
+import 'package:sensebox_bike/ble/ble_platform.dart';
 
 class BleConnectionSessionResult {
   final bool success;
-  final List<BluetoothCharacteristic> characteristics;
+  final List<BleCharacteristicRef> characteristics;
 
   const BleConnectionSessionResult({
     required this.success,
@@ -17,23 +19,27 @@ class BleConnectionSessionResult {
 }
 
 class BleConnectionSession {
-  const BleConnectionSession({this.probeTimeout = bleConnectionSessionProbeTimeout});
+  BleConnectionSession({
+    required BlePlatform platform,
+    this.probeTimeout = bleConnectionSessionProbeTimeout,
+  }) : _platform = platform;
 
+  final BlePlatform _platform;
   final Duration probeTimeout;
 
   Future<BleConnectionSessionResult> establish(
-    BluetoothDevice device, {
+    BleDevice device, {
     required BleCharacteristicStreams streams,
   }) async {
     try {
       await streams.clear();
 
-      final services = await device.discoverServices();
+      final services = await _platform.discoverServices(device.id);
       if (services.isEmpty) {
         return const BleConnectionSessionResult(success: false);
       }
 
-      BluetoothService senseBoxService;
+      BleService senseBoxService;
       try {
         senseBoxService = findSenseBoxService(services);
       } catch (_) {
@@ -44,47 +50,53 @@ class BleConnectionSession {
         return const BleConnectionSessionResult(success: false);
       }
 
-      final probeCharacteristic = senseBoxService.characteristics.first;
+      final characteristics = characteristicRefsFromService(
+        deviceId: device.id,
+        service: senseBoxService,
+      );
+
+      final probeCharacteristic = characteristics.first;
       final probeReceived = await _probeCharacteristic(probeCharacteristic);
       if (!probeReceived) {
         return const BleConnectionSessionResult(success: false);
       }
 
-      await streams.subscribeAll(senseBoxService.characteristics);
+      await streams.subscribeAll(characteristics);
 
       return BleConnectionSessionResult(
         success: true,
-        characteristics: senseBoxService.characteristics,
+        characteristics: characteristics,
       );
     } catch (_) {
       return const BleConnectionSessionResult(success: false);
     }
   }
 
-  /// Drops the GATT link. Call after [BleCharacteristicStreams.clear] while still connected.
   Future<void> release(
-    BluetoothDevice device, {
+    BleDevice device, {
     Duration settle = Duration.zero,
   }) async {
     try {
-      await device.disconnect();
+      await _platform.disconnect(device.id);
     } catch (_) {}
     if (settle > Duration.zero) {
       await Future<void>.delayed(settle);
     }
   }
 
-  Future<bool> _probeCharacteristic(BluetoothCharacteristic characteristic) async {
+  Future<bool> _probeCharacteristic(BleCharacteristicRef characteristic) async {
     final dataReceivedCompleter = Completer<bool>();
     Uint8List? receivedData;
 
-    await characteristic.setNotifyValue(true);
-    final subscription = characteristic.onValueReceived.listen((value) {
-      if (!dataReceivedCompleter.isCompleted) {
-        receivedData = Uint8List.fromList(value);
-        dataReceivedCompleter.complete(true);
-      }
-    });
+    final subscription =
+        _platform.subscribeToCharacteristic(characteristic).listen(
+      (value) {
+        if (!dataReceivedCompleter.isCompleted) {
+          receivedData = Uint8List.fromList(value);
+          dataReceivedCompleter.complete(true);
+        }
+      },
+    );
 
     try {
       await Future.any([
@@ -93,7 +105,6 @@ class BleConnectionSession {
       ]);
     } finally {
       await subscription.cancel();
-      await characteristic.setNotifyValue(false);
     }
 
     return receivedData != null && isValidCharacteristicPayload(receivedData!);

@@ -1,23 +1,24 @@
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/ble/ble_constants.dart';
+import 'package:sensebox_bike/ble/ble_device.dart';
+import 'package:sensebox_bike/ble/ble_platform.dart';
 
 class BleSessionRetryRunner {
-  const BleSessionRetryRunner({
+  BleSessionRetryRunner({
+    required this.platform,
     this.delayBetweenSteps = bleSessionRetryDelay,
     this.connectTimeout = bleDeviceConnectTimeout,
   });
 
+  final BlePlatform platform;
   final Duration delayBetweenSteps;
   final Duration connectTimeout;
 
-  /// Runs [attemptSession] up to [maxAttempts] times, calling [prepareForRetry]
-  /// between failures. Returns true when an attempt succeeds.
   Future<bool> run({
-    required BluetoothDevice device,
+    required BleDevice device,
     required int maxAttempts,
-    required Future<bool> Function(BluetoothDevice device, int attemptIndex)
+    required Future<bool> Function(BleDevice device, int attemptIndex)
         attemptSession,
-    required Future<void> Function(BluetoothDevice device) prepareForRetry,
+    required Future<void> Function(BleDevice device) prepareForRetry,
     void Function()? onEnterRetryMode,
     void Function()? onExitRetryMode,
     void Function(int attemptIndex)? onBetweenAttempts,
@@ -68,9 +69,8 @@ class BleSessionRetryRunner {
     return false;
   }
 
-  /// Disconnects, waits, reconnects GATT link, then waits again before the next session attempt.
   Future<void> prepareDeviceLink(
-    BluetoothDevice device, {
+    BleDevice device, {
     required Future<void> Function() disconnect,
   }) async {
     try {
@@ -78,7 +78,7 @@ class BleSessionRetryRunner {
       await Future.delayed(delayBetweenSteps);
 
       try {
-        await device.connect(timeout: connectTimeout);
+        await platform.connect(device.id, timeout: connectTimeout);
       } catch (_) {
         return;
       }

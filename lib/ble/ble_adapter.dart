@@ -1,17 +1,25 @@
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:app_settings/app_settings.dart';
+import 'package:sensebox_bike/ble/ble_platform.dart';
 
-bool isBluetoothAdapterEnabled(BluetoothAdapterState state) =>
-    state == BluetoothAdapterState.on;
+bool isBluetoothAdapterEnabled(BleAdapterState status) =>
+    status == BleAdapterState.ready;
 
 class BleAdapter {
-  void configure() {
-    FlutterBluePlus.setLogLevel(LogLevel.error);
-  }
+  BleAdapter({required BlePlatform platform}) : _platform = platform;
+
+  final BlePlatform _platform;
+
+  Future<void> configure() => _platform.initialize();
+
+  Stream<BleAdapterState> get statusStream => _platform.statusStream;
 
   Future<bool> isEnabled() async {
-    final state = await FlutterBluePlus.adapterState.first;
-    return isBluetoothAdapterEnabled(state);
+    final status = await _platform.statusStream.firstWhere(
+      (state) => state != BleAdapterState.unknown,
+    );
+    return isBluetoothAdapterEnabled(status);
   }
 
-  Future<void> requestEnable() => FlutterBluePlus.turnOn();
+  Future<void> requestEnable() =>
+      AppSettings.openAppSettings(type: AppSettingsType.bluetooth);
 }

@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
-import 'package:sensebox_bike/ble/ble_constants.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
+import 'package:sensebox_bike/ble/ble_platform.dart';
 
 class BleCharacteristicStreams {
+  BleCharacteristicStreams({required BlePlatform platform}) : _platform = platform;
+
+  final BlePlatform _platform;
   final Map<String, StreamController<List<double>>> _streams = {};
   final Map<String, StreamSubscription<List<int>>> _subscriptions = {};
 
@@ -21,8 +24,8 @@ class BleCharacteristicStreams {
     return _streams[characteristicUuid]!.stream;
   }
 
-  Future<void> subscribe(BluetoothCharacteristic characteristic) async {
-    final uuid = characteristic.uuid.toString();
+  Future<void> subscribe(BleCharacteristicRef characteristic) async {
+    final uuid = characteristic.uuidString;
 
     await _subscriptions[uuid]?.cancel();
     _subscriptions.remove(uuid);
@@ -35,22 +38,24 @@ class BleCharacteristicStreams {
     final controller = StreamController<List<double>>.broadcast();
     _streams[uuid] = controller;
 
-    await characteristic.setNotifyValue(true);
-    _subscriptions[uuid] = characteristic.onValueReceived.listen((value) {
-      if (!controller.isClosed) {
-        controller.add(parseCharacteristicPayload(Uint8List.fromList(value)));
-      }
-    });
+    _subscriptions[uuid] =
+        _platform.subscribeToCharacteristic(characteristic).listen(
+      (value) {
+        if (!controller.isClosed) {
+          controller.add(parseCharacteristicPayload(Uint8List.fromList(value)));
+        }
+      },
+    );
   }
 
-  Future<void> subscribeAll(List<BluetoothCharacteristic> characteristics) async {
+  Future<void> subscribeAll(List<BleCharacteristicRef> characteristics) async {
     for (final characteristic in characteristics) {
       await subscribe(characteristic);
     }
   }
 
   Future<void> clear({
-    Iterable<BluetoothCharacteristic> characteristics = const [],
+    Iterable<BleCharacteristicRef> characteristics = const [],
   }) async {
     final subscriptions = _subscriptions.values.toList();
     _subscriptions.clear();
@@ -62,14 +67,6 @@ class BleCharacteristicStreams {
     _streams.clear();
     for (final controller in controllers) {
       await controller.close();
-    }
-
-    for (final characteristic in characteristics) {
-      try {
-        await characteristic
-            .setNotifyValue(false)
-            .timeout(bleNotificationDisableTimeout);
-      } catch (_) {}
     }
   }
 }

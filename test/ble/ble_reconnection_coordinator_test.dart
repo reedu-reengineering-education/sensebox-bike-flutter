@@ -2,31 +2,33 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:sensebox_bike/ble/ble_device.dart';
+import 'package:sensebox_bike/ble/ble_platform.dart';
 import 'package:sensebox_bike/ble/ble_reconnection_coordinator.dart';
-
-class MockBluetoothDevice extends Mock implements BluetoothDevice {}
+import 'mock_ble_platform.dart';
 
 void main() {
+  late MockBlePlatform platform;
   late BleReconnectionCoordinator coordinator;
   late ValueNotifier<bool> isReconnectingNotifier;
-  late MockBluetoothDevice device;
-  late StreamController<BluetoothConnectionState> connectionStateController;
+  late BleDevice device;
+  late StreamController<BleLinkState> connectionStateController;
   var vibrateOnDisconnect = false;
 
   setUp(() {
     vibrateOnDisconnect = false;
+    platform = MockBlePlatform();
     isReconnectingNotifier = ValueNotifier(false);
     coordinator = BleReconnectionCoordinator(
+      platform: platform,
       isReconnectingNotifier: isReconnectingNotifier,
       getVibrateOnDisconnect: () => vibrateOnDisconnect,
     );
 
-    device = MockBluetoothDevice();
-    connectionStateController =
-        StreamController<BluetoothConnectionState>.broadcast();
-    when(() => device.connectionState)
+    device = const BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
+    connectionStateController = StreamController<BleLinkState>.broadcast();
+    when(() => platform.connectionState(device.id))
         .thenAnswer((_) => connectionStateController.stream);
   });
 
@@ -53,7 +55,7 @@ void main() {
         onListenerError: (_, __) async {},
       );
 
-      connectionStateController.add(BluetoothConnectionState.disconnected);
+      connectionStateController.add(BleLinkState.disconnected);
       await Future<void>.delayed(Duration.zero);
 
       expect(reconnectCalls, 1);
@@ -76,7 +78,7 @@ void main() {
         onListenerError: (_, __) async {},
       );
 
-      connectionStateController.add(BluetoothConnectionState.disconnected);
+      connectionStateController.add(BleLinkState.disconnected);
       await Future<void>.delayed(Duration.zero);
 
       expect(linkLost, isTrue);
@@ -100,7 +102,7 @@ void main() {
         onListenerError: (_, __) async {},
       );
 
-      connectionStateController.add(BluetoothConnectionState.disconnected);
+      connectionStateController.add(BleLinkState.disconnected);
       await Future<void>.delayed(Duration.zero);
 
       expect(reconnectCalls, 1);
@@ -121,7 +123,7 @@ void main() {
         onListenerError: (_, __) async {},
       );
 
-      connectionStateController.add(BluetoothConnectionState.disconnected);
+      connectionStateController.add(BleLinkState.disconnected);
       await Future<void>.delayed(Duration.zero);
 
       expect(reconnectCalls, 0);

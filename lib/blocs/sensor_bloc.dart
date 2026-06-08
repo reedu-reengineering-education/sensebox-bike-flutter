@@ -37,8 +37,7 @@ class SensorBloc with ChangeNotifier {
     _initializeSensors();
 
     _selectedDeviceListener = () {
-      if (bleBloc.selectedDevice != null &&
-          bleBloc.selectedDevice!.isConnected) {
+      if (bleBloc.selectedDevice != null && bleBloc.isConnected) {
         _startListening();
         if (!geolocationBloc.isListening) {
           geolocationBloc.startListening();
@@ -221,7 +220,7 @@ class SensorBloc with ChangeNotifier {
 
   Set<String> get _characteristicUuids => {
         for (final characteristic in bleBloc.availableCharacteristics.value)
-          characteristic.uuid.toString(),
+          characteristic.uuidString,
       };
 
   List<Sensor> get availableSensors => filterAvailableSensors(

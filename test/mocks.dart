@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
+import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -18,6 +19,7 @@ import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'ble/mock_ble_platform.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
 import 'package:sensebox_bike/models/track_data.dart';
@@ -45,9 +47,8 @@ class MockGeolocationService extends Mock implements GeolocationService {}
 class MockSensorService extends Mock implements SensorService {}
 
 class _EmptyBleCharacteristicStreams extends BleCharacteristicStreams {
-  @override
-  Stream<List<double>> characteristicStream(String characteristicUuid) =>
-      Stream.value([]);
+  _EmptyBleCharacteristicStreams()
+      : super(platform: MockBlePlatform());
 }
 
 class MockBleBloc extends Mock implements BleBloc {
@@ -66,11 +67,11 @@ class MockBleBloc extends Mock implements BleBloc {
   final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
 
   @override
-  final ValueNotifier<BluetoothDevice?> selectedDeviceNotifier =
+  final ValueNotifier<BleDevice?> selectedDeviceNotifier =
       ValueNotifier(null);
 
   @override
-  final ValueNotifier<List<BluetoothCharacteristic>> availableCharacteristics =
+  final ValueNotifier<List<BleCharacteristicRef>> availableCharacteristics =
       ValueNotifier([]);
 
   @override
@@ -83,26 +84,26 @@ class MockBleBloc extends Mock implements BleBloc {
   bool get isConnected => false;
 
   @override
-  List<BluetoothDevice> get devicesList => [];
+  List<BleDevice> get devicesList => [];
 
   @override
-  Stream<List<BluetoothDevice>> get devicesListStream => Stream.value([]);
+  Stream<List<BleDevice>> get devicesListStream => Stream.value([]);
 
   @override
-  BluetoothDevice? get selectedDevice => selectedDeviceNotifier.value;
+  BleDevice? get selectedDevice => selectedDeviceNotifier.value;
 
   @override
-  set selectedDevice(BluetoothDevice? device) {
+  set selectedDevice(BleDevice? device) {
     selectedDeviceNotifier.value = device;
   }
 
   @override
   Future<void> connectToDevice(
-      BluetoothDevice device, BuildContext context) async {}
+      BleDevice device, BuildContext context) async {}
 
   @override
   Future<void> disconnectDevice({
-    BluetoothDevice? device,
+    BleDevice? device,
     bool userInitiated = false,
     bool showConnectionError = false,
     bool linkOnly = false,

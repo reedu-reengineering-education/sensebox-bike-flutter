@@ -1,7 +1,7 @@
+import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_scanner.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
@@ -147,7 +147,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
 
   bool _shouldShowRetry({
     required bool isScanning,
-    required AsyncSnapshot<List<BluetoothDevice>> snapshot,
+    required AsyncSnapshot<List<BleDevice>> snapshot,
   }) {
     if (widget.scanError != null) {
       return true;
@@ -199,7 +199,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
         child: ListenableBuilder(
           listenable: widget.bleBloc.isScanningNotifier,
           builder: (context, _) {
-            return StreamBuilder<List<BluetoothDevice>>(
+            return StreamBuilder<List<BleDevice>>(
               stream: widget.bleBloc.devicesListStream,
               initialData: widget.bleBloc.devicesList,
               builder: (context, snapshot) {
@@ -219,7 +219,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                   );
                 }
 
-                final devices = snapshot.data ?? const <BluetoothDevice>[];
+                final devices = snapshot.data ?? const <BleDevice>[];
 
                 if (devices.isEmpty) {
                   if (isScanning) {

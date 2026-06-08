@@ -1,24 +1,28 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_session_retry_runner.dart';
-
-class MockBluetoothDevice extends Mock implements BluetoothDevice {}
+import 'mock_ble_platform.dart';
 
 void main() {
+  late MockBlePlatform platform;
   late BleSessionRetryRunner runner;
-  late MockBluetoothDevice device;
+  late BleDevice device;
 
   setUpAll(() {
     registerFallbackValue(const Duration());
   });
 
   setUp(() {
-    runner = const BleSessionRetryRunner(
+    platform = MockBlePlatform();
+    runner = BleSessionRetryRunner(
+      platform: platform,
       delayBetweenSteps: Duration.zero,
-      connectTimeout: Duration(milliseconds: 50),
+      connectTimeout: const Duration(milliseconds: 50),
     );
-    device = MockBluetoothDevice();
+    device = const BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
+    when(() => platform.connect(any(), timeout: any(named: 'timeout')))
+        .thenAnswer((_) async {});
   });
 
   group('BleSessionRetryRunner.run', () {
@@ -124,7 +128,7 @@ void main() {
     test('disconnects, connects, and does not throw when connect fails',
         () async {
       var disconnected = false;
-      when(() => device.connect(timeout: linkTimeout))
+      when(() => platform.connect(device.id, timeout: linkTimeout))
           .thenThrow(Exception('connect failed'));
 
       await runner.prepareDeviceLink(
@@ -133,16 +137,16 @@ void main() {
       );
 
       expect(disconnected, isTrue);
-      verify(() => device.connect(timeout: linkTimeout)).called(1);
+      verify(() => platform.connect(device.id, timeout: linkTimeout)).called(1);
     });
 
     test('completes link preparation when connect succeeds', () async {
-      when(() => device.connect(timeout: linkTimeout))
+      when(() => platform.connect(device.id, timeout: linkTimeout))
           .thenAnswer((_) async {});
 
       await runner.prepareDeviceLink(device, disconnect: () async {});
 
-      verify(() => device.connect(timeout: linkTimeout)).called(1);
+      verify(() => platform.connect(device.id, timeout: linkTimeout)).called(1);
     });
   });
 }

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:sensebox_bike/secrets.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
+import 'package:sensebox_bike/ble/ble_uuids.dart';
 
 List<double> parseCharacteristicPayload(Uint8List value) {
   final parsedValues = <double>[];
@@ -22,9 +22,24 @@ bool isValidCharacteristicPayload(Uint8List data) {
   return true;
 }
 
-BluetoothService findSenseBoxService(List<BluetoothService> services) {
+BleService findSenseBoxService(List<BleService> services) {
   return services.firstWhere(
-    (service) => service.uuid == senseBoxServiceUUID,
+    (service) => service.serviceId == senseBoxServiceUuid,
     orElse: () => throw Exception('senseBox service not found'),
   );
+}
+
+List<BleCharacteristicRef> characteristicRefsFromService({
+  required String deviceId,
+  required BleService service,
+}) {
+  return service.characteristics
+      .map(
+        (characteristicUuid) => BleCharacteristicRef.fromDiscovered(
+          deviceId: deviceId,
+          serviceUuid: service.serviceId,
+          characteristicUuid: characteristicUuid,
+        ),
+      )
+      .toList();
 }

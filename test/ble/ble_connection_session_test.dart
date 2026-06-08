@@ -2,17 +2,13 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/ble/ble_connection_session.dart';
-import 'package:sensebox_bike/secrets.dart';
-
-class MockBluetoothDevice extends Mock implements BluetoothDevice {}
-
-class MockBluetoothService extends Mock implements BluetoothService {}
-
-class MockBluetoothCharacteristic extends Mock implements BluetoothCharacteristic {}
+import 'package:sensebox_bike/ble/ble_device.dart';
+import 'package:sensebox_bike/ble/ble_uuids.dart';
+import 'mock_ble_platform.dart';
 
 Uint8List float32Bytes(List<double> values) {
   final byteData = ByteData(values.length * 4);
@@ -22,45 +18,57 @@ Uint8List float32Bytes(List<double> values) {
   return byteData.buffer.asUint8List();
 }
 
+BleService discoveredService({
+  required List<BleUuid> characteristics,
+}) {
+  return BleService(
+    serviceId: senseBoxServiceUuid,
+    characteristics: characteristics,
+  );
+}
+
 void main() {
+  late MockBlePlatform platform;
   late BleConnectionSession session;
   late BleCharacteristicStreams streams;
-  late MockBluetoothDevice device;
-  late MockBluetoothService senseBoxService;
-  late MockBluetoothCharacteristic probeCharacteristic;
-  late MockBluetoothCharacteristic otherCharacteristic;
+  late BleDevice device;
   late StreamController<List<int>> notifyController;
+  late BleUuid probeUuid;
+  late BleUuid otherUuid;
+  late BleService senseBoxService;
 
   setUpAll(() {
-    registerFallbackValue(MockBluetoothCharacteristic());
+    registerFallbackValue(
+      BleCharacteristicRef(
+        deviceId: 'AA:BB:CC:DD:EE:01',
+        serviceUuid: senseBoxServiceUuid,
+        characteristicUuid: BleUuid('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
+      ),
+    );
   });
 
   setUp(() {
-    session = const BleConnectionSession(
-      probeTimeout: Duration(milliseconds: 100),
+    platform = MockBlePlatform();
+    session = BleConnectionSession(
+      platform: platform,
+      probeTimeout: const Duration(milliseconds: 100),
     );
-    streams = BleCharacteristicStreams();
-    device = MockBluetoothDevice();
-    senseBoxService = MockBluetoothService();
-    probeCharacteristic = MockBluetoothCharacteristic();
-    otherCharacteristic = MockBluetoothCharacteristic();
+    streams = BleCharacteristicStreams(platform: platform);
+    device = const BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
     notifyController = StreamController<List<int>>.broadcast();
 
-    when(() => senseBoxService.uuid).thenReturn(senseBoxServiceUUID);
-    when(() => senseBoxService.characteristics)
-        .thenReturn([probeCharacteristic, otherCharacteristic]);
+    probeUuid = BleUuid('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+    otherUuid = BleUuid('bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee');
+    senseBoxService = discoveredService(
+      characteristics: [
+        probeUuid,
+        otherUuid,
+      ],
+    );
 
-    when(() => probeCharacteristic.uuid)
-        .thenReturn(Guid.fromString('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'));
-    when(() => otherCharacteristic.uuid)
-        .thenReturn(Guid.fromString('bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee'));
-
-    for (final characteristic in [probeCharacteristic, otherCharacteristic]) {
-      when(() => characteristic.setNotifyValue(any()))
-          .thenAnswer((_) async => true);
-      when(() => characteristic.onValueReceived)
-          .thenAnswer((_) => notifyController.stream);
-    }
+    when(() => platform.subscribeToCharacteristic(any()))
+        .thenAnswer((_) => notifyController.stream);
+    when(() => platform.disconnect(any())).thenAnswer((_) async {});
   });
 
   tearDown(() {
@@ -70,8 +78,6 @@ void main() {
 
   group('BleConnectionSession', () {
     test('release disconnects device and applies settle delay', () async {
-      when(() => device.disconnect()).thenAnswer((_) async {});
-
       final stopwatch = Stopwatch()..start();
       await session.release(
         device,
@@ -79,12 +85,13 @@ void main() {
       );
       stopwatch.stop();
 
-      verify(() => device.disconnect()).called(1);
+      verify(() => platform.disconnect(device.id)).called(1);
       expect(stopwatch.elapsed, greaterThanOrEqualTo(const Duration(milliseconds: 50)));
     });
 
     test('returns failure when discoverServices is empty', () async {
-      when(() => device.discoverServices()).thenAnswer((_) async => []);
+      when(() => platform.discoverServices(device.id))
+          .thenAnswer((_) async => []);
 
       final result = await session.establish(device, streams: streams);
 
@@ -93,12 +100,14 @@ void main() {
     });
 
     test('returns failure when senseBox service is missing', () async {
-      final otherService = MockBluetoothService();
-      when(() => otherService.uuid).thenReturn(
-        Guid.fromString('00000000-0000-0000-0000-000000000001'),
+      when(() => platform.discoverServices(device.id)).thenAnswer(
+        (_) async => [
+          BleService(
+            serviceId: BleUuid('00000000-0000-0000-0000-000000000001'),
+            characteristics: const [],
+          ),
+        ],
       );
-      when(() => device.discoverServices())
-          .thenAnswer((_) async => [otherService]);
 
       final result = await session.establish(device, streams: streams);
 
@@ -106,9 +115,14 @@ void main() {
     });
 
     test('returns failure when senseBox service has no characteristics', () async {
-      when(() => senseBoxService.characteristics).thenReturn([]);
-      when(() => device.discoverServices())
-          .thenAnswer((_) async => [senseBoxService]);
+      when(() => platform.discoverServices(device.id)).thenAnswer(
+        (_) async => [
+          BleService(
+            serviceId: senseBoxServiceUuid,
+            characteristics: const [],
+          ),
+        ],
+      );
 
       final result = await session.establish(device, streams: streams);
 
@@ -116,20 +130,19 @@ void main() {
     });
 
     test('returns failure when probe times out', () async {
-      when(() => device.discoverServices())
+      when(() => platform.discoverServices(device.id))
           .thenAnswer((_) async => [senseBoxService]);
 
       final result = await session.establish(device, streams: streams);
 
       expect(result.success, isFalse);
-      verify(() => probeCharacteristic.setNotifyValue(true)).called(1);
-      verify(() => probeCharacteristic.setNotifyValue(false)).called(1);
+      verify(() => platform.subscribeToCharacteristic(any())).called(1);
     });
 
     test('returns failure when probe payload is all zeros', () async {
-      when(() => device.discoverServices())
+      when(() => platform.discoverServices(device.id))
           .thenAnswer((_) async => [senseBoxService]);
-      when(() => probeCharacteristic.onValueReceived)
+      when(() => platform.subscribeToCharacteristic(any()))
           .thenAnswer((_) => Stream.value(List.filled(4, 0)));
 
       final result = await session.establish(device, streams: streams);
@@ -138,44 +151,60 @@ void main() {
     });
 
     test('subscribes all characteristics on valid probe data', () async {
-      when(() => device.discoverServices())
+      when(() => platform.discoverServices(device.id))
           .thenAnswer((_) async => [senseBoxService]);
-      when(() => probeCharacteristic.onValueReceived)
-          .thenAnswer((_) => Stream.value(float32Bytes([1.0])));
+      when(() => platform.subscribeToCharacteristic(any())).thenAnswer(
+        (invocation) {
+          final ref =
+              invocation.positionalArguments[0] as BleCharacteristicRef;
+          if (ref.characteristicUuid == probeUuid) {
+            return Stream.value(float32Bytes([1.0]));
+          }
+          return notifyController.stream;
+        },
+      );
 
       final result = await session.establish(device, streams: streams);
 
       expect(result.success, isTrue);
-      expect(result.characteristics, senseBoxService.characteristics);
+      expect(result.characteristics.length, 2);
       expect(
         streams.subscribedCharacteristicUuids.toList(),
         containsAll([
-          probeCharacteristic.uuid.toString(),
-          otherCharacteristic.uuid.toString(),
+          probeUuid.toString(),
+          otherUuid.toString(),
         ]),
       );
-      verify(() => probeCharacteristic.setNotifyValue(false)).called(1);
     });
 
     test('clears existing streams before establishing', () async {
-      final existing = MockBluetoothCharacteristic();
-      when(() => existing.uuid)
-          .thenReturn(Guid.fromString('cccccccc-bbbb-cccc-dddd-eeeeeeeeeeee'));
-      when(() => existing.setNotifyValue(any())).thenAnswer((_) async => true);
-      when(() => existing.onValueReceived)
-          .thenAnswer((_) => const Stream.empty());
-      await streams.subscribe(existing);
+      const existingUuid = 'cccccccc-bbbb-cccc-dddd-eeeeeeeeeeee';
+      await streams.subscribe(
+        BleCharacteristicRef(
+          deviceId: device.id,
+          serviceUuid: senseBoxServiceUuid,
+          characteristicUuid: BleUuid(existingUuid),
+        ),
+      );
 
-      when(() => device.discoverServices())
+      when(() => platform.discoverServices(device.id))
           .thenAnswer((_) async => [senseBoxService]);
-      when(() => probeCharacteristic.onValueReceived)
-          .thenAnswer((_) => Stream.value(float32Bytes([2.0])));
+      when(() => platform.subscribeToCharacteristic(any())).thenAnswer(
+        (invocation) {
+          final ref =
+              invocation.positionalArguments[0] as BleCharacteristicRef;
+          if (ref.characteristicUuid == probeUuid) {
+            return Stream.value(float32Bytes([2.0]));
+          }
+          return notifyController.stream;
+        },
+      );
 
       await session.establish(device, streams: streams);
 
       expect(
         streams.subscribedCharacteristicUuids,
-        isNot(contains(existing.uuid.toString())),
+        isNot(contains(existingUuid)),
       );
     });
   });

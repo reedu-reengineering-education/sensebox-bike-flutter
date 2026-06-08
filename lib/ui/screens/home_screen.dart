@@ -1,5 +1,6 @@
 import 'dart:math';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
+import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
@@ -89,7 +90,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 SliverSafeArea(
                   minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                  sliver: ValueListenableBuilder<BluetoothDevice?>(
+                  sliver: ValueListenableBuilder<BleDevice?>(
                     valueListenable: bleBloc.selectedDeviceNotifier,
                     builder: (context, device, child) {
                       if (device == null ||
@@ -97,7 +98,7 @@ class HomeScreen extends StatelessWidget {
                         return const SliverToBoxAdapter(child: SizedBox.shrink());
                       }
 
-                      return ValueListenableBuilder<List<BluetoothCharacteristic>>(
+                      return ValueListenableBuilder<List<BleCharacteristicRef>>(
                         valueListenable: bleBloc.availableCharacteristics,
                         builder: (context, characteristics, child) {
                           if (sensorBloc.availableSensors.isEmpty) {
@@ -489,12 +490,14 @@ class _DisconnectButton extends StatelessWidget {
           label: isReconnecting
               ? AppLocalizations.of(context)!.connectionButtonReconnecting
               : AppLocalizations.of(context)!.connectionButtonDisconnect,
-          onPressed: () async {
-            if (recordingBloc.isRecording) {
-              await recordingBloc.stopRecording();
-            }
-            await bleBloc.disconnectDevice(userInitiated: true);
-          },
+          onPressed: isReconnecting
+              ? null
+              : () async {
+                  if (recordingBloc.isRecording) {
+                    await recordingBloc.stopRecording();
+                  }
+                  await bleBloc.disconnectDevice(userInitiated: true);
+                },
         );
       },
     );

@@ -1,12 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
-import 'package:sensebox_bike/secrets.dart';
-
-class MockBluetoothService extends Mock implements BluetoothService {}
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
+import 'package:sensebox_bike/ble/ble_uuids.dart';
 
 Uint8List float32Bytes(List<double> values) {
   final byteData = ByteData(values.length * 4);
@@ -69,21 +66,23 @@ void main() {
   });
 
   group('findSenseBoxService', () {
-    test('returns service matching senseBoxServiceUUID', () {
-      final senseBox = MockBluetoothService();
-      final other = MockBluetoothService();
-      when(() => senseBox.uuid).thenReturn(senseBoxServiceUUID);
-      when(() => other.uuid).thenReturn(
-        Guid.fromString('0000180f-0000-1000-8000-00805f9b34fb'),
+    test('returns service matching senseBoxServiceUuid', () {
+      final senseBox = BleService(
+        serviceId: senseBoxServiceUuid,
+        characteristics: const [],
+      );
+      final other = BleService(
+        serviceId: BleUuid('0000180f-0000-1000-8000-00805f9b34fb'),
+        characteristics: const [],
       );
 
       expect(findSenseBoxService([other, senseBox]), senseBox);
     });
 
     test('throws when senseBox service is missing', () {
-      final other = MockBluetoothService();
-      when(() => other.uuid).thenReturn(
-        Guid.fromString('0000180f-0000-1000-8000-00805f9b34fb'),
+      final other = BleService(
+        serviceId: BleUuid('0000180f-0000-1000-8000-00805f9b34fb'),
+        characteristics: const [],
       );
 
       expect(
@@ -94,6 +93,27 @@ void main() {
           contains('senseBox service not found'),
         )),
       );
+    });
+  });
+
+  group('characteristicRefsFromService', () {
+    test('builds refs for every discovered characteristic', () {
+      const deviceId = 'AA:BB:CC:DD:EE:01';
+      final charUuid = BleUuid('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+      final service = BleService(
+        serviceId: senseBoxServiceUuid,
+        characteristics: [charUuid],
+      );
+
+      final refs = characteristicRefsFromService(
+        deviceId: deviceId,
+        service: service,
+      );
+
+      expect(refs.length, 1);
+      expect(refs.first.deviceId, deviceId);
+      expect(refs.first.serviceUuid, senseBoxServiceUuid);
+      expect(refs.first.characteristicUuid, charUuid);
     });
   });
 }

@@ -1,101 +1,56 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_scanner.dart';
+import 'mock_ble_platform.dart';
 
-class MockBluetoothDevice extends Mock implements BluetoothDevice {}
-
-class MockScanResult extends Mock implements ScanResult {}
-
-class MockAdvertisementData extends Mock implements AdvertisementData {}
+BleDevice discovered({
+  required String id,
+  required String name,
+}) {
+  return BleDevice(id: id, name: name);
+}
 
 void main() {
-  setUpAll(() {
-    registerFallbackValue(DeviceIdentifier('00:11:22:33:44:55'));
-  });
-
-  group('devicesFromScanResults', () {
+  group('devicesFromDiscovered', () {
     test('includes every advertiser without filtering', () {
-      final senseBox = MockBluetoothDevice();
-      final other = MockBluetoothDevice();
-      when(() => senseBox.remoteId).thenReturn(DeviceIdentifier('AA:BB:CC:DD:EE:01'));
-      when(() => other.remoteId).thenReturn(DeviceIdentifier('AA:BB:CC:DD:EE:02'));
-
-      final senseBoxAdv = MockAdvertisementData();
-      final otherAdv = MockAdvertisementData();
-      when(() => senseBoxAdv.advName).thenReturn('senseBox:abc');
-      when(() => otherAdv.advName).thenReturn('OtherDevice');
-
-      final senseBoxResult = MockScanResult();
-      final otherResult = MockScanResult();
-      when(() => senseBoxResult.device).thenReturn(senseBox);
-      when(() => senseBoxResult.advertisementData).thenReturn(senseBoxAdv);
-      when(() => otherResult.device).thenReturn(other);
-      when(() => otherResult.advertisementData).thenReturn(otherAdv);
+      final senseBox = discovered(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:abc');
+      final other = discovered(id: 'AA:BB:CC:DD:EE:02', name: 'OtherDevice');
 
       expect(
-        devicesFromScanResults([otherResult, senseBoxResult]),
-        [other, senseBox],
+        devicesFromDiscovered([other, senseBox]),
+        [
+          BleDevice(id: other.id, name: other.name),
+          BleDevice(id: senseBox.id, name: senseBox.name),
+        ],
       );
     });
   });
 
-  group('senseBoxDevicesFromScanResults', () {
+  group('senseBoxDevicesFromDiscovered', () {
     test('keeps devices whose advertised name starts with senseBox', () {
-      final senseBox = MockBluetoothDevice();
-      final other = MockBluetoothDevice();
-      final senseBoxId = DeviceIdentifier('AA:BB:CC:DD:EE:01');
-      final otherId = DeviceIdentifier('AA:BB:CC:DD:EE:02');
-      when(() => senseBox.remoteId).thenReturn(senseBoxId);
-      when(() => other.remoteId).thenReturn(otherId);
-      when(() => senseBox.advName).thenReturn('');
-      when(() => senseBox.platformName).thenReturn('');
-      when(() => other.advName).thenReturn('');
-      when(() => other.platformName).thenReturn('');
+      final senseBox = discovered(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:abc');
+      final other = discovered(id: 'AA:BB:CC:DD:EE:02', name: 'OtherDevice');
 
-      final senseBoxAdv = MockAdvertisementData();
-      final otherAdv = MockAdvertisementData();
-      when(() => senseBoxAdv.advName).thenReturn('senseBox:abc');
-      when(() => senseBoxAdv.serviceUuids).thenReturn([]);
-      when(() => otherAdv.advName).thenReturn('OtherDevice');
-      when(() => otherAdv.serviceUuids).thenReturn([]);
+      final filtered = senseBoxDevicesFromDiscovered([other, senseBox]);
 
-      final senseBoxResult = MockScanResult();
-      final otherResult = MockScanResult();
-      when(() => senseBoxResult.device).thenReturn(senseBox);
-      when(() => senseBoxResult.advertisementData).thenReturn(senseBoxAdv);
-      when(() => otherResult.device).thenReturn(other);
-      when(() => otherResult.advertisementData).thenReturn(otherAdv);
-
-      final filtered = senseBoxDevicesFromScanResults([
-        otherResult,
-        senseBoxResult,
-      ]);
-
-      expect(filtered, [senseBox]);
+      expect(filtered, [BleDevice(id: senseBox.id, name: senseBox.name)]);
     });
 
     test('excludes devices that only advertise a service UUID without name', () {
-      final senseBox = MockBluetoothDevice();
-      when(() => senseBox.remoteId).thenReturn(DeviceIdentifier('AA:BB:CC:DD:EE:05'));
-      when(() => senseBox.advName).thenReturn('');
-      when(() => senseBox.platformName).thenReturn('');
-      final adv = MockAdvertisementData();
-      when(() => adv.advName).thenReturn('');
-      when(() => adv.serviceUuids).thenReturn([Guid('0000ffe0-0000-1000-8000-00805f9b34fb')]);
-      final result = MockScanResult();
-      when(() => result.device).thenReturn(senseBox);
-      when(() => result.advertisementData).thenReturn(adv);
+      const device = BleDevice(id: 'AA:BB:CC:DD:EE:05', name: '');
 
-      expect(senseBoxDevicesFromScanResults([result]), isEmpty);
+      expect(senseBoxDevicesFromDiscovered([device]), isEmpty);
     });
   });
 
   group('BleScanner', () {
     test('devicesListStream is available before scanning', () {
-      final scanner = BleScanner(isScanningNotifier: ValueNotifier(false));
-      expect(scanner.devicesListStream, isA<Stream<List<BluetoothDevice>>>());
+      final scanner = BleScanner(
+        platform: MockBlePlatform(),
+        isScanningNotifier: ValueNotifier(false),
+      );
+      expect(scanner.devicesListStream, isA<Stream<List<BleDevice>>>());
       expect(scanner.devicesList, isEmpty);
       scanner.dispose();
     });
