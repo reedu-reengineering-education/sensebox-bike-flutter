@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
@@ -52,9 +51,7 @@ class SensorBloc with ChangeNotifier {
     };
 
     _characteristicsListener = () {
-      final currentUuids = bleBloc.availableCharacteristics.value
-          .map((e) => e.uuid.toString())
-          .toList();
+      final currentUuids = _characteristicUuids.toList();
       if (currentUuids.isEmpty) {
         _lastCharacteristicUuids = [];
         unawaited(_stopListening());
@@ -186,7 +183,7 @@ class SensorBloc with ChangeNotifier {
     }
     _isStartingListening = true;
     try {
-      for (final sensor in _availableSensors) {
+      for (final sensor in availableSensors) {
         await sensor.startListening();
       }
     } finally {
@@ -222,27 +219,18 @@ class SensorBloc with ChangeNotifier {
 
   List<Sensor> get sensors => _sensors;
 
-  bool _isSensorAvailable(Sensor sensor) {
-    if (FeatureFlags.hideSurfaceAnomalySensor &&
-        sensor.title == 'surface_anomaly') {
-      return false;
-    }
-    final availableUuids = bleBloc.availableCharacteristics.value
-        .map((characteristic) => characteristic.uuid.toString())
-        .toSet();
-    return availableUuids.contains(sensor.characteristicUuid);
-  }
+  Set<String> get _characteristicUuids => {
+        for (final characteristic in bleBloc.availableCharacteristics.value)
+          characteristic.uuid.toString(),
+      };
 
-  Iterable<Sensor> get _availableSensors =>
-      _sensors.where(_isSensorAvailable);
-
-  List<Widget> getSensorWidgets() {
-    final availableSensors = _availableSensors.toList()
-      ..sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
-    return availableSensors
-        .map<Widget>((sensor) => sensor.buildWidget())
-        .toList();
-  }
+  List<Sensor> get availableSensors => _sensors.where((sensor) {
+        if (FeatureFlags.hideSurfaceAnomalySensor &&
+            sensor.title == 'surface_anomaly') {
+          return false;
+        }
+        return _characteristicUuids.contains(sensor.characteristicUuid);
+      }).toList();
 
   @override
   void dispose() {

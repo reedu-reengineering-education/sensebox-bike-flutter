@@ -6,7 +6,8 @@ import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
-import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/models/sensebox.dart' hide Sensor;
+import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
@@ -91,21 +92,25 @@ class HomeScreen extends StatelessWidget {
                   sliver: ValueListenableBuilder<BluetoothDevice?>(
                     valueListenable: bleBloc.selectedDeviceNotifier,
                     builder: (context, device, child) {
-                      // Only show sensor area if device is connected and not in error state
                       if (device == null ||
                           bleBloc.connectionErrorNotifier.value) {
-                        return SliverToBoxAdapter(child: SizedBox.shrink());
+                        return const SliverToBoxAdapter(child: SizedBox.shrink());
                       }
 
-                      // Check if there are actually any sensor widgets available
-                      final widgets = sensorBloc.getSensorWidgets();
-                      if (widgets.isEmpty) {
-                        // Connected but no sensor data available: show nothing
-                        return SliverToBoxAdapter(child: SizedBox.shrink());
-                      }
+                      return ValueListenableBuilder<List<BluetoothCharacteristic>>(
+                        valueListenable: bleBloc.availableCharacteristics,
+                        builder: (context, characteristics, child) {
+                          if (sensorBloc.availableSensors.isEmpty) {
+                            return const SliverToBoxAdapter(
+                              child: SizedBox.shrink(),
+                            );
+                          }
 
-                      // Connected and has sensor data: show sensor grid
-                      return _SensorGrid(sensorBloc: sensorBloc);
+                          return _SensorGrid(
+                            sensors: sensorBloc.availableSensors,
+                          );
+                        },
+                      );
                     },
                   ),
                 ),
@@ -522,12 +527,16 @@ class _BottomGradient extends StatelessWidget {
 
 // Widget for the sensor grid
 class _SensorGrid extends StatelessWidget {
-  final SensorBloc sensorBloc;
-  const _SensorGrid({required this.sensorBloc});
+  final List<Sensor> sensors;
+  const _SensorGrid({required this.sensors});
 
   @override
   Widget build(BuildContext context) {
-    final widgets = sensorBloc.getSensorWidgets();
+    final sortedSensors = List<Sensor>.from(sensors)
+      ..sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
+    final widgets =
+        sortedSensors.map((sensor) => sensor.buildWidget()).toList();
+
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
