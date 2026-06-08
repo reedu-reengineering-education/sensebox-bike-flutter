@@ -31,6 +31,12 @@ class HomeScreen extends StatelessWidget {
     final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
 
+    // Use the stable HomeScreen context for showing modals. Child widgets like
+    // _StartStopButton can be removed from the tree (e.g. after disconnecting
+    // while recording), which would leave the bloc holding a deactivated
+    // context and crash showDialog during the async upload flow.
+    recordingBloc.setContext(context);
+
     return Scaffold(
       body: Column(
         children: [
@@ -447,8 +453,6 @@ class _StartStopButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    recordingBloc.setContext(context);
-
     return FilledButton.icon(
       style: const ButtonStyle(
         padding: WidgetStatePropertyAll(
