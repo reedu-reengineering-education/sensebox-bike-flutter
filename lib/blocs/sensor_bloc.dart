@@ -186,7 +186,7 @@ class SensorBloc with ChangeNotifier {
     }
     _isStartingListening = true;
     try {
-      for (var sensor in _sensors) {
+      for (final sensor in _availableSensors) {
         await sensor.startListening();
       }
     } finally {
@@ -222,20 +222,23 @@ class SensorBloc with ChangeNotifier {
 
   List<Sensor> get sensors => _sensors;
 
-  List<Widget> getSensorWidgets() {
+  bool _isSensorAvailable(Sensor sensor) {
+    if (FeatureFlags.hideSurfaceAnomalySensor &&
+        sensor.title == 'surface_anomaly') {
+      return false;
+    }
     final availableUuids = bleBloc.availableCharacteristics.value
-        .map((e) => e.uuid.toString())
+        .map((characteristic) => characteristic.uuid.toString())
         .toSet();
+    return availableUuids.contains(sensor.characteristicUuid);
+  }
 
-    final availableSensors = _sensors.where((sensor) {
-      if (FeatureFlags.hideSurfaceAnomalySensor &&
-          sensor.title == 'surface_anomaly') {
-        return false;
-      }
-      return availableUuids.contains(sensor.characteristicUuid);
-    }).toList();
+  Iterable<Sensor> get _availableSensors =>
+      _sensors.where(_isSensorAvailable);
 
-    availableSensors.sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
+  List<Widget> getSensorWidgets() {
+    final availableSensors = _availableSensors.toList()
+      ..sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
     return availableSensors
         .map<Widget>((sensor) => sensor.buildWidget())
         .toList();
