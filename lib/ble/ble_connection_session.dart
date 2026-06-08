@@ -26,7 +26,7 @@ class BleConnectionSession {
     required BleCharacteristicStreams streams,
   }) async {
     try {
-      streams.clear();
+      await streams.clear();
 
       final services = await device.discoverServices();
       if (services.isEmpty) {
@@ -58,6 +58,19 @@ class BleConnectionSession {
       );
     } catch (_) {
       return const BleConnectionSessionResult(success: false);
+    }
+  }
+
+  /// Drops the GATT link. Call after [BleCharacteristicStreams.clear] while still connected.
+  Future<void> release(
+    BluetoothDevice device, {
+    Duration settle = Duration.zero,
+  }) async {
+    try {
+      await device.disconnect();
+    } catch (_) {}
+    if (settle > Duration.zero) {
+      await Future<void>.delayed(settle);
     }
   }
 

@@ -73,6 +73,28 @@ void main() {
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
       });
 
+      test('user-initiated disconnect calls disconnect on selected device',
+          () async {
+        final realBleBloc = BleBloc(
+          mockSettingsBloc,
+          initializePlatformBle: false,
+        );
+        addTearDown(realBleBloc.dispose);
+
+        final mockDevice = MockBluetoothDevice();
+        when(() => mockDevice.remoteId)
+            .thenReturn(DeviceIdentifier('AA:BB:CC:DD:EE:01'));
+        when(() => mockDevice.disconnect()).thenAnswer((_) async {});
+        realBleBloc.selectedDevice = mockDevice;
+        realBleBloc.selectedDeviceNotifier.value = mockDevice;
+
+        await realBleBloc.disconnectDevice(userInitiated: true);
+
+        verify(() => mockDevice.disconnect()).called(1);
+        expect(realBleBloc.selectedDevice, isNull);
+        expect(realBleBloc.selectedDeviceNotifier.value, isNull);
+      });
+
       test('linkOnly disconnect keeps selected device and reconnecting state',
           () async {
         final realBleBloc = BleBloc(
@@ -103,10 +125,14 @@ void main() {
         addTearDown(realBleBloc.dispose);
 
         final mockDevice = MockBluetoothDevice();
+        when(() => mockDevice.remoteId)
+            .thenReturn(DeviceIdentifier('AA:BB:CC:DD:EE:02'));
+        when(() => mockDevice.disconnect()).thenAnswer((_) async {});
         when(() => mockDevice.connect()).thenThrow(Exception('Connection failed'));
 
         await realBleBloc.connectToDevice(mockDevice, FakeBuildContext());
 
+        verify(() => mockDevice.disconnect()).called(1);
         expect(realBleBloc.connectionErrorNotifier.value, isTrue);
         expect(realBleBloc.isConnectingNotifier.value, isFalse);
         expect(realBleBloc.selectedDeviceNotifier.value, isNull);

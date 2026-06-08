@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:sensebox_bike/ble/ble_constants.dart';
 import 'package:sensebox_bike/utils/device_vibration.dart';
 
 /// Watches [BluetoothDevice.connectionState] and runs reconnect attempts after
@@ -18,10 +17,8 @@ class BleReconnectionCoordinator {
 
   StreamSubscription<BluetoothConnectionState>? _subscription;
   bool _reconnectionInProgress = false;
-  int _reconnectionAttempts = 0;
   bool _hasVibrated = false;
-
-  void recordAttempt() => _reconnectionAttempts++;
+  bool _abortReconnection = false;
 
   void attach(
     BluetoothDevice device, {
@@ -38,19 +35,14 @@ class BleReconnectionCoordinator {
     _subscription = device.connectionState.listen((state) async {
       try {
         if (state == BluetoothConnectionState.disconnected &&
-            !shouldIgnoreDisconnect()) {
-          if (!_reconnectionInProgress) {
-            onLinkLost();
-            try {
-              await _startReconnection(
-                device,
-                runReconnectSessions: runReconnectSessions,
-                onReconnectSucceeded: onReconnectSucceeded,
-              );
-            } catch (_) {
-              reset();
-            }
-          }
+            !shouldIgnoreDisconnect() &&
+            !_reconnectionInProgress) {
+          onLinkLost();
+          await _runReconnectionEpisode(
+            device,
+            runReconnectSessions: runReconnectSessions,
+            onReconnectSucceeded: onReconnectSucceeded,
+          );
         }
       } catch (_) {
         // Let the reconnection process handle errors.
@@ -62,27 +54,35 @@ class BleReconnectionCoordinator {
     });
   }
 
-  Future<void> _startReconnection(
+  void cancelReconnection() {
+    _abortReconnection = true;
+    detach();
+    reset();
+  }
+
+  Future<void> _runReconnectionEpisode(
     BluetoothDevice device, {
     required Future<bool> Function(BluetoothDevice device) runReconnectSessions,
     required void Function() onReconnectSucceeded,
   }) async {
-    if (_reconnectionInProgress) {
-      if (_reconnectionAttempts >= bleMaxReconnectionAttempts) {
-        reset();
-      } else {
-        return;
-      }
+    if (_abortReconnection) {
+      return;
     }
 
     _reconnectionInProgress = true;
     isReconnectingNotifier.value = true;
-    await _maybeVibrateOnDisconnect();
 
-    final success = await runReconnectSessions(device);
-    if (success) {
+    try {
+      if (_abortReconnection) {
+        return;
+      }
+      await _maybeVibrateOnDisconnect();
+      final success = await runReconnectSessions(device);
+      if (success) {
+        onReconnectSucceeded();
+      }
+    } finally {
       reset();
-      onReconnectSucceeded();
     }
   }
 
@@ -106,7 +106,6 @@ class BleReconnectionCoordinator {
   /// Clears in-progress reconnect state. [detach] cancels the connection listener.
   void reset({bool keepNotifier = false}) {
     _reconnectionInProgress = false;
-    _reconnectionAttempts = 0;
     _hasVibrated = false;
     if (!keepNotifier) {
       isReconnectingNotifier.value = false;

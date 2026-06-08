@@ -40,9 +40,9 @@ void main() {
           .thenAnswer((_) => notifyController.stream);
     });
 
-    tearDown(() {
-      streams.clear();
-      notifyController.close();
+    tearDown(() async {
+      await streams.clear();
+      await notifyController.close();
     });
 
     test('characteristicStream throws when uuid is not subscribed', () {
@@ -103,7 +103,7 @@ void main() {
 
     test('clear removes subscriptions and closes streams', () async {
       await streams.subscribe(characteristic);
-      streams.clear();
+      await streams.clear();
 
       expect(streams.subscribedCharacteristicUuids, isEmpty);
       expect(

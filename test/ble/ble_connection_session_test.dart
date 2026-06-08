@@ -64,11 +64,25 @@ void main() {
   });
 
   tearDown(() {
-    streams.clear();
+    unawaited(streams.clear());
     notifyController.close();
   });
 
   group('BleConnectionSession', () {
+    test('release disconnects device and applies settle delay', () async {
+      when(() => device.disconnect()).thenAnswer((_) async {});
+
+      final stopwatch = Stopwatch()..start();
+      await session.release(
+        device,
+        settle: const Duration(milliseconds: 50),
+      );
+      stopwatch.stop();
+
+      verify(() => device.disconnect()).called(1);
+      expect(stopwatch.elapsed, greaterThanOrEqualTo(const Duration(milliseconds: 50)));
+    });
+
     test('returns failure when discoverServices is empty', () async {
       when(() => device.discoverServices()).thenAnswer((_) async => []);
 

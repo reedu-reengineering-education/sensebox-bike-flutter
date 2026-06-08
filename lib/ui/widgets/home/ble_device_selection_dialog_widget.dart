@@ -1,3 +1,4 @@
+import 'package:sensebox_bike/ble/ble_scanner.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -154,10 +155,6 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
     if (snapshot.hasError) {
       return true;
     }
-    if (snapshot.connectionState == ConnectionState.waiting &&
-        !snapshot.hasData) {
-      return false;
-    }
     final devices = snapshot.data;
     if (devices == null || devices.isEmpty) {
       return !isScanning;
@@ -204,6 +201,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
           builder: (context, _) {
             return StreamBuilder<List<BluetoothDevice>>(
               stream: widget.bleBloc.devicesListStream,
+              initialData: widget.bleBloc.devicesList,
               builder: (context, snapshot) {
                 final colorScheme = Theme.of(context).colorScheme;
                 final isScanning = widget.bleBloc.isScanningNotifier.value;
@@ -212,31 +210,18 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                   _shouldShowRetry(isScanning: isScanning, snapshot: snapshot),
                 );
 
-                if (snapshot.connectionState == ConnectionState.waiting &&
-                !snapshot.hasData) {
-              return Center(
-                child: CircularProgressIndicator(
-                  color: colorScheme.primaryFixedDim,
-                ),
-              );
-            }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Stream Error: ${snapshot.error}',
+                      style: TextStyle(color: colorScheme.error),
+                    ),
+                  );
+                }
 
-            if (snapshot.hasError) {
-              return Center(
-                child: Text(
-                  "Stream Error: ${snapshot.error.toString()}",
-                  style: TextStyle(color: colorScheme.error),
-                ),
-              );
-            }
+                final devices = snapshot.data ?? const <BluetoothDevice>[];
 
-            final devices = snapshot.data;
-
-            if (devices == null || devices.isEmpty) {
-              return ValueListenableBuilder<bool>(
-                valueListenable: widget.bleBloc.isScanningNotifier,
-                builder: (context, isScanning, child) {
-                  final colorScheme = Theme.of(context).colorScheme;
+                if (devices.isEmpty) {
                   if (isScanning) {
                     return Center(
                       child: CircularProgressIndicator(
@@ -248,9 +233,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                     icon: Icons.sensors_off_outlined,
                     message: localizations.noBleDevicesFound,
                   );
-                },
-              );
-            }
+                }
 
                 return ListView.separated(
                   separatorBuilder: (context, index) =>
@@ -258,11 +241,8 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                   itemCount: devices.length,
                   itemBuilder: (context, index) {
                     final device = devices[index];
-                    final deviceName = device.platformName.isNotEmpty
-                        ? device.platformName
-                        : "(Unknown)";
                     return ClickableTile(
-                      child: Text(deviceName),
+                      child: Text(bleDevicePickerLabel(device)),
                       onTap: () {
                         widget.bleBloc.connectToDevice(device, context);
                         Navigator.pop(context, true);

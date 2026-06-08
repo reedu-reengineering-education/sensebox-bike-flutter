@@ -484,14 +484,12 @@ class _DisconnectButton extends StatelessWidget {
           label: isReconnecting
               ? AppLocalizations.of(context)!.connectionButtonReconnecting
               : AppLocalizations.of(context)!.connectionButtonDisconnect,
-          onPressed: isReconnecting
-              ? null
-              : () async {
-                  if (recordingBloc.isRecording) {
-                    await recordingBloc.stopRecording();
-                  }
-                  bleBloc.disconnectDevice(userInitiated: true);
-                },
+          onPressed: () async {
+            if (recordingBloc.isRecording) {
+              await recordingBloc.stopRecording();
+            }
+            await bleBloc.disconnectDevice(userInitiated: true);
+          },
         );
       },
     );

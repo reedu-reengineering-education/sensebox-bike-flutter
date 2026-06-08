@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
+import 'package:sensebox_bike/ble/ble_constants.dart';
 
 class BleCharacteristicStreams {
   final Map<String, StreamController<List<double>>> _streams = {};
@@ -48,15 +49,27 @@ class BleCharacteristicStreams {
     }
   }
 
-  void clear() {
-    for (final subscription in _subscriptions.values) {
-      subscription.cancel();
-    }
+  Future<void> clear({
+    Iterable<BluetoothCharacteristic> characteristics = const [],
+  }) async {
+    final subscriptions = _subscriptions.values.toList();
     _subscriptions.clear();
-
-    for (final controller in _streams.values) {
-      controller.close();
+    for (final subscription in subscriptions) {
+      await subscription.cancel();
     }
+
+    final controllers = _streams.values.toList();
     _streams.clear();
+    for (final controller in controllers) {
+      await controller.close();
+    }
+
+    for (final characteristic in characteristics) {
+      try {
+        await characteristic
+            .setNotifyValue(false)
+            .timeout(bleNotificationDisableTimeout);
+      } catch (_) {}
+    }
   }
 }

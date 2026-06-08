@@ -22,6 +22,7 @@ void main() {
 
   setUp(() {
     bleBloc = MockBleBloc();
+    when(() => bleBloc.devicesList).thenReturn([]);
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
     when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
   });
@@ -98,7 +99,9 @@ void main() {
 
   testWidgets('shows list of devices and taps to connect', (tester) async {
     final device = MockBluetoothDevice();
+    when(() => device.advName).thenReturn('TestDevice');
     when(() => device.platformName).thenReturn('TestDevice');
+    when(() => bleBloc.devicesList).thenReturn([device]);
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
     bool connectCalled = false;
     when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {

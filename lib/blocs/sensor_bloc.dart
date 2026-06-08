@@ -55,6 +55,14 @@ class SensorBloc with ChangeNotifier {
       final currentUuids = bleBloc.availableCharacteristics.value
           .map((e) => e.uuid.toString())
           .toList();
+      if (currentUuids.isEmpty) {
+        _lastCharacteristicUuids = [];
+        unawaited(_stopListening());
+        return;
+      }
+      if (bleBloc.selectedDevice == null) {
+        return;
+      }
       if (!_listEqualsUnordered(_lastCharacteristicUuids, currentUuids)) {
         _lastCharacteristicUuids = List.from(currentUuids);
         _restartAllSensors();
@@ -62,6 +70,9 @@ class SensorBloc with ChangeNotifier {
     };
 
     _characteristicStreamsVersionListener = () {
+      if (bleBloc.selectedDevice == null) {
+        return;
+      }
       _restartAllSensors();
     };
 
@@ -190,6 +201,10 @@ class SensorBloc with ChangeNotifier {
   }
 
   Future<void> _restartAllSensors() async {
+    if (bleBloc.selectedDevice == null || !bleBloc.isConnected) {
+      await _stopListening();
+      return;
+    }
     await _stopListening();
     await _startListening();
   }
