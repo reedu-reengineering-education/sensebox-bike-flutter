@@ -55,13 +55,17 @@ class BleConnectionSession {
         service: senseBoxService,
       );
 
-      final probeCharacteristic = characteristics.first;
-      final probeReceived = await _probeCharacteristic(probeCharacteristic);
-      if (!probeReceived) {
+      // Subscribe to every characteristic up front so notifications stay
+      // enabled for the whole session, then verify the link is actually
+      // delivering data. Doing it in this order avoids the
+      // enable/disable/enable churn (and dropped first packets) of probing on
+      // a throwaway subscription before the real ones are attached.
+      await streams.subscribeAll(characteristics);
+
+      final linkIsLive = await _awaitLiveness(characteristics.first);
+      if (!linkIsLive) {
         return const BleConnectionSessionResult(success: false);
       }
-
-      await streams.subscribeAll(characteristics);
 
       return BleConnectionSessionResult(
         success: true,
@@ -84,10 +88,12 @@ class BleConnectionSession {
     }
   }
 
-  Future<bool> _probeCharacteristic(BleCharacteristicRef characteristic) async {
+  Future<bool> _awaitLiveness(BleCharacteristicRef characteristic) async {
     final dataReceivedCompleter = Completer<bool>();
     Uint8List? receivedData;
 
+    // The characteristic is already subscribed via [subscribeAll], so this
+    // extra listener does not toggle notifications off when it is cancelled.
     final subscription =
         _platform.subscribeToCharacteristic(characteristic).listen(
       (value) {

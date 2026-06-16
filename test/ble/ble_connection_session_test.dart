@@ -136,7 +136,8 @@ void main() {
       final result = await session.establish(device, streams: streams);
 
       expect(result.success, isFalse);
-      verify(() => platform.subscribeToCharacteristic(any())).called(1);
+      verify(() => platform.subscribeToCharacteristic(any()))
+          .called(greaterThanOrEqualTo(1));
     });
 
     test('returns failure when probe payload is all zeros', () async {

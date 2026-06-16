@@ -1,17 +1,12 @@
 import 'package:sensebox_bike/ble/ble_constants.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
-import 'package:sensebox_bike/ble/ble_platform.dart';
 
 class BleSessionRetryRunner {
   BleSessionRetryRunner({
-    required this.platform,
     this.delayBetweenSteps = bleSessionRetryDelay,
-    this.connectTimeout = bleDeviceConnectTimeout,
   });
 
-  final BlePlatform platform;
   final Duration delayBetweenSteps;
-  final Duration connectTimeout;
 
   Future<bool> run({
     required BleDevice device,
@@ -72,13 +67,14 @@ class BleSessionRetryRunner {
   Future<void> prepareDeviceLink(
     BleDevice device, {
     required Future<void> Function() disconnect,
+    required Future<void> Function() connect,
   }) async {
     try {
       await disconnect();
       await Future.delayed(delayBetweenSteps);
 
       try {
-        await platform.connect(device.id, timeout: connectTimeout);
+        await connect();
       } catch (_) {
         return;
       }

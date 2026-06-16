@@ -1,28 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_session_retry_runner.dart';
-import 'mock_ble_platform.dart';
 
 void main() {
-  late MockBlePlatform platform;
   late BleSessionRetryRunner runner;
   late BleDevice device;
 
-  setUpAll(() {
-    registerFallbackValue(const Duration());
-  });
-
   setUp(() {
-    platform = MockBlePlatform();
     runner = BleSessionRetryRunner(
-      platform: platform,
       delayBetweenSteps: Duration.zero,
-      connectTimeout: const Duration(milliseconds: 50),
     );
     device = const BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
-    when(() => platform.connect(any(), timeout: any(named: 'timeout')))
-        .thenAnswer((_) async {});
   });
 
   group('BleSessionRetryRunner.run', () {
@@ -123,30 +111,36 @@ void main() {
   });
 
   group('BleSessionRetryRunner.prepareDeviceLink', () {
-    const linkTimeout = Duration(milliseconds: 50);
-
     test('disconnects, connects, and does not throw when connect fails',
         () async {
       var disconnected = false;
-      when(() => platform.connect(device.id, timeout: linkTimeout))
-          .thenThrow(Exception('connect failed'));
+      var connectCalls = 0;
 
       await runner.prepareDeviceLink(
         device,
         disconnect: () async => disconnected = true,
+        connect: () async {
+          connectCalls++;
+          throw Exception('connect failed');
+        },
       );
 
       expect(disconnected, isTrue);
-      verify(() => platform.connect(device.id, timeout: linkTimeout)).called(1);
+      expect(connectCalls, 1);
     });
 
     test('completes link preparation when connect succeeds', () async {
-      when(() => platform.connect(device.id, timeout: linkTimeout))
-          .thenAnswer((_) async {});
+      var disconnected = false;
+      var connectCalls = 0;
 
-      await runner.prepareDeviceLink(device, disconnect: () async {});
+      await runner.prepareDeviceLink(
+        device,
+        disconnect: () async => disconnected = true,
+        connect: () async => connectCalls++,
+      );
 
-      verify(() => platform.connect(device.id, timeout: linkTimeout)).called(1);
+      expect(disconnected, isTrue);
+      expect(connectCalls, 1);
     });
   });
 }

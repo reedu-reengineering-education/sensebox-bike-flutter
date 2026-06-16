@@ -11,6 +11,7 @@ import 'package:sensebox_bike/ble/ble_platform.dart';
 import 'package:sensebox_bike/ble/ble_reconnection_coordinator.dart';
 import 'package:sensebox_bike/ble/ble_scanner.dart';
 import 'package:sensebox_bike/ble/ble_session_retry_runner.dart';
+import 'package:sensebox_bike/ble/ble_uuids.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
@@ -27,7 +28,7 @@ class BleBloc with ChangeNotifier {
       isScanningNotifier: isScanningNotifier,
     );
     _connectionSession = BleConnectionSession(platform: _platform);
-    _sessionRetryRunner = BleSessionRetryRunner(platform: _platform);
+    _sessionRetryRunner = BleSessionRetryRunner();
     characteristicStreams = BleCharacteristicStreams(platform: _platform);
     _reconnectionCoordinator = BleReconnectionCoordinator(
       platform: _platform,
@@ -175,7 +176,14 @@ class BleBloc with ChangeNotifier {
       _scanner.clearDiscoveredDevices();
     }
 
-    _userInitiatedDisconnect = false;
+    // A user-initiated disconnect must keep [_userInitiatedDisconnect] set so
+    // that any reconnection loop still in flight bails out instead of
+    // auto-reconnecting to the device the user just left (or raising a spurious
+    // connection error). The flag is cleared only when the user explicitly
+    // connects again (see connectToDevice).
+    if (!userInitiated) {
+      _userInitiatedDisconnect = false;
+    }
     notifyListeners();
   }
 
@@ -243,7 +251,10 @@ class BleBloc with ChangeNotifier {
         device,
         updateConnectionState: true,
       ),
-      prepareForRetry: _prepareForRetry,
+      prepareForRetry: (retryDevice) => _prepareForRetry(
+        retryDevice,
+        connect: () => _platform.connect(retryDevice.id),
+      ),
       onExhausted: () => _onSessionRetriesExhausted(
         device,
         BleConnectionFailurePhase.initialConnect,
@@ -277,18 +288,26 @@ class BleBloc with ChangeNotifier {
     }
 
     availableCharacteristics.value = result.characteristics;
+    // Mark the link as connected before bumping the stream version so that
+    // listeners reacting to the new characteristic streams (e.g. SensorBloc)
+    // observe `isConnected == true` and re-subscribe. On reconnection
+    // `updateConnectionState` is false, but the session has still succeeded, so
+    // the connected flag must be set here for sensors to restart.
+    _isConnected = true;
+    _userInitiatedDisconnect = false;
     characteristicStreamsVersion.value++;
 
     if (updateConnectionState) {
-      _isConnected = true;
-      _userInitiatedDisconnect = false;
       notifyListeners();
     }
 
     return true;
   }
 
-  Future<void> _prepareForRetry(BleDevice device) async {
+  Future<void> _prepareForRetry(
+    BleDevice device, {
+    required Future<void> Function() connect,
+  }) async {
     if (_userInitiatedDisconnect) {
       return;
     }
@@ -298,6 +317,7 @@ class BleBloc with ChangeNotifier {
     await _sessionRetryRunner.prepareDeviceLink(
       device,
       disconnect: () => disconnectDevice(device: device, linkOnly: true),
+      connect: connect,
     );
   }
 
@@ -327,7 +347,22 @@ class BleBloc with ChangeNotifier {
     );
   }
 
-  Future<bool> _runReconnectionSessions(BleDevice device) {
+  Future<bool> _runReconnectionSessions(BleDevice device) async {
+    // The previous link is dead after an out-of-range disconnect. Fully release
+    // it so the box drops the stale GATT connection and starts advertising
+    // again, then scan for the advertising device before reconnecting. This
+    // avoids the Android stack reusing a half-open link
+    // (flutter_reactive_ble issue #770) and keeps the box discoverable.
+    await _releaseLinkBeforeReconnect(device);
+    try {
+      await _platform.connectToAdvertising(
+        device.id,
+        withServices: [senseBoxServiceUuid],
+      );
+    } catch (_) {
+      // prepareForRetry retries the scan-gated connect on the next attempt.
+    }
+
     return _sessionRetryRunner.run(
       device: device,
       maxAttempts: bleMaxReconnectionAttempts,
@@ -343,12 +378,32 @@ class BleBloc with ChangeNotifier {
           updateConnectionState: false,
         );
       },
-      prepareForRetry: _prepareForRetry,
-      onExhausted: () => _onSessionRetriesExhausted(
-        device,
-        BleConnectionFailurePhase.reconnection,
+      prepareForRetry: (retryDevice) => _prepareForRetry(
+        retryDevice,
+        connect: () => _platform.connectToAdvertising(
+          retryDevice.id,
+          withServices: [senseBoxServiceUuid],
+        ),
       ),
+      onExhausted: () async {
+        // Do not surface a connection error if the user disconnected or
+        // switched devices while the reconnection loop was still running.
+        if (_userInitiatedDisconnect || selectedDevice != device) {
+          return;
+        }
+        await _onSessionRetriesExhausted(
+          device,
+          BleConnectionFailurePhase.reconnection,
+        );
+      },
     );
+  }
+
+  Future<void> _releaseLinkBeforeReconnect(BleDevice device) async {
+    try {
+      await _platform.disconnect(device.id);
+    } catch (_) {}
+    await Future<void>.delayed(blePostDisconnectSettleDelay);
   }
 
   void resetConnectionError() {
