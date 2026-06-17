@@ -3,6 +3,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/models/ble_connection_result.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import '../../../test_helpers.dart';
 
@@ -24,6 +25,10 @@ void main() {
     bleBloc = MockBleBloc();
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
     when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
+    when(() => bleBloc.isConnectingNotifier)
+        .thenReturn(ValueNotifier(false));
+    when(() => bleBloc.finalizePartialConnection(any(), any()))
+        .thenAnswer((_) async => BleConnectionResult.fullSuccess());
   });
 
   testWidgets('shows dialog title', (tester) async {
@@ -103,6 +108,7 @@ void main() {
     bool connectCalled = false;
     when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {
       connectCalled = true;
+      return BleConnectionResult.fullSuccess();
     });
 
     await tester.pumpWidget(
@@ -118,6 +124,93 @@ void main() {
     expect(find.text('TestDevice'), findsOneWidget);
 
     await tapElement(find.text('TestDevice'), tester);
+    await tester.pumpAndSettle();
     expect(connectCalled, isTrue);
+  });
+
+  testWidgets('shows partial connection dialog when some sensors fail',
+      (tester) async {
+    final device = MockBluetoothDevice();
+    when(() => device.platformName).thenReturn('TestDevice');
+    when(() => bleBloc.startScanning()).thenAnswer((_) async {});
+    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
+    when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {
+      return BleConnectionResult.needsUserDecision(probes: [
+        const BleCharacteristicProbeResult(
+          uuid: '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8',
+          isValid: true,
+        ),
+        const BleCharacteristicProbeResult(
+          uuid: 'unknown-sensor-uuid',
+          isValid: false,
+          reason: BleConnectionFailureReason.noData,
+        ),
+      ]);
+    });
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: Builder(
+          builder: (context) {
+            return ElevatedButton(
+              onPressed: () => showDeviceSelectionDialog(context, bleBloc),
+              child: const Text('Open'),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('TestDevice'), findsOneWidget);
+
+    await tester.tap(find.text('TestDevice'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Some sensors unavailable'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+  });
+
+  testWidgets('shows connection attempt failed dialog on failed connect',
+      (tester) async {
+    final device = MockBluetoothDevice();
+    when(() => device.platformName).thenReturn('TestDevice');
+    when(() => bleBloc.startScanning()).thenAnswer((_) async {});
+    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
+    when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {
+      return BleConnectionResult.failure(
+        reason: BleConnectionFailureReason.connectionTimeout,
+      );
+    });
+
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: Builder(
+          builder: (context) {
+            return ElevatedButton(
+              onPressed: () => showDeviceSelectionDialog(context, bleBloc),
+              child: const Text('Open'),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.text('TestDevice'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connection attempt failed'), findsOneWidget);
+    expect(find.textContaining('Turn the senseBox off and on'), findsOneWidget);
+    expect(find.textContaining('battery is charged'), findsOneWidget);
   });
 }

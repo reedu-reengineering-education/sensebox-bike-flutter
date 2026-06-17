@@ -19,11 +19,18 @@ class ErrorService {
       Sentry.captureException(error, stackTrace: stack);
     }
 
+    if (error is BleCharacteristicStreamNotFoundException) {
+      return;
+    }
+
     if (!kDebugMode) {
       if (error is LocationPermissionDenied ||
           error is LoginError ||
           error is RegistrationError ||
           error is ScanPermissionDenied ||
+          error is NotificationPermissionDenied ||
+          error is BleNotReadyForRecording ||
+          error is GeolocationStartFailed ||
           error is NoSenseBoxSelected ||
           error is ExportDirectoryAccessError ||
           error is UploadFailureError ||
@@ -108,6 +115,15 @@ class ErrorService {
     } else if (error is ScanPermissionDenied) {
       return localizations?.errorNoScanAccess ??
           'Please allow the app to scan nearby devices in the phone settings.';
+    } else if (error is NotificationPermissionDenied) {
+      return localizations?.errorNoNotificationAccess ??
+          'Notification permission is required to record your location in the background. Please allow notifications for this app in the phone settings.';
+    } else if (error is BleNotReadyForRecording) {
+      return localizations?.errorBleNotReadyForRecording ??
+          'The senseBox connection is not stable enough to start recording. Please wait until the connection is fully established and try again.';
+    } else if (error is GeolocationStartFailed) {
+      return localizations?.errorGeolocationStartFailed ??
+          'Could not start location tracking for recording. Please check location and notification permissions and try again.';
     } else if (error is NoSenseBoxSelected) {
       return localizations?.errorNoSenseBoxSelected ??
           'Please log in to your openSenseMap account and select a box to upload sensor data to the cloud.';

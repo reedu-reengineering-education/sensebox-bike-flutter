@@ -19,6 +19,37 @@ String buildCanonicalSensorKey(String title, String? attribute) {
   return '${title}${attribute == null ? '' : '_${attribute}'}';
 }
 
+/// Parses a canonical sensor key back into title and attribute components.
+({String title, String? attribute}) parseCanonicalSensorKey(String sensorTypeKey) {
+  for (final key in sensorOrder) {
+    if (key == sensorTypeKey) {
+      return _splitKnownSensorOrderKey(key);
+    }
+  }
+
+  return (title: sensorTypeKey, attribute: null);
+}
+
+({String title, String? attribute}) _splitKnownSensorOrderKey(String key) {
+  const knownPrefixes = <({String prefix, String title})>[
+    (prefix: 'surface_classification_', title: 'surface_classification'),
+    (prefix: 'finedust_', title: 'finedust'),
+    (prefix: 'acceleration_', title: 'acceleration'),
+    (prefix: 'gps_', title: 'gps'),
+  ];
+
+  for (final entry in knownPrefixes) {
+    if (key.startsWith(entry.prefix)) {
+      return (
+        title: entry.title,
+        attribute: key.substring(entry.prefix.length),
+      );
+    }
+  }
+
+  return (title: key, attribute: null);
+}
+
 String getCanonicalKeyFromApiTitle(String apiTitle) {
   final titleLower = apiTitle.toLowerCase();
 
@@ -359,6 +390,31 @@ void addSpeedEntries({
       }
     };
   }
+}
+
+/// BLE characteristic UUIDs the app can subscribe to for sensor data.
+Set<String> get knownSensorCharacteristicUuids =>
+    _uuidToSensorTitle.keys.map((uuid) => uuid.toLowerCase()).toSet();
+
+const Map<String, String> _uuidToSensorTitle = {
+  DistanceSensor.sensorCharacteristicUuid: 'distance',
+  DistanceRightSensor.sensorCharacteristicUuid: 'distance_right',
+  OvertakingPredictionSensor.sensorCharacteristicUuid: 'overtaking',
+  TemperatureSensor.sensorCharacteristicUuid: 'temperature',
+  HumiditySensor.sensorCharacteristicUuid: 'humidity',
+  AccelerationSensor.sensorCharacteristicUuid: 'acceleration',
+  GPSSensor.sensorCharacteristicUuid: 'gps',
+  SurfaceClassificationSensor.sensorCharacteristicUuid: 'surface_classification',
+  SurfaceAnomalySensor.sensorCharacteristicUuid: 'surface_anomaly',
+  FinedustSensor.sensorCharacteristicUuid: 'finedust',
+};
+
+String getSensorDisplayNameByUuid(String characteristicUuid) {
+  final title = _uuidToSensorTitle[characteristicUuid];
+  if (title == null) {
+    return characteristicUuid;
+  }
+  return title.replaceAll('_', ' ');
 }
 
 int getUiPriorityByUuid(String characteristicUuid) {

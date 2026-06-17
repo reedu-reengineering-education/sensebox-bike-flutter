@@ -1,10 +1,14 @@
 // File: lib/services/isar_service/sensor_service.dart
+import 'dart:math';
+
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:isar_community/isar.dart';
+
+const _sensorAttachBatchSize = 100;
 
 class SensorService {
   final IsarProvider isarProvider;
@@ -58,6 +62,49 @@ class SensorService {
     }
 
     return sensorData;
+  }
+
+  Future<void> attachSensorTypeToGeolocations(
+    List<GeolocationData> geolocations,
+    String sensorTypeKey,
+  ) async {
+    if (geolocations.isEmpty) return;
+
+    final parts = parseCanonicalSensorKey(sensorTypeKey);
+    final isar = await isarProvider.getDatabase();
+
+    for (var start = 0; start < geolocations.length; start += _sensorAttachBatchSize) {
+      final end = min(start + _sensorAttachBatchSize, geolocations.length);
+      await isar.txn(() async {
+        for (var i = start; i < end; i++) {
+          final geo = geolocations[i];
+          final sensors = await _getSensorsForGeolocation(
+            isar,
+            geo.id,
+            parts.title,
+            parts.attribute,
+          );
+          await geo.sensorData.load();
+          geo.sensorData.clear();
+          geo.sensorData.addAll(sensors);
+        }
+      });
+    }
+  }
+
+  Future<List<SensorData>> _getSensorsForGeolocation(
+    Isar isar,
+    Id geolocationId,
+    String title,
+    String? attribute,
+  ) async {
+    final sensors = await isar.sensorDatas.where().filter().geolocationData((q) {
+      return q.idEqualTo(geolocationId);
+    }).findAll();
+
+    return sensors
+        .where((sensor) => sensor.title == title && sensor.attribute == attribute)
+        .toList();
   }
 
   Future<void> deleteAllSensorData() async {

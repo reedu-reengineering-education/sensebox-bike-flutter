@@ -532,6 +532,23 @@ void main() {
     });
   });
 
+  group('parseCanonicalSensorKey', () {
+    test('parses simple sensor keys', () {
+      expect(parseCanonicalSensorKey('temperature').title, 'temperature');
+      expect(parseCanonicalSensorKey('temperature').attribute, isNull);
+    });
+
+    test('parses compound sensor keys', () {
+      final finedust = parseCanonicalSensorKey('finedust_pm10');
+      expect(finedust.title, 'finedust');
+      expect(finedust.attribute, 'pm10');
+
+      final surface = parseCanonicalSensorKey('surface_classification_asphalt');
+      expect(surface.title, 'surface_classification');
+      expect(surface.attribute, 'asphalt');
+    });
+  });
+
   group('getCanonicalKeyFromApiTitle', () {
     test('maps surface sensor API titles to canonical keys', () {
       expect(getCanonicalKeyFromApiTitle('Surface Asphalt'),

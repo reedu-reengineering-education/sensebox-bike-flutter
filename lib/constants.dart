@@ -3,6 +3,12 @@ import 'package:geolocator/geolocator.dart' as geolocator;
 // Tracks screen
 const tracksPerPage = 5;
 
+/// Maximum geolocation points rendered on interactive Mapbox track maps.
+const maxMapTrajectoryPoints = 750;
+
+/// Number of early track geolocations sampled to discover available sensor types.
+const discoverSensorSampleSize = 10;
+
 const defaultTimeout = 30; // in seconds
 
 class SharedPreferencesKeys {

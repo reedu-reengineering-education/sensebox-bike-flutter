@@ -19,6 +19,28 @@ class ScanPermissionDenied implements Exception {
       'Please allow the current app to scan nearby devices in the phone settings.';
 }
 
+class NotificationPermissionDenied implements Exception {
+  @override
+  String toString() =>
+      'Notification permission is required to record your location in the background. Please allow notifications for this app in the phone settings.';
+}
+
+class BleNotReadyForRecording implements Exception {
+  @override
+  String toString() =>
+      'The senseBox connection is not stable enough to start recording. Please wait until the connection is fully established and try again.';
+}
+
+class GeolocationStartFailed implements Exception {
+  final Object? cause;
+
+  GeolocationStartFailed([this.cause]);
+
+  @override
+  String toString() =>
+      'Could not start location tracking for recording.${cause != null ? ' Details: $cause' : ''}';
+}
+
 class LoginError implements Exception {
   Object? error;
   LoginError(this.error);
@@ -67,6 +89,17 @@ class PermanentAuthenticationError implements Exception {
   String toString() => details != null
       ? 'Authentication failed permanently: $details. Data upload is stopped but all data is stored locally.'
       : 'Authentication failed permanently. Data upload is stopped but all data is stored locally. Please log in again to continue uploading data.';
+}
+
+class BleCharacteristicStreamNotFoundException implements Exception {
+  final String characteristicUuid;
+
+  BleCharacteristicStreamNotFoundException(this.characteristicUuid);
+
+  @override
+  String toString() =>
+      'Characteristic stream not found for UUID: $characteristicUuid. '
+      'The characteristic may not be available yet or the device may not be connected.';
 }
 
 class TrackHasNoGeolocationsException implements Exception {

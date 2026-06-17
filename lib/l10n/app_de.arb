@@ -206,6 +206,9 @@
     "connectionButtonEnableBluetooth": "Bluetooth aktivieren",
     "errorNoLocationAccess": "Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie bitte die Standortdienste und erlauben Sie der App in den Telefoneinstellungen den Zugriff auf Ihren Standort.",
     "errorNoScanAccess": "Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.",
+    "errorNoNotificationAccess": "Um Ihre Fahrt aufzuzeichnen, erlauben Sie bitte Benachrichtigungen für diese App. Android benötigt dies, damit GPS während der Aufnahme im Hintergrund weiterläuft.",
+    "errorBleNotReadyForRecording": "Die Verbindung zur senseBox ist nicht stabil genug, um die Aufnahme zu starten. Bitte warten Sie, bis die Verbindung vollständig hergestellt ist, und versuchen Sie es erneut.",
+    "errorGeolocationStartFailed": "Standortverfolgung für die Aufnahme konnte nicht gestartet werden. Bitte prüfen Sie, ob Standortdienste und Benachrichtigungen aktiviert sind, und versuchen Sie es erneut.",
     "errorNoSenseBoxSelected": "Um den Upload von Sensordaten in die Cloud zu ermöglichen, melden Sie sich bitte in Ihrem openSenseMap-Konto an und wählen Sie die Box aus.",
     "trackUploadLoginSelectHint": "Bitte melde dich an und wähle eine senseBox zum Hochladen aus.",
     "uploadRequirementsTitle": "Upload nicht möglich",
@@ -215,7 +218,29 @@
     "errorLoginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es später erneut.",
     "errorRegistrationFailed": "Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es später erneut.",
     "errorReasonPrefix": "Grund:",
-    "errorBleConnectionFailed": "Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.",
+    "errorBleConnectionFailed": "Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass die senseBox eingeschaltet ist.",
+    "errorBleConnectionFailedTitle": "Verbindung fehlgeschlagen",
+    "errorBleConnectionAttemptFailedTitle": "Verbindungsversuch fehlgeschlagen",
+    "errorBleConnectionAttemptFailed": "Verbindung zur senseBox nicht möglich.\n\n• senseBox aus- und wieder einschalten\n• Prüfen, ob der Akku geladen ist\n• Näher an das Gerät gehen und Bluetooth auf dem Telefon aktivieren\n• Einige Sekunden warten und erneut verbinden",
+    "errorBleNoSensorData": "Keine Sensordaten empfangen. Ist die senseBox eingeschaltet und läuft die richtige Firmware?",
+    "errorBleInvalidSensorData": "Sensordaten sind ungültig (nur Nullen). Bitte starten Sie die senseBox neu.",
+    "errorBleIncompatibleDevice": "Dieses Gerät scheint keine kompatible senseBox zu sein.",
+    "errorBleConnectionTimeout": "Die Verbindung zur senseBox hat zu lange gedauert. Gehen Sie näher an das Gerät, stellen Sie sicher, dass es eingeschaltet ist, warten Sie einige Sekunden und versuchen Sie es erneut.",
+    "errorBleConnectionLost": "Die Bluetooth-Verbindung wurde während der Einrichtung unterbrochen. Das Gerät ist möglicherweise außer Reichweite oder beschäftigt. Bitte erneut versuchen.",
+    "blePartialConnectionTitle": "Einige Sensoren nicht verfügbar",
+    "blePartialConnectionBody": "Folgende Sensoren haben keine gültigen Daten gesendet: {sensorNames}. Sie können mit den verbleibenden Sensoren verbinden oder abbrechen.",
+    "@blePartialConnectionBody": {
+        "placeholders": {
+            "sensorNames": {
+                "type": "String"
+            }
+        }
+    },
+    "blePartialConnectionCancel": "Abbrechen",
+    "blePartialConnectionContinue": "Fortfahren",
+    "recordingStoppedBleDisconnectTitle": "Aufnahme beendet",
+    "recordingStoppedBleDisconnectBody": "Die Verbindung zur senseBox wurde während der Fahrt unterbrochen. Die Aufnahme wurde automatisch beendet. Die bis dahin aufgezeichneten Daten wurden gespeichert.",
+    "errorBleInitialConnectionFailed": "Verbindung zur senseBox fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "errorUploadFailed": "Daten-Upload fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
     "errorDirectUploadFailed": "Der Echtzeit-Upload konnte aufgrund von Verbindungsproblemen nicht durchgeführt werden. Keine Sorge – deine Daten wurden lokal gespeichert. Nach Beenden der Aufzeichnung kannst du den Track in der Trackübersicht manuell hochladen.",
     "errorPermanentAuthentication": "Authentifizierung dauerhaft fehlgeschlagen. Bitte melden Sie sich an, um Daten hochzuladen.",

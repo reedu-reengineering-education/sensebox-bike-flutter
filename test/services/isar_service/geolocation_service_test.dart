@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:isar_community/isar.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
 import '../../mocks.dart';
@@ -163,6 +164,115 @@ void main() {
             await geolocationService.getLastGeolocationData();
 
         expect(lastGeolocation, isNull);
+      });
+    });
+
+    group('discoverAvailableSensorsFromGeolocations', () {
+      test('unions sensor types from the first geolocations only', () async {
+        final trackData = createMockTrackData();
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(trackData);
+        });
+
+        final geoWithTemperature = GeolocationData()
+          ..latitude = 52.5200
+          ..longitude = 13.4050
+          ..timestamp = DateTime.utc(2024, 1, 1, 10)
+          ..speed = 0.0
+          ..track.value = trackData;
+        final geoWithHumidity = GeolocationData()
+          ..latitude = 52.5201
+          ..longitude = 13.4051
+          ..timestamp = DateTime.utc(2024, 1, 1, 11)
+          ..speed = 0.0
+          ..track.value = trackData;
+
+        await isar.writeTxn(() async {
+          await isar.geolocationDatas.putAll([
+            geoWithTemperature,
+            geoWithHumidity,
+          ]);
+          await geoWithTemperature.track.save();
+          await geoWithHumidity.track.save();
+        });
+
+        final temperatureSensor = SensorData()
+          ..title = 'temperature'
+          ..value = 20.0
+          ..attribute = null
+          ..characteristicUuid = 'temp-uuid'
+          ..geolocationData.value = geoWithTemperature;
+        final humiditySensor = SensorData()
+          ..title = 'humidity'
+          ..value = 55.0
+          ..attribute = null
+          ..characteristicUuid = 'humidity-uuid'
+          ..geolocationData.value = geoWithHumidity;
+
+        await isar.writeTxn(() async {
+          await isar.sensorDatas.putAll([temperatureSensor, humiditySensor]);
+          await temperatureSensor.geolocationData.save();
+          await humiditySensor.geolocationData.save();
+        });
+
+        final geolocations =
+            await geolocationService.getGeolocationDataByTrackId(trackData.id);
+        expect(geolocations.length, equals(2));
+
+        final discovered = await geolocationService
+            .discoverAvailableSensorsFromGeolocations(
+          geolocations,
+          sampleSize: 1,
+        );
+
+        expect(discovered.length, equals(1));
+        expect(discovered.first.title, equals('temperature'));
+      });
+
+      test('returns sensors sorted by canonical order', () async {
+        final trackData = createMockTrackData();
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(trackData);
+        });
+
+        final geo = GeolocationData()
+          ..latitude = 52.5200
+          ..longitude = 13.4050
+          ..timestamp = DateTime.utc(2024, 1, 1, 10)
+          ..speed = 0.0
+          ..track.value = trackData;
+
+        await isar.writeTxn(() async {
+          await isar.geolocationDatas.put(geo);
+          await geo.track.save();
+        });
+
+        final humiditySensor = SensorData()
+          ..title = 'humidity'
+          ..value = 55.0
+          ..attribute = null
+          ..characteristicUuid = 'humidity-uuid'
+          ..geolocationData.value = geo;
+        final temperatureSensor = SensorData()
+          ..title = 'temperature'
+          ..value = 20.0
+          ..attribute = null
+          ..characteristicUuid = 'temp-uuid'
+          ..geolocationData.value = geo;
+
+        await isar.writeTxn(() async {
+          await isar.sensorDatas.putAll([humiditySensor, temperatureSensor]);
+          await humiditySensor.geolocationData.save();
+          await temperatureSensor.geolocationData.save();
+        });
+
+        final geolocations =
+            await geolocationService.getGeolocationDataByTrackId(trackData.id);
+        final discovered = await geolocationService
+            .discoverAvailableSensorsFromGeolocations(geolocations);
+
+        expect(discovered.map((sensor) => sensor.title).toList(),
+            equals(['temperature', 'humidity']));
       });
   });
 });

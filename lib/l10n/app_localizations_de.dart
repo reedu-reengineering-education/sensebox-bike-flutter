@@ -519,6 +519,18 @@ class AppLocalizationsDe extends AppLocalizations {
       'Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.';
 
   @override
+  String get errorNoNotificationAccess =>
+      'Um Ihre Fahrt aufzuzeichnen, erlauben Sie bitte Benachrichtigungen für diese App. Android benötigt dies, damit GPS während der Aufnahme im Hintergrund weiterläuft.';
+
+  @override
+  String get errorBleNotReadyForRecording =>
+      'Die Verbindung zur senseBox ist nicht stabil genug, um die Aufnahme zu starten. Bitte warten Sie, bis die Verbindung vollständig hergestellt ist, und versuchen Sie es erneut.';
+
+  @override
+  String get errorGeolocationStartFailed =>
+      'Standortverfolgung für die Aufnahme konnte nicht gestartet werden. Bitte prüfen Sie, ob Standortdienste und Benachrichtigungen aktiviert sind, und versuchen Sie es erneut.';
+
+  @override
   String get errorNoSenseBoxSelected =>
       'Um den Upload von Sensordaten in die Cloud zu ermöglichen, melden Sie sich bitte in Ihrem openSenseMap-Konto an und wählen Sie die Box aus.';
 
@@ -553,7 +565,63 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get errorBleConnectionFailed =>
-      'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
+      'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass die senseBox eingeschaltet ist.';
+
+  @override
+  String get errorBleConnectionFailedTitle => 'Verbindung fehlgeschlagen';
+
+  @override
+  String get errorBleConnectionAttemptFailedTitle =>
+      'Verbindungsversuch fehlgeschlagen';
+
+  @override
+  String get errorBleConnectionAttemptFailed =>
+      'Verbindung zur senseBox nicht möglich.\n\n• senseBox aus- und wieder einschalten\n• Prüfen, ob der Akku geladen ist\n• Näher an das Gerät gehen und Bluetooth auf dem Telefon aktivieren\n• Einige Sekunden warten und erneut verbinden';
+
+  @override
+  String get errorBleNoSensorData =>
+      'Keine Sensordaten empfangen. Ist die senseBox eingeschaltet und läuft die richtige Firmware?';
+
+  @override
+  String get errorBleInvalidSensorData =>
+      'Sensordaten sind ungültig (nur Nullen). Bitte starten Sie die senseBox neu.';
+
+  @override
+  String get errorBleIncompatibleDevice =>
+      'Dieses Gerät scheint keine kompatible senseBox zu sein.';
+
+  @override
+  String get errorBleConnectionTimeout =>
+      'Die Verbindung zur senseBox hat zu lange gedauert. Gehen Sie näher an das Gerät, stellen Sie sicher, dass es eingeschaltet ist, warten Sie einige Sekunden und versuchen Sie es erneut.';
+
+  @override
+  String get errorBleConnectionLost =>
+      'Die Bluetooth-Verbindung wurde während der Einrichtung unterbrochen. Das Gerät ist möglicherweise außer Reichweite oder beschäftigt. Bitte erneut versuchen.';
+
+  @override
+  String get blePartialConnectionTitle => 'Einige Sensoren nicht verfügbar';
+
+  @override
+  String blePartialConnectionBody(String sensorNames) {
+    return 'Folgende Sensoren haben keine gültigen Daten gesendet: $sensorNames. Sie können mit den verbleibenden Sensoren verbinden oder abbrechen.';
+  }
+
+  @override
+  String get blePartialConnectionCancel => 'Abbrechen';
+
+  @override
+  String get blePartialConnectionContinue => 'Fortfahren';
+
+  @override
+  String get recordingStoppedBleDisconnectTitle => 'Aufnahme beendet';
+
+  @override
+  String get recordingStoppedBleDisconnectBody =>
+      'Die Verbindung zur senseBox wurde während der Fahrt unterbrochen. Die Aufnahme wurde automatisch beendet. Die bis dahin aufgezeichneten Daten wurden gespeichert.';
+
+  @override
+  String get errorBleInitialConnectionFailed =>
+      'Verbindung zur senseBox fehlgeschlagen. Bitte versuchen Sie es erneut.';
 
   @override
   String get errorUploadFailed =>

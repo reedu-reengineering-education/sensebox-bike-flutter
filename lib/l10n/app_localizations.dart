@@ -1008,6 +1008,24 @@ abstract class AppLocalizations {
   /// **'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.'**
   String get errorNoScanAccess;
 
+  /// No description provided for @errorNoNotificationAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'To record your ride, please allow notifications for this app. Android needs this to keep GPS running in the background during recording.'**
+  String get errorNoNotificationAccess;
+
+  /// No description provided for @errorBleNotReadyForRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'The senseBox connection is not stable enough to start recording. Please wait until the connection is fully established and try again.'**
+  String get errorBleNotReadyForRecording;
+
+  /// No description provided for @errorGeolocationStartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start location tracking for recording. Please check that location services and notifications are enabled, then try again.'**
+  String get errorGeolocationStartFailed;
+
   /// No description provided for @errorNoSenseBoxSelected.
   ///
   /// In en, this message translates to:
@@ -1065,8 +1083,98 @@ abstract class AppLocalizations {
   /// No description provided for @errorBleConnectionFailed.
   ///
   /// In en, this message translates to:
-  /// **'Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.'**
+  /// **'Connection to the senseBox was lost. Please make sure the senseBox is powered on.'**
   String get errorBleConnectionFailed;
+
+  /// No description provided for @errorBleConnectionFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed'**
+  String get errorBleConnectionFailedTitle;
+
+  /// No description provided for @errorBleConnectionAttemptFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection attempt failed'**
+  String get errorBleConnectionAttemptFailedTitle;
+
+  /// No description provided for @errorBleConnectionAttemptFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to the senseBox.\n\n• Turn the senseBox off and on\n• Make sure the battery is charged\n• Move closer to the device and check that Bluetooth is enabled on your phone\n• Wait a few seconds, then try connecting again'**
+  String get errorBleConnectionAttemptFailed;
+
+  /// No description provided for @errorBleNoSensorData.
+  ///
+  /// In en, this message translates to:
+  /// **'No sensor data received. Is the senseBox powered on and running the correct firmware?'**
+  String get errorBleNoSensorData;
+
+  /// No description provided for @errorBleInvalidSensorData.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensor data looks invalid (all zeros). Try restarting the senseBox.'**
+  String get errorBleInvalidSensorData;
+
+  /// No description provided for @errorBleIncompatibleDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device does not appear to be a compatible senseBox.'**
+  String get errorBleIncompatibleDevice;
+
+  /// No description provided for @errorBleConnectionTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The phone could not connect to the senseBox in time. Move closer to the device, make sure it is powered on, wait a few seconds, and try again.'**
+  String get errorBleConnectionTimeout;
+
+  /// No description provided for @errorBleConnectionLost.
+  ///
+  /// In en, this message translates to:
+  /// **'The Bluetooth connection dropped while setting up the sensors. The device may be out of range, busy, or reconnecting. Try again.'**
+  String get errorBleConnectionLost;
+
+  /// No description provided for @blePartialConnectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Some sensors unavailable'**
+  String get blePartialConnectionTitle;
+
+  /// No description provided for @blePartialConnectionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The following sensors did not send valid data: {sensorNames}. You can connect with the remaining sensors or cancel.'**
+  String blePartialConnectionBody(String sensorNames);
+
+  /// No description provided for @blePartialConnectionCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get blePartialConnectionCancel;
+
+  /// No description provided for @blePartialConnectionContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get blePartialConnectionContinue;
+
+  /// No description provided for @recordingStoppedBleDisconnectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording stopped'**
+  String get recordingStoppedBleDisconnectTitle;
+
+  /// No description provided for @recordingStoppedBleDisconnectBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection to the senseBox was lost during your ride. Recording has been stopped automatically. The data recorded so far has been saved.'**
+  String get recordingStoppedBleDisconnectBody;
+
+  /// No description provided for @errorBleInitialConnectionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to the senseBox. Please try again.'**
+  String get errorBleInitialConnectionFailed;
 
   /// No description provided for @errorUploadFailed.
   ///

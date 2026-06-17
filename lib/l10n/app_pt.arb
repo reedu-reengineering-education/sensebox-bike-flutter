@@ -206,6 +206,9 @@
     "connectionButtonEnableBluetooth": "Ativar Bluetooth",
     "errorNoLocationAccess": "Os serviços de localização estão desativados ou o acesso é negado. Para gravar faixas, ative os serviços de localização e permita que a aplicação aceda à sua localização nas definições do telefone.",
     "errorNoScanAccess": "Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.",
+    "errorNoNotificationAccess": "Para gravar seu percurso, permita notificações para este app. O Android precisa disso para manter o GPS ativo em segundo plano durante a gravação.",
+    "errorBleNotReadyForRecording": "A conexão com a senseBox não está estável o suficiente para iniciar a gravação. Aguarde até que a conexão esteja totalmente estabelecida e tente novamente.",
+    "errorGeolocationStartFailed": "Não foi possível iniciar o rastreamento de localização para gravação. Verifique se os serviços de localização e as notificações estão ativados e tente novamente.",
     "errorNoSenseBoxSelected": "Para permitir o upload de dados do sensor para a nuvem, faça login na sua conta openSenseMap e selecione a caixa.",
     "trackUploadLoginSelectHint": "Faça login e selecione uma senseBox para enviar os dados.",
     "uploadRequirementsTitle": "Envio indisponível",
@@ -215,7 +218,29 @@
     "errorLoginFailed": "Erro no login. Verifique suas credenciais e tente novamente mais tarde.",
     "errorRegistrationFailed": "Erro no registro. Verifique suas credenciais e tente novamente mais tarde.",
     "errorReasonPrefix": "Motivo:",
-    "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.",
+    "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que a senseBox está ligada.",
+    "errorBleConnectionFailedTitle": "Falha na conexão",
+    "errorBleConnectionAttemptFailedTitle": "Falha na tentativa de conexão",
+    "errorBleConnectionAttemptFailed": "Não foi possível conectar à senseBox.\n\n• Desligue e ligue a senseBox novamente\n• Verifique se a bateria está carregada\n• Aproxime-se do dispositivo e confira se o Bluetooth está ativado no telefone\n• Aguarde alguns segundos e tente conectar novamente",
+    "errorBleNoSensorData": "Nenhum dado do sensor recebido. A senseBox está ligada e com o firmware correto?",
+    "errorBleInvalidSensorData": "Os dados do sensor parecem inválidos (todos zeros). Tente reiniciar a senseBox.",
+    "errorBleIncompatibleDevice": "Este dispositivo não parece ser uma senseBox compatível.",
+    "errorBleConnectionTimeout": "O telefone não conseguiu conectar à senseBox a tempo. Aproxime-se do dispositivo, certifique-se de que está ligado, aguarde alguns segundos e tente novamente.",
+    "errorBleConnectionLost": "A conexão Bluetooth foi interrompida durante a configuração dos sensores. O dispositivo pode estar fora de alcance ou ocupado. Tente novamente.",
+    "blePartialConnectionTitle": "Alguns sensores indisponíveis",
+    "blePartialConnectionBody": "Os seguintes sensores não enviaram dados válidos: {sensorNames}. Pode conectar com os sensores restantes ou cancelar.",
+    "@blePartialConnectionBody": {
+        "placeholders": {
+            "sensorNames": {
+                "type": "String"
+            }
+        }
+    },
+    "blePartialConnectionCancel": "Cancelar",
+    "blePartialConnectionContinue": "Continuar",
+    "recordingStoppedBleDisconnectTitle": "Gravação interrompida",
+    "recordingStoppedBleDisconnectBody": "A conexão com a senseBox foi perdida durante o percurso. A gravação foi interrompida automaticamente. Os dados gravados até agora foram salvos.",
+    "errorBleInitialConnectionFailed": "Não foi possível conectar à senseBox. Por favor, tente novamente.",
     "errorUploadFailed": "Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.",
     "errorDirectUploadFailed": "O upload em tempo real falhou devido a problemas de conectividade. Não se preocupe – seus dados foram salvos localmente. Após parar a gravação, você pode enviar o trajeto manualmente na tela de visão geral dos trajetos.",
     "errorPermanentAuthentication": "Falha permanente na autenticação. Por favor, faça login para enviar dados.",

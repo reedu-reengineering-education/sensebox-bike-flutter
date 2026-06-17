@@ -1022,4 +1022,39 @@ void main() {
       }
     });
   });
+
+  group('downsampleGeolocationsForMapDisplay', () {
+    test('returns original list when below max points', () {
+      final geolocations = List.generate(
+        3,
+        (index) => GeolocationData()
+          ..id = index
+          ..latitude = index.toDouble()
+          ..longitude = index.toDouble(),
+      );
+
+      expect(
+        downsampleGeolocationsForMapDisplay(geolocations),
+        geolocations,
+      );
+    });
+
+    test('reduces long tracks and keeps the last point', () {
+      final geolocations = List.generate(
+        2000,
+        (index) => GeolocationData()
+          ..id = index
+          ..latitude = index.toDouble()
+          ..longitude = index.toDouble(),
+      );
+
+      final sampled = downsampleGeolocationsForMapDisplay(
+        geolocations,
+        maxPoints: 100,
+      );
+
+      expect(sampled.length, 100);
+      expect(sampled.last.id, 1999);
+    });
+  });
 }
