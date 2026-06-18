@@ -53,10 +53,7 @@ class BleBloc with ChangeNotifier {
     _sessionRetryRunner = BleSessionRetryRunner();
     characteristicStreams = BleCharacteristicStreams(platform: _platform);
     _platform.onLinkStateChanged = _handlePlatformLinkStateChange;
-    _reconnectionCoordinator = BleReconnectionCoordinator(
-      platform: _platform,
-      isReconnectingNotifier: isReconnectingNotifier,
-    );
+    _reconnectionCoordinator = BleReconnectionCoordinator(platform: _platform);
 
     if (initializePlatformBle) {
       _refreshBluetoothEnabledStatus();
@@ -524,7 +521,7 @@ class BleBloc with ChangeNotifier {
     if (_userInitiatedDisconnect) {
       return;
     }
-    if (isReconnectingNotifier.value && selectedDevice != device) {
+    if (_phase == BleConnectionPhase.reconnecting && selectedDevice != device) {
       return;
     }
     await _waitForBluetoothReady();

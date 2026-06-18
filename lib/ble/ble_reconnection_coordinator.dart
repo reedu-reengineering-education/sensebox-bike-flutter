@@ -6,13 +6,9 @@ import 'package:sensebox_bike/ble/ble_platform.dart';
 
 /// Watches connection state and runs reconnect attempts after unexpected disconnects.
 class BleReconnectionCoordinator {
-  BleReconnectionCoordinator({
-    required this.platform,
-    required this.isReconnectingNotifier,
-  });
+  BleReconnectionCoordinator({required this.platform});
 
   final BlePlatform platform;
-  final ValueNotifier<bool> isReconnectingNotifier;
 
   StreamSubscription<BleLinkState>? _subscription;
   bool _reconnectionInProgress = false;
@@ -37,7 +33,7 @@ class BleReconnectionCoordinator {
         onListenerError,
   }) {
     detach();
-    reset(keepNotifier: true);
+    reset();
 
     _device = device;
     _shouldIgnoreDisconnect = shouldIgnoreDisconnect;
@@ -126,7 +122,6 @@ class BleReconnectionCoordinator {
     }
 
     _reconnectionInProgress = true;
-    isReconnectingNotifier.value = true;
 
     var success = false;
     try {
@@ -158,15 +153,12 @@ class BleReconnectionCoordinator {
     _onListenerError = null;
   }
 
-  void reset({bool keepNotifier = false}) {
+  void reset() {
     _reconnectionInProgress = false;
     // Clear the abort latch so a cancelled cycle cannot permanently suppress
     // reconnection for the next unexpected disconnect. The coordinator stays
     // attached across cycles, so this latch must not survive a completed or
     // reset episode.
     _abortReconnection = false;
-    if (!keepNotifier) {
-      isReconnectingNotifier.value = false;
-    }
   }
 }

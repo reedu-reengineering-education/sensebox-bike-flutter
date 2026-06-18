@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
@@ -11,17 +10,12 @@ import 'mock_ble_platform.dart';
 void main() {
   late MockBlePlatform platform;
   late BleReconnectionCoordinator coordinator;
-  late ValueNotifier<bool> isReconnectingNotifier;
   late BleDevice device;
   late StreamController<BleLinkState> connectionStateController;
 
   setUp(() {
     platform = MockBlePlatform();
-    isReconnectingNotifier = ValueNotifier(false);
-    coordinator = BleReconnectionCoordinator(
-      platform: platform,
-      isReconnectingNotifier: isReconnectingNotifier,
-    );
+    coordinator = BleReconnectionCoordinator(platform: platform);
 
     device = const BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
     connectionStateController = StreamController<BleLinkState>.broadcast();
@@ -32,18 +26,17 @@ void main() {
   tearDown(() {
     coordinator.detach();
     connectionStateController.close();
-    isReconnectingNotifier.dispose();
   });
 
   group('BleReconnectionCoordinator', () {
-    test('runs reconnect even when onLinkLost already set the UI notifier',
-        () async {
+    test('runs reconnect when onLinkLost marks the episode', () async {
       var reconnectCalls = 0;
+      var linkLostCalls = 0;
 
       coordinator.attach(
         device,
         shouldIgnoreDisconnect: () => false,
-        onLinkLost: () => isReconnectingNotifier.value = true,
+        onLinkLost: () => linkLostCalls++,
         runReconnectSessions: (_) async {
           reconnectCalls++;
           return true;
@@ -56,8 +49,9 @@ void main() {
       connectionStateController.add(BleLinkState.disconnected);
       await Future<void>.delayed(Duration.zero);
 
+      expect(linkLostCalls, 1);
       expect(reconnectCalls, 1);
-      expect(isReconnectingNotifier.value, isFalse);
+      expect(coordinator.isReconnectionInProgress, isFalse);
     });
 
     test('starts reconnect when link drops unexpectedly', () async {
@@ -82,7 +76,7 @@ void main() {
 
       expect(linkLost, isTrue);
       expect(reconnectCalls, 1);
-      expect(isReconnectingNotifier.value, isFalse);
+      expect(coordinator.isReconnectionInProgress, isFalse);
     });
 
     test('ignores disconnect while shouldIgnoreDisconnect is true', () async {
@@ -105,7 +99,6 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(reconnectCalls, 0);
-      expect(isReconnectingNotifier.value, isFalse);
     });
 
     test('calls onListenerError when connection stream errors', () async {
@@ -127,10 +120,10 @@ void main() {
       expect(capturedError, isA<Exception>());
     });
 
-    test('reset clears reconnecting notifier', () {
-      isReconnectingNotifier.value = true;
+    test('reset clears in-progress flag', () {
       coordinator.reset();
-      expect(isReconnectingNotifier.value, isFalse);
+      expect(coordinator.isReconnectionInProgress, isFalse);
+      expect(coordinator.shouldAbortReconnection, isFalse);
     });
 
     test('calls onReconnectEpisodeEnded with success result', () async {
