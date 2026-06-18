@@ -80,6 +80,44 @@ class BleScanner {
     isScanningNotifier.value = true;
   }
 
+  /// Waits until [device] is seen advertising again (same path as [scanForBox]
+  /// before the connect button runs). Returns null on timeout or [shouldCancel].
+  Future<BleDevice?> waitForAdvertisingDevice(
+    BleDevice device, {
+    required bool Function() shouldCancel,
+    Duration timeout = bleScanTimeout,
+  }) async {
+    await stopScanning();
+
+    final found = Completer<BleDevice?>();
+    _scanSubscription = platform.scanForDevices().listen((discovered) {
+      final nameMatches = device.name.isNotEmpty &&
+          deviceDisplayName(discovered) == deviceDisplayName(device);
+      if ((nameMatches || discovered.id == device.id) &&
+          !found.isCompleted) {
+        found.complete(discovered);
+      }
+    });
+    isScanningNotifier.value = true;
+
+    try {
+      return await Future.any<BleDevice?>([
+        found.future,
+        Future<BleDevice?>.delayed(timeout, () => null),
+        _waitUntilCancelled(shouldCancel),
+      ]);
+    } finally {
+      await stopScanning();
+    }
+  }
+
+  Future<BleDevice?> _waitUntilCancelled(bool Function() shouldCancel) async {
+    while (!shouldCancel()) {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    }
+    return null;
+  }
+
   void _onDiscoveredDevice(BleDevice device) {
     if (!isSenseBoxDiscoveredDevice(device)) {
       return;

@@ -22,4 +22,9 @@ class BleAdapter {
 
   Future<void> requestEnable() =>
       AppSettings.openAppSettings(type: AppSettingsType.bluetooth);
+
+  /// Opens the app's system settings page so the user can grant a permission
+  /// that was denied (used when Bluetooth runtime permissions are unavailable).
+  Future<void> openAppSettings() =>
+      AppSettings.openAppSettings(type: AppSettingsType.settings);
 }

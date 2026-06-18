@@ -69,6 +69,9 @@ void main() {
     when(() => platform.subscribeToCharacteristic(any()))
         .thenAnswer((_) => notifyController.stream);
     when(() => platform.disconnect(any())).thenAnswer((_) async {});
+    when(() => platform.isConnected(any())).thenReturn(true);
+    when(() => platform.beginSessionEstablishment(any())).thenReturn(null);
+    when(() => platform.endSessionEstablishment(any())).thenReturn(null);
   });
 
   tearDown(() {
@@ -129,6 +132,15 @@ void main() {
       expect(result.success, isFalse);
     });
 
+    test('returns failure when link is not connected', () async {
+      when(() => platform.isConnected(device.id)).thenReturn(false);
+
+      final result = await session.establish(device, streams: streams);
+
+      expect(result.success, isFalse);
+      verifyNever(() => platform.discoverServices(any()));
+    });
+
     test('returns failure when probe times out', () async {
       when(() => platform.discoverServices(device.id))
           .thenAnswer((_) async => [senseBoxService]);
@@ -136,11 +148,10 @@ void main() {
       final result = await session.establish(device, streams: streams);
 
       expect(result.success, isFalse);
-      verify(() => platform.subscribeToCharacteristic(any()))
-          .called(greaterThanOrEqualTo(1));
+      verify(() => platform.subscribeToCharacteristic(any())).called(2);
     });
 
-    test('returns failure when probe payload is all zeros', () async {
+    test('liveness succeeds on zero-valued sensor frames', () async {
       when(() => platform.discoverServices(device.id))
           .thenAnswer((_) async => [senseBoxService]);
       when(() => platform.subscribeToCharacteristic(any()))
@@ -148,7 +159,29 @@ void main() {
 
       final result = await session.establish(device, streams: streams);
 
-      expect(result.success, isFalse);
+      expect(result.success, isTrue);
+    });
+
+    test('liveness succeeds when any characteristic streams data', () async {
+      when(() => platform.discoverServices(device.id))
+          .thenAnswer((_) async => [senseBoxService]);
+      when(() => platform.subscribeToCharacteristic(any())).thenAnswer(
+        (invocation) {
+          final ref =
+              invocation.positionalArguments[0] as BleCharacteristicRef;
+          if (ref.characteristicUuid == otherUuid) {
+            return Stream.fromFuture(
+              Future.microtask(() => float32Bytes([1.0])),
+            );
+          }
+          return notifyController.stream;
+        },
+      );
+
+      final result = await session.establish(device, streams: streams);
+
+      expect(result.success, isTrue);
+      expect(result.characteristics.length, 2);
     });
 
     test('subscribes all characteristics on valid probe data', () async {
@@ -159,7 +192,10 @@ void main() {
           final ref =
               invocation.positionalArguments[0] as BleCharacteristicRef;
           if (ref.characteristicUuid == probeUuid) {
-            return Stream.value(float32Bytes([1.0]));
+            return Stream.periodic(
+              const Duration(milliseconds: 10),
+              (_) => float32Bytes([1.0]),
+            );
           }
           return notifyController.stream;
         },
@@ -195,7 +231,9 @@ void main() {
           final ref =
               invocation.positionalArguments[0] as BleCharacteristicRef;
           if (ref.characteristicUuid == probeUuid) {
-            return Stream.value(float32Bytes([2.0]));
+            return Stream.fromFuture(
+              Future.microtask(() => float32Bytes([2.0])),
+            );
           }
           return notifyController.stream;
         },
@@ -207,6 +245,60 @@ void main() {
         streams.subscribedCharacteristicUuids,
         isNot(contains(existingUuid)),
       );
+    });
+
+    test('returns failure when stability dwell sees disconnect', () async {
+      when(() => platform.discoverServices(device.id))
+          .thenAnswer((_) async => [senseBoxService]);
+      when(() => platform.isConnected(device.id)).thenReturn(false);
+      when(() => platform.subscribeToCharacteristic(any())).thenAnswer(
+        (invocation) {
+          final ref =
+              invocation.positionalArguments[0] as BleCharacteristicRef;
+          if (ref.characteristicUuid == probeUuid) {
+            return Stream.periodic(
+              const Duration(milliseconds: 10),
+              (_) => float32Bytes([1.0]),
+            );
+          }
+          return notifyController.stream;
+        },
+      );
+
+      final result = await session.establish(
+        device,
+        streams: streams,
+        stabilityDwell: const Duration(milliseconds: 50),
+      );
+
+      expect(result.success, isFalse);
+    });
+
+    test('returns success after stability dwell with ongoing data', () async {
+      when(() => platform.discoverServices(device.id))
+          .thenAnswer((_) async => [senseBoxService]);
+      when(() => platform.isConnected(device.id)).thenReturn(true);
+      when(() => platform.subscribeToCharacteristic(any())).thenAnswer(
+        (invocation) {
+          final ref =
+              invocation.positionalArguments[0] as BleCharacteristicRef;
+          if (ref.characteristicUuid == probeUuid) {
+            return Stream.periodic(
+              const Duration(milliseconds: 20),
+              (_) => float32Bytes([1.0]),
+            );
+          }
+          return notifyController.stream;
+        },
+      );
+
+      final result = await session.establish(
+        device,
+        streams: streams,
+        stabilityDwell: const Duration(milliseconds: 50),
+      );
+
+      expect(result.success, isTrue);
     });
   });
 }

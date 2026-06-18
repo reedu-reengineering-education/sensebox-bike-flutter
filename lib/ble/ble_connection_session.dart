@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
@@ -27,15 +26,39 @@ class BleConnectionSession {
   final BlePlatform _platform;
   final Duration probeTimeout;
 
+  /// Establishes a session on [device].
+  ///
+  /// Enables notifications on every characteristic up front, then waits for a
+  /// valid payload on any of them within [livenessTimeout] (defaulting to
+  /// [probeTimeout]). Subscribing all characteristics before the liveness wait
+  /// keeps GATT traffic up during the short supervision window the box
+  /// negotiates (`timeout=200`); waiting on a single probe characteristic
+  /// first lets the link drop before data arrives. Liveness listens on session
+  /// streams only — never a throwaway platform subscription, which would
+  /// disable notifications on Android when cancelled.
+  ///
+  /// When [stabilityDwell] is set, success is deferred until the link stays
+  /// connected for that duration without dropping.
   Future<BleConnectionSessionResult> establish(
     BleDevice device, {
     required BleCharacteristicStreams streams,
+    Duration? livenessTimeout,
+    Duration? stabilityDwell,
   }) async {
+    _platform.beginSessionEstablishment(device.id);
     try {
+      if (!_platform.isConnected(device.id)) {
+        return const BleConnectionSessionResult(success: false);
+      }
+
       await streams.clear();
 
       final services = await _platform.discoverServices(device.id);
       if (services.isEmpty) {
+        return const BleConnectionSessionResult(success: false);
+      }
+
+      if (!_platform.isConnected(device.id)) {
         return const BleConnectionSessionResult(success: false);
       }
 
@@ -55,16 +78,25 @@ class BleConnectionSession {
         service: senseBoxService,
       );
 
-      // Subscribe to every characteristic up front so notifications stay
-      // enabled for the whole session, then verify the link is actually
-      // delivering data. Doing it in this order avoids the
-      // enable/disable/enable churn (and dropped first packets) of probing on
-      // a throwaway subscription before the real ones are attached.
-      await streams.subscribeAll(characteristics);
-
-      final linkIsLive = await _awaitLiveness(characteristics.first);
+      final linkIsLive = await _subscribeAllAndAwaitLiveness(
+        characteristics,
+        streams: streams,
+        deviceId: device.id,
+        timeout: livenessTimeout ?? probeTimeout,
+      );
       if (!linkIsLive) {
         return const BleConnectionSessionResult(success: false);
+      }
+
+      final dwell = stabilityDwell ?? Duration.zero;
+      if (dwell > Duration.zero) {
+        final linkIsStable = await _awaitStabilityDwell(
+          deviceId: device.id,
+          dwell: dwell,
+        );
+        if (!linkIsStable) {
+          return const BleConnectionSessionResult(success: false);
+        }
       }
 
       return BleConnectionSessionResult(
@@ -73,6 +105,8 @@ class BleConnectionSession {
       );
     } catch (_) {
       return const BleConnectionSessionResult(success: false);
+    } finally {
+      _platform.endSessionEstablishment(device.id);
     }
   }
 
@@ -88,31 +122,75 @@ class BleConnectionSession {
     }
   }
 
-  Future<bool> _awaitLiveness(BleCharacteristicRef characteristic) async {
+  Future<bool> _subscribeAllAndAwaitLiveness(
+    List<BleCharacteristicRef> characteristics, {
+    required BleCharacteristicStreams streams,
+    required String deviceId,
+    required Duration timeout,
+  }) async {
     final dataReceivedCompleter = Completer<bool>();
-    Uint8List? receivedData;
+    final livenessSubscriptions = <StreamSubscription<List<double>>>[];
 
-    // The characteristic is already subscribed via [subscribeAll], so this
-    // extra listener does not toggle notifications off when it is cancelled.
-    final subscription =
-        _platform.subscribeToCharacteristic(characteristic).listen(
-      (value) {
-        if (!dataReceivedCompleter.isCompleted) {
-          receivedData = Uint8List.fromList(value);
-          dataReceivedCompleter.complete(true);
-        }
-      },
-    );
-
-    try {
-      await Future.any([
-        dataReceivedCompleter.future,
-        Future.delayed(probeTimeout),
-      ]);
-    } finally {
-      await subscription.cancel();
+    void onPayload(List<double> values) {
+      if (!dataReceivedCompleter.isCompleted &&
+          _isValidParsedPayload(values)) {
+        dataReceivedCompleter.complete(true);
+      }
     }
 
-    return receivedData != null && isValidCharacteristicPayload(receivedData!);
+    try {
+      for (final characteristic in characteristics) {
+        if (!_platform.isConnected(deviceId)) {
+          return false;
+        }
+
+        await streams.subscribe(characteristic);
+
+        livenessSubscriptions.add(
+          streams
+              .characteristicStream(characteristic.uuidString)
+              .listen(onPayload),
+        );
+
+        if (streams.hasLivePayload(characteristic.uuidString)) {
+          return true;
+        }
+        if (dataReceivedCompleter.isCompleted) {
+          return true;
+        }
+      }
+
+      if (!_platform.isConnected(deviceId)) {
+        return false;
+      }
+
+      await Future.any([
+        dataReceivedCompleter.future,
+        Future.delayed(timeout),
+      ]);
+      return dataReceivedCompleter.isCompleted;
+    } finally {
+      for (final subscription in livenessSubscriptions) {
+        await subscription.cancel();
+      }
+    }
+  }
+
+  Future<bool> _awaitStabilityDwell({
+    required String deviceId,
+    required Duration dwell,
+  }) async {
+    final deadline = DateTime.now().add(dwell);
+    while (DateTime.now().isBefore(deadline)) {
+      if (!_platform.isConnected(deviceId)) {
+        return false;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    return true;
+  }
+
+  static bool _isValidParsedPayload(List<double> values) {
+    return BleCharacteristicStreams.isLivePayload(values);
   }
 }

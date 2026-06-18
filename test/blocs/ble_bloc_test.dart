@@ -90,7 +90,8 @@ void main() {
         realBleBloc.selectedDevice = device;
         realBleBloc.selectedDeviceNotifier.value = device;
 
-        await realBleBloc.disconnectDevice(userInitiated: true);
+        await realBleBloc.disconnectDevice(
+            reason: BleDisconnectReason.userRequested);
 
         verify(() => platform.disconnect(device.id)).called(greaterThanOrEqualTo(1));
         expect(realBleBloc.selectedDevice, isNull);
@@ -115,7 +116,8 @@ void main() {
         realBleBloc.selectedDeviceNotifier.value = device;
         realBleBloc.isReconnectingNotifier.value = true;
 
-        await realBleBloc.disconnectDevice(device: device, linkOnly: true);
+        await realBleBloc.disconnectDevice(
+            device: device, reason: BleDisconnectReason.retryRelease);
 
         expect(realBleBloc.selectedDevice, device);
         expect(realBleBloc.selectedDeviceNotifier.value, device);

@@ -104,9 +104,7 @@ class MockBleBloc extends Mock implements BleBloc {
   @override
   Future<void> disconnectDevice({
     BleDevice? device,
-    bool userInitiated = false,
-    bool showConnectionError = false,
-    bool linkOnly = false,
+    BleDisconnectReason reason = BleDisconnectReason.userRequested,
   }) async {}
 
   @override

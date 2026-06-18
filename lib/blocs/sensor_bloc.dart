@@ -29,6 +29,7 @@ class SensorBloc with ChangeNotifier {
   late final VoidCallback _characteristicStreamsVersionListener;
   late final VoidCallback _selectedDeviceListener;
   late final VoidCallback _recordingListener;
+  late final VoidCallback _reconnectingListener;
   List<String> _lastCharacteristicUuids = [];
   bool _isStartingListening = false;
 
@@ -72,6 +73,19 @@ class SensorBloc with ChangeNotifier {
       _restartAllSensors();
     };
 
+    _reconnectingListener = () {
+      if (bleBloc.isReconnectingNotifier.value) {
+        unawaited(_stopListening());
+        return;
+      }
+      if (bleBloc.selectedDevice != null && bleBloc.isConnected) {
+        unawaited(_restartAllSensors());
+        if (!geolocationBloc.isListening) {
+          geolocationBloc.startListening();
+        }
+      }
+    };
+
     _recordingListener = () {
       if (!recordingBloc.isRecording) {
         _flushAllSensorBuffers();
@@ -84,6 +98,7 @@ class SensorBloc with ChangeNotifier {
     );
 
     bleBloc.selectedDeviceNotifier.addListener(_selectedDeviceListener);
+    bleBloc.isReconnectingNotifier.addListener(_reconnectingListener);
     bleBloc.availableCharacteristics.addListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .addListener(_characteristicStreamsVersionListener);
@@ -197,8 +212,16 @@ class SensorBloc with ChangeNotifier {
   }
 
   Future<void> _restartAllSensors() async {
-    if (bleBloc.selectedDevice == null || !bleBloc.isConnected) {
+    if (bleBloc.selectedDevice == null) {
       await _stopListening();
+      return;
+    }
+    // During reconnect, characteristics may be republished before phase flips
+    // to connected; wait for onReconnectSucceeded before re-subscribing.
+    if (!bleBloc.isConnected) {
+      if (!bleBloc.isReconnectingNotifier.value) {
+        await _stopListening();
+      }
       return;
     }
     await _stopListening();
@@ -231,6 +254,7 @@ class SensorBloc with ChangeNotifier {
   @override
   void dispose() {
     bleBloc.selectedDeviceNotifier.removeListener(_selectedDeviceListener);
+    bleBloc.isReconnectingNotifier.removeListener(_reconnectingListener);
     bleBloc.availableCharacteristics.removeListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .removeListener(_characteristicStreamsVersionListener);

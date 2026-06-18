@@ -8,8 +8,9 @@ const bleSessionRetryDelay = Duration(seconds: 1);
 const bleConnectionSessionProbeTimeout = Duration(seconds: 4);
 const bleScanTimeout = Duration(seconds: 10);
 const blePostDisconnectSettleDelay = Duration(milliseconds: 800);
-const bleNotificationDisableTimeout = Duration(seconds: 2);
-
-/// How long the BLE stack scans for the advertising device before attempting a
-/// reconnect. Prevents the Android stack from hanging on an out-of-range box.
+const bleLinkOnlyDisconnectSettleDelay = Duration(milliseconds: 300);
 const bleReconnectPrescanDuration = Duration(seconds: 5);
+// A connected senseBox streams continuously. If no characteristic data arrives
+// for this long the link is treated as lost, since flutter_reactive_ble does
+// not reliably surface an unexpected peripheral power-off on Android.
+const bleDataStaleTimeout = Duration(seconds: 6);

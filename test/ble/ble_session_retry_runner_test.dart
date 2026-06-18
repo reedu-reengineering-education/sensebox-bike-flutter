@@ -142,5 +142,29 @@ void main() {
       expect(disconnected, isTrue);
       expect(connectCalls, 1);
     });
+
+    test('waits once after disconnect before connecting', () async {
+      runner = BleSessionRetryRunner(
+        delayBetweenSteps: const Duration(milliseconds: 100),
+      );
+      final stopwatch = Stopwatch()..start();
+      var disconnectAt = Duration.zero;
+
+      await runner.prepareDeviceLink(
+        device,
+        disconnect: () async => disconnectAt = stopwatch.elapsed,
+        connect: () async {},
+      );
+
+      expect(disconnectAt, lessThan(const Duration(milliseconds: 100)));
+      expect(
+        stopwatch.elapsed,
+        greaterThanOrEqualTo(const Duration(milliseconds: 100)),
+      );
+      expect(
+        stopwatch.elapsed,
+        lessThan(const Duration(milliseconds: 200)),
+      );
+    });
   });
 }

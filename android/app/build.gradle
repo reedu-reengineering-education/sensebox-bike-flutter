@@ -7,6 +7,10 @@ plugins {
 
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+    // Needed so MainActivity can install an RxJavaPlugins error handler that
+    // swallows undeliverable BLE disconnect exceptions from flutter_reactive_ble.
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.21'
+    implementation 'com.polidea.rxandroidble2:rxandroidble:1.16.0'
 }
 
 android {

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_constants.dart';
@@ -32,6 +33,8 @@ class BlePlatform {
   final Map<String, StreamController<BleLinkState>> _linkStateControllers = {};
   final Map<String, BleLinkState> _linkStates = {};
   final Map<String, Set<String>> _characteristics = {};
+  final Map<String, Timer> _dataWatchdogs = {};
+  final Map<String, int> _sessionEstablishmentDepth = {};
 
   Stream<BleAdapterState> get statusStream =>
       _reactiveBle.statusStream.map(_mapAdapterState);
@@ -49,6 +52,44 @@ class BlePlatform {
 
   bool isConnected(String deviceId) {
     return _linkStates[deviceId] == BleLinkState.connected;
+  }
+
+  /// While [establish] runs, the data-staleness watchdog is suppressed so a
+  /// slow liveness/dwell window does not tear down a link that is still being
+  /// set up.
+  void beginSessionEstablishment(String deviceId) {
+    _sessionEstablishmentDepth[deviceId] =
+        (_sessionEstablishmentDepth[deviceId] ?? 0) + 1;
+    _cancelDataWatchdog(deviceId);
+  }
+
+  void endSessionEstablishment(String deviceId) {
+    final depth = _sessionEstablishmentDepth[deviceId];
+    if (depth == null) {
+      return;
+    }
+    if (depth <= 1) {
+      _sessionEstablishmentDepth.remove(deviceId);
+    } else {
+      _sessionEstablishmentDepth[deviceId] = depth - 1;
+    }
+  }
+
+  Future<bool> waitForLinkConnected(
+    String deviceId, {
+    Duration timeout = bleDeviceConnectTimeout,
+  }) async {
+    if (isConnected(deviceId)) {
+      return true;
+    }
+    try {
+      await connectionState(deviceId)
+          .firstWhere((state) => state == BleLinkState.connected)
+          .timeout(timeout);
+      return true;
+    } on TimeoutException {
+      return false;
+    }
   }
 
   Stream<BleDevice> scanForDevices({
@@ -234,14 +275,39 @@ class BlePlatform {
       );
     }
 
+    final deviceId = characteristic.deviceId;
     return _reactiveBle
         .subscribeToCharacteristic(
-          QualifiedCharacteristic(
-            serviceId: _toUuid(characteristic.serviceUuid),
-            characteristicId: _toUuid(characteristic.characteristicUuid),
-            deviceId: characteristic.deviceId,
-          ),
-        );
+      QualifiedCharacteristic(
+        serviceId: _toUuid(characteristic.serviceUuid),
+        characteristicId: _toUuid(characteristic.characteristicUuid),
+        deviceId: deviceId,
+      ),
+    )
+        .map((value) {
+      // Each incoming notification proves the link is alive; re-arm the
+      // staleness watchdog that detects an unexpected peripheral power-off
+      // (which Android/flutter_reactive_ble does not reliably report).
+      _armDataWatchdog(deviceId);
+      return value;
+    }).handleError((Object _) {
+      // A notification-stream error also means the link dropped.
+      _emitLinkState(deviceId, BleLinkState.disconnected);
+    });
+  }
+
+  void _armDataWatchdog(String deviceId) {
+    if ((_sessionEstablishmentDepth[deviceId] ?? 0) > 0) {
+      return;
+    }
+    _dataWatchdogs[deviceId]?.cancel();
+    _dataWatchdogs[deviceId] = Timer(bleDataStaleTimeout, () {
+      _emitLinkState(deviceId, BleLinkState.disconnected);
+    });
+  }
+
+  void _cancelDataWatchdog(String deviceId) {
+    _dataWatchdogs.remove(deviceId)?.cancel();
   }
 
   BleDevice _bleDeviceFromScanResult(DiscoveredDevice device) {
@@ -249,6 +315,14 @@ class BlePlatform {
   }
 
   void _emitLinkState(String deviceId, BleLinkState state) {
+    if (_linkStates[deviceId] != state) {
+      debugPrint('[BLE][platform] $deviceId link=$state');
+    }
+    // The watchdog is only meaningful while connected; any other state means it
+    // should not fire (re-armed by the next notification once reconnected).
+    if (state != BleLinkState.connected) {
+      _cancelDataWatchdog(deviceId);
+    }
     _linkStates[deviceId] = state;
     final controller = _linkStateControllers[deviceId];
     if (controller != null && !controller.isClosed) {
@@ -261,10 +335,15 @@ class BlePlatform {
     for (final deviceId in deviceIds) {
       await disconnect(deviceId);
     }
+    for (final timer in _dataWatchdogs.values) {
+      timer.cancel();
+    }
     for (final controller in _linkStateControllers.values) {
       await controller.close();
     }
 
+    _dataWatchdogs.clear();
+    _sessionEstablishmentDepth.clear();
     _linkStateControllers.clear();
     _characteristics.clear();
     _linkStates.clear();

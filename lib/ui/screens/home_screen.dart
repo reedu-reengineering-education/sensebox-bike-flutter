@@ -500,7 +500,8 @@ class _DisconnectButton extends StatelessWidget {
                   if (recordingBloc.isRecording) {
                     await recordingBloc.stopRecording();
                   }
-                  await bleBloc.disconnectDevice(userInitiated: true);
+                  await bleBloc.disconnectDevice(
+                      reason: BleDisconnectReason.userRequested);
                 },
         );
       },

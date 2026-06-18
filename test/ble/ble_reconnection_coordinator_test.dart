@@ -52,6 +52,7 @@ void main() {
           return true;
         },
         onReconnectSucceeded: () {},
+        onReconnectEpisodeEnded: (_) {},
         onListenerError: (_, __) async {},
       );
 
@@ -75,6 +76,7 @@ void main() {
           return true;
         },
         onReconnectSucceeded: () {},
+        onReconnectEpisodeEnded: (_) {},
         onListenerError: (_, __) async {},
       );
 
@@ -99,6 +101,7 @@ void main() {
           return true;
         },
         onReconnectSucceeded: () {},
+        onReconnectEpisodeEnded: (_) {},
         onListenerError: (_, __) async {},
       );
 
@@ -120,6 +123,7 @@ void main() {
           return true;
         },
         onReconnectSucceeded: () {},
+        onReconnectEpisodeEnded: (_) {},
         onListenerError: (_, __) async {},
       );
 
@@ -139,6 +143,7 @@ void main() {
         onLinkLost: () {},
         runReconnectSessions: (_) async => true,
         onReconnectSucceeded: () {},
+        onReconnectEpisodeEnded: (_) {},
         onListenerError: (_, error) async => capturedError = error,
       );
 
@@ -152,6 +157,103 @@ void main() {
       isReconnectingNotifier.value = true;
       coordinator.reset();
       expect(isReconnectingNotifier.value, isFalse);
+    });
+
+    test('calls onReconnectEpisodeEnded with success result', () async {
+      bool? episodeSuccess;
+
+      coordinator.attach(
+        device,
+        shouldIgnoreDisconnect: () => false,
+        onLinkLost: () {},
+        runReconnectSessions: (_) async => false,
+        onReconnectSucceeded: () {},
+        onReconnectEpisodeEnded: (success) => episodeSuccess = success,
+        onListenerError: (_, __) async {},
+      );
+
+      connectionStateController.add(BleLinkState.disconnected);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(episodeSuccess, isFalse);
+    });
+
+    test('notifyUnexpectedLinkLost starts reconnect when listener is active',
+        () async {
+      var reconnectCalls = 0;
+
+      coordinator.attach(
+        device,
+        shouldIgnoreDisconnect: () => false,
+        onLinkLost: () {},
+        runReconnectSessions: (_) async {
+          reconnectCalls++;
+          return true;
+        },
+        onReconnectSucceeded: () {},
+        onReconnectEpisodeEnded: (_) {},
+        onListenerError: (_, __) async {},
+      );
+
+      await coordinator.notifyUnexpectedLinkLost();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(reconnectCalls, 1);
+    });
+
+    test('notifyUnexpectedLinkLost is ignored while episode is in progress',
+        () async {
+      final gate = Completer<void>();
+      var reconnectCalls = 0;
+
+      coordinator.attach(
+        device,
+        shouldIgnoreDisconnect: () => false,
+        onLinkLost: () {},
+        runReconnectSessions: (_) async {
+          reconnectCalls++;
+          await gate.future;
+          return true;
+        },
+        onReconnectSucceeded: () {},
+        onReconnectEpisodeEnded: (_) {},
+        onListenerError: (_, __) async {},
+      );
+
+      unawaited(coordinator.notifyUnexpectedLinkLost());
+      await Future<void>.delayed(Duration.zero);
+      await coordinator.notifyUnexpectedLinkLost();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(reconnectCalls, 1);
+      gate.complete();
+    });
+
+    test('abortCurrentEpisode ends an in-flight reconnect loop', () async {
+      final gate = Completer<void>();
+      var episodeSuccess = true;
+
+      coordinator.attach(
+        device,
+        shouldIgnoreDisconnect: () => false,
+        onLinkLost: () {},
+        runReconnectSessions: (_) async {
+          coordinator.abortCurrentEpisode();
+          await gate.future;
+          return true;
+        },
+        onReconnectSucceeded: () {},
+        onReconnectEpisodeEnded: (success) => episodeSuccess = success,
+        onListenerError: (_, __) async {},
+      );
+
+      unawaited(coordinator.notifyUnexpectedLinkLost());
+      await Future<void>.delayed(Duration.zero);
+      gate.complete();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(episodeSuccess, isFalse);
+      expect(coordinator.isReconnectionInProgress, isFalse);
     });
   });
 }

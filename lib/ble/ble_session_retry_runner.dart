@@ -71,15 +71,15 @@ class BleSessionRetryRunner {
   }) async {
     try {
       await disconnect();
-      await Future.delayed(delayBetweenSteps);
+      if (delayBetweenSteps > Duration.zero) {
+        await Future.delayed(delayBetweenSteps);
+      }
 
       try {
         await connect();
       } catch (_) {
         return;
       }
-
-      await Future.delayed(delayBetweenSteps);
     } catch (_) {
       // Let the retry loop continue with the next attempt.
     }
