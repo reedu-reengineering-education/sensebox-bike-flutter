@@ -11,11 +11,11 @@ import 'package:sensebox_bike/ble/ble_platform.dart';
 import 'package:sensebox_bike/ble/ble_reconnection_coordinator.dart';
 import 'package:sensebox_bike/ble/ble_scanner.dart';
 import 'package:sensebox_bike/ble/ble_session_retry_runner.dart';
-import 'package:sensebox_bike/ble/ble_uuids.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
+import 'package:sensebox_bike/utils/device_vibration.dart';
 
 enum BleDisconnectReason {
   userRequested,
@@ -54,10 +54,10 @@ class BleBloc with ChangeNotifier {
     _connectionSession = BleConnectionSession(platform: _platform);
     _sessionRetryRunner = BleSessionRetryRunner();
     characteristicStreams = BleCharacteristicStreams(platform: _platform);
+    _platform.onLinkStateChanged = _handlePlatformLinkStateChange;
     _reconnectionCoordinator = BleReconnectionCoordinator(
       platform: _platform,
       isReconnectingNotifier: isReconnectingNotifier,
-      getVibrateOnDisconnect: () => settingsBloc.vibrateOnDisconnect,
     );
 
     if (initializePlatformBle) {
@@ -94,10 +94,12 @@ class BleBloc with ChangeNotifier {
   Stream<List<BleDevice>> get devicesListStream => _scanner.devicesListStream;
 
   BleDevice? selectedDevice;
+  BleDevice? _linkWatchDevice;
   BleConnectionPhase _phase = BleConnectionPhase.idle;
   bool _userInitiatedDisconnect = false;
   bool _appInitiatedTeardown = false;
   bool _scanAfterDisconnect = false;
+  String? _vibratedForDisconnectDeviceId;
 
   bool get isConnected => _phase == BleConnectionPhase.connected;
 
@@ -170,6 +172,60 @@ class BleBloc with ChangeNotifier {
     characteristicStreamsVersion.value++;
   }
 
+  void _handlePlatformLinkStateChange(
+    String deviceId,
+    BleLinkState? previous,
+    BleLinkState next,
+  ) {
+    if (next == BleLinkState.connected) {
+      if (_vibratedForDisconnectDeviceId == deviceId) {
+        _vibratedForDisconnectDeviceId = null;
+      }
+      return;
+    }
+    if (previous != BleLinkState.connected) {
+      return;
+    }
+    _maybeVibrateOnUnexpectedDisconnect(deviceId);
+  }
+
+  void _maybeVibrateOnUnexpectedDisconnect(String deviceId) {
+    if (!settingsBloc.vibrateOnDisconnect) {
+      return;
+    }
+    if (_userInitiatedDisconnect || _appInitiatedTeardown) {
+      return;
+    }
+    final device = selectedDevice ?? _linkWatchDevice;
+    if (device == null || device.id != deviceId) {
+      return;
+    }
+    if (_vibratedForDisconnectDeviceId == deviceId) {
+      return;
+    }
+    _vibratedForDisconnectDeviceId = deviceId;
+    debugPrint('[BLE] vibrate on unexpected disconnect $deviceId');
+    unawaited(_pulseDisconnectVibration(deviceId));
+  }
+
+  /// Retry once — first pulse can be lost when Android resets Bluetooth.
+  Future<void> _pulseDisconnectVibration(String deviceId) async {
+    await vibrateDisconnectFeedback();
+
+    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    if (_vibratedForDisconnectDeviceId != deviceId) {
+      return;
+    }
+    if (_userInitiatedDisconnect || _appInitiatedTeardown) {
+      return;
+    }
+    if (_platform.isConnected(deviceId)) {
+      return;
+    }
+    debugPrint('[BLE] vibrate retry after disconnect $deviceId');
+    await vibrateDisconnectFeedback();
+  }
+
   Future<void> _waitForBluetoothReady() async {
     while (!isBluetoothEnabledNotifier.value) {
       if (_userInitiatedDisconnect || _shouldAbortReconnection()) {
@@ -226,12 +282,14 @@ class BleBloc with ChangeNotifier {
 
     if (reason == BleDisconnectReason.userRequested) {
       _userInitiatedDisconnect = true;
+      _vibratedForDisconnectDeviceId = null;
       _reconnectionCoordinator.cancelReconnection();
     }
 
     if (!keepSession) {
       selectedDevice = null;
       selectedDeviceNotifier.value = null;
+      _linkWatchDevice = null;
     }
 
     _invalidatePublishedCharacteristics();
@@ -298,6 +356,7 @@ class BleBloc with ChangeNotifier {
 
   Future<void> connectToDevice(BleDevice device, BuildContext context) async {
     _userInitiatedDisconnect = false;
+    _linkWatchDevice = device;
 
     try {
       resetConnectionError();
@@ -312,6 +371,7 @@ class BleBloc with ChangeNotifier {
       if (success) {
         selectedDevice = device;
         selectedDeviceNotifier.value = selectedDevice;
+        _linkWatchDevice = device;
         _setPhase(BleConnectionPhase.connected);
         _attachReconnectionListener(device);
       }
@@ -328,6 +388,7 @@ class BleBloc with ChangeNotifier {
       // If we never reached `connected` (failure or exhausted retries) settle
       // back to idle so the UI does not get stuck on a connecting spinner.
       if (_phase != BleConnectionPhase.connected) {
+        _linkWatchDevice = null;
         _setPhase(BleConnectionPhase.idle);
       }
     }
@@ -541,6 +602,7 @@ class BleBloc with ChangeNotifier {
     if (_shouldAbortReconnection() || selectedDevice != device) {
       return false;
     }
+    _linkWatchDevice = device;
 
     return _connectDeviceWithSessionRetries(
       device,

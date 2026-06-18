@@ -36,6 +36,10 @@ class BlePlatform {
   final Map<String, Timer> _dataWatchdogs = {};
   final Map<String, int> _sessionEstablishmentDepth = {};
 
+  /// Notified on every link-state transition (previous may be null on first event).
+  void Function(String deviceId, BleLinkState? previous, BleLinkState next)?
+      onLinkStateChanged;
+
   Stream<BleAdapterState> get statusStream =>
       _reactiveBle.statusStream.map(_mapAdapterState);
 
@@ -315,8 +319,10 @@ class BlePlatform {
   }
 
   void _emitLinkState(String deviceId, BleLinkState state) {
-    if (_linkStates[deviceId] != state) {
+    final previous = _linkStates[deviceId];
+    if (previous != state) {
       debugPrint('[BLE][platform] $deviceId link=$state');
+      onLinkStateChanged?.call(deviceId, previous, state);
     }
     // The watchdog is only meaningful while connected; any other state means it
     // should not fire (re-armed by the next notification once reconnected).

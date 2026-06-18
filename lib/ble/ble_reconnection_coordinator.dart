@@ -3,23 +3,19 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
-import 'package:sensebox_bike/utils/device_vibration.dart';
 
 /// Watches connection state and runs reconnect attempts after unexpected disconnects.
 class BleReconnectionCoordinator {
   BleReconnectionCoordinator({
     required this.platform,
     required this.isReconnectingNotifier,
-    required bool Function() getVibrateOnDisconnect,
-  }) : _getVibrateOnDisconnect = getVibrateOnDisconnect;
+  });
 
   final BlePlatform platform;
   final ValueNotifier<bool> isReconnectingNotifier;
-  final bool Function() _getVibrateOnDisconnect;
 
   StreamSubscription<BleLinkState>? _subscription;
   bool _reconnectionInProgress = false;
-  bool _hasVibrated = false;
   bool _abortReconnection = false;
 
   BleDevice? _device;
@@ -137,7 +133,6 @@ class BleReconnectionCoordinator {
       if (_abortReconnection) {
         return;
       }
-      await _maybeVibrateOnDisconnect();
       success = await runReconnectSessions(device);
       if (_abortReconnection) {
         success = false;
@@ -148,18 +143,6 @@ class BleReconnectionCoordinator {
     } finally {
       _onReconnectEpisodeEnded?.call(success);
       reset();
-    }
-  }
-
-  Future<void> _maybeVibrateOnDisconnect() async {
-    if (_hasVibrated || !_getVibrateOnDisconnect()) {
-      return;
-    }
-    _hasVibrated = true;
-    try {
-      await vibrateDisconnectFeedback();
-    } catch (_) {
-      // Haptics are best-effort; reconnect must continue.
     }
   }
 
@@ -177,7 +160,6 @@ class BleReconnectionCoordinator {
 
   void reset({bool keepNotifier = false}) {
     _reconnectionInProgress = false;
-    _hasVibrated = false;
     // Clear the abort latch so a cancelled cycle cannot permanently suppress
     // reconnection for the next unexpected disconnect. The coordinator stays
     // attached across cycles, so this latch must not survive a completed or

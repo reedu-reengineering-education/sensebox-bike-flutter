@@ -14,16 +14,13 @@ void main() {
   late ValueNotifier<bool> isReconnectingNotifier;
   late BleDevice device;
   late StreamController<BleLinkState> connectionStateController;
-  var vibrateOnDisconnect = false;
 
   setUp(() {
-    vibrateOnDisconnect = false;
     platform = MockBlePlatform();
     isReconnectingNotifier = ValueNotifier(false);
     coordinator = BleReconnectionCoordinator(
       platform: platform,
       isReconnectingNotifier: isReconnectingNotifier,
-      getVibrateOnDisconnect: () => vibrateOnDisconnect,
     );
 
     device = const BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
@@ -86,29 +83,6 @@ void main() {
       expect(linkLost, isTrue);
       expect(reconnectCalls, 1);
       expect(isReconnectingNotifier.value, isFalse);
-    });
-
-    test('reconnects when vibrate on disconnect setting is enabled', () async {
-      vibrateOnDisconnect = true;
-      var reconnectCalls = 0;
-
-      coordinator.attach(
-        device,
-        shouldIgnoreDisconnect: () => false,
-        onLinkLost: () {},
-        runReconnectSessions: (_) async {
-          reconnectCalls++;
-          return true;
-        },
-        onReconnectSucceeded: () {},
-        onReconnectEpisodeEnded: (_) {},
-        onListenerError: (_, __) async {},
-      );
-
-      connectionStateController.add(BleLinkState.disconnected);
-      await Future<void>.delayed(Duration.zero);
-
-      expect(reconnectCalls, 1);
     });
 
     test('ignores disconnect while shouldIgnoreDisconnect is true', () async {
