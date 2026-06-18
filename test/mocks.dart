@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
@@ -46,9 +48,31 @@ class MockGeolocationService extends Mock implements GeolocationService {}
 
 class MockSensorService extends Mock implements SensorService {}
 
-class _EmptyBleCharacteristicStreams extends BleCharacteristicStreams {
-  _EmptyBleCharacteristicStreams()
-      : super(platform: MockBlePlatform());
+class _TestBleCharacteristicStreams extends BleCharacteristicStreams {
+  _TestBleCharacteristicStreams() : super(platform: MockBlePlatform());
+
+  final Map<String, StreamController<List<double>>> _testStreams = {};
+
+  @override
+  Stream<List<double>> characteristicStream(String characteristicUuid) {
+    return _testStreams
+        .putIfAbsent(
+          characteristicUuid,
+          () => StreamController<List<double>>.broadcast(),
+        )
+        .stream;
+  }
+
+  @override
+  Future<void> clear({
+    Iterable<BleCharacteristicRef> characteristics = const [],
+  }) async {
+    final controllers = _testStreams.values.toList();
+    _testStreams.clear();
+    for (final controller in controllers) {
+      await controller.close();
+    }
+  }
 }
 
 class MockBleBloc extends Mock implements BleBloc {
@@ -132,7 +156,7 @@ class MockBleBloc extends Mock implements BleBloc {
 
   @override
   final BleCharacteristicStreams characteristicStreams =
-      _EmptyBleCharacteristicStreams();
+      _TestBleCharacteristicStreams();
 
   @override
   void addListener(VoidCallback listener) {
