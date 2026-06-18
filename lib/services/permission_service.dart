@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:app_settings/app_settings.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
@@ -23,6 +24,12 @@ class PermissionService {
 
     return statuses.values.every((status) => status.isGranted);
   }
+
+  static Future<void> openBluetoothSettings() =>
+      AppSettings.openAppSettings(type: AppSettingsType.bluetooth);
+
+  static Future<void> openAppSettings() =>
+      AppSettings.openAppSettings(type: AppSettingsType.settings);
 
   static Future<void> ensureLocationPermissionsGranted() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();

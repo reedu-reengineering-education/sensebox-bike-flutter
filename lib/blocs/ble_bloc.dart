@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:sensebox_bike/ble/ble_adapter.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/ble/ble_connection_session.dart';
@@ -46,7 +45,6 @@ class BleBloc with ChangeNotifier {
     bool initializePlatformBle = true,
     BlePlatform? platform,
   }) : _platform = platform ?? BlePlatform() {
-    _adapter = BleAdapter(platform: _platform);
     _scanner = BleScanner(
       platform: _platform,
       isScanningNotifier: isScanningNotifier,
@@ -61,10 +59,9 @@ class BleBloc with ChangeNotifier {
     );
 
     if (initializePlatformBle) {
-      _adapter.configure();
       _refreshBluetoothEnabledStatus();
       _adapterStatusSubscription =
-          _adapter.statusStream.listen(_onAdapterStatusChanged);
+          _platform.statusStream.listen(_onAdapterStatusChanged);
     }
   }
 
@@ -81,7 +78,6 @@ class BleBloc with ChangeNotifier {
   final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
 
-  late final BleAdapter _adapter;
   late final BleScanner _scanner;
   late final BleReconnectionCoordinator _reconnectionCoordinator;
   late final BleConnectionSession _connectionSession;
@@ -114,7 +110,7 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> _refreshBluetoothEnabledStatus() async {
-    updateBluetoothStatus(await _adapter.isEnabled());
+    updateBluetoothStatus(await _platform.isAdapterEnabled());
   }
 
   void _onAdapterStatusChanged(BleAdapterState status) {
@@ -656,13 +652,13 @@ class BleBloc with ChangeNotifier {
     if (!permissionsGranted) {
       // Likely permanently denied; the system Bluetooth toggle won't help, so
       // send the user to the app settings to grant access.
-      await _adapter.openAppSettings();
+      await PermissionService.openAppSettings();
       await _refreshBluetoothEnabledStatus();
       return;
     }
 
     // Permissions are in place but the adapter itself is off.
-    await _adapter.requestEnable();
+    await PermissionService.openBluetoothSettings();
     await _refreshBluetoothEnabledStatus();
   }
 

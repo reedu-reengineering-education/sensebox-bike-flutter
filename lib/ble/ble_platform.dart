@@ -22,6 +22,9 @@ enum BleAdapterState {
   ready,
 }
 
+bool isBluetoothAdapterEnabled(BleAdapterState status) =>
+    status == BleAdapterState.ready;
+
 class BlePlatform {
   BlePlatform({FlutterReactiveBle? reactiveBle})
       : _reactiveBle = reactiveBle ?? FlutterReactiveBle();
@@ -41,6 +44,13 @@ class BlePlatform {
 
   Stream<BleAdapterState> get statusStream =>
       _reactiveBle.statusStream.map(_mapAdapterState);
+
+  Future<bool> isAdapterEnabled() async {
+    final status = await statusStream.firstWhere(
+      (state) => state != BleAdapterState.unknown,
+    );
+    return isBluetoothAdapterEnabled(status);
+  }
 
   Future<void> initialize() async {}
 

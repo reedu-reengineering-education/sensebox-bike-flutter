@@ -10,6 +10,20 @@ class _MockReactiveBle extends Mock implements FlutterReactiveBle {}
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  group('isBluetoothAdapterEnabled', () {
+    test('returns true for ready state', () {
+      expect(isBluetoothAdapterEnabled(BleAdapterState.ready), isTrue);
+    });
+
+    test('returns false for poweredOff state', () {
+      expect(isBluetoothAdapterEnabled(BleAdapterState.poweredOff), isFalse);
+    });
+
+    test('returns false for unknown state', () {
+      expect(isBluetoothAdapterEnabled(BleAdapterState.unknown), isFalse);
+    });
+  });
+
   const deviceId = 'AA:BB:CC:DD:EE:01';
 
   group('BlePlatform', () {
