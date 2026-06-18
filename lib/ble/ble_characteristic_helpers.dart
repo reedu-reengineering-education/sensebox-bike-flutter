@@ -15,13 +15,6 @@ List<double> parseCharacteristicPayload(Uint8List value) {
   return parsedValues;
 }
 
-bool isValidCharacteristicPayload(Uint8List data) {
-  if (data.isEmpty) return false;
-  if (data.every((byte) => byte == 0)) return false;
-  if (data.length < 4) return false;
-  return true;
-}
-
 BleService findSenseBoxService(List<BleService> services) {
   return services.firstWhere(
     (service) => service.serviceId == senseBoxServiceUuid,

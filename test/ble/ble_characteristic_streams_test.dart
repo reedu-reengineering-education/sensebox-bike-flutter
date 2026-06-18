@@ -121,33 +121,5 @@ void main() {
         throwsA(isA<Exception>()),
       );
     });
-
-    test('subscribeAll subscribes every characteristic', () async {
-      const secondUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
-      final secondNotify = StreamController<List<int>>.broadcast();
-
-      when(() => platform.subscribeToCharacteristic(any())).thenAnswer(
-        (invocation) {
-          final ref =
-              invocation.positionalArguments[0] as BleCharacteristicRef;
-          if (ref.uuidString == secondUuid) {
-            return secondNotify.stream;
-          }
-          return notifyController.stream;
-        },
-      );
-
-      await streams.subscribeAll([
-        characteristicRef(uuid),
-        characteristicRef(secondUuid),
-      ]);
-
-      expect(
-        streams.subscribedCharacteristicUuids.toSet(),
-        {uuid, secondUuid},
-      );
-
-      await secondNotify.close();
-    });
   });
 }

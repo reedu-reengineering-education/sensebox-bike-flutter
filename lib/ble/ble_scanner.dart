@@ -178,16 +178,3 @@ List<BleDevice> senseBoxDevicesFromDiscovered(
   }
   return results;
 }
-
-List<BleDevice> devicesFromDiscovered(Iterable<BleDevice> devices) {
-  final results = <BleDevice>[];
-  final seen = <String>{};
-  for (final device in devices) {
-    if (seen.contains(device.id)) {
-      continue;
-    }
-    seen.add(device.id);
-    results.add(device);
-  }
-  return results;
-}

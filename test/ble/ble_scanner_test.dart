@@ -12,21 +12,6 @@ BleDevice discovered({
 }
 
 void main() {
-  group('devicesFromDiscovered', () {
-    test('includes every advertiser without filtering', () {
-      final senseBox = discovered(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:abc');
-      final other = discovered(id: 'AA:BB:CC:DD:EE:02', name: 'OtherDevice');
-
-      expect(
-        devicesFromDiscovered([other, senseBox]),
-        [
-          BleDevice(id: other.id, name: other.name),
-          BleDevice(id: senseBox.id, name: senseBox.name),
-        ],
-      );
-    });
-  });
-
   group('senseBoxDevicesFromDiscovered', () {
     test('keeps devices whose advertised name starts with senseBox', () {
       final senseBox = discovered(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:abc');

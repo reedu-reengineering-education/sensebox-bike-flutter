@@ -36,35 +36,6 @@ void main() {
     });
   });
 
-  group('isValidCharacteristicPayload', () {
-    test('rejects empty payload', () {
-      expect(isValidCharacteristicPayload(Uint8List(0)), isFalse);
-    });
-
-    test('rejects all-zero payload', () {
-      expect(isValidCharacteristicPayload(Uint8List(8)), isFalse);
-    });
-
-    test('rejects payload shorter than 4 bytes', () {
-      expect(isValidCharacteristicPayload(Uint8List.fromList([1, 2, 3])), isFalse);
-    });
-
-    test('accepts non-zero payload with at least 4 bytes', () {
-      expect(isValidCharacteristicPayload(float32Bytes([1.0])), isTrue);
-    });
-
-    test('accepts payload with single non-zero byte in first chunk', () {
-      expect(
-        isValidCharacteristicPayload(Uint8List.fromList([0, 0, 0, 1])),
-        isTrue,
-      );
-    });
-
-    test('rejects payload that is only zero padding beyond 4 bytes', () {
-      expect(isValidCharacteristicPayload(Uint8List(12)), isFalse);
-    });
-  });
-
   group('findSenseBoxService', () {
     test('returns service matching senseBoxServiceUuid', () {
       final senseBox = BleService(

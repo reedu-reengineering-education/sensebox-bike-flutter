@@ -227,15 +227,6 @@ class BleBloc with ChangeNotifier {
     }
   }
 
-  Future<T> _withAppInitiatedTeardown<T>(Future<T> Function() action) async {
-    _appInitiatedTeardown = true;
-    try {
-      return await action();
-    } finally {
-      _appInitiatedTeardown = false;
-    }
-  }
-
   void updateBluetoothStatus(bool isEnabled) {
     if (isBluetoothEnabledNotifier.value != isEnabled) {
       isBluetoothEnabledNotifier.value = isEnabled;

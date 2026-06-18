@@ -104,12 +104,10 @@ class BleReconnectionCoordinator {
   }
 
   void cancelReconnection() {
+    abortCurrentEpisode();
     detach();
     reset();
-    // Set the abort latch after reset() (which clears it) so the currently
-    // running episode bails out via the guard, while a future link-loss event
-    // starts a fresh episode.
-    _abortReconnection = true;
+    abortCurrentEpisode();
   }
 
   Future<void> _runReconnectionEpisode(

@@ -52,8 +52,6 @@ class BlePlatform {
     return isBluetoothAdapterEnabled(status);
   }
 
-  Future<void> initialize() async {}
-
   Stream<BleLinkState> connectionState(String deviceId) {
     return _linkStateControllers
         .putIfAbsent(
@@ -85,23 +83,6 @@ class BlePlatform {
       _sessionEstablishmentDepth.remove(deviceId);
     } else {
       _sessionEstablishmentDepth[deviceId] = depth - 1;
-    }
-  }
-
-  Future<bool> waitForLinkConnected(
-    String deviceId, {
-    Duration timeout = bleDeviceConnectTimeout,
-  }) async {
-    if (isConnected(deviceId)) {
-      return true;
-    }
-    try {
-      await connectionState(deviceId)
-          .firstWhere((state) => state == BleLinkState.connected)
-          .timeout(timeout);
-      return true;
-    } on TimeoutException {
-      return false;
     }
   }
 
@@ -177,63 +158,6 @@ class BlePlatform {
     _emitLinkState(deviceId, BleLinkState.connecting);
     try {
       await connected.future.timeout(timeout);
-    } catch (error) {
-      _emitLinkState(deviceId, BleLinkState.disconnected);
-      rethrow;
-    }
-  }
-
-  /// Scans for the advertising device before connecting.
-  ///
-  /// The Android BLE stack can hang when connecting to a device that is no
-  /// longer in range (e.g. after a supervision timeout). Scanning first and
-  /// only connecting once the device advertises avoids that half-open state,
-  /// which is the recommended approach for reconnection.
-  Future<void> connectToAdvertising(
-    String deviceId, {
-    required List<BleUuid> withServices,
-    Duration prescanDuration = bleReconnectPrescanDuration,
-    Duration timeout = bleDeviceConnectTimeout,
-  }) async {
-    await _connectionSubs[deviceId]?.cancel();
-    _connectionSubs.remove(deviceId);
-
-    final connected = Completer<void>();
-
-    _connectionSubs[deviceId] = _reactiveBle
-        .connectToAdvertisingDevice(
-      id: deviceId,
-      withServices: withServices.map(_toUuid).toList(),
-      prescanDuration: prescanDuration,
-      connectionTimeout: timeout,
-    )
-        .listen(
-      (update) {
-        final state = _mapConnectionState(update.connectionState);
-        _emitLinkState(deviceId, state);
-        if (state == BleLinkState.connected && !connected.isCompleted) {
-          connected.complete();
-        }
-      },
-      onError: (Object error, StackTrace stack) {
-        _emitLinkState(deviceId, BleLinkState.disconnected);
-        if (!connected.isCompleted) {
-          connected.completeError(error, stack);
-        }
-      },
-      onDone: () {
-        _emitLinkState(deviceId, BleLinkState.disconnected);
-        if (!connected.isCompleted) {
-          connected.completeError(
-            TimeoutException('BLE connection stream closed before connected'),
-          );
-        }
-      },
-    );
-
-    _emitLinkState(deviceId, BleLinkState.connecting);
-    try {
-      await connected.future.timeout(prescanDuration + timeout);
     } catch (error) {
       _emitLinkState(deviceId, BleLinkState.disconnected);
       rethrow;

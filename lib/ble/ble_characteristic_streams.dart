@@ -18,15 +18,6 @@ class BleCharacteristicStreams {
   bool hasLivePayload(String characteristicUuid) =>
       _livePayloadUuids.contains(characteristicUuid);
 
-  bool hasLivePayloadAmong(Iterable<String> characteristicUuids) {
-    for (final uuid in characteristicUuids) {
-      if (_livePayloadUuids.contains(uuid)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   static bool isLivePayload(List<double> values) => values.isNotEmpty;
 
   Stream<List<double>> characteristicStream(String characteristicUuid) {
@@ -66,18 +57,6 @@ class BleCharacteristicStreams {
         }
       },
     );
-  }
-
-  Future<void> subscribeAll(
-    List<BleCharacteristicRef> characteristics, {
-    Duration gap = Duration.zero,
-  }) async {
-    for (var index = 0; index < characteristics.length; index++) {
-      await subscribe(characteristics[index]);
-      if (gap > Duration.zero && index < characteristics.length - 1) {
-        await Future<void>.delayed(gap);
-      }
-    }
   }
 
   Future<void> clear({

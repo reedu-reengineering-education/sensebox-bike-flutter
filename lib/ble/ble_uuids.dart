@@ -39,6 +39,3 @@ class BleUuid {
 
 final BleUuid senseBoxServiceUuid =
     BleUuid('CF06A218-F68E-E0BE-AD04-8EBC1EB0BC84');
-
-final BleUuid deviceInfoServiceUuid =
-    BleUuid('CF06A218-F68E-E0BE-AD04-8EBC1EB0BC85');
