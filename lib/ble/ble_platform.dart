@@ -36,7 +36,6 @@ class BlePlatform {
   final Map<String, Timer> _dataWatchdogs = {};
   final Map<String, int> _sessionEstablishmentDepth = {};
 
-  /// Notified on every link-state transition (previous may be null on first event).
   void Function(String deviceId, BleLinkState? previous, BleLinkState next)?
       onLinkStateChanged;
 

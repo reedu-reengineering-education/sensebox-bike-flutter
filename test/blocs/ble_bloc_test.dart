@@ -157,12 +157,12 @@ void main() {
         expect(bleBloc.devicesListStream, isA<Stream<List<BleDevice>>>());
       });
 
-      test('scanForNewDevices clears selected device', () {
+      test('scanForNewDevices clears selected device', () async {
         const device = BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
         bleBloc.selectedDevice = device;
         bleBloc.selectedDeviceNotifier.value = device;
 
-        bleBloc.scanForNewDevices();
+        await bleBloc.scanForNewDevices();
 
         expect(bleBloc.selectedDevice, isNull);
         expect(bleBloc.selectedDeviceNotifier.value, isNull);

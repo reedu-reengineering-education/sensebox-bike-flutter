@@ -307,46 +307,53 @@ class _FloatingButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.isReconnectingNotifier,
-      builder: (context, isReconnecting, child) {
-        return ValueListenableBuilder(
-          valueListenable: bleBloc.selectedDeviceNotifier,
-          builder: (context, selectedDevice, child) {
-            // Show buttons if device is connected or if reconnecting
-            if (selectedDevice == null && !isReconnecting) {
-              return Column(
-                spacing: 12,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _ConnectButton(bleBloc: bleBloc),
-                  // Always show sensebox selection button with different styling based on auth state
-                  _SenseBoxSelectionButton(),
-                ],
-              );
-            } else {
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                spacing: 12,
-                children: [
-                  Row(
+      valueListenable: bleBloc.isConnectingNotifier,
+      builder: (context, isConnecting, child) {
+        return ValueListenableBuilder<bool>(
+          valueListenable: bleBloc.isReconnectingNotifier,
+          builder: (context, isReconnecting, child) {
+            final buttonsBusy = isConnecting || isReconnecting;
+            return ValueListenableBuilder(
+              valueListenable: bleBloc.selectedDeviceNotifier,
+              builder: (context, selectedDevice, child) {
+                if (selectedDevice == null && !isReconnecting) {
+                  return Column(
+                    spacing: 12,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _ConnectButton(bleBloc: bleBloc),
+                      _SenseBoxSelectionButton(),
+                    ],
+                  );
+                } else {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     spacing: 12,
                     children: [
-                      Expanded(
-                        child: _StartStopButton(
-                            recordingBloc: recordingBloc,
-                            isReconnecting: isReconnecting),
+                      Row(
+                        spacing: 12,
+                        children: [
+                          Expanded(
+                            child: _StartStopButton(
+                              recordingBloc: recordingBloc,
+                              buttonsBusy: buttonsBusy,
+                            ),
+                          ),
+                          Expanded(
+                            child: _DisconnectButton(
+                              bleBloc: bleBloc,
+                              recordingBloc: recordingBloc,
+                              buttonsBusy: buttonsBusy,
+                            ),
+                          ),
+                        ],
                       ),
-                      Expanded(
-                        child: _DisconnectButton(
-                            bleBloc: bleBloc, recordingBloc: recordingBloc),
-                      ),
+                      _SenseBoxSelectionButton(),
                     ],
-                  ),
-                  // Always show sensebox selection button with different styling based on auth state
-                  _SenseBoxSelectionButton(),
-                ],
-              );
-            }
+                  );
+                }
+              },
+            );
           },
         );
       },
@@ -447,9 +454,11 @@ class _ConnectButton extends StatelessWidget {
 // Start/Stop button
 class _StartStopButton extends StatelessWidget {
   final RecordingBloc recordingBloc;
-  final bool isReconnecting;
-  const _StartStopButton(
-      {required this.recordingBloc, required this.isReconnecting});
+  final bool buttonsBusy;
+  const _StartStopButton({
+    required this.recordingBloc,
+    required this.buttonsBusy,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -464,7 +473,7 @@ class _StartStopButton extends StatelessWidget {
           : AppLocalizations.of(context)!.connectionButtonStart),
       icon: Icon(
           recordingBloc.isRecording ? Icons.stop : Icons.fiber_manual_record),
-      onPressed: isReconnecting
+      onPressed: buttonsBusy
           ? null
           : () async {
               if (recordingBloc.isRecording) {
@@ -480,7 +489,12 @@ class _StartStopButton extends StatelessWidget {
 class _DisconnectButton extends StatelessWidget {
   final BleBloc bleBloc;
   final RecordingBloc recordingBloc;
-  const _DisconnectButton({required this.bleBloc, required this.recordingBloc});
+  final bool buttonsBusy;
+  const _DisconnectButton({
+    required this.bleBloc,
+    required this.recordingBloc,
+    required this.buttonsBusy,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -494,7 +508,7 @@ class _DisconnectButton extends StatelessWidget {
           label: isReconnecting
               ? AppLocalizations.of(context)!.connectionButtonReconnecting
               : AppLocalizations.of(context)!.connectionButtonDisconnect,
-          onPressed: isReconnecting
+          onPressed: buttonsBusy
               ? null
               : () async {
                   if (recordingBloc.isRecording) {

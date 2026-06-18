@@ -208,7 +208,6 @@ class BleBloc with ChangeNotifier {
     unawaited(_pulseDisconnectVibration(deviceId));
   }
 
-  /// Retry once — first pulse can be lost when Android resets Bluetooth.
   Future<void> _pulseDisconnectVibration(String deviceId) async {
     await vibrateDisconnectFeedback();
 
@@ -287,58 +286,56 @@ class BleBloc with ChangeNotifier {
     }
 
     if (!keepSession) {
-      selectedDevice = null;
-      selectedDeviceNotifier.value = null;
-      _linkWatchDevice = null;
+      isConnectingNotifier.value = true;
     }
 
-    _invalidatePublishedCharacteristics();
-
-    if (keepSession) {
-      _appInitiatedTeardown = true;
-    }
     try {
-      await _teardownLink(
-        target,
-        characteristics: characteristics,
-        settleAfterDisconnect: keepSession
-            ? bleLinkOnlyDisconnectSettleDelay
-            : blePostDisconnectSettleDelay,
-      );
-    } finally {
+      _invalidatePublishedCharacteristics();
+
       if (keepSession) {
-        _appInitiatedTeardown = false;
+        _appInitiatedTeardown = true;
+      }
+      try {
+        await _teardownLink(
+          target,
+          characteristics: characteristics,
+          settleAfterDisconnect: keepSession
+              ? bleLinkOnlyDisconnectSettleDelay
+              : blePostDisconnectSettleDelay,
+        );
+      } finally {
+        if (keepSession) {
+          _appInitiatedTeardown = false;
+        }
+      }
+
+      if (keepSession) {
+        notifyListeners();
+        return;
+      }
+
+      if (reason == BleDisconnectReason.connectionFailed) {
+        connectionErrorNotifier.value = true;
+        _reconnectionCoordinator.reset();
+        _scanAfterDisconnect = true;
+      } else {
+        connectionErrorNotifier.value = false;
+        _scanAfterDisconnect = true;
+        await _scanner.stopScanning();
+        _scanner.clearDiscoveredDevices();
+      }
+
+      if (reason != BleDisconnectReason.userRequested) {
+        _userInitiatedDisconnect = false;
+      }
+    } finally {
+      if (!keepSession) {
+        selectedDevice = null;
+        selectedDeviceNotifier.value = null;
+        _linkWatchDevice = null;
+        _setPhase(BleConnectionPhase.idle);
       }
     }
-
-    if (keepSession) {
-      // Transient release between reconnection attempts: stay in the
-      // reconnecting phase so the retry loop keeps ownership of the UI state.
-      notifyListeners();
-      return;
-    }
-
-    if (reason == BleDisconnectReason.connectionFailed) {
-      connectionErrorNotifier.value = true;
-      _reconnectionCoordinator.reset();
-      _scanAfterDisconnect = true;
-    } else {
-      // userRequested
-      connectionErrorNotifier.value = false;
-      _scanAfterDisconnect = true;
-      await _scanner.stopScanning();
-      _scanner.clearDiscoveredDevices();
-    }
-
-    // A user-initiated disconnect must keep [_userInitiatedDisconnect] set so
-    // that any reconnection loop still in flight bails out instead of
-    // auto-reconnecting to the device the user just left (or raising a spurious
-    // connection error). The flag is cleared only when the user explicitly
-    // connects again (see connectToDevice).
-    if (reason != BleDisconnectReason.userRequested) {
-      _userInitiatedDisconnect = false;
-    }
-    _setPhase(BleConnectionPhase.idle);
   }
 
   Future<void> connectToId(String id, BuildContext context) async {
