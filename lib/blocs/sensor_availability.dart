@@ -13,3 +13,9 @@ List<Sensor> filterAvailableSensors(
     return characteristicUuids.contains(sensor.characteristicUuid);
   }).toList();
 }
+
+List<Sensor> sortSensorsByUiPriority(Iterable<Sensor> sensors) {
+  final sorted = List<Sensor>.from(sensors);
+  sorted.sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
+  return sorted;
+}

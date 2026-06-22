@@ -93,4 +93,43 @@ void main() {
       expect(available, [surfaceAnomaly]);
     });
   });
+
+  group('sortSensorsByUiPriority', () {
+    MockSensor sensor({required int uiPriority}) {
+      final mock = MockSensor();
+      when(() => mock.uiPriority).thenReturn(uiPriority);
+      return mock;
+    }
+
+    test('returns empty list for empty input', () {
+      expect(sortSensorsByUiPriority([]), isEmpty);
+    });
+
+    test('returns single sensor unchanged', () {
+      final only = sensor(uiPriority: 3);
+
+      expect(sortSensorsByUiPriority([only]), [only]);
+    });
+
+    test('returns sensors ordered by ascending uiPriority', () {
+      final low = sensor(uiPriority: 1);
+      final high = sensor(uiPriority: 10);
+      final mid = sensor(uiPriority: 5);
+
+      expect(
+        sortSensorsByUiPriority([high, low, mid]),
+        [low, mid, high],
+      );
+    });
+
+    test('does not mutate the input list', () {
+      final low = sensor(uiPriority: 1);
+      final high = sensor(uiPriority: 10);
+      final input = [high, low];
+
+      sortSensorsByUiPriority(input);
+
+      expect(input, [high, low]);
+    });
+  });
 }

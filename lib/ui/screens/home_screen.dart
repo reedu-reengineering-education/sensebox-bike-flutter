@@ -6,6 +6,7 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/blocs/sensor_availability.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart' hide Sensor;
 import 'package:sensebox_bike/sensors/sensor.dart';
@@ -306,55 +307,54 @@ class _FloatingButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.isConnectingNotifier,
-      builder: (context, isConnecting, child) {
-        return ValueListenableBuilder<bool>(
-          valueListenable: bleBloc.isReconnectingNotifier,
-          builder: (context, isReconnecting, child) {
-            final buttonsBusy = isConnecting || isReconnecting;
-            return ValueListenableBuilder(
-              valueListenable: bleBloc.selectedDeviceNotifier,
-              builder: (context, selectedDevice, child) {
-                if (selectedDevice == null && !isReconnecting) {
-                  return Column(
-                    spacing: 12,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _ConnectButton(bleBloc: bleBloc),
-                      _SenseBoxSelectionButton(),
-                    ],
-                  );
-                } else {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: 12,
-                    children: [
-                      Row(
-                        spacing: 12,
-                        children: [
-                          Expanded(
-                            child: _StartStopButton(
-                              recordingBloc: recordingBloc,
-                              buttonsBusy: buttonsBusy,
-                            ),
-                          ),
-                          Expanded(
-                            child: _DisconnectButton(
-                              bleBloc: bleBloc,
-                              recordingBloc: recordingBloc,
-                              buttonsBusy: buttonsBusy,
-                            ),
-                          ),
-                        ],
-                      ),
-                      _SenseBoxSelectionButton(),
-                    ],
-                  );
-                }
-              },
-            );
-          },
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        bleBloc.isConnectingNotifier,
+        bleBloc.isReconnectingNotifier,
+        bleBloc.selectedDeviceNotifier,
+      ]),
+      builder: (context, _) {
+        final isConnecting = bleBloc.isConnectingNotifier.value;
+        final isReconnecting = bleBloc.isReconnectingNotifier.value;
+        final selectedDevice = bleBloc.selectedDeviceNotifier.value;
+        final buttonsBusy = isConnecting || isReconnecting;
+
+        if (selectedDevice == null && !isReconnecting) {
+          return Column(
+            spacing: 12,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _ConnectButton(bleBloc: bleBloc, isConnecting: isConnecting),
+              _SenseBoxSelectionButton(),
+            ],
+          );
+        }
+
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          spacing: 12,
+          children: [
+            Row(
+              spacing: 12,
+              children: [
+                Expanded(
+                  child: _StartStopButton(
+                    recordingBloc: recordingBloc,
+                    buttonsBusy: buttonsBusy,
+                  ),
+                ),
+                Expanded(
+                  child: _DisconnectButton(
+                    bleBloc: bleBloc,
+                    recordingBloc: recordingBloc,
+                    buttonsBusy: buttonsBusy,
+                    isReconnecting: isReconnecting,
+                  ),
+                ),
+              ],
+            ),
+            _SenseBoxSelectionButton(),
+          ],
         );
       },
     );
@@ -364,87 +364,77 @@ class _FloatingButtons extends StatelessWidget {
 // Connect button
 class _ConnectButton extends StatelessWidget {
   final BleBloc bleBloc;
-  const _ConnectButton({required this.bleBloc});
+  final bool isConnecting;
+  const _ConnectButton({
+    required this.bleBloc,
+    required this.isConnecting,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (isConnecting) {
+      return Align(
+        alignment: Alignment.center,
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            label: Text(
+              AppLocalizations.of(context)!.connectionButtonConnecting,
+            ),
+            icon: const Loader(),
+            onPressed: null,
+          ),
+        ),
+      );
+    }
+
     return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.isConnectingNotifier,
-      builder: (context, isConnecting, child) {
-        return ValueListenableBuilder<bool>(
-          valueListenable: bleBloc.isBluetoothEnabledNotifier,
-          builder: (context, isBluetoothEnabled, child) {
-            if (isConnecting) {
-              return Align(
-                alignment: Alignment.center,
-                child: SizedBox(
-                  width: double.infinity, // Full width for the button
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12), // Vertical padding only
-                    ),
-                    label: Text(
-                      AppLocalizations.of(context)!.connectionButtonConnecting,
-                    ),
-                    icon: const Loader(),
-                    onPressed: null, // Disable button while connecting
-                  ),
+      valueListenable: bleBloc.isBluetoothEnabledNotifier,
+      builder: (context, isBluetoothEnabled, child) {
+        return Align(
+          alignment: Alignment.center,
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: isBluetoothEnabled
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              label: Text(
+                isBluetoothEnabled
+                    ? AppLocalizations.of(context)!.connectionButtonConnect
+                    : AppLocalizations.of(context)!
+                        .connectionButtonEnableBluetooth,
+                style: TextStyle(
+                  color: isBluetoothEnabled
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : Theme.of(context).colorScheme.error,
                 ),
-              );
-            } else {
-              return Align(
-                alignment: Alignment.center,
-                child: SizedBox(
-                  width: double.infinity, // Set a fixed width for the button
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: isBluetoothEnabled
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context)
-                              .colorScheme
-                              .onSurface, // Disabled color
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    label: Text(
-                      isBluetoothEnabled
-                          ? AppLocalizations.of(context)!
-                              .connectionButtonConnect
-                          : AppLocalizations.of(context)!
-                              .connectionButtonEnableBluetooth,
-                      style: TextStyle(
-                        color: isBluetoothEnabled
-                            ? Theme.of(context).colorScheme.onPrimary
-                            : Theme.of(context)
-                                .colorScheme
-                                .error, // Red text if Bluetooth is off
-                      ),
-                    ),
-                    icon: Icon(
-                      Icons.bluetooth,
-                      color: isBluetoothEnabled
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context)
-                              .colorScheme
-                              .error, // Red icon if Bluetooth is off
-                    ),
-                    onPressed: () async {
-                      if (isBluetoothEnabled) {
-                        // Show device selection dialog if Bluetooth is enabled
-                        showDeviceSelectionDialog(context, bleBloc);
-                      } else {
-                        try {
-                          await bleBloc.requestEnableBluetooth();
-                        } catch (e) {
-                          ErrorService.handleError(e, StackTrace.current);
-                        }
-                      }
-                    },
-                  ),
-                ),
-              );
-            }
-          },
+              ),
+              icon: Icon(
+                Icons.bluetooth,
+                color: isBluetoothEnabled
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.error,
+              ),
+              onPressed: () async {
+                if (isBluetoothEnabled) {
+                  showDeviceSelectionDialog(context, bleBloc);
+                } else {
+                  try {
+                    await bleBloc.requestEnableBluetooth();
+                  } catch (e) {
+                    ErrorService.handleError(e, StackTrace.current);
+                  }
+                }
+              },
+            ),
+          ),
         );
       },
     );
@@ -490,35 +480,32 @@ class _DisconnectButton extends StatelessWidget {
   final BleBloc bleBloc;
   final RecordingBloc recordingBloc;
   final bool buttonsBusy;
+  final bool isReconnecting;
   const _DisconnectButton({
     required this.bleBloc,
     required this.recordingBloc,
     required this.buttonsBusy,
+    required this.isReconnecting,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.isReconnectingNotifier,
-      builder: (context, isReconnecting, child) {
-        return SurfaceOutlinedIconButton(
-          icon: isReconnecting
-              ? Icons.bluetooth_searching
-              : Icons.bluetooth_disabled,
-          label: isReconnecting
-              ? AppLocalizations.of(context)!.connectionButtonReconnecting
-              : AppLocalizations.of(context)!.connectionButtonDisconnect,
-          onPressed: buttonsBusy
-              ? null
-              : () async {
-                  if (recordingBloc.isRecording) {
-                    await recordingBloc.stopRecording();
-                  }
-                  await bleBloc.disconnectDevice(
-                      reason: BleDisconnectReason.userRequested);
-                },
-        );
-      },
+    return SurfaceOutlinedIconButton(
+      icon: isReconnecting
+          ? Icons.bluetooth_searching
+          : Icons.bluetooth_disabled,
+      label: isReconnecting
+          ? AppLocalizations.of(context)!.connectionButtonReconnecting
+          : AppLocalizations.of(context)!.connectionButtonDisconnect,
+      onPressed: buttonsBusy
+          ? null
+          : () async {
+              if (recordingBloc.isRecording) {
+                await recordingBloc.stopRecording();
+              }
+              await bleBloc.disconnectDevice(
+                  reason: BleDisconnectReason.userRequested);
+            },
     );
   }
 }
@@ -554,10 +541,7 @@ class _SensorGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sortedSensors = List<Sensor>.from(sensors)
-      ..sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
-    final widgets =
-        sortedSensors.map((sensor) => sensor.buildWidget()).toList();
+    final sortedSensors = sortSensorsByUiPriority(sensors);
 
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -567,9 +551,9 @@ class _SensorGrid extends StatelessWidget {
       ),
       delegate: SliverChildBuilderDelegate(
         (BuildContext context, int index) {
-          return index < widgets.length ? widgets[index] : null;
+          return sortedSensors[index].buildWidget();
         },
-        childCount: widgets.length,
+        childCount: sortedSensors.length,
       ),
     );
   }
