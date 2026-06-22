@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
@@ -92,6 +93,7 @@ class BleBloc with ChangeNotifier {
   bool _userInitiatedDisconnect = false;
   bool _appInitiatedTeardown = false;
   bool _scanAfterDisconnect = false;
+  bool _linkLostDueToAdapterPowerOff = false;
   String? _vibratedForDisconnectDeviceId;
 
   bool get isConnected => _phase == BleConnectionPhase.connected;
@@ -127,6 +129,22 @@ class BleBloc with ChangeNotifier {
         _phase != BleConnectionPhase.reconnecting) {
       return;
     }
+
+    _linkLostDueToAdapterPowerOff = true;
+    final deviceId = selectedDevice!.id;
+
+    // iOS often does not emit a per-device disconnected update when the adapter
+    // is toggled off. Tear down the platform link so stale isConnected() cannot
+    // block recovery when Bluetooth comes back.
+    try {
+      await _platform.disconnect(deviceId);
+    } catch (_) {
+      // Best-effort: subscription cancellation can throw as the radio drops.
+    }
+
+    // Adapter-off may not produce connected→disconnected for [_handlePlatformLinkStateChange].
+    _maybeVibrateOnUnexpectedDisconnect(deviceId);
+
     // An in-flight episode already waits for the adapter in [_waitForBluetoothReady].
     if (_reconnectionCoordinator.isReconnectionInProgress) {
       return;
@@ -145,10 +163,14 @@ class BleBloc with ChangeNotifier {
       return;
     }
     final device = selectedDevice!;
+    // Do not trust isConnected() after an adapter power cycle — iOS can keep a
+    // stale connected flag until the link is explicitly torn down.
     if (_phase == BleConnectionPhase.connected &&
-        _platform.isConnected(device.id)) {
+        _platform.isConnected(device.id) &&
+        !_linkLostDueToAdapterPowerOff) {
       return;
     }
+    _linkLostDueToAdapterPowerOff = false;
     _setPhase(BleConnectionPhase.reconnecting);
     await _reconnectionCoordinator.notifyUnexpectedLinkLost();
   }
@@ -265,6 +287,7 @@ class BleBloc with ChangeNotifier {
 
     if (reason == BleDisconnectReason.userRequested) {
       _userInitiatedDisconnect = true;
+      _linkLostDueToAdapterPowerOff = false;
       _vibratedForDisconnectDeviceId = null;
       _reconnectionCoordinator.cancelReconnection();
     }
@@ -552,6 +575,7 @@ class BleBloc with ChangeNotifier {
       runReconnectSessions: _runReconnectionSessions,
       onReconnectSucceeded: () {
         _userInitiatedDisconnect = false;
+        _linkLostDueToAdapterPowerOff = false;
         _setPhase(BleConnectionPhase.connected);
       },
       onReconnectEpisodeEnded: (success) {
@@ -609,6 +633,24 @@ class BleBloc with ChangeNotifier {
     _reconnectionCoordinator.reset();
     notifyListeners();
   }
+
+  @visibleForTesting
+  void debugSetConnectionPhase(BleConnectionPhase phase) => _setPhase(phase);
+
+  @visibleForTesting
+  void debugAttachReconnectionListener(BleDevice device) =>
+      _attachReconnectionListener(device);
+
+  @visibleForTesting
+  void debugMarkLinkLostDueToAdapterPowerOff() {
+    _linkLostDueToAdapterPowerOff = true;
+  }
+
+  @visibleForTesting
+  Future<void> debugOnBluetoothPoweredOff() => _onBluetoothPoweredOff();
+
+  @visibleForTesting
+  Future<void> debugOnBluetoothPoweredOn() => _onBluetoothPoweredOn();
 
   @override
   void dispose() {

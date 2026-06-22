@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -149,6 +151,98 @@ void main() {
         expect(realBleBloc.isConnectingNotifier.value, isFalse);
         expect(realBleBloc.selectedDeviceNotifier.value, isNull);
         expect(realBleBloc.isConnected, isFalse);
+      });
+    });
+
+    group('Adapter power cycle', () {
+      late MockBlePlatform platform;
+      late BleBloc realBleBloc;
+
+      const device = BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
+
+      setUp(() {
+        platform = MockBlePlatform();
+        when(() => mockSettingsBloc.vibrateOnDisconnect).thenReturn(false);
+        when(() => platform.disconnect(any())).thenAnswer((_) async {});
+        when(() => platform.dispose()).thenAnswer((_) async {});
+        when(() => platform.isConnected(any())).thenAnswer((_) => true);
+        when(() => platform.connectionState(any()))
+            .thenAnswer((_) => const Stream.empty());
+
+        realBleBloc = BleBloc(
+          mockSettingsBloc,
+          initializePlatformBle: false,
+          platform: platform,
+        );
+      });
+
+      tearDown(() {
+        realBleBloc.dispose();
+      });
+
+      test('powered off tears down platform link', () async {
+        realBleBloc.selectedDevice = device;
+        realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
+
+        await realBleBloc.debugOnBluetoothPoweredOff();
+
+        verify(() => platform.disconnect(device.id)).called(1);
+      });
+
+      test('powered off starts reconnecting when listener is attached',
+          () async {
+        realBleBloc.selectedDevice = device;
+        realBleBloc.selectedDeviceNotifier.value = device;
+        realBleBloc.isBluetoothEnabledNotifier.value = true;
+        realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
+        realBleBloc.debugAttachReconnectionListener(device);
+        when(() => platform.connect(any(), timeout: any(named: 'timeout')))
+            .thenAnswer((_) async {});
+
+        unawaited(realBleBloc.debugOnBluetoothPoweredOff());
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(realBleBloc.isReconnectingNotifier.value, isTrue);
+
+        await realBleBloc.disconnectDevice(
+          reason: BleDisconnectReason.userRequested,
+        );
+      });
+
+      test('powered on reconnects when platform still reports connected after adapter off',
+          () async {
+        realBleBloc.selectedDevice = device;
+        realBleBloc.selectedDeviceNotifier.value = device;
+        realBleBloc.isBluetoothEnabledNotifier.value = true;
+        realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
+        realBleBloc.debugAttachReconnectionListener(device);
+        realBleBloc.debugMarkLinkLostDueToAdapterPowerOff();
+        when(() => platform.isConnected(device.id)).thenReturn(true);
+        when(() => platform.connect(any(), timeout: any(named: 'timeout')))
+            .thenAnswer((_) async {});
+
+        unawaited(realBleBloc.debugOnBluetoothPoweredOn());
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(realBleBloc.isReconnectingNotifier.value, isTrue);
+
+        await realBleBloc.disconnectDevice(
+          reason: BleDisconnectReason.userRequested,
+        );
+      });
+
+      test('powered on skips reconnect when link is live and adapter was not powered off',
+          () async {
+        realBleBloc.selectedDevice = device;
+        realBleBloc.selectedDeviceNotifier.value = device;
+        realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
+        realBleBloc.debugAttachReconnectionListener(device);
+        when(() => platform.isConnected(device.id)).thenReturn(true);
+
+        await realBleBloc.debugOnBluetoothPoweredOn();
+
+        expect(realBleBloc.isReconnectingNotifier.value, isFalse);
+        verifyNever(() => platform.disconnect(device.id));
       });
     });
 
