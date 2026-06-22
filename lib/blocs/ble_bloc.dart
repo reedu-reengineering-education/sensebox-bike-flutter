@@ -206,6 +206,7 @@ class BleBloc with ChangeNotifier {
 
   void _maybeVibrateOnUnexpectedDisconnect(String deviceId) {
     if (!settingsBloc.vibrateOnDisconnect) {
+      debugPrint('[BLE] vibrate skipped: setting disabled');
       return;
     }
     if (_userInitiatedDisconnect || _appInitiatedTeardown) {
@@ -571,6 +572,7 @@ class BleBloc with ChangeNotifier {
         // [BleConnectionSession.establish] via [characteristicStreams.clear].
         _invalidatePublishedCharacteristics();
         _setPhase(BleConnectionPhase.reconnecting);
+        _maybeVibrateOnUnexpectedDisconnect(device.id);
       },
       runReconnectSessions: _runReconnectionSessions,
       onReconnectSucceeded: () {
