@@ -633,7 +633,6 @@ class BleBloc with ChangeNotifier {
     connectionErrorNotifier.value = false;
     _reconnectionCoordinator.detach();
     _reconnectionCoordinator.reset();
-    notifyListeners();
   }
 
   @visibleForTesting
