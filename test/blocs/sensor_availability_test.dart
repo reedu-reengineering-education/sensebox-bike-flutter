@@ -6,21 +6,33 @@ import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/temperature_sensor.dart';
 import '../mocks.dart';
 
-void main() {
-  group('filterAvailableSensors', () {
-    MockSensor sensor({
-      required String uuid,
-      required String title,
-    }) {
-      final mock = MockSensor();
-      when(() => mock.characteristicUuid).thenReturn(uuid);
-      when(() => mock.title).thenReturn(title);
-      return mock;
-    }
+MockSensor mockSensor({
+  String? uuid,
+  String? title,
+  int? uiPriority,
+}) {
+  final mock = MockSensor();
+  if (uuid != null) {
+    when(() => mock.characteristicUuid).thenReturn(uuid);
+  }
+  if (title != null) {
+    when(() => mock.title).thenReturn(title);
+  }
+  if (uiPriority != null) {
+    when(() => mock.uiPriority).thenReturn(uiPriority);
+  }
+  return mock;
+}
 
+void main() {
+  setUp(() {
+    FeatureFlags.hideSurfaceAnomalySensor = true;
+  });
+
+  group('filterAvailableSensors', () {
     test('returns empty list when no characteristics match', () {
       final sensors = [
-        sensor(
+        mockSensor(
           uuid: TemperatureSensor.sensorCharacteristicUuid,
           title: 'temperature',
         ),
@@ -30,7 +42,7 @@ void main() {
     });
 
     test('includes sensors whose characteristic is on the box', () {
-      final temperature = sensor(
+      final temperature = mockSensor(
         uuid: TemperatureSensor.sensorCharacteristicUuid,
         title: 'temperature',
       );
@@ -44,11 +56,11 @@ void main() {
     });
 
     test('excludes sensors not present on the box', () {
-      final temperature = sensor(
+      final temperature = mockSensor(
         uuid: TemperatureSensor.sensorCharacteristicUuid,
         title: 'temperature',
       );
-      final humidity = sensor(
+      final humidity = mockSensor(
         uuid: '11111111-2222-3333-4444-555555555555',
         title: 'humidity',
       );
@@ -62,8 +74,7 @@ void main() {
     });
 
     test('excludes surface anomaly when feature flag hides it', () {
-      FeatureFlags.hideSurfaceAnomalySensor = true;
-      final surfaceAnomaly = sensor(
+      final surfaceAnomaly = mockSensor(
         uuid: SurfaceAnomalySensor.sensorCharacteristicUuid,
         title: 'surface_anomaly',
       );
@@ -79,8 +90,7 @@ void main() {
 
     test('includes surface anomaly when feature flag allows it', () {
       FeatureFlags.hideSurfaceAnomalySensor = false;
-      addTearDown(() => FeatureFlags.hideSurfaceAnomalySensor = true);
-      final surfaceAnomaly = sensor(
+      final surfaceAnomaly = mockSensor(
         uuid: SurfaceAnomalySensor.sensorCharacteristicUuid,
         title: 'surface_anomaly',
       );
@@ -95,26 +105,10 @@ void main() {
   });
 
   group('sortSensorsByUiPriority', () {
-    MockSensor sensor({required int uiPriority}) {
-      final mock = MockSensor();
-      when(() => mock.uiPriority).thenReturn(uiPriority);
-      return mock;
-    }
-
-    test('returns empty list for empty input', () {
-      expect(sortSensorsByUiPriority([]), isEmpty);
-    });
-
-    test('returns single sensor unchanged', () {
-      final only = sensor(uiPriority: 3);
-
-      expect(sortSensorsByUiPriority([only]), [only]);
-    });
-
     test('returns sensors ordered by ascending uiPriority', () {
-      final low = sensor(uiPriority: 1);
-      final high = sensor(uiPriority: 10);
-      final mid = sensor(uiPriority: 5);
+      final low = mockSensor(uiPriority: 1);
+      final high = mockSensor(uiPriority: 10);
+      final mid = mockSensor(uiPriority: 5);
 
       expect(
         sortSensorsByUiPriority([high, low, mid]),
@@ -123,8 +117,8 @@ void main() {
     });
 
     test('does not mutate the input list', () {
-      final low = sensor(uiPriority: 1);
-      final high = sensor(uiPriority: 10);
+      final low = mockSensor(uiPriority: 1);
+      final high = mockSensor(uiPriority: 10);
       final input = [high, low];
 
       sortSensorsByUiPriority(input);

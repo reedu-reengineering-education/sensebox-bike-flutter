@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -8,24 +7,8 @@ import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/ble/ble_connection_session.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_uuids.dart';
+import 'ble_test_helpers.dart';
 import 'mock_ble_platform.dart';
-
-Uint8List float32Bytes(List<double> values) {
-  final byteData = ByteData(values.length * 4);
-  for (var i = 0; i < values.length; i++) {
-    byteData.setFloat32(i * 4, values[i], Endian.little);
-  }
-  return byteData.buffer.asUint8List();
-}
-
-BleService discoveredService({
-  required List<BleUuid> characteristics,
-}) {
-  return BleService(
-    serviceId: senseBoxServiceUuid,
-    characteristics: characteristics,
-  );
-}
 
 void main() {
   late MockBlePlatform platform;
@@ -39,11 +22,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(
-      BleCharacteristicRef(
-        deviceId: 'AA:BB:CC:DD:EE:01',
-        serviceUuid: senseBoxServiceUuid,
-        characteristicUuid: BleUuid('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
-      ),
+      testCharacteristicRef('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'),
     );
   });
 
@@ -54,12 +33,12 @@ void main() {
       probeTimeout: const Duration(milliseconds: 100),
     );
     streams = BleCharacteristicStreams(platform: platform);
-    device = const BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
+    device = testBleDevice;
     notifyController = StreamController<List<int>>.broadcast();
 
     probeUuid = BleUuid('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
     otherUuid = BleUuid('bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee');
-    senseBoxService = discoveredService(
+    senseBoxService = discoveredSenseBoxService(
       characteristics: [
         probeUuid,
         otherUuid,

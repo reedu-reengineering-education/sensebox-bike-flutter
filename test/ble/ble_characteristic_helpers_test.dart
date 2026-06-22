@@ -4,35 +4,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_uuids.dart';
-
-Uint8List float32Bytes(List<double> values) {
-  final byteData = ByteData(values.length * 4);
-  for (var i = 0; i < values.length; i++) {
-    byteData.setFloat32(i * 4, values[i], Endian.little);
-  }
-  return byteData.buffer.asUint8List();
-}
+import 'ble_test_helpers.dart';
 
 void main() {
   group('parseCharacteristicPayload', () {
     test('parses little-endian float32 values in 4-byte chunks', () {
       expect(parseCharacteristicPayload(float32Bytes([1.0, 2.5])), [1.0, 2.5]);
-    });
-
-    test('ignores trailing bytes shorter than 4', () {
-      final payload = Uint8List.fromList([...float32Bytes([3.0]), 0x01, 0x02]);
-      expect(parseCharacteristicPayload(payload), [3.0]);
-    });
-
-    test('returns empty list for empty input', () {
-      expect(parseCharacteristicPayload(Uint8List(0)), isEmpty);
-    });
-
-    test('parses multiple float32 values', () {
       expect(
         parseCharacteristicPayload(float32Bytes([0.0, -1.5, 42.0])),
         [0.0, -1.5, 42.0],
       );
+    });
+
+    test('ignores trailing bytes shorter than 4', () {
+      final payload =
+          Uint8List.fromList([...float32Bytes([3.0]), 0x01, 0x02]);
+      expect(parseCharacteristicPayload(payload), [3.0]);
+    });
+
+    test('returns empty list for empty input', () {
+      expect(parseCharacteristicPayload(float32Bytes([])), isEmpty);
     });
   });
 
@@ -69,7 +60,6 @@ void main() {
 
   group('characteristicRefsFromService', () {
     test('builds refs for every discovered characteristic', () {
-      const deviceId = 'AA:BB:CC:DD:EE:01';
       final charUuid = BleUuid('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
       final service = BleService(
         serviceId: senseBoxServiceUuid,
@@ -77,12 +67,12 @@ void main() {
       );
 
       final refs = characteristicRefsFromService(
-        deviceId: deviceId,
+        deviceId: testDeviceId,
         service: service,
       );
 
       expect(refs.length, 1);
-      expect(refs.first.deviceId, deviceId);
+      expect(refs.first.deviceId, testDeviceId);
       expect(refs.first.serviceUuid, senseBoxServiceUuid);
       expect(refs.first.characteristicUuid, charUuid);
     });

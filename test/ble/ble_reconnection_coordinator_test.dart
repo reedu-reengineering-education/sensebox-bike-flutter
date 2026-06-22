@@ -2,24 +2,24 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
 import 'package:sensebox_bike/ble/ble_reconnection_coordinator.dart';
+import 'ble_test_helpers.dart';
 import 'mock_ble_platform.dart';
 
 void main() {
   late MockBlePlatform platform;
   late BleReconnectionCoordinator coordinator;
-  late BleDevice device;
+  late ReconnectionTestSpy spy;
   late StreamController<BleLinkState> connectionStateController;
 
   setUp(() {
     platform = MockBlePlatform();
     coordinator = BleReconnectionCoordinator(platform: platform);
+    spy = ReconnectionTestSpy();
 
-    device = const BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
     connectionStateController = StreamController<BleLinkState>.broadcast();
-    when(() => platform.connectionState(device.id))
+    when(() => platform.connectionState(testBleDevice.id))
         .thenAnswer((_) => connectionStateController.stream);
   });
 
@@ -28,96 +28,41 @@ void main() {
     connectionStateController.close();
   });
 
+  Future<void> emitDisconnected() async {
+    connectionStateController.add(BleLinkState.disconnected);
+    await Future<void>.delayed(Duration.zero);
+  }
+
   group('BleReconnectionCoordinator', () {
-    test('runs reconnect when onLinkLost marks the episode', () async {
-      var reconnectCalls = 0;
-      var linkLostCalls = 0;
+    test('reconnects on unexpected disconnect', () async {
+      spy.attach(coordinator, testBleDevice);
 
-      coordinator.attach(
-        device,
-        shouldIgnoreDisconnect: () => false,
-        onLinkLost: () => linkLostCalls++,
-        runReconnectSessions: (_) async {
-          reconnectCalls++;
-          return true;
-        },
-        onReconnectSucceeded: () {},
-        onReconnectEpisodeEnded: (_) {},
-        onListenerError: (_, __) async {},
-      );
+      await emitDisconnected();
 
-      connectionStateController.add(BleLinkState.disconnected);
-      await Future<void>.delayed(Duration.zero);
-
-      expect(linkLostCalls, 1);
-      expect(reconnectCalls, 1);
-      expect(coordinator.isReconnectionInProgress, isFalse);
-    });
-
-    test('starts reconnect when link drops unexpectedly', () async {
-      var linkLost = false;
-      var reconnectCalls = 0;
-
-      coordinator.attach(
-        device,
-        shouldIgnoreDisconnect: () => false,
-        onLinkLost: () => linkLost = true,
-        runReconnectSessions: (_) async {
-          reconnectCalls++;
-          return true;
-        },
-        onReconnectSucceeded: () {},
-        onReconnectEpisodeEnded: (_) {},
-        onListenerError: (_, __) async {},
-      );
-
-      connectionStateController.add(BleLinkState.disconnected);
-      await Future<void>.delayed(Duration.zero);
-
-      expect(linkLost, isTrue);
-      expect(reconnectCalls, 1);
+      expect(spy.linkLostCalls, 1);
+      expect(spy.reconnectCalls, 1);
       expect(coordinator.isReconnectionInProgress, isFalse);
     });
 
     test('ignores disconnect while shouldIgnoreDisconnect is true', () async {
-      var reconnectCalls = 0;
-
-      coordinator.attach(
-        device,
+      spy.attach(
+        coordinator,
+        testBleDevice,
         shouldIgnoreDisconnect: () => true,
-        onLinkLost: () {},
-        runReconnectSessions: (_) async {
-          reconnectCalls++;
-          return true;
-        },
-        onReconnectSucceeded: () {},
-        onReconnectEpisodeEnded: (_) {},
-        onListenerError: (_, __) async {},
       );
 
-      connectionStateController.add(BleLinkState.disconnected);
-      await Future<void>.delayed(Duration.zero);
+      await emitDisconnected();
 
-      expect(reconnectCalls, 0);
+      expect(spy.reconnectCalls, 0);
     });
 
     test('calls onListenerError when connection stream errors', () async {
-      Object? capturedError;
-
-      coordinator.attach(
-        device,
-        shouldIgnoreDisconnect: () => false,
-        onLinkLost: () {},
-        runReconnectSessions: (_) async => true,
-        onReconnectSucceeded: () {},
-        onReconnectEpisodeEnded: (_) {},
-        onListenerError: (_, error) async => capturedError = error,
-      );
+      spy.attach(coordinator, testBleDevice);
 
       connectionStateController.addError(Exception('stream failed'));
       await Future<void>.delayed(Duration.zero);
 
-      expect(capturedError, isA<Exception>());
+      expect(spy.listenerError, isA<Exception>());
     });
 
     test('reset clears in-progress flag', () {
@@ -127,64 +72,39 @@ void main() {
     });
 
     test('calls onReconnectEpisodeEnded with success result', () async {
-      bool? episodeSuccess;
-
-      coordinator.attach(
-        device,
-        shouldIgnoreDisconnect: () => false,
-        onLinkLost: () {},
+      spy.attach(
+        coordinator,
+        testBleDevice,
         runReconnectSessions: (_) async => false,
-        onReconnectSucceeded: () {},
-        onReconnectEpisodeEnded: (success) => episodeSuccess = success,
-        onListenerError: (_, __) async {},
       );
 
-      connectionStateController.add(BleLinkState.disconnected);
-      await Future<void>.delayed(Duration.zero);
+      await emitDisconnected();
 
-      expect(episodeSuccess, isFalse);
+      expect(spy.episodeSuccess, isFalse);
     });
 
     test('notifyUnexpectedLinkLost starts reconnect when listener is active',
         () async {
-      var reconnectCalls = 0;
-
-      coordinator.attach(
-        device,
-        shouldIgnoreDisconnect: () => false,
-        onLinkLost: () {},
-        runReconnectSessions: (_) async {
-          reconnectCalls++;
-          return true;
-        },
-        onReconnectSucceeded: () {},
-        onReconnectEpisodeEnded: (_) {},
-        onListenerError: (_, __) async {},
-      );
+      spy.attach(coordinator, testBleDevice);
 
       await coordinator.notifyUnexpectedLinkLost();
       await Future<void>.delayed(Duration.zero);
 
-      expect(reconnectCalls, 1);
+      expect(spy.reconnectCalls, 1);
     });
 
     test('notifyUnexpectedLinkLost is ignored while episode is in progress',
         () async {
       final gate = Completer<void>();
-      var reconnectCalls = 0;
 
-      coordinator.attach(
-        device,
-        shouldIgnoreDisconnect: () => false,
-        onLinkLost: () {},
+      spy.attach(
+        coordinator,
+        testBleDevice,
         runReconnectSessions: (_) async {
-          reconnectCalls++;
+          spy.reconnectCalls++;
           await gate.future;
           return true;
         },
-        onReconnectSucceeded: () {},
-        onReconnectEpisodeEnded: (_) {},
-        onListenerError: (_, __) async {},
       );
 
       unawaited(coordinator.notifyUnexpectedLinkLost());
@@ -192,7 +112,7 @@ void main() {
       await coordinator.notifyUnexpectedLinkLost();
       await Future<void>.delayed(Duration.zero);
 
-      expect(reconnectCalls, 1);
+      expect(spy.reconnectCalls, 1);
       gate.complete();
     });
 
@@ -200,18 +120,15 @@ void main() {
       final gate = Completer<void>();
       var episodeSuccess = true;
 
-      coordinator.attach(
-        device,
-        shouldIgnoreDisconnect: () => false,
-        onLinkLost: () {},
+      spy.attach(
+        coordinator,
+        testBleDevice,
         runReconnectSessions: (_) async {
           coordinator.abortCurrentEpisode();
           await gate.future;
           return true;
         },
-        onReconnectSucceeded: () {},
         onReconnectEpisodeEnded: (success) => episodeSuccess = success,
-        onListenerError: (_, __) async {},
       );
 
       unawaited(coordinator.notifyUnexpectedLinkLost());

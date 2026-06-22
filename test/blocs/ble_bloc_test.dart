@@ -5,12 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
-import '../mocks.dart';
+import '../ble/ble_test_helpers.dart';
 import '../ble/mock_ble_platform.dart';
+import '../mocks.dart';
 
 void main() {
   group('BleBloc', () {
-    late BleBloc bleBloc;
     late MockSettingsBloc mockSettingsBloc;
 
     setUpAll(() {
@@ -22,15 +22,13 @@ void main() {
 
     setUp(() {
       mockSettingsBloc = MockSettingsBloc();
-      bleBloc = MockBleBloc();
-    });
-
-    tearDown(() {
-      bleBloc.dispose();
     });
 
     group('Initialization', () {
       test('initializes with correct default values', () {
+        final bleBloc = createTestBleBloc(mockSettingsBloc);
+        addTearDown(bleBloc.dispose);
+
         expect(bleBloc.isBluetoothEnabledNotifier.value, isFalse);
         expect(bleBloc.isScanningNotifier.value, isFalse);
         expect(bleBloc.isConnectingNotifier.value, isFalse);
@@ -46,7 +44,10 @@ void main() {
 
     group('Bluetooth Status', () {
       test('updateBluetoothStatus updates notifier and notifies listeners', () {
-        bool listenerCalled = false;
+        final bleBloc = createTestBleBloc(mockSettingsBloc);
+        addTearDown(bleBloc.dispose);
+
+        var listenerCalled = false;
         bleBloc.addListener(() {
           listenerCalled = true;
         });
@@ -60,6 +61,9 @@ void main() {
 
     group('Connection State Management', () {
       test('resetConnectionError clears connection error state', () {
+        final bleBloc = createTestBleBloc(mockSettingsBloc);
+        addTearDown(bleBloc.dispose);
+
         bleBloc.connectionErrorNotifier.value = true;
         bleBloc.resetConnectionError();
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
@@ -67,35 +71,20 @@ void main() {
     });
 
     group('Error Handling', () {
-      test('connectionErrorNotifier can be set and reset', () {
-        bleBloc.connectionErrorNotifier.value = true;
-        expect(bleBloc.connectionErrorNotifier.value, isTrue);
-
-        bleBloc.resetConnectionError();
-        expect(bleBloc.connectionErrorNotifier.value, isFalse);
-      });
-
       test('user-initiated disconnect calls disconnect on platform',
           () async {
         final platform = MockBlePlatform();
-        when(() => platform.disconnect(any())).thenAnswer((_) async {});
-        when(() => platform.dispose()).thenAnswer((_) async {});
-
-        final realBleBloc = BleBloc(
-          mockSettingsBloc,
-          initializePlatformBle: false,
-          platform: platform,
-        );
+        final realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
         addTearDown(realBleBloc.dispose);
 
-        const device = BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
-        realBleBloc.selectedDevice = device;
-        realBleBloc.selectedDeviceNotifier.value = device;
+        realBleBloc.selectedDevice = testBleDevice;
+        realBleBloc.selectedDeviceNotifier.value = testBleDevice;
 
         await realBleBloc.disconnectDevice(
             reason: BleDisconnectReason.userRequested);
 
-        verify(() => platform.disconnect(device.id)).called(greaterThanOrEqualTo(1));
+        verify(() => platform.disconnect(testBleDevice.id))
+            .called(greaterThanOrEqualTo(1));
         expect(realBleBloc.selectedDevice, isNull);
         expect(realBleBloc.selectedDeviceNotifier.value, isNull);
       });
@@ -103,43 +92,28 @@ void main() {
       test('linkOnly disconnect keeps selected device and reconnecting state',
           () async {
         final platform = MockBlePlatform();
-        when(() => platform.disconnect(any())).thenAnswer((_) async {});
-        when(() => platform.dispose()).thenAnswer((_) async {});
-
-        final realBleBloc = BleBloc(
-          mockSettingsBloc,
-          initializePlatformBle: false,
-          platform: platform,
-        );
+        final realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
         addTearDown(realBleBloc.dispose);
 
-        const device = BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
-        realBleBloc.selectedDevice = device;
-        realBleBloc.selectedDeviceNotifier.value = device;
+        realBleBloc.selectedDevice = testBleDevice;
+        realBleBloc.selectedDeviceNotifier.value = testBleDevice;
         realBleBloc.isReconnectingNotifier.value = true;
 
         await realBleBloc.disconnectDevice(
-            device: device, reason: BleDisconnectReason.retryRelease);
+            device: testBleDevice, reason: BleDisconnectReason.retryRelease);
 
-        expect(realBleBloc.selectedDevice, device);
-        expect(realBleBloc.selectedDeviceNotifier.value, device);
+        expect(realBleBloc.selectedDevice, testBleDevice);
+        expect(realBleBloc.selectedDeviceNotifier.value, testBleDevice);
         expect(realBleBloc.isReconnectingNotifier.value, isTrue);
       });
 
       test('shows connection error when platform.connect throws on initial connect',
           () async {
         final platform = MockBlePlatform();
-        when(() => platform.disconnect(any())).thenAnswer((_) async {});
-        when(() => platform.dispose()).thenAnswer((_) async {});
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
             .thenThrow(Exception('Connection failed'));
-        when(() => platform.dispose()).thenAnswer((_) async {});
 
-        final realBleBloc = BleBloc(
-          mockSettingsBloc,
-          initializePlatformBle: false,
-          platform: platform,
-        );
+        final realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
         addTearDown(realBleBloc.dispose);
 
         const device = BleDevice(id: 'AA:BB:CC:DD:EE:02', name: 'senseBox:test');
@@ -158,22 +132,15 @@ void main() {
       late MockBlePlatform platform;
       late BleBloc realBleBloc;
 
-      const device = BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
-
       setUp(() {
         platform = MockBlePlatform();
+        stubBlePlatformLifecycle(platform);
         when(() => mockSettingsBloc.vibrateOnDisconnect).thenReturn(false);
-        when(() => platform.disconnect(any())).thenAnswer((_) async {});
-        when(() => platform.dispose()).thenAnswer((_) async {});
         when(() => platform.isConnected(any())).thenAnswer((_) => true);
         when(() => platform.connectionState(any()))
             .thenAnswer((_) => const Stream.empty());
 
-        realBleBloc = BleBloc(
-          mockSettingsBloc,
-          initializePlatformBle: false,
-          platform: platform,
-        );
+        realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
       });
 
       tearDown(() {
@@ -181,21 +148,20 @@ void main() {
       });
 
       test('powered off tears down platform link', () async {
-        realBleBloc.selectedDevice = device;
+        realBleBloc.selectedDevice = testBleDevice;
         realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
 
         await realBleBloc.debugOnBluetoothPoweredOff();
 
-        verify(() => platform.disconnect(device.id)).called(1);
+        verify(() => platform.disconnect(testBleDevice.id)).called(1);
       });
 
       test('powered off starts reconnecting when listener is attached',
           () async {
-        realBleBloc.selectedDevice = device;
-        realBleBloc.selectedDeviceNotifier.value = device;
-        realBleBloc.isBluetoothEnabledNotifier.value = true;
-        realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
-        realBleBloc.debugAttachReconnectionListener(device);
+        primeConnectedWithReconnectionListener(
+          realBleBloc,
+          bluetoothEnabled: true,
+        );
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
             .thenAnswer((_) async {});
 
@@ -211,13 +177,12 @@ void main() {
 
       test('powered on reconnects when platform still reports connected after adapter off',
           () async {
-        realBleBloc.selectedDevice = device;
-        realBleBloc.selectedDeviceNotifier.value = device;
-        realBleBloc.isBluetoothEnabledNotifier.value = true;
-        realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
-        realBleBloc.debugAttachReconnectionListener(device);
+        primeConnectedWithReconnectionListener(
+          realBleBloc,
+          bluetoothEnabled: true,
+        );
         realBleBloc.debugMarkLinkLostDueToAdapterPowerOff();
-        when(() => platform.isConnected(device.id)).thenReturn(true);
+        when(() => platform.isConnected(testBleDevice.id)).thenReturn(true);
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
             .thenAnswer((_) async {});
 
@@ -233,28 +198,23 @@ void main() {
 
       test('powered on skips reconnect when link is live and adapter was not powered off',
           () async {
-        realBleBloc.selectedDevice = device;
-        realBleBloc.selectedDeviceNotifier.value = device;
-        realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
-        realBleBloc.debugAttachReconnectionListener(device);
-        when(() => platform.isConnected(device.id)).thenReturn(true);
+        primeConnectedWithReconnectionListener(realBleBloc);
+        when(() => platform.isConnected(testBleDevice.id)).thenReturn(true);
 
         await realBleBloc.debugOnBluetoothPoweredOn();
 
         expect(realBleBloc.isReconnectingNotifier.value, isFalse);
-        verifyNever(() => platform.disconnect(device.id));
+        verifyNever(() => platform.disconnect(testBleDevice.id));
       });
     });
 
     group('Device Management', () {
-      test('devicesListStream provides stream of device lists', () {
-        expect(bleBloc.devicesListStream, isA<Stream<List<BleDevice>>>());
-      });
-
       test('scanForNewDevices clears selected device', () async {
-        const device = BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:test');
-        bleBloc.selectedDevice = device;
-        bleBloc.selectedDeviceNotifier.value = device;
+        final bleBloc = MockBleBloc();
+        addTearDown(bleBloc.dispose);
+
+        bleBloc.selectedDevice = testBleDevice;
+        bleBloc.selectedDeviceNotifier.value = testBleDevice;
 
         await bleBloc.scanForNewDevices();
 

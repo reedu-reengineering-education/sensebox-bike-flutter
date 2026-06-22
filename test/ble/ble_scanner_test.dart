@@ -4,18 +4,12 @@ import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_scanner.dart';
 import 'mock_ble_platform.dart';
 
-BleDevice discovered({
-  required String id,
-  required String name,
-}) {
-  return BleDevice(id: id, name: name);
-}
-
 void main() {
   group('senseBoxDevicesFromDiscovered', () {
     test('keeps devices whose advertised name starts with senseBox', () {
-      final senseBox = discovered(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:abc');
-      final other = discovered(id: 'AA:BB:CC:DD:EE:02', name: 'OtherDevice');
+      final senseBox =
+          BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'senseBox:abc');
+      final other = BleDevice(id: 'AA:BB:CC:DD:EE:02', name: 'OtherDevice');
 
       final filtered = senseBoxDevicesFromDiscovered([other, senseBox]);
 

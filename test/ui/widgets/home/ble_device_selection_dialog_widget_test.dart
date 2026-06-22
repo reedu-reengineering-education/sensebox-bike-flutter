@@ -7,6 +7,7 @@ import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget
 import '../../../test_helpers.dart';
 
 class MockBleBloc extends Mock implements BleBloc {}
+
 class FakeBuildContext extends Fake implements BuildContext {}
 
 void main() {
@@ -63,7 +64,6 @@ void main() {
 
   testWidgets('shows loading spinner while scanning', (tester) async {
     when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(true));
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
 
     await tester.pumpWidget(
       createLocalizedTestApp(
@@ -79,9 +79,6 @@ void main() {
   });
 
   testWidgets('shows no devices found message', (tester) async {
-    when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
-
     await tester.pumpWidget(
       createLocalizedTestApp(
         locale: const Locale('en'),

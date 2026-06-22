@@ -1,37 +1,15 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
-import 'package:sensebox_bike/ble/ble_uuids.dart';
+import 'ble_test_helpers.dart';
 import 'mock_ble_platform.dart';
-
-Uint8List float32Bytes(List<double> values) {
-  final byteData = ByteData(values.length * 4);
-  for (var i = 0; i < values.length; i++) {
-    byteData.setFloat32(i * 4, values[i], Endian.little);
-  }
-  return byteData.buffer.asUint8List();
-}
-
-BleCharacteristicRef characteristicRef(String uuid) {
-  return BleCharacteristicRef(
-    deviceId: 'AA:BB:CC:DD:EE:01',
-    serviceUuid: senseBoxServiceUuid,
-    characteristicUuid: BleUuid(uuid),
-  );
-}
 
 void main() {
   setUpAll(() {
     registerFallbackValue(
-      BleCharacteristicRef(
-        deviceId: 'AA:BB:CC:DD:EE:01',
-        serviceUuid: senseBoxServiceUuid,
-        characteristicUuid: BleUuid('11111111-2222-3333-4444-555555555555'),
-      ),
+      testCharacteristicRef('11111111-2222-3333-4444-555555555555'),
     );
   });
 
@@ -67,7 +45,7 @@ void main() {
     });
 
     test('subscribe emits parsed values from platform stream', () async {
-      await streams.subscribe(characteristicRef(uuid));
+      await streams.subscribe(testCharacteristicRef(uuid));
 
       verify(() => platform.subscribeToCharacteristic(any())).called(1);
 
@@ -86,7 +64,7 @@ void main() {
     });
 
     test('resubscribe replaces prior stream for the same uuid', () async {
-      await streams.subscribe(characteristicRef(uuid));
+      await streams.subscribe(testCharacteristicRef(uuid));
 
       final firstValues = <List<double>>[];
       final firstSubscription =
@@ -94,7 +72,7 @@ void main() {
       notifyController.add(float32Bytes([1.0]));
       await Future<void>.delayed(Duration.zero);
 
-      await streams.subscribe(characteristicRef(uuid));
+      await streams.subscribe(testCharacteristicRef(uuid));
 
       final secondValues = <List<double>>[];
       streams.characteristicStream(uuid).listen(secondValues.add);
@@ -112,7 +90,7 @@ void main() {
     });
 
     test('clear removes subscriptions and closes streams', () async {
-      await streams.subscribe(characteristicRef(uuid));
+      await streams.subscribe(testCharacteristicRef(uuid));
       await streams.clear();
 
       expect(streams.subscribedCharacteristicUuids, isEmpty);
