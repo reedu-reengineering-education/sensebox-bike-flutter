@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/ui/widgets/common/sensor_gradient_widget.dart';
+import '../../../sensor_catalog_test_data.dart';
 
 void main() {
+  setUpAll(setupSensorCatalogFromRepo);
+  tearDownAll(clearMockSensorCatalog);
 
   group('getSensorGradientColors', () {
     test('returns red-orange-green gradient for distance sensor', () {
