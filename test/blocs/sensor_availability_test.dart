@@ -24,6 +24,9 @@ MockSensor mockSensor({
   return mock;
 }
 
+bool alwaysLive(String _) => true;
+bool neverLive(String _) => false;
+
 void main() {
   setUp(() {
     FeatureFlags.hideSurfaceAnomalySensor = true;
@@ -38,10 +41,11 @@ void main() {
         ),
       ];
 
-      expect(filterAvailableSensors(sensors, {}), isEmpty);
+      expect(filterAvailableSensors(sensors, {}, neverLive), isEmpty);
     });
 
-    test('includes sensors whose characteristic is on the box', () {
+    test('includes sensors whose characteristic is on the box and has live data',
+        () {
       final temperature = mockSensor(
         uuid: TemperatureSensor.sensorCharacteristicUuid,
         title: 'temperature',
@@ -50,9 +54,25 @@ void main() {
       final available = filterAvailableSensors(
         [temperature],
         {TemperatureSensor.sensorCharacteristicUuid},
+        alwaysLive,
       );
 
       expect(available, [temperature]);
+    });
+
+    test('excludes sensors without live payload', () {
+      final temperature = mockSensor(
+        uuid: TemperatureSensor.sensorCharacteristicUuid,
+        title: 'temperature',
+      );
+
+      final available = filterAvailableSensors(
+        [temperature],
+        {TemperatureSensor.sensorCharacteristicUuid},
+        neverLive,
+      );
+
+      expect(available, isEmpty);
     });
 
     test('excludes sensors not present on the box', () {
@@ -68,6 +88,7 @@ void main() {
       final available = filterAvailableSensors(
         [temperature, humidity],
         {TemperatureSensor.sensorCharacteristicUuid},
+        alwaysLive,
       );
 
       expect(available, [temperature]);
@@ -83,6 +104,7 @@ void main() {
         filterAvailableSensors(
           [surfaceAnomaly],
           {SurfaceAnomalySensor.sensorCharacteristicUuid},
+          alwaysLive,
         ),
         isEmpty,
       );
@@ -98,9 +120,27 @@ void main() {
       final available = filterAvailableSensors(
         [surfaceAnomaly],
         {SurfaceAnomalySensor.sensorCharacteristicUuid},
+        alwaysLive,
       );
 
       expect(available, [surfaceAnomaly]);
+    });
+  });
+
+  group('filterDiscoveredSensors', () {
+    test('includes sensors with discovered characteristics regardless of payload',
+        () {
+      final temperature = mockSensor(
+        uuid: TemperatureSensor.sensorCharacteristicUuid,
+        title: 'temperature',
+      );
+
+      final discovered = filterDiscoveredSensors(
+        [temperature],
+        {TemperatureSensor.sensorCharacteristicUuid},
+      );
+
+      expect(discovered, [temperature]);
     });
   });
 

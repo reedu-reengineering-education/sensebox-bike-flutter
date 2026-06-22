@@ -30,6 +30,7 @@ class SensorBloc with ChangeNotifier {
   late final VoidCallback _selectedDeviceListener;
   late final VoidCallback _recordingListener;
   late final VoidCallback _reconnectingListener;
+  late final VoidCallback _livePayloadListener;
   List<String> _lastCharacteristicUuids = [];
   bool _isStartingListening = false;
 
@@ -102,6 +103,9 @@ class SensorBloc with ChangeNotifier {
     bleBloc.availableCharacteristics.addListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .addListener(_characteristicStreamsVersionListener);
+    _livePayloadListener = () => notifyListeners();
+    bleBloc.characteristicStreams.livePayloadVersion
+        .addListener(_livePayloadListener);
   }
 
   Future<void> _onRecordingStart() async {
@@ -197,7 +201,7 @@ class SensorBloc with ChangeNotifier {
     }
     _isStartingListening = true;
     try {
-      for (final sensor in availableSensors) {
+      for (final sensor in _discoveredSensors) {
         await sensor.startListening();
       }
     } finally {
@@ -244,9 +248,15 @@ class SensorBloc with ChangeNotifier {
           characteristic.uuidString,
       };
 
+  List<Sensor> get _discoveredSensors => filterDiscoveredSensors(
+        _sensors,
+        _characteristicUuids,
+      );
+
   List<Sensor> get availableSensors => filterAvailableSensors(
         _sensors,
         _characteristicUuids,
+        bleBloc.characteristicStreams.hasLivePayload,
       );
 
   @override
@@ -256,6 +266,8 @@ class SensorBloc with ChangeNotifier {
     bleBloc.availableCharacteristics.removeListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .removeListener(_characteristicStreamsVersionListener);
+    bleBloc.characteristicStreams.livePayloadVersion
+        .removeListener(_livePayloadListener);
     recordingBloc.isRecordingNotifier.removeListener(_recordingListener);
     
     _stopListening().catchError((e, stackTrace) {

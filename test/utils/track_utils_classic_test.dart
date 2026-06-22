@@ -2,8 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
+import '../sensor_catalog_test_data.dart';
 
 void main() {
+  setUpAll(setupSensorCatalogFromRepo);
+  tearDownAll(clearMockSensorCatalog);
+
   group('UploadDataPreparer Classic', () {
     test('handles acceleration sensors', () {
       final sensors = [

@@ -157,47 +157,34 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
 
         final senseBox = SenseBox.fromJson(bloc.senseBoxes[index]);
         final isSelected = senseBox.id == bloc.selectedSenseBox?.id;
-        final isSenseBoxBikeCompatible =
-            configurationBloc.isSenseBoxBikeCompatible(senseBox);
 
         return ListTile(
           title: Text(senseBox.name ??
               localizations.openSenseMapBoxSelectionUnnamedBox),
-          subtitle: !isSenseBoxBikeCompatible
-              ? Row(
-                  children: [
-                    const Icon(Icons.warning, size: 12),
-                    const SizedBox(width: 8),
-                    Text(localizations.openSenseMapBoxSelectionIncompatible),
-                  ],
+          subtitle: senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
+              ? Wrap(
+                  spacing: 8,
+                  children: senseBox.grouptag!
+                      .map((tag) => Badge(
+                            label: Text(tag),
+                            backgroundColor: theme.iconTheme.color,
+                          ))
+                      .toList(),
                 )
-              : senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
-                  ? Wrap(
-                      spacing: 8,
-                      children: senseBox.grouptag!
-                          .map((tag) => Badge(
-                                label: Text(tag),
-                                backgroundColor: theme.iconTheme.color,
-                              ))
-                          .toList(),
-                    )
-                  : null,
+              : null,
           trailing: isSelected
               ? Icon(Icons.check, color: theme.colorScheme.primary)
               : null,
-          enabled: isSenseBoxBikeCompatible,
-          onTap: isSenseBoxBikeCompatible
-              ? () async {
-                  if (isSelected) {
-                    await bloc.setSelectedSenseBox(null);
-                  } else {
-                    await bloc.setSelectedSenseBox(senseBox);
-                  }
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                  }
-                }
-              : null,
+          onTap: () async {
+            if (isSelected) {
+              await bloc.setSelectedSenseBox(null);
+            } else {
+              await bloc.setSelectedSenseBox(senseBox);
+            }
+            if (context.mounted) {
+              Navigator.pop(context);
+            }
+          },
         );
       },
     );
