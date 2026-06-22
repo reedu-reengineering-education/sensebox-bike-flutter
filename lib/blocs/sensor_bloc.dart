@@ -216,8 +216,6 @@ class SensorBloc with ChangeNotifier {
       await _stopListening();
       return;
     }
-    // During reconnect, characteristics may be republished before phase flips
-    // to connected; wait for onReconnectSucceeded before re-subscribing.
     if (!bleBloc.isConnected) {
       if (!bleBloc.isReconnectingNotifier.value) {
         await _stopListening();

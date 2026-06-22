@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
 
-/// Watches connection state and runs reconnect attempts after unexpected disconnects.
 class BleReconnectionCoordinator {
   BleReconnectionCoordinator({required this.platform});
 
@@ -57,9 +56,7 @@ class BleReconnectionCoordinator {
             !_reconnectionInProgress) {
           await _startReconnectionEpisode(device);
         }
-      } catch (_) {
-        // Let the reconnection process handle errors.
-      }
+      } catch (_) {}
     });
 
     _subscription?.onError((error) {
@@ -74,12 +71,10 @@ class BleReconnectionCoordinator {
 
   bool get isReconnectionInProgress => _reconnectionInProgress;
 
-  /// Stops the in-flight reconnect loop without detaching the link listener.
   void abortCurrentEpisode() {
     _abortReconnection = true;
   }
 
-  /// Used when the adapter powers off and the link-state stream may not emit.
   Future<void> notifyUnexpectedLinkLost() async {
     final device = _device;
     if (device == null || _subscription == null) {
@@ -153,10 +148,6 @@ class BleReconnectionCoordinator {
 
   void reset() {
     _reconnectionInProgress = false;
-    // Clear the abort latch so a cancelled cycle cannot permanently suppress
-    // reconnection for the next unexpected disconnect. The coordinator stays
-    // attached across cycles, so this latch must not survive a completed or
-    // reset episode.
     _abortReconnection = false;
   }
 }

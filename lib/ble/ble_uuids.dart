@@ -1,19 +1,10 @@
-/// Library-agnostic Bluetooth UUID value type.
-///
-/// Stores UUIDs in a canonical lowercase, dash-separated 128-bit form so that
-/// equality and the [toString] representation are stable regardless of the
-/// underlying BLE library. The 32-character dash-free [compact] form is used
-/// for hashing and equality so short and long inputs compare correctly.
 class BleUuid {
   BleUuid(String value) : _canonical = _toDashed(value);
 
   final String _canonical;
 
-  /// Canonical lowercase, dash-separated representation
-  /// (e.g. `cf06a218-f68e-e0be-ad04-8ebc1eb0bc84`).
   String get value => _canonical;
 
-  /// Lowercase representation without dashes, used for comparison.
   String get compact => _canonical.replaceAll('-', '');
 
   @override

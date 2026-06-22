@@ -26,19 +26,6 @@ class BleConnectionSession {
   final BlePlatform _platform;
   final Duration probeTimeout;
 
-  /// Establishes a session on [device].
-  ///
-  /// Enables notifications on every characteristic up front, then waits for a
-  /// valid payload on any of them within [livenessTimeout] (defaulting to
-  /// [probeTimeout]). Subscribing all characteristics before the liveness wait
-  /// keeps GATT traffic up during the short supervision window the box
-  /// negotiates (`timeout=200`); waiting on a single probe characteristic
-  /// first lets the link drop before data arrives. Liveness listens on session
-  /// streams only — never a throwaway platform subscription, which would
-  /// disable notifications on Android when cancelled.
-  ///
-  /// When [stabilityDwell] is set, success is deferred until the link stays
-  /// connected for that duration without dropping.
   Future<BleConnectionSessionResult> establish(
     BleDevice device, {
     required BleCharacteristicStreams streams,

@@ -23,20 +23,10 @@ enum BleDisconnectReason {
   retryRelease,
 }
 
-/// The connection lifecycle as a single, explicit state. Replaces the previous
-/// set of interacting booleans so that connect / reconnect / disconnect flows
-/// have exactly one source of truth and invalid combinations are unrepresentable.
 enum BleConnectionPhase {
-  /// No active link and not attempting one.
   idle,
-
-  /// Initial connection attempt (including the session retry loop).
   connecting,
-
-  /// Link established and a live session is running.
   connected,
-
-  /// Link dropped unexpectedly; the reconnection loop is running.
   reconnecting,
 }
 
@@ -98,9 +88,6 @@ class BleBloc with ChangeNotifier {
 
   bool get isConnected => _phase == BleConnectionPhase.connected;
 
-  /// Single mutator for the connection lifecycle. Driving the UI notifiers from
-  /// here (and nowhere else in the bloc) keeps connection state consistent and
-  /// makes missed transitions easy to spot.
   void _setPhase(BleConnectionPhase phase) {
     _phase = phase;
     isConnectingNotifier.value = phase == BleConnectionPhase.connecting;
@@ -133,19 +120,12 @@ class BleBloc with ChangeNotifier {
     _linkLostDueToAdapterPowerOff = true;
     final deviceId = selectedDevice!.id;
 
-    // iOS often does not emit a per-device disconnected update when the adapter
-    // is toggled off. Tear down the platform link so stale isConnected() cannot
-    // block recovery when Bluetooth comes back.
     try {
       await _platform.disconnect(deviceId);
-    } catch (_) {
-      // Best-effort: subscription cancellation can throw as the radio drops.
-    }
+    } catch (_) {}
 
-    // Adapter-off may not produce connected→disconnected for [_handlePlatformLinkStateChange].
     _maybeVibrateOnUnexpectedDisconnect(deviceId);
 
-    // An in-flight episode already waits for the adapter in [_waitForBluetoothReady].
     if (_reconnectionCoordinator.isReconnectionInProgress) {
       return;
     }
@@ -163,8 +143,6 @@ class BleBloc with ChangeNotifier {
       return;
     }
     final device = selectedDevice!;
-    // Do not trust isConnected() after an adapter power cycle — iOS can keep a
-    // stale connected flag until the link is explicitly torn down.
     if (_phase == BleConnectionPhase.connected &&
         _platform.isConnected(device.id) &&
         !_linkLostDueToAdapterPowerOff) {
@@ -390,8 +368,6 @@ class BleBloc with ChangeNotifier {
         stack,
       );
     } finally {
-      // If we never reached `connected` (failure or exhausted retries) settle
-      // back to idle so the UI does not get stuck on a connecting spinner.
       if (_phase != BleConnectionPhase.connected) {
         _linkWatchDevice = null;
         _setPhase(BleConnectionPhase.idle);
@@ -399,9 +375,6 @@ class BleBloc with ChangeNotifier {
     }
   }
 
-  /// Shared connect + establish path for the connect button and auto-reconnect.
-  /// When [waitForAdvertising] is true, each attempt (including retries) scans
-  /// until the box advertises before calling [BlePlatform.connect].
   Future<bool> _connectDeviceWithSessionRetries(
     BleDevice device, {
     required int maxAttempts,
@@ -520,9 +493,6 @@ class BleBloc with ChangeNotifier {
     availableCharacteristics.value = result.characteristics;
     _userInitiatedDisconnect = false;
     characteristicStreamsVersion.value++;
-    // During a reconnect episode keep phase on reconnecting until the
-    // coordinator confirms success, so sensors and geolocation are not
-    // re-armed on a link that may still be settling.
     if (publishConnectedState) {
       _setPhase(BleConnectionPhase.connected);
     }
@@ -566,10 +536,6 @@ class BleBloc with ChangeNotifier {
           _phase == BleConnectionPhase.reconnecting ||
           _appInitiatedTeardown,
       onLinkLost: () {
-        // Drop published characteristics immediately so SensorBloc and the UI
-        // do not keep listening on stream controllers that teardown is about to
-        // close. Each reconnection attempt still rebuilds subscriptions in
-        // [BleConnectionSession.establish] via [characteristicStreams.clear].
         _invalidatePublishedCharacteristics();
         _setPhase(BleConnectionPhase.reconnecting);
         _maybeVibrateOnUnexpectedDisconnect(device.id);
@@ -672,9 +638,6 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> requestEnableBluetooth() async {
-    // On Android 12+ the adapter reports `unauthorized` until the runtime
-    // BLUETOOTH_SCAN/CONNECT permissions are granted, which surfaces as a
-    // disabled-Bluetooth state. Request those first.
     final permissionsGranted =
         await PermissionService.ensureBluetoothPermissionsGranted();
     await _refreshBluetoothEnabledStatus();
@@ -683,23 +646,15 @@ class BleBloc with ChangeNotifier {
     }
 
     if (!permissionsGranted) {
-      // Likely permanently denied; the system Bluetooth toggle won't help, so
-      // send the user to the app settings to grant access.
       await PermissionService.openAppSettings();
       await _refreshBluetoothEnabledStatus();
       return;
     }
 
-    // Permissions are in place but the adapter itself is off.
     await PermissionService.openBluetoothSettings();
     await _refreshBluetoothEnabledStatus();
   }
 
-  /// Single teardown primitive for every disconnect path. Clears characteristic
-  /// streams and releases the link via [BleConnectionSession.release] (which is
-  /// the only disconnect flutter_reactive_ble offers: canceling the
-  /// connection-stream subscription). [settleAfterDisconnect] lets the peer drop
-  /// the GATT link before any reconnect attempt.
   Future<void> _teardownLink(
     BleDevice? device, {
     required List<BleCharacteristicRef> characteristics,

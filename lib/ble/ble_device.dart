@@ -1,4 +1,3 @@
-/// Library-agnostic representation of a discoverable BLE device.
 class BleDevice {
   const BleDevice({
     required this.id,

@@ -42,17 +42,13 @@ class BleSessionRetryRunner {
         if (attempt < maxAttempts - 1) {
           try {
             await prepareForRetry(device);
-          } catch (_) {
-            // Continue with next attempt anyway.
-          }
+          } catch (_) {}
         }
       } catch (_) {
         if (attempt < maxAttempts - 1) {
           try {
             await prepareForRetry(device);
-          } catch (_) {
-            // Continue with next attempt anyway.
-          }
+          } catch (_) {}
         }
       }
     }
@@ -80,8 +76,6 @@ class BleSessionRetryRunner {
       } catch (_) {
         return;
       }
-    } catch (_) {
-      // Let the retry loop continue with the next attempt.
-    }
+    } catch (_) {}
   }
 }

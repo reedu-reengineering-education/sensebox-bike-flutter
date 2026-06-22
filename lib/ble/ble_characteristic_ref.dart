@@ -1,6 +1,5 @@
 import 'package:sensebox_bike/ble/ble_uuids.dart';
 
-/// Library-agnostic reference to a GATT characteristic.
 class BleCharacteristicRef {
   const BleCharacteristicRef({
     required this.deviceId,
@@ -27,7 +26,6 @@ class BleCharacteristicRef {
   }
 }
 
-/// Library-agnostic representation of a discovered GATT service.
 class BleService {
   const BleService({
     required this.serviceId,

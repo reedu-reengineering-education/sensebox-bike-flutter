@@ -44,7 +44,6 @@ void main() {
     test('connectionState exposes a broadcast stream per device', () {
       final stream = platform.connectionState(deviceId);
       expect(stream.isBroadcast, isTrue);
-      // Calling again is backed by the same controller and does not throw.
       expect(platform.connectionState(deviceId), isNotNull);
     });
 

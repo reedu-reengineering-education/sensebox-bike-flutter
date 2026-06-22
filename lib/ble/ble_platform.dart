@@ -65,9 +65,6 @@ class BlePlatform {
     return _linkStates[deviceId] == BleLinkState.connected;
   }
 
-  /// While [establish] runs, the data-staleness watchdog is suppressed so a
-  /// slow liveness/dwell window does not tear down a link that is still being
-  /// set up.
   void beginSessionEstablishment(String deviceId) {
     _sessionEstablishmentDepth[deviceId] =
         (_sessionEstablishmentDepth[deviceId] ?? 0) + 1;
@@ -222,13 +219,9 @@ class BlePlatform {
       ),
     )
         .map((value) {
-      // Each incoming notification proves the link is alive; re-arm the
-      // staleness watchdog that detects an unexpected peripheral power-off
-      // (which Android/flutter_reactive_ble does not reliably report).
       _armDataWatchdog(deviceId);
       return value;
     }).handleError((Object _) {
-      // A notification-stream error also means the link dropped.
       _emitLinkState(deviceId, BleLinkState.disconnected);
     });
   }
@@ -257,8 +250,6 @@ class BlePlatform {
       debugPrint('[BLE][platform] $deviceId link=$state');
       onLinkStateChanged?.call(deviceId, previous, state);
     }
-    // The watchdog is only meaningful while connected; any other state means it
-    // should not fire (re-armed by the next notification once reconnected).
     if (state != BleLinkState.connected) {
       _cancelDataWatchdog(deviceId);
     }

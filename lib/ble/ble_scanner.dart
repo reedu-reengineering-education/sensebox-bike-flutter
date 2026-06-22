@@ -80,8 +80,6 @@ class BleScanner {
     isScanningNotifier.value = true;
   }
 
-  /// Waits until [device] is seen advertising again (same path as [scanForBox]
-  /// before the connect button runs). Returns null on timeout or [shouldCancel].
   Future<BleDevice?> waitForAdvertisingDevice(
     BleDevice device, {
     required bool Function() shouldCancel,

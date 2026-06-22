@@ -149,7 +149,6 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     unawaited(_appLinksSubscription?.cancel());
     _appLinksSubscription = null;
 
-    // Dispose in dependency order: dependents first, then shared providers.
     _sensorBloc?.dispose();
     _sensorBloc = null;
 
