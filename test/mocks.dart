@@ -129,15 +129,20 @@ class MockBleBloc extends Mock implements BleBloc {
   Future<void> disconnectDevice({
     BleDevice? device,
     BleDisconnectReason reason = BleDisconnectReason.userRequested,
-  }) async {}
+  }) async {
+    if (reason != BleDisconnectReason.retryRelease) {
+      selectedDevice = null;
+      selectedDeviceNotifier.value = null;
+    }
+  }
 
   @override
   Future<void> startScanning() async {}
 
   @override
   Future<void> scanForNewDevices() async {
-    selectedDevice = null;
-    selectedDeviceNotifier.value = null;
+    await disconnectDevice(reason: BleDisconnectReason.userRequested);
+    await startScanning();
   }
 
   @override

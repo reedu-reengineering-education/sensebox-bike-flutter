@@ -221,6 +221,30 @@ void main() {
         expect(bleBloc.selectedDevice, isNull);
         expect(bleBloc.selectedDeviceNotifier.value, isNull);
       });
+
+      test('scanForNewDevices awaits disconnect before starting scan', () async {
+        final platform = MockBlePlatform();
+        var scanCalled = false;
+
+        when(() => platform.disconnect(any())).thenAnswer((_) async {
+          expect(scanCalled, isFalse);
+        });
+        when(() => platform.scanForDevices()).thenAnswer((_) {
+          scanCalled = true;
+          return const Stream<BleDevice>.empty();
+        });
+
+        final bleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        addTearDown(bleBloc.dispose);
+
+        bleBloc.selectedDevice = testBleDevice;
+        bleBloc.selectedDeviceNotifier.value = testBleDevice;
+
+        await bleBloc.scanForNewDevices();
+
+        expect(scanCalled, isTrue);
+        verify(() => platform.disconnect(testBleDevice.id)).called(1);
+      });
     });
   });
 }
