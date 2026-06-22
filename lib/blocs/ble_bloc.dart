@@ -294,7 +294,7 @@ class BleBloc with ChangeNotifier {
     }
 
     if (!keepSession) {
-      isConnectingNotifier.value = true;
+      _setPhase(BleConnectionPhase.connecting);
     }
 
     try {
@@ -666,6 +666,8 @@ class BleBloc with ChangeNotifier {
     isConnectingNotifier.dispose();
     isReconnectingNotifier.dispose();
     availableCharacteristics.dispose();
+    characteristicStreamsVersion.dispose();
+    connectionErrorNotifier.dispose();
     super.dispose();
   }
 
