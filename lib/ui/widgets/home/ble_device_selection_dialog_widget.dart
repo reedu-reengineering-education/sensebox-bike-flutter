@@ -243,11 +243,9 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                     final device = devices[index];
                     return ClickableTile(
                       child: Text(bleDevicePickerLabel(device)),
-                      onTap: () async {
-                        await widget.bleBloc.connectToDevice(device, context);
-                        if (context.mounted) {
-                          Navigator.pop(context, true);
-                        }
+                      onTap: () {
+                        widget.bleBloc.connectToDevice(device, context);
+                        Navigator.pop(context, true);
                       },
                     );
                   },
