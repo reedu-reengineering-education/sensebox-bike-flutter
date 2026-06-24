@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_batch.dart';
@@ -46,6 +47,9 @@ abstract class Sensor {
   // Track pending geolocation data for event-driven re-aggregation
   // Key: geoId, Value: GeolocationData with timestamp for window checking
   final Map<int, GeolocationData> _pendingGeolocations = {};
+
+  // Latest instant reading used for periodic collection mode.
+  List<double>? _latestValues;
 
   // Tracks the end timestamp of the last processed geolocation window.
   // Used to avoid unbounded batch growth and prevent "empty batch" starvation.
@@ -108,7 +112,13 @@ abstract class Sensor {
   }
 
   void onDataReceived(List<double> data) {
-    if (data.isNotEmpty && recordingBloc.isRecording) {
+    if (data.isNotEmpty) {
+      _latestValues = List<double>.from(data);
+    }
+
+    if (data.isNotEmpty &&
+        recordingBloc.isRecording &&
+        !recordingBloc.activeCollectionMode.aggregatesSensorValues) {
       final sensorTimestamp = DateTime.now().toUtc();
       final timestampedValue = TimestampedSensorValue(
         values: data,
@@ -251,6 +261,30 @@ abstract class Sensor {
     return valuesInWindow;
   }
 
+  void _performInstantSnapshot(int geoId, GeolocationData geo) {
+    final batch = _sensorBatches[geoId];
+    if (batch == null) {
+      return;
+    }
+
+    if (_latestValues != null &&
+        _latestValues!.isNotEmpty &&
+        !batch.aggregatedData.containsKey(title)) {
+      batch.aggregatedData[title] = List<double>.from(_latestValues!);
+
+      Future.microtask(() async {
+        await _flushBuffers();
+      });
+    }
+
+    if (!batch.aggregatedData.containsKey(title)) {
+      batch.isSavedToDb = true;
+      if (_directUploadService == null || !_directUploadService!.isEnabled) {
+        _sensorBatches.remove(geoId);
+      }
+    }
+  }
+
   void _performDeferredAggregation(int geoId, GeolocationData geo) {
     final batch = _sensorBatches[geoId];
     if (batch == null) {
@@ -332,6 +366,10 @@ abstract class Sensor {
           _cancelPendingAggregation(geoId);
           _performDeferredAggregation(geoId, geo);
           await _flushBuffers();
+        } else if (!recordingBloc.activeCollectionMode.aggregatesSensorValues) {
+          _cancelPendingAggregation(geoId);
+          _performInstantSnapshot(geoId, geo);
+          await _flushBuffers();
         } else {
           // Defer aggregation until lookback window closes
           // This ensures we capture all values that arrive within the window
@@ -404,6 +442,7 @@ abstract class Sensor {
     _pendingGeolocations.clear();
     _sensorBatches.clear();
     _preGpsValues.clear();
+    _latestValues = null;
     _lastAggregatedGeolocationTimeUtc = null;
   }
 

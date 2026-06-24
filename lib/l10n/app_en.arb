@@ -107,6 +107,14 @@
     "connectionButtonReconnecting": "Reconnecting...",
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
+    "recordingPeriodicCollectionMode": "Periodic sampling every {seconds} s",
+    "@recordingPeriodicCollectionMode": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "bleDeviceSelectTitle": "Tap to connect",
     "noBleDevicesFound": "No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.",
     "selectOrCreateBox": "Select or create senseBox:bike",
@@ -139,6 +147,31 @@
     "settingsUploadModePostRideDescription": "• Data is stored locally during recording\n• Upload happens all at once when you finish\n• More reliable and stable\n• Uses less battery during recording",
     "settingsUploadModeDirectTitle": "Upload data in real-time during recording (experimental)",
     "settingsUploadModeDirectDescription": "• Data is uploaded immediately as it's collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording",
+    "settingsCollectionMode": "Recording Mode",
+    "settingsCollectionModeContinuous": "Continuous (GPS-driven)",
+    "settingsCollectionModePeriodic": "Periodic sampling",
+    "settingsCollectionModeCurrent": "Current: {mode}",
+    "@settingsCollectionModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsCollectionModeContinuousTitle": "Record on every GPS update",
+    "settingsCollectionModeContinuousDescription": "• Sensor values are aggregated between GPS points\n• Best for detailed ride maps\n• Uses more storage and battery",
+    "settingsCollectionModePeriodicTitle": "Record at fixed intervals",
+    "settingsCollectionModePeriodicDescription": "• GPS and sensors are sampled on a timer\n• Best for long rides and all-sensor setups\n• Uses less storage and battery",
+    "settingsCollectionModeIntervalLabel": "Sampling interval (seconds)",
+    "settingsCollectionModeIntervalError": "Interval must be at least {minSeconds} seconds",
+    "@settingsCollectionModeIntervalError": {
+        "placeholders": {
+            "minSeconds": {
+                "type": "int"
+            }
+        }
+    },
+    "settingsCollectionModeWhileRecording": "Stop recording to change the recording mode",
     "settingsApiUrl": "Service URL",
     "settingsApiUrlHelper": "Enter the API endpoint for data uploads",
     "settingsApiUrlError": "Please enter a valid URL (e.g., https://api.opensensemap.org)",

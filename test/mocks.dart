@@ -24,6 +24,7 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'ble/mock_ble_platform.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:geolocator/geolocator.dart' as geo;
@@ -304,6 +305,8 @@ class MockSettingsBloc extends Mock
 
 class MockRecordingBloc extends Mock implements RecordingBloc {
   bool _isRecording = false;
+  DataCollectionMode _activeCollectionMode = DataCollectionMode.postRide;
+  int _collectionIntervalSeconds = 60;
   late final ValueNotifier<bool> _isRecordingNotifier;
 
   MockRecordingBloc() {
@@ -318,8 +321,22 @@ class MockRecordingBloc extends Mock implements RecordingBloc {
     _isRecordingNotifier.value = value;
   }
 
+  void setActiveCollectionMode(
+    DataCollectionMode mode, {
+    int intervalSeconds = 60,
+  }) {
+    _activeCollectionMode = mode;
+    _collectionIntervalSeconds = intervalSeconds;
+  }
+
   @override
   ValueNotifier<bool> get isRecordingNotifier => _isRecordingNotifier;
+
+  @override
+  DataCollectionMode get activeCollectionMode => _activeCollectionMode;
+
+  @override
+  int get collectionIntervalSeconds => _collectionIntervalSeconds;
 }
 
 class MockSensorBloc extends Mock implements SensorBloc {

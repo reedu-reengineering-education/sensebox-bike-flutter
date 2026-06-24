@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import '../sensor_catalog_test_data.dart';
 
 void main() {
@@ -99,6 +100,31 @@ void main() {
       };
       final config = BoxConfiguration.fromJson(json);
       expect(config.toJson(), json);
+    });
+
+    test('defaults to postRide collection mode', () {
+      final config = BoxConfiguration.fromJson({
+        'id': 'classic',
+        'displayName': '2022',
+        'defaultGrouptag': 'classic',
+        'sensors': [],
+      });
+      expect(config.dataCollectionMode, DataCollectionMode.postRide);
+      expect(config.collectionIntervalSeconds, defaultCollectionIntervalSeconds);
+    });
+
+    test('parses periodic collection mode and interval', () {
+      final config = BoxConfiguration.fromJson({
+        'id': 'all',
+        'displayName': 'All sensors',
+        'defaultGrouptag': 'all',
+        'dataCollectionMode': 'periodic',
+        'collectionIntervalSeconds': 60,
+        'sensors': [],
+      });
+      expect(config.dataCollectionMode, DataCollectionMode.periodic);
+      expect(config.collectionIntervalSeconds, 60);
+      expect(config.toJson()['dataCollectionMode'], 'periodic');
     });
   });
 

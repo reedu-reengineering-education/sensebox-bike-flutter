@@ -247,6 +247,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get connectionButtonStop => 'Arrêter';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Échantillonnage périodique toutes les $seconds s';
+  }
+
+  @override
   String get bleDeviceSelectTitle => 'Touchez pour connecter';
 
   @override
@@ -333,6 +338,49 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settingsUploadModeDirectDescription =>
       '• Les données sont téléversées immédiatement dès leur collecte\n• Partage des données en temps réel (expérimental)\n• Nécessite une connexion internet stable\n• Peut utiliser plus de batterie pendant l’enregistrement';
+
+  @override
+  String get settingsCollectionMode => 'Mode d\'enregistrement';
+
+  @override
+  String get settingsCollectionModeContinuous => 'Continu (piloté par GPS)';
+
+  @override
+  String get settingsCollectionModePeriodic => 'Échantillonnage périodique';
+
+  @override
+  String settingsCollectionModeCurrent(String mode) {
+    return 'Actuel : $mode';
+  }
+
+  @override
+  String get settingsCollectionModeContinuousTitle =>
+      'Enregistrer à chaque mise à jour GPS';
+
+  @override
+  String get settingsCollectionModeContinuousDescription =>
+      '• Les valeurs des capteurs sont agrégées entre les points GPS\n• Idéal pour des cartes de trajet détaillées\n• Utilise plus de stockage et de batterie';
+
+  @override
+  String get settingsCollectionModePeriodicTitle =>
+      'Enregistrer à intervalles fixes';
+
+  @override
+  String get settingsCollectionModePeriodicDescription =>
+      '• GPS et capteurs sont échantillonnés par minuterie\n• Idéal pour les longs trajets et les configurations multi-capteurs\n• Utilise moins de stockage et de batterie';
+
+  @override
+  String get settingsCollectionModeIntervalLabel =>
+      'Intervalle d\'échantillonnage (secondes)';
+
+  @override
+  String settingsCollectionModeIntervalError(int minSeconds) {
+    return 'L\'intervalle doit être d\'au moins $minSeconds secondes';
+  }
+
+  @override
+  String get settingsCollectionModeWhileRecording =>
+      'Arrêtez l\'enregistrement pour changer le mode d\'enregistrement';
 
   @override
   String get settingsApiUrl => 'URL du service';

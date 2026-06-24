@@ -245,6 +245,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionButtonStop => 'Parar';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Amostragem periódica a cada $seconds s';
+  }
+
+  @override
   String get bleDeviceSelectTitle => 'Toque para conectar';
 
   @override
@@ -330,6 +335,49 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get settingsUploadModeDirectDescription =>
       '• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação';
+
+  @override
+  String get settingsCollectionMode => 'Modo de gravação';
+
+  @override
+  String get settingsCollectionModeContinuous => 'Contínuo (baseado em GPS)';
+
+  @override
+  String get settingsCollectionModePeriodic => 'Amostragem periódica';
+
+  @override
+  String settingsCollectionModeCurrent(String mode) {
+    return 'Atual: $mode';
+  }
+
+  @override
+  String get settingsCollectionModeContinuousTitle =>
+      'Gravar a cada atualização de GPS';
+
+  @override
+  String get settingsCollectionModeContinuousDescription =>
+      '• Valores dos sensores são agregados entre pontos GPS\n• Melhor para mapas detalhados de trajeto\n• Usa mais armazenamento e bateria';
+
+  @override
+  String get settingsCollectionModePeriodicTitle =>
+      'Gravar em intervalos fixos';
+
+  @override
+  String get settingsCollectionModePeriodicDescription =>
+      '• GPS e sensores são amostrados por temporizador\n• Melhor para trajetos longos e configurações com todos os sensores\n• Usa menos armazenamento e bateria';
+
+  @override
+  String get settingsCollectionModeIntervalLabel =>
+      'Intervalo de amostragem (segundos)';
+
+  @override
+  String settingsCollectionModeIntervalError(int minSeconds) {
+    return 'O intervalo deve ser de pelo menos $minSeconds segundos';
+  }
+
+  @override
+  String get settingsCollectionModeWhileRecording =>
+      'Pare a gravação para alterar o modo de gravação';
 
   @override
   String get settingsApiUrl => 'URL do Serviço';

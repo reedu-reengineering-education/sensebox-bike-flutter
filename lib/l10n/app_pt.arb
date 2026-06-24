@@ -108,6 +108,14 @@
     "connectionButtonReconnecting": "Reconectando...",
     "connectionButtonStart": "Iniciar",
     "connectionButtonStop": "Parar",
+    "recordingPeriodicCollectionMode": "Amostragem periódica a cada {seconds} s",
+    "@recordingPeriodicCollectionMode": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "bleDeviceSelectTitle": "Toque para conectar",
     "noBleDevicesFound": "Nenhuma senseBox encontrada. Certifique-se de que sua senseBox está ligada, toque fora desta janela e tente novamente.",
     "selectOrCreateBox": "Selecionar ou criar senseBox",
@@ -140,6 +148,31 @@
     "settingsUploadModePostRideDescription": "• Os dados são armazenados localmente durante a gravação\n• O envio acontece de uma vez quando você terminar\n• Mais confiável e estável\n• Consome menos bateria durante a gravação",
     "settingsUploadModeDirectTitle": "Enviar dados em tempo real durante a gravação (experimental)",
     "settingsUploadModeDirectDescription": "• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação",
+    "settingsCollectionMode": "Modo de gravação",
+    "settingsCollectionModeContinuous": "Contínuo (baseado em GPS)",
+    "settingsCollectionModePeriodic": "Amostragem periódica",
+    "settingsCollectionModeCurrent": "Atual: {mode}",
+    "@settingsCollectionModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsCollectionModeContinuousTitle": "Gravar a cada atualização de GPS",
+    "settingsCollectionModeContinuousDescription": "• Valores dos sensores são agregados entre pontos GPS\n• Melhor para mapas detalhados de trajeto\n• Usa mais armazenamento e bateria",
+    "settingsCollectionModePeriodicTitle": "Gravar em intervalos fixos",
+    "settingsCollectionModePeriodicDescription": "• GPS e sensores são amostrados por temporizador\n• Melhor para trajetos longos e configurações com todos os sensores\n• Usa menos armazenamento e bateria",
+    "settingsCollectionModeIntervalLabel": "Intervalo de amostragem (segundos)",
+    "settingsCollectionModeIntervalError": "O intervalo deve ser de pelo menos {minSeconds} segundos",
+    "@settingsCollectionModeIntervalError": {
+        "placeholders": {
+            "minSeconds": {
+                "type": "int"
+            }
+        }
+    },
+    "settingsCollectionModeWhileRecording": "Pare a gravação para alterar o modo de gravação",
     "settingsApiUrl": "URL do Serviço",
     "settingsApiUrlHelper": "Digite o endpoint da API para uploads de dados",
     "settingsApiUrlError": "Por favor, digite uma URL válida (ex: https://api.opensensemap.org)",

@@ -107,6 +107,14 @@
   "connectionButtonReconnecting": "Reconnexion...",
   "connectionButtonStart": "Démarrer",
   "connectionButtonStop": "Arrêter",
+  "recordingPeriodicCollectionMode": "Échantillonnage périodique toutes les {seconds} s",
+  "@recordingPeriodicCollectionMode": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "bleDeviceSelectTitle": "Touchez pour connecter",
   "noBleDevicesFound": "Aucune senseBox trouvée. Assurez-vous que votre senseBox est chargée, touchez en dehors de cette fenêtre et réessayez.",
   "selectOrCreateBox": "Sélectionner ou créer une senseBox:bike",
@@ -139,6 +147,31 @@
   "settingsUploadModePostRideDescription": "• Les données sont stockées localement pendant l’enregistrement\n• Le téléversement se fait en une seule fois à la fin\n• Plus fiable et stable\n• Utilise moins de batterie pendant l’enregistrement",
   "settingsUploadModeDirectTitle": "Téléverser les données en temps réel pendant l’enregistrement (expérimental)",
   "settingsUploadModeDirectDescription": "• Les données sont téléversées immédiatement dès leur collecte\n• Partage des données en temps réel (expérimental)\n• Nécessite une connexion internet stable\n• Peut utiliser plus de batterie pendant l’enregistrement",
+  "settingsCollectionMode": "Mode d'enregistrement",
+  "settingsCollectionModeContinuous": "Continu (piloté par GPS)",
+  "settingsCollectionModePeriodic": "Échantillonnage périodique",
+  "settingsCollectionModeCurrent": "Actuel : {mode}",
+  "@settingsCollectionModeCurrent": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCollectionModeContinuousTitle": "Enregistrer à chaque mise à jour GPS",
+  "settingsCollectionModeContinuousDescription": "• Les valeurs des capteurs sont agrégées entre les points GPS\n• Idéal pour des cartes de trajet détaillées\n• Utilise plus de stockage et de batterie",
+  "settingsCollectionModePeriodicTitle": "Enregistrer à intervalles fixes",
+  "settingsCollectionModePeriodicDescription": "• GPS et capteurs sont échantillonnés par minuterie\n• Idéal pour les longs trajets et les configurations multi-capteurs\n• Utilise moins de stockage et de batterie",
+  "settingsCollectionModeIntervalLabel": "Intervalle d'échantillonnage (secondes)",
+  "settingsCollectionModeIntervalError": "L'intervalle doit être d'au moins {minSeconds} secondes",
+  "@settingsCollectionModeIntervalError": {
+    "placeholders": {
+      "minSeconds": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsCollectionModeWhileRecording": "Arrêtez l'enregistrement pour changer le mode d'enregistrement",
   "settingsAbout": "À propos",
   "settingsPrivacyPolicy": "Politique de confidentialité",
   "settingsVersion": "Version : {versionNumber}",

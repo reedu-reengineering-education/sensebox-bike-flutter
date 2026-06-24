@@ -244,6 +244,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionButtonStop => 'Stop';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Periodische Aufnahme alle $seconds s';
+  }
+
+  @override
   String get bleDeviceSelectTitle => 'Tippen, um zu verbinden';
 
   @override
@@ -330,6 +335,50 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settingsUploadModeDirectDescription =>
       '• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen';
+
+  @override
+  String get settingsCollectionMode => 'Aufnahmemodus';
+
+  @override
+  String get settingsCollectionModeContinuous =>
+      'Kontinuierlich (GPS-gesteuert)';
+
+  @override
+  String get settingsCollectionModePeriodic => 'Periodische Aufnahme';
+
+  @override
+  String settingsCollectionModeCurrent(String mode) {
+    return 'Aktuell: $mode';
+  }
+
+  @override
+  String get settingsCollectionModeContinuousTitle =>
+      'Bei jedem GPS-Update aufzeichnen';
+
+  @override
+  String get settingsCollectionModeContinuousDescription =>
+      '• Sensorwerte werden zwischen GPS-Punkten aggregiert\n• Am besten für detaillierte Streckenkarten\n• Verbraucht mehr Speicher und Akku';
+
+  @override
+  String get settingsCollectionModePeriodicTitle =>
+      'In festen Intervallen aufzeichnen';
+
+  @override
+  String get settingsCollectionModePeriodicDescription =>
+      '• GPS und Sensoren werden per Timer abgetastet\n• Am besten für lange Fahrten und All-Sensor-Setups\n• Verbraucht weniger Speicher und Akku';
+
+  @override
+  String get settingsCollectionModeIntervalLabel =>
+      'Abtastintervall (Sekunden)';
+
+  @override
+  String settingsCollectionModeIntervalError(int minSeconds) {
+    return 'Intervall muss mindestens $minSeconds Sekunden betragen';
+  }
+
+  @override
+  String get settingsCollectionModeWhileRecording =>
+      'Beende die Aufnahme, um den Aufnahmemodus zu ändern';
 
   @override
   String get settingsApiUrl => 'Service-URL';
