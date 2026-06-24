@@ -554,8 +554,11 @@ class BleBloc with ChangeNotifier {
         if (_userInitiatedDisconnect) {
           return;
         }
-        if (_phase == BleConnectionPhase.reconnecting) {
-          _setPhase(BleConnectionPhase.idle);
+        if (selectedDevice == device) {
+          unawaited(disconnectDevice(
+            device: device,
+            reason: BleDisconnectReason.connectionFailed,
+          ));
         }
       },
       onListenerError: (device, error) async {
