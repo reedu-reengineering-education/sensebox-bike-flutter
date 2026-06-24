@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/models/box_configuration.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsBloc with ChangeNotifier {
@@ -15,6 +18,8 @@ class SettingsBloc with ChangeNotifier {
   List<String> _privacyZones = [];
   bool _directUploadMode =
       false; // false = post-ride upload, true = direct upload
+  DataCollectionMode _dataCollectionMode = DataCollectionMode.postRide;
+  int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
   String _apiUrl = '';
 
   SettingsBloc() {
@@ -29,6 +34,10 @@ class SettingsBloc with ChangeNotifier {
 
   // Getter for the current upload mode
   bool get directUploadMode => _directUploadMode;
+
+  DataCollectionMode get dataCollectionMode => _dataCollectionMode;
+
+  int get collectionIntervalSeconds => _collectionIntervalSeconds;
 
   // Getter for the current API URL
   String get apiUrl =>
@@ -50,6 +59,13 @@ class SettingsBloc with ChangeNotifier {
     _vibrateOnDisconnect = prefs.getBool('vibrateOnDisconnect') ?? false;
     _privacyZones = prefs.getStringList('privacyZones') ?? [];
     _directUploadMode = prefs.getBool('directUploadMode') ?? false;
+    _dataCollectionMode = DataCollectionMode.fromJson(
+      prefs.getString(SharedPreferencesKeys.dataCollectionMode),
+    );
+    _collectionIntervalSeconds = prefs.getInt(
+          SharedPreferencesKeys.collectionIntervalSeconds,
+        ) ??
+        defaultCollectionIntervalSeconds;
     _apiUrl = prefs.getString('apiUrl') ?? '';
 
     // Emit the values to the streams
@@ -82,6 +98,55 @@ class SettingsBloc with ChangeNotifier {
 
     // Emit the new privacy zones to the stream
     _privacyZonesController.add(_privacyZones);
+
+    notifyListeners();
+  }
+
+  /// Applies the box profile's preferred mode unless the user has customized it.
+  Future<void> applyPreferredFromBoxConfiguration(
+    BoxConfiguration config,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(SharedPreferencesKeys.dataCollectionModeCustomized) ==
+        true) {
+      return;
+    }
+
+    _dataCollectionMode = config.dataCollectionMode;
+    _collectionIntervalSeconds = config.collectionIntervalSeconds;
+
+    await prefs.setString(
+      SharedPreferencesKeys.dataCollectionMode,
+      _dataCollectionMode.toJson(),
+    );
+    await prefs.setInt(
+      SharedPreferencesKeys.collectionIntervalSeconds,
+      _collectionIntervalSeconds,
+    );
+
+    notifyListeners();
+  }
+
+  Future<void> setDataCollectionMode(
+    DataCollectionMode mode, {
+    int? intervalSeconds,
+  }) async {
+    _dataCollectionMode = mode;
+    if (intervalSeconds != null) {
+      _collectionIntervalSeconds =
+          parseCollectionIntervalSeconds(intervalSeconds);
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      SharedPreferencesKeys.dataCollectionMode,
+      _dataCollectionMode.toJson(),
+    );
+    await prefs.setInt(
+      SharedPreferencesKeys.collectionIntervalSeconds,
+      _collectionIntervalSeconds,
+    );
+    await prefs.setBool(SharedPreferencesKeys.dataCollectionModeCustomized, true);
 
     notifyListeners();
   }

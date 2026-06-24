@@ -7,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import '../sensor_catalog_test_data.dart';
 
 class MockRemoteDataService extends Mock implements RemoteDataService {}
@@ -101,6 +102,14 @@ void main() {
         expect(bloc.boxConfigurations!.any((config) => config.id == 'atrai'),
             true);
         expect(bloc.boxConfigurations!.any((config) => config.id == 'all'), true);
+        expect(
+          bloc.boxConfigurations!.last.dataCollectionMode,
+          DataCollectionMode.periodic,
+        );
+        expect(
+          bloc.boxConfigurations!.last.collectionIntervalSeconds,
+          defaultCollectionIntervalSeconds,
+        );
         expect(
           bloc.boxConfigurations!.last.sensors.length,
           bloc.sensorCatalog!.length,

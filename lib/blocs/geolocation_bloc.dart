@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
@@ -22,10 +23,13 @@ class GeolocationBloc with ChangeNotifier {
 
   StreamSubscription<Position>? _positionStreamSubscription;
   StreamSubscription<List<String>>? _privacyZonesSubscription;
+  GeolocationData? _lastKnownPosition;
   GeolocationData? _lastEmittedPosition;
   Timer? _stationaryLocationTimer;
+  Timer? _periodicCollectionTimer;
   final PrivacyZoneChecker _privacyZoneChecker = PrivacyZoneChecker();
   bool _isListening = false;
+  VoidCallback? _recordingListener;
 
   bool get isListening => _isListening;
 
@@ -38,6 +42,20 @@ class GeolocationBloc with ChangeNotifier {
     _privacyZonesSubscription = settingsBloc.privacyZonesStream.listen((zones) {
       _privacyZoneChecker.updatePrivacyZones(zones);
     });
+    _recordingListener = () {
+      if (recordingBloc.isRecording &&
+          recordingBloc.activeCollectionMode.usesPeriodicTimer) {
+        _startPeriodicCollectionTimer();
+      } else {
+        _stopPeriodicCollectionTimer();
+        if (recordingBloc.isRecording) {
+          _startStationaryLocationTimer();
+        } else {
+          _stopStationaryLocationTimer();
+        }
+      }
+    };
+    recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
   }
 
   void startListening() async {
@@ -85,6 +103,16 @@ class GeolocationBloc with ChangeNotifier {
               .listen((Position position) async {
         final geolocationData = _createGeolocationFromPosition(position);
 
+        if (_privacyZoneChecker.isInsidePrivacyZone(geolocationData)) {
+          return;
+        }
+
+        _lastKnownPosition = geolocationData;
+
+        if (recordingBloc.activeCollectionMode.usesPeriodicTimer) {
+          return;
+        }
+
         if (shouldSkipGeolocation(geolocationData)) {
           return;
         }
@@ -98,12 +126,19 @@ class GeolocationBloc with ChangeNotifier {
         }
       });
       
-      _startStationaryLocationTimer();
+      if (recordingBloc.isRecording) {
+        if (recordingBloc.activeCollectionMode.usesPeriodicTimer) {
+          _startPeriodicCollectionTimer();
+        } else {
+          _startStationaryLocationTimer();
+        }
+      }
       _isListening = true;
     } catch (e, stack) {
       _positionStreamSubscription?.cancel();
       _positionStreamSubscription = null;
       _stopStationaryLocationTimer();
+      _stopPeriodicCollectionTimer();
       _isListening = false;
       ErrorService.handleError(e, stack);
     }
@@ -120,6 +155,12 @@ class GeolocationBloc with ChangeNotifier {
     try {
       final position = await getCurrentLocation();
       final geolocationData = _createGeolocationFromPosition(position);
+
+      _lastKnownPosition = geolocationData;
+
+      if (recordingBloc.activeCollectionMode.usesPeriodicTimer) {
+        return;
+      }
 
       if (shouldSkipGeolocation(geolocationData)) {
         return;
@@ -138,27 +179,30 @@ class GeolocationBloc with ChangeNotifier {
   void _startStationaryLocationTimer() {
     _stopStationaryLocationTimer();
     
-    if (!recordingBloc.isRecording) {
+    if (!recordingBloc.isRecording ||
+        recordingBloc.activeCollectionMode.usesPeriodicTimer) {
       return;
     }
     
     _stationaryLocationTimer = Timer.periodic(const Duration(seconds: 20), (timer) async {
-      if (!recordingBloc.isRecording) {
+      if (!recordingBloc.isRecording ||
+        recordingBloc.activeCollectionMode.usesPeriodicTimer) {
         _stopStationaryLocationTimer();
         return;
       }
       
-      if (_lastEmittedPosition != null) {
+      if (_lastKnownPosition != null) {
         final geolocationData = GeolocationData()
-          ..latitude = _lastEmittedPosition!.latitude
-          ..longitude = _lastEmittedPosition!.longitude
-          ..speed = _lastEmittedPosition!.speed
+          ..latitude = _lastKnownPosition!.latitude
+          ..longitude = _lastKnownPosition!.longitude
+          ..speed = _lastKnownPosition!.speed
           ..timestamp = DateTime.now().toUtc();
 
         if (shouldSkipGeolocation(geolocationData)) {
           return;
         }
 
+        _lastEmittedPosition = geolocationData;
         final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
         if (shouldEmit) {
           _emitGeolocation(geolocationData);
@@ -182,10 +226,71 @@ class GeolocationBloc with ChangeNotifier {
     _stationaryLocationTimer = null;
   }
 
+  void _startPeriodicCollectionTimer() {
+    _stopPeriodicCollectionTimer();
+    _stopStationaryLocationTimer();
+
+    if (!recordingBloc.isRecording ||
+        !recordingBloc.activeCollectionMode.usesPeriodicTimer) {
+      return;
+    }
+
+    final interval =
+        Duration(seconds: recordingBloc.collectionIntervalSeconds);
+    _periodicCollectionTimer = Timer.periodic(interval, (_) async {
+      await _emitPeriodicSample();
+    });
+    unawaited(_emitPeriodicSample());
+  }
+
+  void _stopPeriodicCollectionTimer() {
+    _periodicCollectionTimer?.cancel();
+    _periodicCollectionTimer = null;
+  }
+
+  Future<void> _emitPeriodicSample() async {
+    if (!recordingBloc.isRecording ||
+        !recordingBloc.activeCollectionMode.usesPeriodicTimer) {
+      return;
+    }
+
+    if (_lastKnownPosition == null) {
+      try {
+        final position = await getCurrentLocation();
+        _lastKnownPosition = _createGeolocationFromPosition(position);
+      } catch (e, stack) {
+        ErrorService.handleError(e, stack);
+        return;
+      }
+    }
+
+    final geolocationData = GeolocationData()
+      ..latitude = _lastKnownPosition!.latitude
+      ..longitude = _lastKnownPosition!.longitude
+      ..speed = _lastKnownPosition!.speed
+      ..timestamp = DateTime.now().toUtc();
+
+    if (_privacyZoneChecker.isInsidePrivacyZone(geolocationData)) {
+      return;
+    }
+
+    if (shouldSkipGeolocation(geolocationData)) {
+      return;
+    }
+
+    _lastEmittedPosition = geolocationData;
+    final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
+    if (shouldEmit) {
+      _emitGeolocation(geolocationData);
+    }
+  }
+
   // function to stop listening to geolocation changes
   void stopListening() {
     _positionStreamSubscription?.cancel();
     _stopStationaryLocationTimer();
+    _stopPeriodicCollectionTimer();
+    _lastKnownPosition = null;
     _lastEmittedPosition = null;
     _isListening = false;
   }
@@ -259,7 +364,7 @@ class GeolocationBloc with ChangeNotifier {
   }
 
   Future<void> emitFinalGeolocation() async {
-    if (_lastEmittedPosition == null || recordingBloc.currentTrack == null) {
+    if (_lastKnownPosition == null || recordingBloc.currentTrack == null) {
       return;
     }
 
@@ -267,13 +372,13 @@ class GeolocationBloc with ChangeNotifier {
         recordingBloc.lastRecordingStopTimestamp ?? DateTime.now().toUtc();
 
     final finalGeolocation = GeolocationData()
-      ..latitude = _lastEmittedPosition!.latitude
-      ..longitude = _lastEmittedPosition!.longitude
-      ..speed = _lastEmittedPosition!.speed
+      ..latitude = _lastKnownPosition!.latitude
+      ..longitude = _lastKnownPosition!.longitude
+      ..speed = _lastKnownPosition!.speed
       ..timestamp = stopTimestamp;
 
     final lastTimestamp =
-        _lastEmittedPosition!.timestamp.millisecondsSinceEpoch;
+        (_lastEmittedPosition ?? _lastKnownPosition)!.timestamp.millisecondsSinceEpoch;
     final stopTimestampMs = stopTimestamp.millisecondsSinceEpoch;
 
     if (lastTimestamp == stopTimestampMs) {
@@ -294,7 +399,11 @@ class GeolocationBloc with ChangeNotifier {
 
   @override
   void dispose() {
+    if (_recordingListener != null) {
+      recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
+    }
     _privacyZonesSubscription?.cancel();
+    _stopPeriodicCollectionTimer();
     _privacyZoneChecker.dispose();
     _geolocationController.close();
     super.dispose();

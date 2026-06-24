@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -37,6 +38,9 @@ void main() {
 
     // Setup mock for directUploadMode
     when(() => mockSettingsBloc.directUploadMode).thenReturn(false);
+    when(() => mockSettingsBloc.dataCollectionMode)
+        .thenReturn(DataCollectionMode.postRide);
+    when(() => mockSettingsBloc.collectionIntervalSeconds).thenReturn(60);
 
     recordingBloc = RecordingBloc(
       mockIsarService,

@@ -23,12 +23,18 @@ class TrackBloc with ChangeNotifier {
   // Use the controller's stream for currentTrackStream
   Stream<TrackData?> get currentTrackStream => _currentTrackController.stream;
 
-  Future<int> startNewTrack({bool? isDirectUpload}) async {
+  Future<int> startNewTrack({
+    bool? isDirectUpload,
+    String? dataCollectionMode,
+    int? collectionIntervalSeconds,
+  }) async {
     _currentTrack = TrackData();
-    
+
     // Set isDirectUpload - direct upload tracks should be marked as 1, regular tracks as 0
     // Default to true (direct upload) when parameter is not provided
     _currentTrack!.isDirectUpload = (isDirectUpload ?? true) ? 1 : 0;
+    _currentTrack!.dataCollectionMode = dataCollectionMode;
+    _currentTrack!.collectionIntervalSeconds = collectionIntervalSeconds;
 
     int id = await isarService.trackService.saveTrack(_currentTrack!);
 

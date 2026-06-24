@@ -510,6 +510,12 @@ abstract class AppLocalizations {
   /// **'Stop'**
   String get connectionButtonStop;
 
+  /// No description provided for @recordingPeriodicCollectionMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodic sampling every {seconds} s'**
+  String recordingPeriodicCollectionMode(int seconds);
+
   /// No description provided for @bleDeviceSelectTitle.
   ///
   /// In en, this message translates to:
@@ -659,6 +665,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording'**
   String get settingsUploadModeDirectDescription;
+
+  /// No description provided for @settingsCollectionMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording Mode'**
+  String get settingsCollectionMode;
+
+  /// No description provided for @settingsCollectionModeContinuous.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous (GPS-driven)'**
+  String get settingsCollectionModeContinuous;
+
+  /// No description provided for @settingsCollectionModePeriodic.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodic sampling'**
+  String get settingsCollectionModePeriodic;
+
+  /// No description provided for @settingsCollectionModeCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current: {mode}'**
+  String settingsCollectionModeCurrent(String mode);
+
+  /// No description provided for @settingsCollectionModeContinuousTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record on every GPS update'**
+  String get settingsCollectionModeContinuousTitle;
+
+  /// No description provided for @settingsCollectionModeContinuousDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'• Sensor values are aggregated between GPS points\n• Best for detailed ride maps\n• Uses more storage and battery'**
+  String get settingsCollectionModeContinuousDescription;
+
+  /// No description provided for @settingsCollectionModePeriodicTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record at fixed intervals'**
+  String get settingsCollectionModePeriodicTitle;
+
+  /// No description provided for @settingsCollectionModePeriodicDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'• GPS and sensors are sampled on a timer\n• Best for long rides and all-sensor setups\n• Uses less storage and battery'**
+  String get settingsCollectionModePeriodicDescription;
+
+  /// No description provided for @settingsCollectionModeIntervalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sampling interval (seconds)'**
+  String get settingsCollectionModeIntervalLabel;
+
+  /// No description provided for @settingsCollectionModeIntervalError.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval must be at least {minSeconds} seconds'**
+  String settingsCollectionModeIntervalError(int minSeconds);
+
+  /// No description provided for @settingsCollectionModeWhileRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording to change the recording mode'**
+  String get settingsCollectionModeWhileRecording;
 
   /// No description provided for @settingsApiUrl.
   ///

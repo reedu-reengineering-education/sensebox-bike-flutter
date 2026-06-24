@@ -14,6 +14,7 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   final OpenSenseMapService _service;
   final ConfigurationBloc? _configurationBloc;
+  final SettingsBloc? _settingsBloc;
   bool _isAuthenticated = false;
   final ValueNotifier<bool> _isAuthenticatingNotifier =
       ValueNotifier<bool>(false);
@@ -65,6 +66,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     SettingsBloc? settingsBloc,
     OpenSenseMapService? service,
   })  : _configurationBloc = configurationBloc,
+        _settingsBloc = settingsBloc,
         _service = service ?? OpenSenseMapService(settingsBloc: settingsBloc) {
     WidgetsBinding.instance.addObserver(this);
   }
@@ -149,6 +151,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       if (_selectedSenseBox?.id != savedSenseBox.id) {
         _senseBoxController.add(savedSenseBox);
         _selectedSenseBox = savedSenseBox;
+        await _applyPreferredCollectionModeIfNeeded(savedSenseBox);
       }
     }
     notifyListeners();
@@ -381,7 +384,24 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     await prefs.setString('selectedSenseBox', jsonEncode(senseBox.toJson()));
     _senseBoxController.add(senseBox); // Push selected senseBox to the stream
     _selectedSenseBox = senseBox;
+    await _applyPreferredCollectionModeIfNeeded(senseBox);
     notifyListeners();
+  }
+
+  Future<void> _applyPreferredCollectionModeIfNeeded(SenseBox senseBox) async {
+    final configurationBloc = _configurationBloc;
+    final settingsBloc = _settingsBloc;
+    if (configurationBloc == null || settingsBloc == null) {
+      return;
+    }
+
+    final boxConfig =
+        configurationBloc.getBoxConfigurationByGrouptag(senseBox.grouptag);
+    if (boxConfig == null) {
+      return;
+    }
+
+    await settingsBloc.applyPreferredFromBoxConfiguration(boxConfig);
   }
 
   Future<void> uploadData(

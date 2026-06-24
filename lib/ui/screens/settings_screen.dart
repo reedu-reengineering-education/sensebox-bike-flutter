@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
@@ -333,6 +335,7 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildGeneralSettingsSection(
       BuildContext context, SettingsBloc settingsBloc) {
     final configurationBloc = Provider.of<ConfigurationBloc>(context);
+    final recordingBloc = Provider.of<RecordingBloc>(context);
     final isarService = Provider.of<TrackBloc>(context).isarService;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,6 +380,39 @@ class SettingsScreen extends StatelessWidget {
                     ),
               ),
               onTap: () => _showUploadModeDialog(context, settingsBloc),
+            );
+          },
+        ),
+        ListenableBuilder(
+          listenable: settingsBloc,
+          builder: (context, _) {
+            final modeLabel = _collectionModeLabel(context, settingsBloc);
+            final intervalSuffix = settingsBloc.dataCollectionMode ==
+                    DataCollectionMode.periodic
+                ? ' (${settingsBloc.collectionIntervalSeconds}s)'
+                : '';
+
+            return ListTile(
+              leading: const Icon(Icons.fiber_manual_record_outlined),
+              title: Text(AppLocalizations.of(context)!.settingsCollectionMode),
+              subtitle: Text(
+                AppLocalizations.of(context)!
+                    .settingsCollectionModeCurrent('$modeLabel$intervalSuffix'),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              onTap: recordingBloc.isRecording
+                  ? () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(AppLocalizations.of(context)!
+                              .settingsCollectionModeWhileRecording),
+                        ),
+                      );
+                    }
+                  : () => _showCollectionModeDialog(context, settingsBloc),
             );
           },
         ),
@@ -619,6 +655,156 @@ class SettingsScreen extends StatelessWidget {
               child: Text(localizations.generalCancel),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  String _collectionModeLabel(BuildContext context, SettingsBloc settingsBloc) {
+    final localizations = AppLocalizations.of(context)!;
+    switch (settingsBloc.dataCollectionMode) {
+      case DataCollectionMode.periodic:
+        return localizations.settingsCollectionModePeriodic;
+      case DataCollectionMode.postRide:
+        return localizations.settingsCollectionModeContinuous;
+    }
+  }
+
+  void _showCollectionModeDialog(
+      BuildContext context, SettingsBloc settingsBloc) {
+    final localizations = AppLocalizations.of(context)!;
+    var selectedMode = settingsBloc.dataCollectionMode;
+    var intervalSeconds = settingsBloc.collectionIntervalSeconds;
+    final intervalController =
+        TextEditingController(text: intervalSeconds.toString());
+    String? intervalError;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(localizations.settingsCollectionMode),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<DataCollectionMode>(
+                      title: Text(localizations.settingsCollectionModeContinuous),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(localizations.settingsCollectionModeContinuousTitle),
+                          const SizedBox(height: 8),
+                          Text(
+                            localizations
+                                .settingsCollectionModeContinuousDescription,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          ),
+                        ],
+                      ),
+                      value: DataCollectionMode.postRide,
+                      groupValue: selectedMode,
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => selectedMode = value);
+                        }
+                      },
+                      isThreeLine: true,
+                    ),
+                    RadioListTile<DataCollectionMode>(
+                      title: Text(localizations.settingsCollectionModePeriodic),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(localizations.settingsCollectionModePeriodicTitle),
+                          const SizedBox(height: 8),
+                          Text(
+                            localizations
+                                .settingsCollectionModePeriodicDescription,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          ),
+                        ],
+                      ),
+                      value: DataCollectionMode.periodic,
+                      groupValue: selectedMode,
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => selectedMode = value);
+                        }
+                      },
+                      isThreeLine: true,
+                    ),
+                    if (selectedMode == DataCollectionMode.periodic) ...[
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: intervalController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText:
+                              localizations.settingsCollectionModeIntervalLabel,
+                          errorText: intervalError,
+                        ),
+                        onChanged: (_) {
+                          if (intervalError != null) {
+                            setState(() => intervalError = null);
+                          }
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(localizations.generalCancel),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    int? parsedInterval;
+                    if (selectedMode == DataCollectionMode.periodic) {
+                      parsedInterval = int.tryParse(intervalController.text);
+                      if (parsedInterval == null ||
+                          parsedInterval < minCollectionIntervalSeconds) {
+                        setState(() {
+                          intervalError = localizations
+                              .settingsCollectionModeIntervalError(
+                            minCollectionIntervalSeconds,
+                          );
+                        });
+                        return;
+                      }
+                    }
+
+                    await settingsBloc.setDataCollectionMode(
+                      selectedMode,
+                      intervalSeconds: parsedInterval,
+                    );
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: Text(localizations.generalSave),
+                ),
+              ],
+            );
+          },
         );
       },
     );

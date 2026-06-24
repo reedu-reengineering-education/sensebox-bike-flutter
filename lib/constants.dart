@@ -9,6 +9,10 @@ class SharedPreferencesKeys {
   static const String privacyPolicyAcceptedAt = 'privacyPolicyAcceptedAt';
   static const String privacyZones = 'privacyZones';
   static const String selectedSenseBox = 'selectedSenseBox';
+  static const String dataCollectionMode = 'dataCollectionMode';
+  static const String collectionIntervalSeconds = 'collectionIntervalSeconds';
+  static const String dataCollectionModeCustomized =
+      'dataCollectionModeCustomized';
   static const bool vibrateOnDisconnect = false;
 }
 

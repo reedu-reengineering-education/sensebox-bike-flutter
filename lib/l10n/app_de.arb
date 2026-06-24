@@ -105,6 +105,14 @@
     "connectionButtonReconnecting": "Erneut verbinden...",
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
+    "recordingPeriodicCollectionMode": "Periodische Aufnahme alle {seconds} s",
+    "@recordingPeriodicCollectionMode": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "bleDeviceSelectTitle": "Tippen, um zu verbinden",
     "noBleDevicesFound": "Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.",
     "selectOrCreateBox": "senseBox wählen oder erstellen",
@@ -140,6 +148,31 @@
     "settingsUploadModePostRideDescription": "• Daten werden lokal während der Aufzeichnung gespeichert\n• Upload erfolgt auf einmal beim Beenden\n• Zuverlässiger und stabiler\n• Verbraucht weniger Akku während der Aufzeichnung",
     "settingsUploadModeDirectTitle": "Daten in Echtzeit während der Aufzeichnung hochladen (experimentell)",
     "settingsUploadModeDirectDescription": "• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen",
+    "settingsCollectionMode": "Aufnahmemodus",
+    "settingsCollectionModeContinuous": "Kontinuierlich (GPS-gesteuert)",
+    "settingsCollectionModePeriodic": "Periodische Aufnahme",
+    "settingsCollectionModeCurrent": "Aktuell: {mode}",
+    "@settingsCollectionModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsCollectionModeContinuousTitle": "Bei jedem GPS-Update aufzeichnen",
+    "settingsCollectionModeContinuousDescription": "• Sensorwerte werden zwischen GPS-Punkten aggregiert\n• Am besten für detaillierte Streckenkarten\n• Verbraucht mehr Speicher und Akku",
+    "settingsCollectionModePeriodicTitle": "In festen Intervallen aufzeichnen",
+    "settingsCollectionModePeriodicDescription": "• GPS und Sensoren werden per Timer abgetastet\n• Am besten für lange Fahrten und All-Sensor-Setups\n• Verbraucht weniger Speicher und Akku",
+    "settingsCollectionModeIntervalLabel": "Abtastintervall (Sekunden)",
+    "settingsCollectionModeIntervalError": "Intervall muss mindestens {minSeconds} Sekunden betragen",
+    "@settingsCollectionModeIntervalError": {
+        "placeholders": {
+            "minSeconds": {
+                "type": "int"
+            }
+        }
+    },
+    "settingsCollectionModeWhileRecording": "Beende die Aufnahme, um den Aufnahmemodus zu ändern",
     "settingsApiUrl": "Service-URL",
     "settingsApiUrlHelper": "Geben Sie den API-Endpunkt für Daten-Uploads ein",
     "settingsApiUrlError": "Bitte geben Sie eine gültige URL ein (z.B. https://api.opensensemap.org)",

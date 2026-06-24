@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import '../mocks.dart';
 import '../test_helpers.dart';
@@ -626,6 +627,48 @@ void main() {
 
         debugDefaultTargetPlatformOverride = null;
       });
+    });
+  });
+
+  group('GeolocationBloc periodic collection mode', () {
+    late GeolocationBloc geolocationBloc;
+    late MockIsarService mockIsarService;
+    late MockRecordingBloc mockRecordingBloc;
+    late MockSettingsBloc mockSettingsBloc;
+    late MockGeolocator mockGeolocator;
+
+    setUp(() {
+      mockIsarService = MockIsarService();
+      mockRecordingBloc = MockRecordingBloc();
+      mockSettingsBloc = MockSettingsBloc();
+      mockGeolocator = MockGeolocator();
+      geo.GeolocatorPlatform.instance = mockGeolocator;
+
+      when(() => mockSettingsBloc.privacyZones).thenReturn([]);
+      when(() => mockSettingsBloc.privacyZonesStream)
+          .thenAnswer((_) => const Stream.empty());
+
+      geolocationBloc = GeolocationBloc(
+        mockIsarService,
+        mockRecordingBloc,
+        mockSettingsBloc,
+      );
+    });
+
+    tearDown(() {
+      geolocationBloc.dispose();
+    });
+
+    test('getCurrentLocationAndEmit does not persist geolocation in periodic mode',
+        () async {
+      setupMockGeolocator(mockGeolocator, testLat1, testLng1);
+      mockRecordingBloc.setActiveCollectionMode(DataCollectionMode.periodic);
+
+      await geolocationBloc.getCurrentLocationAndEmit();
+
+      verifyNever(
+        () => mockIsarService.geolocationService.saveGeolocationData(any()),
+      );
     });
   });
 }

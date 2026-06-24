@@ -241,6 +241,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionButtonStop => 'Stop';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Periodic sampling every $seconds s';
+  }
+
+  @override
   String get bleDeviceSelectTitle => 'Tap to connect';
 
   @override
@@ -326,6 +331,48 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsUploadModeDirectDescription =>
       '• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording';
+
+  @override
+  String get settingsCollectionMode => 'Recording Mode';
+
+  @override
+  String get settingsCollectionModeContinuous => 'Continuous (GPS-driven)';
+
+  @override
+  String get settingsCollectionModePeriodic => 'Periodic sampling';
+
+  @override
+  String settingsCollectionModeCurrent(String mode) {
+    return 'Current: $mode';
+  }
+
+  @override
+  String get settingsCollectionModeContinuousTitle =>
+      'Record on every GPS update';
+
+  @override
+  String get settingsCollectionModeContinuousDescription =>
+      '• Sensor values are aggregated between GPS points\n• Best for detailed ride maps\n• Uses more storage and battery';
+
+  @override
+  String get settingsCollectionModePeriodicTitle => 'Record at fixed intervals';
+
+  @override
+  String get settingsCollectionModePeriodicDescription =>
+      '• GPS and sensors are sampled on a timer\n• Best for long rides and all-sensor setups\n• Uses less storage and battery';
+
+  @override
+  String get settingsCollectionModeIntervalLabel =>
+      'Sampling interval (seconds)';
+
+  @override
+  String settingsCollectionModeIntervalError(int minSeconds) {
+    return 'Interval must be at least $minSeconds seconds';
+  }
+
+  @override
+  String get settingsCollectionModeWhileRecording =>
+      'Stop recording to change the recording mode';
 
   @override
   String get settingsApiUrl => 'Service URL';

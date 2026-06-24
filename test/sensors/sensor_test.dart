@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/sensors/temperature_sensor.dart';
 import '../mocks.dart';
@@ -250,6 +252,65 @@ void main() {
 
       // We expect at least one DB batch to be saved; previously, empty batches could starve saving.
       expect(saveCalls, greaterThan(0));
+
+      sensor.dispose();
+    });
+  });
+
+  group('Sensor periodic collection mode', () {
+    late MockRecordingBloc recordingBloc;
+    late MockGeolocationBloc geolocationBloc;
+    late StreamController<GeolocationData> geoController;
+
+    setUp(() {
+      recordingBloc = MockRecordingBloc();
+      recordingBloc.setRecording(true);
+      recordingBloc.setActiveCollectionMode(DataCollectionMode.periodic);
+
+      geolocationBloc = MockGeolocationBloc();
+      geoController = StreamController<GeolocationData>.broadcast();
+      when(() => geolocationBloc.geolocationStream)
+          .thenAnswer((_) => geoController.stream);
+    });
+
+    tearDown(() async {
+      await geoController.close();
+    });
+
+    test('stores latest instant value instead of aggregated mean', () async {
+      final isarService = MockIsarService();
+      final sensorService = MockSensorService();
+      final savedValues = <double>[];
+      when(() => isarService.sensorService).thenReturn(sensorService);
+      when(() => sensorService.saveSensorDataBatch(any())).thenAnswer((invocation) async {
+        final batch = invocation.positionalArguments[0] as List<SensorData>;
+        if (batch.isNotEmpty) {
+          savedValues.add(batch.first.value);
+        }
+      });
+
+      final sensor = _TestSingleValueSensor(
+        MockBleBloc(),
+        geolocationBloc,
+        recordingBloc,
+        isarService,
+      );
+
+      await sensor.startListening();
+
+      sensor.onDataReceived([10.0]);
+      sensor.onDataReceived([20.0]);
+
+      final geo = GeolocationData()
+        ..id = 1
+        ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0)
+        ..latitude = 52.0
+        ..longitude = 13.0;
+
+      geoController.add(geo);
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      expect(savedValues, [20.0]);
 
       sensor.dispose();
     });

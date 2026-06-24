@@ -6,6 +6,7 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/blocs/sensor_availability.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart' hide Sensor;
@@ -50,6 +51,25 @@ class HomeScreen extends StatelessWidget {
                   _ConnectionErrorBanner(bleBloc: bleBloc),
                   const SizedBox(height: 16),
                 ],
+              );
+            },
+          ),
+          ListenableBuilder(
+            listenable: recordingBloc,
+            builder: (context, _) {
+              if (!recordingBloc.isRecording ||
+                  !recordingBloc
+                      .activeCollectionMode.usesPeriodicTimer) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 48, 16, 0),
+                child: InfoBanner(
+                  text: AppLocalizations.of(context)!
+                      .recordingPeriodicCollectionMode(
+                    recordingBloc.collectionIntervalSeconds,
+                  ),
+                ),
               );
             },
           ),

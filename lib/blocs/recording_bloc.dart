@@ -3,6 +3,7 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
@@ -27,6 +28,8 @@ class RecordingBloc with ChangeNotifier {
   final ValueNotifier<bool> _isRecordingNotifier = ValueNotifier<bool>(false);
   DirectUploadService? _directUploadService;
   BatchUploadService? _batchUploadService;
+  DataCollectionMode _activeCollectionMode = DataCollectionMode.postRide;
+  int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
 
   VoidCallback? _onRecordingStart;
   VoidCallback? _onRecordingStop;
@@ -42,9 +45,16 @@ class RecordingBloc with ChangeNotifier {
   TrackData? get currentTrack => _currentTrack;
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   DateTime? get lastRecordingStopTimestamp => _lastRecordingStopTimestamp;
+  DataCollectionMode get activeCollectionMode => _activeCollectionMode;
+  int get collectionIntervalSeconds => _collectionIntervalSeconds;
 
-  RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
-      this.openSenseMapBloc, this.settingsBloc) {
+  RecordingBloc(
+    this.isarService,
+    this.bleBloc,
+    this.trackBloc,
+    this.openSenseMapBloc,
+    this.settingsBloc,
+  ) {
     openSenseMapBloc.senseBoxStream.listen(_onSenseBoxChanged).onError((error) {
       ErrorService.handleError(error, StackTrace.current);
     });
@@ -91,6 +101,11 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners();
   }
 
+  void _resolveCollectionMode() {
+    _activeCollectionMode = settingsBloc.dataCollectionMode;
+    _collectionIntervalSeconds = settingsBloc.collectionIntervalSeconds;
+  }
+
   Future<void> startRecording() async {
     if (_isRecording) return;
 
@@ -107,7 +122,15 @@ class RecordingBloc with ChangeNotifier {
     _isRecording = true;
     _isRecordingNotifier.value = true;
     _lastRecordingStopTimestamp = null;
-    await trackBloc.startNewTrack(isDirectUpload: settingsBloc.directUploadMode);
+    _resolveCollectionMode();
+    await trackBloc.startNewTrack(
+      isDirectUpload: settingsBloc.directUploadMode,
+      dataCollectionMode: _activeCollectionMode.toJson(),
+      collectionIntervalSeconds: _activeCollectionMode ==
+              DataCollectionMode.periodic
+          ? _collectionIntervalSeconds
+          : null,
+    );
 
     _currentTrack = trackBloc.currentTrack;
 
