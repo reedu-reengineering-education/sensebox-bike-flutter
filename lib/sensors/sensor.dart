@@ -9,6 +9,7 @@ import 'package:sensebox_bike/models/timestamped_sensor_value.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:isar_community/isar.dart';
 
@@ -508,20 +509,26 @@ abstract class Sensor {
 
         if (attributes.isNotEmpty) {
           for (int j = 0; j < attributes.length && j < sensorData.length; j++) {
-            dbBatch.add(SensorData()
+            final data = SensorData()
               ..characteristicUuid = characteristicUuid
               ..title = title
               ..value = sensorData[j]
               ..attribute = attributes[j]
-              ..geolocationData.value = geolocation);
+              ..geolocationData.value = geolocation;
+            if (shouldStoreSensorData(data)) {
+              dbBatch.add(data);
+            }
           }
         } else {
-          dbBatch.add(SensorData()
+          final data = SensorData()
             ..characteristicUuid = characteristicUuid
             ..title = title
             ..value = sensorData.isNotEmpty ? sensorData[0] : 0.0
             ..attribute = null
-            ..geolocationData.value = geolocation);
+            ..geolocationData.value = geolocation;
+          if (shouldStoreSensorData(data)) {
+            dbBatch.add(data);
+          }
         }
 
         if (_directUploadService != null && _directUploadService!.isEnabled) {

@@ -7,8 +7,12 @@ import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import '../test_helpers.dart';
+import '../sensor_catalog_test_data.dart';
 
 void main() {
+  setUpAll(setupSensorCatalogFromRepo);
+  tearDownAll(clearMockSensorCatalog);
+
   group('calculateBounds', () {
     test('returns world bounds for empty list', () {
       final bounds = calculateBounds([]);

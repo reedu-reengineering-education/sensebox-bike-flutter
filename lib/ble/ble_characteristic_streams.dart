@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_helpers.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
@@ -12,6 +13,7 @@ class BleCharacteristicStreams {
   final Map<String, StreamController<List<double>>> _streams = {};
   final Map<String, StreamSubscription<List<int>>> _subscriptions = {};
   final Set<String> _livePayloadUuids = {};
+  final ValueNotifier<int> livePayloadVersion = ValueNotifier(0);
 
   Iterable<String> get subscribedCharacteristicUuids => _streams.keys;
 
@@ -50,8 +52,8 @@ class BleCharacteristicStreams {
       (value) {
         if (!controller.isClosed) {
           final parsed = parseCharacteristicPayload(Uint8List.fromList(value));
-          if (isLivePayload(parsed)) {
-            _livePayloadUuids.add(uuid);
+          if (isLivePayload(parsed) && _livePayloadUuids.add(uuid)) {
+            livePayloadVersion.value++;
           }
           controller.add(parsed);
         }
@@ -65,6 +67,7 @@ class BleCharacteristicStreams {
     final subscriptions = _subscriptions.values.toList();
     _subscriptions.clear();
     _livePayloadUuids.clear();
+    livePayloadVersion.value++;
     for (final subscription in subscriptions) {
       await subscription.cancel();
     }
@@ -74,5 +77,9 @@ class BleCharacteristicStreams {
     for (final controller in controllers) {
       await controller.close();
     }
+  }
+
+  void dispose() {
+    livePayloadVersion.dispose();
   }
 }

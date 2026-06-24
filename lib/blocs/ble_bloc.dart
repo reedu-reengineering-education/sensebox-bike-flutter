@@ -626,6 +626,7 @@ class BleBloc with ChangeNotifier {
     _reconnectionCoordinator.detach();
     _scanner.dispose();
     unawaited(characteristicStreams.clear());
+    characteristicStreams.dispose();
     unawaited(_platform.dispose());
     selectedDeviceNotifier.dispose();
     isBluetoothEnabledNotifier.dispose();

@@ -52,6 +52,17 @@ class _TestBleCharacteristicStreams extends BleCharacteristicStreams {
   _TestBleCharacteristicStreams() : super(platform: MockBlePlatform());
 
   final Map<String, StreamController<List<double>>> _testStreams = {};
+  final Set<String> _testLivePayloadUuids = {};
+
+  @override
+  bool hasLivePayload(String characteristicUuid) =>
+      _testLivePayloadUuids.contains(characteristicUuid);
+
+  void markLive(String characteristicUuid) {
+    if (_testLivePayloadUuids.add(characteristicUuid)) {
+      livePayloadVersion.value++;
+    }
+  }
 
   @override
   Stream<List<double>> characteristicStream(String characteristicUuid) {
@@ -67,6 +78,8 @@ class _TestBleCharacteristicStreams extends BleCharacteristicStreams {
   Future<void> clear({
     Iterable<BleCharacteristicRef> characteristics = const [],
   }) async {
+    _testLivePayloadUuids.clear();
+    livePayloadVersion.value++;
     final controllers = _testStreams.values.toList();
     _testStreams.clear();
     for (final controller in controllers) {

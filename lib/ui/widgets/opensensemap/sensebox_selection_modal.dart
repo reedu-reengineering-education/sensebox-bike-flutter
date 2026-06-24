@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
-import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection.dart';
@@ -50,13 +48,12 @@ class _SenseBoxSelectionModalState extends State<_SenseBoxSelectionModal> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    // Close button at the top right corner
                     Align(
                       alignment: Alignment.topRight,
                       child: IconButton(
                         icon: const Icon(Icons.close),
                         onPressed: () {
-                          Navigator.pop(context); // Close the modal
+                          Navigator.pop(context);
                         },
                       ),
                     ),
@@ -68,11 +65,13 @@ class _SenseBoxSelectionModalState extends State<_SenseBoxSelectionModal> {
                   ],
                 ),
               ),
-              // Plus button or reload button at the bottom right corner
               Positioned(
                 bottom: 32,
                 right: 32,
-                child: _buildActionButton(context),
+                child: ListenableBuilder(
+                  listenable: widget.configurationBloc,
+                  builder: (context, _) => _buildCreateButton(context),
+                ),
               ),
             ],
           ),
@@ -81,39 +80,29 @@ class _SenseBoxSelectionModalState extends State<_SenseBoxSelectionModal> {
     );
   }
 
-  Widget _buildActionButton(BuildContext context) {
+  Widget _buildCreateButton(BuildContext context) {
     final configurationBloc = widget.configurationBloc;
-    final isLoaded = configurationBloc.boxConfigurations != null &&
-        !configurationBloc.isLoadingBoxConfigurations;
     final isLoading = configurationBloc.isLoadingBoxConfigurations;
-    final localizations = AppLocalizations.of(context)!;
 
-    if (isLoaded) {
-      return FloatingActionButton(
-        onPressed: () async {
-          await _showCreateSenseBoxDialog(context);
-        },
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add),
-      );
-    } else {
-      return ButtonWithLoader(
-        isLoading: isLoading,
-        onPressed: isLoading
-            ? null
-            : () async {
-                await configurationBloc.loadBoxConfigurations();
-                if (mounted) {
-                  setState(() {}); 
-                  final bloc = widget.bloc;
-                  if (bloc.senseBoxes.isEmpty) {
-                    await bloc.fetchSenseBoxes();
-                  }
-                }
-              },
-        text: localizations.reloadConfiguration,
-      );
-    }
+    return FloatingActionButton(
+      onPressed: isLoading
+          ? null
+          : () async {
+              if (configurationBloc.boxConfigurations == null) {
+                await configurationBloc.loadAll();
+              }
+              if (!context.mounted) return;
+              await _showCreateSenseBoxDialog(context);
+            },
+      shape: const CircleBorder(),
+      child: isLoading
+          ? const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.add),
+    );
   }
 
   Future<void> _showCreateSenseBoxDialog(BuildContext context) async {

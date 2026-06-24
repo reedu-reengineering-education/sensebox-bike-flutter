@@ -12,9 +12,13 @@ import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 import '../mocks.dart';
 import '../test_helpers.dart';
+import '../sensor_catalog_test_data.dart';
 
 
 void main() {
+  setUpAll(setupSensorCatalogFromRepo);
+  tearDownAll(clearMockSensorCatalog);
+
   const MethodChannel channel =
       MethodChannel('plugins.flutter.io/path_provider');
 
@@ -181,8 +185,8 @@ void main() {
     test('correctly handles GPS speed sensor data', () async {
       // Create GPS speed sensor data with the correct format
       final gpsSpeedSensorData = SensorData()
-        ..title = 'speed' // Correct format: title = 'speed', no attribute
-        ..attribute = null
+        ..title = 'gps'
+        ..attribute = 'speed'
         ..value = 15.5
         ..characteristicUuid = 'gps-speed-uuid'
         ..geolocationData.value = geolocationData;
