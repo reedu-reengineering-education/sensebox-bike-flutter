@@ -394,17 +394,15 @@ class BleBloc with ChangeNotifier {
       return false;
     }
 
-    if (!_platform.isConnected(device.id)) {
+    if (!_platform.isConnected(device.id) &&
+        failurePhase == BleConnectionFailurePhase.initialConnect) {
       try {
         await _connectLink(
           device,
           waitForAdvertising: waitForAdvertising,
         );
       } catch (_) {
-        if (failurePhase == BleConnectionFailurePhase.initialConnect) {
-          rethrow;
-        }
-        return false;
+        rethrow;
       }
     }
 
