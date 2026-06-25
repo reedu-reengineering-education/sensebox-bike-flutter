@@ -48,6 +48,7 @@ void stubBlePlatformLifecycle(MockBlePlatform platform) {
 BleBloc createTestBleBloc(
   SettingsBloc settingsBloc, {
   MockBlePlatform? platform,
+  Duration adapterOffDebounce = Duration.zero,
 }) {
   final blePlatform = platform ?? MockBlePlatform();
   stubBlePlatformLifecycle(blePlatform);
@@ -55,6 +56,7 @@ BleBloc createTestBleBloc(
     settingsBloc,
     initializePlatformBle: false,
     platform: blePlatform,
+    adapterOffDebounce: adapterOffDebounce,
   );
 }
 

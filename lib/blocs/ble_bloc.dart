@@ -35,7 +35,9 @@ class BleBloc with ChangeNotifier {
     this.settingsBloc, {
     bool initializePlatformBle = true,
     BlePlatform? platform,
-  }) : _platform = platform ?? BlePlatform() {
+    Duration adapterOffDebounce = bleAdapterOffDebounce,
+  })  : _platform = platform ?? BlePlatform(),
+        _adapterOffDebounce = adapterOffDebounce {
     _scanner = BleScanner(
       platform: _platform,
       isScanningNotifier: isScanningNotifier,
@@ -55,6 +57,7 @@ class BleBloc with ChangeNotifier {
 
   final SettingsBloc settingsBloc;
   final BlePlatform _platform;
+  final Duration _adapterOffDebounce;
 
   final ValueNotifier<bool> isBluetoothEnabledNotifier = ValueNotifier(false);
   final ValueNotifier<bool> isScanningNotifier = ValueNotifier(false);
@@ -114,6 +117,25 @@ class BleBloc with ChangeNotifier {
     }
     if (_phase != BleConnectionPhase.connected &&
         _phase != BleConnectionPhase.reconnecting) {
+      return;
+    }
+
+    // Debounce: Android power-save/Doze can emit a transient `poweredOff` status
+    // while the radio and the GATT link are still alive. Wait briefly and
+    // re-check before tearing down a link that may have survived the blip.
+    if (_adapterOffDebounce > Duration.zero) {
+      await Future<void>.delayed(_adapterOffDebounce);
+    }
+
+    if (_userInitiatedDisconnect || selectedDevice == null) {
+      return;
+    }
+    if (_phase != BleConnectionPhase.connected &&
+        _phase != BleConnectionPhase.reconnecting) {
+      return;
+    }
+    // If the link is still up after the debounce, it was a spurious blip; keep it.
+    if (_platform.isConnected(selectedDevice!.id)) {
       return;
     }
 
@@ -402,7 +424,10 @@ class BleBloc with ChangeNotifier {
           waitForAdvertising: waitForAdvertising,
         );
       } catch (_) {
-        rethrow;
+        if (failurePhase == BleConnectionFailurePhase.initialConnect) {
+          rethrow;
+        }
+        return false;
       }
     }
 
@@ -552,6 +577,9 @@ class BleBloc with ChangeNotifier {
         if (_userInitiatedDisconnect) {
           return;
         }
+        if (_phase == BleConnectionPhase.connecting) {
+          return;
+        }
         if (selectedDevice == device) {
           unawaited(disconnectDevice(
             device: device,
@@ -598,8 +626,7 @@ class BleBloc with ChangeNotifier {
 
   void resetConnectionError() {
     connectionErrorNotifier.value = false;
-    _reconnectionCoordinator.detach();
-    _reconnectionCoordinator.reset();
+    _reconnectionCoordinator.cancelReconnection();
   }
 
   @visibleForTesting

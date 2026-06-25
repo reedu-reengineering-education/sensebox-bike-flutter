@@ -33,7 +33,15 @@ class GeolocationBloc with ChangeNotifier {
   final RecordingBloc recordingBloc;
   final SettingsBloc settingsBloc;
 
-  GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc) {
+  /// Returns whether box sensor data is currently flowing (i.e. the BLE link is
+  /// live). When this returns false, geolocations (and their GPS speed) are not
+  /// persisted, so a dropped link mid-ride can't produce a GPS-only "ghost"
+  /// track. Defaults to always-active when not provided (e.g. in tests).
+  final bool Function()? _isSensorDataActive;
+
+  GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc,
+      {bool Function()? isSensorDataActive})
+      : _isSensorDataActive = isSensorDataActive {
     _privacyZoneChecker.updatePrivacyZones(settingsBloc.privacyZones);
     _privacyZonesSubscription = settingsBloc.privacyZonesStream.listen((zones) {
       _privacyZoneChecker.updatePrivacyZones(zones);
@@ -227,6 +235,13 @@ class GeolocationBloc with ChangeNotifier {
       {bool allowFinalGeolocation = false}) async {
     if ((!recordingBloc.isRecording && !allowFinalGeolocation) ||
         recordingBloc.currentTrack == null) {
+      return false;
+    }
+
+    // Only persist geolocations while box sensor data is actively arriving.
+    // Prevents GPS-only "ghost" tracks when the BLE link drops mid-ride (e.g.
+    // Android power-save disabling the adapter or background BLE scanning).
+    if (!(_isSensorDataActive?.call() ?? true)) {
       return false;
     }
 
