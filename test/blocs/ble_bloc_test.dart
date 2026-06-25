@@ -147,13 +147,30 @@ void main() {
         realBleBloc.dispose();
       });
 
-      test('powered off tears down platform link', () async {
+      test('powered off tears down platform link when link is gone', () async {
         realBleBloc.selectedDevice = testBleDevice;
         realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
+        // Link did not survive the adapter-off blip.
+        when(() => platform.isConnected(testBleDevice.id)).thenReturn(false);
 
         await realBleBloc.debugOnBluetoothPoweredOff();
 
         verify(() => platform.disconnect(testBleDevice.id)).called(1);
+      });
+
+      test('powered off ignores transient blip when link survives debounce',
+          () async {
+        primeConnectedWithReconnectionListener(
+          realBleBloc,
+          bluetoothEnabled: true,
+        );
+        // isConnected stays true (stubbed in setUp): the link survived the blip.
+
+        await realBleBloc.debugOnBluetoothPoweredOff();
+
+        verifyNever(() => platform.disconnect(testBleDevice.id));
+        expect(realBleBloc.isReconnectingNotifier.value, isFalse);
+        expect(realBleBloc.isConnected, isTrue);
       });
 
       test('powered off starts reconnecting when listener is attached',
@@ -162,6 +179,10 @@ void main() {
           realBleBloc,
           bluetoothEnabled: true,
         );
+        // Link is gone after the adapter-off blip.
+        when(() => platform.isConnected(testBleDevice.id)).thenReturn(false);
+        when(() => platform.scanForDevices())
+            .thenAnswer((_) => const Stream.empty());
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
             .thenAnswer((_) async {});
 
