@@ -141,9 +141,45 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
 
   @override
   void dispose() {
-    // Clean up resources
-    _appLinksSubscription?.cancel();
+    _disposeAppResources();
     super.dispose();
+  }
+
+  void _disposeAppResources() {
+    unawaited(_appLinksSubscription?.cancel());
+    _appLinksSubscription = null;
+
+    _sensorBloc?.dispose();
+    _sensorBloc = null;
+
+    _recordingBloc?.dispose();
+    _recordingBloc = null;
+
+    _geolocationBloc?.dispose();
+    _geolocationBloc = null;
+
+    _trackBloc?.dispose();
+    _trackBloc = null;
+
+    _openSenseMapBloc?.dispose();
+    _openSenseMapBloc = null;
+
+    _bleBloc?.dispose();
+    _bleBloc = null;
+
+    _configurationBloc?.dispose();
+    _configurationBloc = null;
+
+    _settingsBloc?.dispose();
+    _settingsBloc = null;
+
+    _mapboxDrawController?.dispose();
+    _mapboxDrawController = null;
+
+    unawaited(_isarService?.isarProvider.close());
+    _isarService = null;
+
+    _isInitialized = false;
   }
 
   void _initErrorHandlers() {

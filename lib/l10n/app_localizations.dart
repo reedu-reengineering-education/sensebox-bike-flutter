@@ -192,6 +192,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get generalCancel;
 
+  /// No description provided for @generalRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get generalRetry;
+
   /// No description provided for @generalCreate.
   ///
   /// In en, this message translates to:
@@ -1065,7 +1071,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorBleConnectionFailed.
   ///
   /// In en, this message translates to:
-  /// **'Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.'**
+  /// **'Connection to the senseBox failed. Please make sure Bluetooth is enabled and the senseBox is powered on and fully started.'**
   String get errorBleConnectionFailed;
 
   /// No description provided for @errorUploadFailed.

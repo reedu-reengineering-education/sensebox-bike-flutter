@@ -27,6 +27,7 @@
     }
   },
   "generalCancel": "Annuler",
+  "generalRetry": "Réessayer",
   "generalCreate": "Créer",
   "generalOk": "OK",
   "generalSave": "Enregistrer",
@@ -213,7 +214,7 @@
   "errorLoginFailed": "Échec de la connexion. Veuillez vérifier vos identifiants et réessayer plus tard.",
   "errorRegistrationFailed": "Échec de l’inscription. Veuillez vérifier vos identifiants et réessayer plus tard.",
   "errorReasonPrefix": "Raison :",
-  "errorBleConnectionFailed": "La connexion à la senseBox a été perdue. Assurez-vous que le Bluetooth est activé et que la senseBox est allumée.",
+  "errorBleConnectionFailed": "La connexion à la senseBox a échoué. Assurez-vous que le Bluetooth est activé et que la senseBox est allumée et entièrement démarrée.",
   "errorUploadFailed": "Échec du téléversement des données. Veuillez vérifier votre connexion internet et réessayer.",
   "errorDirectUploadFailed": "L’envoi en temps réel a échoué en raison de problèmes de connectivité. Ne vous inquiétez pas : vos données ont été enregistrées localement. Après avoir arrêté l’enregistrement, vous pouvez téléverser la trace manuellement depuis l’écran d’aperçu des parcours.",
   "errorPermanentAuthentication": "Échec permanent de l’authentification. Veuillez vous connecter pour téléverser les données.",

@@ -8,6 +8,8 @@ import 'package:sensebox_bike/sensors/temperature_sensor.dart';
 import '../mocks.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Sensor Aggregation and Value Removal', () {
     late TemperatureSensor sensor;
     late MockRecordingBloc recordingBloc;

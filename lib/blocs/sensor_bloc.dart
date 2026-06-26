@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/feature_flags.dart';
+import 'package:sensebox_bike/blocs/sensor_availability.dart';
 import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_right_sensor.dart';
@@ -30,6 +29,7 @@ class SensorBloc with ChangeNotifier {
   late final VoidCallback _characteristicStreamsVersionListener;
   late final VoidCallback _selectedDeviceListener;
   late final VoidCallback _recordingListener;
+  late final VoidCallback _reconnectingListener;
   List<String> _lastCharacteristicUuids = [];
   bool _isStartingListening = false;
 
@@ -38,8 +38,7 @@ class SensorBloc with ChangeNotifier {
     _initializeSensors();
 
     _selectedDeviceListener = () {
-      if (bleBloc.selectedDevice != null &&
-          bleBloc.selectedDevice!.isConnected) {
+      if (bleBloc.selectedDevice != null && bleBloc.isConnected) {
         _startListening();
         if (!geolocationBloc.isListening) {
           geolocationBloc.startListening();
@@ -52,9 +51,15 @@ class SensorBloc with ChangeNotifier {
     };
 
     _characteristicsListener = () {
-      final currentUuids = bleBloc.availableCharacteristics.value
-          .map((e) => e.uuid.toString())
-          .toList();
+      final currentUuids = _characteristicUuids.toList();
+      if (currentUuids.isEmpty) {
+        _lastCharacteristicUuids = [];
+        unawaited(_stopListening());
+        return;
+      }
+      if (bleBloc.selectedDevice == null) {
+        return;
+      }
       if (!_listEqualsUnordered(_lastCharacteristicUuids, currentUuids)) {
         _lastCharacteristicUuids = List.from(currentUuids);
         _restartAllSensors();
@@ -62,7 +67,23 @@ class SensorBloc with ChangeNotifier {
     };
 
     _characteristicStreamsVersionListener = () {
+      if (bleBloc.selectedDevice == null) {
+        return;
+      }
       _restartAllSensors();
+    };
+
+    _reconnectingListener = () {
+      if (bleBloc.isReconnectingNotifier.value) {
+        unawaited(_stopListening());
+        return;
+      }
+      if (bleBloc.selectedDevice != null && bleBloc.isConnected) {
+        unawaited(_restartAllSensors());
+        if (!geolocationBloc.isListening) {
+          geolocationBloc.startListening();
+        }
+      }
     };
 
     _recordingListener = () {
@@ -77,6 +98,7 @@ class SensorBloc with ChangeNotifier {
     );
 
     bleBloc.selectedDeviceNotifier.addListener(_selectedDeviceListener);
+    bleBloc.isReconnectingNotifier.addListener(_reconnectingListener);
     bleBloc.availableCharacteristics.addListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .addListener(_characteristicStreamsVersionListener);
@@ -175,7 +197,7 @@ class SensorBloc with ChangeNotifier {
     }
     _isStartingListening = true;
     try {
-      for (var sensor in _sensors) {
+      for (final sensor in availableSensors) {
         await sensor.startListening();
       }
     } finally {
@@ -190,6 +212,16 @@ class SensorBloc with ChangeNotifier {
   }
 
   Future<void> _restartAllSensors() async {
+    if (bleBloc.selectedDevice == null) {
+      await _stopListening();
+      return;
+    }
+    if (!bleBloc.isConnected) {
+      if (!bleBloc.isReconnectingNotifier.value) {
+        await _stopListening();
+      }
+      return;
+    }
     await _stopListening();
     await _startListening();
   }
@@ -207,28 +239,20 @@ class SensorBloc with ChangeNotifier {
 
   List<Sensor> get sensors => _sensors;
 
-  List<Widget> getSensorWidgets() {
-    final availableUuids = bleBloc.availableCharacteristics.value
-        .map((e) => e.uuid.toString())
-        .toSet();
+  Set<String> get _characteristicUuids => {
+        for (final characteristic in bleBloc.availableCharacteristics.value)
+          characteristic.uuidString,
+      };
 
-    final availableSensors = _sensors.where((sensor) {
-      if (FeatureFlags.hideSurfaceAnomalySensor &&
-          sensor.title == 'surface_anomaly') {
-        return false;
-      }
-      return availableUuids.contains(sensor.characteristicUuid);
-    }).toList();
-
-    availableSensors.sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
-    return availableSensors
-        .map<Widget>((sensor) => sensor.buildWidget())
-        .toList();
-  }
+  List<Sensor> get availableSensors => filterAvailableSensors(
+        _sensors,
+        _characteristicUuids,
+      );
 
   @override
   void dispose() {
     bleBloc.selectedDeviceNotifier.removeListener(_selectedDeviceListener);
+    bleBloc.isReconnectingNotifier.removeListener(_reconnectingListener);
     bleBloc.availableCharacteristics.removeListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .removeListener(_characteristicStreamsVersionListener);

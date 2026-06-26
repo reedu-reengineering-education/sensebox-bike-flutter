@@ -28,6 +28,7 @@
     },
 
     "generalCancel": "Cancelar",
+    "generalRetry": "Tentar novamente",
     "generalCreate": "Criar",
     "generalOk": "Ok",
     "generalSave": "Salvar",
@@ -215,7 +216,7 @@
     "errorLoginFailed": "Erro no login. Verifique suas credenciais e tente novamente mais tarde.",
     "errorRegistrationFailed": "Erro no registro. Verifique suas credenciais e tente novamente mais tarde.",
     "errorReasonPrefix": "Motivo:",
-    "errorBleConnectionFailed": "A conexão com a senseBox foi perdida. Por favor, certifique-se de que o Bluetooth está ativado e a senseBox está ligada.",
+    "errorBleConnectionFailed": "A conexão com a senseBox falhou. Certifique-se de que o Bluetooth está ativado e a senseBox está ligada e totalmente iniciada.",
     "errorUploadFailed": "Falha no upload de dados. Por favor, verifique sua conexão com a internet e tente novamente.",
     "errorDirectUploadFailed": "O upload em tempo real falhou devido a problemas de conectividade. Não se preocupe – seus dados foram salvos localmente. Após parar a gravação, você pode enviar o trajeto manualmente na tela de visão geral dos trajetos.",
     "errorPermanentAuthentication": "Falha permanente na autenticação. Por favor, faça login para enviar dados.",

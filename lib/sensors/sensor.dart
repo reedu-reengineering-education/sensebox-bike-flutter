@@ -305,7 +305,8 @@ abstract class Sensor {
         _geoSubscription = null;
       }
 
-      final stream = bleBloc.getCharacteristicStream(characteristicUuid);
+      final stream =
+          bleBloc.characteristicStreams.characteristicStream(characteristicUuid);
       _subscription = stream.listen((data) {
         onDataReceived(data);
       });
