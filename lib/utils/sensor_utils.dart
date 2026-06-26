@@ -152,10 +152,13 @@ String? getTitleFromSensorKey(String key, String? attribute) {
     case 'acceleration_z':
       return 'Acceleration Z';
     case 'gps_latitude':
+    case 'sensor_gps_latitude':
       return 'GPS Latitude';
     case 'gps_longitude':
+    case 'sensor_gps_longitude':
       return 'GPS Longitude';
     case 'gps_speed':
+    case 'sensor_gps_speed':
       return 'Speed';
     default:
       debugPrint("Unknown sensor key: $searchKey");
@@ -207,10 +210,13 @@ String? getTranslatedTitleFromSensorKey(
     case 'acceleration_z':
       return AppLocalizations.of(context)!.sensorAccelerationZ;
     case 'gps_latitude':
+    case 'sensor_gps_latitude':
       return AppLocalizations.of(context)!.sensorGPSLat;
     case 'gps_longitude':
+    case 'sensor_gps_longitude':
       return AppLocalizations.of(context)!.sensorGPSLong;
     case 'gps_speed':
+    case 'sensor_gps_speed':
       return AppLocalizations.of(context)!.sensorSpeed;
     default:
       debugPrint("Unknown sensor key: $searchKey");
@@ -233,6 +239,7 @@ IconData getSensorIcon(String sensorType) {
     case 'finedust':
       return Icons.grain;
     case 'gps':
+    case 'sensor_gps':
       return Icons.gps_off;
     case 'overtaking':
       return Icons.directions_car;
@@ -258,6 +265,7 @@ Color getSensorColor(String sensorType) {
     case 'finedust':
       return Colors.blueGrey;
     case 'gps':
+    case 'sensor_gps':
       return Colors.blue;
     case 'overtaking':
       return Colors.teal;

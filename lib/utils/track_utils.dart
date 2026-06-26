@@ -221,7 +221,7 @@ class UploadDataPreparer {
         final String sensorTitle = sensorEntry.key;
         final List<double> aggregatedValues = sensorEntry.value;
 
-        if (sensorTitle == "gps") {
+        if (sensorTitle == "gps" || sensorTitle == "sensor_gps") {
           continue;
         }
 

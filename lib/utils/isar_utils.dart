@@ -47,9 +47,16 @@ Set<List<String?>> collectSensorTitles(Map<int, List<SensorData>> sensorDataByGe
   const separator = '%%';
   final sensorTitlesSet = <String>{};
   for (var sensorData in sensorDataByGeolocation.values) {
+    final seenKeys = <String>{};
     for (var sensor in sensorData) {
-      sensorTitlesSet
-          .add('${sensor.title}$separator${sensor.attribute ?? ""}');
+      final key = '${sensor.title}$separator${sensor.attribute ?? ""}';
+      if (seenKeys.contains(key)) {
+        // Duplicate within this geolocation: add as sensor_<title> to avoid overwrite
+        sensorTitlesSet.add('sensor_${sensor.title}$separator${sensor.attribute ?? ""}');
+      } else {
+        seenKeys.add(key);
+        sensorTitlesSet.add(key);
+      }
     }
   }
   return sensorTitlesSet.map((str) {
@@ -99,9 +106,19 @@ List<String> buildCsvHeaders(List<List<String?>> sensorTitles) {
 Map<String, double?> organizeSensorData(List<SensorData> sensorDataList,{String separator = '%%'}) {
   final sensorMap = <String, double?>{};
 
-  for (var sensorData in sensorDataList) {
-    sensorMap['${sensorData.title}$separator${sensorData.attribute}'] =
-        sensorData.value;
+  // Sort by id ascending so that the lower-id entry (saved first, i.e. phone
+  // GPS speed) deterministically stays under <title>%%<attribute> and the
+  // higher-id entry (BLE GPS speed, saved later) goes to sensor_<title>.
+  final sorted = List<SensorData>.from(sensorDataList)..sort((a, b) => a.id.compareTo(b.id));
+
+  for (var sensorData in sorted) {
+    final key = '${sensorData.title}$separator${sensorData.attribute}';
+    if (sensorMap.containsKey(key)) {
+      // Duplicate key: store under sensor_<title> to preserve both values
+      sensorMap['sensor_${sensorData.title}$separator${sensorData.attribute}'] = sensorData.value;
+    } else {
+      sensorMap[key] = sensorData.value;
+    }
   }
 
   return sensorMap;
@@ -113,25 +130,34 @@ List<List<String>> buildCsvRows(
   List<List<String?>> sensorTitles,
 ) {
   const separator = '%%';
-  return geolocationDataList.map((geoData) {
-    final sensorData = sensorDataByGeolocation[geoData.id] ?? [];
-    if (sensorData.isEmpty) return null;
-    final sensorMap = organizeSensorData(sensorData, separator: separator);
-    final values = sensorTitles.map((title) => sensorMap['${title[0]}$separator${title[1]}']).toList();
-    
+  return geolocationDataList
+      .map((geoData) {
+        final sensorData = sensorDataByGeolocation[geoData.id] ?? [];
+        if (sensorData.isEmpty) return null;
+        final sensorMap = organizeSensorData(sensorData, separator: separator);
+        final values = sensorTitles
+            .map((title) => MapEntry(
+                title[0], sensorMap['${title[0]}$separator${title[1]}']))
+            .toList();
+
         // Format timestamp as UTC ISO8601 string
         final timestampUtc = geoData.timestamp.isUtc
             ? geoData.timestamp
             : geoData.timestamp.toUtc();
         final timestampString = timestampUtc.toIso8601String();
-    
-    return [
+
+        return [
           timestampString,
-      geoData.latitude.toString(),
-      geoData.longitude.toString(),
-          ...values.map((value) =>
-              value?.toStringAsFixed(2) ??
-              ''), // format value to 2 decimal places
-    ];
-  }).whereType<List<String>>().toList();
+          geoData.latitude.toString(),
+          geoData.longitude.toString(),
+          ...values.map((entry) {
+            final isGps = entry.key?.toLowerCase() == 'sensor_gps';
+            return isGps
+                ? (entry.value?.toStringAsFixed(5) ?? '')
+                : (entry.value?.toStringAsFixed(2) ?? '');
+          }),
+        ];
+      })
+      .whereType<List<String>>()
+      .toList();
 }
