@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -50,6 +53,25 @@ class PermissionService {
     }
     await Permission.locationAlways.request();
   }
+
+  static Future<bool> ensureBluetoothPermissionsGranted() async {
+    if (!Platform.isAndroid) {
+      return true;
+    }
+
+    final statuses = await [
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect,
+    ].request();
+
+    return statuses.values.every((status) => status.isGranted);
+  }
+
+  static Future<void> openBluetoothSettings() =>
+      AppSettings.openAppSettings(type: AppSettingsType.bluetooth);
+
+  static Future<void> openAppSettings() =>
+      AppSettings.openAppSettings(type: AppSettingsType.settings);
 
   static Future<void> ensureLocationPermissionsGranted() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();

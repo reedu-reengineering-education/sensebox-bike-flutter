@@ -57,6 +57,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.4"
+  app_settings:
+    dependency: "direct main"
+    description:
+      name: app_settings
+      sha256: "3e46c561441e5820d3a25339bf8b51b9e45a5f686873851a20c257a530917795"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.1"
   args:
     dependency: transitive
     description:
@@ -81,14 +89,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.0"
-  bluez:
-    dependency: transitive
-    description:
-      name: bluez
-      sha256: "61a7204381925896a374301498f2f5399e59827c6498ae1e924aaa598751b545"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.8.3"
   boolean_selector:
     dependency: transitive
     description:
@@ -390,54 +390,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.0+1"
-  flutter_blue_plus:
-    dependency: "direct main"
-    description:
-      name: flutter_blue_plus
-      sha256: bfae0d24619940516261045d8b3c74b4c80ca82222426e05ffbf7f3ea9dbfb1a
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.35.5"
-  flutter_blue_plus_android:
-    dependency: transitive
-    description:
-      name: flutter_blue_plus_android
-      sha256: "9723dd4ba7dcc3f27f8202e1159a302eb4cdb88ae482bb8e0dd733b82230a258"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.5"
-  flutter_blue_plus_darwin:
-    dependency: transitive
-    description:
-      name: flutter_blue_plus_darwin
-      sha256: f34123795352a9761e321589aa06356d3b53f007f13f7e23e3c940e733259b2d
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.1"
-  flutter_blue_plus_linux:
-    dependency: transitive
-    description:
-      name: flutter_blue_plus_linux
-      sha256: "635443d1d333e3695733fd70e81ee0d87fa41e78aa81844103d2a8a854b0d593"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.2"
-  flutter_blue_plus_platform_interface:
-    dependency: transitive
-    description:
-      name: flutter_blue_plus_platform_interface
-      sha256: a4bb70fa6fd09e0be163b004d773bf19e31104e257a4eb846b67f884ddd87de2
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.2"
-  flutter_blue_plus_web:
-    dependency: transitive
-    description:
-      name: flutter_blue_plus_web
-      sha256: "03023c259dbbba1bc5ce0fcd4e88b364f43eec01d45425f393023b9b2722cf4d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.1"
   flutter_cache_manager:
     dependency: transitive
     description:
@@ -499,6 +451,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.24"
+  flutter_reactive_ble:
+    dependency: "direct main"
+    description:
+      name: flutter_reactive_ble
+      sha256: "10022aed17fa1797678a4d848cf25484a4cfd10c46061ce61687f071585fe036"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.4.2"
   flutter_svg:
     dependency: "direct main"
     description:
@@ -525,6 +485,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
+  functional_data:
+    dependency: transitive
+    description:
+      name: functional_data
+      sha256: "76d17dc707c40e552014f5a49c0afcc3f1e3f05e800cd6b7872940bfe41a5039"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
   geolocator:
     dependency: "direct main"
     description:
@@ -613,6 +581,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  haptic_feedback:
+    dependency: "direct main"
+    description:
+      name: haptic_feedback
+      sha256: dcc2494994c41428823f8f2082fd17a4e89e372bd142e07681420cbfaf99dcad
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.4+3"
   http:
     dependency: "direct main"
     description:
@@ -981,6 +957,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.1"
+  protobuf:
+    dependency: transitive
+    description:
+      name: protobuf
+      sha256: "75ec242d22e950bdcc79ee38dd520ce4ee0bc491d7fadc4ea47694604d22bf06"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.0"
   provider:
     dependency: "direct main"
     description:
@@ -1013,6 +997,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
+  reactive_ble_mobile:
+    dependency: transitive
+    description:
+      name: reactive_ble_mobile
+      sha256: ddfc324be406cec06aeace0e85a074cda8d0c01658ef6e5d308764fee4b33b61
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.4.2"
+  reactive_ble_platform_interface:
+    dependency: transitive
+    description:
+      name: reactive_ble_platform_interface
+      sha256: "20efc78259f8d8bf20cd8048c274985e67e043f0d2c62d778303baaa1f1ac667"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.5.0"
   retry:
     dependency: "direct main"
     description:
@@ -1438,18 +1438,18 @@ packages:
     dependency: "direct main"
     description:
       name: vibration
-      sha256: "804ee8f9628f31ee71fbe6137a2bc6206a64e101ec22cd9dd6d3a7dc0272591b"
+      sha256: "9bb06614c69260f8bd11c80fe01ed7988905cf00e3417d656c2647e41f261d87"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.3"
+    version: "3.1.8"
   vibration_platform_interface:
     dependency: transitive
     description:
       name: vibration_platform_interface
-      sha256: "03e9deaa4df48a1a6212e281bfee5f610d62e9247929dd2f26f4efd4fa5e225c"
+      sha256: "258c273268f8aa40c88d29741137c536874a738779b92ddb8aa32ed093721ec5"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.0"
+    version: "0.1.2"
   vm_service:
     dependency: transitive
     description:

@@ -1,71 +1,231 @@
 import 'dart:async';
 
-import 'dart:typed_data';
-import 'package:flutter/widgets.dart';
-import 'package:sensebox_bike/blocs/settings_bloc.dart';
-import 'package:sensebox_bike/secrets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
+import 'package:sensebox_bike/ble/ble_connection_session.dart';
+import 'package:sensebox_bike/ble/ble_constants.dart';
+import 'package:sensebox_bike/ble/ble_device.dart';
+import 'package:sensebox_bike/ble/ble_platform.dart';
+import 'package:sensebox_bike/ble/ble_reconnection_coordinator.dart';
+import 'package:sensebox_bike/ble/ble_scanner.dart';
+import 'package:sensebox_bike/ble/ble_session_retry_runner.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:vibration/vibration.dart';
+import 'package:sensebox_bike/services/permission_service.dart';
+import 'package:sensebox_bike/utils/device_vibration.dart';
 
-const reconnectionDelay = Duration(seconds: 1);
-const deviceConnectTimeout = Duration(seconds: 10);
-const configurableReconnectionDelay = Duration(seconds: 1);
-const dataListeningTimeout = Duration(seconds: 4); 
+enum BleDisconnectReason {
+  userRequested,
+  connectionFailed,
+  retryRelease,
+}
+
+enum BleConnectionPhase {
+  idle,
+  connecting,
+  connected,
+  reconnecting,
+}
 
 class BleBloc with ChangeNotifier {
+  BleBloc(
+    this.settingsBloc, {
+    bool initializePlatformBle = true,
+    BlePlatform? platform,
+  }) : _platform = platform ?? BlePlatform() {
+    _scanner = BleScanner(
+      platform: _platform,
+      isScanningNotifier: isScanningNotifier,
+    );
+    _connectionSession = BleConnectionSession(platform: _platform);
+    _sessionRetryRunner = BleSessionRetryRunner();
+    characteristicStreams = BleCharacteristicStreams(platform: _platform);
+    _platform.onLinkStateChanged = _handlePlatformLinkStateChange;
+    _reconnectionCoordinator = BleReconnectionCoordinator(platform: _platform);
+
+    if (initializePlatformBle) {
+      _refreshBluetoothEnabledStatus();
+      _adapterStatusSubscription =
+          _platform.statusStream.listen(_onAdapterStatusChanged);
+    }
+  }
+
   final SettingsBloc settingsBloc;
+  final BlePlatform _platform;
 
   final ValueNotifier<bool> isBluetoothEnabledNotifier = ValueNotifier(false);
   final ValueNotifier<bool> isScanningNotifier = ValueNotifier(false);
   final ValueNotifier<bool> isConnectingNotifier = ValueNotifier(false);
   final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
-  final ValueNotifier<BluetoothDevice?> selectedDeviceNotifier =
-      ValueNotifier(null);
-  final ValueNotifier<List<BluetoothCharacteristic>> availableCharacteristics =
+  final ValueNotifier<BleDevice?> selectedDeviceNotifier = ValueNotifier(null);
+  final ValueNotifier<List<BleCharacteristicRef>> availableCharacteristics =
       ValueNotifier([]);
   final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
 
-  final List<BluetoothDevice> devicesList = [];
-  final StreamController<List<BluetoothDevice>> _devicesListController =
-      StreamController.broadcast();
-  Stream<List<BluetoothDevice>> get devicesListStream =>
-      _devicesListController.stream;
+  late final BleScanner _scanner;
+  late final BleReconnectionCoordinator _reconnectionCoordinator;
+  late final BleConnectionSession _connectionSession;
+  late final BleSessionRetryRunner _sessionRetryRunner;
+  late final BleCharacteristicStreams characteristicStreams;
 
-  BluetoothDevice? selectedDevice;
-  bool _isConnected = false;
-  bool _isReconnecting = false;
+  StreamSubscription<BleAdapterState>? _adapterStatusSubscription;
+
+  List<BleDevice> get devicesList => _scanner.devicesList;
+  Stream<List<BleDevice>> get devicesListStream => _scanner.devicesListStream;
+
+  BleDevice? selectedDevice;
+  BleDevice? _linkWatchDevice;
+  BleConnectionPhase _phase = BleConnectionPhase.idle;
   bool _userInitiatedDisconnect = false;
-  bool _isInRetryMode = false;
-  int _reconnectionAttempts = 0;
-  bool _hasVibrated = false;
-  static const int _maxReconnectionAttempts = 10;
-  
-  StreamSubscription<BluetoothConnectionState>? _reconnectionListener;
+  bool _appInitiatedTeardown = false;
+  bool _scanAfterDisconnect = false;
+  bool _linkLostDueToAdapterPowerOff = false;
+  String? _vibratedForDisconnectDeviceId;
 
-  final Map<String, StreamController<List<double>>> _characteristicStreams = {};
-  final Map<String, StreamSubscription<List<int>>>
-      _characteristicSubscriptions = {};
+  bool get isConnected => _phase == BleConnectionPhase.connected;
 
-  bool get isConnected => _isConnected;
-
-  BleBloc(this.settingsBloc) {
-    FlutterBluePlus.setLogLevel(LogLevel.error);
-    FlutterBluePlus.adapterState.listen((state) {
-      updateBluetoothStatus(state == BluetoothAdapterState.on);
-    });
-
-    _initializeBluetoothStatus();
+  void _setPhase(BleConnectionPhase phase) {
+    _phase = phase;
+    isConnectingNotifier.value = phase == BleConnectionPhase.connecting;
+    isReconnectingNotifier.value = phase == BleConnectionPhase.reconnecting;
+    notifyListeners();
   }
 
-  Future<void> _initializeBluetoothStatus() async {
-    BluetoothAdapterState currentState =
-        await FlutterBluePlus.adapterState.first;
-    updateBluetoothStatus(currentState == BluetoothAdapterState.on);
+  Future<void> _refreshBluetoothEnabledStatus() async {
+    updateBluetoothStatus(await _platform.isAdapterEnabled());
+  }
+
+  void _onAdapterStatusChanged(BleAdapterState status) {
+    updateBluetoothStatus(isBluetoothAdapterEnabled(status));
+    if (status == BleAdapterState.poweredOff) {
+      unawaited(_onBluetoothPoweredOff());
+    } else if (status == BleAdapterState.ready) {
+      unawaited(_onBluetoothPoweredOn());
+    }
+  }
+
+  Future<void> _onBluetoothPoweredOff() async {
+    if (_userInitiatedDisconnect || selectedDevice == null) {
+      return;
+    }
+    if (_phase != BleConnectionPhase.connected &&
+        _phase != BleConnectionPhase.reconnecting) {
+      return;
+    }
+
+    _linkLostDueToAdapterPowerOff = true;
+    final deviceId = selectedDevice!.id;
+
+    try {
+      await _platform.disconnect(deviceId);
+    } catch (_) {}
+
+    _maybeVibrateOnUnexpectedDisconnect(deviceId);
+
+    if (_reconnectionCoordinator.isReconnectionInProgress) {
+      return;
+    }
+    await _reconnectionCoordinator.notifyUnexpectedLinkLost();
+  }
+
+  Future<void> _onBluetoothPoweredOn() async {
+    if (_userInitiatedDisconnect || selectedDevice == null) {
+      return;
+    }
+    if (_phase == BleConnectionPhase.connecting) {
+      return;
+    }
+    if (_reconnectionCoordinator.isReconnectionInProgress) {
+      return;
+    }
+    final device = selectedDevice!;
+    if (_phase == BleConnectionPhase.connected &&
+        _platform.isConnected(device.id) &&
+        !_linkLostDueToAdapterPowerOff) {
+      return;
+    }
+    _linkLostDueToAdapterPowerOff = false;
+    _setPhase(BleConnectionPhase.reconnecting);
+    await _reconnectionCoordinator.notifyUnexpectedLinkLost();
+  }
+
+  bool _shouldAbortReconnection() {
+    return _reconnectionCoordinator.shouldAbortReconnection;
+  }
+
+  void _invalidatePublishedCharacteristics() {
+    if (availableCharacteristics.value.isEmpty) {
+      return;
+    }
+    availableCharacteristics.value = [];
+    characteristicStreamsVersion.value++;
+  }
+
+  void _handlePlatformLinkStateChange(
+    String deviceId,
+    BleLinkState? previous,
+    BleLinkState next,
+  ) {
+    if (next == BleLinkState.connected) {
+      if (_vibratedForDisconnectDeviceId == deviceId) {
+        _vibratedForDisconnectDeviceId = null;
+      }
+      return;
+    }
+    if (previous != BleLinkState.connected) {
+      return;
+    }
+    _maybeVibrateOnUnexpectedDisconnect(deviceId);
+  }
+
+  void _maybeVibrateOnUnexpectedDisconnect(String deviceId) {
+    if (!settingsBloc.vibrateOnDisconnect) {
+      debugPrint('[BLE] vibrate skipped: setting disabled');
+      return;
+    }
+    if (_userInitiatedDisconnect || _appInitiatedTeardown) {
+      return;
+    }
+    final device = selectedDevice ?? _linkWatchDevice;
+    if (device == null || device.id != deviceId) {
+      return;
+    }
+    if (_vibratedForDisconnectDeviceId == deviceId) {
+      return;
+    }
+    _vibratedForDisconnectDeviceId = deviceId;
+    debugPrint('[BLE] vibrate on unexpected disconnect $deviceId');
+    unawaited(_pulseDisconnectVibration(deviceId));
+  }
+
+  Future<void> _pulseDisconnectVibration(String deviceId) async {
+    await vibrateDisconnectFeedback();
+
+    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    if (_vibratedForDisconnectDeviceId != deviceId) {
+      return;
+    }
+    if (_userInitiatedDisconnect || _appInitiatedTeardown) {
+      return;
+    }
+    if (_platform.isConnected(deviceId)) {
+      return;
+    }
+    debugPrint('[BLE] vibrate retry after disconnect $deviceId');
+    await vibrateDisconnectFeedback();
+  }
+
+  Future<void> _waitForBluetoothReady() async {
+    while (!isBluetoothEnabledNotifier.value) {
+      if (_userInitiatedDisconnect || _shouldAbortReconnection()) {
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    }
   }
 
   void updateBluetoothStatus(bool isEnabled) {
@@ -77,594 +237,446 @@ class BleBloc with ChangeNotifier {
 
   Future<void> startScanning() async {
     isScanningNotifier.value = true;
-
     try {
-      await FlutterBluePlus.startScan(timeout: deviceConnectTimeout);
-    } catch (e) {
+      final afterDisconnect = _scanAfterDisconnect;
+      _scanAfterDisconnect = false;
+      await _scanner.startScanning(afterDisconnect: afterDisconnect);
+    } catch (_) {
       isScanningNotifier.value = false;
-      throw ScanPermissionDenied();
+      rethrow;
     }
-
-    FlutterBluePlus.scanResults.listen((results) {
-      devicesList.clear();
-      for (ScanResult result in results) {
-        if (result.device.platformName.startsWith("senseBox")) {
-          devicesList.add(result.device);
-        }
-      }
-      _devicesListController.add(devicesList);
-      notifyListeners();
-    });
-
-    FlutterBluePlus.isScanning.listen((scanning) {
-      isScanningNotifier.value = scanning;
-    });
   }
 
-  Future<void> stopScanning() async {
-    await FlutterBluePlus.stopScan();
-    isScanningNotifier.value = false;
-  }
+  Future<void> stopScanning() => _scanner.stopScanning();
 
   Future<void> scanForNewDevices() async {
-    // Clear all existing state before scanning
-    disconnectDevice();
-    
-
-    
-    isScanningNotifier.value = true;
-
-    try {
-      await FlutterBluePlus.startScan(timeout: deviceConnectTimeout);
-    } catch (e) {
-      isScanningNotifier.value = false;
-      throw ScanPermissionDenied();
-    }
-
-    FlutterBluePlus.scanResults.listen((results) {
-      devicesList.clear();
-      for (ScanResult result in results) {
-        if (result.device.platformName.startsWith("senseBox")) {
-          devicesList.add(result.device);
-        }
-      }
-      _devicesListController.add(devicesList);
-      notifyListeners();
-    });
-
-    FlutterBluePlus.isScanning.listen((scanning) {
-      isScanningNotifier.value = scanning;
-    });
+    await disconnectDevice(reason: BleDisconnectReason.userRequested);
+    await startScanning();
   }
 
-  void disconnectDevice() {
-    _userInitiatedDisconnect = true;
-    _isInRetryMode = false;
-    selectedDevice?.disconnect();
-    _isConnected = false;
-    selectedDevice = null;
-    selectedDeviceNotifier.value = null;
-    availableCharacteristics.value = [];
-    _reconnectionListener?.cancel();
-    _reconnectionListener = null;
-    resetConnectionError();
-    
-    // Ensure reconnection state is fully reset
-    _resetReconnectionState();
+  Future<void> disconnectDevice({
+    BleDevice? device,
+    BleDisconnectReason reason = BleDisconnectReason.userRequested,
+  }) async {
+    final target = device ?? selectedDevice;
+    final characteristics =
+        List<BleCharacteristicRef>.from(availableCharacteristics.value);
 
+    final keepSession = reason == BleDisconnectReason.retryRelease;
 
-    
-    notifyListeners();
+    if (reason == BleDisconnectReason.userRequested) {
+      _userInitiatedDisconnect = true;
+      _linkLostDueToAdapterPowerOff = false;
+      _vibratedForDisconnectDeviceId = null;
+      _reconnectionCoordinator.cancelReconnection();
+    }
+
+    if (!keepSession) {
+      _setPhase(BleConnectionPhase.connecting);
+    }
+
+    try {
+      _invalidatePublishedCharacteristics();
+
+      if (keepSession) {
+        _appInitiatedTeardown = true;
+      }
+      try {
+        await _teardownLink(
+          target,
+          characteristics: characteristics,
+          settleAfterDisconnect: keepSession
+              ? bleLinkOnlyDisconnectSettleDelay
+              : blePostDisconnectSettleDelay,
+        );
+      } finally {
+        if (keepSession) {
+          _appInitiatedTeardown = false;
+        }
+      }
+
+      if (keepSession) {
+        notifyListeners();
+        return;
+      }
+
+      if (reason == BleDisconnectReason.connectionFailed) {
+        connectionErrorNotifier.value = true;
+        _reconnectionCoordinator.reset();
+        _scanAfterDisconnect = true;
+      } else {
+        connectionErrorNotifier.value = false;
+        _scanAfterDisconnect = true;
+        await _scanner.stopScanning();
+        _scanner.clearDiscoveredDevices();
+      }
+
+      if (reason != BleDisconnectReason.userRequested) {
+        _userInitiatedDisconnect = false;
+      }
+    } finally {
+      if (!keepSession) {
+        selectedDevice = null;
+        selectedDeviceNotifier.value = null;
+        _linkWatchDevice = null;
+        _setPhase(BleConnectionPhase.idle);
+      }
+    }
   }
 
   Future<void> connectToId(String id, BuildContext context) async {
-    resetConnectionError();
-    
-    await FlutterBluePlus.startScan(withNames: [id]);
-    FlutterBluePlus.scanResults.listen((results) async {
-      for (ScanResult result in results) {
-        if (result.device.advName.toString() == id) {
-          await connectToDevice(result.device, context);
-          break;
-        }
-      }
-    });
+    await _connectToBox(id, context);
   }
 
-  Future<void> connectToDevice(
-      BluetoothDevice device, BuildContext context) async {
+  Future<void> _connectToBox(String name, BuildContext context) async {
+    resetConnectionError();
+
+    await _scanner.scanForBox(
+      name: name,
+      onDeviceFound: (device) => connectToDevice(device, context),
+    );
+  }
+
+  Future<void> connectToDevice(BleDevice device, BuildContext context) async {
+    _userInitiatedDisconnect = false;
+    _linkWatchDevice = device;
+
     try {
       resetConnectionError();
+      _setPhase(BleConnectionPhase.connecting);
 
-      isConnectingNotifier.value = true;
-      notifyListeners();
+      final success = await _connectDeviceWithSessionRetries(
+        device,
+        maxAttempts: bleInitialConnectMaxAttempts,
+        failurePhase: BleConnectionFailurePhase.initialConnect,
+      );
 
-      if (isScanningNotifier.value == true) {
-        await stopScanning();
-      }
-
-      await device.connect();
-
-      final success =
-          await _attemptConnectionWithRetries(device, context: context);
-      _isConnected = success;
-
-      if (_isConnected) {
-        _handleDeviceReconnection(device, context);
-        
+      if (success) {
         selectedDevice = device;
         selectedDeviceNotifier.value = selectedDevice;
-      } else {
-        selectedDevice = null;
-        selectedDeviceNotifier.value = null;
+        _linkWatchDevice = device;
+        _setPhase(BleConnectionPhase.connected);
+        _attachReconnectionListener(device);
       }
-    } catch (e) {
-      ErrorService.handleError(e, StackTrace.current);
-      
-      selectedDevice = null;
-      selectedDeviceNotifier.value = null;
-      _isConnected = false;
-      
-      _handleConnectionError(context: context, isInitialConnection: true);
+    } catch (e, stack) {
+      await disconnectDevice(
+        device: device,
+        reason: BleDisconnectReason.connectionFailed,
+      );
+      ErrorService.reportToSentry(
+        BleConnectionFailed(BleConnectionFailurePhase.initialConnect, e),
+        stack,
+      );
     } finally {
-      isConnectingNotifier.value = false;
-      _isInRetryMode = false;
-      notifyListeners();
+      if (_phase != BleConnectionPhase.connected) {
+        _linkWatchDevice = null;
+        _setPhase(BleConnectionPhase.idle);
+      }
     }
-    
   }
 
-  Future<bool> _executeConnectionAttempts(
-    BluetoothDevice device,
-    BuildContext? context, {
+  Future<bool> _connectDeviceWithSessionRetries(
+    BleDevice device, {
     required int maxAttempts,
-    required bool isReconnection,
-    required Future<bool> Function(BluetoothDevice, BuildContext?)
-        attemptConnection,
-    required Future<void> Function(BluetoothDevice) prepareForRetry,
-    required void Function(
-            {required BuildContext context, bool isInitialConnection})
-        handleError,
+    required BleConnectionFailurePhase failurePhase,
+    bool publishConnectedState = true,
+    bool waitForAdvertising = false,
+    Future<void> Function()? onExhausted,
   }) async {
-    _isInRetryMode = true;
-
-    for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      if (attempt > 0) {
-        _isConnected = false;
-      }
-
-      try {
-        bool success = false;
-        try {
-          success = await attemptConnection(device, context);
-        } catch (e) {
-          success = false;
-        }
-
-        if (success) {
-          _isInRetryMode = false;
-          return true;
-        }
-
-        if (attempt < maxAttempts - 1) {
-          try {
-            await prepareForRetry(device);
-          } catch (e) {
-            // Continue with next attempt anyway
-          }
-        }
-      } catch (e) {
-        if (attempt < maxAttempts - 1) {
-          try {
-            await prepareForRetry(device);
-          } catch (e) {
-            // Continue with next attempt anyway
-          }
-        }
+    if (failurePhase == BleConnectionFailurePhase.reconnection) {
+      await _waitForBluetoothReady();
+      if (_shouldAbortReconnection()) {
+        return false;
       }
     }
-
-    _isInRetryMode = false;
-
-    if (context != null) {
-      handleError(context: context, isInitialConnection: !isReconnection);
-    }
-    return false;
-  }
-
-  Future<bool> _attemptConnectionWithRetries(
-    BluetoothDevice device, {
-    BuildContext? context,
-    int maxAttempts = 5,
-    bool isReconnection = false,
-  }) async {
-    return _executeConnectionAttempts(
-      device,
-      context,
-      maxAttempts: maxAttempts,
-      isReconnection: isReconnection,
-      attemptConnection: (device, context) => _attemptSingleConnection(
-        device,
-        context,
-        updateConnectionState: true,
-      ),
-      prepareForRetry: _prepareForRetry,
-      handleError: _handleConnectionError,
-    );
-  }
-
-  /// Attempts a single connection without retries
-  Future<bool> _attemptSingleConnection(
-    BluetoothDevice device,
-    BuildContext? context, {
-    bool updateConnectionState = true,
-  }) async {
-    try {
-      _clearCharacteristicStreams();
-
-      final services = await device.discoverServices();
-      if (services.isEmpty) {
-        return false;
-      }
-
-      BluetoothService? senseBoxService;
-      try {
-        senseBoxService = _findSenseBoxService(services);
-      } catch (e) {
-        return false;
-      }
-
-      if (senseBoxService.characteristics.isEmpty) {
-        return false;
-      }
-
-      final firstCharacteristic = senseBoxService.characteristics.first;
-
-      bool dataReceived = false;
-      final dataReceivedCompleter = Completer<bool>();
-
-      await firstCharacteristic.setNotifyValue(true);
-      Uint8List? receivedData;
-      final subscription = firstCharacteristic.onValueReceived.listen((value) {
-        if (!dataReceivedCompleter.isCompleted) {
-          receivedData = Uint8List.fromList(value);
-          dataReceived = true;
-          dataReceivedCompleter.complete(true);
-        }
-      });
-
-      try {
-        await Future.any([
-          dataReceivedCompleter.future,
-          Future.delayed(dataListeningTimeout),
-        ]);
-      } finally {
-        subscription.cancel();
-        await firstCharacteristic.setNotifyValue(false);
-      }
-
-      if (dataReceived && receivedData != null) {
-        bool isDataMeaningful = _validateReceivedData(receivedData!);
-
-        if (isDataMeaningful) {
-          for (var characteristic in senseBoxService.characteristics) {
-            await _listenToCharacteristic(characteristic);
-          }
-
-          availableCharacteristics.value = senseBoxService.characteristics;
-          characteristicStreamsVersion.value++;
-
-          if (updateConnectionState) {
-            _isConnected = true;
-            _userInitiatedDisconnect = false;
-              
-            notifyListeners();
-          }
-
-          return true;
-        } else {
-          return false;
-        }
-      } else if (dataReceived && receivedData == null) {
-        return false;
-      } else {
-        return false;
-      }
-    } catch (e) {
+    if (_userInitiatedDisconnect &&
+        failurePhase == BleConnectionFailurePhase.initialConnect) {
       return false;
     }
-  }
 
-  /// Prepares device for retry by disconnecting and reconnecting
-  Future<void> _prepareForRetry(BluetoothDevice device) async {
-    try {
-      // Disconnect device (catch any disconnect exceptions)
+    if (!_platform.isConnected(device.id) &&
+        failurePhase == BleConnectionFailurePhase.initialConnect) {
       try {
-        await device.disconnect();
-      } catch (e) {
-        // Continue anyway, device might already be disconnected
+        await _connectLink(
+          device,
+          waitForAdvertising: waitForAdvertising,
+        );
+      } catch (_) {
+        rethrow;
       }
-
-      await Future.delayed(configurableReconnectionDelay);
-      
-      try {
-        await device.connect(timeout: deviceConnectTimeout);
-      } catch (e) {
-        // Don't throw - let the retry continue, next attempt might work
-        return;
-      }
-
-      await Future.delayed(configurableReconnectionDelay);
-    } catch (e) {
-      // Don't throw - let reconnection continue with next attempt
     }
-  }
 
-  void _clearCharacteristicStreams() {
-    for (var subscription in _characteristicSubscriptions.values) {
-      subscription.cancel();
-    }
-    _characteristicSubscriptions.clear();
-    
-    for (var controller in _characteristicStreams.values) {
-      controller.close();
-    }
-    _characteristicStreams.clear();
-  }
-
-  BluetoothService _findSenseBoxService(List<BluetoothService> services) {
-    return services.firstWhere(
-      (service) => service.uuid == senseBoxServiceUUID,
-      orElse: () => throw Exception('senseBox service not found'),
+    return _sessionRetryRunner.run(
+      device: device,
+      maxAttempts: maxAttempts,
+      attemptSession: (_, __) => _attemptSingleConnection(
+        device,
+        publishConnectedState: publishConnectedState,
+      ),
+      prepareForRetry: (retryDevice) => _prepareForRetry(
+        retryDevice,
+        waitForAdvertising: waitForAdvertising,
+      ),
+      onExhausted: onExhausted ??
+          () => _onSessionRetriesExhausted(device, failurePhase),
     );
   }
 
-
-
-  void _handleDeviceReconnection(BluetoothDevice device, BuildContext context) {
-    _reconnectionListener?.cancel();
-    
-    _userInitiatedDisconnect = false;
-    _hasVibrated = false;
-    _reconnectionAttempts = 0;
-
-    _reconnectionListener = device.connectionState.listen((state) async {
-      try {
-        if (state == BluetoothConnectionState.disconnected &&
-            !_userInitiatedDisconnect &&
-            !_isInRetryMode) {
-          if (!_isReconnecting) {
-            _isConnected = false;
-            isReconnectingNotifier.value = true;
-
-            // Start the actual reconnection process
-            try {
-              _startReconnectionProcess(device, context);
-            } catch (e) {
-              // Reset state if reconnection process fails to start
-              _isReconnecting = false;
-              isReconnectingNotifier.value = false;
-            }
-          }
-        }
-      } catch (e) {
-        // Don't throw - let the reconnection process handle it
-      }
-    });
-
-    _reconnectionListener?.onError((error) {
-      _handleConnectionError(context: context, isInitialConnection: false);
-    });
+  Future<BleDevice?> _waitForAdvertisingTarget(BleDevice device) {
+    return _scanner.waitForAdvertisingDevice(
+      device,
+      shouldCancel: () =>
+          _userInitiatedDisconnect || _shouldAbortReconnection(),
+    );
   }
 
-  void _startReconnectionProcess(
-    BluetoothDevice device,
-    BuildContext context,
-  ) async {
+  Future<void> _platformConnect(BleDevice device) async {
+    if (isScanningNotifier.value) {
+      await stopScanning();
+    }
+    await _platform.connect(device.id);
+  }
 
-    
-    // Check if reconnection is already in progress
-    if (_isReconnecting) {
-      // If we've been trying for too long, reset and start fresh
-      if (_reconnectionAttempts >= _maxReconnectionAttempts) {
-        _isReconnecting = false;
-        _reconnectionAttempts = 0;
-        _hasVibrated = false;
-        isReconnectingNotifier.value = false;
-      } else {
-        return;
+  Future<BleDevice> _connectLink(
+    BleDevice device, {
+    required bool waitForAdvertising,
+  }) async {
+    var target = device;
+    if (waitForAdvertising) {
+      final advertised = await _waitForAdvertisingTarget(device);
+      if (advertised == null) {
+        throw StateError('BLE device not advertising');
       }
+      target = advertised;
+    }
+    await _platformConnect(target);
+    return target;
+  }
+
+  Future<void> _onSessionRetriesExhausted(
+    BleDevice device,
+    BleConnectionFailurePhase failurePhase,
+  ) async {
+    ErrorService.reportToSentry(
+      BleConnectionFailed(failurePhase),
+      StackTrace.current,
+    );
+    await disconnectDevice(
+      device: device,
+      reason: BleDisconnectReason.connectionFailed,
+    );
+  }
+
+  Future<bool> _attemptSingleConnection(
+    BleDevice device, {
+    bool publishConnectedState = true,
+  }) async {
+    if (!_platform.isConnected(device.id)) {
+      return false;
     }
 
-    _isReconnecting = true;
-    _isInRetryMode = true;
-
-    if (!_hasVibrated && settingsBloc.vibrateOnDisconnect) {
-      Vibration.vibrate();
-      _hasVibrated = true;
-    }
-
-    final success = await _executeConnectionAttempts(
+    final result = await _connectionSession.establish(
       device,
-      context,
-      maxAttempts: _maxReconnectionAttempts,
-      isReconnection: true,
-      attemptConnection: (device, context) async {
-        _reconnectionAttempts++;
-        return _attemptSingleConnection(
-          device,
-          context,
-          updateConnectionState: false,
+      streams: characteristicStreams,
+    );
+
+    if (!result.success) {
+      await disconnectDevice(
+        device: device,
+        reason: BleDisconnectReason.retryRelease,
+      );
+      return false;
+    }
+
+    availableCharacteristics.value = result.characteristics;
+    _userInitiatedDisconnect = false;
+    characteristicStreamsVersion.value++;
+    if (publishConnectedState) {
+      _setPhase(BleConnectionPhase.connected);
+    }
+    return true;
+  }
+
+  Future<void> _prepareForRetry(
+    BleDevice device, {
+    bool waitForAdvertising = false,
+  }) async {
+    if (_userInitiatedDisconnect) {
+      return;
+    }
+    if (_phase == BleConnectionPhase.reconnecting && selectedDevice != device) {
+      return;
+    }
+    await _waitForBluetoothReady();
+    if (_userInitiatedDisconnect || _shouldAbortReconnection()) {
+      return;
+    }
+    await _sessionRetryRunner.prepareDeviceLink(
+      device,
+      disconnect: () => disconnectDevice(
+        device: device,
+        reason: BleDisconnectReason.retryRelease,
+      ),
+      connect: () => _connectLink(
+        device,
+        waitForAdvertising: waitForAdvertising,
+      ),
+    );
+  }
+
+  void _attachReconnectionListener(BleDevice device) {
+    _userInitiatedDisconnect = false;
+    _reconnectionCoordinator.attach(
+      device,
+      shouldIgnoreDisconnect: () =>
+          _userInitiatedDisconnect ||
+          _phase == BleConnectionPhase.connecting ||
+          _phase == BleConnectionPhase.reconnecting ||
+          _appInitiatedTeardown,
+      onLinkLost: () {
+        _invalidatePublishedCharacteristics();
+        _setPhase(BleConnectionPhase.reconnecting);
+        _maybeVibrateOnUnexpectedDisconnect(device.id);
+      },
+      runReconnectSessions: _runReconnectionSessions,
+      onReconnectSucceeded: () {
+        _userInitiatedDisconnect = false;
+        _linkLostDueToAdapterPowerOff = false;
+        _setPhase(BleConnectionPhase.connected);
+      },
+      onReconnectEpisodeEnded: (success) {
+        if (success) {
+          _attachReconnectionListener(device);
+          return;
+        }
+        if (_userInitiatedDisconnect) {
+          return;
+        }
+        if (selectedDevice == device) {
+          unawaited(disconnectDevice(
+            device: device,
+            reason: BleDisconnectReason.connectionFailed,
+          ));
+        }
+      },
+      onListenerError: (device, error) async {
+        ErrorService.reportToSentry(
+          BleConnectionFailed(BleConnectionFailurePhase.reconnection, error),
+          StackTrace.current,
+        );
+        await disconnectDevice(
+          device: device,
+          reason: BleDisconnectReason.connectionFailed,
         );
       },
-      prepareForRetry: _prepareForRetry,
-      handleError: _handleConnectionError,
     );
-
-    if (success) {
-      _isConnected = true;
-      _userInitiatedDisconnect = false;
-      _hasVibrated = false;
-      _reconnectionAttempts = 0;
-      isReconnectingNotifier.value = false;
-      _isReconnecting = false;
-      _isInRetryMode = false; 
-
-      notifyListeners();
-    }
-
-    // Only handle permanent connection failure if max attempts reached
-    if (!_isConnected && _reconnectionAttempts >= _maxReconnectionAttempts) {
-      _handleConnectionError(context: context, isInitialConnection: false);
-    }
   }
 
-  void _handleConnectionError(
-      {required BuildContext context, bool isInitialConnection = false}) {
-    if (isInitialConnection) {
-      selectedDeviceNotifier.value = null;
-      _isConnected = false;
-      _userInitiatedDisconnect = false;
-      _resetReconnectionState();
-      isConnectingNotifier.value = false; 
-      connectionErrorNotifier.value = false; // Reset connection error state
-    } else {
-      // Max reconnection attempts reached - handle as permanent connection failure
-      // Reset state and notify connection error
-      selectedDevice = null;
-      selectedDeviceNotifier.value = null;
-      _isConnected = false;
-      connectionErrorNotifier.value = true;
-      
-      // Cancel any ongoing reconnection listener
-      _reconnectionListener?.cancel();
-      _reconnectionListener = null;
-
-      // Clear characteristic streams
-      _clearCharacteristicStreams();
-
-      // Reset reconnection state
-      _isReconnecting = false;
-      _isInRetryMode = false;
-      _reconnectionAttempts = 0;
-      _hasVibrated = false;
-      isReconnectingNotifier.value = false;
-      isConnectingNotifier.value = false;
+  Future<bool> _runReconnectionSessions(BleDevice device) async {
+    if (_shouldAbortReconnection() || selectedDevice != device) {
+      return false;
     }
+    _linkWatchDevice = device;
 
-    notifyListeners();
+    return _connectDeviceWithSessionRetries(
+      device,
+      maxAttempts: bleMaxReconnectionAttempts,
+      failurePhase: BleConnectionFailurePhase.reconnection,
+      publishConnectedState: false,
+      waitForAdvertising: true,
+      onExhausted: () async {
+        if (_userInitiatedDisconnect || selectedDevice != device) {
+          return;
+        }
+        await _onSessionRetriesExhausted(
+          device,
+          BleConnectionFailurePhase.reconnection,
+        );
+      },
+    );
   }
 
   void resetConnectionError() {
     connectionErrorNotifier.value = false;
-    
-    // Cancel any ongoing reconnection listener
-    _reconnectionListener?.cancel();
-    _reconnectionListener = null;
-
-    // Reset reconnection state
-    _isReconnecting = false;
-    _isInRetryMode = false;
-    _reconnectionAttempts = 0;
-    _hasVibrated = false;
-    isReconnectingNotifier.value = false;
-    
-    notifyListeners();
+    _reconnectionCoordinator.detach();
+    _reconnectionCoordinator.reset();
   }
 
-  void _resetReconnectionState() {
-    _isReconnecting = false;
-    _isInRetryMode = false;
-    _reconnectionAttempts = 0;
-    _hasVibrated = false;
+  @visibleForTesting
+  void debugSetConnectionPhase(BleConnectionPhase phase) => _setPhase(phase);
 
-    isReconnectingNotifier.value = false;
-    notifyListeners();
+  @visibleForTesting
+  void debugAttachReconnectionListener(BleDevice device) =>
+      _attachReconnectionListener(device);
+
+  @visibleForTesting
+  void debugMarkLinkLostDueToAdapterPowerOff() {
+    _linkLostDueToAdapterPowerOff = true;
   }
 
+  @visibleForTesting
+  Future<void> debugOnBluetoothPoweredOff() => _onBluetoothPoweredOff();
 
-
-  bool _validateReceivedData(Uint8List data) {
-    if (data.isEmpty) {
-      return false;
-    }
-    
-    bool allZeros = data.every((byte) => byte == 0);
-    if (allZeros) {
-      return false;
-    }
-    
-    if (data.length < 4) {
-      return false;
-    }
-    
-    return true;
-  }
-
-  Future<void> _listenToCharacteristic(
-      BluetoothCharacteristic characteristic) async {
-    final uuid = characteristic.uuid.toString();
-
-    await _characteristicSubscriptions[uuid]?.cancel();
-    _characteristicSubscriptions.remove(uuid);
-
-    if (_characteristicStreams.containsKey(uuid)) {
-      await _characteristicStreams[uuid]?.close();
-      _characteristicStreams.remove(uuid);
-    }
-
-    final controller = StreamController<List<double>>.broadcast();
-    _characteristicStreams[uuid] = controller;
-
-    await characteristic.setNotifyValue(true);
-    final subscription = characteristic.onValueReceived.listen((value) {
-      if (!controller.isClosed) {
-        List<double> parsedData = _parseData(Uint8List.fromList(value));
-
-        controller.add(parsedData);
-      }
-    });
-    _characteristicSubscriptions[uuid] = subscription;
-  }
-
-
-
-  Stream<List<double>> getCharacteristicStream(String characteristicUuid) {
-    if (!_characteristicStreams.containsKey(characteristicUuid)) {
-      throw Exception(
-          'Characteristic stream not found for UUID: $characteristicUuid. '
-          'The characteristic may not be available yet or the device may not be connected.');
-    }
-    return _characteristicStreams[characteristicUuid]!.stream;
-  }
-
-  List<double> _parseData(Uint8List value) {
-    // This method will convert the incoming data to a list of doubles
-    List<double> parsedValues = [];
-    for (int i = 0; i < value.length; i += 4) {
-      if (i + 4 <= value.length) {
-        parsedValues.add(
-            ByteData.sublistView(value, i, i + 4).getFloat32(0, Endian.little));
-      }
-    }
-    return parsedValues;
-  }
+  @visibleForTesting
+  Future<void> debugOnBluetoothPoweredOn() => _onBluetoothPoweredOn();
 
   @override
   void dispose() {
-    _reconnectionListener?.cancel();
-    _devicesListController.close();
-    _clearCharacteristicStreams();
+    _adapterStatusSubscription?.cancel();
+    _reconnectionCoordinator.detach();
+    _scanner.dispose();
+    unawaited(characteristicStreams.clear());
+    unawaited(_platform.dispose());
     selectedDeviceNotifier.dispose();
     isBluetoothEnabledNotifier.dispose();
     isScanningNotifier.dispose();
     isConnectingNotifier.dispose();
     isReconnectingNotifier.dispose();
     availableCharacteristics.dispose();
+    characteristicStreamsVersion.dispose();
+    connectionErrorNotifier.dispose();
     super.dispose();
   }
 
   Future<void> requestEnableBluetooth() async {
-    return FlutterBluePlus.turnOn();
+    final permissionsGranted =
+        await PermissionService.ensureBluetoothPermissionsGranted();
+    await _refreshBluetoothEnabledStatus();
+    if (isBluetoothEnabledNotifier.value) {
+      return;
+    }
+
+    if (!permissionsGranted) {
+      await PermissionService.openAppSettings();
+      await _refreshBluetoothEnabledStatus();
+      return;
+    }
+
+    await PermissionService.openBluetoothSettings();
+    await _refreshBluetoothEnabledStatus();
+  }
+
+  Future<void> _teardownLink(
+    BleDevice? device, {
+    required List<BleCharacteristicRef> characteristics,
+    required Duration settleAfterDisconnect,
+  }) async {
+    try {
+      await characteristicStreams.clear();
+    } catch (_) {}
+
+    if (device != null) {
+      try {
+        await _connectionSession.release(device);
+      } catch (_) {}
+    }
+
+    try {
+      await characteristicStreams.clear(characteristics: characteristics);
+    } catch (_) {}
+
+    if (device != null && settleAfterDisconnect > Duration.zero) {
+      await Future<void>.delayed(settleAfterDisconnect);
+    }
   }
 }

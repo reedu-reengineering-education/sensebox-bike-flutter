@@ -63,6 +63,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalCancel => 'Abbrechen';
 
   @override
+  String get generalRetry => 'Erneut versuchen';
+
+  @override
   String get generalCreate => 'Erstellen';
 
   @override
@@ -557,7 +560,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get errorBleConnectionFailed =>
-      'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
+      'Verbindung zur senseBox fehlgeschlagen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet und vollständig gestartet ist.';
 
   @override
   String get errorUploadFailed =>

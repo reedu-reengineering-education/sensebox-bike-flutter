@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
+import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -16,7 +19,9 @@ import 'package:sensebox_bike/services/isar_service/sensor_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'ble/mock_ble_platform.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
 import 'package:sensebox_bike/models/track_data.dart';
@@ -43,6 +48,33 @@ class MockGeolocationService extends Mock implements GeolocationService {}
 
 class MockSensorService extends Mock implements SensorService {}
 
+class _TestBleCharacteristicStreams extends BleCharacteristicStreams {
+  _TestBleCharacteristicStreams() : super(platform: MockBlePlatform());
+
+  final Map<String, StreamController<List<double>>> _testStreams = {};
+
+  @override
+  Stream<List<double>> characteristicStream(String characteristicUuid) {
+    return _testStreams
+        .putIfAbsent(
+          characteristicUuid,
+          () => StreamController<List<double>>.broadcast(),
+        )
+        .stream;
+  }
+
+  @override
+  Future<void> clear({
+    Iterable<BleCharacteristicRef> characteristics = const [],
+  }) async {
+    final controllers = _testStreams.values.toList();
+    _testStreams.clear();
+    for (final controller in controllers) {
+      await controller.close();
+    }
+  }
+}
+
 class MockBleBloc extends Mock implements BleBloc {
   final List<VoidCallback> _listeners = [];
 
@@ -59,11 +91,11 @@ class MockBleBloc extends Mock implements BleBloc {
   final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
 
   @override
-  final ValueNotifier<BluetoothDevice?> selectedDeviceNotifier =
+  final ValueNotifier<BleDevice?> selectedDeviceNotifier =
       ValueNotifier(null);
 
   @override
-  final ValueNotifier<List<BluetoothCharacteristic>> availableCharacteristics =
+  final ValueNotifier<List<BleCharacteristicRef>> availableCharacteristics =
       ValueNotifier([]);
 
   @override
@@ -76,33 +108,41 @@ class MockBleBloc extends Mock implements BleBloc {
   bool get isConnected => false;
 
   @override
-  List<BluetoothDevice> get devicesList => [];
+  List<BleDevice> get devicesList => [];
 
   @override
-  Stream<List<BluetoothDevice>> get devicesListStream => Stream.value([]);
+  Stream<List<BleDevice>> get devicesListStream => Stream.value([]);
 
   @override
-  BluetoothDevice? get selectedDevice => selectedDeviceNotifier.value;
+  BleDevice? get selectedDevice => selectedDeviceNotifier.value;
 
   @override
-  set selectedDevice(BluetoothDevice? device) {
+  set selectedDevice(BleDevice? device) {
     selectedDeviceNotifier.value = device;
   }
 
   @override
   Future<void> connectToDevice(
-      BluetoothDevice device, BuildContext context) async {}
+      BleDevice device, BuildContext context) async {}
 
   @override
-  void disconnectDevice() {}
+  Future<void> disconnectDevice({
+    BleDevice? device,
+    BleDisconnectReason reason = BleDisconnectReason.userRequested,
+  }) async {
+    if (reason != BleDisconnectReason.retryRelease) {
+      selectedDevice = null;
+      selectedDeviceNotifier.value = null;
+    }
+  }
 
   @override
   Future<void> startScanning() async {}
 
   @override
   Future<void> scanForNewDevices() async {
-    selectedDevice = null;
-    selectedDeviceNotifier.value = null;
+    await disconnectDevice(reason: BleDisconnectReason.userRequested);
+    await startScanning();
   }
 
   @override
@@ -120,8 +160,8 @@ class MockBleBloc extends Mock implements BleBloc {
   Future<void> requestEnableBluetooth() async {}
 
   @override
-  Stream<List<double>> getCharacteristicStream(String characteristicUuid) =>
-      Stream.value([]);
+  final BleCharacteristicStreams characteristicStreams =
+      _TestBleCharacteristicStreams();
 
   @override
   void addListener(VoidCallback listener) {
