@@ -53,12 +53,11 @@ class SensorBloc extends Cubit<SensorState> {
 
     final initialBleState = bleBloc.state;
     _lastCharacteristicUuids = initialBleState.availableCharacteristics
-        .map((e) => e.uuid.toString())
+        .map((e) => e.uuidString)
         .toList();
     _lastCharacteristicStreamsVersion =
         initialBleState.characteristicStreamsVersion;
-    _wasBleDeviceConnected =
-        initialBleState.selectedDevice?.isConnected ?? false;
+    _wasBleDeviceConnected = initialBleState.isConnected;
 
     _bleSubscription = bleBloc.stream.listen(_handleBleStateChange);
 
@@ -77,7 +76,7 @@ class SensorBloc extends Cubit<SensorState> {
   }
 
   void _handleBleStateChange(BleState bleState) {
-    final isBleDeviceConnected = bleState.selectedDevice?.isConnected ?? false;
+    final isBleDeviceConnected = bleState.isConnected;
     if (_wasBleDeviceConnected != isBleDeviceConnected) {
       _wasBleDeviceConnected = isBleDeviceConnected;
       if (isBleDeviceConnected) {
@@ -92,9 +91,8 @@ class SensorBloc extends Cubit<SensorState> {
       _emitState();
     }
 
-    final currentUuids = bleState.availableCharacteristics
-        .map((e) => e.uuid.toString())
-        .toList();
+    final currentUuids =
+        bleState.availableCharacteristics.map((e) => e.uuidString).toList();
     final streamsVersionChanged = _lastCharacteristicStreamsVersion !=
         bleState.characteristicStreamsVersion;
     final characteristicsChanged =

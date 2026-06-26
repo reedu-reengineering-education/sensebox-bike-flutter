@@ -141,7 +141,7 @@ class HomeScreen extends StatelessWidget {
                               sensors: sensorBloc.sensors,
                               availableCharacteristicUuids: bleState
                                   .availableCharacteristics
-                                  .map((e) => e.uuid.toString())
+                                  .map((e) => e.uuidString)
                                   .toSet(),
                             );
                             if (widgets.isEmpty) {

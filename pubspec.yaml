@@ -30,38 +30,37 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_blue_plus: ^1.35.5
   flutter_bloc: ^9.1.1
   flutter_reactive_ble: ^5.4.2
-  app_settings: ^6.1.1
+  app_settings: ^7.0.0
   geolocator: ^13.0.1
-  go_router: ^14.8.1
+  go_router: ^17.3.0
   provider: ^6.0.5
-  path_provider: ^2.1.4
+  path_provider: ^2.1.6
   permission_handler: ^11.0.0
-  flutter_background: ^1.3.0+1
+  flutter_background: ^1.3.1
   flutter_local_notifications: ^18.0.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
-  mapbox_maps_flutter: ^2.12.0
-  isar_community: ^3.3.0-dev.3
-  isar_community_flutter_libs: ^3.3.0-dev.3
+  cupertino_icons: ^1.0.9
+  mapbox_maps_flutter: ^2.25.0
+  isar_community: ^3.3.2
+  isar_community_flutter_libs: ^3.3.2
   csv: ^6.0.0
   share_plus: ^12.0.1
-  shared_preferences: ^2.3.2
-  http: ^1.2.2
-  sentry_flutter: ^8.14.2
+  shared_preferences: ^2.5.5
+  http: ^1.6.0
+  sentry_flutter: ^9.0.0
   flutter_dotenv: ^5.1.0
   fl_chart: ^0.70.2
-  flutter_svg: ^2.0.10+1
+  flutter_svg: ^2.3.0
   intl: any
-  turf: ^0.0.10
+  turf: ^0.0.12
   haptic_feedback: ^0.6.4+3
   vibration: ^3.1.3
   device_info_plus: ^11.3.0
-  url_launcher: ^6.3.0
+  url_launcher: ^6.3.2
   package_info_plus: ^8.0.2
   google_polyline_algorithm: ^3.1.0
   cached_network_image: ^3.4.1
@@ -69,13 +68,13 @@ dependencies:
   app_links: ^6.3.2
   flutter_localizations:
     sdk: flutter
-  mocktail: ^1.0.4
+  mocktail: ^1.0.5
   simplify: ^1.1.0
-  webview_flutter: ^4.13.0
+  webview_flutter: ^4.14.0
   retry: ^3.1.2
   dart_jsonwebtoken: ^2.12.1
   modal_bottom_sheet: ^3.0.0
-  google_fonts: ^8.0.2
+  google_fonts: ^8.1.0
 
 dev_dependencies:
   flutter_test:
@@ -87,8 +86,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
-  isar_community_generator: ^3.3.0-dev.3
-  build_runner: any
+  isar_community_generator: ^3.3.2
+  build_runner: ^2.15.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

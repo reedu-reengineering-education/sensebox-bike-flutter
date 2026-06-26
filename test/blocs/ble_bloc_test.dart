@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import '../mocks.dart';
 
@@ -10,7 +10,7 @@ void main() {
     late BleBloc bleBloc;
 
     setUpAll(() {
-      registerFallbackValue(MockBluetoothDevice());
+      registerFallbackValue(const BleDevice(id: 'test-id', name: 'test'));
       registerFallbackValue(FakeBuildContext());
     });
 
@@ -83,10 +83,7 @@ void main() {
         expect(bleBloc.state.isConnecting, isFalse);
         expect(bleBloc.state.selectedDevice, isNull);
 
-        final mockDevice = MockBluetoothDevice();
-        when(() => mockDevice.connect())
-            .thenThrow(Exception('Connection failed'));
-
+        const mockDevice = BleDevice(id: 'failing-device', name: 'senseBox');
         final mockContext = FakeBuildContext();
 
         await bleBloc.connectToDevice(mockDevice, mockContext);
@@ -104,7 +101,7 @@ void main() {
       });
 
       test('scanForNewDevices clears selected device', () {
-        final mockDevice = MockBluetoothDevice();
+        const mockDevice = BleDevice(id: 'test-id', name: 'senseBox');
         bleBloc.selectedDevice = mockDevice;
 
         bleBloc.scanForNewDevices();
@@ -115,7 +112,5 @@ void main() {
     });
   });
 }
-
-class MockBluetoothDevice extends Mock implements BluetoothDevice {}
 
 class FakeBuildContext extends Fake implements BuildContext {}

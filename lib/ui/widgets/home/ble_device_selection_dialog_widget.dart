@@ -1,7 +1,7 @@
+import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
@@ -74,7 +74,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
             top: 0, bottom: spacing, left: spacing, right: spacing),
         child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.6,
-            child: StreamBuilder<List<BluetoothDevice>>(
+            child: StreamBuilder<List<BleDevice>>(
               stream: widget.bleBloc.devicesListStream,
               builder: (context, snapshot) {
                 final colorScheme = Theme.of(context).colorScheme;
@@ -121,9 +121,8 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                   itemCount: devices.length,
                   itemBuilder: (context, index) {
                     final device = devices[index];
-                    final deviceName = device.platformName.isNotEmpty
-                        ? device.platformName
-                        : "(Unknown)";
+                    final deviceName =
+                        device.name.isNotEmpty ? device.name : "(Unknown)";
                     return ClickableTile(
                       child: Text(deviceName),
                       onTap: () {

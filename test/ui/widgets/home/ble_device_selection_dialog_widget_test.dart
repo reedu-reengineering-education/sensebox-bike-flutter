@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
+import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/home/ble_device_selection_dialog_widget.dart';
 import '../../../test_helpers.dart';
 
 class MockBleBloc extends Mock implements BleBloc {}
-
-class MockBluetoothDevice extends Mock implements BluetoothDevice {}
 
 class FakeBuildContext extends Fake implements BuildContext {}
 
@@ -16,7 +15,7 @@ void main() {
   late MockBleBloc bleBloc;
 
   setUpAll(() {
-    registerFallbackValue(MockBluetoothDevice());
+    registerFallbackValue(const BleDevice(id: 'test-id', name: 'test'));
     registerFallbackValue(FakeBuildContext());
     initializeTestDependencies();
     disableProviderDebugChecks();
@@ -33,7 +32,7 @@ void main() {
       isConnecting: false,
       isReconnecting: false,
       selectedDevice: null,
-      availableCharacteristics: <BluetoothCharacteristic>[],
+      availableCharacteristics: <BleCharacteristicRef>[],
       characteristicStreamsVersion: 0,
       connectionError: false,
     ));
@@ -82,7 +81,7 @@ void main() {
       isConnecting: false,
       isReconnecting: false,
       selectedDevice: null,
-      availableCharacteristics: <BluetoothCharacteristic>[],
+      availableCharacteristics: <BleCharacteristicRef>[],
       characteristicStreamsVersion: 0,
       connectionError: false,
     ));
@@ -109,7 +108,7 @@ void main() {
       isConnecting: false,
       isReconnecting: false,
       selectedDevice: null,
-      availableCharacteristics: <BluetoothCharacteristic>[],
+      availableCharacteristics: <BleCharacteristicRef>[],
       characteristicStreamsVersion: 0,
       connectionError: false,
     ));
@@ -130,8 +129,7 @@ void main() {
   });
 
   testWidgets('shows list of devices and taps to connect', (tester) async {
-    final device = MockBluetoothDevice();
-    when(() => device.platformName).thenReturn('TestDevice');
+    const device = BleDevice(id: 'test-device-id', name: 'TestDevice');
     when(() => bleBloc.devicesListStream)
         .thenAnswer((_) => Stream.value([device]));
     bool connectCalled = false;
