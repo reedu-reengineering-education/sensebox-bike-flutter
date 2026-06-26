@@ -10,6 +10,7 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/services/location_permission_platform.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/privacy_zone_checker.dart';
@@ -75,7 +76,7 @@ class GeolocationBloc extends Cubit<GeolocationState> {
 
       late LocationSettings locationSettings;
 
-      if (defaultTargetPlatform == TargetPlatform.android) {
+      if (isAndroidPlatform) {
         PermissionStatus status = await Permission.notification.request();
         if (status.isGranted) {
           locationSettings = AndroidSettings(
@@ -92,8 +93,7 @@ class GeolocationBloc extends Cubit<GeolocationState> {
         } else {
           throw Exception('Notification permissions are denied');
         }
-      } else if (defaultTargetPlatform == TargetPlatform.iOS ||
-          defaultTargetPlatform == TargetPlatform.macOS) {
+      } else if (isIosPlatform) {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.bestForNavigation,
           distanceFilter: 0,

@@ -65,6 +65,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get generalCancel => 'Annuler';
 
   @override
+  String get generalRetry => 'Réessayer';
+
+  @override
   String get generalCreate => 'Créer';
 
   @override
@@ -521,8 +524,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Activer le Bluetooth';
 
   @override
-  String get errorNoLocationAccess =>
-      'Les services de localisation sont désactivés ou l’accès est refusé. Pour enregistrer des parcours, veuillez activer la localisation et autoriser l’application à accéder à votre position dans les paramètres du téléphone.';
+  String get errorNoLocationAccessIos =>
+      'Les services de localisation sont désactivés ou l’accès est refusé. Pour enregistrer des parcours en arrière-plan, sélectionnez « Toujours » pour l’accès à la position dans les paramètres du téléphone.';
+
+  @override
+  String get errorNoLocationAccessAndroid =>
+      'Les services de localisation sont désactivés ou l’accès est refusé. Pour enregistrer des parcours, activez la localisation et autorisez l’accès à votre position dans les paramètres du téléphone.';
 
   @override
   String get errorNoScanAccess =>
@@ -564,7 +571,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get errorBleConnectionFailed =>
-      'La connexion à la senseBox a été perdue. Assurez-vous que le Bluetooth est activé et que la senseBox est allumée.';
+      'La connexion à la senseBox a échoué. Assurez-vous que le Bluetooth est activé et que la senseBox est allumée et entièrement démarrée.';
 
   @override
   String get errorUploadFailed =>

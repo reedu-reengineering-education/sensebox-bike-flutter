@@ -63,6 +63,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalCancel => 'Abbrechen';
 
   @override
+  String get generalRetry => 'Erneut versuchen';
+
+  @override
   String get generalCreate => 'Erstellen';
 
   @override
@@ -517,8 +520,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Bluetooth aktivieren';
 
   @override
-  String get errorNoLocationAccess =>
-      'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie bitte die Standortdienste und erlauben Sie der App in den Telefoneinstellungen den Zugriff auf Ihren Standort.';
+  String get errorNoLocationAccessIos =>
+      'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Fahrten im Hintergrund aufzuzeichnen, wählen Sie in den Telefoneinstellungen \"Immer\" für den Standortzugriff.';
+
+  @override
+  String get errorNoLocationAccessAndroid =>
+      'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie die Standortdienste und erlauben Sie der App den Standortzugriff in den Telefoneinstellungen.';
 
   @override
   String get errorNoScanAccess =>
@@ -559,7 +566,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get errorBleConnectionFailed =>
-      'Die Verbindung zur senseBox wurde unterbrochen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet ist.';
+      'Verbindung zur senseBox fehlgeschlagen. Bitte stellen Sie sicher, dass Bluetooth aktiviert ist und die senseBox eingeschaltet und vollständig gestartet ist.';
 
   @override
   String get errorUploadFailed =>

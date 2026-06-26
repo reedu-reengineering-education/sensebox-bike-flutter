@@ -57,6 +57,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.4"
+  app_settings:
+    dependency: "direct main"
+    description:
+      name: app_settings
+      sha256: "3e46c561441e5820d3a25339bf8b51b9e45a5f686873851a20c257a530917795"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.1"
   args:
     dependency: transitive
     description:
@@ -515,6 +523,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.24"
+  flutter_reactive_ble:
+    dependency: "direct main"
+    description:
+      name: flutter_reactive_ble
+      sha256: "10022aed17fa1797678a4d848cf25484a4cfd10c46061ce61687f071585fe036"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.4.2"
   flutter_svg:
     dependency: "direct main"
     description:
@@ -541,6 +557,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
+  functional_data:
+    dependency: transitive
+    description:
+      name: functional_data
+      sha256: "76d17dc707c40e552014f5a49c0afcc3f1e3f05e800cd6b7872940bfe41a5039"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
   geolocator:
     dependency: "direct main"
     description:
@@ -645,6 +669,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  haptic_feedback:
+    dependency: "direct main"
+    description:
+      name: haptic_feedback
+      sha256: dcc2494994c41428823f8f2082fd17a4e89e372bd142e07681420cbfaf99dcad
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.4+3"
   http:
     dependency: "direct main"
     description:
@@ -1021,6 +1053,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.1"
+  protobuf:
+    dependency: transitive
+    description:
+      name: protobuf
+      sha256: "75ec242d22e950bdcc79ee38dd520ce4ee0bc491d7fadc4ea47694604d22bf06"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.0"
   provider:
     dependency: "direct main"
     description:
@@ -1053,6 +1093,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
+  reactive_ble_mobile:
+    dependency: transitive
+    description:
+      name: reactive_ble_mobile
+      sha256: ddfc324be406cec06aeace0e85a074cda8d0c01658ef6e5d308764fee4b33b61
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.4.2"
+  reactive_ble_platform_interface:
+    dependency: transitive
+    description:
+      name: reactive_ble_platform_interface
+      sha256: "20efc78259f8d8bf20cd8048c274985e67e043f0d2c62d778303baaa1f1ac667"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.5.0"
   retry:
     dependency: "direct main"
     description:

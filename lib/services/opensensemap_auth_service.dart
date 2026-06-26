@@ -22,8 +22,9 @@ class OpenSenseMapAuthService {
       return false;
     }
 
-    final tokens = await _service.refreshToken();
-    if (tokens == null) {
+    try {
+      await _service.refreshToken();
+    } catch (_) {
       return false;
     }
 

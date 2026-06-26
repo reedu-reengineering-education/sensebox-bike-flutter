@@ -83,7 +83,8 @@ void main() {
       when(() => mockService.getRefreshTokenFromPreferences())
           .thenAnswer((_) async => 'refresh-token');
       when(() => mockService.isPermanentlyDisabled).thenReturn(false);
-      when(() => mockService.refreshToken()).thenAnswer((_) async => null);
+      when(() => mockService.refreshToken())
+          .thenThrow(Exception('refresh failed'));
 
       final result = await authService.authenticateFromStoredTokens();
 

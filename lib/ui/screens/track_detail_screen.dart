@@ -16,6 +16,7 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/services/location_permission_platform.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
@@ -367,7 +368,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
       Directory? directory;
 
-      if (defaultTargetPlatform == TargetPlatform.android) {
+      if (isAndroidPlatform) {
         //downloads folder - android only - API>30
         directory = Directory('/storage/emulated/0/Download');
       } else {

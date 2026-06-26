@@ -192,6 +192,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get generalCancel;
 
+  /// No description provided for @generalRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get generalRetry;
+
   /// No description provided for @generalCreate.
   ///
   /// In en, this message translates to:
@@ -1008,11 +1014,17 @@ abstract class AppLocalizations {
   /// **'Enable Bluetooth'**
   String get connectionButtonEnableBluetooth;
 
-  /// No description provided for @errorNoLocationAccess.
+  /// No description provided for @errorNoLocationAccessIos.
   ///
   /// In en, this message translates to:
-  /// **'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.'**
-  String get errorNoLocationAccess;
+  /// **'Location services are disabled or access is denied. To record rides in the background, select \"Always\" for location access in your phone settings.'**
+  String get errorNoLocationAccessIos;
+
+  /// No description provided for @errorNoLocationAccessAndroid.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services are disabled or access is denied. To record tracks, enable location services and allow location access in your phone settings.'**
+  String get errorNoLocationAccessAndroid;
 
   /// No description provided for @errorNoScanAccess.
   ///
@@ -1077,7 +1089,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorBleConnectionFailed.
   ///
   /// In en, this message translates to:
-  /// **'Connection to the senseBox was lost. Please make sure Bluetooth is enabled and the senseBox is powered on.'**
+  /// **'Connection to the senseBox failed. Please make sure Bluetooth is enabled and the senseBox is powered on and fully started.'**
   String get errorBleConnectionFailed;
 
   /// No description provided for @errorUploadFailed.

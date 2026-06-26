@@ -1,3 +1,5 @@
+import 'package:sensebox_bike/services/location_permission_messages.dart';
+
 class TooManyRequestsException implements Exception {
   final int retryAfter;
 
@@ -9,14 +11,26 @@ class TooManyRequestsException implements Exception {
 
 class LocationPermissionDenied implements Exception {
   @override
-  String toString() =>
-      'Location services are disabled or access is denied. Please enable location services and allow the app to access your location in the phone settings.';
+  String toString() => locationPermissionDeniedMessage();
 }
 
 class ScanPermissionDenied implements Exception {
   @override
   String toString() =>
       'Please allow the current app to scan nearby devices in the phone settings.';
+}
+
+enum BleConnectionFailurePhase { initialConnect, reconnection }
+
+class BleConnectionFailed implements Exception {
+  final BleConnectionFailurePhase phase;
+  final Object? cause;
+
+  BleConnectionFailed(this.phase, [this.cause]);
+
+  @override
+  String toString() =>
+      'BLE connection failed (${phase.name})${cause != null ? ': $cause' : ''}';
 }
 
 class LoginError implements Exception {
