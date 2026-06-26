@@ -1002,11 +1002,17 @@ abstract class AppLocalizations {
   /// **'Enable Bluetooth'**
   String get connectionButtonEnableBluetooth;
 
-  /// No description provided for @errorNoLocationAccess.
+  /// No description provided for @errorNoLocationAccessIos.
   ///
   /// In en, this message translates to:
-  /// **'Location services are disabled or access is denied. To record tracks, please enable location services and allow the app to access your location in the phone settings.'**
-  String get errorNoLocationAccess;
+  /// **'Location services are disabled or access is denied. To record rides in the background, select \"Always\" for location access in your phone settings.'**
+  String get errorNoLocationAccessIos;
+
+  /// No description provided for @errorNoLocationAccessAndroid.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services are disabled or access is denied. To record tracks, enable location services and allow location access in your phone settings.'**
+  String get errorNoLocationAccessAndroid;
 
   /// No description provided for @errorNoScanAccess.
   ///

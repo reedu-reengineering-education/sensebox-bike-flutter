@@ -514,8 +514,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Bluetooth aktivieren';
 
   @override
-  String get errorNoLocationAccess =>
-      'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie bitte die Standortdienste und erlauben Sie der App in den Telefoneinstellungen den Zugriff auf Ihren Standort.';
+  String get errorNoLocationAccessIos =>
+      'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Fahrten im Hintergrund aufzuzeichnen, wählen Sie in den Telefoneinstellungen \"Immer\" für den Standortzugriff.';
+
+  @override
+  String get errorNoLocationAccessAndroid =>
+      'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie die Standortdienste und erlauben Sie der App den Standortzugriff in den Telefoneinstellungen.';
 
   @override
   String get errorNoScanAccess =>

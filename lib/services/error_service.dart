@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/location_permission_messages.dart';
+import 'package:sensebox_bike/services/location_permission_platform.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -103,8 +105,12 @@ class ErrorService {
     final localizations = AppLocalizations.of(context);
 
     if (error is LocationPermissionDenied) {
-      return localizations?.errorNoLocationAccess ??
-          'Location services are disabled or access is denied. Please enable location services and allow the app to access your location in the phone settings.';
+      if (requiresAlwaysLocationPermission) {
+        return localizations?.errorNoLocationAccessIos ??
+            locationPermissionDeniedMessage();
+      }
+      return localizations?.errorNoLocationAccessAndroid ??
+          locationPermissionDeniedMessage();
     } else if (error is ScanPermissionDenied) {
       return localizations?.errorNoScanAccess ??
           'Please allow the app to scan nearby devices in the phone settings.';

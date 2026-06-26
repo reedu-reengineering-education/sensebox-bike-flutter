@@ -48,11 +48,11 @@
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>The app uses bluetooth to find, connect and transfer data between different devices</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>We use your location to provide services</string>
+	<string>senseBox:bike records your ride route and speed while the app runs in the background. Always location access is required to continue tracking during a ride.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>We use your location to provide services</string>
+	<string>senseBox:bike records your ride route and speed while the app runs in the background. Always location access is required to continue tracking during a ride.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We use your location to provide services</string>
+	<string>senseBox:bike uses your location to map your ride and attach GPS data to sensor measurements.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
