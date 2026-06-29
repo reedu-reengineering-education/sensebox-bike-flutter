@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
@@ -16,7 +15,6 @@ void main() {
     setUpAll(() {
       TestWidgetsFlutterBinding.ensureInitialized();
       registerFallbackValue(const BleDevice(id: 'fallback', name: 'fallback'));
-      registerFallbackValue(FakeBuildContext());
       registerFallbackValue(const Duration(seconds: 10));
     });
 
@@ -122,7 +120,7 @@ void main() {
         addTearDown(realBleBloc.dispose);
         realBleBloc.updateBluetoothStatus(true);
 
-        await realBleBloc.connectToDevice(device, FakeBuildContext());
+        await realBleBloc.connectToDevice(device);
 
         verify(() => platform.disconnect(device.id)).called(greaterThanOrEqualTo(1));
         expect(realBleBloc.connectionErrorNotifier.value, isTrue);
@@ -273,5 +271,3 @@ void main() {
     });
   });
 }
-
-class FakeBuildContext extends Fake implements BuildContext {}
