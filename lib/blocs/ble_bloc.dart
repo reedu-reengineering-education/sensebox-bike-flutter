@@ -360,6 +360,11 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> connectToDevice(BleDevice device, BuildContext context) async {
+    if (_phase == BleConnectionPhase.connecting ||
+        _phase == BleConnectionPhase.reconnecting) {
+      return;
+    }
+
     _userInitiatedDisconnect = false;
     _linkWatchDevice = device;
 
@@ -369,7 +374,6 @@ class BleBloc with ChangeNotifier {
 
       final success = await _connectDeviceWithSessionRetries(
         device,
-        maxAttempts: bleInitialConnectMaxAttempts,
         failurePhase: BleConnectionFailurePhase.initialConnect,
       );
 
@@ -399,49 +403,33 @@ class BleBloc with ChangeNotifier {
 
   Future<bool> _connectDeviceWithSessionRetries(
     BleDevice device, {
-    required int maxAttempts,
     required BleConnectionFailurePhase failurePhase,
     bool publishConnectedState = true,
-    bool waitForAdvertising = false,
     Future<void> Function()? onExhausted,
   }) async {
-    if (failurePhase == BleConnectionFailurePhase.reconnection) {
-      await _waitForBluetoothReady();
-      if (_shouldAbortReconnection()) {
-        return false;
-      }
+    await _waitForBluetoothReady();
+    if (_userInitiatedDisconnect) {
+      return false;
     }
-    if (_userInitiatedDisconnect &&
-        failurePhase == BleConnectionFailurePhase.initialConnect) {
+    if (failurePhase == BleConnectionFailurePhase.reconnection &&
+        _shouldAbortReconnection()) {
       return false;
     }
 
-    if (!_platform.isConnected(device.id) &&
-        failurePhase == BleConnectionFailurePhase.initialConnect) {
+    if (!_platform.isConnected(device.id)) {
       try {
-        await _connectLink(
-          device,
-          waitForAdvertising: waitForAdvertising,
-        );
-      } catch (_) {
-        if (failurePhase == BleConnectionFailurePhase.initialConnect) {
-          rethrow;
-        }
-        return false;
-      }
+        await _connectLink(device);
+      } catch (_) {}
     }
 
     return _sessionRetryRunner.run(
       device: device,
-      maxAttempts: maxAttempts,
+      maxAttempts: bleConnectMaxAttempts,
       attemptSession: (_, __) => _attemptSingleConnection(
         device,
         publishConnectedState: publishConnectedState,
       ),
-      prepareForRetry: (retryDevice) => _prepareForRetry(
-        retryDevice,
-        waitForAdvertising: waitForAdvertising,
-      ),
+      prepareForRetry: _prepareForRetry,
       onExhausted: onExhausted ??
           () => _onSessionRetriesExhausted(device, failurePhase),
     );
@@ -451,7 +439,9 @@ class BleBloc with ChangeNotifier {
     return _scanner.waitForAdvertisingDevice(
       device,
       shouldCancel: () =>
-          _userInitiatedDisconnect || _shouldAbortReconnection(),
+          _userInitiatedDisconnect ||
+          (_phase == BleConnectionPhase.reconnecting &&
+              _shouldAbortReconnection()),
     );
   }
 
@@ -462,20 +452,13 @@ class BleBloc with ChangeNotifier {
     await _platform.connect(device.id);
   }
 
-  Future<BleDevice> _connectLink(
-    BleDevice device, {
-    required bool waitForAdvertising,
-  }) async {
-    var target = device;
-    if (waitForAdvertising) {
-      final advertised = await _waitForAdvertisingTarget(device);
-      if (advertised == null) {
-        throw StateError('BLE device not advertising');
-      }
-      target = advertised;
+  Future<BleDevice> _connectLink(BleDevice device) async {
+    final advertised = await _waitForAdvertisingTarget(device);
+    if (advertised == null) {
+      throw StateError('BLE device not advertising');
     }
-    await _platformConnect(target);
-    return target;
+    await _platformConnect(advertised);
+    return advertised;
   }
 
   Future<void> _onSessionRetriesExhausted(
@@ -500,32 +483,40 @@ class BleBloc with ChangeNotifier {
       return false;
     }
 
-    final result = await _connectionSession.establish(
-      device,
-      streams: characteristicStreams,
-    );
+    for (var probe = 0; probe < bleEstablishProbeAttemptsPerLink; probe++) {
+      if (!_platform.isConnected(device.id)) {
+        return false;
+      }
 
-    if (!result.success) {
-      await disconnectDevice(
-        device: device,
-        reason: BleDisconnectReason.retryRelease,
+      final livenessTimeout = probe == 0
+          ? bleConnectionSessionProbeTimeout
+          : bleConnectionSessionExtendedProbeTimeout;
+
+      final result = await _connectionSession.establish(
+        device,
+        streams: characteristicStreams,
+        livenessTimeout: livenessTimeout,
       );
-      return false;
+
+      if (result.success) {
+        availableCharacteristics.value = result.characteristics;
+        _userInitiatedDisconnect = false;
+        characteristicStreamsVersion.value++;
+        if (publishConnectedState) {
+          _setPhase(BleConnectionPhase.connected);
+        }
+        return true;
+      }
     }
 
-    availableCharacteristics.value = result.characteristics;
-    _userInitiatedDisconnect = false;
-    characteristicStreamsVersion.value++;
-    if (publishConnectedState) {
-      _setPhase(BleConnectionPhase.connected);
-    }
-    return true;
+    await disconnectDevice(
+      device: device,
+      reason: BleDisconnectReason.retryRelease,
+    );
+    return false;
   }
 
-  Future<void> _prepareForRetry(
-    BleDevice device, {
-    bool waitForAdvertising = false,
-  }) async {
+  Future<void> _prepareForRetry(BleDevice device) async {
     if (_userInitiatedDisconnect) {
       return;
     }
@@ -533,7 +524,9 @@ class BleBloc with ChangeNotifier {
       return;
     }
     await _waitForBluetoothReady();
-    if (_userInitiatedDisconnect || _shouldAbortReconnection()) {
+    if (_userInitiatedDisconnect ||
+        (_phase == BleConnectionPhase.reconnecting &&
+            _shouldAbortReconnection())) {
       return;
     }
     await _sessionRetryRunner.prepareDeviceLink(
@@ -542,10 +535,7 @@ class BleBloc with ChangeNotifier {
         device: device,
         reason: BleDisconnectReason.retryRelease,
       ),
-      connect: () => _connectLink(
-        device,
-        waitForAdvertising: waitForAdvertising,
-      ),
+      connect: () => _connectLink(device),
     );
   }
 
@@ -608,10 +598,8 @@ class BleBloc with ChangeNotifier {
 
     return _connectDeviceWithSessionRetries(
       device,
-      maxAttempts: bleMaxReconnectionAttempts,
       failurePhase: BleConnectionFailurePhase.reconnection,
       publishConnectedState: false,
-      waitForAdvertising: true,
       onExhausted: () async {
         if (_userInitiatedDisconnect || selectedDevice != device) {
           return;
@@ -626,7 +614,10 @@ class BleBloc with ChangeNotifier {
 
   void resetConnectionError() {
     connectionErrorNotifier.value = false;
-    _reconnectionCoordinator.cancelReconnection();
+    // Clear stale listener state without forcing a reconnect-abort flag that
+    // can cancel initial scan-gated connect attempts immediately.
+    _reconnectionCoordinator.detach();
+    _reconnectionCoordinator.reset();
   }
 
   @visibleForTesting

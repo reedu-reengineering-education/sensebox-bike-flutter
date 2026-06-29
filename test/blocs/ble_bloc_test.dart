@@ -110,13 +110,17 @@ void main() {
       test('shows connection error when platform.connect throws on initial connect',
           () async {
         final platform = MockBlePlatform();
+        stubBlePlatformLifecycle(platform);
+        const device = BleDevice(id: 'AA:BB:CC:DD:EE:02', name: 'senseBox:test');
+        when(() => platform.scanForDevices())
+            .thenAnswer((_) => Stream.value(device));
+        when(() => platform.isConnected(any())).thenReturn(false);
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
             .thenThrow(Exception('Connection failed'));
 
         final realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
         addTearDown(realBleBloc.dispose);
-
-        const device = BleDevice(id: 'AA:BB:CC:DD:EE:02', name: 'senseBox:test');
+        realBleBloc.updateBluetoothStatus(true);
 
         await realBleBloc.connectToDevice(device, FakeBuildContext());
 
