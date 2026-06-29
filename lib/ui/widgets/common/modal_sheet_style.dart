@@ -78,7 +78,7 @@ Widget buildModalSheetSurface(
   );
 }
 
-Object showAppModalSheet<T>({
+Future<T?> showAppModalSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool useRootNavigator = true,

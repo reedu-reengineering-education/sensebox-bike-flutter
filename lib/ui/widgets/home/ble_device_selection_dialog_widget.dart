@@ -36,8 +36,7 @@ void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
   );
 
   if (result != true) {
-    // User dismissed the sheet (cancel)
-    bleBloc.stopScanning();
+    await bleBloc.stopScanning();
   }
 }
 

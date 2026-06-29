@@ -41,12 +41,14 @@ class BleScanner {
     }
 
     try {
-      _scanSubscription = platform.scanForDevices().listen(_onDiscoveredDevice);
+      _scanSubscription = platform.scanForDevices().listen(
+            _onDiscoveredDevice,
+          );
       _scanTimeoutTimer = Timer(bleScanTimeout, () {
         unawaited(stopScanning());
       });
       isScanningNotifier.value = true;
-    } catch (_) {
+    } catch (e) {
       await _scanSubscription?.cancel();
       _scanSubscription = null;
       throw ScanPermissionDenied();
@@ -91,8 +93,7 @@ class BleScanner {
     _scanSubscription = platform.scanForDevices().listen((discovered) {
       final nameMatches = device.name.isNotEmpty &&
           deviceDisplayName(discovered) == deviceDisplayName(device);
-      if ((nameMatches || discovered.id == device.id) &&
-          !found.isCompleted) {
+      if ((nameMatches || discovered.id == device.id) && !found.isCompleted) {
         found.complete(discovered);
       }
     });

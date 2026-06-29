@@ -39,6 +39,9 @@ class BlePlatform {
   final Map<String, Timer> _dataWatchdogs = {};
   final Map<String, int> _sessionEstablishmentDepth = {};
 
+  StreamController<BleDevice>? _scanController;
+  StreamSubscription<DiscoveredDevice>? _scanSubscription;
+
   void Function(String deviceId, BleLinkState? previous, BleLinkState next)?
       onLinkStateChanged;
 
@@ -86,32 +89,34 @@ class BlePlatform {
   Stream<BleDevice> scanForDevices({
     List<BleUuid> withServices = const [],
   }) {
-    late final StreamController<BleDevice> controller;
-    StreamSubscription<DiscoveredDevice>? scanSubscription;
+    _scanSubscription?.cancel();
+    _scanController?.close();
 
-    controller = StreamController<BleDevice>(
-      onListen: () async {
-        scanSubscription = _reactiveBle
+    _scanController = StreamController<BleDevice>(
+      onListen: () {
+        _scanSubscription = _reactiveBle
             .scanForDevices(
           withServices: withServices.map(_toUuid).toList(),
           scanMode: ScanMode.lowLatency,
         )
             .listen(
           (device) {
-            if (!controller.isClosed) {
-              controller.add(_bleDeviceFromScanResult(device));
+            if (_scanController != null && !_scanController!.isClosed) {
+              _scanController!.add(_bleDeviceFromScanResult(device));
             }
           },
-          onError: controller.addError,
+          onError: (error) => _scanController?.addError(error),
+          onDone: () => _scanController?.close(),
         );
       },
       onCancel: () async {
-        await scanSubscription?.cancel();
-        scanSubscription = null;
+        await _scanSubscription?.cancel();
+        _scanSubscription = null;
+        _scanController = null;
       },
     );
 
-    return controller.stream;
+    return _scanController!.stream;
   }
 
   Future<void> connect(
@@ -271,6 +276,9 @@ class BlePlatform {
     for (final controller in _linkStateControllers.values) {
       await controller.close();
     }
+
+    await _scanSubscription?.cancel();
+    await _scanController?.close();
 
     _dataWatchdogs.clear();
     _sessionEstablishmentDepth.clear();
