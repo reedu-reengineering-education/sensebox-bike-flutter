@@ -69,8 +69,14 @@ class BleScanner {
     required Future<void> Function(BleDevice device) onDeviceFound,
   }) async {
     await stopScanning();
+    var matchHandled = false;
     _scanSubscription = platform.scanForDevices().listen((device) async {
+      if (matchHandled) {
+        return;
+      }
       if (deviceDisplayName(device) == name) {
+        matchHandled = true;
+        await stopScanning();
         await onDeviceFound(device);
       }
     });
