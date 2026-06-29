@@ -8,14 +8,11 @@ import '../../../test_helpers.dart';
 
 class MockBleBloc extends Mock implements BleBloc {}
 
-class FakeBuildContext extends Fake implements BuildContext {}
-
 void main() {
   late MockBleBloc bleBloc;
 
   setUpAll(() {
     registerFallbackValue(const BleDevice(id: 'fallback', name: 'fallback'));
-    registerFallbackValue(FakeBuildContext());
     initializeTestDependencies();
     disableProviderDebugChecks();
   });
@@ -97,7 +94,7 @@ void main() {
     when(() => bleBloc.devicesList).thenReturn([device]);
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
     var connectCalled = false;
-    when(() => bleBloc.connectToDevice(device, any())).thenAnswer((_) async {
+    when(() => bleBloc.connectToDevice(device)).thenAnswer((_) async {
       connectCalled = true;
     });
 

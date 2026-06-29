@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/ble/ble_connection_session.dart';
@@ -287,10 +286,7 @@ class BleBloc with ChangeNotifier {
     final keepSession = reason == BleDisconnectReason.retryRelease;
 
     if (reason == BleDisconnectReason.userRequested) {
-      _userInitiatedDisconnect = true;
-      _linkLostDueToAdapterPowerOff = false;
-      _vibratedForDisconnectDeviceId = null;
-      _reconnectionCoordinator.cancelReconnection();
+      _prepareUserRequestedDisconnect();
     }
 
     if (!keepSession) {
@@ -300,66 +296,110 @@ class BleBloc with ChangeNotifier {
     try {
       _invalidatePublishedCharacteristics();
 
-      if (keepSession) {
-        _appInitiatedTeardown = true;
-      }
-      try {
-        await _teardownLink(
-          target,
-          characteristics: characteristics,
-          settleAfterDisconnect: keepSession
-              ? bleLinkOnlyDisconnectSettleDelay
-              : blePostDisconnectSettleDelay,
-        );
-      } finally {
-        if (keepSession) {
-          _appInitiatedTeardown = false;
-        }
-      }
+      await _teardownForDisconnect(
+        target,
+        characteristics: characteristics,
+        keepSession: keepSession,
+      );
 
       if (keepSession) {
         notifyListeners();
         return;
       }
 
-      if (reason == BleDisconnectReason.connectionFailed) {
-        connectionErrorNotifier.value = true;
-        _reconnectionCoordinator.reset();
-        _scanAfterDisconnect = true;
-      } else {
-        connectionErrorNotifier.value = false;
-        _scanAfterDisconnect = true;
-        await _scanner.stopScanning();
-        _scanner.clearDiscoveredDevices();
-      }
+      await _applyDisconnectOutcome(reason);
 
       if (reason != BleDisconnectReason.userRequested) {
         _userInitiatedDisconnect = false;
       }
     } finally {
       if (!keepSession) {
-        selectedDevice = null;
-        selectedDeviceNotifier.value = null;
-        _linkWatchDevice = null;
-        _setPhase(BleConnectionPhase.idle);
+        _finalizeFullDisconnect();
       }
     }
   }
 
-  Future<void> connectToId(String id, BuildContext context) async {
-    await _connectToBox(id, context);
+  void _prepareUserRequestedDisconnect() {
+    _markUserInitiatedDisconnect();
+    _clearUnexpectedDisconnectIndicators();
+    _cancelReconnectionFlow();
   }
 
-  Future<void> _connectToBox(String name, BuildContext context) async {
+  void _markUserInitiatedDisconnect() {
+    _userInitiatedDisconnect = true;
+  }
+
+  void _clearUnexpectedDisconnectIndicators() {
+    _linkLostDueToAdapterPowerOff = false;
+    _vibratedForDisconnectDeviceId = null;
+  }
+
+  void _cancelReconnectionFlow() {
+    _reconnectionCoordinator.cancelReconnection();
+  }
+
+  Future<void> _teardownForDisconnect(
+    BleDevice? target, {
+    required List<BleCharacteristicRef> characteristics,
+    required bool keepSession,
+  }) async {
+    if (keepSession) {
+      _appInitiatedTeardown = true;
+    }
+    try {
+      await _teardownLink(
+        target,
+        characteristics: characteristics,
+        settleAfterDisconnect: keepSession
+            ? bleLinkOnlyDisconnectSettleDelay
+            : blePostDisconnectSettleDelay,
+      );
+    } finally {
+      if (keepSession) {
+        _appInitiatedTeardown = false;
+      }
+    }
+  }
+
+  Future<void> _applyDisconnectOutcome(BleDisconnectReason reason) async {
+    _scanAfterDisconnect = true;
+
+    if (reason == BleDisconnectReason.connectionFailed) {
+      connectionErrorNotifier.value = true;
+      _reconnectionCoordinator.reset();
+      return;
+    }
+
+    connectionErrorNotifier.value = false;
+    await _scanner.stopScanning();
+    _scanner.clearDiscoveredDevices();
+  }
+
+  void _finalizeFullDisconnect() {
+    selectedDevice = null;
+    selectedDeviceNotifier.value = null;
+    _linkWatchDevice = null;
+    _setPhase(BleConnectionPhase.idle);
+  }
+
+  Future<void> connectToId(String id) async {
+    await _connectToBox(id);
+  }
+
+  Future<void> _connectToBox(String name) async {
     resetConnectionError();
 
     await _scanner.scanForBox(
       name: name,
-      onDeviceFound: (device) => connectToDevice(device, context),
+      onDeviceFound: _connectResolvedDevice,
     );
   }
 
-  Future<void> connectToDevice(BleDevice device, BuildContext context) async {
+  Future<void> connectToDevice(BleDevice device) async {
+    await _connectResolvedDevice(device);
+  }
+
+  Future<void> _connectResolvedDevice(BleDevice device) async {
     if (_phase == BleConnectionPhase.connecting ||
         _phase == BleConnectionPhase.reconnecting) {
       return;
@@ -372,8 +412,9 @@ class BleBloc with ChangeNotifier {
       resetConnectionError();
       _setPhase(BleConnectionPhase.connecting);
 
-      final success = await _connectDeviceWithSessionRetries(
+      final success = await _runConnectionSessions(
         device,
+        reconnectMode: false,
         failurePhase: BleConnectionFailurePhase.initialConnect,
       );
 
@@ -401,8 +442,9 @@ class BleBloc with ChangeNotifier {
     }
   }
 
-  Future<bool> _connectDeviceWithSessionRetries(
+  Future<bool> _runConnectionSessions(
     BleDevice device, {
+    required bool reconnectMode,
     required BleConnectionFailurePhase failurePhase,
     bool publishConnectedState = true,
     Future<void> Function()? onExhausted,
@@ -411,8 +453,7 @@ class BleBloc with ChangeNotifier {
     if (_userInitiatedDisconnect) {
       return false;
     }
-    if (failurePhase == BleConnectionFailurePhase.reconnection &&
-        _shouldAbortReconnection()) {
+    if (reconnectMode && _shouldAbortReconnection()) {
       return false;
     }
 
@@ -596,8 +637,9 @@ class BleBloc with ChangeNotifier {
     }
     _linkWatchDevice = device;
 
-    return _connectDeviceWithSessionRetries(
+    return _runConnectionSessions(
       device,
+      reconnectMode: true,
       failurePhase: BleConnectionFailurePhase.reconnection,
       publishConnectedState: false,
       onExhausted: () async {
