@@ -74,6 +74,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generalOk => 'Ok';
 
   @override
+  String get generalGoToSettings => 'Ir para definições';
+
+  @override
   String get generalSave => 'Salvar';
 
   @override

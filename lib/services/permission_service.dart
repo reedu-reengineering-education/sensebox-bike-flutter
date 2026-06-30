@@ -76,8 +76,9 @@ class PermissionService {
   static Future<void> openBluetoothSettings() =>
       AppSettings.openAppSettings(type: AppSettingsType.bluetooth);
 
-  static Future<void> openAppSettings() =>
-      AppSettings.openAppSettings(type: AppSettingsType.settings);
+  static Future<void> openAppSettings() async {
+    await Geolocator.openAppSettings();
+  }
 
   static Future<void> ensureLocationPermissionsGranted({
     bool requireAlways = false,

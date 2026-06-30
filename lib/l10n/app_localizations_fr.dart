@@ -74,6 +74,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get generalOk => 'OK';
 
   @override
+  String get generalGoToSettings => 'Aller aux réglages';
+
+  @override
   String get generalSave => 'Enregistrer';
 
   @override

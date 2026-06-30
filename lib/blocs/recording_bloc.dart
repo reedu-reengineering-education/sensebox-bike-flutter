@@ -5,6 +5,7 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -96,19 +97,22 @@ class RecordingBloc with ChangeNotifier {
     if (_isRecording) return;
 
     try {
-      // Show confirmation modal before requesting Always permission
+      // Show confirmation modal before redirecting user to app settings
       if (_context != null) {
+        final localizations = AppLocalizations.of(_context!);
         final message = ErrorService.parseError(
             LocationPermissionDenied(), _context!);
-        if (await showCustomDialog(
+        final proceedToSettings = await showCustomDialog(
               context: _context!,
               message: message,
               type: DialogType.confirmation,
-            ) !=
-            true) {
-          notifyListeners();
-          return;
+              confirmButtonText: localizations?.generalGoToSettings,
+            );
+        if (proceedToSettings == true) {
+          await PermissionService.openAppSettings();
         }
+        notifyListeners();
+        return;
       }
 
       await PermissionService.ensureLocationPermissionsGranted(

@@ -210,6 +210,12 @@ abstract class AppLocalizations {
   /// **'Ok'**
   String get generalOk;
 
+  /// No description provided for @generalGoToSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to settings'**
+  String get generalGoToSettings;
+
   /// No description provided for @generalSave.
   ///
   /// In en, this message translates to:
