@@ -1,6 +1,7 @@
 // File: lib/blocs/geolocation_bloc.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:flutter/foundation.dart';
@@ -28,13 +29,45 @@ class GeolocationBloc with ChangeNotifier {
   final PrivacyZoneChecker _privacyZoneChecker = PrivacyZoneChecker();
   bool _isListening = false;
 
+  bool _isForegroundServiceStartError(Object error) {
+    return error is PlatformException &&
+        error.message != null &&
+        error.message!.contains('Starting FGS with type location');
+  }
+
+  Future<void> _handlePositionStreamError(Object error, StackTrace stack) async {
+    ErrorService.handleError(error, stack);
+
+    await _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
+    _stopStationaryLocationTimer();
+    _isListening = false;
+
+    if (_isForegroundServiceStartError(error)) {
+      // Keep state consistent when Android disallows starting location FGS
+      // from background (e.g. missing background location runtime grant).
+      notifyListeners();
+      return;
+    }
+
+    notifyListeners();
+  }
+
   bool get isListening => _isListening;
 
   final IsarService isarService;
   final RecordingBloc recordingBloc;
   final SettingsBloc settingsBloc;
 
-  GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc) {
+  /// Returns whether box sensor data is currently flowing (i.e. the BLE link is
+  /// live). When this returns false, geolocations (and their GPS speed) are not
+  /// persisted, so a dropped link mid-ride can't produce a GPS-only "ghost"
+  /// track. Defaults to always-active when not provided (e.g. in tests).
+  final bool Function()? _isSensorDataActive;
+
+  GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc,
+      {bool Function()? isSensorDataActive})
+      : _isSensorDataActive = isSensorDataActive {
     _privacyZoneChecker.updatePrivacyZones(settingsBloc.privacyZones);
     _privacyZonesSubscription = settingsBloc.privacyZonesStream.listen((zones) {
       _privacyZoneChecker.updatePrivacyZones(zones);
@@ -80,9 +113,9 @@ class GeolocationBloc with ChangeNotifier {
       }
 
       await _positionStreamSubscription?.cancel();
-      _positionStreamSubscription =
+        _positionStreamSubscription =
           Geolocator.getPositionStream(locationSettings: locationSettings)
-              .listen((Position position) async {
+            .listen((Position position) async {
         final geolocationData = _createGeolocationFromPosition(position);
 
         if (shouldSkipGeolocation(geolocationData)) {
@@ -96,7 +129,9 @@ class GeolocationBloc with ChangeNotifier {
         if (shouldEmit) {
           _emitGeolocation(geolocationData);
         }
-      });
+      }, onError: (Object error, StackTrace stack) {
+        unawaited(_handlePositionStreamError(error, stack));
+      }, cancelOnError: true);
       
       _startStationaryLocationTimer();
       _isListening = true;
@@ -230,6 +265,13 @@ class GeolocationBloc with ChangeNotifier {
       return false;
     }
 
+    // Only persist geolocations while box sensor data is actively arriving.
+    // Prevents GPS-only "ghost" tracks when the BLE link drops mid-ride (e.g.
+    // Android power-save disabling the adapter or background BLE scanning).
+    if (!(_isSensorDataActive?.call() ?? true)) {
+      return false;
+    }
+
     geolocationData.track.value = recordingBloc.currentTrack;
 
     try {
@@ -294,6 +336,7 @@ class GeolocationBloc with ChangeNotifier {
 
   @override
   void dispose() {
+    stopListening();
     _privacyZonesSubscription?.cancel();
     _privacyZoneChecker.dispose();
     _geolocationController.close();

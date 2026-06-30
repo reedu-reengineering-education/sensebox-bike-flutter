@@ -1,24 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
-import 'package:sensebox_bike/services/location_permission_messages.dart';
-import 'package:sensebox_bike/services/location_permission_platform.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 class ErrorService {
   static final GlobalKey<ScaffoldMessengerState> scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
-  static void reportToSentry(dynamic error, StackTrace stack) {
+  static Future<void> reportToSentry(dynamic error, StackTrace stack) async {
     logToConsole(error, stack);
-    Sentry.captureException(error, stackTrace: stack);
+    await Sentry.captureException(error, stackTrace: stack);
   }
 
   static void handleError(dynamic error, StackTrace stack,
       {bool sendToSentry = true}) {
     logToConsole(error, stack);
     if (sendToSentry) {
-      Sentry.captureException(error, stackTrace: stack);
+      unawaited(reportToSentry(error, stack));
     }
 
     if (!kDebugMode) {
@@ -105,12 +105,8 @@ class ErrorService {
     final localizations = AppLocalizations.of(context);
 
     if (error is LocationPermissionDenied) {
-      if (requiresAlwaysLocationPermission) {
-        return localizations?.errorNoLocationAccessIos ??
-            locationPermissionDeniedMessage();
-      }
-      return localizations?.errorNoLocationAccessAndroid ??
-          locationPermissionDeniedMessage();
+      return localizations?.errorLocationAlwaysRequired ??
+          'Background recording requires Location access set to "Always". Open System Settings, find this app, and change Location to "Always".';
     } else if (error is ScanPermissionDenied) {
       return localizations?.errorNoScanAccess ??
           'Please allow the app to scan nearby devices in the phone settings.';

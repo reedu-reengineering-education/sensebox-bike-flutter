@@ -69,8 +69,14 @@ class BleScanner {
     required Future<void> Function(BleDevice device) onDeviceFound,
   }) async {
     await stopScanning();
+    var matchHandled = false;
     _scanSubscription = platform.scanForDevices().listen((device) async {
+      if (matchHandled) {
+        return;
+      }
       if (deviceDisplayName(device) == name) {
+        matchHandled = true;
+        await stopScanning();
         await onDeviceFound(device);
       }
     });
@@ -89,10 +95,12 @@ class BleScanner {
 
     final found = Completer<BleDevice?>();
     _scanSubscription = platform.scanForDevices().listen((discovered) {
-      final nameMatches = device.name.isNotEmpty &&
+      final hasTargetId = device.id.isNotEmpty;
+      final idMatches = hasTargetId && discovered.id == device.id;
+      final nameMatches = !hasTargetId &&
+          device.name.isNotEmpty &&
           deviceDisplayName(discovered) == deviceDisplayName(device);
-      if ((nameMatches || discovered.id == device.id) &&
-          !found.isCompleted) {
+      if ((idMatches || nameMatches) && !found.isCompleted) {
         found.complete(discovered);
       }
     });

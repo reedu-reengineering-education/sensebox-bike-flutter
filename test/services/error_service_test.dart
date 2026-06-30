@@ -37,14 +37,15 @@ void main() {
 
           expect(
             message,
-            AppLocalizations.of(mockContext)!.errorNoLocationAccessIos,
+            AppLocalizations.of(mockContext)!.errorLocationAlwaysRequired,
           );
         } finally {
           debugDefaultTargetPlatformOverride = originalPlatform;
         }
       });
 
-      testWidgets('returns Android message for LocationPermissionDenied',
+      testWidgets(
+          'returns same message for LocationPermissionDenied on all platforms',
           (WidgetTester tester) async {
         final originalPlatform = debugDefaultTargetPlatformOverride;
         debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -58,7 +59,7 @@ void main() {
 
           expect(
             message,
-            AppLocalizations.of(mockContext)!.errorNoLocationAccessAndroid,
+            AppLocalizations.of(mockContext)!.errorLocationAlwaysRequired,
           );
         } finally {
           debugDefaultTargetPlatformOverride = originalPlatform;
@@ -207,7 +208,7 @@ void main() {
           ));
 
           final expectedMessage =
-              AppLocalizations.of(context)!.errorNoLocationAccessAndroid;
+              AppLocalizations.of(context)!.errorLocationAlwaysRequired;
 
           await tester.tap(find.text('Trigger Error'));
           await tester.pump();

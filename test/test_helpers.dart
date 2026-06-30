@@ -244,7 +244,7 @@ void setupMockGeolocator(dynamic mockGeolocator, double lat, double lng,
   when(() => mockGeolocator.isLocationServiceEnabled())
       .thenAnswer((_) async => true);
   when(() => mockGeolocator.checkPermission())
-      .thenAnswer((_) async => geo.LocationPermission.whileInUse);
+      .thenAnswer((_) async => geo.LocationPermission.always);
   when(() => mockGeolocator.getCurrentPosition(
           locationSettings: any(named: 'locationSettings')))
       .thenAnswer(

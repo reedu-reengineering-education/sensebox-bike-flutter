@@ -72,6 +72,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get generalOk => 'Ok';
 
   @override
+  String get generalGoToSettings => 'Zu Einstellungen';
+
+  @override
   String get generalSave => 'Speichern';
 
   @override
@@ -514,12 +517,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Bluetooth aktivieren';
 
   @override
-  String get errorNoLocationAccessIos =>
-      'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Fahrten im Hintergrund aufzuzeichnen, wählen Sie in den Telefoneinstellungen \"Immer\" für den Standortzugriff.';
-
-  @override
-  String get errorNoLocationAccessAndroid =>
-      'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie die Standortdienste und erlauben Sie der App den Standortzugriff in den Telefoneinstellungen.';
+  String get errorLocationAlwaysRequired =>
+      'Für Aufzeichnungen im Hintergrund muss der Standortzugriff auf \"Immer\" gesetzt sein. Öffnen Sie die Systemeinstellungen, wählen Sie diese App aus und stellen Sie den Standortzugriff auf \"Immer\".';
 
   @override
   String get errorNoScanAccess =>

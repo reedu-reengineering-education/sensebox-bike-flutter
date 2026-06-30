@@ -7,6 +7,7 @@ Future<bool?> showCustomDialog({
   required BuildContext context,
   required String message,
   DialogType type = DialogType.error, // Default to error dialog
+  String? confirmButtonText,
 }) async {
   final localizations = AppLocalizations.of(context)!;
   final theme = Theme.of(context);
@@ -31,7 +32,7 @@ Future<bool?> showCustomDialog({
           ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true), // Proceed
-          child: Text(localizations.generalOk),
+          child: Text(confirmButtonText ?? localizations.generalOk),
         ),
       ],
     ),

@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 import '../mocks.dart';
 import '../test_helpers.dart';
 
@@ -312,6 +313,84 @@ void main() {
       //
       //   expect(emittedGeolocations.length, 1);
       // });
+    });
+  });
+
+  group('GeolocationBloc sensor-data gating', () {
+    late MockIsarService mockIsarService;
+    late MockRecordingBloc mockRecordingBloc;
+    late MockSettingsBloc mockSettingsBloc;
+    late StreamController<List<String>> privacyZonesController;
+    late MockGeolocator mockGeolocator;
+    late List<GeolocationData> emittedGeolocations;
+    late bool sensorDataActive;
+    late GeolocationBloc geolocationBloc;
+
+    setUpAll(() {
+      registerFallbackValue(GeolocationData());
+      registerFallbackValue(SensorData());
+    });
+
+    setUp(() {
+      mockIsarService = MockIsarService();
+      mockRecordingBloc = MockRecordingBloc();
+      mockSettingsBloc = MockSettingsBloc();
+      privacyZonesController = StreamController<List<String>>.broadcast();
+      mockGeolocator = MockGeolocator();
+      geo.GeolocatorPlatform.instance = mockGeolocator;
+      emittedGeolocations = [];
+      sensorDataActive = true;
+
+      when(() => mockSettingsBloc.privacyZones).thenReturn([]);
+      when(() => mockSettingsBloc.privacyZonesStream)
+          .thenAnswer((_) => privacyZonesController.stream);
+
+      setupRecordingMode(mockRecordingBloc, mockIsarService);
+
+      geolocationBloc = GeolocationBloc(
+        mockIsarService,
+        mockRecordingBloc,
+        mockSettingsBloc,
+        isSensorDataActive: () => sensorDataActive,
+      );
+      geolocationBloc.geolocationStream.listen(emittedGeolocations.add);
+    });
+
+    tearDown(() {
+      privacyZonesController.close();
+      geolocationBloc.dispose();
+    });
+
+    test('does not save or emit GPS when sensor data is inactive', () async {
+      sensorDataActive = false;
+      setupMockGeolocator(mockGeolocator, testLat1, testLng1);
+
+      await geolocationBloc.getCurrentLocationAndEmit();
+      await Future.delayed(mediumDelay);
+
+      expect(emittedGeolocations, isEmpty);
+      verifyNever(() =>
+          mockIsarService.geolocationService.saveGeolocationData(any()));
+    });
+
+    test('saves and emits GPS when sensor data is active', () async {
+      final geoService = MockGeolocationService();
+      final sensorService = MockSensorService();
+      when(() => mockIsarService.geolocationService).thenReturn(geoService);
+      when(() => mockIsarService.sensorService).thenReturn(sensorService);
+      when(() => geoService.saveGeolocationData(any()))
+          .thenAnswer((_) async => 1);
+      when(() => sensorService.saveSensorData(any())).thenAnswer((_) async => 1);
+
+      sensorDataActive = true;
+      setupMockGeolocator(mockGeolocator, testLat1, testLng1);
+
+      await geolocationBloc.getCurrentLocationAndEmit();
+      await Future.delayed(mediumDelay);
+
+      expect(emittedGeolocations, isNotEmpty);
+      verify(() => geoService.saveGeolocationData(any()))
+          .called(greaterThanOrEqualTo(1));
     });
   });
 

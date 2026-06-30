@@ -5,12 +5,14 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 
@@ -71,8 +73,6 @@ class RecordingBloc with ChangeNotifier {
     }
   }
 
-
-
   void setRecordingCallbacks({
     VoidCallback? onRecordingStart,
     VoidCallback? onRecordingStop,
@@ -95,10 +95,27 @@ class RecordingBloc with ChangeNotifier {
     if (_isRecording) return;
 
     try {
-      // Check location permissions before starting recording
-      await PermissionService.ensureLocationPermissionsGranted();
+      await PermissionService.ensureLocationPermissionsGranted(
+        requireAlways: true,
+      );
+    } on LocationPermissionDenied catch (e) {
+      // Show confirmation modal before redirecting user to app settings
+      if (_context != null) {
+        final localizations = AppLocalizations.of(_context!);
+        final message = ErrorService.parseError(e, _context!);
+        final proceedToSettings = await showCustomDialog(
+          context: _context!,
+          message: message,
+          type: DialogType.confirmation,
+          confirmButtonText: localizations?.generalGoToSettings,
+        );
+        if (proceedToSettings == true) {
+          await PermissionService.openAppSettings();
+        }
+      }
+      notifyListeners();
+      return;
     } catch (e) {
-      // Don't start recording if location permissions are not granted
       ErrorService.handleError(e, StackTrace.current);
       notifyListeners();
       return;
@@ -107,7 +124,8 @@ class RecordingBloc with ChangeNotifier {
     _isRecording = true;
     _isRecordingNotifier.value = true;
     _lastRecordingStopTimestamp = null;
-    await trackBloc.startNewTrack(isDirectUpload: settingsBloc.directUploadMode);
+    await trackBloc.startNewTrack(
+        isDirectUpload: settingsBloc.directUploadMode);
 
     _currentTrack = trackBloc.currentTrack;
 
@@ -230,6 +248,7 @@ class RecordingBloc with ChangeNotifier {
       );
     }
   }
+
   void _cleanupBatchUploadService() {
     _batchUploadService?.dispose();
     _batchUploadService = null;

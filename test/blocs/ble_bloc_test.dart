@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
@@ -16,7 +15,6 @@ void main() {
     setUpAll(() {
       TestWidgetsFlutterBinding.ensureInitialized();
       registerFallbackValue(const BleDevice(id: 'fallback', name: 'fallback'));
-      registerFallbackValue(FakeBuildContext());
       registerFallbackValue(const Duration(seconds: 10));
     });
 
@@ -110,15 +108,19 @@ void main() {
       test('shows connection error when platform.connect throws on initial connect',
           () async {
         final platform = MockBlePlatform();
+        stubBlePlatformLifecycle(platform);
+        const device = BleDevice(id: 'AA:BB:CC:DD:EE:02', name: 'senseBox:test');
+        when(() => platform.scanForDevices())
+            .thenAnswer((_) => Stream.value(device));
+        when(() => platform.isConnected(any())).thenReturn(false);
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
             .thenThrow(Exception('Connection failed'));
 
         final realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
         addTearDown(realBleBloc.dispose);
+        realBleBloc.updateBluetoothStatus(true);
 
-        const device = BleDevice(id: 'AA:BB:CC:DD:EE:02', name: 'senseBox:test');
-
-        await realBleBloc.connectToDevice(device, FakeBuildContext());
+        await realBleBloc.connectToDevice(device);
 
         verify(() => platform.disconnect(device.id)).called(greaterThanOrEqualTo(1));
         expect(realBleBloc.connectionErrorNotifier.value, isTrue);
@@ -147,13 +149,30 @@ void main() {
         realBleBloc.dispose();
       });
 
-      test('powered off tears down platform link', () async {
+      test('powered off tears down platform link when link is gone', () async {
         realBleBloc.selectedDevice = testBleDevice;
         realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
+        // Link did not survive the adapter-off blip.
+        when(() => platform.isConnected(testBleDevice.id)).thenReturn(false);
 
         await realBleBloc.debugOnBluetoothPoweredOff();
 
         verify(() => platform.disconnect(testBleDevice.id)).called(1);
+      });
+
+      test('powered off ignores transient blip when link survives debounce',
+          () async {
+        primeConnectedWithReconnectionListener(
+          realBleBloc,
+          bluetoothEnabled: true,
+        );
+        // isConnected stays true (stubbed in setUp): the link survived the blip.
+
+        await realBleBloc.debugOnBluetoothPoweredOff();
+
+        verifyNever(() => platform.disconnect(testBleDevice.id));
+        expect(realBleBloc.isReconnectingNotifier.value, isFalse);
+        expect(realBleBloc.isConnected, isTrue);
       });
 
       test('powered off starts reconnecting when listener is attached',
@@ -162,6 +181,10 @@ void main() {
           realBleBloc,
           bluetoothEnabled: true,
         );
+        // Link is gone after the adapter-off blip.
+        when(() => platform.isConnected(testBleDevice.id)).thenReturn(false);
+        when(() => platform.scanForDevices())
+            .thenAnswer((_) => const Stream.empty());
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
             .thenAnswer((_) async {});
 
@@ -248,5 +271,3 @@ void main() {
     });
   });
 }
-
-class FakeBuildContext extends Fake implements BuildContext {}

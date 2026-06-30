@@ -5,22 +5,14 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
-import 'package:sensebox_bike/services/location_permission_platform.dart';
 
-bool _isLocationAccessSufficient(
-  LocationPermission permission, {
-  required bool requiresAlways,
-}) {
-  if (requiresAlways) {
-    return permission == LocationPermission.always;
-  }
-  return permission == LocationPermission.always ||
-      permission == LocationPermission.whileInUse;
-}
+bool _isLocationAccessSufficient(LocationPermission permission) =>
+  permission == LocationPermission.always ||
+  permission == LocationPermission.whileInUse;
 
 class PermissionService {
   @visibleForTesting
-  static Future<void> Function()? debugIosAlwaysPermissionRequest;
+  static Future<void> Function()? debugAlwaysLocationPermissionRequest;
 
   static Future<LocationPermission> _resolveLocationPermission() async {
     var permission = await Geolocator.checkPermission();
@@ -37,18 +29,32 @@ class PermissionService {
       return permission;
     }
 
-    if (requiresAlwaysLocationPermission &&
-        permission == LocationPermission.whileInUse) {
-      await _requestIosAlwaysLocationPermission();
+    if (permission == LocationPermission.whileInUse) {
+      return permission;
+    }
+
+    return permission;
+  }
+
+  static Future<LocationPermission> _resolveLocationPermissionRequiringAlways()
+  async {
+    var permission = await _resolveLocationPermission();
+
+    if (permission == LocationPermission.deniedForever) {
+      return permission;
+    }
+
+    if (permission == LocationPermission.whileInUse) {
+      await _requestAlwaysLocationPermission();
       permission = await Geolocator.checkPermission();
     }
 
     return permission;
   }
 
-  static Future<void> _requestIosAlwaysLocationPermission() async {
-    if (debugIosAlwaysPermissionRequest != null) {
-      await debugIosAlwaysPermissionRequest!();
+  static Future<void> _requestAlwaysLocationPermission() async {
+    if (debugAlwaysLocationPermissionRequest != null) {
+      await debugAlwaysLocationPermissionRequest!();
       return;
     }
     await Permission.locationAlways.request();
@@ -70,32 +76,41 @@ class PermissionService {
   static Future<void> openBluetoothSettings() =>
       AppSettings.openAppSettings(type: AppSettingsType.bluetooth);
 
-  static Future<void> openAppSettings() =>
-      AppSettings.openAppSettings(type: AppSettingsType.settings);
+  static Future<void> openAppSettings() async {
+    await Geolocator.openAppSettings();
+  }
 
-  static Future<void> ensureLocationPermissionsGranted() async {
+  static Future<void> ensureLocationPermissionsGranted({
+    bool requireAlways = false,
+  }) async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw LocationPermissionDenied();
     }
 
-    final permission = await _resolveLocationPermission();
-    if (!_isLocationAccessSufficient(
-      permission,
-      requiresAlways: requiresAlwaysLocationPermission,
-    )) {
+    final permission = requireAlways
+        ? await _resolveLocationPermissionRequiringAlways()
+        : await _resolveLocationPermission();
+    if (!requireAlways && !_isLocationAccessSufficient(permission)) {
+      throw LocationPermissionDenied();
+    }
+    if (requireAlways && permission != LocationPermission.always) {
       throw LocationPermissionDenied();
     }
   }
 
-  static Future<bool> isLocationPermissionGranted() async {
+  static Future<bool> isLocationPermissionGranted({
+    bool requireAlways = false,
+  }) async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return false;
 
-    final permission = await _resolveLocationPermission();
-    return _isLocationAccessSufficient(
-      permission,
-      requiresAlways: requiresAlwaysLocationPermission,
-    );
+    final permission = requireAlways
+        ? await _resolveLocationPermissionRequiringAlways()
+        : await _resolveLocationPermission();
+    if (requireAlways) {
+      return permission == LocationPermission.always;
+    }
+    return _isLocationAccessSufficient(permission);
   }
 }

@@ -122,8 +122,7 @@ class MockBleBloc extends Mock implements BleBloc {
   }
 
   @override
-  Future<void> connectToDevice(
-      BleDevice device, BuildContext context) async {}
+  Future<void> connectToDevice(BleDevice device) async {}
 
   @override
   Future<void> disconnectDevice({

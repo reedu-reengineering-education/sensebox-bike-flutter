@@ -78,8 +78,9 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     _trackBloc = TrackBloc(_isarService!);
     _recordingBloc = RecordingBloc(_isarService!, _bleBloc!, _trackBloc!,
         _openSenseMapBloc!, _settingsBloc!);
-    _geolocationBloc =
-        GeolocationBloc(_isarService!, _recordingBloc!, _settingsBloc!);
+    _geolocationBloc = GeolocationBloc(
+        _isarService!, _recordingBloc!, _settingsBloc!,
+        isSensorDataActive: () => _bleBloc!.isConnected);
     _sensorBloc = SensorBloc(
         _bleBloc!, _geolocationBloc!, _recordingBloc!, _settingsBloc!);
     _mapboxDrawController = MapboxDrawController();
@@ -131,7 +132,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
 
           final fullId = "senseBox:bike [$id]";
           debugPrint('Connecting to $fullId');
-          await _bleBloc!.connectToId(fullId, context);
+          await _bleBloc!.connectToId(fullId);
           await Future.delayed(const Duration(seconds: 2));
           _recordingBloc!.startRecording();
         }
