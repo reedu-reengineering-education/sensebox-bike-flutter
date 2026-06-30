@@ -18,6 +18,13 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>de</string>
+		<string>fr</string>
+		<string>pt</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>senseBox:bike</string>
 	<key>CFBundlePackageType</key>
@@ -41,6 +48,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
@@ -53,6 +62,27 @@
 	<string>senseBox:bike records your ride route and speed while the app runs in the background. Always location access is required to continue tracking during a ride.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>senseBox:bike uses your location to map your ride and attach GPS data to sensor measurements.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
@@ -79,15 +109,6 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-	</array>
-	<key>FlutterDeepLinkingEnabled</key>
-	<true/>
-	<key>CFBundleLocalizations</key>
-	<array>
-		<string>en</string>
-		<string>de</string>
-		<string>fr</string>
-		<string>pt</string>
 	</array>
 </dict>
 </plist>
