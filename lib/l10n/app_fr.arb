@@ -203,7 +203,7 @@
   "noCampaignsAvailable": "Aucune campagne disponible",
   "loginScreenTitle": "Compte openSenseMap",
   "connectionButtonEnableBluetooth": "Activer le Bluetooth",
-  "errorNoLocationAccessIos": "Les services de localisation sont désactivés ou l’accès est refusé. Pour enregistrer des parcours en arrière-plan, sélectionnez « Toujours » pour l’accès à la position dans les paramètres du téléphone.",
+  "errorNoLocationAccessIos": "L’enregistrement en arrière-plan nécessite que l’accès à la localisation soit réglé sur « Toujours ». Ouvrez les Réglages système, trouvez cette application et définissez la localisation sur « Toujours ».",
   "errorNoLocationAccessAndroid": "Les services de localisation sont désactivés ou l’accès est refusé. Pour enregistrer des parcours, activez la localisation et autorisez l’accès à votre position dans les paramètres du téléphone.",
   "errorNoScanAccess": "Pour vous connecter à la senseBox, autorisez l’application à rechercher des appareils à proximité dans les paramètres du téléphone.",
   "errorNoSenseBoxSelected": "Pour permettre le téléversement des données des capteurs vers le cloud, veuillez vous connecter à votre compte openSenseMap et sélectionner la box.",

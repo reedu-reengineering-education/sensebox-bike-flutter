@@ -519,7 +519,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get errorNoLocationAccessIos =>
-      'Les services de localisation sont désactivés ou l’accès est refusé. Pour enregistrer des parcours en arrière-plan, sélectionnez « Toujours » pour l’accès à la position dans les paramètres du téléphone.';
+      'L’enregistrement en arrière-plan nécessite que l’accès à la localisation soit réglé sur « Toujours ». Ouvrez les Réglages système, trouvez cette application et définissez la localisation sur « Toujours ».';
 
   @override
   String get errorNoLocationAccessAndroid =>

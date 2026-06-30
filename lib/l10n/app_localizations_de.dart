@@ -515,7 +515,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get errorNoLocationAccessIos =>
-      'Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Fahrten im Hintergrund aufzuzeichnen, wählen Sie in den Telefoneinstellungen \"Immer\" für den Standortzugriff.';
+      'Für Aufzeichnungen im Hintergrund muss der Standortzugriff auf \"Immer\" gesetzt sein. Öffnen Sie die Systemeinstellungen, wählen Sie diese App aus und stellen Sie den Standortzugriff auf \"Immer\".';
 
   @override
   String get errorNoLocationAccessAndroid =>

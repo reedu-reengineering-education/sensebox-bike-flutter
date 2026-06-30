@@ -1005,7 +1005,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorNoLocationAccessIos.
   ///
   /// In en, this message translates to:
-  /// **'Location services are disabled or access is denied. To record rides in the background, select \"Always\" for location access in your phone settings.'**
+  /// **'Background recording requires Location access set to \"Always\". Open System Settings, find this app, and change Location to \"Always\".'**
   String get errorNoLocationAccessIos;
 
   /// No description provided for @errorNoLocationAccessAndroid.

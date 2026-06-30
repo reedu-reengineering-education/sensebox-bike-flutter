@@ -507,7 +507,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorNoLocationAccessIos =>
-      'Location services are disabled or access is denied. To record rides in the background, select \"Always\" for location access in your phone settings.';
+      'Background recording requires Location access set to \"Always\". Open System Settings, find this app, and change Location to \"Always\".';
 
   @override
   String get errorNoLocationAccessAndroid =>

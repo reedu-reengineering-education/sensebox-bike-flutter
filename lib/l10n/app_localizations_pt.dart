@@ -513,7 +513,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get errorNoLocationAccessIos =>
-      'Os serviços de localização estão desativados ou o acesso é negado. Para gravar percursos em segundo plano, selecione \"Sempre\" para o acesso à localização nas definições do telefone.';
+      'A gravação em segundo plano requer que o acesso à Localização esteja definido como \"Sempre\". Abra as Definições do sistema, encontre esta aplicação e altere a Localização para \"Sempre\".';
 
   @override
   String get errorNoLocationAccessAndroid =>

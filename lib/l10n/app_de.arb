@@ -205,7 +205,7 @@
     "noCampaignsAvailable": "Keine Kampagnen verfügbar",
     "loginScreenTitle": "openSenseMap Konto",
     "connectionButtonEnableBluetooth": "Bluetooth aktivieren",
-    "errorNoLocationAccessIos": "Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Fahrten im Hintergrund aufzuzeichnen, wählen Sie in den Telefoneinstellungen \"Immer\" für den Standortzugriff.",
+    "errorNoLocationAccessIos": "Für Aufzeichnungen im Hintergrund muss der Standortzugriff auf \"Immer\" gesetzt sein. Öffnen Sie die Systemeinstellungen, wählen Sie diese App aus und stellen Sie den Standortzugriff auf \"Immer\".",
     "errorNoLocationAccessAndroid": "Standortdienste sind deaktiviert oder der Zugriff ist verweigert. Um Tracks aufzuzeichnen, aktivieren Sie die Standortdienste und erlauben Sie der App den Standortzugriff in den Telefoneinstellungen.",
     "errorNoScanAccess": "Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.",
     "errorNoSenseBoxSelected": "Um den Upload von Sensordaten in die Cloud zu ermöglichen, melden Sie sich bitte in Ihrem openSenseMap-Konto an und wählen Sie die Box aus.",
