@@ -11,6 +11,7 @@ import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 
@@ -95,12 +96,25 @@ class RecordingBloc with ChangeNotifier {
     if (_isRecording) return;
 
     try {
-      // Check location permissions before starting recording
+      // Show confirmation modal before requesting Always permission
+      if (_context != null) {
+        final message = ErrorService.parseError(
+            LocationPermissionDenied(), _context!);
+        if (await showCustomDialog(
+              context: _context!,
+              message: message,
+              type: DialogType.confirmation,
+            ) !=
+            true) {
+          notifyListeners();
+          return;
+        }
+      }
+
       await PermissionService.ensureLocationPermissionsGranted(
         requireAlways: true,
       );
     } catch (e) {
-      // Don't start recording if location permissions are not granted
       ErrorService.handleError(e, StackTrace.current);
       notifyListeners();
       return;
