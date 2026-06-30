@@ -430,7 +430,7 @@ class BleBloc with ChangeNotifier {
         device: device,
         reason: BleDisconnectReason.connectionFailed,
       );
-      ErrorService.reportToSentry(
+      await ErrorService.reportToSentry(
         BleConnectionFailed(BleConnectionFailurePhase.initialConnect, e),
         stack,
       );
@@ -449,6 +449,9 @@ class BleBloc with ChangeNotifier {
     bool publishConnectedState = true,
     Future<void> Function()? onExhausted,
   }) async {
+    Object? initialLinkError;
+    StackTrace? initialLinkErrorStack;
+
     await _waitForBluetoothReady();
     if (_userInitiatedDisconnect) {
       return false;
@@ -460,7 +463,10 @@ class BleBloc with ChangeNotifier {
     if (!_platform.isConnected(device.id)) {
       try {
         await _connectLink(device);
-      } catch (_) {}
+      } catch (error, stack) {
+        initialLinkError ??= error;
+        initialLinkErrorStack ??= stack;
+      }
     }
 
     return _sessionRetryRunner.run(
@@ -472,7 +478,12 @@ class BleBloc with ChangeNotifier {
       ),
       prepareForRetry: _prepareForRetry,
       onExhausted: onExhausted ??
-          () => _onSessionRetriesExhausted(device, failurePhase),
+          () => _onSessionRetriesExhausted(
+            device,
+            failurePhase,
+            cause: initialLinkError,
+            stackTrace: initialLinkErrorStack,
+          ),
     );
   }
 
@@ -505,10 +516,14 @@ class BleBloc with ChangeNotifier {
   Future<void> _onSessionRetriesExhausted(
     BleDevice device,
     BleConnectionFailurePhase failurePhase,
+    {
+    Object? cause,
+    StackTrace? stackTrace,
+  }
   ) async {
-    ErrorService.reportToSentry(
-      BleConnectionFailed(failurePhase),
-      StackTrace.current,
+    await ErrorService.reportToSentry(
+      BleConnectionFailed(failurePhase, cause),
+      stackTrace ?? StackTrace.current,
     );
     await disconnectDevice(
       device: device,
@@ -619,7 +634,7 @@ class BleBloc with ChangeNotifier {
         }
       },
       onListenerError: (device, error) async {
-        ErrorService.reportToSentry(
+        await ErrorService.reportToSentry(
           BleConnectionFailed(BleConnectionFailurePhase.reconnection, error),
           StackTrace.current,
         );

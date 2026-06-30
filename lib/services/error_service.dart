@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
@@ -9,16 +11,16 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 class ErrorService {
   static final GlobalKey<ScaffoldMessengerState> scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
-  static void reportToSentry(dynamic error, StackTrace stack) {
+  static Future<void> reportToSentry(dynamic error, StackTrace stack) async {
     logToConsole(error, stack);
-    Sentry.captureException(error, stackTrace: stack);
+    await Sentry.captureException(error, stackTrace: stack);
   }
 
   static void handleError(dynamic error, StackTrace stack,
       {bool sendToSentry = true}) {
     logToConsole(error, stack);
     if (sendToSentry) {
-      Sentry.captureException(error, stackTrace: stack);
+      unawaited(reportToSentry(error, stack));
     }
 
     if (!kDebugMode) {
