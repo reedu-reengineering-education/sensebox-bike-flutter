@@ -73,8 +73,6 @@ class RecordingBloc with ChangeNotifier {
     }
   }
 
-
-
   void setRecordingCallbacks({
     VoidCallback? onRecordingStart,
     VoidCallback? onRecordingStop,
@@ -97,27 +95,26 @@ class RecordingBloc with ChangeNotifier {
     if (_isRecording) return;
 
     try {
-      // Show confirmation modal before redirecting user to app settings
-      if (_context != null) {
-        final localizations = AppLocalizations.of(_context!);
-        final message = ErrorService.parseError(
-            LocationPermissionDenied(), _context!);
-        final proceedToSettings = await showCustomDialog(
-              context: _context!,
-              message: message,
-              type: DialogType.confirmation,
-              confirmButtonText: localizations?.generalGoToSettings,
-            );
-        if (proceedToSettings == true) {
-          await PermissionService.openAppSettings();
-        }
-        notifyListeners();
-        return;
-      }
-
       await PermissionService.ensureLocationPermissionsGranted(
         requireAlways: true,
       );
+    } on LocationPermissionDenied catch (e) {
+      // Show confirmation modal before redirecting user to app settings
+      if (_context != null) {
+        final localizations = AppLocalizations.of(_context!);
+        final message = ErrorService.parseError(e, _context!);
+        final proceedToSettings = await showCustomDialog(
+          context: _context!,
+          message: message,
+          type: DialogType.confirmation,
+          confirmButtonText: localizations?.generalGoToSettings,
+        );
+        if (proceedToSettings == true) {
+          await PermissionService.openAppSettings();
+        }
+      }
+      notifyListeners();
+      return;
     } catch (e) {
       ErrorService.handleError(e, StackTrace.current);
       notifyListeners();
@@ -127,7 +124,8 @@ class RecordingBloc with ChangeNotifier {
     _isRecording = true;
     _isRecordingNotifier.value = true;
     _lastRecordingStopTimestamp = null;
-    await trackBloc.startNewTrack(isDirectUpload: settingsBloc.directUploadMode);
+    await trackBloc.startNewTrack(
+        isDirectUpload: settingsBloc.directUploadMode);
 
     _currentTrack = trackBloc.currentTrack;
 
@@ -250,6 +248,7 @@ class RecordingBloc with ChangeNotifier {
       );
     }
   }
+
   void _cleanupBatchUploadService() {
     _batchUploadService?.dispose();
     _batchUploadService = null;
