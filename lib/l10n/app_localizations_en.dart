@@ -506,12 +506,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Enable Bluetooth';
 
   @override
-  String get errorNoLocationAccessIos =>
+  String get errorLocationAlwaysRequired =>
       'Background recording requires Location access set to \"Always\". Open System Settings, find this app, and change Location to \"Always\".';
-
-  @override
-  String get errorNoLocationAccessAndroid =>
-      'Location services are disabled or access is denied. To record tracks, enable location services and allow location access in your phone settings.';
 
   @override
   String get errorNoScanAccess =>

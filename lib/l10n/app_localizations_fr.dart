@@ -518,12 +518,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Activer le Bluetooth';
 
   @override
-  String get errorNoLocationAccessIos =>
-      'L’enregistrement en arrière-plan nécessite que l’accès à la localisation soit réglé sur « Toujours ». Ouvrez les Réglages système, trouvez cette application et définissez la localisation sur « Toujours ».';
-
-  @override
-  String get errorNoLocationAccessAndroid =>
-      'Les services de localisation sont désactivés ou l’accès est refusé. Pour enregistrer des parcours, activez la localisation et autorisez l’accès à votre position dans les paramètres du téléphone.';
+  String get errorLocationAlwaysRequired =>
+      'L\'enregistrement en arrière-plan nécessite que l\'accès à la localisation soit réglé sur « Toujours ». Ouvrez les Réglages système, trouvez cette application et définissez la localisation sur « Toujours ».';
 
   @override
   String get errorNoScanAccess =>

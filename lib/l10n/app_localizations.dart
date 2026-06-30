@@ -1002,17 +1002,11 @@ abstract class AppLocalizations {
   /// **'Enable Bluetooth'**
   String get connectionButtonEnableBluetooth;
 
-  /// No description provided for @errorNoLocationAccessIos.
+  /// No description provided for @errorLocationAlwaysRequired.
   ///
   /// In en, this message translates to:
   /// **'Background recording requires Location access set to \"Always\". Open System Settings, find this app, and change Location to \"Always\".'**
-  String get errorNoLocationAccessIos;
-
-  /// No description provided for @errorNoLocationAccessAndroid.
-  ///
-  /// In en, this message translates to:
-  /// **'Location services are disabled or access is denied. To record tracks, enable location services and allow location access in your phone settings.'**
-  String get errorNoLocationAccessAndroid;
+  String get errorLocationAlwaysRequired;
 
   /// No description provided for @errorNoScanAccess.
   ///

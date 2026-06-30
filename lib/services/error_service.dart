@@ -105,7 +105,7 @@ class ErrorService {
     final localizations = AppLocalizations.of(context);
 
     if (error is LocationPermissionDenied) {
-      return localizations?.errorNoLocationAccessIos ??
+      return localizations?.errorLocationAlwaysRequired ??
           'Background recording requires Location access set to "Always". Open System Settings, find this app, and change Location to "Always".';
     } else if (error is ScanPermissionDenied) {
       return localizations?.errorNoScanAccess ??
