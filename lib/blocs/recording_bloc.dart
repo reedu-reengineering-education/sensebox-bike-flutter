@@ -96,7 +96,9 @@ class RecordingBloc with ChangeNotifier {
 
     try {
       // Check location permissions before starting recording
-      await PermissionService.ensureLocationPermissionsGranted();
+      await PermissionService.ensureLocationPermissionsGranted(
+        requireAlways: true,
+      );
     } catch (e) {
       // Don't start recording if location permissions are not granted
       ErrorService.handleError(e, StackTrace.current);

@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
-import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/location_permission_platform.dart';
@@ -86,11 +85,6 @@ class GeolocationBloc with ChangeNotifier {
       late LocationSettings locationSettings;
 
       if (isAndroidPlatform) {
-        final alwaysLocationStatus = await Permission.locationAlways.request();
-        if (!alwaysLocationStatus.isGranted) {
-          throw LocationPermissionDenied();
-        }
-
         PermissionStatus status = await Permission.notification.request();
         if (status.isGranted) {
           locationSettings = AndroidSettings(
