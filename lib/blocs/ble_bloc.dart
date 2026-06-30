@@ -714,20 +714,7 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> requestEnableBluetooth() async {
-    final permissionsGranted =
-        await PermissionService.ensureBluetoothPermissionsGranted();
-    await _refreshBluetoothEnabledStatus();
-    if (isBluetoothEnabledNotifier.value) {
-      return;
-    }
-
-    if (!permissionsGranted) {
-      await PermissionService.openAppSettings();
-      await _refreshBluetoothEnabledStatus();
-      return;
-    }
-
-    await PermissionService.openBluetoothSettings();
+    await PermissionService.ensureBluetoothPermissionsGranted();
     await _refreshBluetoothEnabledStatus();
   }
 
