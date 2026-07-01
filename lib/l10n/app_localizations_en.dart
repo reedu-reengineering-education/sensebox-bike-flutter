@@ -364,6 +364,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGithub => 'GitHub issue';
 
   @override
+  String get settingsBleResetAction => 'Reset BLE state';
+
+  @override
+  String get settingsBleResetHint =>
+      'Useful when discovery or connection gets stuck. This disconnects the current device and resets BLE discovery/connection state.';
+
+  @override
+  String get settingsBleResetConfirm =>
+      'Reset BLE state now? This will disconnect the current device.';
+
+  @override
+  String get settingsBleResetSuccess => 'BLE state reset completed.';
+
+  @override
   String get privacyZonesStart =>
       'Tap on the map to start drawing a zone. Tap the checkmark to finish.';
 

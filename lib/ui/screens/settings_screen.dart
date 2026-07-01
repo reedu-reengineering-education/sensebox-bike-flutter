@@ -418,14 +418,13 @@ class SettingsScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: _buildActionButton(
               context: context,
-              text: 'Reset BLE state',
+              text: AppLocalizations.of(context)!.settingsBleResetAction,
               onPressed: () => _handleBleRecovery(context, bleBloc),
             ),
           ),
         ),
-        const Hint(
-          text:
-              'Useful when discovery or connection gets stuck. This disconnects the current device and resets BLE discovery/connection state.',
+        Hint(
+          text: AppLocalizations.of(context)!.settingsBleResetHint,
         ),
       ],
     );
@@ -435,7 +434,7 @@ class SettingsScreen extends StatelessWidget {
     final localizations = AppLocalizations.of(context)!;
     final confirmation = await showCustomDialog(
       context: context,
-      message: 'Reset BLE state now? This will disconnect the current device.',
+      message: localizations.settingsBleResetConfirm,
       type: DialogType.confirmation,
       confirmButtonText: localizations.generalProceed,
     );
@@ -450,7 +449,7 @@ class SettingsScreen extends StatelessWidget {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('BLE state reset completed.')),
+      SnackBar(content: Text(localizations.settingsBleResetSuccess)),
     );
   }
 
