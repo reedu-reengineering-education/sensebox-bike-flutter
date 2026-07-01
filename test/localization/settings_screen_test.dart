@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 
@@ -24,6 +25,7 @@ void main() {
   late MockTrackBloc mockTrackBloc;
   late SettingsBloc mockSettingsBloc;
   late MockOpenSenseMapBloc mockOpenSenseMapBloc;
+  late BleBloc mockBleBloc;
 
   setUpAll(() {
     // Register fallback values for complex types
@@ -50,6 +52,7 @@ void main() {
     mockTrackBloc = MockTrackBloc();
     mockSettingsBloc = SettingsBloc();
     mockOpenSenseMapBloc = MockOpenSenseMapBloc();
+    mockBleBloc = MockBleBloc();
 
     // Setup service mocks
     when(() => mockTrackBloc.isarService).thenReturn(mockIsarService);
@@ -64,6 +67,7 @@ void main() {
         ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
         ChangeNotifierProvider<TrackBloc>.value(value: mockTrackBloc),
         ChangeNotifierProvider<OpenSenseMapBloc>.value(value: mockOpenSenseMapBloc),
+        ChangeNotifierProvider<BleBloc>.value(value: mockBleBloc),
         ChangeNotifierProvider<ConfigurationBloc>.value(value: configurationBloc),
       ],
       child: createLocalizedTestApp(
