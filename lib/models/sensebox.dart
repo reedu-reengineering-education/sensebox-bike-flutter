@@ -36,7 +36,9 @@ class SenseBox {
     createdAt = json['createdAt'];
     exposure = json['exposure'];
     model = json['model'];
-    grouptag = json['grouptag'].cast<String>();
+    grouptag = json['grouptag'] != null
+        ? (json['grouptag'] as List<dynamic>).cast<String>()
+        : null;
     name = json['name'];
     updatedAt = json['updatedAt'];
     currentLocation = json['currentLocation'] != null

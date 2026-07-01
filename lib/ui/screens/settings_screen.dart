@@ -371,9 +371,9 @@ class SettingsScreen extends StatelessWidget {
     SettingsBloc settingsBloc,
     ConfigurationBloc configurationBloc,
   ) {
-    return AnimatedBuilder(
-      animation: configurationBloc,
-      builder: (context, _) {
+    return BlocBuilder<ConfigurationBloc, ConfigurationState>(
+      bloc: configurationBloc,
+      builder: (context, state) {
         final controller = TextEditingController(text: settingsBloc.apiUrl);
 
         return ListTile(

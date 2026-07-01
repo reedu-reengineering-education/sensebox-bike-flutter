@@ -54,7 +54,9 @@ void main() {
   });
 
   group('TrackBloc - Track Management', () {
-    test('startNewTrack without isDirectUpload parameter sets isDirectUpload to default true', () async {
+    test(
+        'startNewTrack without isDirectUpload parameter sets isDirectUpload to default true',
+        () async {
       when(() => mockIsarService.mockTrackService.saveTrack(any()))
           .thenAnswer((_) async => 1);
 
@@ -65,7 +67,8 @@ void main() {
       expect(trackBloc.currentTrack!.isDirectUpload, equals(1));
     });
 
-    test('startNewTrack with isDirectUpload = true sets isDirectUpload to 1', () async {
+    test('startNewTrack with isDirectUpload = true sets isDirectUpload to 1',
+        () async {
       when(() => mockIsarService.mockTrackService.saveTrack(any()))
           .thenAnswer((_) async => 1);
 
@@ -76,7 +79,8 @@ void main() {
       expect(trackBloc.currentTrack!.isDirectUpload, equals(1));
     });
 
-    test('startNewTrack with isDirectUpload = false sets isDirectUpload to 0', () async {
+    test('startNewTrack with isDirectUpload = false sets isDirectUpload to 0',
+        () async {
       when(() => mockIsarService.mockTrackService.saveTrack(any()))
           .thenAnswer((_) async => 1);
 
@@ -99,7 +103,8 @@ void main() {
           .thenAnswer((_) async => 1);
 
       final streamValues = <TrackData?>[];
-      final subscription = trackBloc.currentTrackStream.listen(streamValues.add);
+      final subscription =
+          trackBloc.currentTrackStream.listen(streamValues.add);
 
       await trackBloc.startNewTrack();
 
@@ -116,7 +121,8 @@ void main() {
           .thenAnswer((_) async => 1);
 
       final streamValues = <TrackData?>[];
-      final subscription = trackBloc.currentTrackStream.listen(streamValues.add);
+      final subscription =
+          trackBloc.currentTrackStream.listen(streamValues.add);
 
       await trackBloc.startNewTrack();
       trackBloc.endTrack();
@@ -138,8 +144,7 @@ void main() {
         ..isDirectUpload = 1
         ..uploaded = 1;
 
-      final statusInfo =
-          trackBloc.getEstimatedTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
           track, testTheme, mockLocalizations);
 
       expect(statusInfo.status, equals(TrackStatus.directUpload));
@@ -155,8 +160,7 @@ void main() {
         ..isDirectUpload = 1
         ..uploaded = 0;
 
-      final statusInfo =
-          trackBloc.getEstimatedTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
           track, testTheme, mockLocalizations);
 
       expect(statusInfo.status, equals(TrackStatus.directUpload));
@@ -173,8 +177,7 @@ void main() {
         ..uploaded = 0
         ..uploadAttempts = 1;
 
-      final statusInfo =
-          trackBloc.getEstimatedTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
           track, testTheme, mockLocalizations);
 
       expect(statusInfo.status, equals(TrackStatus.directUploadAuthFailed));
@@ -189,8 +192,7 @@ void main() {
         ..isDirectUpload = 0
         ..uploaded = 1;
 
-      final statusInfo =
-          trackBloc.getEstimatedTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
           track, testTheme, mockLocalizations);
 
       expect(statusInfo.status, equals(TrackStatus.uploaded));
@@ -207,8 +209,7 @@ void main() {
         ..uploaded = 0
         ..uploadAttempts = 1;
 
-      final statusInfo =
-          trackBloc.getEstimatedTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
           track, testTheme, mockLocalizations);
 
       expect(statusInfo.status, equals(TrackStatus.uploadFailed));
@@ -225,8 +226,7 @@ void main() {
         ..uploaded = 0
         ..uploadAttempts = 0;
 
-      final statusInfo =
-          trackBloc.getEstimatedTrackStatusInfo(
+      final statusInfo = trackBloc.getEstimatedTrackStatusInfo(
           track, testTheme, mockLocalizations);
 
       expect(statusInfo.status, equals(TrackStatus.notUploaded));
@@ -242,12 +242,16 @@ void main() {
       expect(status, equals(TrackStatus.directUpload));
     });
 
-    test('calculateTrackStatusFromValues for direct upload + not uploaded + no attempts', () {
+    test(
+        'calculateTrackStatusFromValues for direct upload + not uploaded + no attempts',
+        () {
       final status = trackBloc.calculateTrackStatusFromValues(true, false, 0);
       expect(status, equals(TrackStatus.directUpload));
     });
 
-    test('calculateTrackStatusFromValues for direct upload + not uploaded + with attempts', () {
+    test(
+        'calculateTrackStatusFromValues for direct upload + not uploaded + with attempts',
+        () {
       final status = trackBloc.calculateTrackStatusFromValues(true, false, 1);
       expect(status, equals(TrackStatus.directUploadAuthFailed));
     });
@@ -257,19 +261,24 @@ void main() {
       expect(status, equals(TrackStatus.uploaded));
     });
 
-    test('calculateTrackStatusFromValues for regular track + not uploaded + no attempts', () {
+    test(
+        'calculateTrackStatusFromValues for regular track + not uploaded + no attempts',
+        () {
       final status = trackBloc.calculateTrackStatusFromValues(false, false, 0);
       expect(status, equals(TrackStatus.notUploaded));
     });
 
-    test('calculateTrackStatusFromValues for regular track + not uploaded + with attempts', () {
+    test(
+        'calculateTrackStatusFromValues for regular track + not uploaded + with attempts',
+        () {
       final status = trackBloc.calculateTrackStatusFromValues(false, false, 1);
       expect(status, equals(TrackStatus.uploadFailed));
     });
   });
 
   group('TrackBloc - Direct Upload Auth Failure', () {
-    test('updateDirectUploadAuthFailure updates track and notifies listeners', () async {
+    test('updateDirectUploadAuthFailure updates track and notifies listeners',
+        () async {
       final track = TrackData()
         ..isDirectUpload = 1
         ..uploaded = 1
@@ -284,7 +293,8 @@ void main() {
       expect(track.uploaded, equals(0));
       expect(track.lastUploadAttempt, isNotNull);
 
-      verify(() => mockIsarService.mockTrackService.updateTrack(track)).called(1);
+      verify(() => mockIsarService.mockTrackService.updateTrack(track))
+          .called(1);
     });
   });
 
@@ -322,41 +332,43 @@ void main() {
   });
 
   group('TrackBloc - Mapbox URL Generation', () {
-    testWidgets('buildStaticMapboxUrl returns empty string for empty polyline', (WidgetTester tester) async {
+    testWidgets('buildStaticMapboxUrl returns empty string for empty polyline',
+        (WidgetTester tester) async {
       await tester.pumpWidget(MaterialApp(home: Container()));
-      
-      final url = trackBloc.buildStaticMapboxUrl(tester.element(find.byType(Container)), '');
-      
+
+      final url = trackBloc.buildStaticMapboxUrl(
+          tester.element(find.byType(Container)), '');
+
       expect(url, equals(''));
     });
 
-    testWidgets('buildStaticMapboxUrl generates correct URL for light theme', (WidgetTester tester) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: ThemeData.light(),
-        home: Container()
-      ));
-      
+    testWidgets('buildStaticMapboxUrl generates correct URL for light theme',
+        (WidgetTester tester) async {
+      await tester
+          .pumpWidget(MaterialApp(theme: ThemeData.light(), home: Container()));
+
       final polyline = 'test_polyline_data';
-      final url = trackBloc.buildStaticMapboxUrl(tester.element(find.byType(Container)), polyline);
-      
+      final url = trackBloc.buildStaticMapboxUrl(
+          tester.element(find.byType(Container)), polyline);
+
       expect(url, contains('light-v11'));
-      expect(url, contains('111'));
-      expect(url, contains('140x140'));
+      expect(url, contains('221'));
+      expect(url, contains('280x280'));
       expect(url, contains(Uri.encodeComponent(polyline)));
     });
 
-    testWidgets('buildStaticMapboxUrl generates correct URL for dark theme', (WidgetTester tester) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: ThemeData.dark(),
-        home: Container()
-      ));
-      
+    testWidgets('buildStaticMapboxUrl generates correct URL for dark theme',
+        (WidgetTester tester) async {
+      await tester
+          .pumpWidget(MaterialApp(theme: ThemeData.dark(), home: Container()));
+
       final polyline = 'test_polyline_data';
-      final url = trackBloc.buildStaticMapboxUrl(tester.element(find.byType(Container)), polyline);
-      
+      final url = trackBloc.buildStaticMapboxUrl(
+          tester.element(find.byType(Container)), polyline);
+
       expect(url, contains('dark-v11'));
       expect(url, contains('fff'));
-      expect(url, contains('140x140'));
+      expect(url, contains('280x280'));
       expect(url, contains(Uri.encodeComponent(polyline)));
     });
   });
@@ -364,15 +376,15 @@ void main() {
   group('TrackBloc - Disposal', () {
     test('dispose closes stream controller', () {
       final trackBlocToDispose = TrackBloc(mockIsarService);
-      
+
       expect(trackBlocToDispose.currentTrackStream, isNotNull);
-      
+
       trackBlocToDispose.dispose();
-      
+
       // After disposal, the stream should still be accessible but closed
       final subscription = trackBlocToDispose.currentTrackStream.listen((_) {});
       expect(subscription.isPaused, isFalse);
-      
+
       subscription.cancel();
     });
   });

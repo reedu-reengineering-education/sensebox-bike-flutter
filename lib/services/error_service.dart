@@ -7,6 +7,8 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 class ErrorService {
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
   static final GlobalKey<ScaffoldMessengerState> scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
   static Future<void> reportToSentry(dynamic error, StackTrace stack) async {
@@ -65,11 +67,11 @@ class ErrorService {
   static List<TextSpan> parseErrorWithFormatting(
       dynamic error, BuildContext context) {
     final errorMessage = parseError(error, context);
-    
+
     if (error is LoginError || error is RegistrationError) {
       return _createBoldMessageWithDetails(errorMessage, context);
     }
-    
+
     return [TextSpan(text: errorMessage)];
   }
 
@@ -86,7 +88,7 @@ class ErrorService {
     final detail = parts.sublist(1).join('\n\n').trim();
     final reasonPrefix =
         AppLocalizations.of(context)?.errorReasonPrefix ?? 'Reason:';
-    
+
     return [
       TextSpan(
           text: parts[0], style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -132,16 +134,12 @@ class ErrorService {
       final mainMessage = localizations?.errorLoginFailed ??
           'Login failed. Please check your credentials and try once again later.';
       final details = error.error?.toString() ?? '';
-      return details.isNotEmpty
-          ? '$mainMessage\n\n$details'
-          : mainMessage;
+      return details.isNotEmpty ? '$mainMessage\n\n$details' : mainMessage;
     } else if (error is RegistrationError) {
       final mainMessage = localizations?.errorRegistrationFailed ??
           'Registration failed. Please check your credentials and try once again later.';
       final details = error.error?.toString() ?? '';
-      return details.isNotEmpty
-          ? '$mainMessage\n\n$details'
-          : mainMessage;
+      return details.isNotEmpty ? '$mainMessage\n\n$details' : mainMessage;
     }
 
     return 'An unknown error occurred.\n Details: ${error.toString()}';

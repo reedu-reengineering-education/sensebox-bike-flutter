@@ -36,6 +36,11 @@ void main() {
 
     testWidgets('should display upload mode option with current selection',
         (WidgetTester tester) async {
+      // Register cleanup to run before tearDown closes the bloc
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+
       // Create a simple widget that just shows the upload mode option
       await tester.pumpWidget(
         MaterialApp(
@@ -85,13 +90,15 @@ void main() {
 
       // Verify default mode is displayed
       expect(find.textContaining('Current: Post-Ride Upload'), findsOneWidget);
-      
-      // Cleanup: pump empty widget to unmount everything
-      await tester.pumpWidget(const SizedBox.shrink());
     });
 
     testWidgets('should update display when upload mode changes',
         (WidgetTester tester) async {
+      // Register cleanup to run before tearDown closes the bloc
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+
       // Create a simple widget that just shows the upload mode option
       await tester.pumpWidget(
         MaterialApp(
@@ -144,13 +151,15 @@ void main() {
       // Verify display updates
       expect(
           find.textContaining('Current: Direct Upload (Beta)'), findsOneWidget);
-      
-      // Cleanup: pump empty widget to unmount everything
-      await tester.pumpWidget(const SizedBox.shrink());
     });
 
     testWidgets('should show upload mode dialog with radio buttons',
         (WidgetTester tester) async {
+      // Register cleanup to run before tearDown closes the bloc
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+
       // Create a simple dialog widget
       await tester.pumpWidget(
         MaterialApp(
@@ -224,9 +233,6 @@ void main() {
       expect(find.text('Post-Ride Upload'), findsOneWidget);
       expect(find.text('Direct Upload (Beta)'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
-      
-      // Cleanup: pump empty widget to unmount everything
-      await tester.pumpWidget(const SizedBox.shrink());
     });
 
     testWidgets('should toggle upload mode correctly in settings bloc',
@@ -319,7 +325,7 @@ void main() {
     });
 
     setUp(() {
-      settingsBloc = SettingsBloc();
+      settingsBloc = SettingsBloc(storage: InMemorySettingsStorage());
     });
 
     tearDown(() {
@@ -328,6 +334,12 @@ void main() {
 
     testWidgets('should not save invalid URL when validation fails',
         (WidgetTester tester) async {
+      // Register cleanup to run before tearDown closes the bloc
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      });
+
       const initialUrl = 'https://api.opensensemap.org';
       const invalidUrl = 'not-a-valid-url';
 
@@ -383,19 +395,22 @@ void main() {
 
       // Tap the button to trigger validation
       await tester.tap(find.text('Save Invalid URL'));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // The URL should not have changed because validation failed
       expect(settingsBloc.apiUrl, initialUrl);
 
       controller.dispose();
-      
-      // Cleanup: pump empty widget to unmount everything
-      await tester.pumpWidget(const SizedBox.shrink());
     });
 
     testWidgets('should save valid URL when validation passes',
         (WidgetTester tester) async {
+      // Register cleanup to run before tearDown closes the bloc
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      });
+
       const initialUrl = 'https://api.opensensemap.org';
       const validUrl = 'https://custom-api.example.com';
 
@@ -451,15 +466,12 @@ void main() {
 
       // Tap the button to trigger validation
       await tester.tap(find.text('Save Valid URL'));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // The URL should have changed because validation passed
       expect(settingsBloc.apiUrl, validUrl);
 
       controller.dispose();
-      
-      // Cleanup: pump empty widget to unmount everything
-      await tester.pumpWidget(const SizedBox.shrink());
     });
   });
 }
