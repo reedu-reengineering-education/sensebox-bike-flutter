@@ -744,10 +744,10 @@ class BleBloc with ChangeNotifier {
 
     Future<void> runRecoveryCleanup(
       String stage,
-      Future<void> action,
+      Future<void> Function() action,
     ) async {
       try {
-        await action;
+        await action();
       } catch (error, stack) {
         await ErrorService.reportToSentry(
           StateError('BLE recovery cleanup failed at $stage: $error'),
@@ -760,10 +760,10 @@ class BleBloc with ChangeNotifier {
     _clearUnexpectedDisconnectIndicators();
     _scanAfterDisconnect = false;
 
-    await runRecoveryCleanup('stopScanning', _scanner.stopScanning());
+    await runRecoveryCleanup('stopScanning', _scanner.stopScanning);
     await runRecoveryCleanup(
       'clearCharacteristicStreams',
-      characteristicStreams.clear(),
+      () => characteristicStreams.clear(),
     );
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
@@ -773,7 +773,7 @@ class BleBloc with ChangeNotifier {
         }
         await runRecoveryCleanup(
           'clearGattCache($deviceId)',
-          _platform.clearGattCache(deviceId),
+          () => _platform.clearGattCache(deviceId),
         );
       }
     }
@@ -781,7 +781,7 @@ class BleBloc with ChangeNotifier {
     await Future<void>.delayed(blePreDisconnectFenceDelay);
     await runRecoveryCleanup(
       'platformResetRuntimeState',
-      _platform.resetRuntimeState(),
+      _platform.resetRuntimeState,
     );
 
     await Future<void>.delayed(blePostDisconnectSettleDelay);
@@ -799,7 +799,7 @@ class BleBloc with ChangeNotifier {
 
     await runRecoveryCleanup(
       'refreshBluetoothEnabledStatus',
-      _refreshBluetoothEnabledStatus(),
+      _refreshBluetoothEnabledStatus,
     );
   }
 

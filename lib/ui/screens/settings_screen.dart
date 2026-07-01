@@ -443,14 +443,25 @@ class SettingsScreen extends StatelessWidget {
       return;
     }
 
-    await bleBloc.recoverBleStack();
-    if (!context.mounted) {
-      return;
-    }
+    try {
+      await bleBloc.recoverBleStack();
+      if (!context.mounted) {
+        return;
+      }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(localizations.settingsBleResetSuccess)),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizations.settingsBleResetSuccess)),
+      );
+    } catch (error, stack) {
+      await ErrorService.reportToSentry(error, stack);
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizations.generalError)),
+      );
+    }
   }
 
   Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc, ConfigurationBloc configurationBloc) {
