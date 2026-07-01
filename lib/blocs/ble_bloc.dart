@@ -204,7 +204,7 @@ class BleBloc extends Cubit<BleState> {
   Future<bool> _runInitialConnectionAttempts(BleDevice device) {
     return _retryRunner.run(
       device: device,
-      maxAttempts: bleInitialConnectMaxAttempts,
+      maxAttempts: bleConnectMaxAttempts,
       attemptSession: (device, _) => _establishSession(device),
       prepareForRetry: (device) => _retryRunner.prepareDeviceLink(
         device,
@@ -242,7 +242,7 @@ class BleBloc extends Cubit<BleState> {
       },
       runReconnectSessions: (device) => _retryRunner.run(
         device: device,
-        maxAttempts: bleMaxReconnectionAttempts,
+        maxAttempts: bleConnectMaxAttempts,
         attemptSession: (device, _) async {
           await _platform.connect(device.id);
           return _establishSession(device);

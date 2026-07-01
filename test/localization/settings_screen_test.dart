@@ -69,7 +69,7 @@ void main() {
           BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
           BlocProvider<TrackBloc>.value(value: mockTrackBloc),
           BlocProvider<OpenSenseMapBloc>.value(value: mockOpenSenseMapBloc),
-          ChangeNotifierProvider<ConfigurationBloc>(
+          BlocProvider<ConfigurationBloc>(
             create: (_) => ConfigurationBloc(),
           ),
         ],

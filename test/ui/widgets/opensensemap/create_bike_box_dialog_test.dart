@@ -57,7 +57,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
+          body: BlocProvider<ConfigurationBloc>.value(
             value: mockConfigurationBloc,
             child: CreateBikeBoxModal(
               boxConfigurations: mockConfigurationBloc.boxConfigurations,
@@ -103,7 +103,7 @@ void main() {
             providers: [
               BlocProvider<OpenSenseMapBloc>.value(value: mockOpenSenseMapBloc),
               BlocProvider<GeolocationBloc>.value(value: mockGeolocationBloc),
-              ChangeNotifierProvider<ConfigurationBloc>.value(
+              BlocProvider<ConfigurationBloc>.value(
                   value: mockConfigurationBloc),
             ],
             child: CreateBikeBoxModal(
@@ -168,7 +168,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
+          body: BlocProvider<ConfigurationBloc>.value(
             value: mockConfigurationBloc,
             child: CreateBikeBoxModal(
               boxConfigurations: mockConfigurationBloc.boxConfigurations,
@@ -201,7 +201,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('de'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
+          body: BlocProvider<ConfigurationBloc>.value(
             value: mockConfigurationBloc,
             child: CreateBikeBoxModal(
               boxConfigurations: mockConfigurationBloc.boxConfigurations,
@@ -256,7 +256,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
+          body: BlocProvider<ConfigurationBloc>.value(
             value: mockConfigurationBloc,
             child: CreateBikeBoxModal(
               boxConfigurations: mockConfigurationBloc.boxConfigurations,
@@ -314,7 +314,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
+          body: BlocProvider<ConfigurationBloc>.value(
             value: mockConfigurationBloc,
             child: CreateBikeBoxModal(
               boxConfigurations: mockConfigurationBloc.boxConfigurations,
@@ -350,7 +350,7 @@ void main() {
             providers: [
               BlocProvider<OpenSenseMapBloc>.value(value: mockOpenSenseMapBloc),
               BlocProvider<GeolocationBloc>.value(value: mockGeolocationBloc),
-              ChangeNotifierProvider<ConfigurationBloc>.value(
+              BlocProvider<ConfigurationBloc>.value(
                   value: mockConfigurationBloc),
             ],
             child: CreateBikeBoxModal(
