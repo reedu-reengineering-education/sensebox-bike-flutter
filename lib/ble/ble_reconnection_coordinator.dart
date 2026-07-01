@@ -67,9 +67,13 @@ class BleReconnectionCoordinator {
     });
   }
 
-  bool get shouldAbortReconnection => _abortReconnection;
+  bool canStartReconnectionEpisode() {
+    return !_reconnectionInProgress && !_abortReconnection;
+  }
 
-  bool get isReconnectionInProgress => _reconnectionInProgress;
+  bool shouldCancelReconnectWork() {
+    return _abortReconnection;
+  }
 
   void abortCurrentEpisode() {
     _abortReconnection = true;
@@ -80,7 +84,7 @@ class BleReconnectionCoordinator {
     if (device == null || _subscription == null) {
       return;
     }
-    if (_reconnectionInProgress || _abortReconnection) {
+    if (!canStartReconnectionEpisode()) {
       return;
     }
     if (_shouldIgnoreDisconnect?.call() ?? true) {
@@ -101,8 +105,7 @@ class BleReconnectionCoordinator {
   void cancelReconnection() {
     abortCurrentEpisode();
     detach();
-    reset();
-    abortCurrentEpisode();
+    _reconnectionInProgress = false;
   }
 
   Future<void> _runReconnectionEpisode(

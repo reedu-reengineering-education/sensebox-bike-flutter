@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
@@ -408,6 +409,61 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildBleRecoverySection(BuildContext context, BleBloc bleBloc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildActionButton(
+              context: context,
+              text: AppLocalizations.of(context)!.settingsBleResetAction,
+              onPressed: () => _handleBleRecovery(context, bleBloc),
+            ),
+          ),
+        ),
+        Hint(
+          text: AppLocalizations.of(context)!.settingsBleResetHint,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleBleRecovery(BuildContext context, BleBloc bleBloc) async {
+    final localizations = AppLocalizations.of(context)!;
+    final confirmation = await showCustomDialog(
+      context: context,
+      message: localizations.settingsBleResetConfirm,
+      type: DialogType.confirmation,
+      confirmButtonText: localizations.generalProceed,
+    );
+
+    if (confirmation != true) {
+      return;
+    }
+
+    try {
+      await bleBloc.recoverBleStack();
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizations.settingsBleResetSuccess)),
+      );
+    } catch (error, stack) {
+      await ErrorService.reportToSentry(error, stack);
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizations.generalError)),
+      );
+    }
+  }
+
   Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc, ConfigurationBloc configurationBloc) {
     return StatefulBuilder(
       builder: (context, setState) {
@@ -462,11 +518,13 @@ class SettingsScreen extends StatelessWidget {
 
   // Help Section
   Widget _buildHelpSection(BuildContext context) {
+    final bleBloc = Provider.of<BleBloc>(context, listen: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(
             context, AppLocalizations.of(context)!.settingsContact),
+        _buildBleRecoverySection(context, bleBloc),
         _buildUrlTile(
           context,
           icon: Icons.menu_book,

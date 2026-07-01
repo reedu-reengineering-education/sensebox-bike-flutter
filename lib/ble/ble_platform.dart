@@ -171,6 +171,10 @@ class BlePlatform {
     _emitLinkState(deviceId, BleLinkState.disconnected);
   }
 
+  Future<void> clearGattCache(String deviceId) async {
+    await _reactiveBle.clearGattCache(deviceId);
+  }
+
   Future<List<BleService>> discoverServices(String deviceId) async {
     await _reactiveBle.discoverAllServices(deviceId);
     final services = await _reactiveBle.getDiscoveredServices(deviceId);
@@ -261,22 +265,37 @@ class BlePlatform {
   }
 
   Future<void> dispose() async {
+    await resetRuntimeState(closeLinkStateControllers: true);
+  }
+
+  Future<void> resetRuntimeState({
+    bool closeLinkStateControllers = false,
+  }) async {
     final deviceIds = _connectionSubs.keys.toList();
+    debugPrint(
+      '[BLE][platform] resetRuntimeState '
+      'devices=${deviceIds.length} closeControllers=$closeLinkStateControllers',
+    );
+
     for (final deviceId in deviceIds) {
       await disconnect(deviceId);
     }
     for (final timer in _dataWatchdogs.values) {
       timer.cancel();
     }
-    for (final controller in _linkStateControllers.values) {
-      await controller.close();
+    if (closeLinkStateControllers) {
+      for (final controller in _linkStateControllers.values) {
+        await controller.close();
+      }
+      _linkStateControllers.clear();
     }
 
     _dataWatchdogs.clear();
     _sessionEstablishmentDepth.clear();
-    _linkStateControllers.clear();
     _characteristics.clear();
     _linkStates.clear();
+
+    debugPrint('[BLE][platform] resetRuntimeState completed');
   }
 
   static Uuid _toUuid(BleUuid uuid) => Uuid.parse(uuid.value);

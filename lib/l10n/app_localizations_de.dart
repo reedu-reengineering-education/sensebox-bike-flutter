@@ -369,6 +369,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsGithub => 'GitHub issue';
 
   @override
+  String get settingsBleResetAction => 'BLE-Status zurücksetzen';
+
+  @override
+  String get settingsBleResetHint =>
+      'Nützlich, wenn Erkennung oder Verbindung hängen bleiben. Trennt das aktuell verbundene Gerät und setzt den BLE-Erkennungs- und Verbindungsstatus zurück.';
+
+  @override
+  String get settingsBleResetConfirm =>
+      'BLE-Status jetzt zurücksetzen? Dadurch wird das aktuell verbundene Gerät getrennt.';
+
+  @override
+  String get settingsBleResetSuccess => 'BLE-Status wurde zurückgesetzt.';
+
+  @override
   String get privacyZonesStart =>
       'Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.';
 

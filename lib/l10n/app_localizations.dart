@@ -726,6 +726,30 @@ abstract class AppLocalizations {
   /// **'GitHub issue'**
   String get settingsGithub;
 
+  /// No description provided for @settingsBleResetAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset BLE state'**
+  String get settingsBleResetAction;
+
+  /// No description provided for @settingsBleResetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Useful when discovery or connection gets stuck. This disconnects the current device and resets BLE discovery/connection state.'**
+  String get settingsBleResetHint;
+
+  /// No description provided for @settingsBleResetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset BLE state now? This will disconnect the current device.'**
+  String get settingsBleResetConfirm;
+
+  /// No description provided for @settingsBleResetSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'BLE state reset completed.'**
+  String get settingsBleResetSuccess;
+
   /// No description provided for @privacyZonesStart.
   ///
   /// In en, this message translates to:

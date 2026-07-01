@@ -82,6 +82,13 @@
     "homeBottomBarHome": "Início",
     "homeBottomBarTracks": "Trajetos",
     "tracksAppBarSumTracks": "{count, plural, =0{Nenhum trajeto} =1{1 trajeto} other{{count} trajetos}}",
+    "@tracksAppBarSumTracks": {
+        "placeholders": {
+            "count": {
+                "type": "num"
+            }
+        }
+    },
     "tracksNoTracks": "Nenhum trajeto disponível",
     "tracksTrackDeleted": "Trajeto excluído",
     "openSenseMapLogin": "Entrar com openSenseMap",
@@ -158,6 +165,10 @@
     "settingsContact": "Ajuda ou feedback?",
     "settingsEmail": "E-mail",
     "settingsGithub": "GitHub issue",
+    "settingsBleResetAction": "Redefinir estado BLE",
+    "settingsBleResetHint": "Útil quando a descoberta ou a conexão ficam travadas. Isso desconecta o dispositivo atual e redefine o estado de descoberta e conexão BLE.",
+    "settingsBleResetConfirm": "Redefinir o estado BLE agora? Isso irá desconectar o dispositivo atualmente conectado.",
+    "settingsBleResetSuccess": "Redefinição do estado BLE concluída.",
     "privacyZonesStart": "Toque no mapa para começar a desenhar uma área. Toque na marca de seleção para finalizar.",
     "privacyZonesDelete": "Toque em uma área para excluí-la. Toque na marca de seleção para finalizar.",
     "trackDetailsPermissionsError": "Permissão negada para salvar o arquivo no armazenamento externo.",

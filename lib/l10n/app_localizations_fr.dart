@@ -372,6 +372,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsGithub => 'Ticket GitHub';
 
   @override
+  String get settingsBleResetAction => 'Réinitialiser l\'état BLE';
+
+  @override
+  String get settingsBleResetHint =>
+      'Utile lorsque la découverte ou la connexion reste bloquée. Cela déconnecte l\'appareil actuel et réinitialise l\'état de découverte et de connexion BLE.';
+
+  @override
+  String get settingsBleResetConfirm =>
+      'Réinitialiser l\'état BLE maintenant ? Cela déconnectera l\'appareil actuellement connecté.';
+
+  @override
+  String get settingsBleResetSuccess =>
+      'Réinitialisation de l\'état BLE terminée.';
+
+  @override
   String get privacyZonesStart =>
       'Touchez la carte pour commencer à dessiner une zone. Touchez la coche pour terminer.';
 

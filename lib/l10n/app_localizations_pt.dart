@@ -369,6 +369,20 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsGithub => 'GitHub issue';
 
   @override
+  String get settingsBleResetAction => 'Redefinir estado BLE';
+
+  @override
+  String get settingsBleResetHint =>
+      'Útil quando a descoberta ou a conexão ficam travadas. Isso desconecta o dispositivo atual e redefine o estado de descoberta e conexão BLE.';
+
+  @override
+  String get settingsBleResetConfirm =>
+      'Redefinir o estado BLE agora? Isso irá desconectar o dispositivo atualmente conectado.';
+
+  @override
+  String get settingsBleResetSuccess => 'Redefinição do estado BLE concluída.';
+
+  @override
   String get privacyZonesStart =>
       'Toque no mapa para começar a desenhar uma área. Toque na marca de seleção para finalizar.';
 
