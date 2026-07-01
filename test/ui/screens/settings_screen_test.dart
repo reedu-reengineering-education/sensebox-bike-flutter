@@ -31,7 +31,7 @@ void main() {
     });
 
     tearDown(() {
-      settingsBloc.dispose();
+      settingsBloc.close();
     });
 
     testWidgets('should display upload mode option with current selection',
@@ -85,6 +85,9 @@ void main() {
 
       // Verify default mode is displayed
       expect(find.textContaining('Current: Post-Ride Upload'), findsOneWidget);
+      
+      // Cleanup: pump empty widget to unmount everything
+      await tester.pumpWidget(const SizedBox.shrink());
     });
 
     testWidgets('should update display when upload mode changes',
@@ -141,6 +144,9 @@ void main() {
       // Verify display updates
       expect(
           find.textContaining('Current: Direct Upload (Beta)'), findsOneWidget);
+      
+      // Cleanup: pump empty widget to unmount everything
+      await tester.pumpWidget(const SizedBox.shrink());
     });
 
     testWidgets('should show upload mode dialog with radio buttons',
@@ -218,6 +224,9 @@ void main() {
       expect(find.text('Post-Ride Upload'), findsOneWidget);
       expect(find.text('Direct Upload (Beta)'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
+      
+      // Cleanup: pump empty widget to unmount everything
+      await tester.pumpWidget(const SizedBox.shrink());
     });
 
     testWidgets('should toggle upload mode correctly in settings bloc',
@@ -264,7 +273,7 @@ void main() {
     });
 
     tearDown(() {
-      settingsBloc.dispose();
+      settingsBloc.close();
     });
 
     test('should return default API URL when no custom URL is set', () {
@@ -314,7 +323,7 @@ void main() {
     });
 
     tearDown(() {
-      settingsBloc.dispose();
+      settingsBloc.close();
     });
 
     testWidgets('should not save invalid URL when validation fails',
@@ -380,6 +389,9 @@ void main() {
       expect(settingsBloc.apiUrl, initialUrl);
 
       controller.dispose();
+      
+      // Cleanup: pump empty widget to unmount everything
+      await tester.pumpWidget(const SizedBox.shrink());
     });
 
     testWidgets('should save valid URL when validation passes',
@@ -445,6 +457,9 @@ void main() {
       expect(settingsBloc.apiUrl, validUrl);
 
       controller.dispose();
+      
+      // Cleanup: pump empty widget to unmount everything
+      await tester.pumpWidget(const SizedBox.shrink());
     });
   });
 }
