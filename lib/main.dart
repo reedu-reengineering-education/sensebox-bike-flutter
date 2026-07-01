@@ -142,8 +142,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp>
         BlocProvider.value(value: widget.dependencies.geolocationBloc),
         BlocProvider.value(value: widget.dependencies.sensorBloc),
         BlocProvider.value(value: widget.dependencies.openSenseMapBloc),
-        ChangeNotifierProvider.value(
-            value: widget.dependencies.configurationBloc),
+        BlocProvider.value(value: widget.dependencies.configurationBloc),
         Provider<OpenSenseMapService>.value(
           value: widget.dependencies.openSenseMapService,
         ),

@@ -330,7 +330,8 @@ class GeolocationBloc extends Cubit<GeolocationState> {
     }
   }
 
-  Future<void> _handlePositionStreamError(Object error, StackTrace stack) async {
+  Future<void> _handlePositionStreamError(
+      Object error, StackTrace stack) async {
     debugPrint('Position stream error: $error');
     ErrorService.handleError(error, stack);
     stopListening();
