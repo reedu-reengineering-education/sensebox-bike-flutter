@@ -718,6 +718,35 @@ class BleBloc with ChangeNotifier {
     await _refreshBluetoothEnabledStatus();
   }
 
+  Future<void> recoverBleStack() async {
+    _appInitiatedTeardown = true;
+    try {
+      _cancelReconnectionFlow();
+      _clearUnexpectedDisconnectIndicators();
+      _scanAfterDisconnect = false;
+
+      await _scanner.stopScanning();
+      await characteristicStreams.clear();
+
+      // Perform a full platform-side connection cleanup so subsequent scans and
+      // connects start from a known-good state.
+      await Future<void>.delayed(blePreDisconnectFenceDelay);
+      await _platform.dispose();
+      await Future<void>.delayed(blePostDisconnectSettleDelay);
+
+      _scanner.clearDiscoveredDevices();
+      _invalidatePublishedCharacteristics();
+      connectionErrorNotifier.value = false;
+      _userInitiatedDisconnect = false;
+      _finalizeFullDisconnect();
+      try {
+        await _refreshBluetoothEnabledStatus();
+      } catch (_) {}
+    } finally {
+      _appInitiatedTeardown = false;
+    }
+  }
+
   Future<void> _teardownLink(
     BleDevice? device, {
     required List<BleCharacteristicRef> characteristics,
@@ -728,6 +757,9 @@ class BleBloc with ChangeNotifier {
     } catch (_) {}
 
     if (device != null) {
+      // Fence notification teardown and link disconnect to avoid platform race
+      // conditions around rapid unsubscribe/disconnect sequences.
+      await Future<void>.delayed(blePreDisconnectFenceDelay);
       try {
         await _connectionSession.release(device);
       } catch (_) {}

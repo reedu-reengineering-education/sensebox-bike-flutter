@@ -18,4 +18,5 @@ const bleAdapterOffDebounce = Duration(seconds: 2);
 
 const blePostDisconnectSettleDelay = Duration(milliseconds: 800);
 const bleLinkOnlyDisconnectSettleDelay = Duration(milliseconds: 300);
+const blePreDisconnectFenceDelay = Duration(milliseconds: 400);
 const bleDataStaleTimeout = Duration(seconds: 6);

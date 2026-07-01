@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
@@ -408,6 +409,51 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildBleRecoverySection(BuildContext context, BleBloc bleBloc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildActionButton(
+              context: context,
+              text: 'Reset BLE state',
+              onPressed: () => _handleBleRecovery(context, bleBloc),
+            ),
+          ),
+        ),
+        const Hint(
+          text:
+              'Useful when discovery or connection gets stuck. This disconnects the current device and resets BLE discovery/connection state.',
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleBleRecovery(BuildContext context, BleBloc bleBloc) async {
+    final localizations = AppLocalizations.of(context)!;
+    final confirmation = await showCustomDialog(
+      context: context,
+      message: 'Reset BLE state now? This will disconnect the current device.',
+      type: DialogType.confirmation,
+      confirmButtonText: localizations.generalProceed,
+    );
+
+    if (confirmation != true) {
+      return;
+    }
+
+    await bleBloc.recoverBleStack();
+    if (!context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('BLE state reset completed.')),
+    );
+  }
+
   Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc, ConfigurationBloc configurationBloc) {
     return StatefulBuilder(
       builder: (context, setState) {
@@ -462,11 +508,13 @@ class SettingsScreen extends StatelessWidget {
 
   // Help Section
   Widget _buildHelpSection(BuildContext context) {
+    final bleBloc = Provider.of<BleBloc>(context, listen: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(
             context, AppLocalizations.of(context)!.settingsContact),
+        _buildBleRecoverySection(context, bleBloc),
         _buildUrlTile(
           context,
           icon: Icons.menu_book,
