@@ -46,8 +46,16 @@ class GeolocationBloc extends Cubit<GeolocationState> {
   final RecordingBloc recordingBloc;
   final SettingsBloc settingsBloc;
 
-  GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc)
-      : super(const GeolocationState(
+  /// Returns whether box sensor data is currently flowing (i.e. the BLE link is
+  /// live). When this returns false, geolocations (and their GPS speed) are not
+  /// persisted, so a dropped link mid-ride can't produce a GPS-only "ghost"
+  /// track. Defaults to always-active when not provided (e.g. in tests).
+  final bool Function()? _isSensorDataActive;
+
+  GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc,
+      {bool Function()? isSensorDataActive})
+      : _isSensorDataActive = isSensorDataActive,
+        super(const GeolocationState(
           isListening: false,
           lastEmittedPosition: null,
         )) {
@@ -121,7 +129,9 @@ class GeolocationBloc extends Cubit<GeolocationState> {
         if (shouldEmit) {
           _emitGeolocation(geolocationData);
         }
-      });
+      }, onError: (Object error, StackTrace stack) {
+        unawaited(_handlePositionStreamError(error, stack));
+      }, cancelOnError: true);
 
       _startStationaryLocationTimer();
       _isListening = true;
@@ -318,6 +328,12 @@ class GeolocationBloc extends Cubit<GeolocationState> {
       _emitGeolocation(finalGeolocation);
       _lastEmittedPosition = finalGeolocation;
     }
+  }
+
+  Future<void> _handlePositionStreamError(Object error, StackTrace stack) async {
+    debugPrint('Position stream error: $error');
+    ErrorService.handleError(error, stack);
+    stopListening();
   }
 
   @override

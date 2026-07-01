@@ -71,6 +71,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalOk => 'Ok';
 
   @override
+  String get generalGoToSettings => 'Go to settings';
+
+  @override
   String get generalSave => 'Save';
 
   @override
@@ -512,12 +515,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Enable Bluetooth';
 
   @override
-  String get errorNoLocationAccessIos =>
-      'Location services are disabled or access is denied. To record rides in the background, select \"Always\" for location access in your phone settings.';
-
-  @override
-  String get errorNoLocationAccessAndroid =>
-      'Location services are disabled or access is denied. To record tracks, enable location services and allow location access in your phone settings.';
+  String get errorLocationAlwaysRequired =>
+      'Background recording requires Location access set to \"Always\". Open System Settings, find this app, and change Location to \"Always\".';
 
   @override
   String get errorNoScanAccess =>

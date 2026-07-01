@@ -74,6 +74,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generalOk => 'Ok';
 
   @override
+  String get generalGoToSettings => 'Ir para definições';
+
+  @override
   String get generalSave => 'Salvar';
 
   @override
@@ -518,12 +521,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionButtonEnableBluetooth => 'Ativar Bluetooth';
 
   @override
-  String get errorNoLocationAccessIos =>
-      'Os serviços de localização estão desativados ou o acesso é negado. Para gravar percursos em segundo plano, selecione \"Sempre\" para o acesso à localização nas definições do telefone.';
-
-  @override
-  String get errorNoLocationAccessAndroid =>
-      'Os serviços de localização estão desativados ou o acesso é negado. Para gravar percursos, ative os serviços de localização e permita o acesso à localização nas definições do telefone.';
+  String get errorLocationAlwaysRequired =>
+      'A gravação em segundo plano requer que o acesso à Localização esteja definido como \"Sempre\". Abra as Definições do sistema, encontre esta aplicação e altere a Localização para \"Sempre\".';
 
   @override
   String get errorNoScanAccess =>

@@ -8,12 +8,14 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
+import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 
 @immutable
@@ -73,6 +75,7 @@ class RecordingBloc extends Cubit<RecordingState> {
 
   DateTime? _lastRecordingStopTimestamp;
   BatchUploadRequest? _pendingBatchUploadRequest;
+  BuildContext? _context;
 
   bool get isRecording => _isRecording;
   Stream<bool> get isRecordingStream =>
@@ -145,6 +148,11 @@ class RecordingBloc extends Cubit<RecordingState> {
     }
   }
 
+  /// Sets the context for showing permission dialogs
+  void setContext(BuildContext context) {
+    _context = context;
+  }
+
   void _onSenseBoxChanged(SenseBox? senseBox) {
     _selectedSenseBox = senseBox;
     _emitState();
@@ -154,10 +162,27 @@ class RecordingBloc extends Cubit<RecordingState> {
     if (_isRecording) return;
 
     try {
-      // Check location permissions before starting recording
-      await PermissionService.ensureLocationPermissionsGranted();
+      await PermissionService.ensureLocationPermissionsGranted(
+        requireAlways: true,
+      );
+    } on LocationPermissionDenied catch (e) {
+      // Show confirmation modal before redirecting user to app settings
+      if (_context != null) {
+        final localizations = AppLocalizations.of(_context!);
+        final message = ErrorService.parseError(e, _context!);
+        final proceedToSettings = await showCustomDialog(
+          context: _context!,
+          message: message,
+          type: DialogType.confirmation,
+          confirmButtonText: localizations?.generalGoToSettings,
+        );
+        if (proceedToSettings == true) {
+          await PermissionService.openAppSettings();
+        }
+      }
+      _emitState();
+      return;
     } catch (e) {
-      // Don't start recording if location permissions are not granted
       ErrorService.handleError(e, StackTrace.current);
       _emitState();
       return;

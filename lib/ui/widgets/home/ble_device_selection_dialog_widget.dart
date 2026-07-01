@@ -125,7 +125,7 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                     return ClickableTile(
                       child: Text(deviceName),
                       onTap: () {
-                        widget.bleBloc.connectToDevice(device, context);
+                        widget.bleBloc.connectToDevice(device);
                         Navigator.pop(context, true);
                       },
                     );
