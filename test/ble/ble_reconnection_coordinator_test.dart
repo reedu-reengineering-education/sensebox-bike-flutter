@@ -41,7 +41,7 @@ void main() {
 
       expect(spy.linkLostCalls, 1);
       expect(spy.reconnectCalls, 1);
-      expect(coordinator.isReconnectionInProgress, isFalse);
+      expect(coordinator.canStartReconnectionEpisode(), isTrue);
     });
 
     test('ignores disconnect while shouldIgnoreDisconnect is true', () async {
@@ -67,8 +67,7 @@ void main() {
 
     test('reset clears in-progress flag', () {
       coordinator.reset();
-      expect(coordinator.isReconnectionInProgress, isFalse);
-      expect(coordinator.shouldAbortReconnection, isFalse);
+      expect(coordinator.canStartReconnectionEpisode(), isTrue);
     });
 
     test('calls onReconnectEpisodeEnded with success result', () async {
@@ -137,7 +136,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(episodeSuccess, isFalse);
-      expect(coordinator.isReconnectionInProgress, isFalse);
+      expect(coordinator.canStartReconnectionEpisode(), isTrue);
     });
   });
 }

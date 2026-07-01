@@ -47,6 +47,35 @@ void main() {
       expect(platform.connectionState(deviceId), isNotNull);
     });
 
+    test('resetRuntimeState keeps active connectionState stream open by default',
+        () async {
+      var streamClosed = false;
+      final sub = platform.connectionState(deviceId).listen(
+            (_) {},
+            onDone: () => streamClosed = true,
+          );
+
+      await platform.resetRuntimeState();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(streamClosed, isFalse);
+      await sub.cancel();
+    });
+
+    test('resetRuntimeState closes active connectionState streams when requested',
+        () async {
+      var streamClosed = false;
+      platform.connectionState(deviceId).listen(
+            (_) {},
+            onDone: () => streamClosed = true,
+          );
+
+      await platform.resetRuntimeState(closeLinkStateControllers: true);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(streamClosed, isTrue);
+    });
+
     test('isConnected is false before connecting', () {
       expect(platform.isConnected(deviceId), isFalse);
     });
