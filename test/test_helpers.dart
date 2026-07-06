@@ -63,6 +63,10 @@ void disableProviderDebugChecks() {
   Provider.debugCheckInvalidValueType = null;
 }
 
+StreamController<T> createBroadcastController<T>() {
+  return StreamController<T>.broadcast();
+}
+
 Future<void> tapElement(
     FinderBase<Element> element, WidgetTester tester) async {
   await tester.tap(element);
@@ -222,7 +226,7 @@ String createZoneCrossingDateLine() {
 }
 
 /// Creates a mock Position for testing
-geo.Position createMockPosition(double lat, double lng, {DateTime? timestamp}) {
+geo.Position _createMockPosition(double lat, double lng, {DateTime? timestamp}) {
   return geo.Position(
     latitude: lat,
     longitude: lng,
@@ -248,7 +252,7 @@ void setupMockGeolocator(dynamic mockGeolocator, double lat, double lng,
   when(() => mockGeolocator.getCurrentPosition(
           locationSettings: any(named: 'locationSettings')))
       .thenAnswer(
-          (_) async => createMockPosition(lat, lng, timestamp: timestamp));
+        (_) async => _createMockPosition(lat, lng, timestamp: timestamp));
 }
 
 /// Sets up recording mode for tests
