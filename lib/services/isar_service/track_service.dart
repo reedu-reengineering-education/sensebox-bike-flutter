@@ -126,10 +126,4 @@ class TrackService {
         .anyId()
         .findFirst();
   }
-
-  /// Determines if a track should be included in unuploaded tracks filtering.
-  /// Returns true for batch upload tracks or direct upload tracks with upload attempts.
-  bool _shouldIncludeInUnuploadedTracks(TrackData track) {
-    return track.isDirectUpload != 1 || track.uploadAttemptsCount > 0;
-  }
 }

@@ -82,6 +82,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   @override
   void dispose() {
     batchUploadService.dispose();
+    _exportProgressService?.cancel();
     _exportProgressService?.dispose();
     super.dispose();
   }
@@ -369,7 +370,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         directory = Directory('/storage/emulated/0/Download');
       } else {
         directory = await getExternalStorageDirectory();
-  }
+      }
 
       if (directory == null || !directory.existsSync()) {
         ErrorService.handleError(
@@ -430,17 +431,20 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           }
         },
         onComplete: () async {
+          if (!mounted) {
+            _exportProgressService?.dispose();
+            _exportProgressService = null;
+            return;
+          }
           setState(() => _isDownloading = false);
           final path = exportedFilePath;
           if (path == null) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Export failed'),
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-              );
-            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(localizations.trackUploadRetryFailed),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
             return;
           }
 
@@ -455,17 +459,22 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           _exportProgressService = null;
         },
         onFailed: () {
+          if (!mounted) return;
           setState(() => _isDownloading = false);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Export failed'),
-                backgroundColor: Theme.of(context).colorScheme.error,
-              ),
-            );
-          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localizations.trackUploadRetryFailed),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
         },
         onDismiss: () {
+          if (!mounted) {
+            _exportProgressService?.cancel();
+            _exportProgressService?.dispose();
+            _exportProgressService = null;
+            return;
+          }
           setState(() => _isDownloading = false);
           _exportProgressService?.cancel();
           _exportProgressService?.dispose();
