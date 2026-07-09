@@ -6,6 +6,11 @@ import 'package:sensebox_bike/ui/widgets/common/upload_progress_indicator.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 
 void main() {
+  String t(WidgetTester tester, String Function(AppLocalizations l10n) pick) {
+    final context = tester.element(find.byType(UploadProgressIndicator));
+    return pick(AppLocalizations.of(context)!);
+  }
+
   group('UploadProgressIndicator', () {
     Widget createTestWidget(UploadProgress progress, {
       bool compact = false,
@@ -35,7 +40,7 @@ void main() {
         await tester.pumpWidget(createTestWidget(progress));
 
         // Should show preparing status
-        expect(find.text('Preparing upload...'), findsOneWidget);
+        expect(find.text(t(tester, (l10n) => l10n.uploadProgressPreparing)), findsOneWidget);
         
         // Should show loading indicator
         expect(find.byType(Loader), findsOneWidget);
@@ -56,11 +61,17 @@ void main() {
         await tester.pumpWidget(createTestWidget(progress));
 
         // Should show uploading status
-        expect(find.text('Uploading track data...'), findsOneWidget);
+        expect(find.text(t(tester, (l10n) => l10n.uploadProgressUploading)), findsOneWidget);
         
         // Should show progress information
-        expect(find.text('2 of 5 chunks uploaded'), findsOneWidget);
-        expect(find.text('40% complete'), findsOneWidget);
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressChunks(2, 5))),
+          findsOneWidget,
+        );
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressPercentage(40))),
+          findsOneWidget,
+        );
         
         // Should show progress bar
         expect(find.byType(LinearProgressIndicator), findsOneWidget);
@@ -81,10 +92,13 @@ void main() {
         await tester.pumpWidget(createTestWidget(progress));
 
         // Should show retrying status
-        expect(find.text('Retrying upload...'), findsOneWidget);
+        expect(find.text(t(tester, (l10n) => l10n.uploadProgressRetrying)), findsOneWidget);
         
         // Should show progress information
-        expect(find.text('1 of 3 chunks uploaded'), findsOneWidget);
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressChunks(1, 3))),
+          findsOneWidget,
+        );
         
         // Should show loading indicator
         expect(find.byType(Loader), findsOneWidget);
@@ -102,13 +116,16 @@ void main() {
         await tester.pumpWidget(createTestWidget(progress));
 
         // Should show completed status
-        expect(find.text('Upload completed successfully'), findsOneWidget);
+        expect(find.text(t(tester, (l10n) => l10n.uploadProgressCompleted)), findsOneWidget);
         
         // Should show success icon
         expect(find.byIcon(Icons.check_circle), findsOneWidget);
         
         // Should show 100% progress
-        expect(find.text('100% complete'), findsOneWidget);
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressPercentage(100))),
+          findsOneWidget,
+        );
       });
 
       testWidgets('displays failed state correctly', (WidgetTester tester) async {
@@ -124,13 +141,16 @@ void main() {
         await tester.pumpWidget(createTestWidget(progress));
 
         // Should show failed status
-        expect(find.text('Upload failed'), findsOneWidget);
+        expect(find.text(t(tester, (l10n) => l10n.uploadProgressFailed)), findsOneWidget);
         
         // Should show error icon
         expect(find.byIcon(Icons.error), findsOneWidget);
         
         // Should show error message
-        expect(find.text('Network connection failed. Please check your internet connection and try again.'), findsOneWidget);
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressNetworkError)),
+          findsOneWidget,
+        );
       });
 
       testWidgets('displays authentication failure correctly', (WidgetTester tester) async {
@@ -146,10 +166,16 @@ void main() {
         await tester.pumpWidget(createTestWidget(progress));
 
         // Should show authentication failed status
-        expect(find.text('Authentication required'), findsOneWidget);
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressAuthenticationFailed)),
+          findsOneWidget,
+        );
         
         // Should show authentication error message
-        expect(find.text('Please log in to upload data.'), findsOneWidget);
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressAuthenticationError)),
+          findsOneWidget,
+        );
       });
     });
 
@@ -166,7 +192,7 @@ void main() {
         await tester.pumpWidget(createTestWidget(progress, compact: true));
 
         // Should show preparing status
-        expect(find.text('Preparing upload...'), findsOneWidget);
+        expect(find.text(t(tester, (l10n) => l10n.uploadProgressPreparing)), findsOneWidget);
         
         // Should show loading indicator
         expect(find.byType(Loader), findsOneWidget);
@@ -187,7 +213,7 @@ void main() {
         await tester.pumpWidget(createTestWidget(progress, compact: true));
 
         // Should show uploading status
-        expect(find.text('Uploading track data...'), findsOneWidget);
+        expect(find.text(t(tester, (l10n) => l10n.uploadProgressUploading)), findsOneWidget);
         
         // Should show progress bar in compact mode
         expect(find.byType(LinearProgressIndicator), findsOneWidget);
@@ -208,7 +234,7 @@ void main() {
         await tester.pumpWidget(createTestWidget(progress, compact: true));
 
         // Should show completed status
-        expect(find.text('Upload completed successfully'), findsOneWidget);
+        expect(find.text(t(tester, (l10n) => l10n.uploadProgressCompleted)), findsOneWidget);
         
         // Should show success icon
         expect(find.byIcon(Icons.check_circle), findsOneWidget);
@@ -233,7 +259,7 @@ void main() {
         ));
 
         // Should show failed status
-        expect(find.text('Upload failed'), findsOneWidget);
+        expect(find.text(t(tester, (l10n) => l10n.uploadProgressFailed)), findsOneWidget);
         
         // Should show error icon
         expect(find.byIcon(Icons.error), findsOneWidget);
@@ -253,8 +279,14 @@ void main() {
         await tester.pumpWidget(createTestWidget(progress));
 
         // Should show correct percentage (3/8 = 37.5% rounded to 38%)
-        expect(find.text('38% complete'), findsOneWidget);
-        expect(find.text('3 of 8 chunks uploaded'), findsOneWidget);
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressPercentage(38))),
+          findsOneWidget,
+        );
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressChunks(3, 8))),
+          findsOneWidget,
+        );
       });
 
       testWidgets('handles zero chunks correctly', (WidgetTester tester) async {
@@ -288,7 +320,10 @@ void main() {
 
         await tester.pumpWidget(createTestWidget(progress));
 
-        expect(find.text('Network connection failed. Please check your internet connection and try again.'), findsOneWidget);
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressNetworkError)),
+          findsOneWidget,
+        );
       });
 
       testWidgets('shows authentication error message for auth failures', (WidgetTester tester) async {
@@ -303,7 +338,10 @@ void main() {
 
         await tester.pumpWidget(createTestWidget(progress));
 
-        expect(find.text('Please log in to upload data.'), findsOneWidget);
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressAuthenticationError)),
+          findsOneWidget,
+        );
       });
 
       testWidgets('shows generic error message for other failures', (WidgetTester tester) async {
@@ -318,7 +356,10 @@ void main() {
 
         await tester.pumpWidget(createTestWidget(progress));
 
-        expect(find.text('Upload failed. Please try again.'), findsOneWidget);
+        expect(
+          find.text(t(tester, (l10n) => l10n.uploadProgressGenericError)),
+          findsOneWidget,
+        );
       });
     });
 

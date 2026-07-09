@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -71,9 +72,12 @@ Future<void> tapElement(
 
 Future<Isar> initializeInMemoryIsar() async {
   await Isar.initializeIsarCore(download: true);
+  final testDirectory = Directory.systemTemp.createTempSync('isar_test_');
+  final testName = 'test_${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(1 << 20)}';
   return await Isar.open(
     [TrackDataSchema, GeolocationDataSchema, SensorDataSchema],
-    directory: '',
+    directory: testDirectory.path,
+    name: testName,
   );
 }
 
@@ -124,13 +128,11 @@ void mockSenseBoxInSharedPreferences() {
 }
 
 TrackData createMockTrackData() {
-  return TrackData()
-    ..id = Isar.autoIncrement;
+  return TrackData();
 }
 
 GeolocationData createMockGeolocationData(TrackData trackData) {
   return GeolocationData()
-    ..id = Isar.autoIncrement
     ..latitude = 52.5200
     ..longitude = 13.4050
     ..timestamp = DateTime.now()
@@ -149,7 +151,6 @@ GeolocationData createTestGeolocation(double latitude, double longitude) {
 
 SensorData createMockSensorData(GeolocationData geolocationData) {
   return SensorData()
-    ..id = Isar.autoIncrement
     ..title = 'temperature'
     ..value = 25.0
     ..attribute = null

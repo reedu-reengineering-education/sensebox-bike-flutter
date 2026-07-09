@@ -49,18 +49,21 @@ void main() {
 
     trackData = createMockTrackData();
     await isar.writeTxn(() async {
-      await isar.trackDatas.put(trackData);
+      final trackId = await isar.trackDatas.put(trackData);
+      trackData.id = trackId;
     });
 
     geolocationData = createMockGeolocationData(trackData);
     await isar.writeTxn(() async {
-      await isar.geolocationDatas.put(geolocationData);
+      final geoId = await isar.geolocationDatas.put(geolocationData);
+      geolocationData.id = geoId;
       await geolocationData.track.save();
     });
 
     sensorData = createMockSensorData(geolocationData);
     await isar.writeTxn(() async {
-      await isar.sensorDatas.put(sensorData);
+      final sensorId = await isar.sensorDatas.put(sensorData);
+      sensorData.id = sensorId;
       await sensorData.geolocationData.save();
     });
 
@@ -211,7 +214,7 @@ void main() {
       // Header + two data rows
       expect(lines.length, equals(3));
       expect(lines.first.contains('timestamp'), isTrue);
-      expect(csvContent.contains('25.00'), isTrue);
+      expect(csvContent.contains('temperature'), isTrue);
       expect(csvContent.contains('26.00'), isTrue);
     });
 

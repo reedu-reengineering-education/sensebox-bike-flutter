@@ -32,7 +32,8 @@ void main() {
     trackData = createMockTrackData();
     trackData.isDirectUpload = 0; // Set to false for batch upload testing
     await isar.writeTxn(() async {
-      await isar.trackDatas.put(trackData);
+      final id = await isar.trackDatas.put(trackData);
+      trackData.id = id;
     });
   });
 
@@ -164,8 +165,8 @@ group('TrackService', () {
 
       test('can mark multiple tracks as uploaded', () async {
         // Create additional tracks
-        final trackData2 = TrackData();
-        final trackData3 = TrackData();
+        final trackData2 = TrackData()..id = 2;
+        final trackData3 = TrackData()..id = 3;
 
         await isar.writeTxn(() async {
           await isar.trackDatas.putAll([trackData2, trackData3]);
@@ -199,14 +200,17 @@ group('TrackService', () {
         
         // Create tracks with different combinations
         final track1 = TrackData()
+          ..id = 101
           ..uploaded = 0
           ..isDirectUpload = 0; // Batch upload, not uploaded
         
         final track2 = TrackData()
+          ..id = 102
           ..uploaded = 0
           ..isDirectUpload = 1; // Direct upload, not uploaded - should be excluded
         
         final track3 = TrackData()
+          ..id = 103
           ..uploaded = 0
           ..isDirectUpload = 0; // Batch upload, not uploaded
 
