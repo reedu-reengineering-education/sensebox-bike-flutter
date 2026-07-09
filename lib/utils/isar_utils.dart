@@ -46,19 +46,27 @@ String formatOpenSenseMapCsvLine(String? sensorId, double? value, GeolocationDat
 Set<List<String?>> collectSensorTitles(Map<int, List<SensorData>> sensorDataByGeolocation) {
   const separator = '%%';
   final sensorTitlesSet = <String>{};
+  final characteristicUuidsByKey = <String, Set<String>>{};
+
   for (var sensorData in sensorDataByGeolocation.values) {
-    final seenKeys = <String>{};
     for (var sensor in sensorData) {
       final key = '${sensor.title}$separator${sensor.attribute ?? ""}';
-      if (seenKeys.contains(key)) {
-        // Duplicate within this geolocation: add as sensor_<title> to avoid overwrite
-        sensorTitlesSet.add('sensor_${sensor.title}$separator${sensor.attribute ?? ""}');
-      } else {
-        seenKeys.add(key);
-        sensorTitlesSet.add(key);
-      }
+      sensorTitlesSet.add(key);
+      characteristicUuidsByKey
+          .putIfAbsent(key, () => <String>{})
+          .add(sensor.characteristicUuid);
     }
   }
+
+  for (final entry in characteristicUuidsByKey.entries) {
+    if (entry.value.length > 1) {
+      final parts = entry.key.split(separator);
+      final title = parts[0];
+      final attribute = parts.length > 1 ? parts[1] : '';
+      sensorTitlesSet.add('sensor_${title}$separator$attribute');
+    }
+  }
+
   return sensorTitlesSet.map((str) {
     var parts = str.split(separator);
     return [
@@ -103,21 +111,52 @@ List<String> buildCsvHeaders(List<List<String?>> sensorTitles) {
   ];
 }
 
-Map<String, double?> organizeSensorData(List<SensorData> sensorDataList,{String separator = '%%'}) {
+Map<String, double?> organizeSensorData(
+  List<SensorData> sensorDataList, {
+  String separator = '%%',
+  Set<String>? keysWithSecondaryColumn,
+}) {
   final sensorMap = <String, double?>{};
 
-  // Sort by id ascending so that the lower-id entry (saved first, i.e. phone
-  // GPS speed) deterministically stays under <title>%%<attribute> and the
-  // higher-id entry (BLE GPS speed, saved later) goes to sensor_<title>.
   final sorted = List<SensorData>.from(sensorDataList)..sort((a, b) => a.id.compareTo(b.id));
+  final entriesByKey = <String, List<SensorData>>{};
 
   for (var sensorData in sorted) {
-    final key = '${sensorData.title}$separator${sensorData.attribute}';
-    if (sensorMap.containsKey(key)) {
-      // Duplicate key: store under sensor_<title> to preserve both values
-      sensorMap['sensor_${sensorData.title}$separator${sensorData.attribute}'] = sensorData.value;
-    } else {
-      sensorMap[key] = sensorData.value;
+    final key = '${sensorData.title}$separator${sensorData.attribute ?? ''}';
+    entriesByKey.putIfAbsent(key, () => <SensorData>[]).add(sensorData);
+  }
+
+  for (final entry in entriesByKey.entries) {
+    final key = entry.key;
+    final sensorsForKey = entry.value;
+
+    final firstIdByUuid = <String, int>{};
+    final latestValueByUuid = <String, double?>{};
+
+    for (final sensor in sensorsForKey) {
+      firstIdByUuid.putIfAbsent(sensor.characteristicUuid, () => sensor.id);
+      latestValueByUuid[sensor.characteristicUuid] = sensor.value;
+    }
+
+    final orderedUuids = firstIdByUuid.keys.toList()
+      ..sort((a, b) => firstIdByUuid[a]!.compareTo(firstIdByUuid[b]!));
+
+    if (orderedUuids.isEmpty) {
+      continue;
+    }
+
+    final primaryUuid = orderedUuids.first;
+    sensorMap[key] = latestValueByUuid[primaryUuid];
+
+    final needsSecondary =
+        (keysWithSecondaryColumn ?? const <String>{}).contains(key);
+    if (needsSecondary && orderedUuids.length > 1) {
+      final secondaryUuid = orderedUuids[1];
+      final parts = key.split(separator);
+      final title = parts[0];
+      final attribute = parts.length > 1 ? parts[1] : '';
+      sensorMap['sensor_$title$separator$attribute'] =
+          latestValueByUuid[secondaryUuid];
     }
   }
 
@@ -130,17 +169,27 @@ List<List<String>> buildCsvRows(
   List<List<String?>> sensorTitles,
 ) {
   const separator = '%%';
+  final keysWithSecondaryColumn = sensorTitles
+      .where((title) => (title[0] ?? '').startsWith('sensor_'))
+      .map((title) {
+    final baseTitle = (title[0] ?? '').replaceFirst('sensor_', '');
+    return '$baseTitle$separator${title[1] ?? ''}';
+  }).toSet();
+
   return geolocationDataList
       .map((geoData) {
         final sensorData = sensorDataByGeolocation[geoData.id] ?? [];
         if (sensorData.isEmpty) return null;
-        final sensorMap = organizeSensorData(sensorData, separator: separator);
+        final sensorMap = organizeSensorData(
+          sensorData,
+          separator: separator,
+          keysWithSecondaryColumn: keysWithSecondaryColumn,
+        );
         final values = sensorTitles
             .map((title) => MapEntry(
                 title[0], sensorMap['${title[0]}$separator${title[1]}']))
             .toList();
 
-        // Format timestamp as UTC ISO8601 string
         final timestampUtc = geoData.timestamp.isUtc
             ? geoData.timestamp
             : geoData.timestamp.toUtc();

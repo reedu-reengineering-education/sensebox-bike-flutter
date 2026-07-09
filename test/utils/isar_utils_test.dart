@@ -15,18 +15,21 @@ void main() {
   final tempSensorData = SensorData()
     ..id = 1
     ..title = 'temperature'
+    ..characteristicUuid = 'temp-char'
     ..attribute = '°C'
     ..value = 22.5;
 
   final surfaceSensorData = SensorData()
     ..id = 2
     ..title = 'surface_classification_compacted'
+    ..characteristicUuid = 'surface-char'
     ..attribute = '%'
     ..value = 60.0;
 
   final overtakingSensorData = SensorData()
     ..id = 3
     ..title = 'distance'
+    ..characteristicUuid = 'distance-char'
     ..attribute = 'cm'
     ..value = 100.0;
 
@@ -60,14 +63,19 @@ void main() {
       final first = SensorData()
         ..id = 10
         ..title = 'gps'
+        ..characteristicUuid = 'phone-gps-speed'
         ..attribute = 'speed'
         ..value = 1.5;
       final second = SensorData()
         ..id = 11
         ..title = 'gps'
+        ..characteristicUuid = 'ble-gps-speed'
         ..attribute = 'speed'
         ..value = 2.5;
-      final result = organizeSensorData([first, second]);
+      final result = organizeSensorData(
+        [first, second],
+        keysWithSecondaryColumn: {'gps%%speed'},
+      );
       expect(result, {
         'gps%%speed': 1.5,
         'sensor_gps%%speed': 2.5,
@@ -78,18 +86,47 @@ void main() {
       final lower = SensorData()
         ..id = 10
         ..title = 'gps'
+        ..characteristicUuid = 'phone-gps-speed'
         ..attribute = 'speed'
         ..value = 1.5;
       final higher = SensorData()
         ..id = 11
         ..title = 'gps'
+        ..characteristicUuid = 'ble-gps-speed'
         ..attribute = 'speed'
         ..value = 2.5;
       // Pass in reverse order to prove sorting is applied
-      final result = organizeSensorData([higher, lower]);
+      final result = organizeSensorData(
+        [higher, lower],
+        keysWithSecondaryColumn: {'gps%%speed'},
+      );
       expect(result, {
         'gps%%speed': 1.5,       // lower id → primary column
         'sensor_gps%%speed': 2.5, // higher id → sensor_ column
+      });
+    });
+
+    test('keeps only base column for duplicate entries from the same sensor stream', () {
+      final first = SensorData()
+        ..id = 20
+        ..title = 'gps'
+        ..characteristicUuid = 'phone-gps-speed'
+        ..attribute = 'speed'
+        ..value = 1.1;
+      final second = SensorData()
+        ..id = 21
+        ..title = 'gps'
+        ..characteristicUuid = 'phone-gps-speed'
+        ..attribute = 'speed'
+        ..value = 1.9;
+
+      final result = organizeSensorData(
+        [first, second],
+        keysWithSecondaryColumn: {'gps%%speed'},
+      );
+
+      expect(result, {
+        'gps%%speed': 1.9,
       });
     });
   });
@@ -120,11 +157,13 @@ void main() {
       final gpsSpeed1 = SensorData()
         ..id = 10
         ..title = 'gps'
+        ..characteristicUuid = 'phone-gps-speed'
         ..attribute = 'speed'
         ..value = 1.5;
       final gpsSpeed2 = SensorData()
         ..id = 11
         ..title = 'gps'
+        ..characteristicUuid = 'ble-gps-speed'
         ..attribute = 'speed'
         ..value = 2.5;
       final Map<int, List<SensorData>> sensorDataByGeolocation = {
@@ -134,6 +173,31 @@ void main() {
       expect(result, {
         ['gps', 'speed'],
         ['sensor_gps', 'speed'],
+      });
+    });
+
+    test('does not add sensor_ prefixed entry for repeated values from same sensor stream', () {
+      final gpsSpeed1 = SensorData()
+        ..id = 10
+        ..title = 'gps'
+        ..characteristicUuid = 'phone-gps-speed'
+        ..attribute = 'speed'
+        ..value = 1.5;
+      final gpsSpeed2 = SensorData()
+        ..id = 11
+        ..title = 'gps'
+        ..characteristicUuid = 'phone-gps-speed'
+        ..attribute = 'speed'
+        ..value = 2.5;
+
+      final Map<int, List<SensorData>> sensorDataByGeolocation = {
+        1: [gpsSpeed1, gpsSpeed2],
+      };
+
+      final result = collectSensorTitles(sensorDataByGeolocation);
+
+      expect(result, {
+        ['gps', 'speed'],
       });
     });
   });
@@ -180,16 +244,19 @@ void main() {
       final tempSensorData1 = SensorData()
         ..id = 1
         ..title = 'temperature'
+        ..characteristicUuid = 'temp-char'
         ..attribute = '°C'
         ..value = 22.5;
       final tempSensorData2 = SensorData()
         ..id = 2
         ..title = 'temperature'
+        ..characteristicUuid = 'temp-char'
         ..attribute = '°C'
         ..value = 23.0;
       final humiditySensorData = SensorData()
         ..id = 3
         ..title = 'humidity'
+        ..characteristicUuid = 'humidity-char'
         ..attribute = '%'
         ..value = 60.0;
 
@@ -238,6 +305,7 @@ void main() {
       final tempSensorData1 = SensorData()
         ..id = 1
         ..title = 'temperature'
+        ..characteristicUuid = 'temp-char'
         ..attribute = '°C'
         ..value = 22.5;
 
@@ -364,21 +432,25 @@ void main() {
       final sensorData1 = SensorData()
         ..id = 1
         ..title = 'humidity'
+        ..characteristicUuid = 'humidity-char'
         ..attribute = null
         ..value = 60.0;
       final sensorData2 = SensorData()
         ..id = 2
         ..title = 'surface_classification'
+        ..characteristicUuid = 'surface-char'
         ..attribute = 'sett'
         ..value = 10.0;
       final sensorData3 = SensorData()
         ..id = 3
         ..title = 'temperature'
+        ..characteristicUuid = 'temp-char'
         ..attribute = null
         ..value = 25.0;
       final sensorData4 = SensorData()
         ..id = 4
         ..title = 'surface_classification'
+        ..characteristicUuid = 'surface-char'
         ..attribute = 'asphalt'
         ..value = 80.0;
 
