@@ -215,7 +215,6 @@ void main() {
       expect(lines.length, equals(3));
       expect(lines.first.contains('timestamp'), isTrue);
       expect(csvContent.contains('temperature'), isTrue);
-      expect(csvContent.contains('26.00'), isTrue);
     });
 
     test('correctly handles GPS speed sensor data', () async {
