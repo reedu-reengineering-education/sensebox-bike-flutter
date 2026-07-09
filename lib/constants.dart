@@ -2,6 +2,7 @@ import 'package:geolocator/geolocator.dart' as geolocator;
 
 // Tracks screen
 const tracksPerPage = 5;
+const exportCsvWriteBatchSize = 500;
 
 const defaultTimeout = 30; // in seconds
 

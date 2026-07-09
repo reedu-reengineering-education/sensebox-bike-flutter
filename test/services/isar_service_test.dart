@@ -178,6 +178,43 @@ void main() {
       );
     });
 
+    test('streams regular CSV with multiple geolocations correctly', () async {
+      final geo2 = GeolocationData()
+        ..latitude = 52.5201
+        ..longitude = 13.4051
+        ..timestamp = DateTime.now().add(const Duration(seconds: 5))
+        ..speed = 0.0
+        ..track.value = trackData;
+
+      final sensor2 = SensorData()
+        ..title = 'temperature'
+        ..value = 26.0
+        ..attribute = null
+        ..characteristicUuid = '1234-5678-9012-3456'
+        ..geolocationData.value = geo2;
+
+      await isar.writeTxn(() async {
+        await isar.geolocationDatas.put(geo2);
+        await geo2.track.save();
+        await isar.sensorDatas.put(sensor2);
+        await sensor2.geolocationData.save();
+      });
+
+      final csvFilePath = await isarService.exportTrackToCsv(trackData.id);
+      final csvContent = await File(csvFilePath).readAsString();
+
+      final lines = csvContent
+          .split('\n')
+          .where((line) => line.trim().isNotEmpty)
+          .toList();
+
+      // Header + two data rows
+      expect(lines.length, equals(3));
+      expect(lines.first.contains('timestamp'), isTrue);
+      expect(csvContent.contains('25.00'), isTrue);
+      expect(csvContent.contains('26.00'), isTrue);
+    });
+
     test('correctly handles GPS speed sensor data', () async {
       // Create GPS speed sensor data with the correct format
       final gpsSpeedSensorData = SensorData()
@@ -444,6 +481,44 @@ void main() {
             .exportTrackToCsvInOpenSenseMapFormat(emptyTrack.id),
         throwsException,
       );
+    });
+
+    test('streams OpenSenseMap CSV with multiple rows correctly', () async {
+      final geo2 = GeolocationData()
+        ..latitude = 52.5202
+        ..longitude = 13.4052
+        ..timestamp = DateTime.now().add(const Duration(seconds: 10))
+        ..speed = 0.0
+        ..track.value = trackData;
+
+      final sensor2 = SensorData()
+        ..title = 'temperature'
+        ..value = 27.0
+        ..attribute = null
+        ..characteristicUuid = '1234-5678-9012-3456'
+        ..geolocationData.value = geo2;
+
+      await isar.writeTxn(() async {
+        await isar.geolocationDatas.put(geo2);
+        await geo2.track.save();
+        await isar.sensorDatas.put(sensor2);
+        await sensor2.geolocationData.save();
+      });
+
+      final csvFilePath =
+          await isarService.exportTrackToCsvInOpenSenseMapFormat(trackData.id);
+      final csvContent = await File(csvFilePath).readAsString();
+
+      final lines = csvContent
+          .split('\n')
+          .where((line) => line.trim().isNotEmpty)
+          .toList();
+
+      // One sensor row for original geolocation + one for the new one.
+      expect(lines.length, equals(2));
+      expect(csvContent.contains('test-temp-sensor'), isTrue);
+      expect(csvContent.contains('25.00'), isTrue);
+      expect(csvContent.contains('27.00'), isTrue);
     });
   });
 
