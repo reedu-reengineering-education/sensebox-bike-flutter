@@ -27,8 +27,13 @@ class OperationProgressOverlay {
         showConfirmation: config.showConfirmation,
         titleText: config.titleText,
         confirmMessageText: config.confirmMessageText,
+        exportFilePath: config.exportFilePath,
+        onShare: config.onShare,
         onComplete: () {
-          OperationProgressOverlay.hide();
+          // Keep export completion modal visible so user can use share action.
+          if (config.exportFilePath == null) {
+            OperationProgressOverlay.hide();
+          }
           config.onComplete?.call();
         },
         onFailed: config.onFailed,

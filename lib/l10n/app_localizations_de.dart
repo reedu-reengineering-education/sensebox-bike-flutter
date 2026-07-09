@@ -385,7 +385,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die CSV-Datei wird im Ordner Downloads gespeichert.';
 
   @override
-  String get trackDetailsExport => 'CSV-Export von Trackdaten.';
+  String get trackDetailsExport => 'CSV-Export von Trackdaten';
 
   @override
   String get trackDetailsLoadingError => 'Fehler beim Laden des Tracks.';
@@ -642,26 +642,26 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackStatistics => 'Track-Statistiken';
 
   @override
-  String get uploadProgressTitle => 'Track Upload';
+  String get uploadProgressTitle => 'Operationfortschritt';
 
   @override
-  String get uploadProgressPreparing => 'Upload wird vorbereitet...';
+  String get uploadProgressPreparing => 'Vorbereitung der Operation...';
 
   @override
-  String get uploadProgressUploading => 'Track wird hochgeladen...';
+  String get uploadProgressUploading => 'Fahrtdaten werden verarbeitet...';
 
   @override
   String get uploadProgressInfo =>
-      'Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.\n\nFalls Sie Ihre Track-Daten später hochladen möchten, können Sie das in der Trackübersicht tun.';
+      'Bitte schließen Sie die App während der Verarbeitung nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.\n\nFalls Sie Ihre Track-Daten später verarbeiten möchten, können Sie das in der Trackübersicht tun.';
 
   @override
-  String get uploadProgressRetrying => 'Upload wird wiederholt...';
+  String get uploadProgressRetrying => 'Operation wird wiederholt...';
 
   @override
-  String get uploadProgressCompleted => 'Upload erfolgreich';
+  String get uploadProgressCompleted => 'Operation erfolgreich';
 
   @override
-  String get uploadProgressFailed => 'Upload fehlgeschlagen';
+  String get uploadProgressFailed => 'Operation fehlgeschlagen';
 
   @override
   String get uploadProgressAuthenticationFailed =>
@@ -676,7 +676,7 @@ class AppLocalizationsDe extends AppLocalizations {
       one: '1 Block',
       zero: '0 Blöcken',
     );
-    return '$completed von $_temp0 hochgeladen';
+    return '$completed von $_temp0 verarbeitet';
   }
 
   @override
@@ -689,12 +689,16 @@ class AppLocalizationsDe extends AppLocalizations {
       'Bitte melden Sie sich an, um Daten hochzuladen.';
 
   @override
+  String get exportRequiresLoginToOpenSenseMap =>
+      'Bitte melden Sie sich bei Ihrem openSenseMap-Konto an, um mit dem Export fortzufahren.';
+
+  @override
   String get uploadProgressNetworkError =>
       'Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
 
   @override
   String get uploadProgressGenericError =>
-      'Upload fehlgeschlagen. Bitte versuchen Sie es erneut.';
+      'Operation fehlgeschlagen. Bitte versuchen Sie es erneut.';
 
   @override
   String get uploadConfirmTitle => 'Track-Daten hochladen';

@@ -4,6 +4,7 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_indicator.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_info_widget.dart';
+import 'package:sensebox_bike/theme.dart';
 
 class OperationProgressModal extends StatefulWidget {
   final Stream<UploadProgress> progressStream;
@@ -14,6 +15,8 @@ class OperationProgressModal extends StatefulWidget {
   final bool showConfirmation;
   final String? titleText;
   final String? confirmMessageText;
+  final String? exportFilePath;
+  final Future<void> Function()? onShare;
 
   const OperationProgressModal({
     super.key,
@@ -25,6 +28,8 @@ class OperationProgressModal extends StatefulWidget {
     this.showConfirmation = true,
     this.titleText,
     this.confirmMessageText,
+    this.exportFilePath,
+    this.onShare,
   });
 
   @override
@@ -182,6 +187,8 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
   }
 
   Widget _buildProgressDialog(BuildContext context, UploadProgress progress) {
+    final theme = Theme.of(context);
+    
     return AlertDialog(
       title: Text(widget.titleText ?? AppLocalizations.of(context)!.uploadProgressTitle),
       contentPadding: EdgeInsets.zero,
@@ -192,6 +199,37 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
             progress: progress,
             compact: false,
           ),
+          // Show info message for completed export with file path
+          if (progress.isCompleted && widget.exportFilePath != null) ...[
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.info.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  spacing: 8,
+                  children: [
+                    Icon(
+                      Icons.info,
+                      color: theme.colorScheme.info,
+                      size: 20,
+                    ),
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)!.trackDetailsFileSaved,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
       actions: _buildActions(context, progress),
@@ -206,6 +244,22 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
         return [];
 
       case UploadStatus.completed:
+        // For export operations, show share button
+        if (widget.exportFilePath != null && widget.onShare != null) {
+          return [
+            TextButton(
+              onPressed: _handleDismiss,
+              child: Text(AppLocalizations.of(context)!.generalClose),
+            ),
+            FilledButton(
+              onPressed: () async {
+                await widget.onShare?.call();
+                if (mounted) _handleDismiss();
+              },
+              child: Text(AppLocalizations.of(context)!.generalShare),
+            ),
+          ];
+        }
         return [
           FilledButton(
             onPressed: _handleDismiss,

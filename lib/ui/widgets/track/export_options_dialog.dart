@@ -28,17 +28,19 @@ class _ExportOptionsDialogState extends State<ExportOptionsDialog> {
                 ? null
                 : () async {
                     setState(() => isExporting = true);
+                    final format = selectedFormat;
+                    // Pop the dialog first to ensure context is proper for overlay
+                    Navigator.of(context).pop();
+                    
+                    // Then trigger the export after dialog is closed
                     try {
-                      await widget.onExport(selectedFormat!);
-                      if (context.mounted) Navigator.of(context).pop();
+                      await widget.onExport(format!);
                     } catch (e) {
-                      if (context.mounted) {
+                      if (mounted) {
                         setState(() => isExporting = false);
                         await showCustomDialog(
                             context: context, message: e.toString());
                       }
-                    } finally {
-                      if (mounted) setState(() => isExporting = false);
                     }
                   },
             text: localizations.generalExport,

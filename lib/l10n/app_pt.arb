@@ -82,6 +82,13 @@
     "homeBottomBarHome": "Início",
     "homeBottomBarTracks": "Trajetos",
     "tracksAppBarSumTracks": "{count, plural, =0{Nenhum trajeto} =1{1 trajeto} other{{count} trajetos}}",
+    "@tracksAppBarSumTracks": {
+        "placeholders": {
+            "count": {
+                "type": "num"
+            }
+        }
+    },
     "tracksNoTracks": "Nenhum trajeto disponível",
     "tracksTrackDeleted": "Trajeto excluído",
     "openSenseMapLogin": "Entrar com openSenseMap",
@@ -162,7 +169,7 @@
     "privacyZonesDelete": "Toque em uma área para excluí-la. Toque na marca de seleção para finalizar.",
     "trackDetailsPermissionsError": "Permissão negada para salvar o arquivo no armazenamento externo.",
     "trackDetailsFileSaved": "Arquivo CSV salvo na pasta Downloads.",
-    "trackDetailsExport": "Exportação de dados do trajeto em CSV.",
+    "trackDetailsExport": "Exportação de dados do trajeto em CSV",
   
     "trackDetailsLoadingError": "Erro ao carregar o trajeto.",
     "trackDetailsNoTrackData": "Nenhum trajeto disponível.",
@@ -242,15 +249,15 @@
     "tracksStatisticsDistanceInfo": "distância percorrida",
     "tracksStatisticsTimeInfo": "tempo gasto na estrada",
     "trackStatistics": "Estatísticas do Trajeto",
-    "uploadProgressTitle": "Progresso do Upload",
-    "uploadProgressPreparing": "Preparando upload...",
-    "uploadProgressUploading": "Enviando dados do trajeto...",
-    "uploadProgressInfo": "Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser enviar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.",
-    "uploadProgressRetrying": "Tentando upload novamente...",
-    "uploadProgressCompleted": "Upload concluído com sucesso",
-    "uploadProgressFailed": "Upload falhou",
+    "uploadProgressTitle": "Progresso da Operação",
+    "uploadProgressPreparing": "Preparando operação...",
+    "uploadProgressUploading": "Processando dados do trajeto...",
+    "uploadProgressInfo": "Por favor, não feche o aplicativo durante o processamento. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser processar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.",
+    "uploadProgressRetrying": "Tentando operação novamente...",
+    "uploadProgressCompleted": "Operação concluída com sucesso",
+    "uploadProgressFailed": "Operação falhou",
     "uploadProgressAuthenticationFailed": "Autenticação necessária",
-    "uploadProgressChunks": "{completed} de {total, plural, =0{0 blocos} =1{1 bloco} other{{total} blocos}} enviados",
+    "uploadProgressChunks": "{completed} de {total, plural, =0{0 blocos} =1{1 bloco} other{{total} blocos}} processados",
     "@uploadProgressChunks": {
         "placeholders": {
             "completed": {
@@ -270,8 +277,9 @@
         }
     },
     "uploadProgressAuthenticationError": "Por favor, faça login para enviar dados.",
+    "exportRequiresLoginToOpenSenseMap": "Por favor, faça login na sua conta openSenseMap para prosseguir com a exportação.",
     "uploadProgressNetworkError": "Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.",
-    "uploadProgressGenericError": "Upload falhou. Tente novamente.",
+    "uploadProgressGenericError": "Operação falhou. Tente novamente.",
     "uploadConfirmTitle": "Enviar Dados do Trajeto",
     "uploadConfirmMessage": "Gostaria de enviar os dados do seu trajeto agora ou mais tarde?",
     "uploadConfirmUploadNow": "Enviar agora",
@@ -298,13 +306,5 @@
     "errorTrackNoGeolocations": "Trajeto não possui dados de geolocalização e não pode ser enviado.",
     "openSenseMapInfoText": "Os dados da sua senseBox:bike serão compartilhados no openSenseMap, contribuindo para a ciência cidadã e o monitoramento ambiental.",
     "openSenseMapInfoLink": "Visite openSenseMap.org",
-    "loginForgotPasswordInfo": "Se você esqueceu sua senha, navegue até o openSenseMap, clique em \"Login\" e \"Forgot it?\".",
-    "trackStatusUploadFailedAt": "Falha no envio em {date}",
-    "@trackStatusUploadFailedAt": {
-        "placeholders": {
-            "date": {
-                "type": "Object"
-            }
-        }
-    }
+    "loginForgotPasswordInfo": "Se você esqueceu sua senha, navegue até o openSenseMap, clique em \"Login\" e \"Forgot it?\"."
 }

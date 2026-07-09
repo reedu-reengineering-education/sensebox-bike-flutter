@@ -753,7 +753,7 @@ abstract class AppLocalizations {
   /// No description provided for @trackDetailsExport.
   ///
   /// In en, this message translates to:
-  /// **'Track data CSV export.'**
+  /// **'Track data CSV export'**
   String get trackDetailsExport;
 
   /// No description provided for @trackDetailsLoadingError.
@@ -1227,43 +1227,43 @@ abstract class AppLocalizations {
   /// No description provided for @uploadProgressTitle.
   ///
   /// In en, this message translates to:
-  /// **'Upload Progress'**
+  /// **'Operation Progress'**
   String get uploadProgressTitle;
 
   /// No description provided for @uploadProgressPreparing.
   ///
   /// In en, this message translates to:
-  /// **'Preparing upload...'**
+  /// **'Preparing operation...'**
   String get uploadProgressPreparing;
 
   /// No description provided for @uploadProgressUploading.
   ///
   /// In en, this message translates to:
-  /// **'Uploading track data...'**
+  /// **'Processing track data...'**
   String get uploadProgressUploading;
 
   /// No description provided for @uploadProgressInfo.
   ///
   /// In en, this message translates to:
-  /// **'Do not close the app while uploading. It can take some time depending on your track length.\n\nIf you would like to upload your track data later, you can do that from track overview screen.'**
+  /// **'Do not close the app while processing. It can take some time depending on your track length.\n\nIf you would like to process your track data later, you can do that from track overview screen.'**
   String get uploadProgressInfo;
 
   /// No description provided for @uploadProgressRetrying.
   ///
   /// In en, this message translates to:
-  /// **'Retrying upload...'**
+  /// **'Retrying operation...'**
   String get uploadProgressRetrying;
 
   /// No description provided for @uploadProgressCompleted.
   ///
   /// In en, this message translates to:
-  /// **'Upload completed successfully'**
+  /// **'Operation completed successfully'**
   String get uploadProgressCompleted;
 
   /// No description provided for @uploadProgressFailed.
   ///
   /// In en, this message translates to:
-  /// **'Upload failed'**
+  /// **'Operation failed'**
   String get uploadProgressFailed;
 
   /// No description provided for @uploadProgressAuthenticationFailed.
@@ -1275,7 +1275,7 @@ abstract class AppLocalizations {
   /// No description provided for @uploadProgressChunks.
   ///
   /// In en, this message translates to:
-  /// **'{completed} of {total, plural, =0{0 chunks} =1{1 chunk} other{{total} chunks}} uploaded'**
+  /// **'{completed} of {total, plural, =0{0 chunks} =1{1 chunk} other{{total} chunks}} processed'**
   String uploadProgressChunks(int completed, int total);
 
   /// No description provided for @uploadProgressPercentage.
@@ -1290,6 +1290,12 @@ abstract class AppLocalizations {
   /// **'Please log in to upload data.'**
   String get uploadProgressAuthenticationError;
 
+  /// No description provided for @exportRequiresLoginToOpenSenseMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to your openSenseMap account to proceed with export.'**
+  String get exportRequiresLoginToOpenSenseMap;
+
   /// No description provided for @uploadProgressNetworkError.
   ///
   /// In en, this message translates to:
@@ -1299,7 +1305,7 @@ abstract class AppLocalizations {
   /// No description provided for @uploadProgressGenericError.
   ///
   /// In en, this message translates to:
-  /// **'Upload failed. Please try again.'**
+  /// **'Operation failed. Please try again.'**
   String get uploadProgressGenericError;
 
   /// No description provided for @uploadConfirmTitle.

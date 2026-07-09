@@ -4,6 +4,9 @@ import 'package:sensebox_bike/services/isar_service.dart';
 
 /// Service for managing export progress and emitting progress updates
 class ExportProgressService {
+  static const String exportLoginRequiredErrorToken =
+      'EXPORT_LOGIN_REQUIRED';
+
   final IsarService isarService;
   final int trackId;
   final bool isOpenSourceMapCompatible;
@@ -52,7 +55,9 @@ class ExportProgressService {
             completedChunks: 0,
             failedChunks: 1,
             status: UploadStatus.failed,
-            errorMessage: e.toString(),
+            // Use a dedicated token so the existing modal can render
+            // a specific localized export-authentication message.
+            errorMessage: exportLoginRequiredErrorToken,
             canRetry: false,
           ),
         );

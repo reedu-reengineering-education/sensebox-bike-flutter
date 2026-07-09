@@ -1,9 +1,6 @@
-import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
+
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -11,12 +8,10 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
-import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:sensebox_bike/services/location_permission_platform.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
 import 'package:sensebox_bike/ui/widgets/common/operation_progress_overlay.dart';
@@ -340,66 +335,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
-  Future<void> _handleAndroidExport(String csvFilePath) async {
-    final localization = AppLocalizations.of(context)!;
-
-    try {
-      DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-      final androidInfo = await deviceInfoPlugin.androidInfo;
-
-      // check if api level is smaller than 33
-      if (androidInfo.version.sdkInt < 33) {
-        PermissionStatus status = await Permission.storage.request();
-
-        if (!status.isGranted && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(localization.trackDetailsPermissionsError),
-            action: SnackBarAction(
-                label: localization.generalSettings,
-                onPressed: () => openAppSettings()),
-          ));
-          return;
-        }
-      }
-
-      Directory? directory;
-
-      if (isAndroidPlatform) {
-        //downloads folder - android only - API>30
-        directory = Directory('/storage/emulated/0/Download');
-      } else {
-        directory = await getExternalStorageDirectory();
-  }
-
-      if (directory == null || !directory.existsSync()) {
-        ErrorService.handleError(
-            ExportDirectoryAccessError(), StackTrace.current);
-        return;
-      }
-
-      // copy file to external storage
-      final file = File(csvFilePath);
-      final newName = file.path.split('/').last;
-      final newPath = '${directory.path}/$newName';
-
-      await file.copy(newPath);
-
-      if (context.mounted) {
-        // show snackbar
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(localization.trackDetailsFileSaved),
-          action: SnackBarAction(
-            label: localization.generalShare,
-            onPressed: () async {
-              await _shareFile(newPath);
-            },
-          ),
-        ));
-      }
-    } catch (e) {
-      await _shareFile(csvFilePath);
-    }
-  }
 
   Future<void> _exportTrackToCsv(
       {bool isOpenSourceMapCompatible = false}) async {
@@ -422,6 +357,13 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         progressStream: _exportProgressService!.progressStream,
         titleText: localizations.trackDetailsExport,
         showConfirmation: false,
+        exportFilePath: 'export', // Flag to indicate this is an export
+        onShare: () async {
+          final path = exportedFilePath;
+          if (path != null) {
+            await _shareFile(path);
+          }
+        },
         onStart: () async {
           try {
             exportedFilePath = await _exportProgressService!.startExport();
@@ -431,39 +373,11 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         },
         onComplete: () async {
           setState(() => _isDownloading = false);
-          final path = exportedFilePath;
-          if (path == null) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Export failed'),
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-              );
-            }
-            return;
-          }
-
-          if (Platform.isAndroid) {
-            await _handleAndroidExport(path);
-          } else if (Platform.isIOS) {
-            await Share.shareXFiles([XFile(path)],
-                text: localizations.trackDetailsExport);
-          }
-
           _exportProgressService?.dispose();
           _exportProgressService = null;
         },
         onFailed: () {
           setState(() => _isDownloading = false);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Export failed'),
-                backgroundColor: Theme.of(context).colorScheme.error,
-              ),
-            );
-          }
         },
         onDismiss: () {
           setState(() => _isDownloading = false);
@@ -607,6 +521,23 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           isDisabled: false,
           isDownloading: _isDownloading,
           onExport: (selectedFormat) async {
+            // Require authentication for openSenseMap export format
+            if (selectedFormat == 'openSenseMap' &&
+                !openSenseMapBloc.isAuthenticated) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(context)!
+                          .exportRequiresLoginToOpenSenseMap,
+                    ),
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                );
+              }
+              return;
+            }
+
             if (selectedFormat == 'regular') {
               await _exportTrackToCsv();
             } else if (selectedFormat == 'openSenseMap') {

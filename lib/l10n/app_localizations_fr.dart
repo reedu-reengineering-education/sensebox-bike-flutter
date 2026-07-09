@@ -388,7 +388,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Fichier CSV enregistré dans le dossier Téléchargements.';
 
   @override
-  String get trackDetailsExport => 'Export CSV des données du parcours.';
+  String get trackDetailsExport => 'Export CSV des données du parcours';
 
   @override
   String get trackDetailsLoadingError =>
@@ -648,27 +648,26 @@ class AppLocalizationsFr extends AppLocalizations {
   String get trackStatistics => 'Statistiques du parcours';
 
   @override
-  String get uploadProgressTitle => 'Progression du téléversement';
+  String get uploadProgressTitle => 'Progression de l\'Opération';
 
   @override
-  String get uploadProgressPreparing => 'Préparation du téléversement...';
+  String get uploadProgressPreparing => 'Préparation de l\'opération...';
 
   @override
-  String get uploadProgressUploading =>
-      'Téléversement des données du parcours...';
+  String get uploadProgressUploading => 'Traitement des données du parcours...';
 
   @override
   String get uploadProgressInfo =>
-      'Ne fermez pas l’application pendant le téléversement. Cela peut prendre un certain temps selon la longueur du parcours.\n\nSi vous souhaitez téléverser plus tard, vous pouvez le faire depuis l’écran d’aperçu des parcours.';
+      'Ne fermez pas l\'application pendant le traitement. Cela peut prendre un certain temps selon la longueur du parcours.\n\nSi vous souhaitez traiter plus tard, vous pouvez le faire depuis l\'écran d\'aperçu des parcours.';
 
   @override
-  String get uploadProgressRetrying => 'Nouvelle tentative de téléversement...';
+  String get uploadProgressRetrying => 'Nouvelle tentative de l\'opération...';
 
   @override
-  String get uploadProgressCompleted => 'Téléversement terminé avec succès';
+  String get uploadProgressCompleted => 'Opération terminée avec succès';
 
   @override
-  String get uploadProgressFailed => 'Échec du téléversement';
+  String get uploadProgressFailed => 'Échec de l\'opération';
 
   @override
   String get uploadProgressAuthenticationFailed => 'Authentification requise';
@@ -682,7 +681,7 @@ class AppLocalizationsFr extends AppLocalizations {
       one: '1 segment',
       zero: '0 segments',
     );
-    return '$completed sur $_temp0 téléversés';
+    return '$completed sur $_temp0 traités';
   }
 
   @override
@@ -695,12 +694,16 @@ class AppLocalizationsFr extends AppLocalizations {
       'Veuillez vous connecter pour téléverser les données.';
 
   @override
+  String get exportRequiresLoginToOpenSenseMap =>
+      'Veuillez vous connecter à votre compte openSenseMap pour poursuivre l\'export.';
+
+  @override
   String get uploadProgressNetworkError =>
       'Échec de la connexion réseau. Veuillez vérifier votre connexion internet et réessayer.';
 
   @override
   String get uploadProgressGenericError =>
-      'Échec du téléversement. Veuillez réessayer.';
+      'Échec de l\'opération. Veuillez réessayer.';
 
   @override
   String get uploadConfirmTitle => 'Téléverser les données du parcours';

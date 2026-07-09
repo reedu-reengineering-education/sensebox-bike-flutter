@@ -162,7 +162,7 @@
     "privacyZonesDelete": "Tippen Sie auf eine Zone, um sie zu löschen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.",
     "trackDetailsPermissionsError": "Keine Berechtigung zum Speichern der Datei auf externem Speicher.",
     "trackDetailsFileSaved": "Die CSV-Datei wird im Ordner Downloads gespeichert.",
-    "trackDetailsExport": "CSV-Export von Trackdaten.",
+    "trackDetailsExport": "CSV-Export von Trackdaten",
   
     "trackDetailsLoadingError": "Fehler beim Laden des Tracks.",
     "trackDetailsNoTrackData": "Kein Track verfügbar.",
@@ -242,15 +242,15 @@
     "tracksStatisticsDistanceInfo": "zurückgelegte Strecke",
     "tracksStatisticsTimeInfo": "Fahrzeit",
     "trackStatistics": "Track-Statistiken",
-    "uploadProgressTitle": "Track Upload",
-    "uploadProgressPreparing": "Upload wird vorbereitet...",
-    "uploadProgressUploading": "Track wird hochgeladen...",
-    "uploadProgressInfo": "Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.\n\nFalls Sie Ihre Track-Daten später hochladen möchten, können Sie das in der Trackübersicht tun.",
-    "uploadProgressRetrying": "Upload wird wiederholt...",
-    "uploadProgressCompleted": "Upload erfolgreich",
-    "uploadProgressFailed": "Upload fehlgeschlagen",
+    "uploadProgressTitle": "Operationfortschritt",
+    "uploadProgressPreparing": "Vorbereitung der Operation...",
+    "uploadProgressUploading": "Fahrtdaten werden verarbeitet...",
+    "uploadProgressInfo": "Bitte schließen Sie die App während der Verarbeitung nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.\n\nFalls Sie Ihre Track-Daten später verarbeiten möchten, können Sie das in der Trackübersicht tun.",
+    "uploadProgressRetrying": "Operation wird wiederholt...",
+    "uploadProgressCompleted": "Operation erfolgreich",
+    "uploadProgressFailed": "Operation fehlgeschlagen",
     "uploadProgressAuthenticationFailed": "Authentifizierung erforderlich",
-    "uploadProgressChunks": "{completed} von {total, plural, =0{0 Blöcken} =1{1 Block} other{{total} Blöcken}} hochgeladen",
+    "uploadProgressChunks": "{completed} von {total, plural, =0{0 Blöcken} =1{1 Block} other{{total} Blöcken}} verarbeitet",
     "@uploadProgressChunks": {
         "placeholders": {
             "completed": {
@@ -270,8 +270,9 @@
         }
     },
     "uploadProgressAuthenticationError": "Bitte melden Sie sich an, um Daten hochzuladen.",
+    "exportRequiresLoginToOpenSenseMap": "Bitte melden Sie sich bei Ihrem openSenseMap-Konto an, um mit dem Export fortzufahren.",
     "uploadProgressNetworkError": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
-    "uploadProgressGenericError": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "uploadProgressGenericError": "Operation fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "uploadConfirmTitle": "Track-Daten hochladen",
     "uploadConfirmMessage": "Möchten Sie Ihre Track-Daten jetzt oder später hochladen?",
     "uploadConfirmUploadNow": "Jetzt hochladen",
@@ -298,13 +299,5 @@
     "errorTrackNoGeolocations": "Track hat keine Geolokationsdaten und kann nicht hochgeladen werden.",
     "openSenseMapInfoText": "Deine senseBox:bike-Daten werden auf openSenseMap geteilt und tragen zur Bürgerwissenschaft und Umweltüberwachung bei.",
     "openSenseMapInfoLink": "Besuche openSenseMap.org",
-    "loginForgotPasswordInfo": "Wenn du dein Passwort vergessen hast, gehe bitte zu openSenseMap, klicke auf \"Anmelden\" und \"Vergessen?\".",
-    "trackStatusUploadFailedAt": "Upload fehlgeschlagen am {date}",
-    "@trackStatusUploadFailedAt": {
-        "placeholders": {
-            "date": {
-                "type": "Object"
-            }
-        }
-    }
+    "loginForgotPasswordInfo": "Wenn du dein Passwort vergessen hast, gehe bitte zu openSenseMap, klicke auf \"Anmelden\" und \"Vergessen?\"."
 }

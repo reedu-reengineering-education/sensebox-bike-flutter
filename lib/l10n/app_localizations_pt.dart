@@ -384,7 +384,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackDetailsFileSaved => 'Arquivo CSV salvo na pasta Downloads.';
 
   @override
-  String get trackDetailsExport => 'Exportação de dados do trajeto em CSV.';
+  String get trackDetailsExport => 'Exportação de dados do trajeto em CSV';
 
   @override
   String get trackDetailsLoadingError => 'Erro ao carregar o trajeto.';
@@ -640,26 +640,26 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackStatistics => 'Estatísticas do Trajeto';
 
   @override
-  String get uploadProgressTitle => 'Progresso do Upload';
+  String get uploadProgressTitle => 'Progresso da Operação';
 
   @override
-  String get uploadProgressPreparing => 'Preparando upload...';
+  String get uploadProgressPreparing => 'Preparando operação...';
 
   @override
-  String get uploadProgressUploading => 'Enviando dados do trajeto...';
+  String get uploadProgressUploading => 'Processando dados do trajeto...';
 
   @override
   String get uploadProgressInfo =>
-      'Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser enviar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.';
+      'Por favor, não feche o aplicativo durante o processamento. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser processar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.';
 
   @override
-  String get uploadProgressRetrying => 'Tentando upload novamente...';
+  String get uploadProgressRetrying => 'Tentando operação novamente...';
 
   @override
-  String get uploadProgressCompleted => 'Upload concluído com sucesso';
+  String get uploadProgressCompleted => 'Operação concluída com sucesso';
 
   @override
-  String get uploadProgressFailed => 'Upload falhou';
+  String get uploadProgressFailed => 'Operação falhou';
 
   @override
   String get uploadProgressAuthenticationFailed => 'Autenticação necessária';
@@ -673,7 +673,7 @@ class AppLocalizationsPt extends AppLocalizations {
       one: '1 bloco',
       zero: '0 blocos',
     );
-    return '$completed de $_temp0 enviados';
+    return '$completed de $_temp0 processados';
   }
 
   @override
@@ -686,11 +686,15 @@ class AppLocalizationsPt extends AppLocalizations {
       'Por favor, faça login para enviar dados.';
 
   @override
+  String get exportRequiresLoginToOpenSenseMap =>
+      'Por favor, faça login na sua conta openSenseMap para prosseguir com a exportação.';
+
+  @override
   String get uploadProgressNetworkError =>
       'Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.';
 
   @override
-  String get uploadProgressGenericError => 'Upload falhou. Tente novamente.';
+  String get uploadProgressGenericError => 'Operação falhou. Tente novamente.';
 
   @override
   String get uploadConfirmTitle => 'Enviar Dados do Trajeto';
@@ -718,7 +722,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String trackStatusUploadFailedAt(Object date) {
-    return 'Falha no envio em $date';
+    return 'Envio falhou em $date';
   }
 
   @override

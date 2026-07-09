@@ -210,6 +210,7 @@ class RecordingBloc with ChangeNotifier {
           context: _context!,
           message: message,
           confirmButtonText: localizations?.generalOk,
+          type: DialogType.confirmation,
         );
       }
 

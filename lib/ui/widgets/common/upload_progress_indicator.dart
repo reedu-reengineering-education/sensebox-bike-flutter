@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
+import 'package:sensebox_bike/services/export_progress_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/theme.dart';
 
@@ -279,6 +280,10 @@ class UploadProgressIndicator extends StatelessWidget {
 
   /// Gets user-friendly error message
   String _getErrorMessage(AppLocalizations localizations, String errorMessage) {
+    if (errorMessage == ExportProgressService.exportLoginRequiredErrorToken) {
+      return localizations.exportRequiresLoginToOpenSenseMap;
+    }
+
     if (errorMessage.contains('Authentication failed') ||
         errorMessage.contains('user needs to re-login')) {
       return localizations.uploadProgressAuthenticationError;

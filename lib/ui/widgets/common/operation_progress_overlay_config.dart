@@ -13,6 +13,8 @@ class OperationProgressOverlayConfig {
   final VoidCallback? onFailed;
   final VoidCallback? onStart;
   final VoidCallback? onDismiss;
+  final String? exportFilePath;
+  final Future<void> Function()? onShare;
 
   const OperationProgressOverlayConfig._({
     required this.progressStream,
@@ -23,6 +25,8 @@ class OperationProgressOverlayConfig {
     this.onFailed,
     this.onStart,
     this.onDismiss,
+    this.exportFilePath,
+    this.onShare,
   });
 
   factory OperationProgressOverlayConfig.upload({
@@ -55,6 +59,8 @@ class OperationProgressOverlayConfig {
     VoidCallback? onFailed,
     VoidCallback? onStart,
     VoidCallback? onDismiss,
+    String? exportFilePath,
+    Future<void> Function()? onShare,
   }) {
     return OperationProgressOverlayConfig._(
       progressStream: progressStream,
@@ -65,6 +71,8 @@ class OperationProgressOverlayConfig {
       onFailed: onFailed,
       onStart: onStart,
       onDismiss: onDismiss,
+      exportFilePath: exportFilePath,
+      onShare: onShare,
     );
   }
 }
