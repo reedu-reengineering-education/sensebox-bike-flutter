@@ -384,8 +384,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Permission refusée pour enregistrer le fichier dans le stockage externe.';
 
   @override
-  String get trackDetailsFileSaved =>
+  String get fileSavedDownloadsDirectory =>
       'Fichier CSV enregistré dans le dossier Téléchargements.';
+
+  @override
+  String get trackDetailsFileSavedApplicationDirectory =>
+      'Fichier CSV enregistré dans le dossier du répertoire de l\'application.';
 
   @override
   String get trackDetailsExport => 'Export CSV des données du parcours';

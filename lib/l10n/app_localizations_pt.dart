@@ -381,7 +381,12 @@ class AppLocalizationsPt extends AppLocalizations {
       'Permissão negada para salvar o arquivo no armazenamento externo.';
 
   @override
-  String get trackDetailsFileSaved => 'Arquivo CSV salvo na pasta Downloads.';
+  String get fileSavedDownloadsDirectory =>
+      'Arquivo CSV salvo na pasta Downloads.';
+
+  @override
+  String get trackDetailsFileSavedApplicationDirectory =>
+      'Arquivo CSV salvo na pasta de diretório do aplicativo.';
 
   @override
   String get trackDetailsExport => 'Exportação de dados do trajeto em CSV';

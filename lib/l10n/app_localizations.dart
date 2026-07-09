@@ -744,11 +744,17 @@ abstract class AppLocalizations {
   /// **'Permission denied to save file to external storage.'**
   String get trackDetailsPermissionsError;
 
-  /// No description provided for @trackDetailsFileSaved.
+  /// No description provided for @fileSavedDownloadsDirectory.
   ///
   /// In en, this message translates to:
   /// **'CSV file saved to Downloads folder.'**
-  String get trackDetailsFileSaved;
+  String get fileSavedDownloadsDirectory;
+
+  /// No description provided for @trackDetailsFileSavedApplicationDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'CSV file saved in the application directory folder.'**
+  String get trackDetailsFileSavedApplicationDirectory;
 
   /// No description provided for @trackDetailsExport.
   ///

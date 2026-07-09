@@ -168,7 +168,8 @@
     "privacyZonesStart": "Toque no mapa para começar a desenhar uma área. Toque na marca de seleção para finalizar.",
     "privacyZonesDelete": "Toque em uma área para excluí-la. Toque na marca de seleção para finalizar.",
     "trackDetailsPermissionsError": "Permissão negada para salvar o arquivo no armazenamento externo.",
-    "trackDetailsFileSaved": "Arquivo CSV salvo na pasta Downloads.",
+    "fileSavedDownloadsDirectory": "Arquivo CSV salvo na pasta Downloads.",
+    "trackDetailsFileSavedApplicationDirectory": "Arquivo CSV salvo na pasta de diretório do aplicativo.",
     "trackDetailsExport": "Exportação de dados do trajeto em CSV",
   
     "trackDetailsLoadingError": "Erro ao carregar o trajeto.",

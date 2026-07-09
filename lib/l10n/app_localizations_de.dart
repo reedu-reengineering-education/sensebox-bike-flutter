@@ -381,8 +381,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Keine Berechtigung zum Speichern der Datei auf externem Speicher.';
 
   @override
-  String get trackDetailsFileSaved =>
+  String get fileSavedDownloadsDirectory =>
       'Die CSV-Datei wird im Ordner Downloads gespeichert.';
+
+  @override
+  String get trackDetailsFileSavedApplicationDirectory =>
+      'Die CSV-Datei wird im Anwendungsordner gespeichert.';
 
   @override
   String get trackDetailsExport => 'CSV-Export von Trackdaten';

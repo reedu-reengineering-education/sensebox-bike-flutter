@@ -42,7 +42,11 @@ class IsarService {
     final senseBox = await getSelectedSenseBoxOrThrow();
     final geolocationDataList =
         await geolocationService.getGeolocationDataByTrackId(trackId);
-    final file = await _createCsvFile(track, geolocationDataList);
+    final file = await _createCsvFile(
+      track,
+      geolocationDataList,
+      formatSuffix: 'osem',
+    );
     final sensorDataByGeolocation = <int, List<SensorData>>{};
 
     // Load sensor data once so chunk estimation and writing use identical data.
@@ -92,7 +96,11 @@ class IsarService {
     final track = await _getTrackOrThrow(trackId);
     final geolocationDataList =
         await geolocationService.getGeolocationDataByTrackId(trackId);
-    final file = await _createCsvFile(track, geolocationDataList);
+    final file = await _createCsvFile(
+      track,
+      geolocationDataList,
+      formatSuffix: 'standard',
+    );
     const converter = ListToCsvConverter();
     final sensorDataByGeolocation = <int, List<SensorData>>{};
 
@@ -148,8 +156,9 @@ class IsarService {
   Future<File> _createCsvFile(
     TrackData track,
     List<GeolocationData> geolocationDataList,
+    {required String formatSuffix}
   ) async {
-    final directory = await getApplicationDocumentsDirectory();
+    final directory = await _resolveExportDirectory();
 
     if (geolocationDataList.isEmpty) {
       throw Exception("Track has no geolocations");
@@ -158,10 +167,34 @@ class IsarService {
     String formattedTimestamp = DateFormat('yyyy-MM-dd_HH-mm')
         .format(geolocationDataList.first.timestamp);
 
-    String trackName = "senseBox_bike_$formattedTimestamp";
+    final baseName = 'senseBox_bike_${formattedTimestamp}_$formatSuffix';
+    return _createUniqueCsvFile(directory.path, baseName);
+  }
 
-    final filePath = '${directory.path}/$trackName.csv';
-    return File(filePath);
+  Future<Directory> _resolveExportDirectory() async {
+    if (Platform.isAndroid) {
+      final downloadsDirectory = Directory('/storage/emulated/0/Download');
+      if (downloadsDirectory.existsSync()) {
+        return downloadsDirectory;
+      }
+    }
+
+    // Fallback for non-Android platforms or when public Downloads is unavailable.
+    return getApplicationDocumentsDirectory();
+  }
+
+  File _createUniqueCsvFile(String directoryPath, String baseName) {
+    var filePath = '$directoryPath/$baseName.csv';
+    var file = File(filePath);
+
+    var counter = 1;
+    while (file.existsSync()) {
+      filePath = '$directoryPath/${baseName}_$counter.csv';
+      file = File(filePath);
+      counter++;
+    }
+
+    return file;
   }
 
   Future<String> _writeCsvFile(

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
@@ -219,7 +220,11 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
                     ),
                     Expanded(
                       child: Text(
-                        AppLocalizations.of(context)!.trackDetailsFileSaved,
+                        Platform.isIOS
+                            ? AppLocalizations.of(context)!
+                                .trackDetailsFileSavedApplicationDirectory
+                          : AppLocalizations.of(context)!
+                            .fileSavedDownloadsDirectory,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),

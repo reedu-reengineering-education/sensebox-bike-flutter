@@ -376,7 +376,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Permission denied to save file to external storage.';
 
   @override
-  String get trackDetailsFileSaved => 'CSV file saved to Downloads folder.';
+  String get fileSavedDownloadsDirectory =>
+      'CSV file saved to Downloads folder.';
+
+  @override
+  String get trackDetailsFileSavedApplicationDirectory =>
+      'CSV file saved in the application directory folder.';
 
   @override
   String get trackDetailsExport => 'Track data CSV export';
