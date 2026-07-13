@@ -284,6 +284,19 @@ class UploadProgressIndicator extends StatelessWidget {
       return localizations.exportRequiresLoginToOpenSenseMap;
     }
 
+    if (errorMessage == ExportProgressService.exportNoGeolocationsErrorToken) {
+      return localizations.errorTrackNoGeolocations;
+    }
+
+    if (errorMessage ==
+        ExportProgressService.exportDirectoryAccessErrorToken) {
+      return localizations.errorExportDirectoryAccess;
+    }
+
+    if (errorMessage == ExportProgressService.exportFailedErrorToken) {
+      return localizations.errorExportFailed;
+    }
+
     if (errorMessage.contains('Authentication failed') ||
         errorMessage.contains('user needs to re-login')) {
       return localizations.uploadProgressAuthenticationError;

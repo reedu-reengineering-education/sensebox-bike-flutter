@@ -695,6 +695,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Por favor, faça login na sua conta openSenseMap para prosseguir com a exportação.';
 
   @override
+  String get errorExportFailed => 'Falha na exportação. Tente novamente.';
+
+  @override
   String get uploadProgressNetworkError =>
       'Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.';
 

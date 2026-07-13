@@ -8,6 +8,7 @@ import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
 import 'package:sensebox_bike/services/isar_service/sensor_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
@@ -161,7 +162,7 @@ class IsarService {
     final directory = await _resolveExportDirectory();
 
     if (geolocationDataList.isEmpty) {
-      throw Exception("Track has no geolocations");
+      throw TrackHasNoGeolocationsException(track.id);
     }
 
     String formattedTimestamp = DateFormat('yyyy-MM-dd_HH-mm')

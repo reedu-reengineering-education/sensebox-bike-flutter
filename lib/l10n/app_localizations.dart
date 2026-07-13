@@ -1302,6 +1302,12 @@ abstract class AppLocalizations {
   /// **'Please log in to your openSenseMap account to proceed with export.'**
   String get exportRequiresLoginToOpenSenseMap;
 
+  /// No description provided for @errorExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed. Please try again.'**
+  String get errorExportFailed;
+
   /// No description provided for @uploadProgressNetworkError.
   ///
   /// In en, this message translates to:

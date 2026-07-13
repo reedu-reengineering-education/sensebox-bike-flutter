@@ -1,11 +1,18 @@
 import 'dart:async';
 import 'package:sensebox_bike/models/upload_progress.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 
 /// Service for managing export progress and emitting progress updates
 class ExportProgressService {
   static const String exportLoginRequiredErrorToken =
       'EXPORT_LOGIN_REQUIRED';
+  static const String exportNoGeolocationsErrorToken =
+    'EXPORT_NO_GEOLOCATIONS';
+  static const String exportDirectoryAccessErrorToken =
+    'EXPORT_DIRECTORY_ACCESS_ERROR';
+  static const String exportFailedErrorToken =
+    'EXPORT_FAILED';
 
   final IsarService isarService;
   final int trackId;
@@ -74,9 +81,7 @@ class ExportProgressService {
             completedChunks: _currentCompletedChunks,
             failedChunks: 1,
             status: UploadStatus.failed,
-            // Use a dedicated token so the existing modal can render
-            // a specific localized export-authentication message.
-            errorMessage: exportLoginRequiredErrorToken,
+            errorMessage: _mapExportErrorToToken(e),
             canRetry: false,
           ),
         );
@@ -140,5 +145,28 @@ class ExportProgressService {
         canRetry: false,
       ),
     );
+  }
+
+  String _mapExportErrorToToken(Object error) {
+    if (error is NoSenseBoxSelected || error is LoginError) {
+      return exportLoginRequiredErrorToken;
+    }
+
+    if (error is TrackHasNoGeolocationsException ||
+        error.toString().contains('Track has no geolocations')) {
+      return exportNoGeolocationsErrorToken;
+    }
+
+    if (error is ExportDirectoryAccessError) {
+      return exportDirectoryAccessErrorToken;
+    }
+
+    final errorText = error.toString().toLowerCase();
+    if (errorText.contains('no selected sensebox') ||
+      (errorText.contains('opensensemap') && errorText.contains('login'))) {
+      return exportLoginRequiredErrorToken;
+    }
+
+    return exportFailedErrorToken;
   }
 }

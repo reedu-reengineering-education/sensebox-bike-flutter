@@ -270,6 +270,7 @@
     },
     "uploadProgressAuthenticationError": "Please log in to upload data.",
     "exportRequiresLoginToOpenSenseMap": "Please log in to your openSenseMap account to proceed with export.",
+    "errorExportFailed": "Export failed. Please try again.",
     "uploadProgressNetworkError": "Network connection failed. Please check your internet connection and try again.",
     "uploadProgressGenericError": "Operation failed. Please try again.",
     "uploadConfirmTitle": "Upload Track Data",

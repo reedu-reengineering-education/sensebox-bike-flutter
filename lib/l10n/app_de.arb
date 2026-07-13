@@ -272,6 +272,7 @@
     },
     "uploadProgressAuthenticationError": "Bitte melden Sie sich an, um Daten hochzuladen.",
     "exportRequiresLoginToOpenSenseMap": "Bitte melden Sie sich bei Ihrem openSenseMap-Konto an, um mit dem Export fortzufahren.",
+    "errorExportFailed": "Export fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "uploadProgressNetworkError": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
     "uploadProgressGenericError": "Operation fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "uploadConfirmTitle": "Track-Daten hochladen",

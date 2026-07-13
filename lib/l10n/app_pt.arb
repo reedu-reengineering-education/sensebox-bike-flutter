@@ -279,6 +279,7 @@
     },
     "uploadProgressAuthenticationError": "Por favor, faça login para enviar dados.",
     "exportRequiresLoginToOpenSenseMap": "Por favor, faça login na sua conta openSenseMap para prosseguir com a exportação.",
+    "errorExportFailed": "Falha na exportação. Tente novamente.",
     "uploadProgressNetworkError": "Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.",
     "uploadProgressGenericError": "Operação falhou. Tente novamente.",
     "uploadConfirmTitle": "Enviar Dados do Trajeto",

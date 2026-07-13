@@ -270,6 +270,7 @@
   },
   "uploadProgressAuthenticationError": "Veuillez vous connecter pour téléverser les données.",
   "exportRequiresLoginToOpenSenseMap": "Veuillez vous connecter à votre compte openSenseMap pour poursuivre l'export.",
+  "errorExportFailed": "Échec de l'export. Veuillez réessayer.",
   "uploadProgressNetworkError": "Échec de la connexion réseau. Veuillez vérifier votre connexion internet et réessayer.",
   "uploadProgressGenericError": "Échec de l'opération. Veuillez réessayer.",
   "uploadConfirmTitle": "Téléverser les données du parcours",
