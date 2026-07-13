@@ -115,7 +115,6 @@ class IsarService {
     final totalChunks = _estimateRegularExportChunks(
       geolocationDataList,
       sensorDataByGeolocation,
-      sensorTitles,
     );
     var completedChunks = 0;
     onChunkPlan?.call(totalChunks);
@@ -266,16 +265,13 @@ class IsarService {
   int _estimateRegularExportChunks(
     List<GeolocationData> geolocationDataList,
     Map<int, List<SensorData>> sensorDataByGeolocation,
-    List<List<String?>> sensorTitles,
   ) {
     var totalRows = 0;
     for (final geoData in geolocationDataList) {
-      final rows = buildCsvRows(
-        [geoData],
-        {geoData.id: sensorDataByGeolocation[geoData.id] ?? []},
-        sensorTitles,
-      );
-      totalRows += rows.length;
+      final sensors = sensorDataByGeolocation[geoData.id] ?? const <SensorData>[];
+      if (sensors.isNotEmpty) {
+        totalRows++;
+      }
     }
 
     final chunks = (totalRows / exportCsvWriteBatchSize).ceil();
