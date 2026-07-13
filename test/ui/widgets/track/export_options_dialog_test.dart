@@ -8,8 +8,10 @@ import '../../../test_helpers.dart';
 
 Widget buildDialog({required Future<void> Function(String) onExport}) {
   return createLocalizedTestApp(
-    child: Builder(
-      builder: (context) => ExportOptionsDialog(onExport: onExport),
+    child: Scaffold(
+      body: Builder(
+        builder: (context) => ExportOptionsDialog(onExport: onExport),
+      ),
     ),
     locale: const Locale('en'),
   );
@@ -58,7 +60,7 @@ void main() {
     expect(selectedFormat, 'regular');
   });
 
-  testWidgets('shows error dialog if onExport throws', (tester) async {
+  testWidgets('shows snackbar if onExport throws', (tester) async {
     await tester.pumpWidget(buildDialog(
       onExport: (_) async {
         throw Exception('Export failed!');
@@ -68,8 +70,8 @@ void main() {
     await tapElement(
         find.widgetWithText(SelectableListTile, 'Standard CSV'), tester);
     await tapElement(find.widgetWithText(ButtonWithLoader, 'Export'), tester);
+    await tester.pumpAndSettle();
 
-    expect(find.textContaining('Export failed!'), findsOneWidget);
-    expect(find.text('Ok'), findsOneWidget);
+    expect(find.byType(SnackBar), findsOneWidget);
   });
 }
