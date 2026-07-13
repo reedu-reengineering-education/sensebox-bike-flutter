@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
@@ -173,13 +174,16 @@ class IsarService {
 
   Future<Directory> _resolveExportDirectory() async {
     if (Platform.isAndroid) {
-      final downloadsDirectory = Directory('/storage/emulated/0/Download');
-      if (downloadsDirectory.existsSync()) {
-        return downloadsDirectory;
+      final status = await Permission.storage.status;
+      if (status.isGranted) {
+        final downloadsDirectory = Directory('/storage/emulated/0/Download');
+        if (downloadsDirectory.existsSync()) {
+          return downloadsDirectory;
+        }
       }
     }
 
-    // Fallback for non-Android platforms or when public Downloads is unavailable.
+    // Fallback for non-Android platforms, missing permission, or scoped storage restrictions.
     return getApplicationDocumentsDirectory();
   }
 
