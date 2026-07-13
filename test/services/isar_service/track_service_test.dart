@@ -530,6 +530,41 @@ group('TrackService', () {
         expect(tracks[1].id, equals(unuploadedTrack2.id));
         expect(tracks[2].id, equals(unuploadedTrack1.id));
       });
+
+      test(
+          'skipLastTrack does not skip extra item when newest track is filtered out',
+          () async {
+        await trackService.deleteAllTracks();
+
+        final newestFilteredOut = TrackData()
+          ..uploaded = 0
+          ..isDirectUpload = 1
+          ..uploadAttempts = 0;
+
+        final expectedFirst = TrackData()
+          ..uploaded = 0
+          ..isDirectUpload = 0;
+
+        final expectedSecond = TrackData()
+          ..uploaded = 0
+          ..isDirectUpload = 0;
+
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(newestFilteredOut);
+          await isar.trackDatas.put(expectedFirst);
+          await isar.trackDatas.put(expectedSecond);
+        });
+
+        final tracks = await trackService.getUnuploadedTracksPaginated(
+          offset: 0,
+          limit: 10,
+          skipLastTrack: true,
+        );
+
+        final ids = tracks.map((t) => t.id).toSet();
+        expect(ids, isNot(contains(newestFilteredOut.id)));
+        expect(tracks.length, equals(1));
+      });
     });
 });
 }

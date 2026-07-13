@@ -95,9 +95,12 @@ class TrackService {
 
     var effectiveOffset = offset;
     if (skipLastTrack) {
-      // Keep existing behavior: if newest track is unuploaded, skip one result.
+      // Skip the newest entry only when it would actually be part of this
+      // filtered unuploaded query; otherwise don't shift pagination.
       final lastTrack = await getLastTrack();
-      if (lastTrack != null && lastTrack.uploaded != 1) {
+      if (lastTrack != null &&
+          lastTrack.uploaded != 1 &&
+          _shouldIncludeInUnuploadedTracks(lastTrack)) {
         effectiveOffset += 1;
       }
     }
