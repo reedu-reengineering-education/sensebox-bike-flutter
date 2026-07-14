@@ -6,24 +6,18 @@ import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:isar_community/isar.dart';
 
-/// Writes sensor rows and saves each geolocation link at most once per transaction.
+/// Writes sensor rows and saves each geolocation link after every put.
 Future<void> putSensorRows(
   Isar isar,
   List<SensorData> batch, {
   GeolocationData? geolocation,
 }) async {
-  final linkedGeolocations = <GeolocationData>{};
-
   for (final sensor in batch) {
     if (geolocation != null) {
       sensor.geolocationData.value = geolocation;
     }
     await isar.sensorDatas.put(sensor);
-
-    final geo = sensor.geolocationData.value;
-    if (geo != null && linkedGeolocations.add(geo)) {
-      await sensor.geolocationData.save();
-    }
+    await sensor.geolocationData.save();
   }
 }
 

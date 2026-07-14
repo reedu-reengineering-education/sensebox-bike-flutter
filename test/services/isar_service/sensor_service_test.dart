@@ -172,6 +172,37 @@ void main() {
             await sensorService.getSensorDataByGeolocationId(testGeolocationId);
         expect(sensors.length, equals(2));
       });
+
+      test('persists all finedust attributes for the same geolocation', () async {
+        await sensorService.deleteAllSensorData();
+
+        final geo = await isar.geolocationDatas.get(testGeolocationId);
+        const attributes = ['pm1', 'pm2.5', 'pm4', 'pm10'];
+        final values = [1.1, 2.2, 3.3, 4.4];
+        final batch = <SensorData>[];
+
+        for (var i = 0; i < attributes.length; i++) {
+          batch.add(SensorData()
+            ..title = 'finedust'
+            ..value = values[i]
+            ..attribute = attributes[i]
+            ..characteristicUuid = '7e14e070-84ea-489f-b45a-e1317364b979'
+            ..geolocationData.value = geo);
+        }
+
+        await sensorService.saveSensorDataBatch(batch);
+
+        final sensors =
+            await sensorService.getSensorDataByGeolocationId(testGeolocationId);
+        expect(sensors.length, equals(4));
+        expect(
+          sensors.map((s) => s.attribute).toSet(),
+          equals(attributes.toSet()),
+        );
+
+        await geo!.sensorData.load();
+        expect(geo.sensorData.length, equals(4));
+      });
     });
 
     group('getSensorData', () {
