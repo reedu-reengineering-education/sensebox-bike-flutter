@@ -45,13 +45,7 @@ void main() {
         .thenAnswer((_) async => 1);
 
     isar = await initializeInMemoryIsar();
-
-    // Mock IsarProvider to return the in-memory Isar instance
-    final mockIsarProvider = MockIsarProvider();
-    when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
-
-    // Initialize SensorService with the mocked IsarProvider
-    sensorService = SensorService(isarProvider: mockIsarProvider);
+    sensorService = SensorService(isarProvider: TestIsarProvider(isar));
 
     await clearIsarDatabase(isar);
 
@@ -159,6 +153,24 @@ void main() {
         expect(savedSensorData?.title, equals('pressure'));
         expect(savedSensorData?.value, equals(1013.25));
         expect(savedSensorData?.attribute, equals('hPa'));
+      });
+    });
+
+    group('saveSensorDataBatch', () {
+      test('persists multiple sensor rows for the same geolocation', () async {
+        final geo = await isar.geolocationDatas.get(testGeolocationId);
+        final sensorData2 = SensorData()
+          ..title = 'humidity'
+          ..value = 60.0
+          ..attribute = 'Percentage'
+          ..characteristicUuid = '1234-5678-9012-3456'
+          ..geolocationData.value = geo;
+
+        await sensorService.saveSensorDataBatch([sensorData, sensorData2]);
+
+        final sensors =
+            await sensorService.getSensorDataByGeolocationId(testGeolocationId);
+        expect(sensors.length, equals(2));
       });
     });
 

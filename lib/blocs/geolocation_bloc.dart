@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/location_permission_platform.dart';
@@ -275,19 +276,15 @@ class GeolocationBloc with ChangeNotifier {
     geolocationData.track.value = recordingBloc.currentTrack;
 
     try {
+      final gpsSpeedSensorData = createGpsSpeedSensorData(geolocationData);
+      final sensorRows = shouldStoreSensorData(gpsSpeedSensorData)
+          ? [gpsSpeedSensorData]
+          : const <SensorData>[];
+
       final savedId = await isarService.geolocationService
-          .saveGeolocationData(geolocationData);
+          .saveGeolocationWithSensors(geolocationData, sensorRows);
       geolocationData.id = savedId;
 
-      final gpsSpeedSensorData = createGpsSpeedSensorData(geolocationData);
-      if (shouldStoreSensorData(gpsSpeedSensorData)) {
-        try {
-          await isarService.sensorService.saveSensorData(gpsSpeedSensorData);
-        } catch (e, stack) {
-          ErrorService.handleError(e, stack);
-        }
-      }
-      
       return true;
     } catch (e) {
       geolocationData.id = 0;

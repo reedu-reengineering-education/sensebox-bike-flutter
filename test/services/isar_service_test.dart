@@ -43,11 +43,7 @@ void main() {
     });
 
     isar = await initializeInMemoryIsar();
-    // Mock IsarProvider to return the in-memory Isar instance
-    final mockIsarProvider = MockIsarProvider();
-    when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
-
-    isarService = IsarService(isarProvider: mockIsarProvider);
+    isarService = IsarService(isarProvider: TestIsarProvider(isar));
 
     await clearIsarDatabase(isar);
 

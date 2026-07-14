@@ -262,8 +262,8 @@ void main() {
         await Future.delayed(mediumDelay);
 
         expect(emittedGeolocations.length, 0);
-        verifyNever(() =>
-            mockIsarService.geolocationService.saveGeolocationData(any()));
+        verifyNever(() => mockIsarService.geolocationService
+            .saveGeolocationWithSensors(any(), any()));
       });
     });
 
@@ -369,18 +369,15 @@ void main() {
       await Future.delayed(mediumDelay);
 
       expect(emittedGeolocations, isEmpty);
-      verifyNever(() =>
-          mockIsarService.geolocationService.saveGeolocationData(any()));
+      verifyNever(() => mockIsarService.geolocationService
+          .saveGeolocationWithSensors(any(), any()));
     });
 
     test('saves and emits GPS when sensor data is active', () async {
       final geoService = MockGeolocationService();
-      final sensorService = MockSensorService();
       when(() => mockIsarService.geolocationService).thenReturn(geoService);
-      when(() => mockIsarService.sensorService).thenReturn(sensorService);
-      when(() => geoService.saveGeolocationData(any()))
+      when(() => geoService.saveGeolocationWithSensors(any(), any()))
           .thenAnswer((_) async => 1);
-      when(() => sensorService.saveSensorData(any())).thenAnswer((_) async => 1);
 
       sensorDataActive = true;
       setupMockGeolocator(mockGeolocator, testLat1, testLng1);
@@ -389,7 +386,7 @@ void main() {
       await Future.delayed(mediumDelay);
 
       expect(emittedGeolocations, isNotEmpty);
-      verify(() => geoService.saveGeolocationData(any()))
+      verify(() => geoService.saveGeolocationWithSensors(any(), any()))
           .called(greaterThanOrEqualTo(1));
     });
   });

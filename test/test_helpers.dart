@@ -16,6 +16,7 @@ import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Initializes common test dependencies
@@ -90,6 +91,37 @@ void mockPathProvider(String tempDirectoryPath) {
     }
     return null;
   });
+}
+
+/// In-memory [IsarProvider] for service tests with serialized writes.
+class TestIsarProvider implements IsarProvider {
+  TestIsarProvider(this._isar);
+
+  final Isar _isar;
+  Future<void> _writeChain = Future.value();
+
+  @override
+  Future<Isar> get db async => _isar;
+
+  @override
+  Future<Isar> getDatabase() async => _isar;
+
+  @override
+  Future<T> runWriteTxn<T>(Future<T> Function(Isar isar) action) async {
+    final operation = _writeChain.then((_) async {
+      return _isar.writeTxn(() => action(_isar));
+    });
+    _writeChain = operation.then((_) {}, onError: (_) {});
+    return operation;
+  }
+
+  @override
+  Future<void> close() async {
+    if (_isar.isOpen) {
+      await _isar.close();
+    }
+    _writeChain = Future.value();
+  }
 }
 
 Future<void> clearIsarDatabase(Isar isar) async {
@@ -255,8 +287,10 @@ void setupMockGeolocator(dynamic mockGeolocator, double lat, double lng,
 /// Sets up recording mode for tests
 /// Requires MockRecordingBloc and MockIsarService from mocks.dart
 void setupRecordingMode(dynamic recordingBloc, dynamic isarService) {
-  when(() => isarService.geolocationService.saveGeolocationData(any()))
-      .thenAnswer((_) async => 1);
+  when(() => isarService.geolocationService.saveGeolocationWithSensors(
+        any(),
+        any(),
+      )).thenAnswer((_) async => 1);
   recordingBloc.setRecording(true);
   when(() => recordingBloc.currentTrack).thenReturn(createMockTrackData());
 }
@@ -303,10 +337,12 @@ Future<void> testGeolocationWithPrivacyZone({
   }
 
   if (shouldSave) {
-    verify(() => mockIsarService.geolocationService.saveGeolocationData(any()))
-        .called(1);
+    verify(() => mockIsarService.geolocationService.saveGeolocationWithSensors(
+          any(),
+          any(),
+        )).called(1);
   } else {
-    verifyNever(
-        () => mockIsarService.geolocationService.saveGeolocationData(any()));
+    verifyNever(() => mockIsarService.geolocationService
+        .saveGeolocationWithSensors(any(), any()));
   }
 }
