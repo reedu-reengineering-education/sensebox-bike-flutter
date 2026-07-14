@@ -19,6 +19,8 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'sensor_catalog_test_data.dart';
+
 /// Initializes common test dependencies
 void initializeTestDependencies() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -186,7 +188,7 @@ SensorData createMockSensorData(GeolocationData geolocationData) {
     ..title = 'temperature'
     ..value = 25.0
     ..attribute = null
-    ..characteristicUuid = '1234-5678-9012-3456'
+    ..characteristicUuid = testTemperatureCharacteristicUuid
     ..geolocationData.value = geolocationData;
 }
 

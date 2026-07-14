@@ -14,7 +14,6 @@ import '../mocks.dart';
 import '../test_helpers.dart';
 import '../sensor_catalog_test_data.dart';
 
-
 void main() {
   setUpAll(setupSensorCatalogFromRepo);
   tearDownAll(clearMockSensorCatalog);
@@ -193,7 +192,7 @@ void main() {
         ..title = 'temperature'
         ..value = 26.0
         ..attribute = null
-        ..characteristicUuid = '1234-5678-9012-3456'
+        ..characteristicUuid = testTemperatureCharacteristicUuid
         ..geolocationData.value = geo2;
 
       await isar.writeTxn(() async {
@@ -497,7 +496,7 @@ void main() {
         ..title = 'temperature'
         ..value = 27.0
         ..attribute = null
-        ..characteristicUuid = '1234-5678-9012-3456'
+        ..characteristicUuid = testTemperatureCharacteristicUuid
         ..geolocationData.value = geo2;
 
       await isar.writeTxn(() async {

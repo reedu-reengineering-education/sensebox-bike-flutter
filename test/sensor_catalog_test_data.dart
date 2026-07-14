@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:sensebox_bike/models/sensor_catalog_entry.dart';
 import 'package:sensebox_bike/services/sensor_catalog_registry.dart';
 
+const testTemperatureCharacteristicUuid =
+    '2cdf2174-35be-fdc4-4ca2-6fd173f8b3a8';
+
 final mockSensorCatalogJson = [
   {
     'label': 'Temperature',
