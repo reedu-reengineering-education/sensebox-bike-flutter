@@ -11,9 +11,11 @@ class IsarProvider {
   factory IsarProvider() => _instance;
   IsarProvider._internal();
 
+  Future<void> _writeChain = Future.value();
+
   Future<Isar> get db async {
     if (_isar != null && _isar!.isOpen) return _isar!;
-    
+
     return _isar = await _initDB();
   }
 
@@ -29,15 +31,25 @@ class IsarProvider {
     );
   }
 
-  /// Added back `getDatabase` method for direct access
+  /// Serializes all write transactions so only one [writeTxn] runs at a time.
+  Future<T> runWriteTxn<T>(Future<T> Function(Isar isar) action) async {
+    final operation = _writeChain.then((_) async {
+      final isar = await getDatabase();
+      return isar.writeTxn(() => action(isar));
+    });
+    _writeChain = operation.then((_) {}, onError: (_) {});
+    return operation;
+  }
+
   Future<Isar> getDatabase() async {
     return await db;
   }
 
-  /// Close the database connection
   Future<void> close() async {
     if (_isar != null && _isar!.isOpen) {
       await _isar!.close();
     }
+    _isar = null;
+    _writeChain = Future.value();
   }
 }

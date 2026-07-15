@@ -9,8 +9,7 @@ class TrackService {
   TrackService({required this.isarProvider});
 
   Future<Id> saveTrack(TrackData track) async {
-    final isar = await isarProvider.getDatabase();
-    return await isar.writeTxn(() async {
+    return isarProvider.runWriteTxn((isar) async {
       return await isar.trackDatas.put(track);
     });
   }
@@ -27,23 +26,20 @@ class TrackService {
   }
 
   Future<void> deleteTrack(int id) async {
-    final isar = await isarProvider.getDatabase();
-    await isar.writeTxn(() async {
+    await isarProvider.runWriteTxn((isar) async {
       await isar.trackDatas.delete(id);
     });
   }
 
   Future<void> deleteAllTracks() async {
-    final isar = await isarProvider.getDatabase();
-    await isar.writeTxn(() async {
+    await isarProvider.runWriteTxn((isar) async {
       await isar.trackDatas.clear();
     });
   }
 
   /// Marks a track as uploaded
   Future<void> markTrackAsUploaded(int trackId) async {
-    final isar = await isarProvider.getDatabase();
-    await isar.writeTxn(() async {
+    await isarProvider.runWriteTxn((isar) async {
       final track = await isar.trackDatas.get(trackId);
       if (track != null) {
         track.uploaded = 1;
@@ -54,8 +50,7 @@ class TrackService {
 
   /// Updates a track with new data
   Future<void> updateTrack(TrackData track) async {
-    final isar = await isarProvider.getDatabase();
-    await isar.writeTxn(() async {
+    await isarProvider.runWriteTxn((isar) async {
       await isar.trackDatas.put(track);
     });
   }

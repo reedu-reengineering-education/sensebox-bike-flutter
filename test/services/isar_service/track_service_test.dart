@@ -23,9 +23,7 @@ void main() {
     mockPathProvider(tempDirectory.path);
 
     isar = await initializeInMemoryIsar();
-    final mockIsarProvider = MockIsarProvider();
-    when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
-    trackService = TrackService(isarProvider: mockIsarProvider);
+    trackService = TrackService(isarProvider: TestIsarProvider(isar));
 
     await clearIsarDatabase(isar);
 

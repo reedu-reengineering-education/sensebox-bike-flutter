@@ -14,6 +14,7 @@ import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/finedust_sensor.dart';
+import 'package:sensebox_bike/services/sensor_catalog_registry.dart';
 
 String buildCanonicalSensorKey(String title, String? attribute) {
   return '${title}${attribute == null ? '' : '_${attribute}'}';
@@ -110,60 +111,11 @@ String? getSearchKey(String key, String? attribute) {
 }
 
 String? getTitleFromSensorKey(String key, String? attribute) {
-  String searchKey = getSearchKey(key, attribute) ?? key;
-
-  switch (searchKey) {
-    case 'temperature':
-      return 'Temperature';
-    case 'humidity':
-      return 'Rel. Humidity';
-    case 'finedust_pm10':
-      return 'Finedust PM10';
-    case 'finedust_pm4':
-      return 'Finedust PM4';
-    case 'finedust_pm2_5':
-      return 'Finedust PM2.5';
-    case 'finedust_pm1':
-      return 'Finedust PM1';
-    case 'distance':
-      return 'Overtaking Distance';
-    case 'distance_right':
-      return 'Distance Right';
-    case 'overtaking':
-      return 'Overtaking Manoeuvre';
-    case 'surface_classification_asphalt':
-      return 'Surface Asphalt';
-    case 'surface_classification_sett':
-      return 'Surface Sett';
-    case 'surface_classification_compacted':
-      return 'Surface Compacted';
-    case 'surface_classification_paving':
-      return 'Surface Paving';
-    case 'surface_classification_standing':
-      return 'Standing';
-    case 'surface_anomaly':
-      return 'Surface Anomaly';
-    case 'speed':
-      return 'Speed';
-    case 'acceleration_x':
-      return 'Acceleration X';
-    case 'acceleration_y':
-      return 'Acceleration Y';
-    case 'acceleration_z':
-      return 'Acceleration Z';
-    case 'gps_latitude':
-    case 'sensor_gps_latitude':
-      return 'GPS Latitude';
-    case 'gps_longitude':
-    case 'sensor_gps_longitude':
-      return 'GPS Longitude';
-    case 'gps_speed':
-    case 'sensor_gps_speed':
-      return 'Speed';
-    default:
-      debugPrint("Unknown sensor key: $searchKey");
-      return null;
-  }
+  return SensorCatalogRegistry.getUploadTitle(
+    key,
+    attribute,
+    characteristicUuid: null,
+  );
 }
 
 String? getTranslatedTitleFromSensorKey(
@@ -280,8 +232,24 @@ Color getSensorColor(String sensorType) {
 
 String? findSensorIdByData(
     SensorData sensorData, List<sensebox_model.Sensor> boxSensors) {
-  final sensorDataTitle =
-      getTitleFromSensorKey(sensorData.title, sensorData.attribute);
+  for (final boxSensor in boxSensors) {
+    final catalogEntry =
+        SensorCatalogRegistry.findByUploadTitle(boxSensor.title ?? '');
+    if (catalogEntry != null &&
+        catalogEntry.matchesSensorData(
+          dataKey: sensorData.title,
+          dataAttribute: sensorData.attribute,
+          dataCharacteristicUuid: sensorData.characteristicUuid,
+        )) {
+      return boxSensor.id;
+    }
+  }
+
+  final sensorDataTitle = SensorCatalogRegistry.getUploadTitle(
+    sensorData.title,
+    sensorData.attribute,
+    characteristicUuid: sensorData.characteristicUuid,
+  );
 
   if (sensorDataTitle == null) {
     debugPrint(
@@ -294,7 +262,6 @@ String? findSensorIdByData(
       return sensor.id;
     }
   }
-  // Return null if no match is found
   return null;
 }
 
@@ -308,12 +275,16 @@ SensorData createGpsSpeedSensorData(GeolocationData geoData) {
 }
 
 bool shouldStoreSensorData(SensorData sensorData) {
-  // Don't store NaN or infinite values
   if (sensorData.value.isNaN || sensorData.value.isInfinite) {
     return false;
   }
 
-  // Don't store zero GPS coordinates (invalid GPS data)
+  if ((sensorData.title == 'distance' ||
+          sensorData.title == 'distance_right') &&
+      sensorData.value == 0.0) {
+    return false;
+  }
+
   if (sensorData.title == 'gps' &&
       (sensorData.attribute == 'latitude' ||
           sensorData.attribute == 'longitude') &&

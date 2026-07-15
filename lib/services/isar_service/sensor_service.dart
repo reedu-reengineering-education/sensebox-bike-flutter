@@ -6,15 +6,29 @@ import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:isar_community/isar.dart';
 
+/// Writes sensor rows and saves each geolocation link after every put.
+Future<void> putSensorRows(
+  Isar isar,
+  List<SensorData> batch, {
+  GeolocationData? geolocation,
+}) async {
+  for (final sensor in batch) {
+    if (geolocation != null) {
+      sensor.geolocationData.value = geolocation;
+    }
+    await isar.sensorDatas.put(sensor);
+    await sensor.geolocationData.save();
+  }
+}
+
 class SensorService {
   final IsarProvider isarProvider;
 
   SensorService({required this.isarProvider});
 
   Future<Id> saveSensorData(SensorData sensorData) async {
-    final isar = await isarProvider.getDatabase();
-    return await isar.writeTxn(() async {
-      Id sensorDataId = await isar.sensorDatas.put(sensorData);
+    return isarProvider.runWriteTxn((isar) async {
+      final sensorDataId = await isar.sensorDatas.put(sensorData);
       await sensorData.geolocationData.save();
       return sensorDataId;
     });
@@ -31,11 +45,11 @@ class SensorService {
     final sensorData = await isar.sensorDatas.where().filter().geolocationData((q) {
       return q.idEqualTo(geolocationId);
     }).findAll();
-    
+
     sensorData.sort((a, b) => compareSensorsByCanonicalOrder(
       a.title, a.attribute, b.title, b.attribute,
     ));
-    
+
     return sensorData;
   }
 
@@ -61,29 +75,16 @@ class SensorService {
   }
 
   Future<void> deleteAllSensorData() async {
-    final isar = await isarProvider.getDatabase();
-    await isar.writeTxn(() async {
+    await isarProvider.runWriteTxn((isar) async {
       await isar.sensorDatas.clear();
     });
   }
 
   Future<void> saveSensorDataBatch(List<SensorData> batch) async {
     if (batch.isEmpty) return;
-    final isar = await isarProvider.getDatabase();
-    
-    try {
-      await isar.writeTxn(() async {
-        for (final sensor in batch) {
-          try {
-            await isar.sensorDatas.put(sensor);
-            await sensor.geolocationData.save();
-          } catch (e) {
-            // Continue with other sensors in the batch
-          }
-        }
-      });
-    } catch (e) {
-      rethrow; // Re-throw to let the caller handle it
-    }
+
+    await isarProvider.runWriteTxn((isar) async {
+      await putSensorRows(isar, batch);
+    });
   }
 }

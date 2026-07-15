@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:isar_community/isar.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
 import '../../mocks.dart';
@@ -22,10 +23,7 @@ void main() {
     mockPathProvider(tempDirectory.path);
 
     isar = await initializeInMemoryIsar();
-    final mockIsarProvider = MockIsarProvider();
-    when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
-
-    geolocationService = GeolocationService(isarProvider: mockIsarProvider);
+    geolocationService = GeolocationService(isarProvider: TestIsarProvider(isar));
 
     await clearIsarDatabase(isar);
 
@@ -134,6 +132,35 @@ void main() {
             await geolocationService.getGeolocationDataByTrackId(-1);
 
         expect(geolocations.isEmpty, isTrue);
+      });
+    });
+
+    group('saveGeolocationWithSensors', () {
+      test('persists geolocation and sensor rows in one transaction', () async {
+        final sensor = SensorData()
+          ..title = 'gps'
+          ..attribute = 'speed'
+          ..value = 5.5
+          ..characteristicUuid = 'gps-speed';
+
+        final savedId = await geolocationService.saveGeolocationWithSensors(
+          GeolocationData()
+            ..latitude = 50.0
+            ..longitude = 8.0
+            ..speed = 5.5
+            ..timestamp = DateTime.now().toUtc()
+            ..track.value = geolocationData.track.value,
+          [sensor],
+        );
+
+        final sensors =
+            await isar.sensorDatas.where().filter().geolocationData((q) {
+          return q.idEqualTo(savedId);
+        }).findAll();
+
+        expect(savedId, greaterThan(0));
+        expect(sensors.length, equals(1));
+        expect(sensors.first.value, equals(5.5));
       });
     });
 

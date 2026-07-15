@@ -104,15 +104,34 @@ class HomeScreen extends StatelessWidget {
                       return ValueListenableBuilder<List<BleCharacteristicRef>>(
                         valueListenable: bleBloc.availableCharacteristics,
                         builder: (context, characteristics, child) {
+                      return ValueListenableBuilder<int>(
+                        valueListenable:
+                            bleBloc.characteristicStreams.livePayloadVersion,
+                        builder: (context, _, child) {
                           if (sensorBloc.availableSensors.isEmpty) {
-                            return const SliverToBoxAdapter(
-                              child: SizedBox.shrink(),
+                            if (characteristics.isEmpty) {
+                              return const SliverToBoxAdapter(
+                                child: SizedBox.shrink(),
+                              );
+                            }
+                            return SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24.0),
+                                child: Center(
+                                  child: Text(
+                                    AppLocalizations.of(context)!
+                                        .generalLoading,
+                                  ),
+                                ),
+                              ),
                             );
                           }
 
                           return _SensorGrid(
                             sensors: sensorBloc.availableSensors,
                           );
+                        },
+                      );
                         },
                       );
                     },

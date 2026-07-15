@@ -12,9 +12,12 @@ import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 import '../mocks.dart';
 import '../test_helpers.dart';
-
+import '../sensor_catalog_test_data.dart';
 
 void main() {
+  setUpAll(setupSensorCatalogFromRepo);
+  tearDownAll(clearMockSensorCatalog);
+
   const MethodChannel channel =
       MethodChannel('plugins.flutter.io/path_provider');
 
@@ -39,11 +42,7 @@ void main() {
     });
 
     isar = await initializeInMemoryIsar();
-    // Mock IsarProvider to return the in-memory Isar instance
-    final mockIsarProvider = MockIsarProvider();
-    when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
-
-    isarService = IsarService(isarProvider: mockIsarProvider);
+    isarService = IsarService(isarProvider: TestIsarProvider(isar));
 
     await clearIsarDatabase(isar);
 
@@ -193,7 +192,7 @@ void main() {
         ..title = 'temperature'
         ..value = 26.0
         ..attribute = null
-        ..characteristicUuid = '1234-5678-9012-3456'
+        ..characteristicUuid = testTemperatureCharacteristicUuid
         ..geolocationData.value = geo2;
 
       await isar.writeTxn(() async {
@@ -220,8 +219,8 @@ void main() {
     test('correctly handles GPS speed sensor data', () async {
       // Create GPS speed sensor data with the correct format
       final gpsSpeedSensorData = SensorData()
-        ..title = 'speed' // Correct format: title = 'speed', no attribute
-        ..attribute = null
+        ..title = 'gps'
+        ..attribute = 'speed'
         ..value = 15.5
         ..characteristicUuid = 'gps-speed-uuid'
         ..geolocationData.value = geolocationData;
@@ -497,7 +496,7 @@ void main() {
         ..title = 'temperature'
         ..value = 27.0
         ..attribute = null
-        ..characteristicUuid = '1234-5678-9012-3456'
+        ..characteristicUuid = testTemperatureCharacteristicUuid
         ..geolocationData.value = geo2;
 
       await isar.writeTxn(() async {
