@@ -157,36 +157,31 @@ void main() {
                       builder: (BuildContext context) {
                         return AlertDialog(
                           title: const Text('Upload Mode'),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              RadioListTile<bool>(
-                                title: const Text('Post-Ride Upload'),
-                                subtitle: const Text(
-                                    'Upload data after recording stops'),
-                                value: false,
-                                groupValue: settingsBloc.directUploadMode,
-                                onChanged: (bool? value) {
-                                  if (value != null) {
-                                    settingsBloc.toggleDirectUploadMode(value);
-                                    Navigator.of(context).pop();
-                                  }
-                                },
-                              ),
-                              RadioListTile<bool>(
-                                title: const Text('Direct Upload (Beta)'),
-                                subtitle: const Text(
-                                    'Upload data in real-time during recording (experimental)'),
-                                value: true,
-                                groupValue: settingsBloc.directUploadMode,
-                                onChanged: (bool? value) {
-                                  if (value != null) {
-                                    settingsBloc.toggleDirectUploadMode(value);
-                                    Navigator.of(context).pop();
-                                  }
-                                },
-                              ),
-                            ],
+                          content: RadioGroup<bool>(
+                            groupValue: settingsBloc.directUploadMode,
+                            onChanged: (bool? value) {
+                              if (value != null) {
+                                settingsBloc.toggleDirectUploadMode(value);
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                RadioListTile<bool>(
+                                  title: const Text('Post-Ride Upload'),
+                                  subtitle: const Text(
+                                      'Upload data after recording stops'),
+                                  value: false,
+                                ),
+                                RadioListTile<bool>(
+                                  title: const Text('Direct Upload (Beta)'),
+                                  subtitle: const Text(
+                                      'Upload data in real-time during recording (experimental)'),
+                                  value: true,
+                                ),
+                              ],
+                            ),
                           ),
                           actions: [
                             TextButton(

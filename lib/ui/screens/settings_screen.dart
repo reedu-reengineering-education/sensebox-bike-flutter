@@ -538,69 +538,70 @@ class SettingsScreen extends StatelessWidget {
                     bottom: isLargeScreen
                         ? 24.0
                         : 0.0), // Add bottom padding on larger screens
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioListTile<bool>(
-                      title: Text(localizations.settingsUploadModePostRide),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(localizations.settingsUploadModePostRideTitle),
-                          const SizedBox(height: 8),
-                          Text(
-                            localizations.settingsUploadModePostRideDescription,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                          ),
-                        ],
+                child: RadioGroup<bool>(
+                  groupValue: currentMode,
+                  onChanged: (bool? value) {
+                    if (value != null) {
+                      settingsBloc.toggleDirectUploadMode(value);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RadioListTile<bool>(
+                        title: Text(localizations.settingsUploadModePostRide),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(localizations.settingsUploadModePostRideTitle),
+                            const SizedBox(height: 8),
+                            Text(
+                              localizations.settingsUploadModePostRideDescription,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                        value: false,
+                        isThreeLine: true,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16.0),
                       ),
-                      value: false,
-                      groupValue: currentMode,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          settingsBloc.toggleDirectUploadMode(value);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                    const SizedBox(height: 16),
-                    RadioListTile<bool>(
-                      title: Text(localizations.settingsUploadModeDirect),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(localizations.settingsUploadModeDirectTitle),
-                          const SizedBox(height: 8),
-                          Text(
-                            localizations.settingsUploadModeDirectDescription,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                          ),
-                        ],
+                      const SizedBox(height: 16),
+                      RadioListTile<bool>(
+                        title: Text(localizations.settingsUploadModeDirect),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(localizations.settingsUploadModeDirectTitle),
+                            const SizedBox(height: 8),
+                            Text(
+                              localizations.settingsUploadModeDirectDescription,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                        value: true,
+                        isThreeLine: true,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16.0),
                       ),
-                      value: true,
-                      groupValue: currentMode,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          settingsBloc.toggleDirectUploadMode(value);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
