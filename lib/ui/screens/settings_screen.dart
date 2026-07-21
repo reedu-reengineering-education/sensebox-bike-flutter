@@ -15,6 +15,7 @@ import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
 import 'package:sensebox_bike/ui/widgets/settings/app_info_section.dart';
+import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -367,38 +368,32 @@ class SettingsScreen extends StatelessWidget {
                 ? AppLocalizations.of(context)!.settingsUploadModeDirect
                 : AppLocalizations.of(context)!.settingsUploadModePostRide;
 
-            return ListTile(
-              leading: const Icon(Icons.cloud_upload),
-              title: Text(AppLocalizations.of(context)!.settingsUploadMode),
-              subtitle: Text(
-                AppLocalizations.of(context)!
-                    .settingsUploadModeCurrent(uploadModeText),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
+            return SettingsValueTile(
+              icon: Icons.cloud_upload,
+              title: AppLocalizations.of(context)!.settingsUploadMode,
+              value: AppLocalizations.of(context)!
+                  .settingsUploadModeCurrent(uploadModeText),
               onTap: () => _showUploadModeDialog(context, settingsBloc),
             );
           },
         ),
         _buildApiUrlSection(context, settingsBloc, configurationBloc),
-        ListTile(
-          leading: const Icon(Icons.admin_panel_settings),
-          title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
+        SettingsNavigationTile(
+          icon: Icons.admin_panel_settings,
+          title: AppLocalizations.of(context)!.generalPrivacyZones,
+          trailingPrefix: Badge.count(
+            count: settingsBloc.privacyZones.length,
+            backgroundColor: Theme.of(context).iconTheme.color,
+          ),
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
                 builder: (context) => const ExclusionZonesScreen()),
           ),
-          trailing: Badge.count(
-            count: settingsBloc.privacyZones.length,
-            backgroundColor: Theme.of(context).iconTheme.color,
-          ),
         ),
-        ListTile(
-          leading: const Icon(Icons.trending_up_outlined),
-          title: Text(AppLocalizations.of(context)!.trackStatistics),
+        SettingsNavigationTile(
+          icon: Icons.trending_up_outlined,
+          title: AppLocalizations.of(context)!.trackStatistics,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
@@ -421,18 +416,16 @@ class SettingsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Consumer<SettingsBloc>(
-              builder: (context, bloc, _) => ListTile(
-                leading: const Icon(Icons.settings_ethernet_outlined),
-                title: Text(AppLocalizations.of(context)!.settingsApiUrl),
-                subtitle: Text(
-                  bloc.apiUrl,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
+              builder: (context, bloc, _) => SettingsValueTile(
+                icon: Icons.settings_ethernet_outlined,
+                title: AppLocalizations.of(context)!.settingsApiUrl,
+                value: bloc.apiUrl,
                 onTap: () {
-                  _showApiUrlDialog(context, bloc, controller, apiUrls: apiUrls, isLoading: isLoading, error: error, setState: setState);
+                  _showApiUrlDialog(context, bloc, controller,
+                      apiUrls: apiUrls,
+                      isLoading: isLoading,
+                      error: error,
+                      setState: setState);
                 },
               ),
             ),
@@ -503,25 +496,14 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(
-          top: spacing * 3, bottom: spacing, left: spacing, right: spacing),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
-    );
+    return SettingsSectionHeader(title: title);
   }
 
   Widget _buildUrlTile(BuildContext context,
       {required IconData icon, required String title, required String url}) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      trailing: Icon(
-        Icons.chevron_right,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
+    return SettingsNavigationTile(
+      icon: icon,
+      title: title,
       onTap: () => launchExternalUrl(url, launchUrlFunction: launchUrlFunction),
     );
   }

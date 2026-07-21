@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
 import 'package:sensebox_bike/utils/storage_utils.dart';
 import 'package:sensebox_bike/utils/url_launch_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -50,26 +51,23 @@ class _AppInfoSectionState extends State<AppInfoSection> {
               ConnectionState.waiting ||
               ConnectionState.active =>
                 localizations.settingsVersion('...'),
-              ConnectionState.done when snapshot.hasError || snapshot.data == null =>
+              ConnectionState.done
+                  when snapshot.hasError || snapshot.data == null =>
                 localizations.settingsVersion('—'),
               ConnectionState.done =>
                 localizations.settingsVersion(snapshot.data!),
             };
 
-            return ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: Text(versionText),
+            return SettingsInfoTile(
+              icon: Icons.info_outline,
+              title: versionText,
             );
           },
         ),
         const _StorageUsageTile(),
-        ListTile(
-          leading: const Icon(Icons.privacy_tip_outlined),
-          title: Text(localizations.settingsPrivacyPolicy),
-          trailing: Icon(
-            Icons.chevron_right,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+        SettingsNavigationTile(
+          icon: Icons.privacy_tip_outlined,
+          title: localizations.settingsPrivacyPolicy,
           onTap: () => launchExternalUrl(
             senseBoxBikePrivacyPolicyUrl,
             launchUrlFunction: widget.launchUrlFunction,
@@ -112,10 +110,7 @@ class _StorageUsageTileState extends State<_StorageUsageTile> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    final subtitleStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.w500,
-        );
+    final subtitleStyle = settingsInfoSubtitleStyle(context);
 
     return FutureBuilder<AppStorageInfo?>(
       future: _storageFuture,
@@ -136,9 +131,9 @@ class _StorageUsageTileState extends State<_StorageUsageTile> {
             ),
         };
 
-        return ListTile(
-          leading: const Icon(Icons.storage),
-          title: Text(localizations.settingsStorageUsed),
+        return SettingsInfoTile(
+          icon: Icons.storage,
+          title: localizations.settingsStorageUsed,
           subtitle: subtitle,
         );
       },
