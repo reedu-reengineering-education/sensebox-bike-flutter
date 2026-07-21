@@ -518,6 +518,10 @@ class SettingsScreen extends StatelessWidget {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
       onTap: () => launchExternalUrl(url, launchUrlFunction: launchUrlFunction),
     );
   }

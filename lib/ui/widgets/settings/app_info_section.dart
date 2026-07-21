@@ -66,6 +66,10 @@ class _AppInfoSectionState extends State<AppInfoSection> {
         ListTile(
           leading: const Icon(Icons.privacy_tip_outlined),
           title: Text(localizations.settingsPrivacyPolicy),
+          trailing: Icon(
+            Icons.chevron_right,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           onTap: () => launchExternalUrl(
             senseBoxBikePrivacyPolicyUrl,
             launchUrlFunction: widget.launchUrlFunction,
