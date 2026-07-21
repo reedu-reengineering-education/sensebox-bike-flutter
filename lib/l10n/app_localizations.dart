@@ -708,6 +708,18 @@ abstract class AppLocalizations {
   /// **'Version: {versionNumber}'**
   String settingsVersion(String versionNumber);
 
+  /// No description provided for @settingsStorageUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage used'**
+  String get settingsStorageUsed;
+
+  /// No description provided for @settingsStorageDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Database: {databaseSize} · Total: {totalSize}'**
+  String settingsStorageDetails(String databaseSize, String totalSize);
+
   /// No description provided for @settingsContact.
   ///
   /// In en, this message translates to:

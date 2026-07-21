@@ -9,10 +9,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class PrivacyPolicyScreen extends StatefulWidget {
-  const PrivacyPolicyScreen({Key? key}) : super(key: key);
+  const PrivacyPolicyScreen({super.key});
 
   @override
-  _PrivacyPolicyScreenState createState() => _PrivacyPolicyScreenState();
+  State<PrivacyPolicyScreen> createState() => _PrivacyPolicyScreenState();
 }
 
 class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
@@ -75,7 +75,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (_isLoading)
-                Center(child: CircularProgressIndicator())
+                const Center(child: CircularProgressIndicator())
               else
                 Expanded(child: WebViewWidget(controller: _controller)),
               const CustomSpacer(),
@@ -94,6 +94,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                   onPressed: (_isCheckboxChecked)
                       ? () async {
                           await _saveAcceptanceDate();
+                          if (!context.mounted) return;
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(

@@ -154,6 +154,18 @@
             }
         }
     },
+    "settingsStorageUsed": "Storage used",
+    "settingsStorageDetails": "Database: {databaseSize} · Total: {totalSize}",
+    "@settingsStorageDetails": {
+        "placeholders": {
+            "databaseSize": {
+                "type": "String"
+            },
+            "totalSize": {
+                "type": "String"
+            }
+        }
+    },
     "settingsContact": "Help or feedback?",
     "settingsEmail": "E-mail",
     "settingsGithub": "GitHub issue",

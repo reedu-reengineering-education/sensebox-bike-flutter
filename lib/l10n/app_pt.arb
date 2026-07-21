@@ -155,6 +155,18 @@
             }
         }
     },
+    "settingsStorageUsed": "Armazenamento usado",
+    "settingsStorageDetails": "Banco de dados: {databaseSize} · Total: {totalSize}",
+    "@settingsStorageDetails": {
+        "placeholders": {
+            "databaseSize": {
+                "type": "String"
+            },
+            "totalSize": {
+                "type": "String"
+            }
+        }
+    },
     "settingsContact": "Ajuda ou feedback?",
     "settingsEmail": "E-mail",
     "settingsGithub": "GitHub issue",

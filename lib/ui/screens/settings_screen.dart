@@ -14,6 +14,7 @@ import 'package:sensebox_bike/ui/widgets/common/api_url_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
+import 'package:sensebox_bike/ui/widgets/settings/app_info_section.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -52,6 +53,7 @@ class SettingsScreen extends StatelessWidget {
           _buildGeneralSettingsSection(context, settingsBloc),
           _buildAccountManagementSection(context),
           _buildHelpSection(context),
+          _buildAboutSection(context),
         ],
       ),
     );
@@ -485,6 +487,17 @@ class SettingsScreen extends StatelessWidget {
           title: AppLocalizations.of(context)!.settingsGithub,
           url: gitHubNewIssueUrl,
         ),
+      ],
+    );
+  }
+
+  Widget _buildAboutSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+            context, AppLocalizations.of(context)!.settingsAbout),
+        const AppInfoSection(),
       ],
     );
   }

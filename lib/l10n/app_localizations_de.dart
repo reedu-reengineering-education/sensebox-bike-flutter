@@ -360,6 +360,14 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get settingsStorageUsed => 'Speichernutzung';
+
+  @override
+  String settingsStorageDetails(String databaseSize, String totalSize) {
+    return 'Datenbank: $databaseSize · Gesamt: $totalSize';
+  }
+
+  @override
   String get settingsContact => 'Hilfe oder Feedback?';
 
   @override

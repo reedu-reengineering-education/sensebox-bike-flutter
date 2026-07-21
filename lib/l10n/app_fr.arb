@@ -150,6 +150,18 @@
       }
     }
   },
+  "settingsStorageUsed": "Espace de stockage utilisé",
+  "settingsStorageDetails": "Base de données : {databaseSize} · Total : {totalSize}",
+  "@settingsStorageDetails": {
+    "placeholders": {
+      "databaseSize": {
+        "type": "String"
+      },
+      "totalSize": {
+        "type": "String"
+      }
+    }
+  },
   "settingsContact": "Aide ou retour ?",
   "settingsEmail": "E-mail",
   "settingsGithub": "Ticket GitHub",

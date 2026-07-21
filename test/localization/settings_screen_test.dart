@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -41,6 +42,14 @@ void main() {
       }
       return null;
     });
+
+    PackageInfo.setMockInitialValues(
+      appName: 'senseBox Bike',
+      packageName: 'de.reedu.senseboxbike',
+      version: '3.4.0',
+      buildNumber: '340',
+      buildSignature: 'test',
+    );
 
     initializeTestDependencies();
   });
@@ -84,15 +93,17 @@ void main() {
       expect(find.text('Privacy Zones'), findsOneWidget);
 
       // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.scrollUntilVisible(find.text('Privacy Policy'), 500.0);
       await tester.pumpAndSettle();
       
-      // 'Other' section is not present in the current UI
-      // 'About' section is not present in the current UI
       expect(find.text('Help or feedback?'), findsOneWidget);
       expect(find.text('Knowledge Base'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
+      expect(find.text('About'), findsOneWidget);
+      expect(find.textContaining('Version:'), findsWidgets);
+      expect(find.text('Storage used'), findsOneWidget);
+      expect(find.text('Privacy Policy'), findsOneWidget);
     });
 
     testWidgets("is translated in German", (WidgetTester tester) async {
@@ -105,14 +116,16 @@ void main() {
       expect(find.text('Privatzonen'), findsOneWidget);
 
       // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.scrollUntilVisible(find.text('Datenschutz'), 500.0);
       await tester.pumpAndSettle();
       
-      // 'Andere' section is not present in the current UI
-      // 'Über die App' section is not present in the current UI
       expect(find.text('Hilfe oder Feedback?'), findsOneWidget);
       expect(find.text('E-Mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
+      expect(find.text('Über die App'), findsOneWidget);
+      expect(find.textContaining('Version:'), findsWidgets);
+      expect(find.text('Speichernutzung'), findsOneWidget);
+      expect(find.text('Datenschutz'), findsOneWidget);
     });
 
     testWidgets("is translated in Portuguese", (WidgetTester tester) async {
@@ -125,14 +138,16 @@ void main() {
       expect(find.text('Áreas de Privacidade'), findsOneWidget);
 
       // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.scrollUntilVisible(find.text('Política de Privacidade'), 500.0);
       await tester.pumpAndSettle();
       
-      // 'Outros' section is not present in the current UI
-      // 'Sobre' section is not present in the current UI
       expect(find.text('Ajuda ou feedback?'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
+      expect(find.text('Sobre'), findsOneWidget);
+      expect(find.textContaining('Versão:'), findsWidgets);
+      expect(find.text('Armazenamento usado'), findsOneWidget);
+      expect(find.text('Política de Privacidade'), findsOneWidget);
     });
 
     testWidgets("is translated in French", (WidgetTester tester) async {
@@ -145,14 +160,16 @@ void main() {
       expect(find.text('Zones de confidentialité'), findsOneWidget);
 
       // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('Ticket GitHub'), 500.0);
+      await tester.scrollUntilVisible(find.text('Politique de confidentialité'), 500.0);
       await tester.pumpAndSettle();
       
-      // 'Autre' section is not present in the current UI
-      // 'À propos' section is not present in the current UI
       expect(find.text('Aide ou retour ?'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('Ticket GitHub'), findsOneWidget);
+      expect(find.text('À propos'), findsOneWidget);
+      expect(find.textContaining('Version :'), findsWidgets);
+      expect(find.text('Espace de stockage utilisé'), findsOneWidget);
+      expect(find.text('Politique de confidentialité'), findsOneWidget);
     });
 
     testWidgets("login and logout buttons are translated in English",
