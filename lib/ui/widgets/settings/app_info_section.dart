@@ -19,104 +19,119 @@ class AppInfoSection extends StatefulWidget {
 }
 
 class _AppInfoSectionState extends State<AppInfoSection> {
-  late final Future<_AppInfoData> _appInfoFuture;
+  late final Future<String> _versionFuture;
 
   @override
   void initState() {
     super.initState();
-    _appInfoFuture = _loadAppInfo();
+    _versionFuture = _loadVersionLabel();
   }
 
-  Future<_AppInfoData> _loadAppInfo() async {
+  Future<String> _loadVersionLabel() async {
     final packageInfo = await PackageInfo.fromPlatform();
-    AppStorageInfo? storageInfo;
-    try {
-      storageInfo = await getAppStorageInfo();
-    } catch (_) {
-      storageInfo = null;
-    }
-
-    return _AppInfoData(
-      versionLabel:
-          '${packageInfo.version} (${packageInfo.buildNumber})',
-      storageInfo: storageInfo,
-    );
+    return '${packageInfo.version} (${packageInfo.buildNumber})';
   }
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    return FutureBuilder<_AppInfoData>(
-      future: _appInfoFuture,
-      builder: (context, snapshot) {
-        final data = snapshot.data;
-        final versionText = data != null
-            ? localizations.settingsVersion(data.versionLabel)
-            : localizations.settingsVersion('...');
-        final storageSubtitle = _buildStorageSubtitle(context, data?.storageInfo);
+    return Column(
+      children: [
+        FutureBuilder<String>(
+          future: _versionFuture,
+          builder: (context, snapshot) {
+            final versionLabel = snapshot.data;
+            final versionText = versionLabel != null
+                ? localizations.settingsVersion(versionLabel)
+                : localizations.settingsVersion('...');
 
-        return Column(
-          children: [
-            ListTile(
+            return ListTile(
               leading: const Icon(Icons.info_outline),
               title: Text(versionText),
-            ),
-            ListTile(
-              leading: const Icon(Icons.storage),
-              title: Text(localizations.settingsStorageUsed),
-              subtitle: storageSubtitle,
-            ),
-            ListTile(
-              leading: const Icon(Icons.privacy_tip_outlined),
-              title: Text(localizations.settingsPrivacyPolicy),
-              onTap: () async {
-                try {
-                  await widget.launchUrlFunction(
-                    Uri.parse(senseBoxBikePrivacyPolicyUrl),
-                    mode: LaunchMode.externalApplication,
-                  );
-                } catch (error, stack) {
-                  ErrorService.handleError(error, stack);
-                }
-              },
-            ),
-          ],
-        );
-      },
+            );
+          },
+        ),
+        const _StorageUsageTile(),
+        ListTile(
+          leading: const Icon(Icons.privacy_tip_outlined),
+          title: Text(localizations.settingsPrivacyPolicy),
+          onTap: () async {
+            try {
+              await widget.launchUrlFunction(
+                Uri.parse(senseBoxBikePrivacyPolicyUrl),
+                mode: LaunchMode.externalApplication,
+              );
+            } catch (error, stack) {
+              ErrorService.handleError(error, stack);
+            }
+          },
+        ),
+      ],
     );
   }
+}
 
-  Widget? _buildStorageSubtitle(
-    BuildContext context,
-    AppStorageInfo? storageInfo,
-  ) {
+class _StorageUsageTile extends StatefulWidget {
+  const _StorageUsageTile();
+
+  @override
+  State<_StorageUsageTile> createState() => _StorageUsageTileState();
+}
+
+class _StorageUsageTileState extends State<_StorageUsageTile> {
+  Future<AppStorageInfo?>? _storageFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _storageFuture = _loadStorageInfo();
+      });
+    });
+  }
+
+  Future<AppStorageInfo?> _loadStorageInfo() async {
+    try {
+      return await getAppStorageInfo();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final subtitleStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
           color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.w500,
         );
 
-    if (storageInfo == null) {
-      return Text('—', style: subtitleStyle);
-    }
+    return FutureBuilder<AppStorageInfo?>(
+      future: _storageFuture,
+      builder: (context, snapshot) {
+        final subtitle = switch (snapshot.connectionState) {
+          ConnectionState.none => Text('...', style: subtitleStyle),
+          ConnectionState.waiting => Text('...', style: subtitleStyle),
+          ConnectionState.active => Text('...', style: subtitleStyle),
+          ConnectionState.done when snapshot.data != null => Text(
+              localizations.settingsStorageDetails(
+                formatStorageSize(snapshot.data!.isarSize),
+                formatStorageSize(snapshot.data!.totalAppDataSize),
+              ),
+              style: subtitleStyle,
+            ),
+          ConnectionState.done => Text('—', style: subtitleStyle),
+        };
 
-    return Text(
-      localizations.settingsStorageDetails(
-        formatStorageSize(storageInfo.isarSize),
-        formatStorageSize(storageInfo.totalAppDataSize),
-      ),
-      style: subtitleStyle,
+        return ListTile(
+          leading: const Icon(Icons.storage),
+          title: Text(localizations.settingsStorageUsed),
+          subtitle: subtitle,
+        );
+      },
     );
   }
-}
-
-class _AppInfoData {
-  final String versionLabel;
-  final AppStorageInfo? storageInfo;
-
-  const _AppInfoData({
-    required this.versionLabel,
-    required this.storageInfo,
-  });
 }
