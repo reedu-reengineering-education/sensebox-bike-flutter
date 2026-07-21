@@ -88,22 +88,21 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Settings'), findsOneWidget);
-      expect(find.text('General'), findsOneWidget);
-      expect(find.text('Vibrate on disconnect'), findsOneWidget);
-      expect(find.text('Privacy Zones'), findsOneWidget);
-
-      // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('Privacy Policy'), 500.0);
-      await tester.pumpAndSettle();
-      
-      expect(find.text('Help or feedback?'), findsOneWidget);
-      expect(find.text('Knowledge Base'), findsOneWidget);
-      expect(find.text('E-mail'), findsOneWidget);
-      expect(find.text('GitHub issue'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
       expect(find.textContaining('Version:'), findsWidgets);
       expect(find.text('Storage used'), findsOneWidget);
       expect(find.text('Privacy Policy'), findsOneWidget);
+      expect(find.text('General'), findsOneWidget);
+      expect(find.text('Vibrate on disconnect'), findsOneWidget);
+      expect(find.text('Privacy Zones'), findsOneWidget);
+
+      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Help or feedback?'), findsOneWidget);
+      expect(find.text('Knowledge Base'), findsOneWidget);
+      expect(find.text('E-mail'), findsOneWidget);
+      expect(find.text('GitHub issue'), findsOneWidget);
     });
 
     testWidgets("is translated in German", (WidgetTester tester) async {
@@ -111,21 +110,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Einstellungen'), findsOneWidget);
-      expect(find.text('Allgemeine'), findsOneWidget);
-      expect(find.text('Vibration bei Verbindungsabbruch'), findsOneWidget);
-      expect(find.text('Privatzonen'), findsOneWidget);
-
-      // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('Datenschutz'), 500.0);
-      await tester.pumpAndSettle();
-      
-      expect(find.text('Hilfe oder Feedback?'), findsOneWidget);
-      expect(find.text('E-Mail'), findsOneWidget);
-      expect(find.text('GitHub issue'), findsOneWidget);
       expect(find.text('Über die App'), findsOneWidget);
       expect(find.textContaining('Version:'), findsWidgets);
       expect(find.text('Speichernutzung'), findsOneWidget);
       expect(find.text('Datenschutz'), findsOneWidget);
+      expect(find.text('Allgemeine'), findsOneWidget);
+      expect(find.text('Vibration bei Verbindungsabbruch'), findsOneWidget);
+      expect(find.text('Privatzonen'), findsOneWidget);
+
+      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hilfe oder Feedback?'), findsOneWidget);
+      expect(find.text('E-Mail'), findsOneWidget);
+      expect(find.text('GitHub issue'), findsOneWidget);
     });
 
     testWidgets("is translated in Portuguese", (WidgetTester tester) async {
@@ -133,21 +131,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Configurações'), findsOneWidget);
-      expect(find.text('Geral'), findsOneWidget);
-      expect(find.text('Vibrar ao desconectar'), findsOneWidget);
-      expect(find.text('Áreas de Privacidade'), findsOneWidget);
-
-      // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('Política de Privacidade'), 500.0);
-      await tester.pumpAndSettle();
-      
-      expect(find.text('Ajuda ou feedback?'), findsOneWidget);
-      expect(find.text('E-mail'), findsOneWidget);
-      expect(find.text('GitHub issue'), findsOneWidget);
       expect(find.text('Sobre'), findsOneWidget);
       expect(find.textContaining('Versão:'), findsWidgets);
       expect(find.text('Armazenamento usado'), findsOneWidget);
       expect(find.text('Política de Privacidade'), findsOneWidget);
+      expect(find.text('Geral'), findsOneWidget);
+      expect(find.text('Vibrar ao desconectar'), findsOneWidget);
+      expect(find.text('Áreas de Privacidade'), findsOneWidget);
+
+      await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ajuda ou feedback?'), findsOneWidget);
+      expect(find.text('E-mail'), findsOneWidget);
+      expect(find.text('GitHub issue'), findsOneWidget);
     });
 
     testWidgets("is translated in French", (WidgetTester tester) async {
@@ -155,21 +152,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Paramètres'), findsOneWidget);
-      expect(find.text('Général'), findsOneWidget);
-      expect(find.text('Vibrer lors de la déconnexion'), findsOneWidget);
-      expect(find.text('Zones de confidentialité'), findsOneWidget);
-
-      // Scroll to make all sections visible
-      await tester.scrollUntilVisible(find.text('Politique de confidentialité'), 500.0);
-      await tester.pumpAndSettle();
-      
-      expect(find.text('Aide ou retour ?'), findsOneWidget);
-      expect(find.text('E-mail'), findsOneWidget);
-      expect(find.text('Ticket GitHub'), findsOneWidget);
       expect(find.text('À propos'), findsOneWidget);
       expect(find.textContaining('Version :'), findsWidgets);
       expect(find.text('Espace de stockage utilisé'), findsOneWidget);
       expect(find.text('Politique de confidentialité'), findsOneWidget);
+      expect(find.text('Général'), findsOneWidget);
+      expect(find.text('Vibrer lors de la déconnexion'), findsOneWidget);
+      expect(find.text('Zones de confidentialité'), findsOneWidget);
+
+      await tester.scrollUntilVisible(find.text('Ticket GitHub'), 500.0);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Aide ou retour ?'), findsOneWidget);
+      expect(find.text('E-mail'), findsOneWidget);
+      expect(find.text('Ticket GitHub'), findsOneWidget);
     });
 
     testWidgets("login and logout buttons are translated in English",

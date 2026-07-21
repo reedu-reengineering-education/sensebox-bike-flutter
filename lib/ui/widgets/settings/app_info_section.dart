@@ -7,7 +7,12 @@ import 'package:sensebox_bike/utils/storage_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AppInfoSection extends StatefulWidget {
-  const AppInfoSection({super.key});
+  final Future<bool> Function(Uri url, {LaunchMode mode}) launchUrlFunction;
+
+  const AppInfoSection({
+    super.key,
+    this.launchUrlFunction = launchUrl,
+  });
 
   @override
   State<AppInfoSection> createState() => _AppInfoSectionState();
@@ -67,7 +72,7 @@ class _AppInfoSectionState extends State<AppInfoSection> {
               title: Text(localizations.settingsPrivacyPolicy),
               onTap: () async {
                 try {
-                  await launchUrl(
+                  await widget.launchUrlFunction(
                     Uri.parse(senseBoxBikePrivacyPolicyUrl),
                     mode: LaunchMode.externalApplication,
                   );

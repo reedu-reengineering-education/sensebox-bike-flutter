@@ -50,10 +50,10 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         children: <Widget>[
           _buildLoginLogoutSection(context, openSenseMapBloc),
+          _buildAboutSection(context),
           _buildGeneralSettingsSection(context, settingsBloc),
           _buildAccountManagementSection(context),
           _buildHelpSection(context),
-          _buildAboutSection(context),
         ],
       ),
     );
@@ -497,7 +497,7 @@ class SettingsScreen extends StatelessWidget {
       children: [
         _buildSectionHeader(
             context, AppLocalizations.of(context)!.settingsAbout),
-        const AppInfoSection(),
+        AppInfoSection(launchUrlFunction: launchUrlFunction),
       ],
     );
   }
