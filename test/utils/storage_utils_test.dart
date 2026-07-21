@@ -1,9 +1,16 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/utils/storage_utils.dart';
 
+import '../test_helpers.dart';
+
 void main() {
+  setUpAll(() {
+    initializeTestDependencies();
+  });
+
   group('formatStorageSize', () {
     test('formats bytes', () {
       expect(formatStorageSize(512), '512 B');
@@ -67,6 +74,38 @@ void main() {
 
       expect(size, 5);
       await tempFile.delete();
+    });
+  });
+
+  group('getAppStorageInfo', () {
+    late Directory tempDir;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('storage_utils_test');
+      const channel = MethodChannel('plugins.flutter.io/path_provider');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'getApplicationDocumentsDirectory') {
+          return tempDir.path;
+        }
+        return null;
+      });
+    });
+
+    tearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test('returns isar and total app data sizes', () async {
+      await File('${tempDir.path}/default.isar').writeAsString('12345');
+      await File('${tempDir.path}/export.csv').writeAsString('abc');
+
+      final info = await getAppStorageInfo();
+
+      expect(info.isarSize, 5);
+      expect(info.totalAppDataSize, 8);
     });
   });
 }

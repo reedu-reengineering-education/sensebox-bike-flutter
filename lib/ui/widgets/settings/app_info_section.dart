@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/utils/storage_utils.dart';
+import 'package:sensebox_bike/utils/url_launch_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AppInfoSection extends StatefulWidget {
@@ -19,7 +19,7 @@ class AppInfoSection extends StatefulWidget {
 }
 
 class _AppInfoSectionState extends State<AppInfoSection> {
-  late final Future<String> _versionFuture;
+  late final Future<String?> _versionFuture;
 
   @override
   void initState() {
@@ -27,9 +27,13 @@ class _AppInfoSectionState extends State<AppInfoSection> {
     _versionFuture = _loadVersionLabel();
   }
 
-  Future<String> _loadVersionLabel() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    return '${packageInfo.version} (${packageInfo.buildNumber})';
+  Future<String?> _loadVersionLabel() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      return '${packageInfo.version} (${packageInfo.buildNumber})';
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -38,13 +42,19 @@ class _AppInfoSectionState extends State<AppInfoSection> {
 
     return Column(
       children: [
-        FutureBuilder<String>(
+        FutureBuilder<String?>(
           future: _versionFuture,
           builder: (context, snapshot) {
-            final versionLabel = snapshot.data;
-            final versionText = versionLabel != null
-                ? localizations.settingsVersion(versionLabel)
-                : localizations.settingsVersion('...');
+            final versionText = switch (snapshot.connectionState) {
+              ConnectionState.none ||
+              ConnectionState.waiting ||
+              ConnectionState.active =>
+                localizations.settingsVersion('...'),
+              ConnectionState.done when snapshot.hasError || snapshot.data == null =>
+                localizations.settingsVersion('—'),
+              ConnectionState.done =>
+                localizations.settingsVersion(snapshot.data!),
+            };
 
             return ListTile(
               leading: const Icon(Icons.info_outline),
@@ -56,16 +66,10 @@ class _AppInfoSectionState extends State<AppInfoSection> {
         ListTile(
           leading: const Icon(Icons.privacy_tip_outlined),
           title: Text(localizations.settingsPrivacyPolicy),
-          onTap: () async {
-            try {
-              await widget.launchUrlFunction(
-                Uri.parse(senseBoxBikePrivacyPolicyUrl),
-                mode: LaunchMode.externalApplication,
-              );
-            } catch (error, stack) {
-              ErrorService.handleError(error, stack);
-            }
-          },
+          onTap: () => launchExternalUrl(
+            senseBoxBikePrivacyPolicyUrl,
+            launchUrlFunction: widget.launchUrlFunction,
+          ),
         ),
       ],
     );
@@ -113,17 +117,19 @@ class _StorageUsageTileState extends State<_StorageUsageTile> {
       future: _storageFuture,
       builder: (context, snapshot) {
         final subtitle = switch (snapshot.connectionState) {
-          ConnectionState.none => Text('...', style: subtitleStyle),
-          ConnectionState.waiting => Text('...', style: subtitleStyle),
-          ConnectionState.active => Text('...', style: subtitleStyle),
-          ConnectionState.done when snapshot.data != null => Text(
+          ConnectionState.none ||
+          ConnectionState.waiting ||
+          ConnectionState.active =>
+            Text('...', style: subtitleStyle),
+          ConnectionState.done when snapshot.hasError || snapshot.data == null =>
+            Text('—', style: subtitleStyle),
+          ConnectionState.done => Text(
               localizations.settingsStorageDetails(
                 formatStorageSize(snapshot.data!.isarSize),
                 formatStorageSize(snapshot.data!.totalAppDataSize),
               ),
               style: subtitleStyle,
             ),
-          ConnectionState.done => Text('—', style: subtitleStyle),
         };
 
         return ListTile(

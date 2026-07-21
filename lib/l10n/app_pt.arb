@@ -156,7 +156,7 @@
         }
     },
     "settingsStorageUsed": "Armazenamento usado",
-    "settingsStorageDetails": "Banco de dados: {databaseSize} · Total: {totalSize}",
+    "settingsStorageDetails": "Dados do app: {totalSize} (banco de dados: {databaseSize})",
     "@settingsStorageDetails": {
         "placeholders": {
             "databaseSize": {

@@ -364,7 +364,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String settingsStorageDetails(String databaseSize, String totalSize) {
-    return 'Datenbank: $databaseSize · Gesamt: $totalSize';
+    return 'App-Daten: $totalSize (Datenbank: $databaseSize)';
   }
 
   @override

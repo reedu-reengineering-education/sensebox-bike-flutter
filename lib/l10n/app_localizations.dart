@@ -717,7 +717,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsStorageDetails.
   ///
   /// In en, this message translates to:
-  /// **'Database: {databaseSize} · Total: {totalSize}'**
+  /// **'App data: {totalSize} (database: {databaseSize})'**
   String settingsStorageDetails(String databaseSize, String totalSize);
 
   /// No description provided for @settingsContact.

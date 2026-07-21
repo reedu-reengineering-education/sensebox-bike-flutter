@@ -5,8 +5,8 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
-import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/utils/url_launch_utils.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
@@ -518,14 +518,7 @@ class SettingsScreen extends StatelessWidget {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
-      onTap: () async {
-        try {
-          await launchUrlFunction(Uri.parse(url),
-              mode: LaunchMode.externalApplication);
-        } catch (error, stack) {
-          ErrorService.handleError(error, stack);
-        }
-      },
+      onTap: () => launchExternalUrl(url, launchUrlFunction: launchUrlFunction),
     );
   }
 

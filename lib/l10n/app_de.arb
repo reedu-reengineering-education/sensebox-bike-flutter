@@ -156,7 +156,7 @@
         }
     },
     "settingsStorageUsed": "Speichernutzung",
-    "settingsStorageDetails": "Datenbank: {databaseSize} · Gesamt: {totalSize}",
+    "settingsStorageDetails": "App-Daten: {totalSize} (Datenbank: {databaseSize})",
     "@settingsStorageDetails": {
         "placeholders": {
             "databaseSize": {
