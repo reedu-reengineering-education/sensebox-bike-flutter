@@ -187,7 +187,8 @@ List<List<String>> buildCsvRows(
         );
         final values = sensorTitles
             .map((title) => MapEntry(
-                title[0], sensorMap['${title[0]}$separator${title[1]}']))
+                title[0],
+                sensorMap['${title[0]}$separator${title[1] ?? ''}']))
             .toList();
 
         final timestampUtc = geoData.timestamp.isUtc

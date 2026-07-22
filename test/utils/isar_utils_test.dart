@@ -290,6 +290,72 @@ void main() {
       ]);
     });
 
+    test('includes values for sensors with null attribute', () {
+      final geoData1 = GeolocationData()
+        ..id = 1
+        ..timestamp = DateTime.utc(2025, 5, 14, 12, 0, 0)
+        ..latitude = 52.52
+        ..longitude = 13.405;
+
+      final temperature = SensorData()
+        ..id = 1
+        ..title = 'temperature'
+        ..characteristicUuid = 'temp-char'
+        ..attribute = null
+        ..value = 26.16;
+      final humidity = SensorData()
+        ..id = 2
+        ..title = 'humidity'
+        ..characteristicUuid = 'humidity-char'
+        ..attribute = null
+        ..value = 52.94;
+      final distance = SensorData()
+        ..id = 3
+        ..title = 'distance'
+        ..characteristicUuid = 'distance-char'
+        ..attribute = null
+        ..value = 6.0;
+      final overtaking = SensorData()
+        ..id = 4
+        ..title = 'overtaking'
+        ..characteristicUuid = 'overtaking-char'
+        ..attribute = null
+        ..value = 0.09;
+      final asphalt = SensorData()
+        ..id = 5
+        ..title = 'surface_classification'
+        ..characteristicUuid = 'surface-char'
+        ..attribute = 'asphalt'
+        ..value = 1.0;
+
+      final rows = buildCsvRows(
+        [geoData1],
+        {
+          1: [temperature, humidity, distance, overtaking, asphalt],
+        },
+        [
+          ['temperature', null],
+          ['humidity', null],
+          ['distance', null],
+          ['overtaking', null],
+          ['surface_classification', 'asphalt'],
+        ],
+      );
+
+      expect(rows, [
+        [
+          '2025-05-14T12:00:00.000Z',
+          '52.52',
+          '13.405',
+          '26.16',
+          '52.94',
+          '6.00',
+          '0.09',
+          '1.00',
+        ],
+      ]);
+    });
+
     test('skips rows with no sensor data', () {
       final geoData1 = GeolocationData()
         ..id = 1
