@@ -16,8 +16,12 @@ import 'package:sensebox_bike/sensors/gps_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_classification_sensor.dart';
 import 'package:sensebox_bike/sensors/surface_anomaly_sensor.dart';
 import 'package:sensebox_bike/sensors/finedust_sensor.dart';
+import '../sensor_catalog_test_data.dart';
 
 void main() {
+  setUp(setupSensorCatalogFromRepo);
+  tearDown(clearMockSensorCatalog);
+
   final boxSensors = [
     Sensor(id: "67d937c2b6275400071c38c0", title: "Temperature", unit: "°C"),
     Sensor(id: "67d937c2b6275400071c38c1", title: "Rel. Humidity", unit: "%"),
@@ -29,7 +33,8 @@ void main() {
     test('should return sensor ID when title and attribute match', () {
       final sensorData = SensorData()
         ..title = "finedust"
-        ..attribute = "pm1";
+        ..attribute = "pm1"
+        ..characteristicUuid = FinedustSensor.sensorCharacteristicUuid;
       final sensorId = findSensorIdByData(sensorData, boxSensors);
 
       expect(sensorId, "67d937c2b6275400071c38c2");
@@ -38,7 +43,8 @@ void main() {
     test('should return sensor ID when title matches and attribute is null', () {
       final sensorData = SensorData()
         ..title = "temperature"
-        ..attribute = null;
+        ..attribute = null
+        ..characteristicUuid = TemperatureSensor.sensorCharacteristicUuid;
 
       final sensorId = findSensorIdByData(sensorData, boxSensors);
 
@@ -48,7 +54,8 @@ void main() {
     test('should return null when no matching sensor is found', () {
       final sensorData = SensorData()
         ..title = "unknown"
-        ..attribute = null;
+        ..attribute = null
+        ..characteristicUuid = 'unknown-uuid';
 
       final sensorId = findSensorIdByData(sensorData, boxSensors);
 
@@ -58,7 +65,8 @@ void main() {
     test('should return null when attribute does not match', () {
       final sensorData = SensorData()
         ..title = "finedust"
-        ..attribute = "pm15";
+        ..attribute = "pm15"
+        ..characteristicUuid = FinedustSensor.sensorCharacteristicUuid;
 
       final sensorId = findSensorIdByData(sensorData, boxSensors);
 

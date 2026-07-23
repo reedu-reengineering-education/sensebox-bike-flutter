@@ -4,8 +4,11 @@ import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
 import 'package:sensebox_bike/services/isar_service/sensor_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
@@ -31,73 +34,248 @@ class IsarService {
   }
 
   // Additional high-level methods that require coordination between services
-  Future<String> exportTrackToCsvInOpenSenseMapFormat(int trackId) async {
+  Future<String> exportTrackToCsvInOpenSenseMapFormat(
+    int trackId, {
+    void Function(int totalChunks)? onChunkPlan,
+    void Function(int completedChunks, int totalChunks)? onChunkProgress,
+  }) async {
     final track = await _getTrackOrThrow(trackId);
     final senseBox = await getSelectedSenseBoxOrThrow();
     final geolocationDataList =
         await geolocationService.getGeolocationDataByTrackId(trackId);
-    final List<String> sensorDataLines = [];
+    final file = await _createCsvFile(
+      track,
+      geolocationDataList,
+      formatSuffix: 'osem',
+    );
+    final sensorDataByGeolocation = <int, List<SensorData>>{};
 
-    for (var geoData in geolocationDataList) {
-      final data = await sensorService.getSensorDataByGeolocationId(geoData.id);
-      sensorDataLines.addAll(
-        data.map((sensor) {
-          final sensorId = findSensorIdByData(sensor, senseBox.sensors ?? []);
-          return formatOpenSenseMapCsvLine(sensorId, sensor.value, geoData);
-        }),
-      );
+    // Load sensor data once so chunk estimation and writing use identical data.
+    for (final geoData in geolocationDataList) {
+      sensorDataByGeolocation[geoData.id] =
+          await sensorService.getSensorDataByGeolocationId(geoData.id);
     }
 
-    // Convert the enriched sensor data to CSV lines
-    final csvContent = sensorDataLines.join('\n');
-    final filePath = await _saveCsvFile(track, csvContent);
+    final totalChunks = _estimateOpenSenseMapExportChunks(sensorDataByGeolocation);
+    var completedChunks = 0;
+    onChunkPlan?.call(totalChunks);
 
-    return filePath;
+    return _writeCsvFile(file, (sink) async {
+      final lineBuffer = <String>[];
+      for (final geoData in geolocationDataList) {
+        final data = sensorDataByGeolocation[geoData.id] ?? const <SensorData>[];
+        lineBuffer.addAll(
+          data.map((sensor) {
+            final sensorId = findSensorIdByData(sensor, senseBox.sensors ?? []);
+            return formatOpenSenseMapCsvLine(sensorId, sensor.value, geoData);
+          }),
+        );
+
+        final flushedChunks = _flushLineBufferIfNeeded(sink, lineBuffer);
+        if (flushedChunks > 0) {
+          completedChunks += flushedChunks;
+          onChunkProgress?.call(completedChunks, totalChunks);
+          // Yield so UI can paint progress updates between flushed chunks.
+          await Future<void>.delayed(Duration.zero);
+        }
+      }
+
+      final finalFlushedChunks = _flushLineBuffer(sink, lineBuffer);
+      if (finalFlushedChunks > 0) {
+        completedChunks += finalFlushedChunks;
+        onChunkProgress?.call(completedChunks, totalChunks);
+        await Future<void>.delayed(Duration.zero);
+      }
+    });
   }
 
-  Future<String> exportTrackToCsv(int trackId) async {
+  Future<String> exportTrackToCsv(
+    int trackId, {
+    void Function(int totalChunks)? onChunkPlan,
+    void Function(int completedChunks, int totalChunks)? onChunkProgress,
+  }) async {
     final track = await _getTrackOrThrow(trackId);
     final geolocationDataList =
         await geolocationService.getGeolocationDataByTrackId(trackId);
+    final file = await _createCsvFile(
+      track,
+      geolocationDataList,
+      formatSuffix: 'standard',
+    );
+    const converter = ListToCsvConverter();
     final sensorDataByGeolocation = <int, List<SensorData>>{};
 
-    for (var geoData in geolocationDataList) {
-      final sensorData =
+    // Load sensor data once and reuse for both header discovery and row writing.
+    for (final geoData in geolocationDataList) {
+      sensorDataByGeolocation[geoData.id] =
           await sensorService.getSensorDataByGeolocationId(geoData.id);
-      sensorDataByGeolocation[geoData.id] = sensorData;
     }
 
     final sensorTitles = collectAndSortSensorTitles(sensorDataByGeolocation);
-    final headers = buildCsvHeaders(sensorTitles);
-    final csvData = <List<String>>[
-      headers,
-      ...buildCsvRows(
-          geolocationDataList, sensorDataByGeolocation, sensorTitles),
-    ];
+    final totalChunks = _estimateRegularExportChunks(
+      geolocationDataList,
+      sensorDataByGeolocation,
+    );
+    var completedChunks = 0;
+    onChunkPlan?.call(totalChunks);
 
-    final csvString = const ListToCsvConverter().convert(csvData);
-    final filePath = await _saveCsvFile(track, csvString);
+    return _writeCsvFile(file, (sink) async {
+      final headers = buildCsvHeaders(sensorTitles);
+      sink.writeln(converter.convert([headers]));
 
-    return filePath;
+      final rowBuffer = <List<String>>[];
+      for (final geoData in geolocationDataList) {
+        final rows = buildCsvRows(
+          [geoData],
+          {geoData.id: sensorDataByGeolocation[geoData.id] ?? []},
+          sensorTitles,
+        );
+
+        if (rows.isNotEmpty) {
+          rowBuffer.addAll(rows);
+        }
+
+        final flushedChunks = _flushRowBufferIfNeeded(sink, converter, rowBuffer);
+        if (flushedChunks > 0) {
+          completedChunks += flushedChunks;
+          onChunkProgress?.call(completedChunks, totalChunks);
+          // Yield so UI can paint progress updates between flushed chunks.
+          await Future<void>.delayed(Duration.zero);
+        }
+      }
+
+      final finalFlushedChunks = _flushRowBuffer(sink, converter, rowBuffer);
+      if (finalFlushedChunks > 0) {
+        completedChunks += finalFlushedChunks;
+        onChunkProgress?.call(completedChunks, totalChunks);
+        await Future<void>.delayed(Duration.zero);
+      }
+    });
   }
 
-  Future<String> _saveCsvFile(TrackData track, String csvString) async {
-    final directory = await getApplicationDocumentsDirectory();
+  Future<File> _createCsvFile(
+    TrackData track,
+    List<GeolocationData> geolocationDataList,
+    {required String formatSuffix}
+  ) async {
+    final directory = await _resolveExportDirectory();
 
-    if (track.geolocations.isEmpty) {
-      throw Exception("Track has no geolocations");
+    if (geolocationDataList.isEmpty) {
+      throw TrackHasNoGeolocationsException(track.id);
     }
 
     String formattedTimestamp = DateFormat('yyyy-MM-dd_HH-mm')
-        .format(track.geolocations.first.timestamp);
+        .format(geolocationDataList.first.timestamp);
 
-    String trackName = "senseBox_bike_$formattedTimestamp";
+    final baseName = 'senseBox_bike_${formattedTimestamp}_$formatSuffix';
+    return _createUniqueCsvFile(directory.path, baseName);
+  }
 
-    final filePath = '${directory.path}/$trackName.csv';
-    final file = File(filePath);
+  Future<Directory> _resolveExportDirectory() async {
+    if (Platform.isAndroid) {
+      final downloadsDirectory = Directory('/storage/emulated/0/Download');
+      if (downloadsDirectory.existsSync()) {
+        return downloadsDirectory;
+      }
+    }
 
-    await file.writeAsString(csvString);
-    return filePath;
+    // Fallback for non-Android platforms or when public Downloads is unavailable.
+    return getApplicationDocumentsDirectory();
+  }
+
+  File _createUniqueCsvFile(String directoryPath, String baseName) {
+    var filePath = '$directoryPath/$baseName.csv';
+    var file = File(filePath);
+
+    var counter = 1;
+    while (file.existsSync()) {
+      filePath = '$directoryPath/${baseName}_$counter.csv';
+      file = File(filePath);
+      counter++;
+    }
+
+    return file;
+  }
+
+  Future<String> _writeCsvFile(
+    File file,
+    Future<void> Function(IOSink sink) write,
+  ) async {
+    final sink = file.openWrite();
+    try {
+      await write(sink);
+    } finally {
+      await sink.close();
+    }
+    return file.path;
+  }
+
+  int _flushLineBufferIfNeeded(IOSink sink, List<String> lineBuffer) {
+    var flushedChunks = 0;
+    while (lineBuffer.length >= exportCsvWriteBatchSize) {
+      sink.writeln(lineBuffer.take(exportCsvWriteBatchSize).join('\n'));
+      lineBuffer.removeRange(0, exportCsvWriteBatchSize);
+      flushedChunks++;
+    }
+    return flushedChunks;
+  }
+
+  int _flushLineBuffer(IOSink sink, List<String> lineBuffer) {
+    if (lineBuffer.isEmpty) return 0;
+    sink.writeln(lineBuffer.join('\n'));
+    lineBuffer.clear();
+    return 1;
+  }
+
+  int _flushRowBufferIfNeeded(
+    IOSink sink,
+    ListToCsvConverter converter,
+    List<List<String>> rowBuffer,
+  ) {
+    var flushedChunks = 0;
+    while (rowBuffer.length >= exportCsvWriteBatchSize) {
+      final chunk = rowBuffer.take(exportCsvWriteBatchSize).toList();
+      sink.writeln(converter.convert(chunk));
+      rowBuffer.removeRange(0, exportCsvWriteBatchSize);
+      flushedChunks++;
+    }
+    return flushedChunks;
+  }
+
+  int _flushRowBuffer(
+    IOSink sink,
+    ListToCsvConverter converter,
+    List<List<String>> rowBuffer,
+  ) {
+    if (rowBuffer.isEmpty) return 0;
+    sink.writeln(converter.convert(rowBuffer));
+    rowBuffer.clear();
+    return 1;
+  }
+
+  int _estimateOpenSenseMapExportChunks(
+    Map<int, List<SensorData>> sensorDataByGeolocation,
+  ) {
+    final totalRows = sensorDataByGeolocation.values
+        .fold<int>(0, (sum, sensors) => sum + sensors.length);
+    final chunks = (totalRows / exportCsvWriteBatchSize).ceil();
+    return chunks <= 0 ? 1 : chunks;
+  }
+
+  int _estimateRegularExportChunks(
+    List<GeolocationData> geolocationDataList,
+    Map<int, List<SensorData>> sensorDataByGeolocation,
+  ) {
+    var totalRows = 0;
+    for (final geoData in geolocationDataList) {
+      final sensors = sensorDataByGeolocation[geoData.id] ?? const <SensorData>[];
+      if (sensors.isNotEmpty) {
+        totalRows++;
+      }
+    }
+
+    final chunks = (totalRows / exportCsvWriteBatchSize).ceil();
+    return chunks <= 0 ? 1 : chunks;
   }
 
   Future<void> deleteAllData() async {
@@ -105,10 +283,7 @@ class IsarService {
       await trackService.deleteAllTracks();
       await geolocationService.deleteAllGeolocations();
       await sensorService.deleteAllSensorData();
-
-      print("All data has been successfully deleted.");
     } catch (e) {
-      print("Error while deleting all data: $e");
       throw Exception("Failed to delete all data.");
     }
   }

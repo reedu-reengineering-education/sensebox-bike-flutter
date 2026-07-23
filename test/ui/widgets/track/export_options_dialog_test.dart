@@ -6,10 +6,40 @@ import 'package:sensebox_bike/ui/widgets/common/selectable_list_tile.dart';
 
 import '../../../test_helpers.dart';
 
+class _DialogHost extends StatefulWidget {
+  const _DialogHost({required this.onExport});
+
+  final Future<void> Function(String) onExport;
+
+  @override
+  State<_DialogHost> createState() => _DialogHostState();
+}
+
+class _DialogHostState extends State<_DialogHost> {
+  bool _opened = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_opened) return;
+    _opened = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (_) => ExportOptionsDialog(onExport: widget.onExport),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
+}
+
 Widget buildDialog({required Future<void> Function(String) onExport}) {
   return createLocalizedTestApp(
-    child: Builder(
-      builder: (context) => ExportOptionsDialog(onExport: onExport),
+    child: Scaffold(
+      body: _DialogHost(onExport: onExport),
     ),
     locale: const Locale('en'),
   );
@@ -22,6 +52,7 @@ void main() {
 
   testWidgets('shows options and disables export button if nothing selected', (tester) async {
     await tester.pumpWidget(buildDialog(onExport: (_) async {}));
+    await tester.pumpAndSettle();
 
     expect(find.text('Standard CSV'), findsOneWidget);
     expect(find.text('openSenseMap CSV'), findsOneWidget);
@@ -43,6 +74,7 @@ void main() {
         selectedFormat = format;
       },
     ));
+    await tester.pumpAndSettle();
 
     await tapElement(
         find.widgetWithText(SelectableListTile, 'Standard CSV'), tester);
@@ -58,18 +90,19 @@ void main() {
     expect(selectedFormat, 'regular');
   });
 
-  testWidgets('shows error dialog if onExport throws', (tester) async {
+  testWidgets('shows snackbar if onExport throws', (tester) async {
     await tester.pumpWidget(buildDialog(
       onExport: (_) async {
         throw Exception('Export failed!');
       },
     ));
+    await tester.pumpAndSettle();
 
     await tapElement(
         find.widgetWithText(SelectableListTile, 'Standard CSV'), tester);
     await tapElement(find.widgetWithText(ButtonWithLoader, 'Export'), tester);
+    await tester.pumpAndSettle();
 
-    expect(find.textContaining('Export failed!'), findsOneWidget);
-    expect(find.text('Ok'), findsOneWidget);
+    expect(find.byType(SnackBar), findsOneWidget);
   });
 }

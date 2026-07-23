@@ -13,7 +13,7 @@ import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
-import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
+import 'package:sensebox_bike/ui/widgets/common/operation_progress_overlay.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 
 class RecordingBloc with ChangeNotifier {
@@ -199,6 +199,25 @@ class RecordingBloc with ChangeNotifier {
     final canUpload =
         senseBox != null && openSenseMapBloc.hasAuthAndSelectedSenseBox;
 
+    if (!canUpload) {
+      final localizations = AppLocalizations.of(_context!);
+      final message = !openSenseMapBloc.isAuthenticated
+          ? localizations?.uploadBlockNotAuthenticated
+          : localizations?.uploadBlockNoBox;
+
+      if (message != null) {
+        showCustomDialog(
+          context: _context!,
+          message: message,
+          confirmButtonText: localizations?.generalOk,
+          type: DialogType.confirmation,
+        );
+      }
+
+      _cleanupBatchUploadService();
+      return;
+    }
+
     try {
       await track.geolocations.load();
       final geolocations = track.geolocations.toList();
@@ -207,28 +226,27 @@ class RecordingBloc with ChangeNotifier {
         throw TrackHasNoGeolocationsException(track.id);
       }
 
-      UploadProgressOverlay.show(
+      OperationProgressOverlay.show(
         _context!,
-        batchUploadService: _batchUploadService!,
-        canUpload: canUpload,
-        isAuthenticated: openSenseMapBloc.isAuthenticated,
-        hasSelectedBox: openSenseMapBloc.selectedSenseBox != null,
-        onUploadComplete: () {
-          _cleanupBatchUploadService();
-          debugPrint('[RecordingBloc] Batch upload completed successfully');
-        },
-        onUploadFailed: () {
-          _cleanupBatchUploadService();
-          debugPrint('[RecordingBloc] Batch upload failed permanently');
-        },
-        onStartUpload: () {
-          if (canUpload) _startBatchUpload(track, senseBox!);
-        },
+        config: OperationProgressOverlayConfig.upload(
+          uploadService: _batchUploadService!,
+          onComplete: () {
+            _cleanupBatchUploadService();
+            debugPrint('[RecordingBloc] Batch upload completed successfully');
+          },
+          onFailed: () {
+            _cleanupBatchUploadService();
+            debugPrint('[RecordingBloc] Batch upload failed permanently');
+          },
+          onStart: () {
+            _startBatchUpload(track, senseBox);
+          },
+        ),
       );
     } catch (e, stack) {
       debugPrint('[RecordingBloc] Error showing upload modal: $e');
       ErrorService.handleError(e, stack);
-      UploadProgressOverlay.hide();
+      OperationProgressOverlay.hide();
       _cleanupBatchUploadService();
     }
   }
@@ -265,7 +283,7 @@ class RecordingBloc with ChangeNotifier {
     _isRecordingNotifier.dispose();
 
     // Hide any open upload modal
-    UploadProgressOverlay.hide();
+    OperationProgressOverlay.hide();
 
     super.dispose();
   }

@@ -2,6 +2,7 @@ import 'package:geolocator/geolocator.dart' as geolocator;
 
 // Tracks screen
 const tracksPerPage = 5;
+const exportCsvWriteBatchSize = 500;
 
 const defaultTimeout = 30; // in seconds
 
@@ -30,11 +31,15 @@ const githubDataBaseUrl =
 const apiUrlsPath = '/api_urls.json';
 const campaignsPath = '/locations.json';
 const boxConfigurationsPath = '/box_configurations.json';
+const sensorsPath = '/sensors.json';
 
+const sensorsAssetPath = 'data/sensors.json';
+const boxConfigurationsAssetPath = 'data/box_configurations.json';
 
 const apiUrlsUrl = '$githubDataBaseUrl$apiUrlsPath';
 const campaignsUrl = '$githubDataBaseUrl$campaignsPath';
 const boxConfigurationsUrl = '$githubDataBaseUrl$boxConfigurationsPath';
+const sensorsUrl = '$githubDataBaseUrl$sensorsPath';
 
 final globePosition = geolocator.Position(
     latitude: 0.0,

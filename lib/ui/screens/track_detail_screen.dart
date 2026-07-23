@@ -1,9 +1,6 @@
-import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
+
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -11,15 +8,14 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
-import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:sensebox_bike/services/location_permission_platform.dart';
 import 'package:sensebox_bike/ui/widgets/track/export_button.dart';
 import 'package:sensebox_bike/ui/widgets/track/trajectory_widget.dart';
-import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
+import 'package:sensebox_bike/ui/widgets/common/operation_progress_overlay.dart';
+import 'package:sensebox_bike/services/export_progress_service.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -53,6 +49,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   List<GeolocationData> _geolocations = [];
   List<SensorData> _sensorData = [];
   bool _isLoading = true;
+  ExportProgressService? _exportProgressService;
   // Local track data that can be updated
   late TrackData _track;
 
@@ -80,6 +77,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   @override
   void dispose() {
     batchUploadService.dispose();
+    _exportProgressService?.dispose();
     super.dispose();
   }
 
@@ -337,96 +335,58 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
-  Future<void> _handleAndroidExport(String csvFilePath) async {
-    final localization = AppLocalizations.of(context)!;
-
-    try {
-      DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-      final androidInfo = await deviceInfoPlugin.androidInfo;
-
-      // check if api level is smaller than 33
-      if (androidInfo.version.sdkInt < 33) {
-        PermissionStatus status = await Permission.storage.request();
-
-        if (!status.isGranted && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(localization.trackDetailsPermissionsError),
-            action: SnackBarAction(
-                label: localization.generalSettings,
-                onPressed: () => openAppSettings()),
-          ));
-          return;
-        }
-      }
-
-      Directory? directory;
-
-      if (isAndroidPlatform) {
-        //downloads folder - android only - API>30
-        directory = Directory('/storage/emulated/0/Download');
-      } else {
-        directory = await getExternalStorageDirectory();
-      }
-
-      if (directory == null || !directory.existsSync()) {
-        ErrorService.handleError(
-            ExportDirectoryAccessError(), StackTrace.current);
-        return;
-      }
-
-      // copy file to external storage
-      final file = File(csvFilePath);
-      final newName = file.path.split('/').last;
-      final newPath = '${directory.path}/$newName';
-
-      await file.copy(newPath);
-
-      if (context.mounted) {
-        // show snackbar
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(localization.trackDetailsFileSaved),
-          action: SnackBarAction(
-            label: localization.generalShare,
-            onPressed: () async {
-              await _shareFile(newPath);
-            },
-          ),
-        ));
-      }
-    } catch (e) {
-      await _shareFile(csvFilePath);
-    }
-  }
 
   Future<void> _exportTrackToCsv(
       {bool isOpenSourceMapCompatible = false}) async {
+    final localizations = AppLocalizations.of(context)!;
     setState(() => _isDownloading = true);
 
-    try {
-      final String csvFilePath;
+    _exportProgressService?.dispose();
+    _exportProgressService = ExportProgressService(
+      isarService: isarService,
+      trackId: _track.id,
+      isOpenSourceMapCompatible: isOpenSourceMapCompatible,
+    );
+    _exportProgressService!.initialize();
 
-      if (isOpenSourceMapCompatible) {
-        csvFilePath = await isarService
-            .exportTrackToCsvInOpenSenseMapFormat(_track.id);
-      } else {
-        csvFilePath = await isarService.exportTrackToCsv(_track.id);
-      }
+    String? exportedFilePath;
 
-      // if android, save to external storage
-      // if ios, open share dialog
-      if (Platform.isAndroid) {
-        _handleAndroidExport(csvFilePath);
-      } else if (Platform.isIOS) {
-        await Share.shareXFiles([XFile(csvFilePath)],
-            text: AppLocalizations.of(context)!.trackDetailsExport);
-      }
-    } catch (e) {
-      ErrorService.handleError('Error exporting CSV: $e', StackTrace.current);
-    } finally {
-      setState(() {
-        _isDownloading = false;
-      });
-    }
+    OperationProgressOverlay.show(
+      context,
+      config: OperationProgressOverlayConfig.stream(
+        progressStream: _exportProgressService!.progressStream,
+        titleText: localizations.trackDetailsExport,
+        showConfirmation: false,
+        exportFilePath: 'export', // Flag to indicate this is an export
+        onShare: () async {
+          final path = exportedFilePath;
+          if (path != null) {
+            await _shareFile(path);
+          }
+        },
+        onStart: () async {
+          try {
+            exportedFilePath = await _exportProgressService!.startExport();
+          } catch (e) {
+            ErrorService.handleError('Error exporting CSV: $e', StackTrace.current);
+          }
+        },
+        onComplete: () async {
+          setState(() => _isDownloading = false);
+          _exportProgressService?.dispose();
+          _exportProgressService = null;
+        },
+        onFailed: () {
+          setState(() => _isDownloading = false);
+        },
+        onDismiss: () {
+          setState(() => _isDownloading = false);
+          _exportProgressService?.cancel();
+          _exportProgressService?.dispose();
+          _exportProgressService = null;
+        },
+      ),
+    );
   }
 
   Future<void> _startUpload() async {
@@ -449,44 +409,24 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     setState(() => _isUploading = true);
 
     try {
-      UploadProgressOverlay.show(
+      OperationProgressOverlay.show(
         context,
-        batchUploadService: batchUploadService,
-        isAuthenticated: openSenseMapBloc.isAuthenticated,
-        hasSelectedBox: openSenseMapBloc.selectedSenseBox != null,
-        onUploadComplete: () {
-          // Upload completed successfully
-          setState(() => _isUploading = false);
-          if (mounted) {
-            // Refresh the track data to show updated status
-            _loadTrackData();
-            widget.onTrackUploaded?.call(); // Call the callback
-          }
-        },
-        onUploadFailed: () {
-          // Upload failed permanently
-          setState(() => _isUploading = false);
-          if (mounted) {
-            // Refresh the track data to show updated error status and upload attempts
-            _loadTrackData();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(localizations.trackUploadRetryFailed),
-                backgroundColor: Theme.of(context).colorScheme.error,
-              ),
-            );
-          }
-        },
-        onStartUpload: () async {
-          // Start the upload when user confirms
-          try {
-            await batchUploadService.uploadTrack(
-                _track, openSenseMapBloc.selectedSenseBox!);
-          } catch (e) {
+        config: OperationProgressOverlayConfig.upload(
+          uploadService: batchUploadService,
+          onComplete: () {
+            // Upload completed successfully
             setState(() => _isUploading = false);
-            // Show error message and refresh track data
             if (mounted) {
-              // Refresh the track data to show any status changes
+              // Refresh the track data to show updated status
+              _loadTrackData();
+              widget.onTrackUploaded?.call(); // Call the callback
+            }
+          },
+          onFailed: () {
+            // Upload failed permanently
+            setState(() => _isUploading = false);
+            if (mounted) {
+              // Refresh the track data to show updated error status and upload attempts
               _loadTrackData();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -495,12 +435,32 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 ),
               );
             }
-          }
-        },
-        onDismiss: () {
-          // User canceled the upload modal
-          setState(() => _isUploading = false);
-        },
+          },
+          onStart: () async {
+            // Start the upload when user confirms
+            try {
+              await batchUploadService.uploadTrack(
+                  _track, openSenseMapBloc.selectedSenseBox!);
+            } catch (e) {
+              setState(() => _isUploading = false);
+              // Show error message and refresh track data
+              if (mounted) {
+                // Refresh the track data to show any status changes
+                _loadTrackData();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(localizations.trackUploadRetryFailed),
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                );
+              }
+            }
+          },
+          onDismiss: () {
+            // User canceled the upload modal
+            setState(() => _isUploading = false);
+          },
+        ),
       );
 
       // Don't start upload immediately - wait for user confirmation
@@ -519,7 +479,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       }
     }
   }
-
 
   Widget _buildAppBarTitle(TrackData track, bool hideUploadButton) {
     final theme = Theme.of(context);
@@ -562,6 +521,23 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           isDisabled: false,
           isDownloading: _isDownloading,
           onExport: (selectedFormat) async {
+            // Require authentication for openSenseMap export format
+            if (selectedFormat == 'openSenseMap' &&
+                !openSenseMapBloc.isAuthenticated) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(context)!
+                          .exportRequiresLoginToOpenSenseMap,
+                    ),
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                );
+              }
+              return;
+            }
+
             if (selectedFormat == 'regular') {
               await _exportTrackToCsv();
             } else if (selectedFormat == 'openSenseMap') {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -15,7 +16,10 @@ import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'sensor_catalog_test_data.dart';
 
 /// Initializes common test dependencies
 void initializeTestDependencies() {
@@ -71,9 +75,12 @@ Future<void> tapElement(
 
 Future<Isar> initializeInMemoryIsar() async {
   await Isar.initializeIsarCore(download: true);
+  final testDirectory = Directory.systemTemp.createTempSync('isar_test_');
+  final testName = 'test_${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(1 << 20)}';
   return await Isar.open(
     [TrackDataSchema, GeolocationDataSchema, SensorDataSchema],
-    directory: '',
+    directory: testDirectory.path,
+    name: testName,
   );
 }
 
@@ -86,6 +93,37 @@ void mockPathProvider(String tempDirectoryPath) {
     }
     return null;
   });
+}
+
+/// In-memory [IsarProvider] for service tests with serialized writes.
+class TestIsarProvider implements IsarProvider {
+  TestIsarProvider(this._isar);
+
+  final Isar _isar;
+  Future<void> _writeChain = Future.value();
+
+  @override
+  Future<Isar> get db async => _isar;
+
+  @override
+  Future<Isar> getDatabase() async => _isar;
+
+  @override
+  Future<T> runWriteTxn<T>(Future<T> Function(Isar isar) action) async {
+    final operation = _writeChain.then((_) async {
+      return _isar.writeTxn(() => action(_isar));
+    });
+    _writeChain = operation.then((_) {}, onError: (_) {});
+    return operation;
+  }
+
+  @override
+  Future<void> close() async {
+    if (_isar.isOpen) {
+      await _isar.close();
+    }
+    _writeChain = Future.value();
+  }
 }
 
 Future<void> clearIsarDatabase(Isar isar) async {
@@ -124,13 +162,11 @@ void mockSenseBoxInSharedPreferences() {
 }
 
 TrackData createMockTrackData() {
-  return TrackData()
-    ..id = Isar.autoIncrement;
+  return TrackData();
 }
 
 GeolocationData createMockGeolocationData(TrackData trackData) {
   return GeolocationData()
-    ..id = Isar.autoIncrement
     ..latitude = 52.5200
     ..longitude = 13.4050
     ..timestamp = DateTime.now()
@@ -149,11 +185,10 @@ GeolocationData createTestGeolocation(double latitude, double longitude) {
 
 SensorData createMockSensorData(GeolocationData geolocationData) {
   return SensorData()
-    ..id = Isar.autoIncrement
     ..title = 'temperature'
     ..value = 25.0
     ..attribute = null
-    ..characteristicUuid = '1234-5678-9012-3456'
+    ..characteristicUuid = testTemperatureCharacteristicUuid
     ..geolocationData.value = geolocationData;
 }
 
@@ -254,8 +289,10 @@ void setupMockGeolocator(dynamic mockGeolocator, double lat, double lng,
 /// Sets up recording mode for tests
 /// Requires MockRecordingBloc and MockIsarService from mocks.dart
 void setupRecordingMode(dynamic recordingBloc, dynamic isarService) {
-  when(() => isarService.geolocationService.saveGeolocationData(any()))
-      .thenAnswer((_) async => 1);
+  when(() => isarService.geolocationService.saveGeolocationWithSensors(
+        any(),
+        any(),
+      )).thenAnswer((_) async => 1);
   recordingBloc.setRecording(true);
   when(() => recordingBloc.currentTrack).thenReturn(createMockTrackData());
 }
@@ -302,10 +339,12 @@ Future<void> testGeolocationWithPrivacyZone({
   }
 
   if (shouldSave) {
-    verify(() => mockIsarService.geolocationService.saveGeolocationData(any()))
-        .called(1);
+    verify(() => mockIsarService.geolocationService.saveGeolocationWithSensors(
+          any(),
+          any(),
+        )).called(1);
   } else {
-    verifyNever(
-        () => mockIsarService.geolocationService.saveGeolocationData(any()));
+    verifyNever(() => mockIsarService.geolocationService
+        .saveGeolocationWithSensors(any(), any()));
   }
 }
