@@ -13,6 +13,18 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// Kotlin 2.2+ rejects languageVersion < 1.8. Some plugins (e.g. sentry_flutter 8.x)
+// still pin 1.6; raise the floor so the project builds with AGP/Kotlin for API 36.
+// 1.9 is required by plugins that use enum entries (e.g. haptic_feedback).
+subprojects {
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            languageVersion = "1.9"
+            apiVersion = "1.9"
+        }
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
