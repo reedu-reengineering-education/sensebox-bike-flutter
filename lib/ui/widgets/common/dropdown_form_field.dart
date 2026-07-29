@@ -14,9 +14,7 @@ class DropdownFormField<T> extends FormField<T> {
   }) : super(
           builder: (FormFieldState<T> state) {
             return DropdownButtonFormField<T>(
-              // ignore: deprecated_member_use
-              // Using 'value' for compatibility with Flutter 3.29.1
-              value: state.value,
+              initialValue: state.value,
               decoration: InputDecoration(
                 labelText: labelText,
                 errorText: state.errorText,
