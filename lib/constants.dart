@@ -30,11 +30,13 @@ const githubDataBaseUrl =
 
 const apiUrlsPath = '/api_urls.json';
 const campaignsPath = '/locations.json';
-const boxConfigurationsPath = '/box_configurations.json';
+// Legacy inline format kept at /box_configurations.json for older app releases.
+// Current builds use the catalog-keyed v2 file.
+const boxConfigurationsPath = '/box_configurations_v2.json';
 const sensorsPath = '/sensors.json';
 
 const sensorsAssetPath = 'data/sensors.json';
-const boxConfigurationsAssetPath = 'data/box_configurations.json';
+const boxConfigurationsAssetPath = 'data/box_configurations_v2.json';
 
 const apiUrlsUrl = '$githubDataBaseUrl$apiUrlsPath';
 const campaignsUrl = '$githubDataBaseUrl$campaignsPath';

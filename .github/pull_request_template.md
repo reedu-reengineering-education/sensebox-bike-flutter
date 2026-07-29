@@ -16,6 +16,7 @@ Closes #
 [ ] I have performed a self-review of my code
 [ ] I have added or updated tests
 [ ] I have added or updated relevant documentation
+[ ] I checked whether this change could break the app for people who already have it installed (for example remote config, file formats, or required updates)
 
 ### Additional Information
 
