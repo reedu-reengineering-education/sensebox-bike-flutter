@@ -85,17 +85,11 @@ class GeolocationBloc with ChangeNotifier {
     recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
   }
 
-  void setCollectInstantSensorData(
-    List<SensorData> Function(GeolocationData geo)? callback,
-  ) {
-    _collectInstantSensorData = callback;
-  }
-
   void _onRecordingChanged() {
     if (recordingBloc.isRecording) {
       if (recordingBloc.activeCollectionMode.usesPeriodicTimer) {
         _startPeriodicCollectionTimer();
-      } else if (recordingBloc.activeCollectionMode.isGpsDriven) {
+      } else if (recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
         _stopPeriodicCollectionTimer();
         _startStationaryLocationTimer();
       } else {
@@ -157,14 +151,18 @@ class GeolocationBloc with ChangeNotifier {
           return;
         }
 
-        // Only GPS-driven recording persists from the stream. Always keep the
-        // last fix for on-tap / periodic captureSample. Re-check recording+mode
-        // here so an in-flight event from idle (mode reset to gpsDriven) cannot
-        // save when the user has just started an on-tap / periodic session.
-        if (!recordingBloc.isRecording ||
-            !recordingBloc.activeCollectionMode.isGpsDriven) {
-          _lastEmittedPosition = geolocationData;
+        _lastEmittedPosition = geolocationData;
+
+        if (!recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
+          // periodic / onTap: refresh last known position only.
           return;
+        }
+
+        _resetStationaryLocationTimer();
+
+        final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
+        if (shouldEmit) {
+          _emitGeolocation(geolocationData);
         }
 
         await _applyIncomingGpsPosition(
@@ -177,6 +175,8 @@ class GeolocationBloc with ChangeNotifier {
       
       if (recordingBloc.isRecording) {
         _onRecordingChanged();
+      } else if (recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
+        _startStationaryLocationTimer();
       }
       _isListening = true;
     } catch (e, stack) {
@@ -230,9 +230,61 @@ class GeolocationBloc with ChangeNotifier {
         return;
       }
 
-      final shouldEmit = await _persistAndEmit(geolocationData);
+      _lastEmittedPosition = geolocationData;
+
+      if (!recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
+        // Avoid dense GPS-driven samples when in periodic/onTap mode.
+        return;
+      }
+
+      final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
       if (shouldEmit) {
         _lastEmittedPosition = geolocationData;
+      }
+    } finally {
+      _isCapturingSample = false;
+    }
+  }
+
+  /// Single write/emit path for GPS-driven stationary ticks, periodic timer,
+  /// and on-tap manual samples.
+  Future<void> captureSample({DateTime? at}) async {
+    if (_isCapturingSample) {
+      return;
+    }
+    if (!recordingBloc.isRecording || recordingBloc.currentTrack == null) {
+      return;
+    }
+
+    _isCapturingSample = true;
+    try {
+      GeolocationData? source = _lastEmittedPosition;
+      if (source == null) {
+        try {
+          final position = await getCurrentLocation();
+          source = _createGeolocationFromPosition(position);
+          _lastEmittedPosition = source;
+        } catch (e, stack) {
+          ErrorService.handleError(e, stack);
+          return;
+        }
+      }
+
+      final geolocationData = GeolocationData()
+        ..latitude = source.latitude
+        ..longitude = source.longitude
+        ..speed = source.speed
+        ..timestamp = (at ?? DateTime.now()).toUtc();
+
+      // Manual/periodic samples skip the 1s GPS throttle; still respect privacy.
+      if (_privacyZoneChecker.isInsidePrivacyZone(geolocationData)) {
+        return;
+      }
+
+      final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
+      if (shouldEmit) {
+        _lastEmittedPosition = geolocationData;
+        _emitGeolocation(geolocationData);
       }
     } finally {
       _isCapturingSample = false;
@@ -243,13 +295,13 @@ class GeolocationBloc with ChangeNotifier {
     _stopStationaryLocationTimer();
     
     if (!recordingBloc.isRecording ||
-        !recordingBloc.activeCollectionMode.isGpsDriven) {
+        !recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
       return;
     }
     
     _stationaryLocationTimer = Timer.periodic(const Duration(seconds: 20), (timer) async {
       if (!recordingBloc.isRecording ||
-          !recordingBloc.activeCollectionMode.isGpsDriven) {
+          !recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
         _stopStationaryLocationTimer();
         return;
       }
@@ -277,6 +329,7 @@ class GeolocationBloc with ChangeNotifier {
     _periodicCollectionTimer = Timer.periodic(interval, (_) {
       unawaited(captureSample());
     });
+    unawaited(captureSample());
   }
 
   void _stopPeriodicCollectionTimer() {

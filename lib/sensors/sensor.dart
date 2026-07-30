@@ -36,43 +36,6 @@ abstract class Sensor {
 
   /// Latest instant reading used for periodic / on-tap collection modes.
   List<double>? _latestValues;
-
-  bool get hasLatestValues =>
-      _latestValues != null && _latestValues!.isNotEmpty;
-
-  /// Builds DB rows from the last BLE reading (periodic / on-tap; no aggregation).
-  List<SensorData> latestReadingAsSensorData(GeolocationData geolocation) {
-    final values = _latestValues;
-    if (values == null || values.isEmpty) {
-      return const [];
-    }
-
-    final rows = <SensorData>[];
-    if (attributes.isNotEmpty) {
-      for (int j = 0; j < attributes.length && j < values.length; j++) {
-        final data = SensorData()
-          ..characteristicUuid = characteristicUuid
-          ..title = title
-          ..value = values[j]
-          ..attribute = attributes[j]
-          ..geolocationData.value = geolocation;
-        if (shouldStoreSensorData(data)) {
-          rows.add(data);
-        }
-      }
-    } else {
-      final data = SensorData()
-        ..characteristicUuid = characteristicUuid
-        ..title = title
-        ..value = values[0]
-        ..attribute = null
-        ..geolocationData.value = geolocation;
-      if (shouldStoreSensorData(data)) {
-        rows.add(data);
-      }
-    }
-    return rows;
-  }
   
   DirectUploadService? _directUploadService;
   VoidCallback? _recordingListener;
@@ -156,7 +119,7 @@ abstract class Sensor {
     // Buffer for lookback aggregation only in GPS-driven mode.
     if (data.isNotEmpty &&
         recordingBloc.isRecording &&
-        recordingBloc.activeCollectionMode.isGpsDriven) {
+        recordingBloc.activeCollectionMode.aggregatesSensorValues) {
       final sensorTimestamp = DateTime.now().toUtc();
       final timestampedValue = TimestampedSensorValue(
         values: data,
@@ -299,11 +262,7 @@ abstract class Sensor {
     return valuesInWindow;
   }
 
-  void _performInstantSnapshot(
-    int geoId,
-    GeolocationData geo, {
-    bool alreadyPersisted = false,
-  }) {
+  void _performInstantSnapshot(int geoId, GeolocationData geo) {
     final batch = _sensorBatches[geoId];
     if (batch == null) {
       return;
@@ -313,25 +272,18 @@ abstract class Sensor {
         _latestValues!.isNotEmpty &&
         !batch.aggregatedData.containsKey(title)) {
       batch.aggregatedData[title] = List<double>.from(_latestValues!);
-      if (alreadyPersisted) {
-        batch.isSavedToDb = true;
-      }
 
       Future.microtask(() async {
         await _flushBuffers();
       });
-      return;
     }
 
-    if (alreadyPersisted) {
+    if (!batch.aggregatedData.containsKey(title)) {
       batch.isSavedToDb = true;
       if (_directUploadService == null || !_directUploadService!.isEnabled) {
         _sensorBatches.remove(geoId);
       }
-      return;
     }
-
-    _markEmptyBatchProcessed(geoId, batch);
   }
 
   void _performDeferredAggregation(int geoId, GeolocationData geo) {
@@ -418,11 +370,10 @@ abstract class Sensor {
           _cancelPendingAggregation(geoId);
           _performDeferredAggregation(geoId, geo);
           await _flushBuffers();
-        } else if (!recordingBloc.activeCollectionMode.isGpsDriven) {
-          // periodic / onTap: rows already saved with the geolocation in
-          // captureSample; keep batch only for direct upload.
+        } else if (!recordingBloc.activeCollectionMode.aggregatesSensorValues) {
+          // periodic / onTap: store latest instant reading
           _cancelPendingAggregation(geoId);
-          _performInstantSnapshot(geoId, geo, alreadyPersisted: true);
+          _performInstantSnapshot(geoId, geo);
         } else {
           // Defer aggregation until lookback window closes
           // This ensures we capture all values that arrive within the window
@@ -491,9 +442,7 @@ abstract class Sensor {
     _pendingGeolocations.clear();
     _sensorBatches.clear();
     _preGpsValues.clear();
-    if (clearLatestValues) {
-      _latestValues = null;
-    }
+    _latestValues = null;
     _lastAggregatedGeolocationTimeUtc = null;
   }
 

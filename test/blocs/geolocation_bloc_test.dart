@@ -742,6 +742,11 @@ void main() {
     test('captureSample saves and emits while recording', () async {
       setupMockGeolocator(mockGeolocator, testLat1, testLng1);
 
+      await geolocationBloc.getCurrentLocationAndEmit();
+      await Future.delayed(mediumDelay);
+      emittedGeolocations.clear();
+      clearInteractions(geoService);
+
       await geolocationBloc.captureSample();
       await Future.delayed(mediumDelay);
 
@@ -753,6 +758,8 @@ void main() {
 
     test('captureSample is a no-op when overlapping in-flight call', () async {
       setupMockGeolocator(mockGeolocator, testLat1, testLng1);
+      await geolocationBloc.getCurrentLocationAndEmit();
+      await Future.delayed(mediumDelay);
       clearInteractions(geoService);
 
       final saveCompleter = Completer<int>();
@@ -771,40 +778,27 @@ void main() {
           .called(1);
     });
 
-    test('captureSample skips persist in onTap without instant sensor readings',
+    test('getCurrentLocationAndEmit does not persist in periodic mode',
         () async {
-      mockRecordingBloc.setActiveCollectionMode(DataCollectionMode.onTap);
-      geolocationBloc.setCollectInstantSensorData((_) => const []);
+      mockRecordingBloc.setActiveCollectionMode(DataCollectionMode.periodic);
       setupMockGeolocator(mockGeolocator, testLat1, testLng1);
 
-      await geolocationBloc.captureSample();
+      await geolocationBloc.getCurrentLocationAndEmit();
       await Future.delayed(mediumDelay);
 
       expect(emittedGeolocations, isEmpty);
       verifyNever(() => geoService.saveGeolocationWithSensors(any(), any()));
     });
 
-    test('captureSample persists last sensor readings with onTap sample',
-        () async {
+    test('getCurrentLocationAndEmit does not persist in onTap mode', () async {
       mockRecordingBloc.setActiveCollectionMode(DataCollectionMode.onTap);
-      final instantRow = SensorData()
-        ..title = 'temperature'
-        ..value = 21.5
-        ..characteristicUuid = 'temp-uuid';
-      geolocationBloc.setCollectInstantSensorData((_) => [instantRow]);
       setupMockGeolocator(mockGeolocator, testLat1, testLng1);
 
-      await geolocationBloc.captureSample();
+      await geolocationBloc.getCurrentLocationAndEmit();
       await Future.delayed(mediumDelay);
 
-      expect(emittedGeolocations.length, 1);
-      final captured = verify(
-        () => geoService.saveGeolocationWithSensors(any(), captureAny()),
-      ).captured.single as List<SensorData>;
-      expect(
-        captured.any((row) => row.title == 'temperature' && row.value == 21.5),
-        isTrue,
-      );
+      expect(emittedGeolocations, isEmpty);
+      verifyNever(() => geoService.saveGeolocationWithSensors(any(), any()));
     });
   });
 }

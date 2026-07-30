@@ -277,13 +277,27 @@ void main() {
       await geoController.close();
     });
 
-    test('latestReadingAsSensorData returns last value not a mean', () async {
+    test('stores latest instant value instead of aggregated mean', () async {
+      final isarService = MockIsarService();
+      final sensorService = MockSensorService();
+      final savedValues = <double>[];
+      when(() => isarService.sensorService).thenReturn(sensorService);
+      when(() => sensorService.saveSensorDataBatch(any()))
+          .thenAnswer((invocation) async {
+        final batch = invocation.positionalArguments[0] as List<SensorData>;
+        if (batch.isNotEmpty) {
+          savedValues.add(batch.first.value);
+        }
+      });
+
       final sensor = _TestSingleValueSensor(
         MockBleBloc(),
         geolocationBloc,
         recordingBloc,
-        MockIsarService(),
+        isarService,
       );
+
+      await sensor.startListening();
 
       sensor.onDataReceived([10.0]);
       sensor.onDataReceived([20.0]);
@@ -294,45 +308,28 @@ void main() {
         ..latitude = 52.0
         ..longitude = 13.0;
 
-      final rows = sensor.latestReadingAsSensorData(geo);
+      geoController.add(geo);
+      await Future.delayed(const Duration(milliseconds: 100));
 
-      expect(rows, hasLength(1));
-      expect(rows.first.value, 20.0);
-      expect(rows.first.title, 'test_sensor');
+      expect(savedValues, [20.0]);
 
       sensor.dispose();
     });
 
-    test('onTap latestReadingAsSensorData returns last value', () async {
+    test('onTap mode also stores latest instant value', () async {
       recordingBloc.setActiveCollectionMode(DataCollectionMode.onTap);
 
-      final sensor = _TestSingleValueSensor(
-        MockBleBloc(),
-        geolocationBloc,
-        recordingBloc,
-        MockIsarService(),
-      );
-
-      sensor.onDataReceived([7.5]);
-
-      final rows = sensor.latestReadingAsSensorData(GeolocationData()
-        ..id = 2
-        ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0)
-        ..latitude = 52.0
-        ..longitude = 13.0);
-
-      expect(rows, hasLength(1));
-      expect(rows.first.value, 7.5);
-      sensor.dispose();
-    });
-
-    test('geo stream does not double-write when sample already persisted',
-        () async {
       final isarService = MockIsarService();
       final sensorService = MockSensorService();
+      final savedValues = <double>[];
       when(() => isarService.sensorService).thenReturn(sensorService);
       when(() => sensorService.saveSensorDataBatch(any()))
-          .thenAnswer((_) async {});
+          .thenAnswer((invocation) async {
+        final batch = invocation.positionalArguments[0] as List<SensorData>;
+        if (batch.isNotEmpty) {
+          savedValues.add(batch.first.value);
+        }
+      });
 
       final sensor = _TestSingleValueSensor(
         MockBleBloc(),
@@ -342,16 +339,16 @@ void main() {
       );
 
       await sensor.startListening();
-      sensor.onDataReceived([20.0]);
+      sensor.onDataReceived([7.5]);
 
       geoController.add(GeolocationData()
-        ..id = 1
+        ..id = 2
         ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0)
         ..latitude = 52.0
         ..longitude = 13.0);
       await Future.delayed(const Duration(milliseconds: 100));
 
-      verifyNever(() => sensorService.saveSensorDataBatch(any()));
+      expect(savedValues, [7.5]);
       sensor.dispose();
     });
   });

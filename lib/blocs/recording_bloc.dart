@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -23,6 +24,7 @@ class RecordingBloc with ChangeNotifier {
   final TrackBloc trackBloc;
   final OpenSenseMapBloc openSenseMapBloc;
   final SettingsBloc settingsBloc;
+  final ConfigurationBloc configurationBloc;
 
   bool _isRecording = false;
   TrackData? _currentTrack;
@@ -34,8 +36,8 @@ class RecordingBloc with ChangeNotifier {
   DataCollectionMode _activeCollectionMode = DataCollectionMode.gpsDriven;
   int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
 
-  Future<void> Function()? _onRecordingStart;
-  Future<void> Function()? _onRecordingStop;
+  VoidCallback? _onRecordingStart;
+  VoidCallback? _onRecordingStop;
 
   // Context for showing upload modal
   BuildContext? _context;
@@ -58,6 +60,7 @@ class RecordingBloc with ChangeNotifier {
     this.trackBloc,
     this.openSenseMapBloc,
     this.settingsBloc,
+    this.configurationBloc,
   ) {
     openSenseMapBloc.senseBoxStream.listen(_onSenseBoxChanged).onError((error) {
       ErrorService.handleError(error, StackTrace.current);
@@ -103,6 +106,15 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners();
   }
 
+  void _resolveCollectionMode() {
+    final config = configurationBloc
+        .getBoxConfigurationByGrouptag(_selectedSenseBox?.grouptag);
+    _activeCollectionMode =
+        config?.dataCollectionMode ?? DataCollectionMode.gpsDriven;
+    _collectionIntervalSeconds =
+        config?.collectionIntervalSeconds ?? defaultCollectionIntervalSeconds;
+  }
+
   Future<void> startRecording() async {
     if (_isRecording) return;
 
@@ -133,16 +145,16 @@ class RecordingBloc with ChangeNotifier {
       return;
     }
 
-    _activeCollectionMode = settingsBloc.dataCollectionMode;
-    _collectionIntervalSeconds = settingsBloc.collectionIntervalSeconds;
+    _resolveCollectionMode();
     _isRecording = true;
     _lastRecordingStopTimestamp = null;
     await trackBloc.startNewTrack(
       isDirectUpload: settingsBloc.directUploadMode,
       dataCollectionMode: _activeCollectionMode,
-      collectionIntervalSeconds: _activeCollectionMode.usesPeriodicTimer
-          ? _collectionIntervalSeconds
-          : null,
+      collectionIntervalSeconds:
+          _activeCollectionMode == DataCollectionMode.periodic
+              ? _collectionIntervalSeconds
+              : null,
     );
 
     _currentTrack = trackBloc.currentTrack;
@@ -186,10 +198,9 @@ class RecordingBloc with ChangeNotifier {
 
     _isRecording = false;
     _isRecordingNotifier.value = false;
-    // Keep activeCollectionMode until the next startRecording snapshots
-    // settings. Resetting to gpsDriven made the idle GPS stream take the
-    // continuous persist path and race into the first on-tap/periodic point.
-    await _onRecordingStop?.call();
+    _activeCollectionMode = DataCollectionMode.gpsDriven;
+    _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
+    _onRecordingStop?.call();
 
     // Store current track and sensebox for upload
     final trackToUpload = _currentTrack;

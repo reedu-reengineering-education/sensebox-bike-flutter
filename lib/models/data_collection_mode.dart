@@ -1,6 +1,5 @@
 const defaultCollectionIntervalSeconds = 60;
 const minCollectionIntervalSeconds = 5;
-const collectionIntervalPresetsSeconds = [30, 60, 120];
 
 enum DataCollectionMode {
   gpsDriven,
@@ -37,10 +36,11 @@ enum DataCollectionMode {
 }
 
 extension DataCollectionModeBehavior on DataCollectionMode {
-  /// Continuous GPS-driven collection (stream persistence + sensor aggregation).
-  bool get isGpsDriven => this == DataCollectionMode.gpsDriven;
+  bool get usesGpsStreamPersistence => this == DataCollectionMode.gpsDriven;
 
   bool get usesPeriodicTimer => this == DataCollectionMode.periodic;
+
+  bool get aggregatesSensorValues => this == DataCollectionMode.gpsDriven;
 
   bool get showsManualSampleButton => this == DataCollectionMode.onTap;
 }

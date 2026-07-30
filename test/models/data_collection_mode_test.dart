@@ -21,10 +21,11 @@ void main() {
     });
 
     test('behavior helpers', () {
-      expect(DataCollectionMode.gpsDriven.isGpsDriven, isTrue);
+      expect(DataCollectionMode.gpsDriven.usesGpsStreamPersistence, isTrue);
+      expect(DataCollectionMode.gpsDriven.aggregatesSensorValues, isTrue);
       expect(DataCollectionMode.periodic.usesPeriodicTimer, isTrue);
       expect(DataCollectionMode.onTap.showsManualSampleButton, isTrue);
-      expect(DataCollectionMode.onTap.isGpsDriven, isFalse);
+      expect(DataCollectionMode.onTap.aggregatesSensorValues, isFalse);
     });
 
     test('parseCollectionIntervalSeconds validates', () {
