@@ -234,13 +234,13 @@ void main() {
         final now = DateTime.now();
         setupMockGeolocator(mockGeolocator, testLat2, testLng2, timestamp: now);
 
-        await geolocationBloc.applyCurrentGpsPosition();
+        await geolocationBloc.captureSample();
         await Future.delayed(mediumDelay);
 
         emittedGeolocations.clear();
 
         setupMockGeolocator(mockGeolocator, testLat2, testLng2, timestamp: now);
-        await geolocationBloc.applyCurrentGpsPosition();
+        await geolocationBloc.captureSample();
         await Future.delayed(mediumDelay);
 
         expect(emittedGeolocations.length, 0);
@@ -255,11 +255,11 @@ void main() {
         final now = DateTime.now();
         setupMockGeolocator(mockGeolocator, testLat1, testLng1, timestamp: now);
 
-        await geolocationBloc.applyCurrentGpsPosition();
+        await geolocationBloc.captureSample();
         await Future.delayed(mediumDelay);
 
         setupMockGeolocator(mockGeolocator, testLat1, testLng1, timestamp: now);
-        await geolocationBloc.applyCurrentGpsPosition();
+        await geolocationBloc.captureSample();
         await Future.delayed(mediumDelay);
 
         expect(emittedGeolocations.length, 0);
@@ -366,7 +366,7 @@ void main() {
       sensorDataActive = false;
       setupMockGeolocator(mockGeolocator, testLat1, testLng1);
 
-      await geolocationBloc.applyCurrentGpsPosition();
+      await geolocationBloc.captureSample();
       await Future.delayed(mediumDelay);
 
       expect(emittedGeolocations, isEmpty);
@@ -383,7 +383,7 @@ void main() {
       sensorDataActive = true;
       setupMockGeolocator(mockGeolocator, testLat1, testLng1);
 
-      await geolocationBloc.applyCurrentGpsPosition();
+      await geolocationBloc.captureSample();
       await Future.delayed(mediumDelay);
 
       expect(emittedGeolocations, isNotEmpty);
@@ -742,11 +742,6 @@ void main() {
     test('captureSample saves and emits while recording', () async {
       setupMockGeolocator(mockGeolocator, testLat1, testLng1);
 
-      await geolocationBloc.refreshLastKnownPosition();
-      await Future.delayed(mediumDelay);
-      emittedGeolocations.clear();
-      clearInteractions(geoService);
-
       await geolocationBloc.captureSample();
       await Future.delayed(mediumDelay);
 
@@ -758,8 +753,6 @@ void main() {
 
     test('captureSample is a no-op when overlapping in-flight call', () async {
       setupMockGeolocator(mockGeolocator, testLat1, testLng1);
-      await geolocationBloc.refreshLastKnownPosition();
-      await Future.delayed(mediumDelay);
       clearInteractions(geoService);
 
       final saveCompleter = Completer<int>();
@@ -776,28 +769,6 @@ void main() {
 
       verify(() => geoService.saveGeolocationWithSensors(any(), any()))
           .called(1);
-    });
-
-    test('refreshLastKnownPosition does not persist in periodic mode', () async {
-      mockRecordingBloc.setActiveCollectionMode(DataCollectionMode.periodic);
-      setupMockGeolocator(mockGeolocator, testLat1, testLng1);
-
-      await geolocationBloc.refreshLastKnownPosition();
-      await Future.delayed(mediumDelay);
-
-      expect(emittedGeolocations, isEmpty);
-      verifyNever(() => geoService.saveGeolocationWithSensors(any(), any()));
-    });
-
-    test('refreshLastKnownPosition does not persist in onTap mode', () async {
-      mockRecordingBloc.setActiveCollectionMode(DataCollectionMode.onTap);
-      setupMockGeolocator(mockGeolocator, testLat1, testLng1);
-
-      await geolocationBloc.refreshLastKnownPosition();
-      await Future.delayed(mediumDelay);
-
-      expect(emittedGeolocations, isEmpty);
-      verifyNever(() => geoService.saveGeolocationWithSensors(any(), any()));
     });
   });
 }

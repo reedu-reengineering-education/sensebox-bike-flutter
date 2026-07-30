@@ -103,19 +103,6 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  void _resolveCollectionMode() {
-    _activeCollectionMode = settingsBloc.lastResolvedDataCollectionMode;
-    _collectionIntervalSeconds =
-        settingsBloc.lastResolvedCollectionIntervalSeconds;
-  }
-
-  Future<void> _persistResolvedCollectionMode() async {
-    await settingsBloc.setLastResolvedCollectionMode(
-      mode: _activeCollectionMode,
-      collectionIntervalSeconds: _collectionIntervalSeconds,
-    );
-  }
-
   Future<void> startRecording() async {
     if (_isRecording) return;
 
@@ -146,16 +133,16 @@ class RecordingBloc with ChangeNotifier {
       return;
     }
 
-    _resolveCollectionMode();
+    _activeCollectionMode = settingsBloc.dataCollectionMode;
+    _collectionIntervalSeconds = settingsBloc.collectionIntervalSeconds;
     _isRecording = true;
     _lastRecordingStopTimestamp = null;
     await trackBloc.startNewTrack(
       isDirectUpload: settingsBloc.directUploadMode,
       dataCollectionMode: _activeCollectionMode,
-      collectionIntervalSeconds:
-          _activeCollectionMode == DataCollectionMode.periodic
-              ? _collectionIntervalSeconds
-              : null,
+      collectionIntervalSeconds: _activeCollectionMode.usesPeriodicTimer
+          ? _collectionIntervalSeconds
+          : null,
     );
 
     _currentTrack = trackBloc.currentTrack;
@@ -185,7 +172,6 @@ class RecordingBloc with ChangeNotifier {
       }
 
       await _onRecordingStart?.call();
-      await _persistResolvedCollectionMode();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }

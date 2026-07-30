@@ -166,8 +166,6 @@ class GeolocationBloc with ChangeNotifier {
       
       if (recordingBloc.isRecording) {
         _onRecordingChanged();
-      } else if (recordingBloc.activeCollectionMode.isGpsDriven) {
-        _startStationaryLocationTimer();
       }
       _isListening = true;
     } catch (e, stack) {
@@ -185,54 +183,6 @@ class GeolocationBloc with ChangeNotifier {
     await PermissionService.ensureLocationPermissionsGranted();
 
     return Geolocator.getCurrentPosition();
-  }
-
-  /// Updates [_lastEmittedPosition] from the current GPS fix without saving.
-  Future<void> refreshLastKnownPosition() async {
-    try {
-      final position = await getCurrentLocation();
-      final geolocationData = _createGeolocationFromPosition(position);
-
-    _isCapturingSample = true;
-    try {
-      GeolocationData? source = _lastEmittedPosition;
-      if (source == null) {
-        try {
-          final position = await getCurrentLocation();
-          source = _createGeolocationFromPosition(position);
-          _lastEmittedPosition = source;
-        } catch (e, stack) {
-          ErrorService.handleError(e, stack);
-          return;
-        }
-      }
-
-      final geolocationData = _cloneGeolocationWithTimestamp(
-        source,
-        (at ?? DateTime.now()).toUtc(),
-      );
-
-      // Manual/periodic samples skip the 1s GPS throttle; still respect privacy.
-      if (_privacyZoneChecker.isInsidePrivacyZone(geolocationData)) {
-        return;
-      }
-
-      _lastEmittedPosition = geolocationData;
-    } catch (e, stack) {
-      ErrorService.handleError(e, stack);
-    }
-  }
-
-  /// Fetches current GPS and applies continuous-mode persistence rules.
-  /// Prefer [captureSample] for periodic and manual samples.
-  Future<void> applyCurrentGpsPosition() async {
-    try {
-      final position = await getCurrentLocation();
-      final geolocationData = _createGeolocationFromPosition(position);
-      await _applyIncomingGpsPosition(geolocationData);
-    } catch (e, stack) {
-      ErrorService.handleError(e, stack);
-    }
   }
 
   /// Single write/emit path for GPS-driven stationary ticks, periodic timer,
@@ -385,12 +335,8 @@ class GeolocationBloc with ChangeNotifier {
 
     _lastEmittedPosition = geolocationData;
 
-    if (!recordingBloc.activeCollectionMode.isGpsDriven) {
-      return;
-    }
-
     if (resetStationaryTimer) {
-      _resetStationaryLocationTimer();
+      _startStationaryLocationTimer();
     }
 
     await _persistAndEmit(geolocationData);

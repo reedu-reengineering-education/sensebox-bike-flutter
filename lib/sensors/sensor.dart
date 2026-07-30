@@ -278,12 +278,7 @@ abstract class Sensor {
       });
     }
 
-    if (!batch.aggregatedData.containsKey(title)) {
-      batch.isSavedToDb = true;
-      if (_directUploadService == null || !_directUploadService!.isEnabled) {
-        _sensorBatches.remove(geoId);
-      }
-    }
+    _markEmptyBatchProcessed(geoId, batch);
   }
 
   void _performDeferredAggregation(int geoId, GeolocationData geo) {
@@ -434,7 +429,7 @@ abstract class Sensor {
     _isListening = false;
   }
 
-  void clearBuffersForNewRecording({bool clearLatestValues = true}) {
+  void clearBuffersForNewRecording() {
     for (final geoId in _pendingAggregations.keys.toList()) {
       _cancelPendingAggregation(geoId);
     }

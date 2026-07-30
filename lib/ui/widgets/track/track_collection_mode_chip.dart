@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/theme.dart';
-import 'package:sensebox_bike/utils/track_collection_mode_display.dart';
+import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
 
 class TrackCollectionModeChip extends StatelessWidget {
   final TrackData track;
