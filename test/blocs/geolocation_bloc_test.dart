@@ -770,5 +770,41 @@ void main() {
       verify(() => geoService.saveGeolocationWithSensors(any(), any()))
           .called(1);
     });
+
+    test('captureSample skips persist in onTap without instant sensor readings',
+        () async {
+      mockRecordingBloc.setActiveCollectionMode(DataCollectionMode.onTap);
+      geolocationBloc.setCollectInstantSensorData((_) => const []);
+      setupMockGeolocator(mockGeolocator, testLat1, testLng1);
+
+      await geolocationBloc.captureSample();
+      await Future.delayed(mediumDelay);
+
+      expect(emittedGeolocations, isEmpty);
+      verifyNever(() => geoService.saveGeolocationWithSensors(any(), any()));
+    });
+
+    test('captureSample persists last sensor readings with onTap sample',
+        () async {
+      mockRecordingBloc.setActiveCollectionMode(DataCollectionMode.onTap);
+      final instantRow = SensorData()
+        ..title = 'temperature'
+        ..value = 21.5
+        ..characteristicUuid = 'temp-uuid';
+      geolocationBloc.setCollectInstantSensorData((_) => [instantRow]);
+      setupMockGeolocator(mockGeolocator, testLat1, testLng1);
+
+      await geolocationBloc.captureSample();
+      await Future.delayed(mediumDelay);
+
+      expect(emittedGeolocations.length, 1);
+      final captured = verify(
+        () => geoService.saveGeolocationWithSensors(any(), captureAny()),
+      ).captured.single as List<SensorData>;
+      expect(
+        captured.any((row) => row.title == 'temperature' && row.value == 21.5),
+        isTrue,
+      );
+    });
   });
 }

@@ -141,7 +141,11 @@ class SensorBloc with ChangeNotifier {
     if (!geolocationBloc.isListening) {
       geolocationBloc.startListening();
     }
-    await geolocationBloc.captureSample();
+    // Periodic: take an immediate first sample. On-tap waits for the user;
+    // GPS-driven collection is driven by the position stream.
+    if (recordingBloc.activeCollectionMode.usesPeriodicTimer) {
+      await geolocationBloc.captureSample();
+    }
   }
 
   Future<void> _onRecordingStop() async {

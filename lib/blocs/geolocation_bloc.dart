@@ -85,6 +85,12 @@ class GeolocationBloc with ChangeNotifier {
     recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
   }
 
+  void setCollectInstantSensorData(
+    List<SensorData> Function(GeolocationData geo)? callback,
+  ) {
+    _collectInstantSensorData = callback;
+  }
+
   void _onRecordingChanged() {
     if (recordingBloc.isRecording) {
       if (recordingBloc.activeCollectionMode.usesPeriodicTimer) {
@@ -151,7 +157,12 @@ class GeolocationBloc with ChangeNotifier {
           return;
         }
 
-        if (!recordingBloc.activeCollectionMode.isGpsDriven) {
+        // Only GPS-driven recording persists from the stream. Always keep the
+        // last fix for on-tap / periodic captureSample. Re-check recording+mode
+        // here so an in-flight event from idle (mode reset to gpsDriven) cannot
+        // save when the user has just started an on-tap / periodic session.
+        if (!recordingBloc.isRecording ||
+            !recordingBloc.activeCollectionMode.isGpsDriven) {
           _lastEmittedPosition = geolocationData;
           return;
         }
@@ -334,6 +345,13 @@ class GeolocationBloc with ChangeNotifier {
     }
 
     _lastEmittedPosition = geolocationData;
+
+    // Defensive: stream handler should already gate this; async gaps can still
+    // reach here after the user switched to on-tap / periodic.
+    if (!recordingBloc.isRecording ||
+        !recordingBloc.activeCollectionMode.isGpsDriven) {
+      return;
+    }
 
     if (resetStationaryTimer) {
       _startStationaryLocationTimer();
