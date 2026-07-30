@@ -61,6 +61,10 @@ class FakeOpenSenseMapBlocForRecording extends Fake implements OpenSenseMapBloc 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUpAll(() {
+    registerFallbackValue(DataCollectionMode.gpsDriven);
+  });
+
   group('RecordingBloc collection mode resolution', () {
     late MockIsarService mockIsarService;
     late MockBleBloc mockBleBloc;
@@ -90,6 +94,16 @@ void main() {
       setupMockGeolocator(mockGeolocator, testLat1, testLng1);
 
       when(() => mockSettingsBloc.directUploadMode).thenReturn(false);
+      when(() => mockSettingsBloc.lastResolvedDataCollectionMode)
+          .thenReturn(DataCollectionMode.gpsDriven);
+      when(() => mockSettingsBloc.lastResolvedCollectionIntervalSeconds)
+          .thenReturn(defaultCollectionIntervalSeconds);
+      when(
+        () => mockSettingsBloc.setLastResolvedCollectionMode(
+          mode: any(named: 'mode'),
+          collectionIntervalSeconds: any(named: 'collectionIntervalSeconds'),
+        ),
+      ).thenAnswer((_) async {});
       when(() => mockConfigurationBloc.getBoxConfigurationByGrouptag(any()))
           .thenReturn(null);
     });
@@ -118,6 +132,80 @@ void main() {
         DataCollectionMode.gpsDriven,
       );
       expect(fakeTrackBloc.capturedCollectionIntervalSeconds, isNull);
+      verify(
+        () => mockSettingsBloc.setLastResolvedCollectionMode(
+          mode: DataCollectionMode.gpsDriven,
+          collectionIntervalSeconds: defaultCollectionIntervalSeconds,
+        ),
+      ).called(1);
+    });
+
+    test('uses last resolved prefs when no grouptag match', () async {
+      when(() => mockSettingsBloc.lastResolvedDataCollectionMode)
+          .thenReturn(DataCollectionMode.periodic);
+      when(() => mockSettingsBloc.lastResolvedCollectionIntervalSeconds)
+          .thenReturn(45);
+
+      recordingBloc = RecordingBloc(
+        mockIsarService,
+        mockBleBloc,
+        fakeTrackBloc,
+        fakeOpenSenseMapBloc,
+        mockSettingsBloc,
+        mockConfigurationBloc,
+      );
+
+      await recordingBloc.startRecording();
+
+      expect(recordingBloc.activeCollectionMode, DataCollectionMode.periodic);
+      expect(recordingBloc.collectionIntervalSeconds, 45);
+      expect(fakeTrackBloc.capturedCollectionIntervalSeconds, 45);
+      verify(
+        () => mockSettingsBloc.setLastResolvedCollectionMode(
+          mode: DataCollectionMode.periodic,
+          collectionIntervalSeconds: 45,
+        ),
+      ).called(1);
+    });
+
+    test('grouptag match overrides last resolved prefs', () async {
+      when(() => mockSettingsBloc.lastResolvedDataCollectionMode)
+          .thenReturn(DataCollectionMode.periodic);
+      when(() => mockSettingsBloc.lastResolvedCollectionIntervalSeconds)
+          .thenReturn(45);
+      when(() => mockConfigurationBloc.getBoxConfigurationByGrouptag(any()))
+          .thenReturn(
+        BoxConfiguration(
+          id: 'classic',
+          displayName: '2022',
+          defaultGrouptag: 'classic',
+          sensors: const [],
+        ),
+      );
+
+      recordingBloc = RecordingBloc(
+        mockIsarService,
+        mockBleBloc,
+        fakeTrackBloc,
+        fakeOpenSenseMapBloc,
+        mockSettingsBloc,
+        mockConfigurationBloc,
+      );
+
+      senseBoxController.add(
+        SenseBox(sId: 'classic-box', name: 'Classic', grouptag: ['bike', 'classic']),
+      );
+      await Future.delayed(shortDelay);
+
+      await recordingBloc.startRecording();
+
+      expect(recordingBloc.activeCollectionMode, DataCollectionMode.gpsDriven);
+      verify(
+        () => mockSettingsBloc.setLastResolvedCollectionMode(
+          mode: DataCollectionMode.gpsDriven,
+          collectionIntervalSeconds: defaultCollectionIntervalSeconds,
+        ),
+      ).called(1);
     });
 
     test('resolves periodic mode and interval from box configuration', () async {
@@ -157,6 +245,12 @@ void main() {
         DataCollectionMode.periodic,
       );
       expect(fakeTrackBloc.capturedCollectionIntervalSeconds, 45);
+      verify(
+        () => mockSettingsBloc.setLastResolvedCollectionMode(
+          mode: DataCollectionMode.periodic,
+          collectionIntervalSeconds: 45,
+        ),
+      ).called(1);
     });
 
     test('resolves onTap mode from box configuration', () async {
@@ -197,6 +291,66 @@ void main() {
         DataCollectionMode.onTap,
       );
       expect(fakeTrackBloc.capturedCollectionIntervalSeconds, isNull);
+      verify(
+        () => mockSettingsBloc.setLastResolvedCollectionMode(
+          mode: DataCollectionMode.onTap,
+          collectionIntervalSeconds: defaultCollectionIntervalSeconds,
+        ),
+      ).called(1);
+    });
+
+    test('record with all then start without box uses persisted periodic',
+        () async {
+      when(() => mockConfigurationBloc.getBoxConfigurationByGrouptag(any()))
+          .thenReturn(
+        BoxConfiguration(
+          id: 'all',
+          displayName: 'All sensors',
+          defaultGrouptag: 'all',
+          sensors: const [],
+          dataCollectionMode: DataCollectionMode.periodic,
+          collectionIntervalSeconds: 45,
+        ),
+      );
+
+      recordingBloc = RecordingBloc(
+        mockIsarService,
+        mockBleBloc,
+        fakeTrackBloc,
+        fakeOpenSenseMapBloc,
+        mockSettingsBloc,
+        mockConfigurationBloc,
+      );
+
+      senseBoxController.add(
+        SenseBox(sId: 'box-1', name: 'Test', grouptag: ['bike', 'all']),
+      );
+      await Future.delayed(shortDelay);
+      await recordingBloc.startRecording();
+      await recordingBloc.stopRecording();
+      recordingBloc.dispose();
+
+      when(() => mockConfigurationBloc.getBoxConfigurationByGrouptag(any()))
+          .thenReturn(null);
+      when(() => mockSettingsBloc.lastResolvedDataCollectionMode)
+          .thenReturn(DataCollectionMode.periodic);
+      when(() => mockSettingsBloc.lastResolvedCollectionIntervalSeconds)
+          .thenReturn(45);
+
+      fakeTrackBloc = FakeTrackBlocForCollectionMode();
+      recordingBloc = RecordingBloc(
+        mockIsarService,
+        mockBleBloc,
+        fakeTrackBloc,
+        fakeOpenSenseMapBloc,
+        mockSettingsBloc,
+        mockConfigurationBloc,
+      );
+
+      await recordingBloc.startRecording();
+
+      expect(recordingBloc.activeCollectionMode, DataCollectionMode.periodic);
+      expect(recordingBloc.collectionIntervalSeconds, 45);
     });
   });
 }
