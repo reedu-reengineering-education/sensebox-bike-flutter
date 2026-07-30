@@ -149,28 +149,28 @@ class SettingsBloc with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setDataCollectionMode(DataCollectionMode mode) async {
-    _lastResolvedDataCollectionMode = mode;
-
+  Future<void> _writeCollectionPrefsToDisk() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       SharedPreferencesKeys.lastResolvedDataCollectionMode,
-      mode.toJson(),
+      _lastResolvedDataCollectionMode.toJson(),
     );
+    await prefs.setInt(
+      SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds,
+      _lastResolvedCollectionIntervalSeconds,
+    );
+  }
 
+  Future<void> setDataCollectionMode(DataCollectionMode mode) async {
+    _lastResolvedDataCollectionMode = mode;
+    await _writeCollectionPrefsToDisk();
     notifyListeners();
   }
 
   Future<void> setCollectionIntervalSeconds(int seconds) async {
-    final validated = parseCollectionIntervalSeconds(seconds);
-    _lastResolvedCollectionIntervalSeconds = validated;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(
-      SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds,
-      validated,
-    );
-
+    _lastResolvedCollectionIntervalSeconds =
+        parseCollectionIntervalSeconds(seconds);
+    await _writeCollectionPrefsToDisk();
     notifyListeners();
   }
 
@@ -179,18 +179,9 @@ class SettingsBloc with ChangeNotifier {
     required int collectionIntervalSeconds,
   }) async {
     _lastResolvedDataCollectionMode = mode;
-    _lastResolvedCollectionIntervalSeconds = collectionIntervalSeconds;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      SharedPreferencesKeys.lastResolvedDataCollectionMode,
-      mode.toJson(),
-    );
-    await prefs.setInt(
-      SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds,
-      collectionIntervalSeconds,
-    );
-
+    _lastResolvedCollectionIntervalSeconds =
+        parseCollectionIntervalSeconds(collectionIntervalSeconds);
+    await _writeCollectionPrefsToDisk();
     notifyListeners();
   }
 

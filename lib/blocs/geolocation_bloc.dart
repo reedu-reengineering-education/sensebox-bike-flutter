@@ -86,7 +86,7 @@ class GeolocationBloc with ChangeNotifier {
     if (recordingBloc.isRecording) {
       if (recordingBloc.activeCollectionMode.usesPeriodicTimer) {
         _startPeriodicCollectionTimer();
-      } else if (recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
+      } else if (recordingBloc.activeCollectionMode.isGpsDriven) {
         _stopPeriodicCollectionTimer();
         _startStationaryLocationTimer();
       } else {
@@ -148,26 +148,22 @@ class GeolocationBloc with ChangeNotifier {
           return;
         }
 
-        _lastEmittedPosition = geolocationData;
-
-        if (!recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
-          // periodic / onTap: refresh last known position only.
+        if (!recordingBloc.activeCollectionMode.isGpsDriven) {
+          _lastEmittedPosition = geolocationData;
           return;
         }
 
-        _resetStationaryLocationTimer();
-
-        final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
-        if (shouldEmit) {
-          _emitGeolocation(geolocationData);
-        }
+        await _applyIncomingGpsPosition(
+          geolocationData,
+          resetStationaryTimer: true,
+        );
       }, onError: (Object error, StackTrace stack) {
         unawaited(_handlePositionStreamError(error, stack));
       }, cancelOnError: true);
       
       if (recordingBloc.isRecording) {
         _onRecordingChanged();
-      } else if (recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
+      } else if (recordingBloc.activeCollectionMode.isGpsDriven) {
         _startStationaryLocationTimer();
       }
       _isListening = true;
@@ -188,7 +184,8 @@ class GeolocationBloc with ChangeNotifier {
     return Geolocator.getCurrentPosition();
   }
 
-  Future<void> getCurrentLocationAndEmit() async {
+  /// Updates [_lastEmittedPosition] from the current GPS fix without saving.
+  Future<void> refreshLastKnownPosition() async {
     try {
       final position = await getCurrentLocation();
       final geolocationData = _createGeolocationFromPosition(position);
@@ -198,16 +195,18 @@ class GeolocationBloc with ChangeNotifier {
       }
 
       _lastEmittedPosition = geolocationData;
+    } catch (e, stack) {
+      ErrorService.handleError(e, stack);
+    }
+  }
 
-      if (!recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
-        // Avoid dense GPS-driven samples when in periodic/onTap mode.
-        return;
-      }
-
-      final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
-      if (shouldEmit) {
-        _emitGeolocation(geolocationData);
-      }
+  /// Fetches current GPS and applies continuous-mode persistence rules.
+  /// Prefer [captureSample] for periodic and manual samples.
+  Future<void> applyCurrentGpsPosition() async {
+    try {
+      final position = await getCurrentLocation();
+      final geolocationData = _createGeolocationFromPosition(position);
+      await _applyIncomingGpsPosition(geolocationData);
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
@@ -237,21 +236,19 @@ class GeolocationBloc with ChangeNotifier {
         }
       }
 
-      final geolocationData = GeolocationData()
-        ..latitude = source.latitude
-        ..longitude = source.longitude
-        ..speed = source.speed
-        ..timestamp = (at ?? DateTime.now()).toUtc();
+      final geolocationData = _cloneGeolocationWithTimestamp(
+        source,
+        (at ?? DateTime.now()).toUtc(),
+      );
 
       // Manual/periodic samples skip the 1s GPS throttle; still respect privacy.
       if (_privacyZoneChecker.isInsidePrivacyZone(geolocationData)) {
         return;
       }
 
-      final shouldEmit = await _saveGeolocationIfRecording(geolocationData);
+      final shouldEmit = await _persistAndEmit(geolocationData);
       if (shouldEmit) {
         _lastEmittedPosition = geolocationData;
-        _emitGeolocation(geolocationData);
       }
     } finally {
       _isCapturingSample = false;
@@ -262,13 +259,13 @@ class GeolocationBloc with ChangeNotifier {
     _stopStationaryLocationTimer();
     
     if (!recordingBloc.isRecording ||
-        !recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
+        !recordingBloc.activeCollectionMode.isGpsDriven) {
       return;
     }
     
     _stationaryLocationTimer = Timer.periodic(const Duration(seconds: 20), (timer) async {
       if (!recordingBloc.isRecording ||
-          !recordingBloc.activeCollectionMode.usesGpsStreamPersistence) {
+          !recordingBloc.activeCollectionMode.isGpsDriven) {
         _stopStationaryLocationTimer();
         return;
       }
@@ -348,6 +345,52 @@ class GeolocationBloc with ChangeNotifier {
     return false;
   }
 
+  GeolocationData _cloneGeolocationWithTimestamp(
+    GeolocationData source,
+    DateTime timestamp,
+  ) {
+    return GeolocationData()
+      ..latitude = source.latitude
+      ..longitude = source.longitude
+      ..speed = source.speed
+      ..timestamp = timestamp;
+  }
+
+  Future<void> _applyIncomingGpsPosition(
+    GeolocationData geolocationData, {
+    bool resetStationaryTimer = false,
+  }) async {
+    if (shouldSkipGeolocation(geolocationData)) {
+      return;
+    }
+
+    _lastEmittedPosition = geolocationData;
+
+    if (!recordingBloc.activeCollectionMode.isGpsDriven) {
+      return;
+    }
+
+    if (resetStationaryTimer) {
+      _resetStationaryLocationTimer();
+    }
+
+    await _persistAndEmit(geolocationData);
+  }
+
+  Future<bool> _persistAndEmit(
+    GeolocationData geolocationData, {
+    bool allowFinalGeolocation = false,
+  }) async {
+    final shouldEmit = await _saveGeolocationIfRecording(
+      geolocationData,
+      allowFinalGeolocation: allowFinalGeolocation,
+    );
+    if (shouldEmit) {
+      _emitGeolocation(geolocationData);
+    }
+    return shouldEmit;
+  }
+
   Future<bool> _saveGeolocationIfRecording(
       GeolocationData geolocationData,
       {bool allowFinalGeolocation = false}) async {
@@ -395,11 +438,10 @@ class GeolocationBloc with ChangeNotifier {
     final stopTimestamp =
         recordingBloc.lastRecordingStopTimestamp ?? DateTime.now().toUtc();
 
-    final finalGeolocation = GeolocationData()
-      ..latitude = _lastEmittedPosition!.latitude
-      ..longitude = _lastEmittedPosition!.longitude
-      ..speed = _lastEmittedPosition!.speed
-      ..timestamp = stopTimestamp;
+    final finalGeolocation = _cloneGeolocationWithTimestamp(
+      _lastEmittedPosition!,
+      stopTimestamp,
+    );
 
     final lastTimestamp =
         _lastEmittedPosition!.timestamp.millisecondsSinceEpoch;
@@ -413,10 +455,11 @@ class GeolocationBloc with ChangeNotifier {
       return;
     }
 
-    final shouldEmit = await _saveGeolocationIfRecording(finalGeolocation,
-        allowFinalGeolocation: true);
+    final shouldEmit = await _persistAndEmit(
+      finalGeolocation,
+      allowFinalGeolocation: true,
+    );
     if (shouldEmit) {
-      _emitGeolocation(finalGeolocation);
       _lastEmittedPosition = finalGeolocation;
     }
   }

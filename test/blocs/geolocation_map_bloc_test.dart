@@ -38,7 +38,6 @@ void main() {
         mockTrackBloc,
         mockOpenSenseMapBloc,
         mockSettingsBloc,
-        MockConfigurationBloc(),
       );
 
       bloc = GeolocationMapBloc(
