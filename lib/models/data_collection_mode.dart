@@ -37,11 +37,10 @@ enum DataCollectionMode {
 }
 
 extension DataCollectionModeBehavior on DataCollectionMode {
-  bool get usesGpsStreamPersistence => this == DataCollectionMode.gpsDriven;
+  /// Continuous GPS-driven collection (stream persistence + sensor aggregation).
+  bool get isGpsDriven => this == DataCollectionMode.gpsDriven;
 
   bool get usesPeriodicTimer => this == DataCollectionMode.periodic;
-
-  bool get aggregatesSensorValues => this == DataCollectionMode.gpsDriven;
 
   bool get showsManualSampleButton => this == DataCollectionMode.onTap;
 }
