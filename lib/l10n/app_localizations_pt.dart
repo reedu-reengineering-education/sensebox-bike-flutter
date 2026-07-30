@@ -248,6 +248,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionButtonStop => 'Parar';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Amostragem periódica a cada $seconds s';
+  }
+
+  @override
+  String get recordingSaveSample => 'Salvar amostra';
+
+  @override
   String get bleDeviceSelectTitle => 'Toque para conectar';
 
   @override

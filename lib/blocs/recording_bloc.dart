@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -22,6 +24,7 @@ class RecordingBloc with ChangeNotifier {
   final TrackBloc trackBloc;
   final OpenSenseMapBloc openSenseMapBloc;
   final SettingsBloc settingsBloc;
+  final ConfigurationBloc configurationBloc;
 
   bool _isRecording = false;
   TrackData? _currentTrack;
@@ -29,6 +32,9 @@ class RecordingBloc with ChangeNotifier {
   final ValueNotifier<bool> _isRecordingNotifier = ValueNotifier<bool>(false);
   DirectUploadService? _directUploadService;
   BatchUploadService? _batchUploadService;
+
+  DataCollectionMode _activeCollectionMode = DataCollectionMode.gpsDriven;
+  int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
 
   VoidCallback? _onRecordingStart;
   VoidCallback? _onRecordingStop;
@@ -45,8 +51,17 @@ class RecordingBloc with ChangeNotifier {
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   DateTime? get lastRecordingStopTimestamp => _lastRecordingStopTimestamp;
 
-  RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
-      this.openSenseMapBloc, this.settingsBloc) {
+  DataCollectionMode get activeCollectionMode => _activeCollectionMode;
+  int get collectionIntervalSeconds => _collectionIntervalSeconds;
+
+  RecordingBloc(
+    this.isarService,
+    this.bleBloc,
+    this.trackBloc,
+    this.openSenseMapBloc,
+    this.settingsBloc,
+    this.configurationBloc,
+  ) {
     openSenseMapBloc.senseBoxStream.listen(_onSenseBoxChanged).onError((error) {
       ErrorService.handleError(error, StackTrace.current);
     });
@@ -91,6 +106,15 @@ class RecordingBloc with ChangeNotifier {
     notifyListeners();
   }
 
+  void _resolveCollectionMode() {
+    final config = configurationBloc
+        .getBoxConfigurationByGrouptag(_selectedSenseBox?.grouptag);
+    _activeCollectionMode =
+        config?.dataCollectionMode ?? DataCollectionMode.gpsDriven;
+    _collectionIntervalSeconds =
+        config?.collectionIntervalSeconds ?? defaultCollectionIntervalSeconds;
+  }
+
   Future<void> startRecording() async {
     if (_isRecording) return;
 
@@ -121,11 +145,18 @@ class RecordingBloc with ChangeNotifier {
       return;
     }
 
+    _resolveCollectionMode();
     _isRecording = true;
     _isRecordingNotifier.value = true;
     _lastRecordingStopTimestamp = null;
     await trackBloc.startNewTrack(
-        isDirectUpload: settingsBloc.directUploadMode);
+      isDirectUpload: settingsBloc.directUploadMode,
+      dataCollectionMode: _activeCollectionMode,
+      collectionIntervalSeconds:
+          _activeCollectionMode == DataCollectionMode.periodic
+              ? _collectionIntervalSeconds
+              : null,
+    );
 
     _currentTrack = trackBloc.currentTrack;
 
@@ -167,6 +198,8 @@ class RecordingBloc with ChangeNotifier {
 
     _isRecording = false;
     _isRecordingNotifier.value = false;
+    _activeCollectionMode = DataCollectionMode.gpsDriven;
+    _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
     _onRecordingStop?.call();
 
     // Store current track and sensebox for upload

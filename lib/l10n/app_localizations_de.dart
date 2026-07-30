@@ -247,6 +247,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionButtonStop => 'Stop';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Periodische Aufnahme alle $seconds s';
+  }
+
+  @override
+  String get recordingSaveSample => 'Messpunkt speichern';
+
+  @override
   String get bleDeviceSelectTitle => 'Tippen, um zu verbinden';
 
   @override

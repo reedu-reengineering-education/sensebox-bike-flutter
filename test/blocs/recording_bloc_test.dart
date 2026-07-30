@@ -23,6 +23,7 @@ void main() {
   late MockTrackBloc mockTrackBloc;
   late MockOpenSenseMapBloc mockOpenSenseMapBloc;
   late MockSettingsBloc mockSettingsBloc;
+  late MockConfigurationBloc mockConfigurationBloc;
   late RecordingBloc recordingBloc;
 
   setUp(() {
@@ -32,11 +33,14 @@ void main() {
     mockTrackBloc = MockTrackBloc();
     mockOpenSenseMapBloc = MockOpenSenseMapBloc();
     mockSettingsBloc = MockSettingsBloc();
+    mockConfigurationBloc = MockConfigurationBloc();
 
     geo.GeolocatorPlatform.instance = mockGeolocator;
 
     // Setup mock for directUploadMode
     when(() => mockSettingsBloc.directUploadMode).thenReturn(false);
+    when(() => mockConfigurationBloc.getBoxConfigurationByGrouptag(any()))
+        .thenReturn(null);
 
     recordingBloc = RecordingBloc(
       mockIsarService,
@@ -44,6 +48,7 @@ void main() {
       mockTrackBloc,
       mockOpenSenseMapBloc,
       mockSettingsBloc,
+      mockConfigurationBloc,
     );
   });
 

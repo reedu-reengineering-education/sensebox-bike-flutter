@@ -106,6 +106,15 @@
     "connectionButtonReconnecting": "Erneut verbinden...",
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
+    "recordingPeriodicCollectionMode": "Periodische Aufnahme alle {seconds} s",
+    "@recordingPeriodicCollectionMode": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
+    "recordingSaveSample": "Messpunkt speichern",
     "bleDeviceSelectTitle": "Tippen, um zu verbinden",
     "noBleDevicesFound": "Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.",
     "selectOrCreateBox": "senseBox wählen oder erstellen",

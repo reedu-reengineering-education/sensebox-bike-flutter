@@ -516,6 +516,18 @@ abstract class AppLocalizations {
   /// **'Stop'**
   String get connectionButtonStop;
 
+  /// No description provided for @recordingPeriodicCollectionMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodic sampling every {seconds} s'**
+  String recordingPeriodicCollectionMode(int seconds);
+
+  /// No description provided for @recordingSaveSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Save sample'**
+  String get recordingSaveSample;
+
   /// No description provided for @bleDeviceSelectTitle.
   ///
   /// In en, this message translates to:

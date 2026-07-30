@@ -24,6 +24,13 @@ class TrackData {
   @Index()
   int? isDirectUpload; // 0 = false, 1 = true, null = null
 
+  /// Collection strategy used for this track (`gpsDriven`, `periodic`, `onTap`).
+  /// Null on legacy tracks means GPS-driven aggregation.
+  String? dataCollectionMode;
+
+  /// Interval in seconds when [dataCollectionMode] is `periodic`.
+  int? collectionIntervalSeconds;
+
   // Computed getters that provide boolean behavior
   @ignore
   bool get isUploaded => uploaded == 1;
