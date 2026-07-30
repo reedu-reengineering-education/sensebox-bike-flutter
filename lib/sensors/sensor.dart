@@ -119,7 +119,7 @@ abstract class Sensor {
     // Buffer for lookback aggregation only in GPS-driven mode.
     if (data.isNotEmpty &&
         recordingBloc.isRecording &&
-        recordingBloc.activeCollectionMode.aggregatesSensorValues) {
+        recordingBloc.activeCollectionMode.isGpsDriven) {
       final sensorTimestamp = DateTime.now().toUtc();
       final timestampedValue = TimestampedSensorValue(
         values: data,
@@ -370,7 +370,7 @@ abstract class Sensor {
           _cancelPendingAggregation(geoId);
           _performDeferredAggregation(geoId, geo);
           await _flushBuffers();
-        } else if (!recordingBloc.activeCollectionMode.aggregatesSensorValues) {
+        } else if (!recordingBloc.activeCollectionMode.isGpsDriven) {
           // periodic / onTap: store latest instant reading
           _cancelPendingAggregation(geoId);
           _performInstantSnapshot(geoId, geo);

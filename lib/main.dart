@@ -77,7 +77,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     );
     _trackBloc = TrackBloc(_isarService!);
     _recordingBloc = RecordingBloc(_isarService!, _bleBloc!, _trackBloc!,
-        _openSenseMapBloc!, _settingsBloc!, _configurationBloc!);
+        _openSenseMapBloc!, _settingsBloc!);
     _geolocationBloc = GeolocationBloc(
         _isarService!, _recordingBloc!, _settingsBloc!,
         isSensorDataActive: () => _bleBloc!.isConnected);

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
-import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
@@ -24,7 +23,6 @@ class RecordingBloc with ChangeNotifier {
   final TrackBloc trackBloc;
   final OpenSenseMapBloc openSenseMapBloc;
   final SettingsBloc settingsBloc;
-  final ConfigurationBloc configurationBloc;
 
   bool _isRecording = false;
   TrackData? _currentTrack;
@@ -36,8 +34,8 @@ class RecordingBloc with ChangeNotifier {
   DataCollectionMode _activeCollectionMode = DataCollectionMode.gpsDriven;
   int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
 
-  VoidCallback? _onRecordingStart;
-  VoidCallback? _onRecordingStop;
+  Future<void> Function()? _onRecordingStart;
+  Future<void> Function()? _onRecordingStop;
 
   // Context for showing upload modal
   BuildContext? _context;
@@ -60,7 +58,6 @@ class RecordingBloc with ChangeNotifier {
     this.trackBloc,
     this.openSenseMapBloc,
     this.settingsBloc,
-    this.configurationBloc,
   ) {
     openSenseMapBloc.senseBoxStream.listen(_onSenseBoxChanged).onError((error) {
       ErrorService.handleError(error, StackTrace.current);
@@ -187,7 +184,7 @@ class RecordingBloc with ChangeNotifier {
         );
       }
 
-      _onRecordingStart?.call();
+      await _onRecordingStart?.call();
       await _persistResolvedCollectionMode();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
@@ -205,7 +202,7 @@ class RecordingBloc with ChangeNotifier {
     _isRecordingNotifier.value = false;
     _activeCollectionMode = DataCollectionMode.gpsDriven;
     _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
-    _onRecordingStop?.call();
+    await _onRecordingStop?.call();
 
     // Store current track and sensebox for upload
     final trackToUpload = _currentTrack;

@@ -7,7 +7,6 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
-import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
@@ -71,7 +70,6 @@ void main() {
     late FakeTrackBlocForCollectionMode fakeTrackBloc;
     late FakeOpenSenseMapBlocForRecording fakeOpenSenseMapBloc;
     late MockSettingsBloc mockSettingsBloc;
-    late MockConfigurationBloc mockConfigurationBloc;
     late StreamController<SenseBox?> senseBoxController;
     late MockGeolocatorForRecording mockGeolocator;
     late RecordingBloc recordingBloc;
@@ -81,7 +79,6 @@ void main() {
       mockBleBloc = MockBleBloc();
       fakeTrackBloc = FakeTrackBlocForCollectionMode();
       mockSettingsBloc = MockSettingsBloc();
-      mockConfigurationBloc = MockConfigurationBloc();
       mockGeolocator = MockGeolocatorForRecording();
       senseBoxController = StreamController<SenseBox?>.broadcast();
 
@@ -104,8 +101,6 @@ void main() {
           collectionIntervalSeconds: any(named: 'collectionIntervalSeconds'),
         ),
       ).thenAnswer((_) async {});
-      when(() => mockConfigurationBloc.getBoxConfigurationByGrouptag(any()))
-          .thenReturn(null);
     });
 
     tearDown(() async {
@@ -120,7 +115,6 @@ void main() {
         fakeTrackBloc,
         fakeOpenSenseMapBloc,
         mockSettingsBloc,
-        mockConfigurationBloc,
       );
 
       await recordingBloc.startRecording();
@@ -152,7 +146,6 @@ void main() {
         fakeTrackBloc,
         fakeOpenSenseMapBloc,
         mockSettingsBloc,
-        mockConfigurationBloc,
       );
 
       await recordingBloc.startRecording();
@@ -168,19 +161,9 @@ void main() {
       ).called(1);
     });
 
-    test('uses settings mode even when box config differs', () async {
+    test('uses onTap from settings when sensebox is selected', () async {
       when(() => mockSettingsBloc.lastResolvedDataCollectionMode)
           .thenReturn(DataCollectionMode.onTap);
-      when(() => mockConfigurationBloc.getBoxConfigurationByGrouptag(any()))
-          .thenReturn(
-        BoxConfiguration(
-          id: 'classic',
-          displayName: '2022',
-          defaultGrouptag: 'classic',
-          sensors: const [],
-          dataCollectionMode: DataCollectionMode.gpsDriven,
-        ),
-      );
 
       recordingBloc = RecordingBloc(
         mockIsarService,
@@ -188,7 +171,6 @@ void main() {
         fakeTrackBloc,
         fakeOpenSenseMapBloc,
         mockSettingsBloc,
-        mockConfigurationBloc,
       );
 
       senseBoxController.add(
@@ -220,7 +202,6 @@ void main() {
         fakeTrackBloc,
         fakeOpenSenseMapBloc,
         mockSettingsBloc,
-        mockConfigurationBloc,
       );
 
       await recordingBloc.startRecording();
