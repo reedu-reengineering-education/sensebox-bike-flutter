@@ -329,7 +329,6 @@ class GeolocationBloc with ChangeNotifier {
     _periodicCollectionTimer = Timer.periodic(interval, (_) {
       unawaited(captureSample());
     });
-    unawaited(captureSample());
   }
 
   void _stopPeriodicCollectionTimer() {

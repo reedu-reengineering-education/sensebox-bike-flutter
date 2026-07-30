@@ -107,17 +107,9 @@ class RecordingBloc with ChangeNotifier {
   }
 
   void _resolveCollectionMode() {
-    final config = configurationBloc
-        .getBoxConfigurationByGrouptag(_selectedSenseBox?.grouptag);
-
-    if (config != null) {
-      _activeCollectionMode = config.dataCollectionMode;
-      _collectionIntervalSeconds = config.collectionIntervalSeconds;
-    } else {
-      _activeCollectionMode = settingsBloc.lastResolvedDataCollectionMode;
-      _collectionIntervalSeconds =
-          settingsBloc.lastResolvedCollectionIntervalSeconds;
-    }
+    _activeCollectionMode = settingsBloc.lastResolvedDataCollectionMode;
+    _collectionIntervalSeconds =
+        settingsBloc.lastResolvedCollectionIntervalSeconds;
   }
 
   Future<void> _persistResolvedCollectionMode() async {
