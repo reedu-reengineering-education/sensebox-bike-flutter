@@ -48,6 +48,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createBoxCustomTagHelper => 'You can separate tags with commas';
 
   @override
+  String get createBoxDataRecording => 'Advanced data recording';
+
+  @override
   String get generalLoading => 'Loading...';
 
   @override

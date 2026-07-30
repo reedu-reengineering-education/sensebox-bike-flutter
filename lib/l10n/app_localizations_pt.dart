@@ -51,6 +51,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Você pode separar etiquetas com vírgulas';
 
   @override
+  String get createBoxDataRecording => 'Gravação avançada de dados';
+
+  @override
   String get generalLoading => 'Carregando...';
 
   @override

@@ -6,8 +6,10 @@ import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/campaign.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart';
 
@@ -22,6 +24,7 @@ void main() {
       defaultGrouptag: 'test',
       sensors: [],
     ));
+    registerFallbackValue(DataCollectionMode.gpsDriven);
   });
 
   group('CreateBikeBoxModal - Custom Grouptag', () {
@@ -75,12 +78,28 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(find.text('Add custom group tag'), findsOneWidget);
+      expect(find.text('Advanced data recording'), findsOneWidget);
     });
 
     testWidgets(
         'splits the custom grouptag input into individual tags and passes them to the createSenseBoxBike method',
         (WidgetTester tester) async {
       final mockGeolocationBloc = MockGeolocationBloc();
+      final mockSettingsBloc = MockSettingsBloc();
+      when(() => mockOpenSenseMapBloc.createSenseBoxBike(
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+          )).thenAnswer((_) async {});
+      when(
+        () => mockSettingsBloc.setLastResolvedCollectionMode(
+          mode: any(named: 'mode'),
+          collectionIntervalSeconds: any(named: 'collectionIntervalSeconds'),
+        ),
+      ).thenAnswer((_) async {});
       when(() => mockGeolocationBloc.getCurrentLocation())
           .thenAnswer((_) async => Position(
                 latitude: 50.0,
@@ -104,6 +123,8 @@ void main() {
                   value: mockOpenSenseMapBloc),
               ChangeNotifierProvider<GeolocationBloc>.value(
                   value: mockGeolocationBloc),
+              ChangeNotifierProvider<SettingsBloc>.value(
+                  value: mockSettingsBloc),
                 ChangeNotifierProvider<ConfigurationBloc>.value(
                   value: mockConfigurationBloc),
             ],
@@ -129,11 +150,19 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField).last, 'foo, bar ,baz');
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.widgetWithText(ButtonWithLoader, 'Create'));
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ButtonWithLoader, 'Create'));
       await tester.pumpAndSettle();
       verify(() => mockOpenSenseMapBloc.createSenseBoxBike(
           any(), any(), any(),
           mockBoxConfiguration, any(), ['foo', 'bar', 'baz'])).called(1);
+      verify(
+        () => mockSettingsBloc.setLastResolvedCollectionMode(
+          mode: DataCollectionMode.gpsDriven,
+          collectionIntervalSeconds: defaultCollectionIntervalSeconds,
+        ),
+      ).called(1);
     });
   });
   group('CreateBikeBoxModal - Location Selection', () {
@@ -279,6 +308,8 @@ void main() {
 
       await tester.enterText(find.byType(TextFormField).first, 'A');
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.widgetWithText(ButtonWithLoader, 'Create'));
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ButtonWithLoader, 'Create'));
       await tester.pumpAndSettle();
 
@@ -342,6 +373,7 @@ void main() {
         (WidgetTester tester) async {
       final mockGeolocationBloc = MockGeolocationBloc();
       final mockOpenSenseMapBloc = MockOpenSenseMapBloc();
+      final mockSettingsBloc = MockSettingsBloc();
       when(() => mockGeolocationBloc.getCurrentLocation())
           .thenThrow(Exception('Location error'));
 
@@ -354,6 +386,8 @@ void main() {
                   value: mockOpenSenseMapBloc),
               ChangeNotifierProvider<GeolocationBloc>.value(
                   value: mockGeolocationBloc),
+              ChangeNotifierProvider<SettingsBloc>.value(
+                  value: mockSettingsBloc),
                 ChangeNotifierProvider<ConfigurationBloc>.value(
                   value: mockConfigurationBloc),
             ],
@@ -375,6 +409,8 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextFormField).first, 'My Bike');
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.widgetWithText(ButtonWithLoader, 'Create'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ButtonWithLoader, 'Create'));
       await tester.pumpAndSettle();

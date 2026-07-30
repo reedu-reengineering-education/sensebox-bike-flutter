@@ -15,6 +15,7 @@
     "createBoxAddCustomTag": "Add custom group tag",
     "createBoxCustomTag": "Custom group tag",
     "createBoxCustomTagHelper": "You can separate tags with commas",
+    "createBoxDataRecording": "Advanced data recording",
     "@@locale": "en",
     "generalLoading": "Loading...",
     "generalError": "Error",

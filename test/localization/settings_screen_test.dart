@@ -14,6 +14,7 @@ import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 
 import '../test_helpers.dart';
 import '../mocks.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MockIsarService extends Mock implements IsarService {}
 
@@ -46,6 +47,7 @@ void main() {
   });
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     mockIsarService = MockIsarService();
     mockTrackBloc = MockTrackBloc();
     mockSettingsBloc = SettingsBloc();
@@ -185,6 +187,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Connexion ou inscription'), findsOneWidget);
+    });
+
+    testWidgets('always shows Data recording settings',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget(const Locale('en')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Data recording'), findsOneWidget);
     });
   });
 }
