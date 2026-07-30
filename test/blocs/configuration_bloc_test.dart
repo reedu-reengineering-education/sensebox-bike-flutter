@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
-import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 
 import '../helpers/box_configurations_test_support.dart';
@@ -138,10 +137,6 @@ void main() {
         expect(
           bloc.boxConfigurations!.last.sensors.length,
           bloc.sensorCatalog!.length,
-        );
-        expect(
-          bloc.boxConfigurations!.last.dataCollectionMode,
-          DataCollectionMode.gpsDriven,
         );
         expect(bloc.boxConfigurations!.first.sensors.first.title, 'Temperature');
         expect(bloc.isLoadingBoxConfigurations, false);

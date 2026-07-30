@@ -11,7 +11,7 @@ import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/labeled_text_form_field.dart';
 import 'package:sensebox_bike/ui/widgets/common/dropdown_form_field.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
-import 'package:sensebox_bike/ui/widgets/settings/data_collection_mode_fields.dart';
+import 'package:sensebox_bike/utils/track_collection_mode_display.dart';
 
 class CreateBikeBoxModal extends StatefulWidget {
   final List<BoxConfiguration>? boxConfigurations;
@@ -124,9 +124,9 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
             selectedTag,
             customTags);
 
-        await settingsBloc.setCollectionPreferences(
+        await settingsBloc.setLastResolvedCollectionMode(
           mode: _dataCollectionMode,
-          intervalSeconds: _collectionIntervalSeconds,
+          collectionIntervalSeconds: _collectionIntervalSeconds,
         );
 
         await opensensemapBloc.fetchSenseBoxes(page: 0);
@@ -206,20 +206,62 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: DataCollectionModeFields(
-            mode: _dataCollectionMode,
-            intervalSeconds: _collectionIntervalSeconds,
-            enabled: !_loading,
-            onModeChanged: (mode) {
-              setState(() {
-                _dataCollectionMode = mode;
-              });
-            },
-            onIntervalChanged: (seconds) {
-              setState(() {
-                _collectionIntervalSeconds = seconds;
-              });
-            },
+          child: Column(
+            children: [
+              DropdownButtonFormField<DataCollectionMode>(
+                value: _dataCollectionMode,
+                decoration: InputDecoration(
+                  labelText: localizations.settingsDataCollectionMode,
+                ),
+                items: DataCollectionMode.values
+                    .map(
+                      (mode) => DropdownMenuItem(
+                        value: mode,
+                        child: Text(
+                          dataCollectionModeSettingsLabel(mode, localizations),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _loading
+                    ? null
+                    : (mode) {
+                        if (mode != null) {
+                          setState(() {
+                            _dataCollectionMode = mode;
+                          });
+                        }
+                      },
+              ),
+              if (_dataCollectionMode == DataCollectionMode.periodic) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  value: _collectionIntervalSeconds,
+                  decoration: InputDecoration(
+                    labelText: localizations.settingsCollectionInterval,
+                  ),
+                  items: collectionIntervalPresetsSeconds
+                      .map(
+                        (seconds) => DropdownMenuItem(
+                          value: seconds,
+                          child: Text(
+                            localizations.trackCollectionModePeriodic(seconds),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: _loading
+                      ? null
+                      : (seconds) {
+                          if (seconds != null) {
+                            setState(() {
+                              _collectionIntervalSeconds = seconds;
+                            });
+                          }
+                        },
+                ),
+              ],
+            ],
           ),
         ),
       ],
