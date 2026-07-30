@@ -109,10 +109,22 @@ class RecordingBloc with ChangeNotifier {
   void _resolveCollectionMode() {
     final config = configurationBloc
         .getBoxConfigurationByGrouptag(_selectedSenseBox?.grouptag);
-    _activeCollectionMode =
-        config?.dataCollectionMode ?? DataCollectionMode.gpsDriven;
-    _collectionIntervalSeconds =
-        config?.collectionIntervalSeconds ?? defaultCollectionIntervalSeconds;
+
+    if (config != null) {
+      _activeCollectionMode = config.dataCollectionMode;
+      _collectionIntervalSeconds = config.collectionIntervalSeconds;
+    } else {
+      _activeCollectionMode = settingsBloc.lastResolvedDataCollectionMode;
+      _collectionIntervalSeconds =
+          settingsBloc.lastResolvedCollectionIntervalSeconds;
+    }
+  }
+
+  Future<void> _persistResolvedCollectionMode() async {
+    await settingsBloc.setLastResolvedCollectionMode(
+      mode: _activeCollectionMode,
+      collectionIntervalSeconds: _collectionIntervalSeconds,
+    );
   }
 
   Future<void> startRecording() async {
@@ -184,6 +196,7 @@ class RecordingBloc with ChangeNotifier {
       }
 
       _onRecordingStart?.call();
+      await _persistResolvedCollectionMode();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
