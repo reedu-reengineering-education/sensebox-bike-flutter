@@ -107,17 +107,9 @@ class RecordingBloc with ChangeNotifier {
   }
 
   void _resolveCollectionMode() {
-    final config = configurationBloc
-        .getBoxConfigurationByGrouptag(_selectedSenseBox?.grouptag);
-
-    if (config != null) {
-      _activeCollectionMode = config.dataCollectionMode;
-      _collectionIntervalSeconds = config.collectionIntervalSeconds;
-    } else {
-      _activeCollectionMode = settingsBloc.lastResolvedDataCollectionMode;
-      _collectionIntervalSeconds =
-          settingsBloc.lastResolvedCollectionIntervalSeconds;
-    }
+    _activeCollectionMode = settingsBloc.lastResolvedDataCollectionMode;
+    _collectionIntervalSeconds =
+        settingsBloc.lastResolvedCollectionIntervalSeconds;
   }
 
   Future<void> _persistResolvedCollectionMode() async {
@@ -159,7 +151,6 @@ class RecordingBloc with ChangeNotifier {
 
     _resolveCollectionMode();
     _isRecording = true;
-    _isRecordingNotifier.value = true;
     _lastRecordingStopTimestamp = null;
     await trackBloc.startNewTrack(
       isDirectUpload: settingsBloc.directUploadMode,
@@ -171,6 +162,7 @@ class RecordingBloc with ChangeNotifier {
     );
 
     _currentTrack = trackBloc.currentTrack;
+    _isRecordingNotifier.value = true;
 
     try {
       if (_selectedSenseBox == null && settingsBloc.directUploadMode) {

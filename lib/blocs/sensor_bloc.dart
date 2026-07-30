@@ -134,8 +134,7 @@ class SensorBloc with ChangeNotifier {
     if (!geolocationBloc.isListening) {
       geolocationBloc.startListening();
     }
-    geolocationBloc.getCurrentLocationAndEmit().catchError((e) {
-    });
+    await geolocationBloc.captureSample();
   }
 
   Future<void> _onRecordingStop() async {

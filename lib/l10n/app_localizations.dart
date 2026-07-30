@@ -678,6 +678,72 @@ abstract class AppLocalizations {
   /// **'• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording'**
   String get settingsUploadModeDirectDescription;
 
+  /// No description provided for @settingsDataCollectionMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Data recording'**
+  String get settingsDataCollectionMode;
+
+  /// No description provided for @settingsDataCollectionModeCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current: {mode}'**
+  String settingsDataCollectionModeCurrent(String mode);
+
+  /// No description provided for @settingsDataCollectionModeGpsDriven.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous'**
+  String get settingsDataCollectionModeGpsDriven;
+
+  /// No description provided for @settingsDataCollectionModePeriodic.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodic'**
+  String get settingsDataCollectionModePeriodic;
+
+  /// No description provided for @settingsDataCollectionModeOnTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual sampling'**
+  String get settingsDataCollectionModeOnTap;
+
+  /// No description provided for @settingsDataCollectionModeGpsDrivenDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Save sensor data along your GPS track as you ride'**
+  String get settingsDataCollectionModeGpsDrivenDescription;
+
+  /// No description provided for @settingsDataCollectionModePeriodicDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Save data automatically at the interval you choose'**
+  String get settingsDataCollectionModePeriodicDescription;
+
+  /// No description provided for @settingsDataCollectionModeOnTapDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Save data only when you tap Save sample during recording'**
+  String get settingsDataCollectionModeOnTapDescription;
+
+  /// No description provided for @settingsCollectionInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Sampling interval'**
+  String get settingsCollectionInterval;
+
+  /// No description provided for @settingsCollectionIntervalDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'How often data is saved in periodic sampling mode'**
+  String get settingsCollectionIntervalDescription;
+
+  /// No description provided for @settingsCollectionIntervalCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current: Every {seconds} s'**
+  String settingsCollectionIntervalCurrent(int seconds);
+
   /// No description provided for @settingsApiUrl.
   ///
   /// In en, this message translates to:

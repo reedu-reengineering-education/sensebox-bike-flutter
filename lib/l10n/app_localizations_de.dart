@@ -343,6 +343,47 @@ class AppLocalizationsDe extends AppLocalizations {
       '• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen';
 
   @override
+  String get settingsDataCollectionMode => 'Datenaufzeichnung';
+
+  @override
+  String settingsDataCollectionModeCurrent(String mode) {
+    return 'Aktuell: $mode';
+  }
+
+  @override
+  String get settingsDataCollectionModeGpsDriven => 'Kontinuierlich';
+
+  @override
+  String get settingsDataCollectionModePeriodic => 'Periodisch';
+
+  @override
+  String get settingsDataCollectionModeOnTap => 'Manuelle Erfassung';
+
+  @override
+  String get settingsDataCollectionModeGpsDrivenDescription =>
+      'Sensordaten entlang der GPS-Route während der Fahrt speichern';
+
+  @override
+  String get settingsDataCollectionModePeriodicDescription =>
+      'Daten automatisch im gewählten Intervall speichern';
+
+  @override
+  String get settingsDataCollectionModeOnTapDescription =>
+      'Daten nur speichern, wenn du während der Aufzeichnung auf Messpunkt speichern tippst';
+
+  @override
+  String get settingsCollectionInterval => 'Abtastintervall';
+
+  @override
+  String get settingsCollectionIntervalDescription =>
+      'Wie oft Daten im periodischen Modus gespeichert werden';
+
+  @override
+  String settingsCollectionIntervalCurrent(int seconds) {
+    return 'Aktuell: Alle $seconds s';
+  }
+
+  @override
   String get settingsApiUrl => 'Service-URL';
 
   @override

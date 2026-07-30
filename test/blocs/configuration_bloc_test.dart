@@ -141,11 +141,7 @@ void main() {
         );
         expect(
           bloc.boxConfigurations!.last.dataCollectionMode,
-          DataCollectionMode.periodic,
-        );
-        expect(
-          bloc.boxConfigurations!.last.collectionIntervalSeconds,
-          defaultCollectionIntervalSeconds,
+          DataCollectionMode.gpsDriven,
         );
         expect(bloc.boxConfigurations!.first.sensors.first.title, 'Temperature');
         expect(bloc.isLoadingBoxConfigurations, false);

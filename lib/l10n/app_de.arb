@@ -150,6 +150,31 @@
     "settingsUploadModePostRideDescription": "• Daten werden lokal während der Aufzeichnung gespeichert\n• Upload erfolgt auf einmal beim Beenden\n• Zuverlässiger und stabiler\n• Verbraucht weniger Akku während der Aufzeichnung",
     "settingsUploadModeDirectTitle": "Daten in Echtzeit während der Aufzeichnung hochladen (experimentell)",
     "settingsUploadModeDirectDescription": "• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen",
+    "settingsDataCollectionMode": "Datenaufzeichnung",
+    "settingsDataCollectionModeCurrent": "Aktuell: {mode}",
+    "@settingsDataCollectionModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsDataCollectionModeGpsDriven": "Kontinuierlich",
+    "settingsDataCollectionModePeriodic": "Periodisch",
+    "settingsDataCollectionModeOnTap": "Manuelle Erfassung",
+    "settingsDataCollectionModeGpsDrivenDescription": "Sensordaten entlang der GPS-Route während der Fahrt speichern",
+    "settingsDataCollectionModePeriodicDescription": "Daten automatisch im gewählten Intervall speichern",
+    "settingsDataCollectionModeOnTapDescription": "Daten nur speichern, wenn du während der Aufzeichnung auf Messpunkt speichern tippst",
+    "settingsCollectionInterval": "Abtastintervall",
+    "settingsCollectionIntervalDescription": "Wie oft Daten im periodischen Modus gespeichert werden",
+    "settingsCollectionIntervalCurrent": "Aktuell: Alle {seconds} s",
+    "@settingsCollectionIntervalCurrent": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "settingsApiUrl": "Service-URL",
     "settingsApiUrlHelper": "Geben Sie den API-Endpunkt für Daten-Uploads ein",
     "settingsApiUrlError": "Bitte geben Sie eine gültige URL ein (z.B. https://api.opensensemap.org)",
