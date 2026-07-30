@@ -5,8 +5,10 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
-import 'package:sensebox_bike/utils/url_launch_utils.dart';
+import 'package:sensebox_bike/utils/track_collection_mode_display.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
@@ -14,8 +16,7 @@ import 'package:sensebox_bike/ui/widgets/common/api_url_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
-import 'package:sensebox_bike/ui/widgets/settings/app_info_section.dart';
-import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
+import 'package:sensebox_bike/ui/widgets/common/selectable_list_tile.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -377,6 +378,53 @@ class SettingsScreen extends StatelessWidget {
             );
           },
         ),
+        Consumer<SettingsBloc>(
+          builder: (context, bloc, _) {
+            final modeLabel = dataCollectionModeSettingsLabel(
+              bloc.lastResolvedDataCollectionMode,
+              AppLocalizations.of(context)!,
+            );
+            return ListTile(
+              leading: const Icon(Icons.sensors),
+              title: Text(
+                AppLocalizations.of(context)!.settingsDataCollectionMode,
+              ),
+              subtitle: Text(
+                AppLocalizations.of(context)!
+                    .settingsDataCollectionModeCurrent(modeLabel),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              onTap: () => _showDataCollectionModeDialog(context, bloc),
+            );
+          },
+        ),
+        Consumer<SettingsBloc>(
+          builder: (context, bloc, _) {
+            if (bloc.lastResolvedDataCollectionMode !=
+                DataCollectionMode.periodic) {
+              return const SizedBox.shrink();
+            }
+            final seconds = bloc.lastResolvedCollectionIntervalSeconds;
+            return ListTile(
+              leading: const Icon(Icons.schedule),
+              title: Text(
+                AppLocalizations.of(context)!.settingsCollectionInterval,
+              ),
+              subtitle: Text(
+                AppLocalizations.of(context)!
+                    .settingsCollectionIntervalCurrent(seconds),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              onTap: () => _showCollectionIntervalDialog(context, bloc),
+            );
+          },
+        ),
         _buildApiUrlSection(context, settingsBloc, configurationBloc),
         SettingsNavigationTile(
           icon: Icons.admin_panel_settings,
@@ -614,6 +662,175 @@ class SettingsScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
+              child: Text(localizations.generalCancel),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDataCollectionModeDialog(
+      BuildContext context, SettingsBloc settingsBloc) {
+    final localizations = AppLocalizations.of(context)!;
+    final currentMode = settingsBloc.lastResolvedDataCollectionMode;
+    final screenSize = MediaQuery.of(context).size;
+    final isLargeScreen = screenSize.width > 375;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(localizations.settingsDataCollectionMode),
+          titlePadding: isLargeScreen
+              ? const EdgeInsets.fromLTRB(24, 24, 24, 24)
+              : const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          contentPadding: EdgeInsets.zero,
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(bottom: isLargeScreen ? 24.0 : 0.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<DataCollectionMode>(
+                      title: Text(
+                        localizations.settingsDataCollectionModeGpsDriven,
+                      ),
+                      subtitle: Text(
+                        localizations.settingsDataCollectionModeGpsDrivenDescription,
+                        style: Theme.of(dialogContext)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                              color: Theme.of(dialogContext)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                      value: DataCollectionMode.gpsDriven,
+                      groupValue: currentMode,
+                      onChanged: (mode) async {
+                        if (mode != null) {
+                          await settingsBloc.setDataCollectionMode(mode);
+                          Navigator.of(dialogContext).pop();
+                        }
+                      },
+                      isThreeLine: true,
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16.0),
+                    ),
+                    RadioListTile<DataCollectionMode>(
+                      title: Text(
+                        localizations.settingsDataCollectionModePeriodic,
+                      ),
+                      subtitle: Text(
+                        localizations.settingsDataCollectionModePeriodicDescription,
+                        style: Theme.of(dialogContext)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                              color: Theme.of(dialogContext)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                      value: DataCollectionMode.periodic,
+                      groupValue: currentMode,
+                      onChanged: (mode) async {
+                        if (mode != null) {
+                          await settingsBloc.setDataCollectionMode(mode);
+                          Navigator.of(dialogContext).pop();
+                        }
+                      },
+                      isThreeLine: true,
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16.0),
+                    ),
+                    RadioListTile<DataCollectionMode>(
+                      title: Text(
+                        localizations.settingsDataCollectionModeOnTap,
+                      ),
+                      subtitle: Text(
+                        localizations.settingsDataCollectionModeOnTapDescription,
+                        style: Theme.of(dialogContext)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                              color: Theme.of(dialogContext)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                      value: DataCollectionMode.onTap,
+                      groupValue: currentMode,
+                      onChanged: (mode) async {
+                        if (mode != null) {
+                          await settingsBloc.setDataCollectionMode(mode);
+                          Navigator.of(dialogContext).pop();
+                        }
+                      },
+                      isThreeLine: true,
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16.0),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(localizations.generalCancel),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCollectionIntervalDialog(
+      BuildContext context, SettingsBloc settingsBloc) {
+    final localizations = AppLocalizations.of(context)!;
+    final currentSeconds = settingsBloc.lastResolvedCollectionIntervalSeconds;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(localizations.settingsCollectionInterval),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  localizations.settingsCollectionIntervalDescription,
+                  style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(dialogContext)
+                            .colorScheme
+                            .onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: spacing / 2),
+                for (final seconds in collectionIntervalPresetsSeconds)
+                  SelectableListTile(
+                    title: localizations.trackCollectionModePeriodic(seconds),
+                    isSelected: currentSeconds == seconds,
+                    onTap: () async {
+                      await settingsBloc.setCollectionIntervalSeconds(seconds);
+                      Navigator.of(dialogContext).pop();
+                    },
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(localizations.generalCancel),
             ),
           ],

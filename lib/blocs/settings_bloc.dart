@@ -149,6 +149,31 @@ class SettingsBloc with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setDataCollectionMode(DataCollectionMode mode) async {
+    _lastResolvedDataCollectionMode = mode;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      SharedPreferencesKeys.lastResolvedDataCollectionMode,
+      mode.toJson(),
+    );
+
+    notifyListeners();
+  }
+
+  Future<void> setCollectionIntervalSeconds(int seconds) async {
+    final validated = parseCollectionIntervalSeconds(seconds);
+    _lastResolvedCollectionIntervalSeconds = validated;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+      SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds,
+      validated,
+    );
+
+    notifyListeners();
+  }
+
   Future<void> setLastResolvedCollectionMode({
     required DataCollectionMode mode,
     required int collectionIntervalSeconds,

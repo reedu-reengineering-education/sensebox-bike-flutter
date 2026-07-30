@@ -70,4 +70,36 @@ void main() {
       expect(display.text, localizations.trackCollectionModeOnTap);
     });
   });
+
+  group('dataCollectionModeSettingsLabel', () {
+    late AppLocalizations localizations;
+
+    setUpAll(() async {
+      localizations = await AppLocalizations.delegate.load(const Locale('en'));
+    });
+
+    test('returns labels for each mode', () {
+      expect(
+        dataCollectionModeSettingsLabel(
+          DataCollectionMode.gpsDriven,
+          localizations,
+        ),
+        localizations.settingsDataCollectionModeGpsDriven,
+      );
+      expect(
+        dataCollectionModeSettingsLabel(
+          DataCollectionMode.periodic,
+          localizations,
+        ),
+        localizations.settingsDataCollectionModePeriodic,
+      );
+      expect(
+        dataCollectionModeSettingsLabel(
+          DataCollectionMode.onTap,
+          localizations,
+        ),
+        localizations.settingsDataCollectionModeOnTap,
+      );
+    });
+  });
 }

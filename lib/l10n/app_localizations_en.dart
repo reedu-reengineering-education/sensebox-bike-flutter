@@ -339,6 +339,47 @@ class AppLocalizationsEn extends AppLocalizations {
       '• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording';
 
   @override
+  String get settingsDataCollectionMode => 'Data recording';
+
+  @override
+  String settingsDataCollectionModeCurrent(String mode) {
+    return 'Current: $mode';
+  }
+
+  @override
+  String get settingsDataCollectionModeGpsDriven => 'Continuous';
+
+  @override
+  String get settingsDataCollectionModePeriodic => 'Periodic';
+
+  @override
+  String get settingsDataCollectionModeOnTap => 'Manual sampling';
+
+  @override
+  String get settingsDataCollectionModeGpsDrivenDescription =>
+      'Save sensor data along your GPS track as you ride';
+
+  @override
+  String get settingsDataCollectionModePeriodicDescription =>
+      'Save data automatically at the interval you choose';
+
+  @override
+  String get settingsDataCollectionModeOnTapDescription =>
+      'Save data only when you tap Save sample during recording';
+
+  @override
+  String get settingsCollectionInterval => 'Sampling interval';
+
+  @override
+  String get settingsCollectionIntervalDescription =>
+      'How often data is saved in periodic sampling mode';
+
+  @override
+  String settingsCollectionIntervalCurrent(int seconds) {
+    return 'Current: Every $seconds s';
+  }
+
+  @override
   String get settingsApiUrl => 'Service URL';
 
   @override

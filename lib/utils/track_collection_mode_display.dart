@@ -13,6 +13,20 @@ class TrackCollectionModeDisplay {
   });
 }
 
+String dataCollectionModeSettingsLabel(
+  DataCollectionMode mode,
+  AppLocalizations localizations,
+) {
+  switch (mode) {
+    case DataCollectionMode.gpsDriven:
+      return localizations.settingsDataCollectionModeGpsDriven;
+    case DataCollectionMode.periodic:
+      return localizations.settingsDataCollectionModePeriodic;
+    case DataCollectionMode.onTap:
+      return localizations.settingsDataCollectionModeOnTap;
+  }
+}
+
 TrackCollectionModeDisplay? collectionModeDisplay(
   TrackData track,
   AppLocalizations localizations,

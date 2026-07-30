@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/campaign.dart';
-import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/sensor_catalog_entry.dart';
 import 'package:sensebox_bike/services/remote_data_service.dart';
 import 'package:sensebox_bike/services/sensor_catalog_registry.dart';
@@ -216,8 +215,6 @@ class ConfigurationBloc extends ChangeNotifier {
       displayName: 'All sensors',
       defaultGrouptag: 'all',
       sensors: sensors,
-      dataCollectionMode: DataCollectionMode.periodic,
-      collectionIntervalSeconds: defaultCollectionIntervalSeconds,
     );
   }
 

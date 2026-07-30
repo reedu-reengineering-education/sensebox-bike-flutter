@@ -1,5 +1,6 @@
 const defaultCollectionIntervalSeconds = 60;
 const minCollectionIntervalSeconds = 5;
+const collectionIntervalPresetsSeconds = [30, 60, 120];
 
 enum DataCollectionMode {
   gpsDriven,

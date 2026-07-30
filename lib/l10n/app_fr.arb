@@ -149,6 +149,31 @@
   "settingsUploadModePostRideDescription": "• Les données sont stockées localement pendant l’enregistrement\n• Le téléversement se fait en une seule fois à la fin\n• Plus fiable et stable\n• Utilise moins de batterie pendant l’enregistrement",
   "settingsUploadModeDirectTitle": "Téléverser les données en temps réel pendant l’enregistrement (expérimental)",
   "settingsUploadModeDirectDescription": "• Les données sont téléversées immédiatement dès leur collecte\n• Partage des données en temps réel (expérimental)\n• Nécessite une connexion internet stable\n• Peut utiliser plus de batterie pendant l’enregistrement",
+  "settingsDataCollectionMode": "Enregistrement des données",
+  "settingsDataCollectionModeCurrent": "Actuel : {mode}",
+  "@settingsDataCollectionModeCurrent": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDataCollectionModeGpsDriven": "Continu",
+  "settingsDataCollectionModePeriodic": "Périodique",
+  "settingsDataCollectionModeOnTap": "Échantillonnage manuel",
+  "settingsDataCollectionModeGpsDrivenDescription": "Enregistrer les données des capteurs le long de votre trajet GPS",
+  "settingsDataCollectionModePeriodicDescription": "Enregistrer automatiquement les données à l’intervalle choisi",
+  "settingsDataCollectionModeOnTapDescription": "Enregistrer les données uniquement lorsque vous appuyez sur Enregistrer un point pendant l’enregistrement",
+  "settingsCollectionInterval": "Intervalle d’échantillonnage",
+  "settingsCollectionIntervalDescription": "Fréquence d’enregistrement en mode périodique",
+  "settingsCollectionIntervalCurrent": "Actuel : toutes les {seconds} s",
+  "@settingsCollectionIntervalCurrent": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "settingsAbout": "À propos",
   "settingsPrivacyPolicy": "Politique de confidentialité",
   "settingsVersion": "Version : {versionNumber}",

@@ -343,6 +343,47 @@ class AppLocalizationsPt extends AppLocalizations {
       '• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação';
 
   @override
+  String get settingsDataCollectionMode => 'Gravação de dados';
+
+  @override
+  String settingsDataCollectionModeCurrent(String mode) {
+    return 'Atual: $mode';
+  }
+
+  @override
+  String get settingsDataCollectionModeGpsDriven => 'Contínuo';
+
+  @override
+  String get settingsDataCollectionModePeriodic => 'Periódico';
+
+  @override
+  String get settingsDataCollectionModeOnTap => 'Amostragem manual';
+
+  @override
+  String get settingsDataCollectionModeGpsDrivenDescription =>
+      'Salvar dados dos sensores ao longo do trajeto GPS durante o passeio';
+
+  @override
+  String get settingsDataCollectionModePeriodicDescription =>
+      'Salvar dados automaticamente no intervalo escolhido';
+
+  @override
+  String get settingsDataCollectionModeOnTapDescription =>
+      'Salvar dados apenas ao tocar em Salvar amostra durante a gravação';
+
+  @override
+  String get settingsCollectionInterval => 'Intervalo de amostragem';
+
+  @override
+  String get settingsCollectionIntervalDescription =>
+      'Com que frequência os dados são salvos no modo periódico';
+
+  @override
+  String settingsCollectionIntervalCurrent(int seconds) {
+    return 'Atual: A cada $seconds s';
+  }
+
+  @override
   String get settingsApiUrl => 'URL do Serviço';
 
   @override
