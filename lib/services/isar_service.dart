@@ -64,6 +64,9 @@ class IsarService {
       final lineBuffer = <String>[];
       for (final geoData in geolocationDataList) {
         final data = sensorDataByGeolocation[geoData.id] ?? const <SensorData>[];
+        if (data.isEmpty || isGpsSpeedOnlySensorData(data)) {
+          continue;
+        }
         lineBuffer.addAll(
           data.map((sensor) {
             final sensorId = findSensorIdByData(sensor, senseBox.sensors ?? []);

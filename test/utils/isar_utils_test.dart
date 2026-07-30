@@ -395,6 +395,33 @@ void main() {
         ],
       ]);
     });
+
+    test('skips geolocations that only have phone GPS speed', () {
+      final geoData = GeolocationData()
+        ..id = 1
+        ..timestamp = DateTime.utc(2025, 5, 14, 12, 0, 0)
+        ..latitude = 52.52
+        ..longitude = 13.405;
+      final gpsSpeedOnly = SensorData()
+        ..id = 1
+        ..title = 'gps'
+        ..attribute = 'speed'
+        ..characteristicUuid = 'phone-gps'
+        ..value = 3.5;
+
+      final rows = buildCsvRows(
+        [geoData],
+        {
+          1: [gpsSpeedOnly],
+        },
+        [
+          ['gps', 'speed'],
+          ['temperature', null],
+        ],
+      );
+
+      expect(rows, isEmpty);
+    });
   });
 
   group('getSelectedSenseBoxOrThrow', () {
