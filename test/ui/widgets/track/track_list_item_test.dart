@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/models/track_data.dart';
-import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/track_status_info.dart';
 import 'package:sensebox_bike/ui/widgets/track/track_list_item.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';

@@ -7,6 +7,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/ui/widgets/track/track_collection_mode_chip.dart';
 
 const double kMapPreviewWidth = 140;
 const double kMapPreviewHeight = 140;
@@ -173,6 +174,7 @@ class TrackListItem extends StatelessWidget {
                       children: [
                         Text(date, style: theme.textTheme.titleSmall),
                         Text(times, style: theme.textTheme.titleSmall),
+                        TrackCollectionModeChip(track: track),
                       ],
                     ),
                     _buildStatusIcon(context, localizations, theme),

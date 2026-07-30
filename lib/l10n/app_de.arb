@@ -312,6 +312,16 @@
   "trackUploadAttempts": "Upload-Versuche",
   "trackLastAttempt": "Letzter Versuch",
   "trackStatus": "Status",
+  "trackCollectionModeLabel": "Erfassung",
+  "trackCollectionModeOnTap": "Manuelle Erfassung",
+  "trackCollectionModePeriodic": "Alle {seconds} s",
+  "@trackCollectionModePeriodic": {
+      "placeholders": {
+          "seconds": {
+              "type": "int"
+          }
+      }
+  },
   "trackDirectUploadAuthFailed": "Dieser Track konnte nicht in Echtzeit hochgeladen werden, da du nicht angemeldet warst. Bitte melde dich an und versuche den Upload erneut.",
     "trackStatusNotUploaded": "Nicht hochgeladen",
     "trackStatusUploadFailed": "Upload fehlgeschlagen",

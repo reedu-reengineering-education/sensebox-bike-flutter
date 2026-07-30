@@ -358,6 +358,8 @@ class TestTrackBuilder {
     int? uploaded,
     int? uploadAttempts,
     DateTime? lastUploadAttempt,
+    String? dataCollectionMode,
+    int? collectionIntervalSeconds,
     List<GeolocationData>? geolocations,
   }) {
     final track = TrackData()
@@ -365,7 +367,9 @@ class TestTrackBuilder {
       ..isDirectUpload = isDirectUpload ?? 1
       ..uploaded = uploaded ?? 0
       ..uploadAttempts = uploadAttempts ?? 0
-      ..lastUploadAttempt = lastUploadAttempt;
+      ..lastUploadAttempt = lastUploadAttempt
+      ..dataCollectionMode = dataCollectionMode
+      ..collectionIntervalSeconds = collectionIntervalSeconds;
 
     if (geolocations != null) {
       track.geolocations.addAll(geolocations);

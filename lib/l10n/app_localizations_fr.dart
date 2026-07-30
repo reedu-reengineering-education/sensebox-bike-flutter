@@ -771,6 +771,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get trackStatus => 'Statut';
 
   @override
+  String get trackCollectionModeLabel => 'Échantillonnage';
+
+  @override
+  String get trackCollectionModeOnTap => 'Échantillonnage manuel';
+
+  @override
+  String trackCollectionModePeriodic(int seconds) {
+    return 'Toutes les $seconds s';
+  }
+
+  @override
   String get trackDirectUploadAuthFailed =>
       'Ce parcours n’a pas pu être téléversé en temps réel car vous n’étiez pas connecté. Veuillez vous connecter et réessayer le téléversement.';
 

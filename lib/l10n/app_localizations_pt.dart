@@ -763,6 +763,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackStatus => 'Status';
 
   @override
+  String get trackCollectionModeLabel => 'Amostragem';
+
+  @override
+  String get trackCollectionModeOnTap => 'Amostragem manual';
+
+  @override
+  String trackCollectionModePeriodic(int seconds) {
+    return 'A cada $seconds s';
+  }
+
+  @override
   String get trackDirectUploadAuthFailed =>
       'Este trajeto falhou ao ser enviado em tempo real porque você não estava logado. Por favor, faça login e tente enviar novamente.';
 

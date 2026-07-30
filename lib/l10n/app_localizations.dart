@@ -1416,6 +1416,24 @@ abstract class AppLocalizations {
   /// **'Status'**
   String get trackStatus;
 
+  /// No description provided for @trackCollectionModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sampling'**
+  String get trackCollectionModeLabel;
+
+  /// No description provided for @trackCollectionModeOnTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual sampling'**
+  String get trackCollectionModeOnTap;
+
+  /// No description provided for @trackCollectionModePeriodic.
+  ///
+  /// In en, this message translates to:
+  /// **'Every {seconds} s'**
+  String trackCollectionModePeriodic(int seconds);
+
   /// No description provided for @trackDirectUploadAuthFailed.
   ///
   /// In en, this message translates to:

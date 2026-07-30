@@ -320,6 +320,16 @@
   "trackUploadAttempts": "Tentatives de téléversement",
   "trackLastAttempt": "Dernière tentative",
   "trackStatus": "Statut",
+  "trackCollectionModeLabel": "Échantillonnage",
+  "trackCollectionModeOnTap": "Échantillonnage manuel",
+  "trackCollectionModePeriodic": "Toutes les {seconds} s",
+  "@trackCollectionModePeriodic": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "trackDirectUploadAuthFailed": "Ce parcours n’a pas pu être téléversé en temps réel car vous n’étiez pas connecté. Veuillez vous connecter et réessayer le téléversement.",
   "trackFilterAll": "Tous",
   "trackFilterUnuploaded": "Non téléversé",
