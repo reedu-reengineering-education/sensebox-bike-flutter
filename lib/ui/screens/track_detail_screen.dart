@@ -24,7 +24,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:intl/intl.dart';
 import 'package:sensebox_bike/ui/widgets/common/sensor_gradient_widget.dart';
 import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
-import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
+import 'package:sensebox_bike/utils/track_collection_mode_display.dart';
 
 class TrackDetailScreen extends StatefulWidget {
   final TrackData track;
