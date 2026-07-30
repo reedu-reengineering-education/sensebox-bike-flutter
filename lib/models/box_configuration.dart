@@ -1,4 +1,3 @@
-import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/sensor_catalog_entry.dart';
 import 'package:sensebox_bike/services/sensor_catalog_registry.dart';
 import 'package:sensebox_bike/utils/json_validation.dart';
@@ -8,16 +7,12 @@ class BoxConfiguration {
   final String displayName;
   final String defaultGrouptag;
   final List<SensorDefinition> sensors;
-  final DataCollectionMode dataCollectionMode;
-  final int collectionIntervalSeconds;
 
   BoxConfiguration({
     required this.id,
     required this.displayName,
     required this.defaultGrouptag,
     required this.sensors,
-    this.dataCollectionMode = DataCollectionMode.gpsDriven,
-    this.collectionIntervalSeconds = defaultCollectionIntervalSeconds,
   });
 
   factory BoxConfiguration.fromJson(Map<String, dynamic> json) {
@@ -38,12 +33,6 @@ class BoxConfiguration {
           fallbackId: entry.key.toString(),
         );
       }).toList(),
-      dataCollectionMode: DataCollectionMode.fromJson(
-        optionalString(json, 'dataCollectionMode'),
-      ),
-      collectionIntervalSeconds: parseCollectionIntervalSeconds(
-        json['collectionIntervalSeconds'],
-      ),
     );
   }
 
@@ -52,11 +41,6 @@ class BoxConfiguration {
       'id': id,
       'displayName': displayName,
       'defaultGrouptag': defaultGrouptag,
-      if (dataCollectionMode != DataCollectionMode.gpsDriven)
-        'dataCollectionMode': dataCollectionMode.toJson(),
-      if (dataCollectionMode == DataCollectionMode.periodic &&
-          collectionIntervalSeconds != defaultCollectionIntervalSeconds)
-        'collectionIntervalSeconds': collectionIntervalSeconds,
       'sensors': sensors.map((sensor) => sensor.toRefJson()).toList(),
     };
   }

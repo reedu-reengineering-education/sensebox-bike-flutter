@@ -168,6 +168,12 @@ abstract class AppLocalizations {
   /// **'You can separate tags with commas'**
   String get createBoxCustomTagHelper;
 
+  /// No description provided for @createBoxDataRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced data recording'**
+  String get createBoxDataRecording;
+
   /// No description provided for @generalLoading.
   ///
   /// In en, this message translates to:

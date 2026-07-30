@@ -49,6 +49,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get createBoxCustomTagHelper => 'Du kannst Tags mit Kommas trennen';
 
   @override
+  String get createBoxDataRecording => 'Erweiterte Datenaufzeichnung';
+
+  @override
   String get generalLoading => 'Lädt...';
 
   @override

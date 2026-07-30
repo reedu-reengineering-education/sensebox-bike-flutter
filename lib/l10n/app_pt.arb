@@ -15,6 +15,7 @@
     "createBoxAddCustomTag": "Adicionar etiqueta de grupo personalizada",
     "createBoxCustomTag": "Etiqueta de grupo personalizada",
     "createBoxCustomTagHelper": "Você pode separar etiquetas com vírgulas",
+    "createBoxDataRecording": "Gravação avançada de dados",
     "@@locale": "pt",
     "generalLoading": "Carregando...",
     "generalError": "Erro",

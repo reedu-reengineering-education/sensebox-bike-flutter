@@ -53,6 +53,19 @@ void main() {
         throwsA(isA<FormatException>()),
       );
     });
+
+    test('setLastResolvedCollectionMode persists mode and interval', () async {
+      await settingsBloc.setLastResolvedCollectionMode(
+        mode: DataCollectionMode.periodic,
+        collectionIntervalSeconds: 120,
+      );
+
+      expect(
+        settingsBloc.lastResolvedDataCollectionMode,
+        DataCollectionMode.periodic,
+      );
+      expect(settingsBloc.lastResolvedCollectionIntervalSeconds, 120);
+    });
   });
 
   group('SettingsBloc Upload Mode Tests', () {

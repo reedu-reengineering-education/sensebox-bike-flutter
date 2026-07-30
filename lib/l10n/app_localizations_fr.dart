@@ -51,6 +51,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'Vous pouvez séparer les étiquettes par des virgules';
 
   @override
+  String get createBoxDataRecording => 'Enregistrement des données avancé';
+
+  @override
   String get generalLoading => 'Chargement...';
 
   @override
