@@ -274,6 +274,17 @@ SensorData createGpsSpeedSensorData(GeolocationData geoData) {
     ..geolocationData.value = geoData;
 }
 
+/// True when the only stored rows are phone GPS speed (no box sensor readings).
+/// These show up as mostly-empty CSV rows for on-tap / periodic samples.
+bool isGpsSpeedOnlySensorData(List<SensorData> sensorData) {
+  if (sensorData.isEmpty) {
+    return false;
+  }
+  return sensorData.every(
+    (sensor) => sensor.title == 'gps' && sensor.attribute == 'speed',
+  );
+}
+
 bool shouldStoreSensorData(SensorData sensorData) {
   if (sensorData.value.isNaN || sensorData.value.isInfinite) {
     return false;

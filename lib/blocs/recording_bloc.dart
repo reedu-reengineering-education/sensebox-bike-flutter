@@ -186,8 +186,9 @@ class RecordingBloc with ChangeNotifier {
 
     _isRecording = false;
     _isRecordingNotifier.value = false;
-    _activeCollectionMode = DataCollectionMode.gpsDriven;
-    _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
+    // Keep activeCollectionMode until the next startRecording snapshots
+    // settings. Resetting to gpsDriven made the idle GPS stream take the
+    // continuous persist path and race into the first on-tap/periodic point.
     await _onRecordingStop?.call();
 
     // Store current track and sensebox for upload

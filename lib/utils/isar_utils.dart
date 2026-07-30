@@ -179,7 +179,9 @@ List<List<String>> buildCsvRows(
   return geolocationDataList
       .map((geoData) {
         final sensorData = sensorDataByGeolocation[geoData.id] ?? [];
-        if (sensorData.isEmpty) return null;
+        if (sensorData.isEmpty || isGpsSpeedOnlySensorData(sensorData)) {
+          return null;
+        }
         final sensorMap = organizeSensorData(
           sensorData,
           separator: separator,

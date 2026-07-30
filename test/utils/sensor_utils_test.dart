@@ -97,6 +97,37 @@ void main() {
     });
   });
 
+  group('isGpsSpeedOnlySensorData', () {
+    test('returns true when only phone GPS speed is present', () {
+      final sensorData = [
+        SensorData()
+          ..title = 'gps'
+          ..attribute = 'speed'
+          ..value = 1.0,
+      ];
+
+      expect(isGpsSpeedOnlySensorData(sensorData), isTrue);
+    });
+
+    test('returns false when box sensors are present', () {
+      final sensorData = [
+        SensorData()
+          ..title = 'gps'
+          ..attribute = 'speed'
+          ..value = 1.0,
+        SensorData()
+          ..title = 'temperature'
+          ..value = 20.0,
+      ];
+
+      expect(isGpsSpeedOnlySensorData(sensorData), isFalse);
+    });
+
+    test('returns false for empty list', () {
+      expect(isGpsSpeedOnlySensorData(const []), isFalse);
+    });
+  });
+
   group('shouldStoreSensorData', () {
     test('returns true for valid sensor data', () {
       final sensorData = SensorData()

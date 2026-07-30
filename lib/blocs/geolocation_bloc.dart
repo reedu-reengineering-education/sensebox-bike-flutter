@@ -70,6 +70,9 @@ class GeolocationBloc with ChangeNotifier {
   /// track. Defaults to always-active when not provided (e.g. in tests).
   final bool Function()? _isSensorDataActive;
 
+  /// For periodic / on-tap: collect last BLE readings to persist with the sample.
+  List<SensorData> Function(GeolocationData geo)? _collectInstantSensorData;
+
   GeolocationBloc(this.isarService, this.recordingBloc, this.settingsBloc,
       {bool Function()? isSensorDataActive})
       : _isSensorDataActive = isSensorDataActive {
@@ -80,6 +83,12 @@ class GeolocationBloc with ChangeNotifier {
 
     _recordingListener = _onRecordingChanged;
     recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
+  }
+
+  void setCollectInstantSensorData(
+    List<SensorData> Function(GeolocationData geo)? callback,
+  ) {
+    _collectInstantSensorData = callback;
   }
 
   void _onRecordingChanged() {
@@ -148,7 +157,12 @@ class GeolocationBloc with ChangeNotifier {
           return;
         }
 
-        if (!recordingBloc.activeCollectionMode.isGpsDriven) {
+        // Only GPS-driven recording persists from the stream. Always keep the
+        // last fix for on-tap / periodic captureSample. Re-check recording+mode
+        // here so an in-flight event from idle (mode reset to gpsDriven) cannot
+        // save when the user has just started an on-tap / periodic session.
+        if (!recordingBloc.isRecording ||
+            !recordingBloc.activeCollectionMode.isGpsDriven) {
           _lastEmittedPosition = geolocationData;
           return;
         }
@@ -332,6 +346,13 @@ class GeolocationBloc with ChangeNotifier {
 
     _lastEmittedPosition = geolocationData;
 
+    // Defensive: stream handler should already gate this; async gaps can still
+    // reach here after the user switched to on-tap / periodic.
+    if (!recordingBloc.isRecording ||
+        !recordingBloc.activeCollectionMode.isGpsDriven) {
+      return;
+    }
+
     if (resetStationaryTimer) {
       _startStationaryLocationTimer();
     }
@@ -372,9 +393,20 @@ class GeolocationBloc with ChangeNotifier {
 
     try {
       final gpsSpeedSensorData = createGpsSpeedSensorData(geolocationData);
-      final sensorRows = shouldStoreSensorData(gpsSpeedSensorData)
-          ? [gpsSpeedSensorData]
-          : const <SensorData>[];
+      final sensorRows = <SensorData>[
+        if (shouldStoreSensorData(gpsSpeedSensorData)) gpsSpeedSensorData,
+      ];
+
+      // Periodic / on-tap: persist last BLE readings with the sample (no
+      // lookback aggregation). Skip GPS-only samples when nothing is available.
+      if (!recordingBloc.activeCollectionMode.isGpsDriven) {
+        final instantRows =
+            _collectInstantSensorData?.call(geolocationData) ?? const [];
+        if (instantRows.isEmpty) {
+          return false;
+        }
+        sensorRows.addAll(instantRows);
+      }
 
       final savedId = await isarService.geolocationService
           .saveGeolocationWithSensors(geolocationData, sensorRows);

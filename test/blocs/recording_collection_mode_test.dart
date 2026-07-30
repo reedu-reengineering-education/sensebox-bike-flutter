@@ -167,5 +167,24 @@ void main() {
       );
       expect(fakeTrackBloc.capturedCollectionIntervalSeconds, isNull);
     });
+
+    test('stopRecording keeps collection mode for next session setup', () async {
+      when(() => mockSettingsBloc.dataCollectionMode)
+          .thenReturn(DataCollectionMode.onTap);
+
+      recordingBloc = RecordingBloc(
+        mockIsarService,
+        mockBleBloc,
+        fakeTrackBloc,
+        fakeOpenSenseMapBloc,
+        mockSettingsBloc,
+      );
+
+      await recordingBloc.startRecording();
+      await recordingBloc.stopRecording();
+
+      expect(recordingBloc.isRecording, isFalse);
+      expect(recordingBloc.activeCollectionMode, DataCollectionMode.onTap);
+    });
   });
 }
