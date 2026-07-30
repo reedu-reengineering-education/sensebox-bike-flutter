@@ -301,6 +301,16 @@
     "trackUploadAttempts": "Upload attempts",
     "trackLastAttempt": "Last attempt",
     "trackStatus": "Status",
+    "trackCollectionModeLabel": "Sampling",
+    "trackCollectionModeOnTap": "Manual sampling",
+    "trackCollectionModePeriodic": "Every {seconds} s",
+    "@trackCollectionModePeriodic": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "trackDirectUploadAuthFailed": "This track failed to upload in real-time because you weren't logged in. Please log in and try uploading again.",
     "trackFilterAll": "All",
     "trackFilterUnuploaded": "Not uploaded",

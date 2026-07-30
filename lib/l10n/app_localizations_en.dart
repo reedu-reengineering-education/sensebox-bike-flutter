@@ -749,6 +749,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackStatus => 'Status';
 
   @override
+  String get trackCollectionModeLabel => 'Sampling';
+
+  @override
+  String get trackCollectionModeOnTap => 'Manual sampling';
+
+  @override
+  String trackCollectionModePeriodic(int seconds) {
+    return 'Every $seconds s';
+  }
+
+  @override
   String get trackDirectUploadAuthFailed =>
       'This track failed to upload in real-time because you weren\'t logged in. Please log in and try uploading again.';
 

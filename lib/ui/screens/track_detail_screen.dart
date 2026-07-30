@@ -24,6 +24,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:intl/intl.dart';
 import 'package:sensebox_bike/ui/widgets/common/sensor_gradient_widget.dart';
 import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
+import 'package:sensebox_bike/utils/track_collection_mode_display.dart';
 
 class TrackDetailScreen extends StatefulWidget {
   final TrackData track;
@@ -204,6 +205,25 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     } else {
       return localizations.trackStatusNotUploaded;
     }
+  }
+
+  Widget _buildCollectionModeSection() {
+    final localizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final display = collectionModeDisplay(_track, localizations);
+    if (display == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: padding, horizontal: spacing),
+      child: _buildDetailRow(
+        icon: display.icon,
+        label: localizations.trackCollectionModeLabel,
+        value: display.text,
+        theme: theme,
+      ),
+    );
   }
 
   Widget _buildUploadDetails() {
@@ -568,6 +588,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         child: Column(
           children: [
             _buildUploadStatusSection(),
+            _buildCollectionModeSection(),
             if (_shouldShowUploadHint())
               InfoBanner(text: localizations.trackUploadLoginSelectHint),
             Expanded(

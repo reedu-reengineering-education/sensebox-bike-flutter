@@ -307,6 +307,16 @@
   "trackUploadAttempts": "Tentativas de envio",
   "trackLastAttempt": "Última tentativa",
   "trackStatus": "Status",
+  "trackCollectionModeLabel": "Amostragem",
+  "trackCollectionModeOnTap": "Amostragem manual",
+  "trackCollectionModePeriodic": "A cada {seconds} s",
+  "@trackCollectionModePeriodic": {
+      "placeholders": {
+          "seconds": {
+              "type": "int"
+          }
+      }
+  },
   "trackDirectUploadAuthFailed": "Este trajeto falhou ao ser enviado em tempo real porque você não estava logado. Por favor, faça login e tente enviar novamente.",
     "trackStatusNotUploaded": "Não enviado",
     "trackStatusUploadFailed": "Envio falhou",

@@ -759,6 +759,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackStatus => 'Status';
 
   @override
+  String get trackCollectionModeLabel => 'Erfassung';
+
+  @override
+  String get trackCollectionModeOnTap => 'Manuelle Erfassung';
+
+  @override
+  String trackCollectionModePeriodic(int seconds) {
+    return 'Alle $seconds s';
+  }
+
+  @override
   String get trackDirectUploadAuthFailed =>
       'Dieser Track konnte nicht in Echtzeit hochgeladen werden, da du nicht angemeldet warst. Bitte melde dich an und versuche den Upload erneut.';
 
