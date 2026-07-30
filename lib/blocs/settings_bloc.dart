@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsBloc with ChangeNotifier {
@@ -16,6 +18,10 @@ class SettingsBloc with ChangeNotifier {
   bool _directUploadMode =
       false; // false = post-ride upload, true = direct upload
   String _apiUrl = '';
+  DataCollectionMode _lastResolvedDataCollectionMode =
+      DataCollectionMode.gpsDriven;
+  int _lastResolvedCollectionIntervalSeconds =
+      defaultCollectionIntervalSeconds;
 
   SettingsBloc() {
     _loadSettings();
@@ -34,6 +40,12 @@ class SettingsBloc with ChangeNotifier {
   String get apiUrl =>
       _apiUrl.isEmpty ? 'https://api.opensensemap.org' : _apiUrl;
 
+  DataCollectionMode get lastResolvedDataCollectionMode =>
+      _lastResolvedDataCollectionMode;
+
+  int get lastResolvedCollectionIntervalSeconds =>
+      _lastResolvedCollectionIntervalSeconds;
+
   // Stream for vibrateOnDisconnect updates
   Stream<bool> get vibrateOnDisconnectStream =>
       _vibrateOnDisconnectController.stream;
@@ -44,6 +56,28 @@ class SettingsBloc with ChangeNotifier {
   // Stream for upload mode updates
   Stream<bool> get directUploadModeStream => _directUploadModeController.stream;
 
+  static DataCollectionMode _parseStoredCollectionMode(String? value) {
+    if (value == null) {
+      return DataCollectionMode.gpsDriven;
+    }
+    try {
+      return DataCollectionMode.fromJson(value);
+    } catch (_) {
+      return DataCollectionMode.gpsDriven;
+    }
+  }
+
+  static int _parseStoredCollectionIntervalSeconds(int? value) {
+    if (value == null) {
+      return defaultCollectionIntervalSeconds;
+    }
+    try {
+      return parseCollectionIntervalSeconds(value);
+    } catch (_) {
+      return defaultCollectionIntervalSeconds;
+    }
+  }
+
   // Load settings from Shared Preferences
   Future<void> _loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -51,6 +85,13 @@ class SettingsBloc with ChangeNotifier {
     _privacyZones = prefs.getStringList('privacyZones') ?? [];
     _directUploadMode = prefs.getBool('directUploadMode') ?? false;
     _apiUrl = prefs.getString('apiUrl') ?? '';
+    _lastResolvedDataCollectionMode = _parseStoredCollectionMode(
+      prefs.getString(SharedPreferencesKeys.lastResolvedDataCollectionMode),
+    );
+    _lastResolvedCollectionIntervalSeconds =
+        _parseStoredCollectionIntervalSeconds(
+      prefs.getInt(SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds),
+    );
 
     // Emit the values to the streams
     _vibrateOnDisconnectController.add(_vibrateOnDisconnect);
@@ -104,6 +145,26 @@ class SettingsBloc with ChangeNotifier {
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('apiUrl', value);
+
+    notifyListeners();
+  }
+
+  Future<void> setLastResolvedCollectionMode({
+    required DataCollectionMode mode,
+    required int collectionIntervalSeconds,
+  }) async {
+    _lastResolvedDataCollectionMode = mode;
+    _lastResolvedCollectionIntervalSeconds = collectionIntervalSeconds;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      SharedPreferencesKeys.lastResolvedDataCollectionMode,
+      mode.toJson(),
+    );
+    await prefs.setInt(
+      SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds,
+      collectionIntervalSeconds,
+    );
 
     notifyListeners();
   }
