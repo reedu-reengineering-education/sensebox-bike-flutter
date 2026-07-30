@@ -8,7 +8,7 @@ import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
-import 'package:sensebox_bike/utils/track_collection_mode_display.dart';
+import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
@@ -16,7 +16,7 @@ import 'package:sensebox_bike/ui/widgets/common/api_url_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
-import 'package:sensebox_bike/ui/widgets/common/selectable_list_tile.dart';
+import 'package:sensebox_bike/ui/widgets/settings/data_collection_mode_fields.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -381,7 +381,7 @@ class SettingsScreen extends StatelessWidget {
         Consumer<SettingsBloc>(
           builder: (context, bloc, _) {
             final modeLabel = dataCollectionModeSettingsLabel(
-              bloc.lastResolvedDataCollectionMode,
+              bloc.dataCollectionMode,
               AppLocalizations.of(context)!,
             );
             return ListTile(
@@ -403,11 +403,10 @@ class SettingsScreen extends StatelessWidget {
         ),
         Consumer<SettingsBloc>(
           builder: (context, bloc, _) {
-            if (bloc.lastResolvedDataCollectionMode !=
-                DataCollectionMode.periodic) {
+            if (!bloc.dataCollectionMode.usesPeriodicTimer) {
               return const SizedBox.shrink();
             }
-            final seconds = bloc.lastResolvedCollectionIntervalSeconds;
+            final seconds = bloc.collectionIntervalSeconds;
             return ListTile(
               leading: const Icon(Icons.schedule),
               title: Text(
@@ -673,7 +672,7 @@ class SettingsScreen extends StatelessWidget {
   void _showDataCollectionModeDialog(
       BuildContext context, SettingsBloc settingsBloc) {
     final localizations = AppLocalizations.of(context)!;
-    final currentMode = settingsBloc.lastResolvedDataCollectionMode;
+    final currentMode = settingsBloc.dataCollectionMode;
     final screenSize = MediaQuery.of(context).size;
     final isLargeScreen = screenSize.width > 375;
 
@@ -692,91 +691,12 @@ class SettingsScreen extends StatelessWidget {
               thumbVisibility: true,
               child: SingleChildScrollView(
                 padding: EdgeInsets.only(bottom: isLargeScreen ? 24.0 : 0.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioListTile<DataCollectionMode>(
-                      title: Text(
-                        localizations.settingsDataCollectionModeGpsDriven,
-                      ),
-                      subtitle: Text(
-                        localizations.settingsDataCollectionModeGpsDrivenDescription,
-                        style: Theme.of(dialogContext)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(
-                              color: Theme.of(dialogContext)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                      ),
-                      value: DataCollectionMode.gpsDriven,
-                      groupValue: currentMode,
-                      onChanged: (mode) async {
-                        if (mode != null) {
-                          await settingsBloc.setDataCollectionMode(mode);
-                          Navigator.of(dialogContext).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                    RadioListTile<DataCollectionMode>(
-                      title: Text(
-                        localizations.settingsDataCollectionModePeriodic,
-                      ),
-                      subtitle: Text(
-                        localizations.settingsDataCollectionModePeriodicDescription,
-                        style: Theme.of(dialogContext)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(
-                              color: Theme.of(dialogContext)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                      ),
-                      value: DataCollectionMode.periodic,
-                      groupValue: currentMode,
-                      onChanged: (mode) async {
-                        if (mode != null) {
-                          await settingsBloc.setDataCollectionMode(mode);
-                          Navigator.of(dialogContext).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                    RadioListTile<DataCollectionMode>(
-                      title: Text(
-                        localizations.settingsDataCollectionModeOnTap,
-                      ),
-                      subtitle: Text(
-                        localizations.settingsDataCollectionModeOnTapDescription,
-                        style: Theme.of(dialogContext)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(
-                              color: Theme.of(dialogContext)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                      ),
-                      value: DataCollectionMode.onTap,
-                      groupValue: currentMode,
-                      onChanged: (mode) async {
-                        if (mode != null) {
-                          await settingsBloc.setDataCollectionMode(mode);
-                          Navigator.of(dialogContext).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ],
+                child: DataCollectionModeRadioList(
+                  groupValue: currentMode,
+                  onChanged: (selected) async {
+                    await settingsBloc.setDataCollectionMode(selected);
+                    Navigator.of(dialogContext).pop();
+                  },
                 ),
               ),
             ),
@@ -795,7 +715,7 @@ class SettingsScreen extends StatelessWidget {
   void _showCollectionIntervalDialog(
       BuildContext context, SettingsBloc settingsBloc) {
     final localizations = AppLocalizations.of(context)!;
-    final currentSeconds = settingsBloc.lastResolvedCollectionIntervalSeconds;
+    final currentSeconds = settingsBloc.collectionIntervalSeconds;
 
     showDialog(
       context: context,
@@ -816,15 +736,13 @@ class SettingsScreen extends StatelessWidget {
                       ),
                 ),
                 const SizedBox(height: spacing / 2),
-                for (final seconds in collectionIntervalPresetsSeconds)
-                  SelectableListTile(
-                    title: localizations.trackCollectionModePeriodic(seconds),
-                    isSelected: currentSeconds == seconds,
-                    onTap: () async {
-                      await settingsBloc.setCollectionIntervalSeconds(seconds);
-                      Navigator.of(dialogContext).pop();
-                    },
-                  ),
+                CollectionIntervalPresetList(
+                  selectedSeconds: currentSeconds,
+                  onSelected: (seconds) async {
+                    await settingsBloc.setCollectionIntervalSeconds(seconds);
+                    Navigator.of(dialogContext).pop();
+                  },
+                ),
               ],
             ),
           ),

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/data_collection_mode.dart';
-import 'package:sensebox_bike/models/track_data.dart';
-import 'package:sensebox_bike/utils/track_collection_mode_display.dart';
+import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
 
 import '../mocks.dart';
 

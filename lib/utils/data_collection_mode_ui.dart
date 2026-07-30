@@ -27,16 +27,28 @@ String dataCollectionModeSettingsLabel(
   }
 }
 
+String dataCollectionModeSettingsDescription(
+  DataCollectionMode mode,
+  AppLocalizations localizations,
+) {
+  switch (mode) {
+    case DataCollectionMode.gpsDriven:
+      return localizations.settingsDataCollectionModeGpsDrivenDescription;
+    case DataCollectionMode.periodic:
+      return localizations.settingsDataCollectionModePeriodicDescription;
+    case DataCollectionMode.onTap:
+      return localizations.settingsDataCollectionModeOnTapDescription;
+  }
+}
+
 TrackCollectionModeDisplay? collectionModeDisplay(
   TrackData track,
   AppLocalizations localizations,
 ) {
   final mode = DataCollectionMode.fromJson(track.dataCollectionMode);
-  if (mode == DataCollectionMode.gpsDriven) {
-    return null;
-  }
-
   switch (mode) {
+    case DataCollectionMode.gpsDriven:
+      return null;
     case DataCollectionMode.periodic:
       final seconds =
           track.collectionIntervalSeconds ?? defaultCollectionIntervalSeconds;
@@ -49,7 +61,5 @@ TrackCollectionModeDisplay? collectionModeDisplay(
         icon: Icons.add_location_alt,
         text: localizations.trackCollectionModeOnTap,
       );
-    case DataCollectionMode.gpsDriven:
-      return null;
   }
 }
