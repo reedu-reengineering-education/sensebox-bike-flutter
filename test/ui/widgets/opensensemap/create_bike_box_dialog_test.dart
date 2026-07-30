@@ -16,6 +16,52 @@ import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart
 import '../../../mocks.dart';
 import '../../../test_helpers.dart';
 
+MockSettingsBloc _stubSettingsBloc() {
+  final settings = MockSettingsBloc();
+  when(() => settings.dataCollectionMode)
+      .thenReturn(DataCollectionMode.gpsDriven);
+  when(() => settings.collectionIntervalSeconds)
+      .thenReturn(defaultCollectionIntervalSeconds);
+  when(() => settings.setCollectionPreferences(
+        mode: any(named: 'mode'),
+        intervalSeconds: any(named: 'intervalSeconds'),
+      )).thenAnswer((_) async {});
+  when(() => settings.setDataCollectionMode(any())).thenAnswer((_) async {});
+  when(() => settings.setCollectionIntervalSeconds(any()))
+      .thenAnswer((_) async {});
+  return settings;
+}
+
+Widget _pumpCreateModal({
+  required ConfigurationBloc configurationBloc,
+  SettingsBloc? settingsBloc,
+  OpenSenseMapBloc? openSenseMapBloc,
+  GeolocationBloc? geolocationBloc,
+}) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<ConfigurationBloc>.value(value: configurationBloc),
+      ChangeNotifierProvider<SettingsBloc>.value(
+        value: settingsBloc ?? _stubSettingsBloc(),
+      ),
+      if (openSenseMapBloc != null)
+        ChangeNotifierProvider<OpenSenseMapBloc>.value(value: openSenseMapBloc),
+      if (geolocationBloc != null)
+        ChangeNotifierProvider<GeolocationBloc>.value(value: geolocationBloc),
+    ],
+    child: CreateBikeBoxModal(
+      boxConfigurations: configurationBloc.boxConfigurations,
+      campaigns: configurationBloc.campaigns,
+      isLoadingBoxConfigurations: configurationBloc.isLoadingBoxConfigurations,
+      isLoadingCampaigns: configurationBloc.isLoadingCampaigns,
+      boxConfigurationsError: configurationBloc.boxConfigurationsError,
+      campaignsError: configurationBloc.campaignsError,
+      getBoxConfigurationById: (id) =>
+          configurationBloc.getBoxConfigurationById(id),
+    ),
+  );
+}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(BoxConfiguration(
@@ -59,21 +105,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
+          body: _pumpCreateModal(configurationBloc: mockConfigurationBloc),
         ),
       ));
       await tester.pumpAndSettle();
@@ -85,7 +117,7 @@ void main() {
         'splits the custom grouptag input into individual tags and passes them to the createSenseBoxBike method',
         (WidgetTester tester) async {
       final mockGeolocationBloc = MockGeolocationBloc();
-      final mockSettingsBloc = MockSettingsBloc();
+      final mockSettingsBloc = _stubSettingsBloc();
       when(() => mockOpenSenseMapBloc.createSenseBoxBike(
             any(),
             any(),
@@ -94,12 +126,6 @@ void main() {
             any(),
             any(),
           )).thenAnswer((_) async {});
-      when(
-        () => mockSettingsBloc.setLastResolvedCollectionMode(
-          mode: any(named: 'mode'),
-          collectionIntervalSeconds: any(named: 'collectionIntervalSeconds'),
-        ),
-      ).thenAnswer((_) async {});
       when(() => mockGeolocationBloc.getCurrentLocation())
           .thenAnswer((_) async => Position(
                 latitude: 50.0,
@@ -117,29 +143,11 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: MultiProvider(
-            providers: [
-              ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                  value: mockOpenSenseMapBloc),
-              ChangeNotifierProvider<GeolocationBloc>.value(
-                  value: mockGeolocationBloc),
-              ChangeNotifierProvider<SettingsBloc>.value(
-                  value: mockSettingsBloc),
-                ChangeNotifierProvider<ConfigurationBloc>.value(
-                  value: mockConfigurationBloc),
-            ],
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
+          body: _pumpCreateModal(
+            configurationBloc: mockConfigurationBloc,
+            settingsBloc: mockSettingsBloc,
+            openSenseMapBloc: mockOpenSenseMapBloc,
+            geolocationBloc: mockGeolocationBloc,
           ),
         ),
       ));
@@ -158,9 +166,9 @@ void main() {
           any(), any(), any(),
           mockBoxConfiguration, any(), ['foo', 'bar', 'baz'])).called(1);
       verify(
-        () => mockSettingsBloc.setLastResolvedCollectionMode(
+        () => mockSettingsBloc.setCollectionPreferences(
           mode: DataCollectionMode.gpsDriven,
-          collectionIntervalSeconds: defaultCollectionIntervalSeconds,
+          intervalSeconds: defaultCollectionIntervalSeconds,
         ),
       ).called(1);
     });
@@ -199,21 +207,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
+          body: _pumpCreateModal(configurationBloc: mockConfigurationBloc),
         ),
       ));
       await tester.pumpAndSettle();
@@ -232,21 +226,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('de'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
+          body: _pumpCreateModal(configurationBloc: mockConfigurationBloc),
         ),
       ));
       await tester.pumpAndSettle();
@@ -287,21 +267,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
+          body: _pumpCreateModal(configurationBloc: mockConfigurationBloc),
         ),
       ));
       await tester.pumpAndSettle();
@@ -347,21 +313,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
+          body: _pumpCreateModal(configurationBloc: mockConfigurationBloc),
         ),
       ));
       await tester.pumpAndSettle();
@@ -373,36 +325,16 @@ void main() {
         (WidgetTester tester) async {
       final mockGeolocationBloc = MockGeolocationBloc();
       final mockOpenSenseMapBloc = MockOpenSenseMapBloc();
-      final mockSettingsBloc = MockSettingsBloc();
       when(() => mockGeolocationBloc.getCurrentLocation())
           .thenThrow(Exception('Location error'));
 
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: MultiProvider(
-            providers: [
-              ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                  value: mockOpenSenseMapBloc),
-              ChangeNotifierProvider<GeolocationBloc>.value(
-                  value: mockGeolocationBloc),
-              ChangeNotifierProvider<SettingsBloc>.value(
-                  value: mockSettingsBloc),
-                ChangeNotifierProvider<ConfigurationBloc>.value(
-                  value: mockConfigurationBloc),
-            ],
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
+          body: _pumpCreateModal(
+            configurationBloc: mockConfigurationBloc,
+            openSenseMapBloc: mockOpenSenseMapBloc,
+            geolocationBloc: mockGeolocationBloc,
           ),
         ),
       ));

@@ -82,7 +82,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
         _isarService!, _recordingBloc!, _settingsBloc!,
         isSensorDataActive: () => _bleBloc!.isConnected);
     _sensorBloc = SensorBloc(
-        _bleBloc!, _geolocationBloc!, _recordingBloc!, _settingsBloc!);
+        _bleBloc!, _geolocationBloc!, _recordingBloc!);
     _mapboxDrawController = MapboxDrawController();
 
     // Preload box configurations and campaigns

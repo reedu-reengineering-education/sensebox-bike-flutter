@@ -4,7 +4,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_availability.dart';
 import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
@@ -23,7 +22,6 @@ class SensorBloc with ChangeNotifier {
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
   final RecordingBloc recordingBloc;
-  final SettingsBloc settingsBloc;
   final List<Sensor> _sensors = [];
   late final VoidCallback _characteristicsListener;
   late final VoidCallback _characteristicStreamsVersionListener;
@@ -34,8 +32,7 @@ class SensorBloc with ChangeNotifier {
   List<String> _lastCharacteristicUuids = [];
   bool _isStartingListening = false;
 
-  SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc,
-      this.settingsBloc) {
+  SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc) {
     _initializeSensors();
 
     _selectedDeviceListener = () {

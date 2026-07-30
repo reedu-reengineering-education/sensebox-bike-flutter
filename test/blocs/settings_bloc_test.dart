@@ -24,7 +24,7 @@ void main() {
       await settingsBloc.setDataCollectionMode(DataCollectionMode.onTap);
 
       expect(
-        settingsBloc.lastResolvedDataCollectionMode,
+        settingsBloc.dataCollectionMode,
         DataCollectionMode.onTap,
       );
 
@@ -38,7 +38,7 @@ void main() {
     test('setCollectionIntervalSeconds persists and updates getter', () async {
       await settingsBloc.setCollectionIntervalSeconds(30);
 
-      expect(settingsBloc.lastResolvedCollectionIntervalSeconds, 30);
+      expect(settingsBloc.collectionIntervalSeconds, 30);
 
       final prefs = await SharedPreferences.getInstance();
       expect(
@@ -47,24 +47,31 @@ void main() {
       );
     });
 
+    test('setCollectionPreferences writes mode and interval once', () async {
+      await settingsBloc.setCollectionPreferences(
+        mode: DataCollectionMode.periodic,
+        intervalSeconds: 120,
+      );
+
+      expect(settingsBloc.dataCollectionMode, DataCollectionMode.periodic);
+      expect(settingsBloc.collectionIntervalSeconds, 120);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getString(SharedPreferencesKeys.lastResolvedDataCollectionMode),
+        'periodic',
+      );
+      expect(
+        prefs.getInt(SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds),
+        120,
+      );
+    });
+
     test('setCollectionIntervalSeconds rejects invalid values', () async {
       await expectLater(
         settingsBloc.setCollectionIntervalSeconds(2),
         throwsA(isA<FormatException>()),
       );
-    });
-
-    test('setLastResolvedCollectionMode persists mode and interval', () async {
-      await settingsBloc.setLastResolvedCollectionMode(
-        mode: DataCollectionMode.periodic,
-        collectionIntervalSeconds: 120,
-      );
-
-      expect(
-        settingsBloc.lastResolvedDataCollectionMode,
-        DataCollectionMode.periodic,
-      );
-      expect(settingsBloc.lastResolvedCollectionIntervalSeconds, 120);
     });
   });
 

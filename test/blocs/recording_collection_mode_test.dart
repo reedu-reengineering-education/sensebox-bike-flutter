@@ -91,16 +91,10 @@ void main() {
       setupMockGeolocator(mockGeolocator, testLat1, testLng1);
 
       when(() => mockSettingsBloc.directUploadMode).thenReturn(false);
-      when(() => mockSettingsBloc.lastResolvedDataCollectionMode)
+      when(() => mockSettingsBloc.dataCollectionMode)
           .thenReturn(DataCollectionMode.gpsDriven);
-      when(() => mockSettingsBloc.lastResolvedCollectionIntervalSeconds)
+      when(() => mockSettingsBloc.collectionIntervalSeconds)
           .thenReturn(defaultCollectionIntervalSeconds);
-      when(
-        () => mockSettingsBloc.setLastResolvedCollectionMode(
-          mode: any(named: 'mode'),
-          collectionIntervalSeconds: any(named: 'collectionIntervalSeconds'),
-        ),
-      ).thenAnswer((_) async {});
     });
 
     tearDown(() async {
@@ -126,19 +120,12 @@ void main() {
         DataCollectionMode.gpsDriven,
       );
       expect(fakeTrackBloc.capturedCollectionIntervalSeconds, isNull);
-      verify(
-        () => mockSettingsBloc.setLastResolvedCollectionMode(
-          mode: DataCollectionMode.gpsDriven,
-          collectionIntervalSeconds: defaultCollectionIntervalSeconds,
-        ),
-      ).called(1);
     });
 
     test('uses periodic mode from settings', () async {
-      when(() => mockSettingsBloc.lastResolvedDataCollectionMode)
+      when(() => mockSettingsBloc.dataCollectionMode)
           .thenReturn(DataCollectionMode.periodic);
-      when(() => mockSettingsBloc.lastResolvedCollectionIntervalSeconds)
-          .thenReturn(45);
+      when(() => mockSettingsBloc.collectionIntervalSeconds).thenReturn(45);
 
       recordingBloc = RecordingBloc(
         mockIsarService,
@@ -153,47 +140,10 @@ void main() {
       expect(recordingBloc.activeCollectionMode, DataCollectionMode.periodic);
       expect(recordingBloc.collectionIntervalSeconds, 45);
       expect(fakeTrackBloc.capturedCollectionIntervalSeconds, 45);
-      verify(
-        () => mockSettingsBloc.setLastResolvedCollectionMode(
-          mode: DataCollectionMode.periodic,
-          collectionIntervalSeconds: 45,
-        ),
-      ).called(1);
-    });
-
-    test('uses onTap from settings when sensebox is selected', () async {
-      when(() => mockSettingsBloc.lastResolvedDataCollectionMode)
-          .thenReturn(DataCollectionMode.onTap);
-
-      recordingBloc = RecordingBloc(
-        mockIsarService,
-        mockBleBloc,
-        fakeTrackBloc,
-        fakeOpenSenseMapBloc,
-        mockSettingsBloc,
-      );
-
-      senseBoxController.add(
-        SenseBox(
-          sId: 'classic-box',
-          name: 'Classic',
-          grouptag: ['bike', 'classic'],
-        ),
-      );
-      await Future.delayed(shortDelay);
-
-      await recordingBloc.startRecording();
-
-      expect(recordingBloc.activeCollectionMode, DataCollectionMode.onTap);
-      expect(
-        fakeTrackBloc.capturedDataCollectionMode,
-        DataCollectionMode.onTap,
-      );
-      expect(fakeTrackBloc.capturedCollectionIntervalSeconds, isNull);
     });
 
     test('uses onTap mode from settings', () async {
-      when(() => mockSettingsBloc.lastResolvedDataCollectionMode)
+      when(() => mockSettingsBloc.dataCollectionMode)
           .thenReturn(DataCollectionMode.onTap);
 
       recordingBloc = RecordingBloc(
@@ -216,12 +166,6 @@ void main() {
         DataCollectionMode.onTap,
       );
       expect(fakeTrackBloc.capturedCollectionIntervalSeconds, isNull);
-      verify(
-        () => mockSettingsBloc.setLastResolvedCollectionMode(
-          mode: DataCollectionMode.onTap,
-          collectionIntervalSeconds: defaultCollectionIntervalSeconds,
-        ),
-      ).called(1);
     });
   });
 }
