@@ -244,6 +244,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionButtonStop => 'Stop';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Periodic sampling every $seconds s';
+  }
+
+  @override
+  String get recordingSaveSample => 'Save sample';
+
+  @override
   String get bleDeviceSelectTitle => 'Tap to connect';
 
   @override

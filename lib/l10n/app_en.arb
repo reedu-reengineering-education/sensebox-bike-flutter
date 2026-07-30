@@ -108,6 +108,15 @@
     "connectionButtonReconnecting": "Reconnecting...",
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
+    "recordingPeriodicCollectionMode": "Periodic sampling every {seconds} s",
+    "@recordingPeriodicCollectionMode": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
+    "recordingSaveSample": "Save sample",
     "bleDeviceSelectTitle": "Tap to connect",
     "noBleDevicesFound": "No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.",
     "selectOrCreateBox": "Select or create senseBox:bike",

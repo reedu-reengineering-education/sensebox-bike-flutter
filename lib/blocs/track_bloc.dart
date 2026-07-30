@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/track_status_info.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -23,12 +24,19 @@ class TrackBloc with ChangeNotifier {
   // Use the controller's stream for currentTrackStream
   Stream<TrackData?> get currentTrackStream => _currentTrackController.stream;
 
-  Future<int> startNewTrack({bool? isDirectUpload}) async {
+  Future<int> startNewTrack({
+    bool? isDirectUpload,
+    DataCollectionMode? dataCollectionMode,
+    int? collectionIntervalSeconds,
+  }) async {
     _currentTrack = TrackData();
     
     // Set isDirectUpload - direct upload tracks should be marked as 1, regular tracks as 0
     // Default to true (direct upload) when parameter is not provided
     _currentTrack!.isDirectUpload = (isDirectUpload ?? true) ? 1 : 0;
+    _currentTrack!.dataCollectionMode =
+        (dataCollectionMode ?? DataCollectionMode.gpsDriven).toJson();
+    _currentTrack!.collectionIntervalSeconds = collectionIntervalSeconds;
 
     int id = await isarService.trackService.saveTrack(_currentTrack!);
 

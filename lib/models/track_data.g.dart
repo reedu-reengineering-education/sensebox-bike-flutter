@@ -17,23 +17,33 @@ const TrackDataSchema = CollectionSchema(
   name: r'TrackData',
   id: -595095596094647637,
   properties: {
-    r'isDirectUpload': PropertySchema(
+    r'collectionIntervalSeconds': PropertySchema(
       id: 0,
+      name: r'collectionIntervalSeconds',
+      type: IsarType.long,
+    ),
+    r'dataCollectionMode': PropertySchema(
+      id: 1,
+      name: r'dataCollectionMode',
+      type: IsarType.string,
+    ),
+    r'isDirectUpload': PropertySchema(
+      id: 2,
       name: r'isDirectUpload',
       type: IsarType.long,
     ),
     r'lastUploadAttempt': PropertySchema(
-      id: 1,
+      id: 3,
       name: r'lastUploadAttempt',
       type: IsarType.dateTime,
     ),
     r'uploadAttempts': PropertySchema(
-      id: 2,
+      id: 4,
       name: r'uploadAttempts',
       type: IsarType.long,
     ),
     r'uploaded': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'uploaded',
       type: IsarType.long,
     )
@@ -80,6 +90,12 @@ int _trackDataEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.dataCollectionMode;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   return bytesCount;
 }
 
@@ -89,10 +105,12 @@ void _trackDataSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.isDirectUpload);
-  writer.writeDateTime(offsets[1], object.lastUploadAttempt);
-  writer.writeLong(offsets[2], object.uploadAttempts);
-  writer.writeLong(offsets[3], object.uploaded);
+  writer.writeLong(offsets[0], object.collectionIntervalSeconds);
+  writer.writeString(offsets[1], object.dataCollectionMode);
+  writer.writeLong(offsets[2], object.isDirectUpload);
+  writer.writeDateTime(offsets[3], object.lastUploadAttempt);
+  writer.writeLong(offsets[4], object.uploadAttempts);
+  writer.writeLong(offsets[5], object.uploaded);
 }
 
 TrackData _trackDataDeserialize(
@@ -102,11 +120,13 @@ TrackData _trackDataDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = TrackData();
+  object.collectionIntervalSeconds = reader.readLongOrNull(offsets[0]);
+  object.dataCollectionMode = reader.readStringOrNull(offsets[1]);
   object.id = id;
-  object.isDirectUpload = reader.readLongOrNull(offsets[0]);
-  object.lastUploadAttempt = reader.readDateTimeOrNull(offsets[1]);
-  object.uploadAttempts = reader.readLongOrNull(offsets[2]);
-  object.uploaded = reader.readLongOrNull(offsets[3]);
+  object.isDirectUpload = reader.readLongOrNull(offsets[2]);
+  object.lastUploadAttempt = reader.readDateTimeOrNull(offsets[3]);
+  object.uploadAttempts = reader.readLongOrNull(offsets[4]);
+  object.uploaded = reader.readLongOrNull(offsets[5]);
   return object;
 }
 
@@ -120,10 +140,14 @@ P _trackDataDeserializeProp<P>(
     case 0:
       return (reader.readLongOrNull(offset)) as P;
     case 1:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 2:
       return (reader.readLongOrNull(offset)) as P;
     case 3:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 4:
+      return (reader.readLongOrNull(offset)) as P;
+    case 5:
       return (reader.readLongOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -343,6 +367,234 @@ extension TrackDataQueryWhere
 
 extension TrackDataQueryFilter
     on QueryBuilder<TrackData, TrackData, QFilterCondition> {
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      collectionIntervalSecondsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'collectionIntervalSeconds',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      collectionIntervalSecondsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'collectionIntervalSeconds',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      collectionIntervalSecondsEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'collectionIntervalSeconds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      collectionIntervalSecondsGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'collectionIntervalSeconds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      collectionIntervalSecondsLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'collectionIntervalSeconds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      collectionIntervalSecondsBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'collectionIntervalSeconds',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'dataCollectionMode',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'dataCollectionMode',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'dataCollectionMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'dataCollectionMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'dataCollectionMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'dataCollectionMode',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'dataCollectionMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'dataCollectionMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'dataCollectionMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'dataCollectionMode',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'dataCollectionMode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      dataCollectionModeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'dataCollectionMode',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<TrackData, TrackData, QAfterFilterCondition> idEqualTo(
       Id value) {
     return QueryBuilder.apply(this, (query) {
@@ -757,6 +1009,33 @@ extension TrackDataQueryLinks
 }
 
 extension TrackDataQuerySortBy on QueryBuilder<TrackData, TrackData, QSortBy> {
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      sortByCollectionIntervalSeconds() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'collectionIntervalSeconds', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      sortByCollectionIntervalSecondsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'collectionIntervalSeconds', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByDataCollectionMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dataCollectionMode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      sortByDataCollectionModeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dataCollectionMode', Sort.desc);
+    });
+  }
+
   QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByIsDirectUpload() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isDirectUpload', Sort.asc);
@@ -809,6 +1088,33 @@ extension TrackDataQuerySortBy on QueryBuilder<TrackData, TrackData, QSortBy> {
 
 extension TrackDataQuerySortThenBy
     on QueryBuilder<TrackData, TrackData, QSortThenBy> {
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      thenByCollectionIntervalSeconds() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'collectionIntervalSeconds', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      thenByCollectionIntervalSecondsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'collectionIntervalSeconds', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByDataCollectionMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dataCollectionMode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      thenByDataCollectionModeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dataCollectionMode', Sort.desc);
+    });
+  }
+
   QueryBuilder<TrackData, TrackData, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -873,6 +1179,21 @@ extension TrackDataQuerySortThenBy
 
 extension TrackDataQueryWhereDistinct
     on QueryBuilder<TrackData, TrackData, QDistinct> {
+  QueryBuilder<TrackData, TrackData, QDistinct>
+      distinctByCollectionIntervalSeconds() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'collectionIntervalSeconds');
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QDistinct> distinctByDataCollectionMode(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'dataCollectionMode',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<TrackData, TrackData, QDistinct> distinctByIsDirectUpload() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isDirectUpload');
@@ -903,6 +1224,20 @@ extension TrackDataQueryProperty
   QueryBuilder<TrackData, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<TrackData, int?, QQueryOperations>
+      collectionIntervalSecondsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'collectionIntervalSeconds');
+    });
+  }
+
+  QueryBuilder<TrackData, String?, QQueryOperations>
+      dataCollectionModeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'dataCollectionMode');
     });
   }
 

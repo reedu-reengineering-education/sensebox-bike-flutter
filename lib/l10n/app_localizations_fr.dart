@@ -250,6 +250,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get connectionButtonStop => 'Arrêter';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Échantillonnage périodique toutes les $seconds s';
+  }
+
+  @override
+  String get recordingSaveSample => 'Enregistrer un point';
+
+  @override
   String get bleDeviceSelectTitle => 'Touchez pour connecter';
 
   @override

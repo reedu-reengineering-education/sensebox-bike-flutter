@@ -4,10 +4,12 @@ import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
+import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_availability.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/sensebox.dart' hide Sensor;
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/theme.dart';
@@ -31,6 +33,8 @@ class HomeScreen extends StatelessWidget {
     final BleBloc bleBloc = Provider.of<BleBloc>(context);
     final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
+    final GeolocationBloc geolocationBloc =
+        Provider.of<GeolocationBloc>(context);
 
     recordingBloc.setContext(context);
 
@@ -50,6 +54,24 @@ class HomeScreen extends StatelessWidget {
                   _ConnectionErrorBanner(bleBloc: bleBloc),
                   const SizedBox(height: 16),
                 ],
+              );
+            },
+          ),
+          ListenableBuilder(
+            listenable: recordingBloc,
+            builder: (context, _) {
+              if (!recordingBloc.isRecording ||
+                  !recordingBloc.activeCollectionMode.usesPeriodicTimer) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 48, bottom: 8),
+                child: InfoBanner(
+                  text: AppLocalizations.of(context)!
+                      .recordingPeriodicCollectionMode(
+                    recordingBloc.collectionIntervalSeconds,
+                  ),
+                ),
               );
             },
           ),
@@ -83,7 +105,10 @@ class HomeScreen extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: _FloatingButtons(
-                                bleBloc: bleBloc, recordingBloc: recordingBloc),
+                              bleBloc: bleBloc,
+                              recordingBloc: recordingBloc,
+                              geolocationBloc: geolocationBloc,
+                            ),
                           ),
                         ),
                       ],
@@ -318,7 +343,12 @@ class _SenseBoxSelectionButton extends StatelessWidget {
 class _FloatingButtons extends StatelessWidget {
   final BleBloc bleBloc;
   final RecordingBloc recordingBloc;
-  const _FloatingButtons({required this.bleBloc, required this.recordingBloc});
+  final GeolocationBloc geolocationBloc;
+  const _FloatingButtons({
+    required this.bleBloc,
+    required this.recordingBloc,
+    required this.geolocationBloc,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -327,6 +357,7 @@ class _FloatingButtons extends StatelessWidget {
         bleBloc.isConnectingNotifier,
         bleBloc.isReconnectingNotifier,
         bleBloc.selectedDeviceNotifier,
+        recordingBloc,
       ]),
       builder: (context, _) {
         final isConnecting = bleBloc.isConnectingNotifier.value;
@@ -368,6 +399,25 @@ class _FloatingButtons extends StatelessWidget {
                 ),
               ],
             ),
+            if (recordingBloc.isRecording &&
+                recordingBloc.activeCollectionMode.showsManualSampleButton)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  style: const ButtonStyle(
+                    padding: WidgetStatePropertyAll(
+                      EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    ),
+                  ),
+                  onPressed: buttonsBusy
+                      ? null
+                      : () => geolocationBloc.captureSample(),
+                  icon: const Icon(Icons.add_location_alt),
+                  label: Text(
+                    AppLocalizations.of(context)!.recordingSaveSample,
+                  ),
+                ),
+              ),
             _SenseBoxSelectionButton(),
           ],
         );
