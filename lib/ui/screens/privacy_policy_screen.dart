@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart'; // For translations
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/ui/layout/content_constraint.dart';
 import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sensebox_bike/ui/widgets/common/checkbox_with_text.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
@@ -68,8 +69,9 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
     final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-        appBar: AppBar(title: Text(localizations.settingsPrivacyPolicy)),
-        body: Padding(
+      appBar: AppBar(title: Text(localizations.settingsPrivacyPolicy)),
+      body: ContentConstraint(
+        child: Padding(
           padding: const EdgeInsets.all(spacing * 1.5),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,6 +108,8 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
               ),
             ],
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

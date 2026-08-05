@@ -24,6 +24,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:intl/intl.dart';
 import 'package:sensebox_bike/ui/widgets/common/sensor_gradient_widget.dart';
 import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
 
 class TrackDetailScreen extends StatefulWidget {
@@ -223,6 +224,36 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         value: display.text,
         theme: theme,
       ),
+    );
+  }
+
+  /// iPad: upload status and sampling frequency on one row. Phone: stacked.
+  Widget _buildStatusAndCollectionHeader() {
+    final upload = _buildUploadStatusSection();
+    final collection = _buildCollectionModeSection();
+
+    if (!context.isTablet) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [upload, collection],
+      );
+    }
+
+    // Direct-upload info banner stays full width; sampling frequency below.
+    if (_track.isDirectUploadTrack && _track.lastUploadAttempt == null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [upload, collection],
+      );
+    }
+
+    // Reuse upload status widget (chip or ExpansionTile) beside collection mode.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: upload),
+        collection,
+      ],
     );
   }
 
@@ -514,28 +545,15 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         const Spacer(),
         // Upload button - only show if track hasn't been uploaded
         if (!_track.isUploaded && !hideUploadButton)
-          GestureDetector(
-            onTap: _isUploading ? null : _startUpload,
-            child: Container(
-              constraints: const BoxConstraints(
-                minWidth: 48,
-                minHeight: 48,
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Center(
-                child: _isUploading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Icon(
-                        Icons.cloud_upload,
-                        size: 24,
-                        color: theme.colorScheme.onSurface,
-                      ),
-              ),
-            ),
+          IconButton(
+            icon: _isUploading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.cloud_upload),
+            onPressed: _isUploading ? null : _startUpload,
           ),
         ExportButton(
           isDisabled: false,
@@ -587,8 +605,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         minimum: const EdgeInsets.only(bottom: 8),
         child: Column(
           children: [
-            _buildUploadStatusSection(),
-            _buildCollectionModeSection(),
+            _buildStatusAndCollectionHeader(),
             if (_shouldShowUploadHint())
               InfoBanner(text: localizations.trackUploadLoginSelectHint),
             Expanded(

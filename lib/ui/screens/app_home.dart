@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/ui/screens/home_screen.dart';
-import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -13,30 +12,68 @@ class AppHome extends StatefulWidget {
 }
 
 class _AppHomeState extends State<AppHome> {
+  static const int _tabCount = 3;
+
   int _selectedIndex = 0;
+  late final PageController _pageController;
 
   final GlobalKey<TracksScreenState> _tracksScreenKey =
       GlobalKey<TracksScreenState>();
 
-  late final List<Widget> _pages;
-
   @override
   void initState() {
     super.initState();
-    _pages = [
-      const HomeScreen(),
-      TracksScreen(key: _tracksScreenKey),
-      const SettingsScreen(),
-      const LoginScreen(),
-    ];
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onDestinationSelected(int index) {
+    if (index < 0 || index >= _tabCount) return;
+
+    // Re-tapping Tracks refreshes once without animating.
+    if (index == _selectedIndex) {
+      if (index == 1) {
+        _tracksScreenKey.currentState?.refreshTracks();
+      }
+      return;
+    }
+
+    setState(() => _selectedIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
+    // Tracks refresh happens in _onPageChanged when the page settles.
+  }
+
+  void _onPageChanged(int index) {
+    setState(() => _selectedIndex = index);
+    if (index == 1) {
+      _tracksScreenKey.currentState?.refreshTracks();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
+      // No KeepAlive: keeping the Mapbox platform view alive inside a
+      // PageView steals gestures on every tab. Home rebuilds when you return.
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: _onPageChanged,
+        children: [
+          const HomeScreen(),
+          TracksScreen(key: _tracksScreenKey),
+          const SettingsScreen(),
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -52,26 +89,21 @@ class _AppHomeState extends State<AppHome> {
             topRight: Radius.circular(24),
           ),
           child: NavigationBar(
-            onDestinationSelected: (value) {
-              setState(() {
-                _selectedIndex = value;
-                // Refresh tracks when navigating to tracks tab
-                if (value == 1) {
-                  _tracksScreenKey.currentState?.refreshTracks();
-                }
-              });
-            },
+            onDestinationSelected: _onDestinationSelected,
             selectedIndex: _selectedIndex,
             destinations: [
               NavigationDestination(
-                  icon: Icon(Icons.map),
-                  label: AppLocalizations.of(context)!.homeBottomBarHome),
+                icon: const Icon(Icons.map),
+                label: l10n.homeBottomBarHome,
+              ),
               NavigationDestination(
-                  icon: Icon(Icons.route),
-                  label: AppLocalizations.of(context)!.homeBottomBarTracks),
+                icon: const Icon(Icons.route),
+                label: l10n.homeBottomBarTracks,
+              ),
               NavigationDestination(
-                  icon: Icon(Icons.settings),
-                  label: AppLocalizations.of(context)!.generalSettings),
+                icon: const Icon(Icons.settings),
+                label: l10n.generalSettings,
+              ),
             ],
           ),
         ),
