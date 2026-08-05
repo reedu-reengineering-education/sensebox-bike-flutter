@@ -24,6 +24,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:intl/intl.dart';
 import 'package:sensebox_bike/ui/widgets/common/sensor_gradient_widget.dart';
 import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
 
 class TrackDetailScreen extends StatefulWidget {
@@ -222,6 +223,98 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         label: localizations.trackCollectionModeLabel,
         value: display.text,
         theme: theme,
+      ),
+    );
+  }
+
+  /// iPad: upload status and sampling frequency on one row. Phone: stacked.
+  Widget _buildStatusAndCollectionHeader() {
+    if (!context.isTablet) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildUploadStatusSection(),
+          _buildCollectionModeSection(),
+        ],
+      );
+    }
+
+    final localizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final display = collectionModeDisplay(_track, localizations);
+    final collectionMode = display == null
+        ? null
+        : _buildDetailRow(
+            icon: display.icon,
+            label: localizations.trackCollectionModeLabel,
+            value: display.text,
+            theme: theme,
+          );
+
+    // Direct-upload info banner stays full width; sampling frequency below.
+    if (_track.isDirectUploadTrack && _track.lastUploadAttempt == null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InfoBanner(text: localizations.trackDirectUploadInfo),
+          if (collectionMode != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  vertical: padding, horizontal: spacing),
+              child: collectionMode,
+            ),
+        ],
+      );
+    }
+
+    // Failed uploads keep the collapsible details; sampling frequency beside it.
+    if (!_track.isUploaded && _track.uploadAttemptsCount > 0) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: padding),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ExpansionTile(
+                tilePadding: const EdgeInsets.symmetric(horizontal: spacing),
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                collapsedBackgroundColor:
+                    theme.colorScheme.surfaceContainerHighest,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(borderRadius),
+                ),
+                title: _buildStatusIcon(context, localizations, theme),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: spacing),
+                    child: _buildUploadDetails(),
+                  ),
+                ],
+              ),
+            ),
+            if (collectionMode != null)
+              Padding(
+                padding: const EdgeInsets.only(
+                    right: spacing, top: padding, left: spacing),
+                child: collectionMode,
+              ),
+          ],
+        ),
+      );
+    }
+
+    // Uploaded / not-uploaded chip + sampling frequency inline.
+    return Padding(
+      padding:
+          const EdgeInsets.symmetric(vertical: padding, horizontal: spacing),
+      child: Row(
+        children: [
+          Flexible(child: _buildStatusIcon(context, localizations, theme)),
+          if (collectionMode != null) ...[
+            const SizedBox(width: spacing),
+            Flexible(child: collectionMode),
+          ],
+        ],
       ),
     );
   }
@@ -587,8 +680,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         minimum: const EdgeInsets.only(bottom: 8),
         child: Column(
           children: [
-            _buildUploadStatusSection(),
-            _buildCollectionModeSection(),
+            _buildStatusAndCollectionHeader(),
             if (_shouldShowUploadHint())
               InfoBanner(text: localizations.trackUploadLoginSelectHint),
             Expanded(
