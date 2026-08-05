@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 /// Shared breakpoints. Phone behavior must match pre-tablet layouts.
@@ -12,9 +10,6 @@ class Breakpoints {
 
   /// Centered modal/dialog width on iPad.
   static const double modalMaxWidth = 560;
-
-  /// Cap for home map header height on tablet (avoids % of tall windows).
-  static const double homeMapMaxHeight = 420;
 }
 
 extension FormFactorX on BuildContext {
@@ -34,21 +29,13 @@ extension FormFactorX on BuildContext {
     return isLandscape ? 3 : 4;
   }
 
-  /// Map header heights. Phone keeps existing fractions of screen height.
+  /// Phone map header heights (fractions of screen). Tablet portrait uses
+  /// available viewport height via [LayoutBuilder] instead.
   double homeMapMinHeight({required bool isConnected}) {
-    final screenHeight = MediaQuery.sizeOf(this).height;
-    if (!isTablet) {
-      return screenHeight * 0.33;
-    }
-    return min(screenHeight * 0.28, Breakpoints.homeMapMaxHeight * 0.7);
+    return MediaQuery.sizeOf(this).height * 0.33;
   }
 
   double homeMapMaxHeight({required bool isConnected}) {
-    final screenHeight = MediaQuery.sizeOf(this).height;
-    if (!isTablet) {
-      return screenHeight * (isConnected ? 0.65 : 0.85);
-    }
-    final fraction = isConnected ? 0.45 : 0.55;
-    return min(screenHeight * fraction, Breakpoints.homeMapMaxHeight);
+    return MediaQuery.sizeOf(this).height * (isConnected ? 0.65 : 0.85);
   }
 }
