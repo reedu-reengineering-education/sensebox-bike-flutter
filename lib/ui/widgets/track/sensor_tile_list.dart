@@ -23,7 +23,8 @@ class SensorTileList extends StatelessWidget {
     final sensorEntries = getUniqueSortedSensorEntries(sensorData);
     final filteredEntries = _filterSensorEntries(sensorEntries);
     final tiles = _buildSensorTiles(context, filteredEntries);
-    final crossAxisCount = _crossAxisCount(context);
+    final crossAxisCount =
+        context.trackSensorCrossAxisCount(tileCount: tiles.length);
     final height = _gridHeight(context, crossAxisCount);
 
     return SizedBox(
@@ -33,13 +34,6 @@ class SensorTileList extends StatelessWidget {
         crossAxisCount: crossAxisCount,
       ),
     );
-  }
-
-  /// Phone: 3 or 4 columns (unchanged). Tablet: 8 so a full row fits on screen.
-  int _crossAxisCount(BuildContext context) {
-    if (context.isTablet) return 8;
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    return screenWidth < 400 ? 3 : 4;
   }
 
   double _gridHeight(BuildContext context, int crossAxisCount) {

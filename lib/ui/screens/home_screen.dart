@@ -167,10 +167,12 @@ class _HomeScrollBody extends StatelessWidget {
   });
 
   /// Height of one square sensor tile row (grid default aspect ratio is 1).
-  double _oneSensorTileHeight(BuildContext context, double maxWidth) {
+  double _oneSensorTileHeight(
+      BuildContext context, double maxWidth, int tileCount) {
     const horizontalPadding = 16.0; // SliverSafeArea left + right
     const crossAxisSpacing = 8.0;
-    final crossAxisCount = context.homeSensorCrossAxisCount();
+    final crossAxisCount =
+        context.homeSensorCrossAxisCount(tileCount: tileCount);
     final tileExtent = (maxWidth -
             horizontalPadding -
             crossAxisSpacing * (crossAxisCount - 1)) /
@@ -209,7 +211,9 @@ class _HomeScrollBody extends StatelessWidget {
       builder: (context, constraints) {
         final available = constraints.maxHeight;
         final connected = bleBloc.isConnected;
-        final sensorPeek = _oneSensorTileHeight(context, constraints.maxWidth);
+        final tileCount = sensorBloc.availableSensors.length;
+        final sensorPeek =
+            _oneSensorTileHeight(context, constraints.maxWidth, tileCount);
 
         final double minHeight;
         final double maxHeight;
@@ -737,7 +741,8 @@ class _SensorGrid extends StatelessWidget {
 
     return SliverGrid(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: context.homeSensorCrossAxisCount(),
+        crossAxisCount: context.homeSensorCrossAxisCount(
+            tileCount: sortedSensors.length),
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
       ),
