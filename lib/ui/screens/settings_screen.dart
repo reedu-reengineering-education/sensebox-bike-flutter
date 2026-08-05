@@ -9,6 +9,9 @@ import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
+import 'package:sensebox_bike/ui/layout/adaptive_modal.dart';
+import 'package:sensebox_bike/ui/layout/content_constraint.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
@@ -49,13 +52,15 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.generalSettings),
       ),
-      body: ListView(
-        children: <Widget>[
-          _buildLoginLogoutSection(context, openSenseMapBloc),
-          _buildGeneralSettingsSection(context, settingsBloc),
-          _buildAccountManagementSection(context),
-          _buildHelpSection(context),
-        ],
+      body: ContentConstraint(
+        child: ListView(
+          children: <Widget>[
+            _buildLoginLogoutSection(context, openSenseMapBloc),
+            _buildGeneralSettingsSection(context, settingsBloc),
+            _buildAccountManagementSection(context),
+            _buildHelpSection(context),
+          ],
+        ),
       ),
     );
   }
@@ -217,7 +222,7 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _showModalBottomSheet(BuildContext context,
       Widget Function(BuildContext) contentBuilder) async {
-    await showModalBottomSheet(
+    await showAdaptiveModal(
       context: context,
       isScrollControlled: true,
       builder: (context) => contentBuilder(context),
@@ -226,7 +231,8 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildLoginModalContent(BuildContext context) {
     return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.9,
+      height: MediaQuery.sizeOf(context).height *
+          (context.isTablet ? 0.75 : 0.9),
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(borderRadius),

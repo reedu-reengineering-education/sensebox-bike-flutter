@@ -23,6 +23,7 @@ import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection_modal.d
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
@@ -38,135 +39,261 @@ class HomeScreen extends StatelessWidget {
 
     recordingBloc.setContext(context);
 
+    final mapStack = _MapStack(
+      bleBloc: bleBloc,
+      recordingBloc: recordingBloc,
+      geolocationBloc: geolocationBloc,
+    );
+
     return Scaffold(
       body: Column(
         children: [
-          // Error banner with spacing
-          ValueListenableBuilder<bool>(
-            valueListenable: bleBloc.connectionErrorNotifier,
-            builder: (context, error, child) {
-              if (error != true) {
-                return const SizedBox.shrink();
-              }
-              return Column(
-                children: [
-                  const SizedBox(height: 48),
-                  _ConnectionErrorBanner(bleBloc: bleBloc),
-                  const SizedBox(height: 16),
-                ],
-              );
-            },
-          ),
-          ListenableBuilder(
-            listenable: recordingBloc,
-            builder: (context, _) {
-              if (!recordingBloc.isRecording ||
-                  !recordingBloc.activeCollectionMode.usesPeriodicTimer) {
-                return const SizedBox.shrink();
-              }
-              return Padding(
-                padding: const EdgeInsets.only(top: 48, bottom: 8),
-                child: InfoBanner(
-                  text: AppLocalizations.of(context)!
-                      .recordingPeriodicCollectionMode(
-                    recordingBloc.collectionIntervalSeconds,
-                  ),
-                ),
-              );
-            },
-          ),
-          // Main content
+          _HomeBanners(bleBloc: bleBloc, recordingBloc: recordingBloc),
           Expanded(
-            child: CustomScrollView(
-              clipBehavior: Clip.none,
-              slivers: [
-                // SliverPersistentHeader with the map and floating buttons
-                SliverPersistentHeader(
-                  delegate: _SliverAppBarDelegate(
-                    minHeight: MediaQuery.of(context).size.height * 0.33,
-                    maxHeight: MediaQuery.of(context).size.height *
-                        (bleBloc.isConnected ? 0.65 : 0.85),
-                    child: Stack(
-                      children: [
-                        const SizedBox(
-                          width: double.infinity,
-                          child: GeolocationMapWidget(), // The map
-                        ),
-                        const Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: _BottomGradient(),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: _FloatingButtons(
-                              bleBloc: bleBloc,
-                              recordingBloc: recordingBloc,
-                              geolocationBloc: geolocationBloc,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+            child: context.isTablet && context.isLandscape
+                ? _TabletLandscapeBody(
+                    bleBloc: bleBloc,
+                    sensorBloc: sensorBloc,
+                    mapStack: mapStack,
+                  )
+                : _PhoneOrPortraitBody(
+                    bleBloc: bleBloc,
+                    sensorBloc: sensorBloc,
+                    mapStack: mapStack,
                   ),
-                  pinned: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeBanners extends StatelessWidget {
+  final BleBloc bleBloc;
+  final RecordingBloc recordingBloc;
+
+  const _HomeBanners({
+    required this.bleBloc,
+    required this.recordingBloc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        ValueListenableBuilder<bool>(
+          valueListenable: bleBloc.connectionErrorNotifier,
+          builder: (context, error, child) {
+            if (error != true) {
+              return const SizedBox.shrink();
+            }
+            return Column(
+              children: [
+                const SizedBox(height: 48),
+                _ConnectionErrorBanner(bleBloc: bleBloc),
+                const SizedBox(height: 16),
+              ],
+            );
+          },
+        ),
+        ListenableBuilder(
+          listenable: recordingBloc,
+          builder: (context, _) {
+            if (!recordingBloc.isRecording ||
+                !recordingBloc.activeCollectionMode.usesPeriodicTimer) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(top: 48, bottom: 8),
+              child: InfoBanner(
+                text: AppLocalizations.of(context)!
+                    .recordingPeriodicCollectionMode(
+                  recordingBloc.collectionIntervalSeconds,
                 ),
-                SliverSafeArea(
-                  minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                  sliver: ValueListenableBuilder<BleDevice?>(
-                    valueListenable: bleBloc.selectedDeviceNotifier,
-                    builder: (context, device, child) {
-                      if (device == null ||
-                          bleBloc.connectionErrorNotifier.value) {
-                        return const SliverToBoxAdapter(child: SizedBox.shrink());
-                      }
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
 
-                      return ValueListenableBuilder<List<BleCharacteristicRef>>(
-                        valueListenable: bleBloc.availableCharacteristics,
-                        builder: (context, characteristics, child) {
-                      return ValueListenableBuilder<int>(
-                        valueListenable:
-                            bleBloc.characteristicStreams.livePayloadVersion,
-                        builder: (context, _, child) {
-                          if (sensorBloc.availableSensors.isEmpty) {
-                            if (characteristics.isEmpty) {
-                              return const SliverToBoxAdapter(
-                                child: SizedBox.shrink(),
-                              );
-                            }
-                            return SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24.0),
-                                child: Center(
-                                  child: Text(
-                                    AppLocalizations.of(context)!
-                                        .generalLoading,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
+class _MapStack extends StatelessWidget {
+  final BleBloc bleBloc;
+  final RecordingBloc recordingBloc;
+  final GeolocationBloc geolocationBloc;
 
-                          return _SensorGrid(
-                            sensors: sensorBloc.availableSensors,
-                          );
-                        },
-                      );
-                        },
-                      );
-                    },
-                  ),
+  const _MapStack({
+    required this.bleBloc,
+    required this.recordingBloc,
+    required this.geolocationBloc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const GeolocationMapWidget(),
+        const Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: _BottomGradient(),
+        ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _FloatingButtons(
+              bleBloc: bleBloc,
+              recordingBloc: recordingBloc,
+              geolocationBloc: geolocationBloc,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Phone + iPad portrait: scrollable map header + sensor grid below.
+class _PhoneOrPortraitBody extends StatelessWidget {
+  final BleBloc bleBloc;
+  final SensorBloc sensorBloc;
+  final Widget mapStack;
+
+  const _PhoneOrPortraitBody({
+    required this.bleBloc,
+    required this.sensorBloc,
+    required this.mapStack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      clipBehavior: Clip.none,
+      slivers: [
+        SliverPersistentHeader(
+          delegate: _SliverAppBarDelegate(
+            minHeight:
+                context.homeMapMinHeight(isConnected: bleBloc.isConnected),
+            maxHeight:
+                context.homeMapMaxHeight(isConnected: bleBloc.isConnected),
+            child: mapStack,
+          ),
+          pinned: true,
+        ),
+        SliverSafeArea(
+          minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          sliver: _SensorSliver(bleBloc: bleBloc, sensorBloc: sensorBloc),
+        ),
+      ],
+    );
+  }
+}
+
+/// iPad landscape: map and sensors side by side.
+class _TabletLandscapeBody extends StatelessWidget {
+  final BleBloc bleBloc;
+  final SensorBloc sensorBloc;
+  final Widget mapStack;
+
+  const _TabletLandscapeBody({
+    required this.bleBloc,
+    required this.sensorBloc,
+    required this.mapStack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          flex: 3,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8, right: 4, bottom: 8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(borderRadius),
+              child: mapStack,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: SafeArea(
+            left: false,
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(4, 0, 8, 8),
+                  sliver:
+                      _SensorSliver(bleBloc: bleBloc, sensorBloc: sensorBloc),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SensorSliver extends StatelessWidget {
+  final BleBloc bleBloc;
+  final SensorBloc sensorBloc;
+
+  const _SensorSliver({
+    required this.bleBloc,
+    required this.sensorBloc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<BleDevice?>(
+      valueListenable: bleBloc.selectedDeviceNotifier,
+      builder: (context, device, child) {
+        if (device == null || bleBloc.connectionErrorNotifier.value) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+
+        return ValueListenableBuilder<List<BleCharacteristicRef>>(
+          valueListenable: bleBloc.availableCharacteristics,
+          builder: (context, characteristics, child) {
+            return ValueListenableBuilder<int>(
+              valueListenable:
+                  bleBloc.characteristicStreams.livePayloadVersion,
+              builder: (context, _, child) {
+                if (sensorBloc.availableSensors.isEmpty) {
+                  if (characteristics.isEmpty) {
+                    return const SliverToBoxAdapter(
+                      child: SizedBox.shrink(),
+                    );
+                  }
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Center(
+                        child: Text(
+                          AppLocalizations.of(context)!.generalLoading,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return _SensorGrid(
+                  sensors: sensorBloc.availableSensors,
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -609,8 +736,8 @@ class _SensorGrid extends StatelessWidget {
     final sortedSensors = sortSensorsByUiPriority(sensors);
 
     return SliverGrid(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: context.homeSensorCrossAxisCount(),
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
       ),
