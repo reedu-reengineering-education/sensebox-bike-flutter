@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/widgets/track/sensor_tile.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 
@@ -22,11 +23,34 @@ class SensorTileList extends StatelessWidget {
     final sensorEntries = getUniqueSortedSensorEntries(sensorData);
     final filteredEntries = _filterSensorEntries(sensorEntries);
     final tiles = _buildSensorTiles(context, filteredEntries);
+    final crossAxisCount = _crossAxisCount(context);
+    final height = _gridHeight(context, crossAxisCount);
 
     return SizedBox(
-      height: 200,
-      child: _SensorTileGrid(tileList: tiles),
+      height: height,
+      child: _SensorTileGrid(
+        tileList: tiles,
+        crossAxisCount: crossAxisCount,
+      ),
     );
+  }
+
+  /// Phone: 3 or 4 columns (unchanged). Tablet: 8 so a full row fits on screen.
+  int _crossAxisCount(BuildContext context) {
+    if (context.isTablet) return 8;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    return screenWidth < 400 ? 3 : 4;
+  }
+
+  double _gridHeight(BuildContext context, int crossAxisCount) {
+    // Phone keeps the existing fixed height.
+    if (!context.isTablet) return 200;
+
+    // One row of square tiles (default GridView aspect ratio 1).
+    final width = MediaQuery.sizeOf(context).width;
+    const padding = spacing / 2;
+    final tileExtent = (width - padding * 2) / crossAxisCount;
+    return padding * 2 + tileExtent;
   }
 
   List<SensorEntry> _filterSensorEntries(List<SensorEntry> entries) {
@@ -65,7 +89,12 @@ class SensorTileList extends StatelessWidget {
 
 class _SensorTileGrid extends StatefulWidget {
   final List<Widget> tileList;
-  const _SensorTileGrid({required this.tileList});
+  final int crossAxisCount;
+
+  const _SensorTileGrid({
+    required this.tileList,
+    required this.crossAxisCount,
+  });
 
   @override
   State<_SensorTileGrid> createState() => _SensorTileGridState();
@@ -82,10 +111,6 @@ class _SensorTileGridState extends State<_SensorTileGrid> {
 
   @override
   Widget build(BuildContext context) {
-    // On the smaller screens, we want to show 3 tiles per row
-    final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth < 400 ? 3 : 4;
-
     return Scrollbar(
       controller: _controller,
       thumbVisibility: true,
@@ -93,7 +118,7 @@ class _SensorTileGridState extends State<_SensorTileGrid> {
         controller: _controller,
         scrollDirection: Axis.vertical,
         padding: const EdgeInsets.all(spacing / 2),
-        crossAxisCount: crossAxisCount,
+        crossAxisCount: widget.crossAxisCount,
         children: widget.tileList,
       ),
     );
