@@ -50,17 +50,11 @@ class HomeScreen extends StatelessWidget {
         children: [
           _HomeBanners(bleBloc: bleBloc, recordingBloc: recordingBloc),
           Expanded(
-            child: context.isTablet && context.isLandscape
-                ? _TabletLandscapeBody(
-                    bleBloc: bleBloc,
-                    sensorBloc: sensorBloc,
-                    mapStack: mapStack,
-                  )
-                : _PhoneOrPortraitBody(
-                    bleBloc: bleBloc,
-                    sensorBloc: sensorBloc,
-                    mapStack: mapStack,
-                  ),
+            child: _HomeScrollBody(
+              bleBloc: bleBloc,
+              sensorBloc: sensorBloc,
+              mapStack: mapStack,
+            ),
           ),
         ],
       ),
@@ -160,21 +154,33 @@ class _MapStack extends StatelessWidget {
   }
 }
 
-/// Phone + iPad portrait: scrollable map header + sensor grid below.
-class _PhoneOrPortraitBody extends StatelessWidget {
+/// Phone + iPad: pinned map header with sensor grid scrolling below.
+class _HomeScrollBody extends StatelessWidget {
   final BleBloc bleBloc;
   final SensorBloc sensorBloc;
   final Widget mapStack;
 
-  const _PhoneOrPortraitBody({
+  const _HomeScrollBody({
     required this.bleBloc,
     required this.sensorBloc,
     required this.mapStack,
   });
 
+  /// Height of one square sensor tile row (grid default aspect ratio is 1).
+  double _oneSensorTileHeight(BuildContext context, double maxWidth) {
+    const horizontalPadding = 16.0; // SliverSafeArea left + right
+    const crossAxisSpacing = 8.0;
+    final crossAxisCount = context.homeSensorCrossAxisCount();
+    final tileExtent = (maxWidth -
+            horizontalPadding -
+            crossAxisSpacing * (crossAxisCount - 1)) /
+        crossAxisCount;
+    return tileExtent + 8; // one row + bottom padding
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Phone: existing screen-fraction header heights.
+    // Phone: unchanged screen-fraction header heights.
     if (!context.isTablet) {
       return CustomScrollView(
         clipBehavior: Clip.none,
@@ -197,15 +203,23 @@ class _PhoneOrPortraitBody extends StatelessWidget {
       );
     }
 
-    // iPad portrait: size map from the real viewport so it can fill the screen.
+    // iPad: same vertical scroll as phone. When connected, map leaves room for
+    // exactly one sensor tile row; scroll to reveal the rest.
     return LayoutBuilder(
       builder: (context, constraints) {
         final available = constraints.maxHeight;
         final connected = bleBloc.isConnected;
-        // Disconnected: map fills the body so controls sit at the bottom.
-        // Connected: map shares space with the sensor grid.
-        final minHeight = connected ? available * 0.35 : available;
-        final maxHeight = connected ? available * 0.55 : available;
+        final sensorPeek = _oneSensorTileHeight(context, constraints.maxWidth);
+
+        final double minHeight;
+        final double maxHeight;
+        if (!connected) {
+          minHeight = available;
+          maxHeight = available;
+        } else {
+          maxHeight = max(available - sensorPeek, available * 0.4);
+          minHeight = min(available * 0.33, maxHeight);
+        }
 
         return CustomScrollView(
           clipBehavior: Clip.none,
@@ -225,53 +239,6 @@ class _PhoneOrPortraitBody extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-}
-
-/// iPad landscape: map and sensors side by side.
-class _TabletLandscapeBody extends StatelessWidget {
-  final BleBloc bleBloc;
-  final SensorBloc sensorBloc;
-  final Widget mapStack;
-
-  const _TabletLandscapeBody({
-    required this.bleBloc,
-    required this.sensorBloc,
-    required this.mapStack,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          flex: 3,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 8, right: 4, bottom: 8),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(borderRadius),
-              child: mapStack,
-            ),
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: SafeArea(
-            left: false,
-            child: CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(4, 0, 8, 8),
-                  sliver:
-                      _SensorSliver(bleBloc: bleBloc, sensorBloc: sensorBloc),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
