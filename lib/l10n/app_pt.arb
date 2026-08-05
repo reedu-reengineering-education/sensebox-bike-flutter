@@ -162,6 +162,18 @@
             }
         }
     },
+    "settingsStorageUsed": "Armazenamento usado",
+    "settingsStorageDetails": "Dados do app: {totalSize} (banco de dados: {databaseSize})",
+    "@settingsStorageDetails": {
+        "placeholders": {
+            "databaseSize": {
+                "type": "String"
+            },
+            "totalSize": {
+                "type": "String"
+            }
+        }
+    },
     "settingsContact": "Ajuda ou feedback?",
     "settingsEmail": "E-mail",
     "settingsGithub": "GitHub issue",

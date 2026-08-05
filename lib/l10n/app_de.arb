@@ -155,6 +155,18 @@
             }
         }
     },
+    "settingsStorageUsed": "Speichernutzung",
+    "settingsStorageDetails": "App-Daten: {totalSize} (Datenbank: {databaseSize})",
+    "@settingsStorageDetails": {
+        "placeholders": {
+            "databaseSize": {
+                "type": "String"
+            },
+            "totalSize": {
+                "type": "String"
+            }
+        }
+    },
     "settingsContact": "Hilfe oder Feedback?",
     "settingsEmail": "E-Mail",
     "settingsGithub": "GitHub issue",

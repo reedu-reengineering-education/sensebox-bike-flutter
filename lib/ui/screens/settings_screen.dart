@@ -5,8 +5,8 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
-import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/utils/url_launch_utils.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
@@ -14,6 +14,8 @@ import 'package:sensebox_bike/ui/widgets/common/api_url_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
+import 'package:sensebox_bike/ui/widgets/settings/app_info_section.dart';
+import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -49,6 +51,7 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         children: <Widget>[
           _buildLoginLogoutSection(context, openSenseMapBloc),
+          _buildAboutSection(context),
           _buildGeneralSettingsSection(context, settingsBloc),
           _buildAccountManagementSection(context),
           _buildHelpSection(context),
@@ -365,38 +368,32 @@ class SettingsScreen extends StatelessWidget {
                 ? AppLocalizations.of(context)!.settingsUploadModeDirect
                 : AppLocalizations.of(context)!.settingsUploadModePostRide;
 
-            return ListTile(
-              leading: const Icon(Icons.cloud_upload),
-              title: Text(AppLocalizations.of(context)!.settingsUploadMode),
-              subtitle: Text(
-                AppLocalizations.of(context)!
-                    .settingsUploadModeCurrent(uploadModeText),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
+            return SettingsValueTile(
+              icon: Icons.cloud_upload,
+              title: AppLocalizations.of(context)!.settingsUploadMode,
+              value: AppLocalizations.of(context)!
+                  .settingsUploadModeCurrent(uploadModeText),
               onTap: () => _showUploadModeDialog(context, settingsBloc),
             );
           },
         ),
         _buildApiUrlSection(context, settingsBloc, configurationBloc),
-        ListTile(
-          leading: const Icon(Icons.admin_panel_settings),
-          title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
+        SettingsNavigationTile(
+          icon: Icons.admin_panel_settings,
+          title: AppLocalizations.of(context)!.generalPrivacyZones,
+          trailingPrefix: Badge.count(
+            count: settingsBloc.privacyZones.length,
+            backgroundColor: Theme.of(context).iconTheme.color,
+          ),
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
                 builder: (context) => const ExclusionZonesScreen()),
           ),
-          trailing: Badge.count(
-            count: settingsBloc.privacyZones.length,
-            backgroundColor: Theme.of(context).iconTheme.color,
-          ),
         ),
-        ListTile(
-          leading: const Icon(Icons.trending_up_outlined),
-          title: Text(AppLocalizations.of(context)!.trackStatistics),
+        SettingsNavigationTile(
+          icon: Icons.trending_up_outlined,
+          title: AppLocalizations.of(context)!.trackStatistics,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
@@ -419,18 +416,16 @@ class SettingsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Consumer<SettingsBloc>(
-              builder: (context, bloc, _) => ListTile(
-                leading: const Icon(Icons.settings_ethernet_outlined),
-                title: Text(AppLocalizations.of(context)!.settingsApiUrl),
-                subtitle: Text(
-                  bloc.apiUrl,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
+              builder: (context, bloc, _) => SettingsValueTile(
+                icon: Icons.settings_ethernet_outlined,
+                title: AppLocalizations.of(context)!.settingsApiUrl,
+                value: bloc.apiUrl,
                 onTap: () {
-                  _showApiUrlDialog(context, bloc, controller, apiUrls: apiUrls, isLoading: isLoading, error: error, setState: setState);
+                  _showApiUrlDialog(context, bloc, controller,
+                      apiUrls: apiUrls,
+                      isLoading: isLoading,
+                      error: error,
+                      setState: setState);
                 },
               ),
             ),
@@ -489,30 +484,27 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(
-          top: spacing * 3, bottom: spacing, left: spacing, right: spacing),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
+  Widget _buildAboutSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+            context, AppLocalizations.of(context)!.settingsAbout),
+        AppInfoSection(launchUrlFunction: launchUrlFunction),
+      ],
     );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return SettingsSectionHeader(title: title);
   }
 
   Widget _buildUrlTile(BuildContext context,
       {required IconData icon, required String title, required String url}) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: () async {
-        try {
-          await launchUrlFunction(Uri.parse(url),
-              mode: LaunchMode.externalApplication);
-        } catch (error, stack) {
-          ErrorService.handleError(error, stack);
-        }
-      },
+    return SettingsNavigationTile(
+      icon: icon,
+      title: title,
+      onTap: () => launchExternalUrl(url, launchUrlFunction: launchUrlFunction),
     );
   }
 
@@ -558,12 +550,14 @@ class SettingsScreen extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             localizations.settingsUploadModePostRideDescription,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
                           ),
                         ],
                       ),
@@ -576,7 +570,8 @@ class SettingsScreen extends StatelessWidget {
                         }
                       },
                       isThreeLine: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.0),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 16.0),
                     ),
                     const SizedBox(height: 16),
                     RadioListTile<bool>(
@@ -588,12 +583,14 @@ class SettingsScreen extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             localizations.settingsUploadModeDirectDescription,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
                           ),
                         ],
                       ),
@@ -606,7 +603,8 @@ class SettingsScreen extends StatelessWidget {
                         }
                       },
                       isThreeLine: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.0),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 16.0),
                     ),
                   ],
                 ),

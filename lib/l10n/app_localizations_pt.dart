@@ -360,6 +360,14 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get settingsStorageUsed => 'Armazenamento usado';
+
+  @override
+  String settingsStorageDetails(String databaseSize, String totalSize) {
+    return 'Dados do app: $totalSize (banco de dados: $databaseSize)';
+  }
+
+  @override
   String get settingsContact => 'Ajuda ou feedback?';
 
   @override
