@@ -34,15 +34,22 @@ class _AppHomeState extends State<AppHome> {
 
   void _onDestinationSelected(int index) {
     if (index < 0 || index >= _tabCount) return;
-    setState(() => _selectedIndex = index);
-    if (index == 1) {
-      _tracksScreenKey.currentState?.refreshTracks();
+
+    // Re-tapping Tracks refreshes once without animating.
+    if (index == _selectedIndex) {
+      if (index == 1) {
+        _tracksScreenKey.currentState?.refreshTracks();
+      }
+      return;
     }
+
+    setState(() => _selectedIndex = index);
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOutCubic,
     );
+    // Tracks refresh happens in _onPageChanged when the page settles.
   }
 
   void _onPageChanged(int index) {
