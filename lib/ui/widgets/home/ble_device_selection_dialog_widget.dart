@@ -75,10 +75,17 @@ class _BleDeviceSelectionBottomSheetState
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          localizations.bleDeviceSelectTitle,
-          style: Theme.of(context).textTheme.headlineSmall,
-          textAlign: TextAlign.center,
+        Padding(
+          padding: EdgeInsets.only(
+            left: spacing,
+            right: spacing,
+            top: spacing * 2 + MediaQuery.of(context).viewPadding.top,
+          ),
+          child: Text(
+            localizations.bleDeviceSelectTitle,
+            style: Theme.of(context).textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
         ),
         DeviceSelectionSheet(
           bleBloc: widget.bleBloc,
