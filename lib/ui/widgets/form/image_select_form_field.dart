@@ -27,23 +27,23 @@ class ImageSelectFormField<T> extends FormField<T> {
                   children: items.map((item) {
                     bool isSelected = controller.selectedValue == item.value;
                     return Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          controller.select(item.value);
-                          state.didChange(
-                              item.value); // Update the form field state
-                        },
-                        child: Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Colors.transparent,
-                              width: isSelected ? 2 : 0,
-                            ),
-                            borderRadius: BorderRadius.circular(24),
+                      child: Card(
+                        elevation: 0,
+                        clipBehavior: Clip.antiAlias,
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.transparent,
+                            width: isSelected ? 2 : 0,
                           ),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            controller.select(item.value);
+                            state.didChange(item.value);
+                          },
                           child: Column(
                             children: [
                               Image.asset(

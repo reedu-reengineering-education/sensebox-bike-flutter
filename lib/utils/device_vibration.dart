@@ -16,6 +16,36 @@ Future<void> vibrateDisconnectFeedback() async {
   await _vibrateAndroid();
 }
 
+/// Light tap feedback for primary UI actions (connect, start/stop, etc.).
+///
+/// Uses [Haptics] (native UIImpact/selection) instead of Flutter's
+/// [HapticFeedback], which is unreliable on many iOS devices.
+/// No-ops on hardware without a taptic engine (most iPads, simulator).
+Future<void> vibrateTapFeedback() async {
+  try {
+    if (await Haptics.canVibrate()) {
+      await Haptics.vibrate(HapticsType.selection);
+      return;
+    }
+  } on PlatformException catch (e) {
+    debugPrint('vibrateTapFeedback: $e');
+  }
+
+  // Fallbacks when the preferred path is unavailable.
+  if (Platform.isIOS) {
+    try {
+      if (await Vibration.hasVibrator() == true) {
+        await Vibration.vibrate(duration: 15);
+        return;
+      }
+    } on PlatformException catch (e) {
+      debugPrint('vibrateTapFeedback iOS fallback: $e');
+    }
+  }
+
+  await HapticFeedback.selectionClick();
+}
+
 Future<void> _vibrateIos() async {
   try {
     if (await Vibration.hasVibrator() == true) {
