@@ -174,24 +174,57 @@ class _PhoneOrPortraitBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      clipBehavior: Clip.none,
-      slivers: [
-        SliverPersistentHeader(
-          delegate: _SliverAppBarDelegate(
-            minHeight:
-                context.homeMapMinHeight(isConnected: bleBloc.isConnected),
-            maxHeight:
-                context.homeMapMaxHeight(isConnected: bleBloc.isConnected),
-            child: mapStack,
+    // Phone: existing screen-fraction header heights.
+    if (!context.isTablet) {
+      return CustomScrollView(
+        clipBehavior: Clip.none,
+        slivers: [
+          SliverPersistentHeader(
+            delegate: _SliverAppBarDelegate(
+              minHeight:
+                  context.homeMapMinHeight(isConnected: bleBloc.isConnected),
+              maxHeight:
+                  context.homeMapMaxHeight(isConnected: bleBloc.isConnected),
+              child: mapStack,
+            ),
+            pinned: true,
           ),
-          pinned: true,
-        ),
-        SliverSafeArea(
-          minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-          sliver: _SensorSliver(bleBloc: bleBloc, sensorBloc: sensorBloc),
-        ),
-      ],
+          SliverSafeArea(
+            minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            sliver: _SensorSliver(bleBloc: bleBloc, sensorBloc: sensorBloc),
+          ),
+        ],
+      );
+    }
+
+    // iPad portrait: size map from the real viewport so it can fill the screen.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final available = constraints.maxHeight;
+        final connected = bleBloc.isConnected;
+        // Disconnected: map fills the body so controls sit at the bottom.
+        // Connected: map shares space with the sensor grid.
+        final minHeight = connected ? available * 0.35 : available;
+        final maxHeight = connected ? available * 0.55 : available;
+
+        return CustomScrollView(
+          clipBehavior: Clip.none,
+          slivers: [
+            SliverPersistentHeader(
+              delegate: _SliverAppBarDelegate(
+                minHeight: minHeight,
+                maxHeight: maxHeight,
+                child: mapStack,
+              ),
+              pinned: true,
+            ),
+            SliverSafeArea(
+              minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              sliver: _SensorSliver(bleBloc: bleBloc, sensorBloc: sensorBloc),
+            ),
+          ],
+        );
+      },
     );
   }
 }
