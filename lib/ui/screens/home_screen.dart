@@ -514,48 +514,61 @@ class _FloatingButtons extends StatelessWidget {
           );
         }
 
+        final showSample = recordingBloc.isRecording &&
+            recordingBloc.activeCollectionMode.showsManualSampleButton;
+
+        final startStop = Expanded(
+          child: _StartStopButton(
+            recordingBloc: recordingBloc,
+            buttonsBusy: buttonsBusy,
+          ),
+        );
+        final disconnect = Expanded(
+          child: _DisconnectButton(
+            bleBloc: bleBloc,
+            recordingBloc: recordingBloc,
+            buttonsBusy: buttonsBusy,
+            isReconnecting: isReconnecting,
+          ),
+        );
+        final sampleButton = FilledButton.tonalIcon(
+          style: const ButtonStyle(
+            padding: WidgetStatePropertyAll(
+              EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            ),
+          ),
+          onPressed:
+              buttonsBusy ? null : () => geolocationBloc.captureSample(),
+          icon: const Icon(Icons.add_location_alt),
+          label: Text(
+            AppLocalizations.of(context)!.recordingSaveSample,
+          ),
+        );
+
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 12,
           children: [
-            Row(
-              spacing: 12,
-              children: [
-                Expanded(
-                  child: _StartStopButton(
-                    recordingBloc: recordingBloc,
-                    buttonsBusy: buttonsBusy,
-                  ),
-                ),
-                Expanded(
-                  child: _DisconnectButton(
-                    bleBloc: bleBloc,
-                    recordingBloc: recordingBloc,
-                    buttonsBusy: buttonsBusy,
-                    isReconnecting: isReconnecting,
-                  ),
-                ),
-              ],
-            ),
-            if (recordingBloc.isRecording &&
-                recordingBloc.activeCollectionMode.showsManualSampleButton)
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.tonalIcon(
-                  style: const ButtonStyle(
-                    padding: WidgetStatePropertyAll(
-                      EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    ),
-                  ),
-                  onPressed: buttonsBusy
-                      ? null
-                      : () => geolocationBloc.captureSample(),
-                  icon: const Icon(Icons.add_location_alt),
-                  label: Text(
-                    AppLocalizations.of(context)!.recordingSaveSample,
-                  ),
-                ),
+            if (showSample && context.isTablet)
+              Row(
+                spacing: 12,
+                children: [
+                  startStop,
+                  Expanded(child: sampleButton),
+                  disconnect,
+                ],
+              )
+            else ...[
+              Row(
+                spacing: 12,
+                children: [startStop, disconnect],
               ),
+              if (showSample)
+                SizedBox(
+                  width: double.infinity,
+                  child: sampleButton,
+                ),
+            ],
             _SenseBoxSelectionButton(),
           ],
         );
