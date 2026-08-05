@@ -4,13 +4,15 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/ui/layout/adaptive_modal.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/empty_state_message.dart';
 import 'package:sensebox_bike/ui/widgets/common/surface_outlined_icon_button.dart';
 
 void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
-  final selected = await showModalBottomSheet<bool>(
+  final selected = await showAdaptiveModal<bool>(
     showDragHandle: true,
     isScrollControlled: true,
     context: context,
@@ -176,7 +178,8 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
           right: spacing,
         ),
         child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.6,
+          height: MediaQuery.sizeOf(context).height *
+              (context.isTablet ? 0.45 : 0.6),
           child: Center(
             child: Text(
               widget.scanError.toString(),
@@ -195,7 +198,8 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
         right: spacing,
       ),
       child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.6,
+        height: MediaQuery.sizeOf(context).height *
+            (context.isTablet ? 0.45 : 0.6),
         child: ListenableBuilder(
           listenable: widget.bleBloc.isScanningNotifier,
           builder: (context, _) {

@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/ui/layout/adaptive_modal.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_spacer.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection.dart';
 
 void showSenseBoxSelection(BuildContext context, OpenSenseMapBloc bloc,
     ConfigurationBloc configurationBloc) {
-  showModalBottomSheet(
+  showAdaptiveModal(
     context: context,
     clipBehavior: Clip.antiAlias,
     isScrollControlled: true,
@@ -41,7 +43,8 @@ class _SenseBoxSelectionModalState extends State<_SenseBoxSelectionModal> {
     return Consumer<OpenSenseMapBloc>(
       builder: (context, bloc, child) {
         return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.8,
+          height: MediaQuery.sizeOf(context).height *
+              (context.isTablet ? 0.7 : 0.8),
           child: Stack(
             children: [
               Padding(

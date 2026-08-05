@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 
 class ButtonWithLoader extends StatelessWidget {
@@ -45,9 +48,13 @@ class ButtonWithLoader extends StatelessWidget {
     );
 
     if (width != null) {
-      final screenWidth = MediaQuery.of(context).size.width;
+      final screenWidth = MediaQuery.sizeOf(context).width;
+      // Phone: fraction of screen (unchanged). Tablet: also cap to content width.
+      final base = context.isTablet
+          ? min(screenWidth, context.contentMaxWidth)
+          : screenWidth;
       return SizedBox(
-        width: screenWidth * width!,
+        width: base * width!,
         child: button,
       );
     } else {

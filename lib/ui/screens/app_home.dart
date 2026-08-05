@@ -31,8 +31,19 @@ class _AppHomeState extends State<AppHome> {
     ];
   }
 
+  void _onDestinationSelected(int value) {
+    setState(() {
+      _selectedIndex = value;
+      if (value == 1) {
+        _tracksScreenKey.currentState?.refreshTracks();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
@@ -52,26 +63,21 @@ class _AppHomeState extends State<AppHome> {
             topRight: Radius.circular(24),
           ),
           child: NavigationBar(
-            onDestinationSelected: (value) {
-              setState(() {
-                _selectedIndex = value;
-                // Refresh tracks when navigating to tracks tab
-                if (value == 1) {
-                  _tracksScreenKey.currentState?.refreshTracks();
-                }
-              });
-            },
+            onDestinationSelected: _onDestinationSelected,
             selectedIndex: _selectedIndex,
             destinations: [
               NavigationDestination(
-                  icon: Icon(Icons.map),
-                  label: AppLocalizations.of(context)!.homeBottomBarHome),
+                icon: const Icon(Icons.map),
+                label: l10n.homeBottomBarHome,
+              ),
               NavigationDestination(
-                  icon: Icon(Icons.route),
-                  label: AppLocalizations.of(context)!.homeBottomBarTracks),
+                icon: const Icon(Icons.route),
+                label: l10n.homeBottomBarTracks,
+              ),
               NavigationDestination(
-                  icon: Icon(Icons.settings),
-                  label: AppLocalizations.of(context)!.generalSettings),
+                icon: const Icon(Icons.settings),
+                label: l10n.generalSettings,
+              ),
             ],
           ),
         ),
