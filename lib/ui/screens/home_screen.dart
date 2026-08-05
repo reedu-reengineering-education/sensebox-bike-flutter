@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
@@ -24,6 +25,7 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import 'package:sensebox_bike/ui/layout/form_factor.dart';
+import 'package:sensebox_bike/utils/device_vibration.dart';
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
@@ -392,74 +394,79 @@ class _SenseBoxSelectionButton extends StatelessWidget {
               onTap = () => showSenseBoxSelection(context, osemBloc, configBloc);
             }
 
-            return InkWell(
-              onTap: onTap,
-              child: Container(
-                width: double.infinity,
-                constraints: const BoxConstraints(minHeight: 48),
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(borderRadiusSmall),
-                  border: Border.all(
-                    color: borderColor,
-                    width: 1.0,
-                    style: BorderStyle.solid,
+            return Material(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(borderRadiusSmall),
+              clipBehavior: Clip.antiAlias,
+              elevation: 1,
+              shadowColor: colorScheme.shadow.withValues(alpha: 0.03),
+              child: InkWell(
+                onTap: onTap == null
+                    ? null
+                    : () {
+                        unawaited(vibrateTapFeedback());
+                        onTap!();
+                      },
+                borderRadius: BorderRadius.circular(borderRadiusSmall),
+                child: Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(minHeight: 48),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(borderRadiusSmall),
+                    border: Border.all(
+                      color: borderColor,
+                      width: 1.0,
+                      style: BorderStyle.solid,
+                    ),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.shadow.withOpacity(0.03),
-                      blurRadius: 1.5,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Icon in a small circle background
-                    SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: Center(
-                        child: isAuthenticating
-                            ? Loader(light: true)
-                            : Icon(
-                                icon,
-                                color: textColor,
-                                size: 20,
-                              ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Title
-                    Expanded(
-                      child: Text(
-                        label,
-                        style: textTheme.bodyLarge?.copyWith(
-                            color: textColor,
-                            fontWeight: FontWeight.w600,
-                            height: 1.2),
-                        maxLines: 3,
-                      ),
-                    ),
-                    // Optional description (for error or noBox) - only show when authenticated and not loading
-                    if (isAuthenticated && !isAuthenticating)
-                      if (hasError)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child:
-                              Icon(Icons.refresh, color: textColor, size: 16),
-                        )
-                      else if (noBox)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: Icon(Icons.arrow_forward,
-                              color: textColor, size: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Icon in a small circle background
+                      SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: Center(
+                          child: isAuthenticating
+                              ? Loader(light: true)
+                              : Icon(
+                                  icon,
+                                  color: textColor,
+                                  size: 20,
+                                ),
                         ),
-                  ],
+                      ),
+                      const SizedBox(width: 12),
+                      // Title
+                      Expanded(
+                        child: Text(
+                          label,
+                          style: textTheme.bodyLarge?.copyWith(
+                              color: textColor,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2),
+                          maxLines: 3,
+                        ),
+                      ),
+                      // Optional description (for error or noBox) - only show when authenticated and not loading
+                      if (isAuthenticated && !isAuthenticating)
+                        if (hasError)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child:
+                                Icon(Icons.refresh, color: textColor, size: 16),
+                          )
+                        else if (noBox)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Icon(Icons.arrow_forward,
+                                color: textColor, size: 16),
+                          ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -619,6 +626,7 @@ class _ConnectButton extends StatelessWidget {
                     : Theme.of(context).colorScheme.error,
               ),
               onPressed: () async {
+                unawaited(vibrateTapFeedback());
                 if (isBluetoothEnabled) {
                   showDeviceSelectionDialog(context, bleBloc);
                 } else {
@@ -662,6 +670,7 @@ class _StartStopButton extends StatelessWidget {
       onPressed: buttonsBusy
           ? null
           : () async {
+              unawaited(vibrateTapFeedback());
               if (recordingBloc.isRecording) {
                 await recordingBloc.stopRecording();
               } else {

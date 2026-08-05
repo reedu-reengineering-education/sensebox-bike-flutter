@@ -18,40 +18,45 @@ class SelectableListTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return InkWell(
+    return Material(
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(borderRadius),
-      onTap: onTap,
-      child: Padding(
-        padding:
-            const EdgeInsets.symmetric(vertical: padding, horizontal: padding),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: circleSize,
-              height: circleSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected ? colorScheme.secondary : Colors.transparent,
-                border: Border.all(
-                    color: colorScheme.secondary, width: borderWidth),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(borderRadius),
+        onTap: onTap,
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(vertical: padding, horizontal: padding),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: circleSize,
+                height: circleSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSelected ? colorScheme.secondary : Colors.transparent,
+                  border: Border.all(
+                      color: colorScheme.secondary, width: borderWidth),
+                ),
+                child: isSelected
+                    ? Icon(Icons.check,
+                        size: iconSize, color: colorScheme.onSecondary)
+                    : null,
               ),
-              child: isSelected
-                  ? Icon(Icons.check,
-                      size: iconSize, color: colorScheme.onSecondary)
-                  : null,
-            ),
-            const SizedBox(width: spacing),
-            Text(
-              title,
-              style: textTheme.bodyMedium?.copyWith(
-                color: isSelected
-                    ? colorScheme.secondary
-                    : textTheme.bodyMedium?.color,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              const SizedBox(width: spacing),
+              Text(
+                title,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: isSelected
+                      ? colorScheme.secondary
+                      : textTheme.bodyMedium?.color,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

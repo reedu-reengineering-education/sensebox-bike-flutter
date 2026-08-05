@@ -9,16 +9,23 @@ class ClickableTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-            padding: const EdgeInsets.all(spacing * 2), 
-        child: Row(
-        children: [
-          Expanded( child: child),
-          Icon(Icons.chevron_right),
-        ],
-      )
-    ));
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(borderRadius),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Padding(
+          padding: const EdgeInsets.all(spacing * 2),
+          child: Row(
+            children: [
+              Expanded(child: child),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

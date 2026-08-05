@@ -607,28 +607,15 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         const Spacer(),
         // Upload button - only show if track hasn't been uploaded
         if (!_track.isUploaded && !hideUploadButton)
-          GestureDetector(
-            onTap: _isUploading ? null : _startUpload,
-            child: Container(
-              constraints: const BoxConstraints(
-                minWidth: 48,
-                minHeight: 48,
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Center(
-                child: _isUploading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Icon(
-                        Icons.cloud_upload,
-                        size: 24,
-                        color: theme.colorScheme.onSurface,
-                      ),
-              ),
-            ),
+          IconButton(
+            icon: _isUploading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.cloud_upload),
+            onPressed: _isUploading ? null : _startUpload,
           ),
         ExportButton(
           isDisabled: false,
