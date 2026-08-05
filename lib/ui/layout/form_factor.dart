@@ -45,8 +45,8 @@ extension FormFactorX on BuildContext {
     return min(maxColumns, tileCount);
   }
 
-  /// Phone map header heights (fractions of screen). Tablet portrait uses
-  /// available viewport height via [LayoutBuilder] instead.
+  /// Two-column layouts (tracks list, settings) on iPad landscape.
+  bool get useTwoColumnLandscape => isTablet && isLandscape;
   double homeMapMinHeight({required bool isConnected}) {
     return MediaQuery.sizeOf(this).height * 0.33;
   }

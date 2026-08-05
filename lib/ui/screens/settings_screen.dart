@@ -47,19 +47,40 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingsBloc = Provider.of<SettingsBloc>(context);
     final OpenSenseMapBloc openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context);
+    final twoColumn = context.useTwoColumnLandscape;
+
+    final login = _buildLoginLogoutSection(context, openSenseMapBloc);
+    final general = _buildGeneralSettingsSection(context, settingsBloc);
+    final account = _buildAccountManagementSection(context);
+    final help = _buildHelpSection(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.generalSettings),
       ),
       body: ContentConstraint(
+        // Full width in landscape for two side-by-side sections.
+        maxWidth: twoColumn ? double.infinity : null,
         child: ListView(
-          children: <Widget>[
-            _buildLoginLogoutSection(context, openSenseMapBloc),
-            _buildGeneralSettingsSection(context, settingsBloc),
-            _buildAccountManagementSection(context),
-            _buildHelpSection(context),
-          ],
+          padding: twoColumn
+              ? const EdgeInsets.symmetric(horizontal: spacing * 3)
+              : EdgeInsets.zero,
+          children: twoColumn
+              ? [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: general),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [login, account, help],
+                        ),
+                      ),
+                    ],
+                  ),
+                ]
+              : [login, general, account, help],
         ),
       ),
     );
