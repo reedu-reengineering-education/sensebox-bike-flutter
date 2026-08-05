@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 /// Shared breakpoints. Phone behavior must match pre-tablet layouts.
@@ -17,16 +19,30 @@ extension FormFactorX on BuildContext {
       MediaQuery.sizeOf(this).shortestSide >= Breakpoints.tablet;
 
   bool get isLandscape =>
-      MediaQuery.orientationOf(this) == Orientation.landscape;
+      MediaQuery.sizeOf(this).width > MediaQuery.sizeOf(this).height;
 
   /// Phone: unbounded (full bleed). Tablet: reading width.
   double get contentMaxWidth =>
       isTablet ? Breakpoints.contentMaxWidth : double.infinity;
 
   /// Home sensor grid: phone stays at 2 columns.
-  int homeSensorCrossAxisCount() {
+  /// iPad: up to 4 (portrait) / 8 (landscape), or fewer if fewer tiles.
+  int homeSensorCrossAxisCount({required int tileCount}) {
     if (!isTablet) return 2;
-    return isLandscape ? 3 : 4;
+    final maxColumns = isLandscape ? 8 : 4;
+    if (tileCount <= 0) return maxColumns;
+    return min(maxColumns, tileCount);
+  }
+
+  /// Track overview sensor tiles: phone unchanged.
+  /// iPad: up to 4 (portrait) / 8 (landscape), or fewer if fewer tiles.
+  int trackSensorCrossAxisCount({required int tileCount}) {
+    if (!isTablet) {
+      return MediaQuery.sizeOf(this).width < 400 ? 3 : 4;
+    }
+    final maxColumns = isLandscape ? 8 : 4;
+    if (tileCount <= 0) return maxColumns;
+    return min(maxColumns, tileCount);
   }
 
   /// Phone map header heights (fractions of screen). Tablet portrait uses
