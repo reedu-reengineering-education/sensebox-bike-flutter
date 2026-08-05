@@ -229,93 +229,31 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
   /// iPad: upload status and sampling frequency on one row. Phone: stacked.
   Widget _buildStatusAndCollectionHeader() {
+    final upload = _buildUploadStatusSection();
+    final collection = _buildCollectionModeSection();
+
     if (!context.isTablet) {
       return Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildUploadStatusSection(),
-          _buildCollectionModeSection(),
-        ],
+        children: [upload, collection],
       );
     }
-
-    final localizations = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final display = collectionModeDisplay(_track, localizations);
-    final collectionMode = display == null
-        ? null
-        : _buildDetailRow(
-            icon: display.icon,
-            label: localizations.trackCollectionModeLabel,
-            value: display.text,
-            theme: theme,
-          );
 
     // Direct-upload info banner stays full width; sampling frequency below.
     if (_track.isDirectUploadTrack && _track.lastUploadAttempt == null) {
       return Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          InfoBanner(text: localizations.trackDirectUploadInfo),
-          if (collectionMode != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  vertical: padding, horizontal: spacing),
-              child: collectionMode,
-            ),
-        ],
+        children: [upload, collection],
       );
     }
 
-    // Failed uploads keep the collapsible details; sampling frequency beside it.
-    if (!_track.isUploaded && _track.uploadAttemptsCount > 0) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: padding),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ExpansionTile(
-                tilePadding: const EdgeInsets.symmetric(horizontal: spacing),
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                collapsedBackgroundColor:
-                    theme.colorScheme.surfaceContainerHighest,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(borderRadius),
-                ),
-                title: _buildStatusIcon(context, localizations, theme),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: spacing),
-                    child: _buildUploadDetails(),
-                  ),
-                ],
-              ),
-            ),
-            if (collectionMode != null)
-              Padding(
-                padding: const EdgeInsets.only(
-                    right: spacing, top: padding, left: spacing),
-                child: collectionMode,
-              ),
-          ],
-        ),
-      );
-    }
-
-    // Uploaded / not-uploaded chip + sampling frequency inline.
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(vertical: padding, horizontal: spacing),
-      child: Row(
-        children: [
-          Flexible(child: _buildStatusIcon(context, localizations, theme)),
-          if (collectionMode != null) ...[
-            const SizedBox(width: spacing),
-            Flexible(child: collectionMode),
-          ],
-        ],
-      ),
+    // Reuse upload status widget (chip or ExpansionTile) beside collection mode.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: upload),
+        collection,
+      ],
     );
   }
 
