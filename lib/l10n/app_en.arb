@@ -15,6 +15,7 @@
     "createBoxAddCustomTag": "Add custom group tag",
     "createBoxCustomTag": "Custom group tag",
     "createBoxCustomTagHelper": "You can separate tags with commas",
+    "createBoxDataRecording": "Advanced data recording",
     "@@locale": "en",
     "generalLoading": "Loading...",
     "generalError": "Error",
@@ -108,6 +109,15 @@
     "connectionButtonReconnecting": "Reconnecting...",
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
+    "recordingPeriodicCollectionMode": "Periodic sampling every {seconds} s",
+    "@recordingPeriodicCollectionMode": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
+    "recordingSaveSample": "Save sample",
     "bleDeviceSelectTitle": "Tap to connect",
     "noBleDevicesFound": "No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.",
     "selectOrCreateBox": "Select or create senseBox:bike",
@@ -140,6 +150,31 @@
     "settingsUploadModePostRideDescription": "• Data is stored locally during recording\n• Upload happens all at once when you finish\n• More reliable and stable\n• Uses less battery during recording",
     "settingsUploadModeDirectTitle": "Upload data in real-time during recording (experimental)",
     "settingsUploadModeDirectDescription": "• Data is uploaded immediately as it's collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording",
+    "settingsDataCollectionMode": "Data recording",
+    "settingsDataCollectionModeCurrent": "Current: {mode}",
+    "@settingsDataCollectionModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsDataCollectionModeGpsDriven": "Continuous",
+    "settingsDataCollectionModePeriodic": "Periodic",
+    "settingsDataCollectionModeOnTap": "Manual sampling",
+    "settingsDataCollectionModeGpsDrivenDescription": "Save sensor data along your GPS track as you ride",
+    "settingsDataCollectionModePeriodicDescription": "Save data automatically at the interval you choose",
+    "settingsDataCollectionModeOnTapDescription": "Save data only when you tap Save sample during recording",
+    "settingsCollectionInterval": "Sampling interval",
+    "settingsCollectionIntervalDescription": "How often data is saved in periodic sampling mode",
+    "settingsCollectionIntervalCurrent": "Current: Every {seconds} s",
+    "@settingsCollectionIntervalCurrent": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "settingsApiUrl": "Service URL",
     "settingsApiUrlHelper": "Enter the API endpoint for data uploads",
     "settingsApiUrlError": "Please enter a valid URL (e.g., https://api.opensensemap.org)",
@@ -304,6 +339,16 @@
     "trackUploadAttempts": "Upload attempts",
     "trackLastAttempt": "Last attempt",
     "trackStatus": "Status",
+    "trackCollectionModeLabel": "Sampling",
+    "trackCollectionModeOnTap": "Manual sampling",
+    "trackCollectionModePeriodic": "Every {seconds} s",
+    "@trackCollectionModePeriodic": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "trackDirectUploadAuthFailed": "This track failed to upload in real-time because you weren't logged in. Please log in and try uploading again.",
     "trackFilterAll": "All",
     "trackFilterUnuploaded": "Not uploaded",

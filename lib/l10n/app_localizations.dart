@@ -168,6 +168,12 @@ abstract class AppLocalizations {
   /// **'You can separate tags with commas'**
   String get createBoxCustomTagHelper;
 
+  /// No description provided for @createBoxDataRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced data recording'**
+  String get createBoxDataRecording;
+
   /// No description provided for @generalLoading.
   ///
   /// In en, this message translates to:
@@ -516,6 +522,18 @@ abstract class AppLocalizations {
   /// **'Stop'**
   String get connectionButtonStop;
 
+  /// No description provided for @recordingPeriodicCollectionMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodic sampling every {seconds} s'**
+  String recordingPeriodicCollectionMode(int seconds);
+
+  /// No description provided for @recordingSaveSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Save sample'**
+  String get recordingSaveSample;
+
   /// No description provided for @bleDeviceSelectTitle.
   ///
   /// In en, this message translates to:
@@ -665,6 +683,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording'**
   String get settingsUploadModeDirectDescription;
+
+  /// No description provided for @settingsDataCollectionMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Data recording'**
+  String get settingsDataCollectionMode;
+
+  /// No description provided for @settingsDataCollectionModeCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current: {mode}'**
+  String settingsDataCollectionModeCurrent(String mode);
+
+  /// No description provided for @settingsDataCollectionModeGpsDriven.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous'**
+  String get settingsDataCollectionModeGpsDriven;
+
+  /// No description provided for @settingsDataCollectionModePeriodic.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodic'**
+  String get settingsDataCollectionModePeriodic;
+
+  /// No description provided for @settingsDataCollectionModeOnTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual sampling'**
+  String get settingsDataCollectionModeOnTap;
+
+  /// No description provided for @settingsDataCollectionModeGpsDrivenDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Save sensor data along your GPS track as you ride'**
+  String get settingsDataCollectionModeGpsDrivenDescription;
+
+  /// No description provided for @settingsDataCollectionModePeriodicDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Save data automatically at the interval you choose'**
+  String get settingsDataCollectionModePeriodicDescription;
+
+  /// No description provided for @settingsDataCollectionModeOnTapDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Save data only when you tap Save sample during recording'**
+  String get settingsDataCollectionModeOnTapDescription;
+
+  /// No description provided for @settingsCollectionInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Sampling interval'**
+  String get settingsCollectionInterval;
+
+  /// No description provided for @settingsCollectionIntervalDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'How often data is saved in periodic sampling mode'**
+  String get settingsCollectionIntervalDescription;
+
+  /// No description provided for @settingsCollectionIntervalCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current: Every {seconds} s'**
+  String settingsCollectionIntervalCurrent(int seconds);
 
   /// No description provided for @settingsApiUrl.
   ///
@@ -1403,6 +1487,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Status'**
   String get trackStatus;
+
+  /// No description provided for @trackCollectionModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sampling'**
+  String get trackCollectionModeLabel;
+
+  /// No description provided for @trackCollectionModeOnTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual sampling'**
+  String get trackCollectionModeOnTap;
+
+  /// No description provided for @trackCollectionModePeriodic.
+  ///
+  /// In en, this message translates to:
+  /// **'Every {seconds} s'**
+  String trackCollectionModePeriodic(int seconds);
 
   /// No description provided for @trackDirectUploadAuthFailed.
   ///

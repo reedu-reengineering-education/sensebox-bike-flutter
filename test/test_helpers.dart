@@ -280,10 +280,12 @@ void setupMockGeolocator(dynamic mockGeolocator, double lat, double lng,
       .thenAnswer((_) async => true);
   when(() => mockGeolocator.checkPermission())
       .thenAnswer((_) async => geo.LocationPermission.always);
+  final position = createMockPosition(lat, lng, timestamp: timestamp);
+  when(() => mockGeolocator.getCurrentPosition())
+      .thenAnswer((_) async => position);
   when(() => mockGeolocator.getCurrentPosition(
           locationSettings: any(named: 'locationSettings')))
-      .thenAnswer(
-          (_) async => createMockPosition(lat, lng, timestamp: timestamp));
+      .thenAnswer((_) async => position);
 }
 
 /// Sets up recording mode for tests
@@ -329,7 +331,7 @@ Future<void> testGeolocationWithPrivacyZone({
   setupMockGeolocator(mockGeolocator, lat, lng, timestamp: timestamp);
 
   final initialCount = emittedGeolocations.length;
-  await geolocationBloc.getCurrentLocationAndEmit();
+  await geolocationBloc.captureSample();
   await Future.delayed(mediumDelay);
 
   if (shouldEmit) {

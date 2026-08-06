@@ -5,7 +5,9 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
 import 'package:sensebox_bike/utils/url_launch_utils.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
@@ -15,6 +17,7 @@ import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
 import 'package:sensebox_bike/ui/widgets/settings/app_info_section.dart';
+import 'package:sensebox_bike/ui/widgets/settings/data_collection_mode_fields.dart';
 import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -377,6 +380,52 @@ class SettingsScreen extends StatelessWidget {
             );
           },
         ),
+        Consumer<SettingsBloc>(
+          builder: (context, bloc, _) {
+            final modeLabel = dataCollectionModeSettingsLabel(
+              bloc.dataCollectionMode,
+              AppLocalizations.of(context)!,
+            );
+            return ListTile(
+              leading: const Icon(Icons.sensors),
+              title: Text(
+                AppLocalizations.of(context)!.settingsDataCollectionMode,
+              ),
+              subtitle: Text(
+                AppLocalizations.of(context)!
+                    .settingsDataCollectionModeCurrent(modeLabel),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              onTap: () => _showDataCollectionModeDialog(context, bloc),
+            );
+          },
+        ),
+        Consumer<SettingsBloc>(
+          builder: (context, bloc, _) {
+            if (!bloc.dataCollectionMode.usesPeriodicTimer) {
+              return const SizedBox.shrink();
+            }
+            final seconds = bloc.collectionIntervalSeconds;
+            return ListTile(
+              leading: const Icon(Icons.schedule),
+              title: Text(
+                AppLocalizations.of(context)!.settingsCollectionInterval,
+              ),
+              subtitle: Text(
+                AppLocalizations.of(context)!
+                    .settingsCollectionIntervalCurrent(seconds),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              onTap: () => _showCollectionIntervalDialog(context, bloc),
+            );
+          },
+        ),
         _buildApiUrlSection(context, settingsBloc, configurationBloc),
         SettingsNavigationTile(
           icon: Icons.admin_panel_settings,
@@ -614,6 +663,94 @@ class SettingsScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
+              child: Text(localizations.generalCancel),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDataCollectionModeDialog(
+      BuildContext context, SettingsBloc settingsBloc) {
+    final localizations = AppLocalizations.of(context)!;
+    final currentMode = settingsBloc.dataCollectionMode;
+    final screenSize = MediaQuery.of(context).size;
+    final isLargeScreen = screenSize.width > 375;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(localizations.settingsDataCollectionMode),
+          titlePadding: isLargeScreen
+              ? const EdgeInsets.fromLTRB(24, 24, 24, 24)
+              : const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          contentPadding: EdgeInsets.zero,
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(bottom: isLargeScreen ? 24.0 : 0.0),
+                child: DataCollectionModeRadioList(
+                  groupValue: currentMode,
+                  onChanged: (selected) async {
+                    await settingsBloc.setDataCollectionMode(selected);
+                    Navigator.of(dialogContext).pop();
+                  },
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(localizations.generalCancel),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCollectionIntervalDialog(
+      BuildContext context, SettingsBloc settingsBloc) {
+    final localizations = AppLocalizations.of(context)!;
+    final currentSeconds = settingsBloc.collectionIntervalSeconds;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(localizations.settingsCollectionInterval),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  localizations.settingsCollectionIntervalDescription,
+                  style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(dialogContext)
+                            .colorScheme
+                            .onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: spacing / 2),
+                CollectionIntervalPresetList(
+                  selectedSeconds: currentSeconds,
+                  onSelected: (seconds) async {
+                    await settingsBloc.setCollectionIntervalSeconds(seconds);
+                    Navigator.of(dialogContext).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(localizations.generalCancel),
             ),
           ],

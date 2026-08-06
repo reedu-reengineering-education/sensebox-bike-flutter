@@ -10,7 +10,12 @@ class SharedPreferencesKeys {
   static const String privacyPolicyAcceptedAt = 'privacyPolicyAcceptedAt';
   static const String privacyZones = 'privacyZones';
   static const String selectedSenseBox = 'selectedSenseBox';
-  static const bool vibrateOnDisconnect = false;
+  static const String vibrateOnDisconnect = 'vibrateOnDisconnect';
+  // Legacy key names kept for prefs migration; Dart API uses dataCollectionMode.
+  static const String lastResolvedDataCollectionMode =
+      'lastResolvedDataCollectionMode';
+  static const String lastResolvedCollectionIntervalSeconds =
+      'lastResolvedCollectionIntervalSeconds';
 }
 
 

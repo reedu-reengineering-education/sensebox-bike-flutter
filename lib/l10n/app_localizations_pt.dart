@@ -51,6 +51,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Você pode separar etiquetas com vírgulas';
 
   @override
+  String get createBoxDataRecording => 'Gravação avançada de dados';
+
+  @override
   String get generalLoading => 'Carregando...';
 
   @override
@@ -248,6 +251,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionButtonStop => 'Parar';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Amostragem periódica a cada $seconds s';
+  }
+
+  @override
+  String get recordingSaveSample => 'Salvar amostra';
+
+  @override
   String get bleDeviceSelectTitle => 'Toque para conectar';
 
   @override
@@ -333,6 +344,47 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get settingsUploadModeDirectDescription =>
       '• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação';
+
+  @override
+  String get settingsDataCollectionMode => 'Gravação de dados';
+
+  @override
+  String settingsDataCollectionModeCurrent(String mode) {
+    return 'Atual: $mode';
+  }
+
+  @override
+  String get settingsDataCollectionModeGpsDriven => 'Contínuo';
+
+  @override
+  String get settingsDataCollectionModePeriodic => 'Periódico';
+
+  @override
+  String get settingsDataCollectionModeOnTap => 'Amostragem manual';
+
+  @override
+  String get settingsDataCollectionModeGpsDrivenDescription =>
+      'Salvar dados dos sensores ao longo do trajeto GPS durante o passeio';
+
+  @override
+  String get settingsDataCollectionModePeriodicDescription =>
+      'Salvar dados automaticamente no intervalo escolhido';
+
+  @override
+  String get settingsDataCollectionModeOnTapDescription =>
+      'Salvar dados apenas ao tocar em Salvar amostra durante a gravação';
+
+  @override
+  String get settingsCollectionInterval => 'Intervalo de amostragem';
+
+  @override
+  String get settingsCollectionIntervalDescription =>
+      'Com que frequência os dados são salvos no modo periódico';
+
+  @override
+  String settingsCollectionIntervalCurrent(int seconds) {
+    return 'Atual: A cada $seconds s';
+  }
 
   @override
   String get settingsApiUrl => 'URL do Serviço';
@@ -753,6 +805,17 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trackStatus => 'Status';
+
+  @override
+  String get trackCollectionModeLabel => 'Amostragem';
+
+  @override
+  String get trackCollectionModeOnTap => 'Amostragem manual';
+
+  @override
+  String trackCollectionModePeriodic(int seconds) {
+    return 'A cada $seconds s';
+  }
 
   @override
   String get trackDirectUploadAuthFailed =>

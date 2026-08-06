@@ -49,6 +49,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get createBoxCustomTagHelper => 'Du kannst Tags mit Kommas trennen';
 
   @override
+  String get createBoxDataRecording => 'Erweiterte Datenaufzeichnung';
+
+  @override
   String get generalLoading => 'Lädt...';
 
   @override
@@ -247,6 +250,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionButtonStop => 'Stop';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Periodische Aufnahme alle $seconds s';
+  }
+
+  @override
+  String get recordingSaveSample => 'Messpunkt speichern';
+
+  @override
   String get bleDeviceSelectTitle => 'Tippen, um zu verbinden';
 
   @override
@@ -333,6 +344,47 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settingsUploadModeDirectDescription =>
       '• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen';
+
+  @override
+  String get settingsDataCollectionMode => 'Datenaufzeichnung';
+
+  @override
+  String settingsDataCollectionModeCurrent(String mode) {
+    return 'Aktuell: $mode';
+  }
+
+  @override
+  String get settingsDataCollectionModeGpsDriven => 'Kontinuierlich';
+
+  @override
+  String get settingsDataCollectionModePeriodic => 'Periodisch';
+
+  @override
+  String get settingsDataCollectionModeOnTap => 'Manuelle Erfassung';
+
+  @override
+  String get settingsDataCollectionModeGpsDrivenDescription =>
+      'Sensordaten entlang der GPS-Route während der Fahrt speichern';
+
+  @override
+  String get settingsDataCollectionModePeriodicDescription =>
+      'Daten automatisch im gewählten Intervall speichern';
+
+  @override
+  String get settingsDataCollectionModeOnTapDescription =>
+      'Daten nur speichern, wenn du während der Aufzeichnung auf Messpunkt speichern tippst';
+
+  @override
+  String get settingsCollectionInterval => 'Abtastintervall';
+
+  @override
+  String get settingsCollectionIntervalDescription =>
+      'Wie oft Daten im periodischen Modus gespeichert werden';
+
+  @override
+  String settingsCollectionIntervalCurrent(int seconds) {
+    return 'Aktuell: Alle $seconds s';
+  }
 
   @override
   String get settingsApiUrl => 'Service-URL';
@@ -757,6 +809,17 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trackStatus => 'Status';
+
+  @override
+  String get trackCollectionModeLabel => 'Erfassung';
+
+  @override
+  String get trackCollectionModeOnTap => 'Manuelle Erfassung';
+
+  @override
+  String trackCollectionModePeriodic(int seconds) {
+    return 'Alle $seconds s';
+  }
 
   @override
   String get trackDirectUploadAuthFailed =>

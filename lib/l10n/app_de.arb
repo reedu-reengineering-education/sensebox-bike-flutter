@@ -15,6 +15,7 @@
     "createBoxAddCustomTag": "Eigene Gruppentags hinzufügen",
     "createBoxCustomTag": "Eigener Gruppentag",
     "createBoxCustomTagHelper": "Du kannst Tags mit Kommas trennen",
+    "createBoxDataRecording": "Erweiterte Datenaufzeichnung",
     "@@locale": "de",
     "generalLoading": "Lädt...",
     "generalError": "Fehler",
@@ -106,6 +107,15 @@
     "connectionButtonReconnecting": "Erneut verbinden...",
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
+    "recordingPeriodicCollectionMode": "Periodische Aufnahme alle {seconds} s",
+    "@recordingPeriodicCollectionMode": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
+    "recordingSaveSample": "Messpunkt speichern",
     "bleDeviceSelectTitle": "Tippen, um zu verbinden",
     "noBleDevicesFound": "Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.",
     "selectOrCreateBox": "senseBox wählen oder erstellen",
@@ -141,6 +151,31 @@
     "settingsUploadModePostRideDescription": "• Daten werden lokal während der Aufzeichnung gespeichert\n• Upload erfolgt auf einmal beim Beenden\n• Zuverlässiger und stabiler\n• Verbraucht weniger Akku während der Aufzeichnung",
     "settingsUploadModeDirectTitle": "Daten in Echtzeit während der Aufzeichnung hochladen (experimentell)",
     "settingsUploadModeDirectDescription": "• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen",
+    "settingsDataCollectionMode": "Datenaufzeichnung",
+    "settingsDataCollectionModeCurrent": "Aktuell: {mode}",
+    "@settingsDataCollectionModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsDataCollectionModeGpsDriven": "Kontinuierlich",
+    "settingsDataCollectionModePeriodic": "Periodisch",
+    "settingsDataCollectionModeOnTap": "Manuelle Erfassung",
+    "settingsDataCollectionModeGpsDrivenDescription": "Sensordaten entlang der GPS-Route während der Fahrt speichern",
+    "settingsDataCollectionModePeriodicDescription": "Daten automatisch im gewählten Intervall speichern",
+    "settingsDataCollectionModeOnTapDescription": "Daten nur speichern, wenn du während der Aufzeichnung auf Messpunkt speichern tippst",
+    "settingsCollectionInterval": "Abtastintervall",
+    "settingsCollectionIntervalDescription": "Wie oft Daten im periodischen Modus gespeichert werden",
+    "settingsCollectionIntervalCurrent": "Aktuell: Alle {seconds} s",
+    "@settingsCollectionIntervalCurrent": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "settingsApiUrl": "Service-URL",
     "settingsApiUrlHelper": "Geben Sie den API-Endpunkt für Daten-Uploads ein",
     "settingsApiUrlError": "Bitte geben Sie eine gültige URL ein (z.B. https://api.opensensemap.org)",
@@ -303,6 +338,16 @@
   "trackUploadAttempts": "Upload-Versuche",
   "trackLastAttempt": "Letzter Versuch",
   "trackStatus": "Status",
+  "trackCollectionModeLabel": "Erfassung",
+  "trackCollectionModeOnTap": "Manuelle Erfassung",
+  "trackCollectionModePeriodic": "Alle {seconds} s",
+  "@trackCollectionModePeriodic": {
+      "placeholders": {
+          "seconds": {
+              "type": "int"
+          }
+      }
+  },
   "trackDirectUploadAuthFailed": "Dieser Track konnte nicht in Echtzeit hochgeladen werden, da du nicht angemeldet warst. Bitte melde dich an und versuche den Upload erneut.",
     "trackStatusNotUploaded": "Nicht hochgeladen",
     "trackStatusUploadFailed": "Upload fehlgeschlagen",

@@ -77,18 +77,6 @@ class ConfigurationBloc extends ChangeNotifier {
     return null;
   }
 
-  BoxConfiguration? getBoxConfigurationByGrouptag(List<String>? grouptags) {
-    if (_boxConfigurations == null || grouptags == null || grouptags.isEmpty) {
-      return null;
-    }
-    for (final config in _boxConfigurations!) {
-      if (grouptags.contains(config.defaultGrouptag)) {
-        return config;
-      }
-    }
-    return null;
-  }
-
   Future<T?> _loadData<T>({
     required String url,
     required bool Function() isAlreadyLoading,

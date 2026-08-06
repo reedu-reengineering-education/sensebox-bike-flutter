@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensor_batch.dart';
@@ -32,6 +33,46 @@ abstract class Sensor {
   
   final Map<int, SensorBatch> _sensorBatches = {};
   final List<TimestampedSensorValue> _preGpsValues = [];
+
+  /// Latest instant reading used for periodic / on-tap collection modes.
+  List<double>? _latestValues;
+
+  bool get hasLatestValues =>
+      _latestValues != null && _latestValues!.isNotEmpty;
+
+  /// Builds DB rows from the last BLE reading (periodic / on-tap; no aggregation).
+  List<SensorData> latestReadingAsSensorData(GeolocationData geolocation) {
+    final values = _latestValues;
+    if (values == null || values.isEmpty) {
+      return const [];
+    }
+
+    final rows = <SensorData>[];
+    if (attributes.isNotEmpty) {
+      for (int j = 0; j < attributes.length && j < values.length; j++) {
+        final data = SensorData()
+          ..characteristicUuid = characteristicUuid
+          ..title = title
+          ..value = values[j]
+          ..attribute = attributes[j]
+          ..geolocationData.value = geolocation;
+        if (shouldStoreSensorData(data)) {
+          rows.add(data);
+        }
+      }
+    } else {
+      final data = SensorData()
+        ..characteristicUuid = characteristicUuid
+        ..title = title
+        ..value = values[0]
+        ..attribute = null
+        ..geolocationData.value = geolocation;
+      if (shouldStoreSensorData(data)) {
+        rows.add(data);
+      }
+    }
+    return rows;
+  }
   
   DirectUploadService? _directUploadService;
   VoidCallback? _recordingListener;
@@ -108,7 +149,14 @@ abstract class Sensor {
   }
 
   void onDataReceived(List<double> data) {
-    if (data.isNotEmpty && recordingBloc.isRecording) {
+    if (data.isNotEmpty) {
+      _latestValues = List<double>.from(data);
+    }
+
+    // Buffer for lookback aggregation only in GPS-driven mode.
+    if (data.isNotEmpty &&
+        recordingBloc.isRecording &&
+        recordingBloc.activeCollectionMode.isGpsDriven) {
       final sensorTimestamp = DateTime.now().toUtc();
       final timestampedValue = TimestampedSensorValue(
         values: data,
@@ -251,6 +299,41 @@ abstract class Sensor {
     return valuesInWindow;
   }
 
+  void _performInstantSnapshot(
+    int geoId,
+    GeolocationData geo, {
+    bool alreadyPersisted = false,
+  }) {
+    final batch = _sensorBatches[geoId];
+    if (batch == null) {
+      return;
+    }
+
+    if (_latestValues != null &&
+        _latestValues!.isNotEmpty &&
+        !batch.aggregatedData.containsKey(title)) {
+      batch.aggregatedData[title] = List<double>.from(_latestValues!);
+      if (alreadyPersisted) {
+        batch.isSavedToDb = true;
+      }
+
+      Future.microtask(() async {
+        await _flushBuffers();
+      });
+      return;
+    }
+
+    if (alreadyPersisted) {
+      batch.isSavedToDb = true;
+      if (_directUploadService == null || !_directUploadService!.isEnabled) {
+        _sensorBatches.remove(geoId);
+      }
+      return;
+    }
+
+    _markEmptyBatchProcessed(geoId, batch);
+  }
+
   void _performDeferredAggregation(int geoId, GeolocationData geo) {
     final batch = _sensorBatches[geoId];
     if (batch == null) {
@@ -274,13 +357,16 @@ abstract class Sensor {
     _lastAggregatedGeolocationTimeUtc = _toUtc(batchGeo.timestamp);
     _removeAggregatedValues(batchGeo.timestamp);
 
-    // If there is no data for this geolocation for this sensor, mark it as processed.
-    // Otherwise, batches without data would remain unsaved forever and block later batches.
-    if (!batch.aggregatedData.containsKey(title)) {
-      batch.isSavedToDb = true;
-      if (_directUploadService == null || !_directUploadService!.isEnabled) {
-        _sensorBatches.remove(geoId);
-      }
+    _markEmptyBatchProcessed(geoId, batch);
+  }
+
+  void _markEmptyBatchProcessed(int geoId, SensorBatch batch) {
+    if (batch.aggregatedData.containsKey(title)) {
+      return;
+    }
+    batch.isSavedToDb = true;
+    if (_directUploadService == null || !_directUploadService!.isEnabled) {
+      _sensorBatches.remove(geoId);
     }
   }
 
@@ -332,6 +418,11 @@ abstract class Sensor {
           _cancelPendingAggregation(geoId);
           _performDeferredAggregation(geoId, geo);
           await _flushBuffers();
+        } else if (!recordingBloc.activeCollectionMode.isGpsDriven) {
+          // periodic / onTap: rows already saved with the geolocation in
+          // captureSample; keep batch only for direct upload.
+          _cancelPendingAggregation(geoId);
+          _performInstantSnapshot(geoId, geo, alreadyPersisted: true);
         } else {
           // Defer aggregation until lookback window closes
           // This ensures we capture all values that arrive within the window
@@ -392,11 +483,7 @@ abstract class Sensor {
     _isListening = false;
   }
 
-  Future<void> flushBuffers() async {
-    await _flushBuffers();
-  }
-
-  void clearBuffersForNewRecording() {
+  void clearBuffersForNewRecording({bool clearLatestValues = true}) {
     for (final geoId in _pendingAggregations.keys.toList()) {
       _cancelPendingAggregation(geoId);
     }
@@ -404,51 +491,10 @@ abstract class Sensor {
     _pendingGeolocations.clear();
     _sensorBatches.clear();
     _preGpsValues.clear();
+    if (clearLatestValues) {
+      _latestValues = null;
+    }
     _lastAggregatedGeolocationTimeUtc = null;
-  }
-
-  bool hasRemainingValuesWhenStopped() {
-    return _preGpsValues.isNotEmpty;
-  }
-  List<SensorData> getSensorDataForGeolocation(int geoId) {
-    final batch = _sensorBatches[geoId];
-    if (batch == null) {
-      return [];
-    }
-
-    final sensorData = batch.aggregatedData[title];
-    if (sensorData == null || sensorData.isEmpty) {
-      return [];
-    }
-
-    final List<SensorData> result = [];
-    if (attributes.isNotEmpty) {
-      for (int j = 0; j < attributes.length && j < sensorData.length; j++) {
-        result.add(SensorData()
-          ..characteristicUuid = characteristicUuid
-          ..title = title
-          ..value = sensorData[j]
-          ..attribute = attributes[j]
-          ..geolocationData.value = batch.geoLocation);
-      }
-    } else {
-      result.add(SensorData()
-        ..characteristicUuid = characteristicUuid
-        ..title = title
-        ..value = sensorData.isNotEmpty ? sensorData[0] : 0.0
-        ..attribute = null
-        ..geolocationData.value = batch.geoLocation);
-    }
-
-    return result;
-  }
-
-  /// Mark a batch for a specific geolocation as saved to database
-  void markBatchAsSaved(int geoId) {
-    final batch = _sensorBatches[geoId];
-    if (batch != null) {
-      batch.isSavedToDb = true;
-    }
   }
 
   Future<void> _flushBuffers() async {

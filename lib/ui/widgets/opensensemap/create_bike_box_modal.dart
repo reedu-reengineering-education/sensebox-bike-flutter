@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/campaign.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/labeled_text_form_field.dart';
 import 'package:sensebox_bike/ui/widgets/common/dropdown_form_field.dart';
 import 'package:sensebox_bike/ui/utils/common.dart';
+import 'package:sensebox_bike/ui/widgets/settings/data_collection_mode_fields.dart';
 
 class CreateBikeBoxModal extends StatefulWidget {
   final List<BoxConfiguration>? boxConfigurations;
@@ -36,22 +39,31 @@ class CreateBikeBoxModal extends StatefulWidget {
 
 class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
   bool _customTagExpanded = false;
+  bool _dataRecordingExpanded = false;
   final _customTagController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _boxConfigKey = GlobalKey<FormFieldState<String>>();
   final _campaignKey = GlobalKey<FormFieldState<String>>();
   final _nameKey = GlobalKey<FormFieldState<String>>();
   bool _loading = false;
+  DataCollectionMode _dataCollectionMode = DataCollectionMode.gpsDriven;
+  int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final configs = widget.boxConfigurations ?? [];
-        if (configs.isNotEmpty && _boxConfigKey.currentState?.value == null) {
-          _boxConfigKey.currentState?.didChange(configs.first.id);
-        }
+      if (!mounted) return;
+
+      final settings = context.read<SettingsBloc>();
+      setState(() {
+        _dataCollectionMode = settings.dataCollectionMode;
+        _collectionIntervalSeconds = settings.collectionIntervalSeconds;
+      });
+
+      final configs = widget.boxConfigurations ?? [];
+      if (configs.isNotEmpty && _boxConfigKey.currentState?.value == null) {
+        _boxConfigKey.currentState?.didChange(configs.first.id);
       }
     });
 
@@ -85,6 +97,7 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
       try {
         final geolocationBloc = context.read<GeolocationBloc>();
         final opensensemapBloc = context.read<OpenSenseMapBloc>();
+        final settingsBloc = context.read<SettingsBloc>();
 
         final position = await geolocationBloc.getCurrentLocation();
 
@@ -110,6 +123,11 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
             boxConfig,
             selectedTag,
             customTags);
+
+        await settingsBloc.setCollectionPreferences(
+          mode: _dataCollectionMode,
+          intervalSeconds: _collectionIntervalSeconds,
+        );
 
         await opensensemapBloc.fetchSenseBoxes(page: 0);
 
@@ -168,6 +186,43 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
       items: items,
       enabled: !_loading && campaigns.isNotEmpty,
       disabledHint: AppLocalizations.of(context)!.selectCampaign,
+    );
+  }
+
+  Widget _buildDataRecordingSection(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    return ExpansionTile(
+      title: Text(localizations.createBoxDataRecording),
+      initiallyExpanded: _dataRecordingExpanded,
+      onExpansionChanged: _loading
+          ? null
+          : (expanded) {
+              setState(() {
+                _dataRecordingExpanded = expanded;
+              });
+            },
+      shape: Border.all(color: Colors.transparent),
+      collapsedShape: Border.all(color: Colors.transparent),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: DataCollectionModeFields(
+            mode: _dataCollectionMode,
+            intervalSeconds: _collectionIntervalSeconds,
+            enabled: !_loading,
+            onModeChanged: (mode) {
+              setState(() {
+                _dataCollectionMode = mode;
+              });
+            },
+            onIntervalChanged: (seconds) {
+              setState(() {
+                _collectionIntervalSeconds = seconds;
+              });
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -249,6 +304,7 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
                         ),
                       ],
                     ),
+                    _buildDataRecordingSection(context),
                     const SizedBox(height: 16),
                     Row(
                       children: [

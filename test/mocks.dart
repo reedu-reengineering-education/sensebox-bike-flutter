@@ -26,6 +26,7 @@ import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/sensors/sensor.dart' as sensors;
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -303,6 +304,8 @@ class MockSettingsBloc extends Mock
 
 class MockRecordingBloc extends Mock implements RecordingBloc {
   bool _isRecording = false;
+  DataCollectionMode _activeCollectionMode = DataCollectionMode.gpsDriven;
+  int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
   late final ValueNotifier<bool> _isRecordingNotifier;
 
   MockRecordingBloc() {
@@ -315,6 +318,20 @@ class MockRecordingBloc extends Mock implements RecordingBloc {
   void setRecording(bool value) {
     _isRecording = value;
     _isRecordingNotifier.value = value;
+  }
+
+  @override
+  DataCollectionMode get activeCollectionMode => _activeCollectionMode;
+
+  void setActiveCollectionMode(DataCollectionMode mode) {
+    _activeCollectionMode = mode;
+  }
+
+  @override
+  int get collectionIntervalSeconds => _collectionIntervalSeconds;
+
+  void setCollectionIntervalSeconds(int seconds) {
+    _collectionIntervalSeconds = seconds;
   }
 
   @override
@@ -341,6 +358,8 @@ class TestTrackBuilder {
     int? uploaded,
     int? uploadAttempts,
     DateTime? lastUploadAttempt,
+    String? dataCollectionMode,
+    int? collectionIntervalSeconds,
     List<GeolocationData>? geolocations,
   }) {
     final track = TrackData()
@@ -348,7 +367,9 @@ class TestTrackBuilder {
       ..isDirectUpload = isDirectUpload ?? 1
       ..uploaded = uploaded ?? 0
       ..uploadAttempts = uploadAttempts ?? 0
-      ..lastUploadAttempt = lastUploadAttempt;
+      ..lastUploadAttempt = lastUploadAttempt
+      ..dataCollectionMode = dataCollectionMode
+      ..collectionIntervalSeconds = collectionIntervalSeconds;
 
     if (geolocations != null) {
       track.geolocations.addAll(geolocations);

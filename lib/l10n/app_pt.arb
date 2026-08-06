@@ -15,6 +15,7 @@
     "createBoxAddCustomTag": "Adicionar etiqueta de grupo personalizada",
     "createBoxCustomTag": "Etiqueta de grupo personalizada",
     "createBoxCustomTagHelper": "Você pode separar etiquetas com vírgulas",
+    "createBoxDataRecording": "Gravação avançada de dados",
     "@@locale": "pt",
     "generalLoading": "Carregando...",
     "generalError": "Erro",
@@ -116,6 +117,15 @@
     "connectionButtonReconnecting": "Reconectando...",
     "connectionButtonStart": "Iniciar",
     "connectionButtonStop": "Parar",
+    "recordingPeriodicCollectionMode": "Amostragem periódica a cada {seconds} s",
+    "@recordingPeriodicCollectionMode": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
+    "recordingSaveSample": "Salvar amostra",
     "bleDeviceSelectTitle": "Toque para conectar",
     "noBleDevicesFound": "Nenhuma senseBox encontrada. Certifique-se de que sua senseBox está ligada, toque fora desta janela e tente novamente.",
     "selectOrCreateBox": "Selecionar ou criar senseBox",
@@ -148,6 +158,31 @@
     "settingsUploadModePostRideDescription": "• Os dados são armazenados localmente durante a gravação\n• O envio acontece de uma vez quando você terminar\n• Mais confiável e estável\n• Consome menos bateria durante a gravação",
     "settingsUploadModeDirectTitle": "Enviar dados em tempo real durante a gravação (experimental)",
     "settingsUploadModeDirectDescription": "• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação",
+    "settingsDataCollectionMode": "Gravação de dados",
+    "settingsDataCollectionModeCurrent": "Atual: {mode}",
+    "@settingsDataCollectionModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsDataCollectionModeGpsDriven": "Contínuo",
+    "settingsDataCollectionModePeriodic": "Periódico",
+    "settingsDataCollectionModeOnTap": "Amostragem manual",
+    "settingsDataCollectionModeGpsDrivenDescription": "Salvar dados dos sensores ao longo do trajeto GPS durante o passeio",
+    "settingsDataCollectionModePeriodicDescription": "Salvar dados automaticamente no intervalo escolhido",
+    "settingsDataCollectionModeOnTapDescription": "Salvar dados apenas ao tocar em Salvar amostra durante a gravação",
+    "settingsCollectionInterval": "Intervalo de amostragem",
+    "settingsCollectionIntervalDescription": "Com que frequência os dados são salvos no modo periódico",
+    "settingsCollectionIntervalCurrent": "Atual: A cada {seconds} s",
+    "@settingsCollectionIntervalCurrent": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "settingsApiUrl": "URL do Serviço",
     "settingsApiUrlHelper": "Digite o endpoint da API para uploads de dados",
     "settingsApiUrlError": "Por favor, digite uma URL válida (ex: https://api.opensensemap.org)",
@@ -310,6 +345,16 @@
   "trackUploadAttempts": "Tentativas de envio",
   "trackLastAttempt": "Última tentativa",
   "trackStatus": "Status",
+  "trackCollectionModeLabel": "Amostragem",
+  "trackCollectionModeOnTap": "Amostragem manual",
+  "trackCollectionModePeriodic": "A cada {seconds} s",
+  "@trackCollectionModePeriodic": {
+      "placeholders": {
+          "seconds": {
+              "type": "int"
+          }
+      }
+  },
   "trackDirectUploadAuthFailed": "Este trajeto falhou ao ser enviado em tempo real porque você não estava logado. Por favor, faça login e tente enviar novamente.",
     "trackStatusNotUploaded": "Não enviado",
     "trackStatusUploadFailed": "Envio falhou",
