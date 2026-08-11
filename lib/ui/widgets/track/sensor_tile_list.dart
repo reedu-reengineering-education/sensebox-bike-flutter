@@ -11,11 +11,15 @@ class SensorTileList extends StatelessWidget {
   final String selectedSensorType;
   final ValueChanged<String> onSensorTypeSelected;
 
+  /// When true, renders a single-column vertical rail (landscape side panel).
+  final bool vertical;
+
   const SensorTileList({
     super.key,
     required this.sensorData,
     required this.selectedSensorType,
     required this.onSensorTypeSelected,
+    this.vertical = false,
   });
 
   @override
@@ -23,6 +27,11 @@ class SensorTileList extends StatelessWidget {
     final sensorEntries = getUniqueSortedSensorEntries(sensorData);
     final filteredEntries = _filterSensorEntries(sensorEntries);
     final tiles = _buildSensorTiles(context, filteredEntries);
+
+    if (vertical) {
+      return _SensorTileRail(tileList: tiles);
+    }
+
     final crossAxisCount =
         context.trackSensorCrossAxisCount(tileCount: tiles.length);
     final height = _gridHeight(context, crossAxisCount);
@@ -114,6 +123,47 @@ class _SensorTileGridState extends State<_SensorTileGrid> {
         padding: const EdgeInsets.all(spacing / 2),
         crossAxisCount: widget.crossAxisCount,
         children: widget.tileList,
+      ),
+    );
+  }
+}
+
+class _SensorTileRail extends StatefulWidget {
+  final List<Widget> tileList;
+
+  const _SensorTileRail({required this.tileList});
+
+  @override
+  State<_SensorTileRail> createState() => _SensorTileRailState();
+}
+
+class _SensorTileRailState extends State<_SensorTileRail> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scrollbar(
+      controller: _controller,
+      thumbVisibility: true,
+      child: ListView.separated(
+        controller: _controller,
+        padding: const EdgeInsets.all(spacing / 2),
+        itemCount: widget.tileList.length,
+        separatorBuilder: (_, __) => const SizedBox(height: spacing / 2),
+        itemBuilder: (context, index) {
+          // Keep a readable tile height even when the track rail is narrow;
+          // do not lock height to width (AspectRatio 1 made tiles shrink).
+          return SizedBox(
+            height: 112,
+            child: widget.tileList[index],
+          );
+        },
       ),
     );
   }

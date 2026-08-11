@@ -77,6 +77,7 @@ class TracksScreenState extends State<TracksScreen> {
   }
 
   Future<void> _fetchInitialTracks() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     List<TrackData> tracks;
@@ -94,6 +95,7 @@ class TracksScreenState extends State<TracksScreen> {
       );
     }
 
+    if (!mounted) return;
     setState(() {
       _displayedTracks = tracks;
       _currentPage = 1;
@@ -107,6 +109,7 @@ class TracksScreenState extends State<TracksScreen> {
   }
 
   void _toggleFilter() {
+    if (!mounted) return;
     setState(() {
       _showOnlyUnuploaded = !_showOnlyUnuploaded;
       _currentPage = 0;
@@ -117,6 +120,7 @@ class TracksScreenState extends State<TracksScreen> {
   }
 
   Future<void> _handleRefresh() async {
+    if (!mounted) return;
     setState(() {
       _currentPage = 0;
       _displayedTracks.clear();
@@ -126,7 +130,7 @@ class TracksScreenState extends State<TracksScreen> {
   }
 
   Future<void> _loadMoreTracks() async {
-    if (_isLoading || !_hasMoreTracks) return;
+    if (!mounted || _isLoading || !_hasMoreTracks) return;
     setState(() => _isLoading = true);
 
     List<TrackData> tracks;
@@ -144,6 +148,7 @@ class TracksScreenState extends State<TracksScreen> {
       );
     }
 
+    if (!mounted) return;
     setState(() {
       _displayedTracks.addAll(tracks);
       _currentPage += 1;

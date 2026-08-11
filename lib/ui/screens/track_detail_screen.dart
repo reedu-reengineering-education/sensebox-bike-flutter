@@ -25,6 +25,7 @@ import 'package:intl/intl.dart';
 import 'package:sensebox_bike/ui/widgets/common/sensor_gradient_widget.dart';
 import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
 import 'package:sensebox_bike/ui/layout/form_factor.dart';
+import 'package:sensebox_bike/ui/layout/landscape_side_panel.dart';
 import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
 
 class TrackDetailScreen extends StatefulWidget {
@@ -587,10 +588,46 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     );
   }
 
+  Widget _buildMapCard() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Card.filled(
+        clipBehavior: Clip.hardEdge,
+        elevation: 4,
+        child: TrajectoryWidget(
+          geolocationData: _geolocations,
+          sensorType: _sensorType,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSensorGradient() {
+    return SensorGradientWidget(
+      sensorType: _sensorType,
+      geolocations: _geolocations,
+      senseBox: openSenseMapBloc.selectedSenseBox,
+    );
+  }
+
+  Widget _buildSensorTileList({required bool vertical}) {
+    return SensorTileList(
+      sensorData: _sensorData,
+      selectedSensorType: _sensorType,
+      vertical: vertical,
+      onSensorTypeSelected: (type) {
+        setState(() {
+          _sensorType = type;
+        });
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final hideUploadButton = _shouldHideUploadButton();
     final localizations = AppLocalizations.of(context)!;
+    final useSideRail = context.useLandscapeSideRail;
 
     if (_isLoading) {
       return Scaffold(
@@ -598,6 +635,13 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         body: const Center(child: CircularProgressIndicator()),
       );
     }
+
+    final mapAndLegend = Column(
+      children: [
+        Expanded(child: _buildMapCard()),
+        _buildSensorGradient(),
+      ],
+    );
 
     return Scaffold(
       appBar: AppBar(title: _buildAppBarTitle(_track, hideUploadButton)),
@@ -609,29 +653,24 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             if (_shouldShowUploadHint())
               InfoBanner(text: localizations.trackUploadLoginSelectHint),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Card.filled(
-                  clipBehavior: Clip.hardEdge,
-                  elevation: 4,
-                  child: TrajectoryWidget(
-                      geolocationData: _geolocations, sensorType: _sensorType),
-                ),
-              ),
-            ),
-            SensorGradientWidget(
-              sensorType: _sensorType,
-              geolocations: _geolocations,
-              senseBox: openSenseMapBloc.selectedSenseBox,
-            ),
-            SensorTileList(
-              sensorData: _sensorData,
-              selectedSensorType: _sensorType,
-              onSensorTypeSelected: (type) {
-                setState(() {
-                  _sensorType = type;
-                });
-              },
+              child: useSideRail
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: mapAndLegend),
+                        LandscapeSidePanel(
+                          width: context.landscapeTrackSideRailWidth,
+                          child: _buildSensorTileList(vertical: true),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        Expanded(child: _buildMapCard()),
+                        _buildSensorGradient(),
+                        _buildSensorTileList(vertical: false),
+                      ],
+                    ),
             ),
           ],
         ),

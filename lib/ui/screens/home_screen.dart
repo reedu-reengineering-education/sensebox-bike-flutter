@@ -25,6 +25,7 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import 'package:sensebox_bike/ui/layout/form_factor.dart';
+import 'package:sensebox_bike/ui/layout/landscape_side_panel.dart';
 import 'package:sensebox_bike/utils/device_vibration.dart';
 
 // HomeScreen now delegates sections to smaller widgets
@@ -41,10 +42,12 @@ class HomeScreen extends StatelessWidget {
 
     recordingBloc.setContext(context);
 
+    final useSideRail = context.useLandscapeSideRail;
     final mapStack = _MapStack(
       bleBloc: bleBloc,
       recordingBloc: recordingBloc,
       geolocationBloc: geolocationBloc,
+      showFloatingButtons: !useSideRail,
     );
 
     return Scaffold(
@@ -52,11 +55,26 @@ class HomeScreen extends StatelessWidget {
         children: [
           _HomeBanners(bleBloc: bleBloc, recordingBloc: recordingBloc),
           Expanded(
-            child: _HomeScrollBody(
-              bleBloc: bleBloc,
-              sensorBloc: sensorBloc,
-              mapStack: mapStack,
-            ),
+            child: useSideRail
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: mapStack),
+                      LandscapeSidePanel(
+                        child: _HomeSideRail(
+                          bleBloc: bleBloc,
+                          recordingBloc: recordingBloc,
+                          geolocationBloc: geolocationBloc,
+                          sensorBloc: sensorBloc,
+                        ),
+                      ),
+                    ],
+                  )
+                : _HomeScrollBody(
+                    bleBloc: bleBloc,
+                    sensorBloc: sensorBloc,
+                    mapStack: mapStack,
+                  ),
           ),
         ],
       ),
@@ -119,11 +137,13 @@ class _MapStack extends StatelessWidget {
   final BleBloc bleBloc;
   final RecordingBloc recordingBloc;
   final GeolocationBloc geolocationBloc;
+  final bool showFloatingButtons;
 
   const _MapStack({
     required this.bleBloc,
     required this.recordingBloc,
     required this.geolocationBloc,
+    this.showFloatingButtons = true,
   });
 
   @override
@@ -132,26 +152,73 @@ class _MapStack extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         const GeolocationMapWidget(),
-        const Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: _BottomGradient(),
-        ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
+        if (showFloatingButtons) ...[
+          const Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _BottomGradient(),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: _FloatingButtons(
+                bleBloc: bleBloc,
+                recordingBloc: recordingBloc,
+                geolocationBloc: geolocationBloc,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Landscape side rail: action buttons on top, sensor list below.
+class _HomeSideRail extends StatelessWidget {
+  final BleBloc bleBloc;
+  final RecordingBloc recordingBloc;
+  final GeolocationBloc geolocationBloc;
+  final SensorBloc sensorBloc;
+
+  const _HomeSideRail({
+    required this.bleBloc,
+    required this.recordingBloc,
+    required this.geolocationBloc,
+    required this.sensorBloc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      left: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
             child: _FloatingButtons(
               bleBloc: bleBloc,
               recordingBloc: recordingBloc,
               geolocationBloc: geolocationBloc,
+              vertical: true,
             ),
           ),
-        ),
-      ],
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: _SensorRail(
+                bleBloc: bleBloc,
+                sensorBloc: sensorBloc,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -482,10 +549,13 @@ class _FloatingButtons extends StatelessWidget {
   final BleBloc bleBloc;
   final RecordingBloc recordingBloc;
   final GeolocationBloc geolocationBloc;
+  final bool vertical;
+
   const _FloatingButtons({
     required this.bleBloc,
     required this.recordingBloc,
     required this.geolocationBloc,
+    this.vertical = false,
   });
 
   @override
@@ -507,6 +577,7 @@ class _FloatingButtons extends StatelessWidget {
           return Column(
             spacing: 12,
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _ConnectButton(bleBloc: bleBloc, isConnecting: isConnecting),
               _SenseBoxSelectionButton(),
@@ -517,19 +588,15 @@ class _FloatingButtons extends StatelessWidget {
         final showSample = recordingBloc.isRecording &&
             recordingBloc.activeCollectionMode.showsManualSampleButton;
 
-        final startStop = Expanded(
-          child: _StartStopButton(
-            recordingBloc: recordingBloc,
-            buttonsBusy: buttonsBusy,
-          ),
+        final startStop = _StartStopButton(
+          recordingBloc: recordingBloc,
+          buttonsBusy: buttonsBusy,
         );
-        final disconnect = Expanded(
-          child: _DisconnectButton(
-            bleBloc: bleBloc,
-            recordingBloc: recordingBloc,
-            buttonsBusy: buttonsBusy,
-            isReconnecting: isReconnecting,
-          ),
+        final disconnect = _DisconnectButton(
+          bleBloc: bleBloc,
+          recordingBloc: recordingBloc,
+          buttonsBusy: buttonsBusy,
+          isReconnecting: isReconnecting,
         );
         final sampleButton = FilledButton.tonalIcon(
           style: const ButtonStyle(
@@ -545,6 +612,19 @@ class _FloatingButtons extends StatelessWidget {
           ),
         );
 
+        if (vertical) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: 12,
+            children: [
+              startStop,
+              if (showSample) sampleButton,
+              disconnect,
+              _SenseBoxSelectionButton(),
+            ],
+          );
+        }
+
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 12,
@@ -553,15 +633,18 @@ class _FloatingButtons extends StatelessWidget {
               Row(
                 spacing: 12,
                 children: [
-                  startStop,
+                  Expanded(child: startStop),
                   Expanded(child: sampleButton),
-                  disconnect,
+                  Expanded(child: disconnect),
                 ],
               )
             else ...[
               Row(
                 spacing: 12,
-                children: [startStop, disconnect],
+                children: [
+                  Expanded(child: startStop),
+                  Expanded(child: disconnect),
+                ],
               ),
               if (showSample)
                 SizedBox(
@@ -774,6 +857,65 @@ class _SensorGrid extends StatelessWidget {
         },
         childCount: sortedSensors.length,
       ),
+    );
+  }
+}
+
+/// Vertical sensor list for the landscape side rail.
+class _SensorRail extends StatelessWidget {
+  final BleBloc bleBloc;
+  final SensorBloc sensorBloc;
+
+  const _SensorRail({
+    required this.bleBloc,
+    required this.sensorBloc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<BleDevice?>(
+      valueListenable: bleBloc.selectedDeviceNotifier,
+      builder: (context, device, child) {
+        if (device == null || bleBloc.connectionErrorNotifier.value) {
+          return const SizedBox.shrink();
+        }
+
+        return ValueListenableBuilder<List<BleCharacteristicRef>>(
+          valueListenable: bleBloc.availableCharacteristics,
+          builder: (context, characteristics, child) {
+            return ValueListenableBuilder<int>(
+              valueListenable:
+                  bleBloc.characteristicStreams.livePayloadVersion,
+              builder: (context, _, child) {
+                if (sensorBloc.availableSensors.isEmpty) {
+                  if (characteristics.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return Center(
+                    child: Text(
+                      AppLocalizations.of(context)!.generalLoading,
+                    ),
+                  );
+                }
+
+                final sensors =
+                    sortSensorsByUiPriority(sensorBloc.availableSensors);
+                return ListView.separated(
+                  padding: EdgeInsets.zero,
+                  itemCount: sensors.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    return AspectRatio(
+                      aspectRatio: 1,
+                      child: sensors[index].buildWidget(),
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }

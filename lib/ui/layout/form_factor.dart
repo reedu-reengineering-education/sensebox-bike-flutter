@@ -47,6 +47,19 @@ extension FormFactorX on BuildContext {
 
   /// Two-column layouts (tracks list, settings) on iPad landscape.
   bool get useTwoColumnLandscape => isTablet && isLandscape;
+
+  /// Home + track overview: map left, actions/sensors in a right rail.
+  bool get useLandscapeSideRail => useTwoColumnLandscape;
+
+  /// Width of the landscape side rail (actions / sensor tiles).
+  double get landscapeSideRailWidth {
+    final width = MediaQuery.sizeOf(this).width;
+    return (width * 0.28).clamp(240.0, 320.0);
+  }
+
+  /// Narrower rail for track overview sensor tiles only.
+  double get landscapeTrackSideRailWidth => landscapeSideRailWidth / 2;
+
   double homeMapMinHeight({required bool isConnected}) {
     return MediaQuery.sizeOf(this).height * 0.33;
   }
