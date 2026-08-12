@@ -17,6 +17,9 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/theme.dart';
 
+/// Largest a track card is allowed to get. Sized so phones stay at 2 columns.
+const double kTrackTileMaxExtent = 240;
+
 class TracksScreen extends StatefulWidget {
   const TracksScreen({super.key});
 
@@ -98,6 +101,22 @@ class TracksScreenState extends State<TracksScreen> {
     }
   }
 
+  /// Pagination is driven by [_onScroll], which only fires once the content is
+  /// long enough to scroll. A wide grid can fit a full page without
+  /// overflowing, which would strand the list at one page, so top it up after
+  /// each load until the viewport is covered.
+  void _ensureViewportFilled() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _isLoading || !_hasMoreTracks) return;
+      if (!_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      if (!position.hasContentDimensions) return;
+      if (position.extentAfter < 360) {
+        _loadMoreTracks();
+      }
+    });
+  }
+
   Future<void> _fetchInitialTracks() async {
     setState(() => _isLoading = true);
 
@@ -122,6 +141,8 @@ class TracksScreenState extends State<TracksScreen> {
       _hasMoreTracks = tracks.length == tracksPerPage;
       _isLoading = false;
     });
+
+    _ensureViewportFilled();
   }
 
   Future<void> _loadSummaryStats() async {
@@ -208,6 +229,8 @@ class TracksScreenState extends State<TracksScreen> {
       _hasMoreTracks = tracks.length == tracksPerPage;
       _isLoading = false;
     });
+
+    _ensureViewportFilled();
   }
 
   @override
@@ -283,9 +306,13 @@ class TracksScreenState extends State<TracksScreen> {
                       0,
                     ).copyWith(bottom: bottomContentInset),
                     sliver: SliverGrid(
+                      // Column count follows the available width so cards keep
+                      // roughly their phone size on tablets instead of
+                      // stretching: 2-up on phones, 4-up on an iPad in
+                      // portrait, 5-up in landscape.
                       gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: kTrackTileMaxExtent,
                         mainAxisSpacing: spacing,
                         crossAxisSpacing: spacing,
                         childAspectRatio: 0.74,
