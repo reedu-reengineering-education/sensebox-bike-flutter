@@ -83,6 +83,7 @@ class TrackListItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(_cardRadius),
+            boxShadow: cardBoxShadow,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

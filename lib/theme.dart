@@ -7,10 +7,10 @@ const Color loginRequiredColor =
 const Color loginRequiredTextColor =
     Colors.white; // White text for login requirement
 
-const _lightBackground = Color(0xFFFBF9F4);
-const _lightSurface = Color(0xFFF3EEE4);
-const _lightOnSurface = Color(0xFF1F1B16);
-const _lightOnSurfaceVariant = Color(0xFF625C54);
+const _lightBackground = Color(0xFFf5f3f0);
+const _lightSurface = Color(0xFFfbfaf9);
+const _lightOnSurface = Color(0xFF1C1C1A);
+const _lightOnSurfaceVariant = Color(0xFF5E5E58);
 
 const _darkBackground = Color(0xFF171513);
 const _darkSurface = Color(0xFF201D1A);
@@ -119,13 +119,13 @@ final lightTheme = ThemeData(
   colorScheme: const ColorScheme.light(
     primary: _lightOnSurface,
     primaryFixedDim: Colors.grey,
-    secondary: Color(0xFFDED8CE),
+    secondary: Color(0xFFE0E0DA),
     tertiary: Color.fromRGBO(2, 59, 35, 1),
     onTertiaryContainer: Colors.white,
     surface: _lightSurface,
     onSurface: _lightOnSurface,
     onSurfaceVariant: _lightOnSurfaceVariant,
-    outline: Color(0xFFBFAE95),
+    outline: Color(0xFFBBBAB3),
   ),
   canvasColor: _lightSurface,
   appBarTheme: const AppBarTheme(
@@ -135,6 +135,8 @@ final lightTheme = ThemeData(
     scrolledUnderElevation: 0,
   ),
   cardTheme: CardThemeData(
+    elevation: 1,
+    shadowColor: Color(0x15000000),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(24),
     ),
@@ -178,6 +180,8 @@ final darkTheme = ThemeData(
     scrolledUnderElevation: 0,
   ),
   cardTheme: CardThemeData(
+    elevation: 1,
+    shadowColor: Color(0x15000000),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(24),
     ),
@@ -198,5 +202,13 @@ const double iconSizeLarge = 16.0;
 const double spacing = 12.0;
 const double borderWidth = 1.5;
 const double padding = 8.0;
+
+const cardBoxShadow = [
+  BoxShadow(
+    color: Color(0x0F000000),
+    blurRadius: 8,
+    offset: Offset(0, 2),
+  ),
+];
 const double borderRadius = 24.0;
 const double borderRadiusSmall = 8.0;

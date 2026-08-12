@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/theme.dart';
 
 class SensorCard extends StatelessWidget {
   final Widget child;
@@ -18,11 +19,11 @@ class SensorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(18),
+        boxShadow: cardBoxShadow,
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),

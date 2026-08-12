@@ -187,6 +187,7 @@ class _TracksStatsCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(20),
+          boxShadow: cardBoxShadow,
         ),
         padding: const EdgeInsets.all(spacing * 1.5),
         child: Column(
