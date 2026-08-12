@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // Custom colors for specific use cases
@@ -133,6 +134,11 @@ final lightTheme = ThemeData(
     backgroundColor: Colors.transparent,
     elevation: 0,
     scrolledUnderElevation: 0,
+    systemOverlayStyle: SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+    ),
   ),
   cardTheme: CardThemeData(
     elevation: 1,
@@ -178,6 +184,11 @@ final darkTheme = ThemeData(
     backgroundColor: Colors.transparent,
     elevation: 0,
     scrolledUnderElevation: 0,
+    systemOverlayStyle: SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+    ),
   ),
   cardTheme: CardThemeData(
     elevation: 1,
