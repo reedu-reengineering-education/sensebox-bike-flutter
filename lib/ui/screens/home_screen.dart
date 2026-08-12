@@ -13,6 +13,7 @@ import 'package:sensebox_bike/ui/widgets/home/geolocation_widget.dart';
 import 'package:sensebox_bike/ui/widgets/home/sensebox_selection_button.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_widget_factory.dart';
 
@@ -31,6 +32,15 @@ class HomeScreen extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: bleBloc.connectionErrorNotifier,
       builder: (context, connectionError, _) {
+        if (context.useSideRail) {
+          return _TabletLayout(
+            bleBloc: bleBloc,
+            recordingBloc: recordingBloc,
+            sensorBloc: sensorBloc,
+            connectionError: connectionError,
+          );
+        }
+
         return Scaffold(
           body: Column(
             children: [
@@ -60,14 +70,18 @@ class HomeScreen extends StatelessWidget {
                               width: double.infinity,
                               child: GeolocationMapWidget(), // The map
                             ),
-                            const Positioned(
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              child: _BottomGradient(
-                                direction: AxisDirection.up,
+                            // Top fade softens the map under the status bar on
+                            // phones. On a tablet there is enough map showing
+                            // that it just reads as a stray band.
+                            if (!context.isTablet)
+                              const Positioned(
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                child: _BottomGradient(
+                                  direction: AxisDirection.up,
+                                ),
                               ),
-                            ),
                             const Positioned(
                               bottom: 0,
                               left: 0,
@@ -93,37 +107,14 @@ class HomeScreen extends StatelessWidget {
                     SliverSafeArea(
                       top: false,
                       minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                      sliver: ValueListenableBuilder<BleDevice?>(
-                        valueListenable: bleBloc.selectedDeviceNotifier,
-                        builder: (context, device, _) {
-                          // Only show sensor area if device is connected and not in error state
-                          if (device == null || connectionError) {
-                            return const SliverToBoxAdapter(
-                                child: SizedBox.shrink());
-                          }
-
-                          return ValueListenableBuilder<
-                              List<BleCharacteristicRef>>(
-                            valueListenable: bleBloc.availableCharacteristics,
-                            builder: (context, characteristics, _) {
-                              // Check if there are actually any sensor widgets available
-                              final widgets = buildAvailableSensorWidgets(
-                                sensors: sensorBloc.sensors,
-                                availableCharacteristicUuids: characteristics
-                                    .map((e) => e.uuidString)
-                                    .toSet(),
-                              );
-                              if (widgets.isEmpty) {
-                                // Connected but no sensor data available: show nothing
-                                return const SliverToBoxAdapter(
-                                    child: SizedBox.shrink());
-                              }
-
-                              // Connected and has sensor data: show sensor grid
-                              return _SensorGrid(widgets: widgets);
-                            },
-                          );
-                        },
+                      sliver: _SensorWidgets(
+                        bleBloc: bleBloc,
+                        sensorBloc: sensorBloc,
+                        connectionError: connectionError,
+                        empty:
+                            const SliverToBoxAdapter(child: SizedBox.shrink()),
+                        builder: (context, widgets) =>
+                            _SensorGrid(widgets: widgets),
                       ),
                     ),
                   ],
@@ -133,6 +124,163 @@ class HomeScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Resolves the sensor tiles that are currently available and hands them to
+/// [builder]. Renders [empty] while disconnected, in error, or with no tiles.
+class _SensorWidgets extends StatelessWidget {
+  final BleBloc bleBloc;
+  final SensorBloc sensorBloc;
+  final bool connectionError;
+  final Widget empty;
+  final Widget Function(BuildContext context, List<Widget> widgets) builder;
+
+  const _SensorWidgets({
+    required this.bleBloc,
+    required this.sensorBloc,
+    required this.connectionError,
+    required this.empty,
+    required this.builder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<BleDevice?>(
+      valueListenable: bleBloc.selectedDeviceNotifier,
+      builder: (context, device, _) {
+        // Only show sensor area if device is connected and not in error state
+        if (device == null || connectionError) {
+          return empty;
+        }
+
+        return ValueListenableBuilder<List<BleCharacteristicRef>>(
+          valueListenable: bleBloc.availableCharacteristics,
+          builder: (context, characteristics, _) {
+            // Check if there are actually any sensor widgets available
+            final widgets = buildAvailableSensorWidgets(
+              sensors: sensorBloc.sensors,
+              availableCharacteristicUuids:
+                  characteristics.map((e) => e.uuidString).toSet(),
+            );
+            if (widgets.isEmpty) {
+              // Connected but no sensor data available: show nothing
+              return empty;
+            }
+
+            return builder(context, widgets);
+          },
+        );
+      },
+    );
+  }
+}
+
+/// Tablet landscape layout: full-bleed map with a floating rail on the right
+/// holding the sensor grid on top and the connect / senseBox actions below.
+class _TabletLayout extends StatelessWidget {
+  final BleBloc bleBloc;
+  final RecordingBloc recordingBloc;
+  final SensorBloc sensorBloc;
+  final bool connectionError;
+
+  const _TabletLayout({
+    required this.bleBloc,
+    required this.recordingBloc,
+    required this.sensorBloc,
+    required this.connectionError,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          const Positioned.fill(child: GeolocationMapWidget()),
+          if (connectionError)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                minimum: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: _ConnectionErrorBanner(bleBloc: bleBloc),
+              ),
+            ),
+          Positioned.fill(
+            child: SafeArea(
+              minimum: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: SizedBox(
+                  width: context.sideRailWidth,
+                  child: _SideRail(
+                    bleBloc: bleBloc,
+                    recordingBloc: recordingBloc,
+                    sensorBloc: sensorBloc,
+                    connectionError: connectionError,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The floating rail itself. Sizes to its content so it only covers the map
+/// where it has something to show.
+class _SideRail extends StatelessWidget {
+  final BleBloc bleBloc;
+  final RecordingBloc recordingBloc;
+  final SensorBloc sensorBloc;
+  final bool connectionError;
+
+  const _SideRail({
+    required this.bleBloc,
+    required this.recordingBloc,
+    required this.sensorBloc,
+    required this.connectionError,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _FloatingCard(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Sensor grid on top, scrolls when it outgrows the rail.
+          Flexible(
+            child: _SensorWidgets(
+              bleBloc: bleBloc,
+              sensorBloc: sensorBloc,
+              connectionError: connectionError,
+              empty: const SizedBox.shrink(),
+              builder: (context, widgets) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: GridView.extent(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  maxCrossAxisExtent: kSensorTileMaxExtent,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  children: widgets,
+                ),
+              ),
+            ),
+          ),
+          // Actions pinned to the bottom of the rail.
+          _ActionButtons(
+            bleBloc: bleBloc,
+            recordingBloc: recordingBloc,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -161,65 +309,97 @@ class _FloatingButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _FloatingCard(
+      child: _ActionButtons(bleBloc: bleBloc, recordingBloc: recordingBloc),
+    );
+  }
+}
+
+/// Rounded surface used for the floating map controls and the tablet rail.
+class _FloatingCard extends StatelessWidget {
+  final Widget child;
+
+  /// Defaults to the same surface the sensor cards use. The tablet rail passes
+  /// the page background instead so the cards inside it stay distinguishable.
+  final Color? color;
+
+  const _FloatingCard({required this.child, this.color});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: ListenableBuilder(
-              listenable: Listenable.merge([
-                bleBloc.isReconnectingNotifier,
-                bleBloc.selectedDeviceNotifier,
-              ]),
-              builder: (context, _) {
-                final isReconnecting = bleBloc.isReconnectingNotifier.value;
-                final selectedDevice = bleBloc.selectedDeviceNotifier.value;
-                // Show buttons if device is connected or if reconnecting
-                if (selectedDevice == null && !isReconnecting) {
-                  return Column(
-                    spacing: 12,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _ConnectButton(bleBloc: bleBloc),
-                      // Always show sensebox selection button with different styling based on auth state
-                      const SenseBoxSelectionButton(),
-                    ],
-                  );
-                } else {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: 12,
-                    children: [
-                      Row(
-                        spacing: 12,
-                        children: [
-                          Expanded(
-                            child: _StartStopButton(
-                                recordingBloc: recordingBloc,
-                                isReconnecting: isReconnecting),
-                          ),
-                          Expanded(
-                            child: _DisconnectButton(
-                                bleBloc: bleBloc, recordingBloc: recordingBloc),
-                          ),
-                        ],
-                      ),
-                      // Always show sensebox selection button with different styling based on auth state
-                      const SenseBoxSelectionButton(),
-                    ],
-                  );
-                }
-              },
-            )));
+      decoration: BoxDecoration(
+        color: color ?? Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: child,
+      ),
+    );
+  }
+}
+
+// Connect / record / senseBox actions, without any surrounding chrome.
+class _ActionButtons extends StatelessWidget {
+  final BleBloc bleBloc;
+  final RecordingBloc recordingBloc;
+  const _ActionButtons({required this.bleBloc, required this.recordingBloc});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        bleBloc.isReconnectingNotifier,
+        bleBloc.selectedDeviceNotifier,
+      ]),
+      builder: (context, _) {
+        final isReconnecting = bleBloc.isReconnectingNotifier.value;
+        final selectedDevice = bleBloc.selectedDeviceNotifier.value;
+        // Show buttons if device is connected or if reconnecting
+        if (selectedDevice == null && !isReconnecting) {
+          return Column(
+            spacing: 12,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _ConnectButton(bleBloc: bleBloc),
+              // Always show sensebox selection button with different styling based on auth state
+              const SenseBoxSelectionButton(),
+            ],
+          );
+        } else {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 12,
+            children: [
+              Row(
+                spacing: 12,
+                children: [
+                  Expanded(
+                    child: _StartStopButton(
+                        recordingBloc: recordingBloc,
+                        isReconnecting: isReconnecting),
+                  ),
+                  Expanded(
+                    child: _DisconnectButton(
+                        bleBloc: bleBloc, recordingBloc: recordingBloc),
+                  ),
+                ],
+              ),
+              // Always show sensebox selection button with different styling based on auth state
+              const SenseBoxSelectionButton(),
+            ],
+          );
+        }
+      },
+    );
   }
 }
 
@@ -417,6 +597,10 @@ class _BottomGradient extends StatelessWidget {
   }
 }
 
+/// Largest a sensor tile is allowed to get. Sized so phones stay at 2 columns
+/// and an iPad in portrait lands on 4.
+const double kSensorTileMaxExtent = 220;
+
 // Widget for the sensor grid
 class _SensorGrid extends StatelessWidget {
   final List<Widget> widgets;
@@ -425,8 +609,11 @@ class _SensorGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverGrid(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      // Column count follows the available width instead of being fixed, so
+      // tiles keep roughly their phone size on wider screens (2-up on phones,
+      // 4-up on an iPad in portrait) rather than stretching.
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: kSensorTileMaxExtent,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
       ),
