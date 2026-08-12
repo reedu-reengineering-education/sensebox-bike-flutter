@@ -7,6 +7,7 @@ import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/api_url_dialog.dart';
@@ -20,10 +21,17 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   final Future<bool> Function(Uri url, {LaunchMode mode}) launchUrlFunction;
 
   const SettingsScreen({super.key, this.launchUrlFunction = launchUrl});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +42,18 @@ class SettingsScreen extends StatelessWidget {
           builder: (context, settingsState, _) {
             final settingsBloc = context.read<SettingsBloc>();
             final configurationBloc = context.read<ConfigurationBloc>();
+
+            if (context.isTablet) {
+              return _buildTabletLayout(
+                context,
+                openSenseMapBloc,
+                openSenseMapState,
+                settingsBloc,
+                settingsState,
+                configurationBloc,
+              );
+            }
+
             return ScreenWrapper(
               title: AppLocalizations.of(context)!.generalSettings,
               child: ListView(
@@ -60,6 +80,64 @@ class SettingsScreen extends StatelessWidget {
       },
     );
   }
+
+  // ── Tablet two-pane layout ──────────────────────────────────────────────────
+
+  Widget _buildTabletLayout(
+    BuildContext context,
+    OpenSenseMapBloc openSenseMapBloc,
+    OpenSenseMapBloc openSenseMapState,
+    SettingsBloc settingsBloc,
+    SettingsBloc settingsState,
+    ConfigurationBloc configurationBloc,
+  ) {
+    final localizations = AppLocalizations.of(context)!;
+
+    final sections = [
+      (Icons.tune, localizations.settingsGeneral),
+      (Icons.info_outline, localizations.settingsAbout),
+      (Icons.help_outline, localizations.settingsContact),
+    ];
+
+    final sectionContent = [
+      ListView(children: [
+        _buildGeneralSettingsSection(
+            context, settingsBloc, settingsState, configurationBloc),
+        _buildAccountManagementSection(context),
+      ]),
+      ListView(children: [_buildOtherSection(context)]),
+      ListView(children: [_buildHelpSection(context)]),
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          localizations.generalSettings,
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
+      ),
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SettingsSidebar(
+            selectedIndex: _selectedIndex,
+            sections: sections,
+            onSelected: (i) => setState(() => _selectedIndex = i),
+            openSenseMapBloc: openSenseMapBloc,
+            openSenseMapState: openSenseMapState,
+          ),
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: sectionContent,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Shared section builders ─────────────────────────────────────────────────
 
   Widget _buildLoginLogoutSection(
     BuildContext context,
@@ -431,7 +509,7 @@ class SettingsScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(context, localizations.settingsAbout),
-        AppInfoSection(launchUrlFunction: launchUrlFunction),
+        AppInfoSection(launchUrlFunction: widget.launchUrlFunction),
       ],
     );
   }
@@ -483,12 +561,324 @@ class SettingsScreen extends StatelessWidget {
       title: Text(title),
       onTap: () async {
         try {
-          await launchUrlFunction(Uri.parse(url),
+          await widget.launchUrlFunction(Uri.parse(url),
               mode: LaunchMode.externalApplication);
         } catch (error, stack) {
           ErrorService.handleError(error, stack);
         }
       },
+    );
+  }
+}
+
+/// shadcn-style sidebar: account card at top, nav items in middle, delete at bottom.
+class _SettingsSidebar extends StatelessWidget {
+  final int selectedIndex;
+  final List<(IconData, String)> sections;
+  final ValueChanged<int> onSelected;
+  final OpenSenseMapBloc openSenseMapBloc;
+  final OpenSenseMapBloc openSenseMapState;
+
+  const _SettingsSidebar({
+    required this.selectedIndex,
+    required this.sections,
+    required this.onSelected,
+    required this.openSenseMapBloc,
+    required this.openSenseMapState,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isAuthenticated = openSenseMapState.isAuthenticated;
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Container(
+        width: 280,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SidebarAccountCard(
+                isAuthenticated: isAuthenticated,
+                openSenseMapBloc: openSenseMapBloc,
+                colorScheme: colorScheme,
+                textTheme: textTheme,
+              ),
+              const SizedBox(height: 16),
+              for (int i = 0; i < sections.length; i++) ...[
+                _SidebarItem(
+                  icon: sections[i].$1,
+                  label: sections[i].$2,
+                  selected: i == selectedIndex,
+                  colorScheme: colorScheme,
+                  textTheme: textTheme,
+                  onTap: () => onSelected(i),
+                ),
+                const SizedBox(height: 2),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarAccountCard extends StatelessWidget {
+  final bool isAuthenticated;
+  final OpenSenseMapBloc openSenseMapBloc;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  const _SidebarAccountCard({
+    required this.isAuthenticated,
+    required this.openSenseMapBloc,
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cardColor =
+        isAuthenticated ? colorScheme.tertiary : loginRequiredColor;
+    final onCard = colorScheme.onTertiaryContainer;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FutureBuilder<Map<String, dynamic>?>(
+            future: openSenseMapBloc.userData,
+            builder: (context, snapshot) {
+              final user = snapshot.data?['data']?['me'];
+              final email = user?['email'];
+              final name = user?['name'];
+              return Row(
+                spacing: 10,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: onCard.withAlpha(40),
+                    ),
+                    child: Icon(Icons.account_circle, size: 32, color: onCard),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (isAuthenticated && name != null)
+                          Text(name,
+                              style: textTheme.bodyLarge?.copyWith(
+                                  color: onCard, fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis)
+                        else
+                          Text(
+                            AppLocalizations.of(context)!.openSenseMapLogin,
+                            style: textTheme.bodyLarge?.copyWith(
+                                color: onCard, fontWeight: FontWeight.w600),
+                          ),
+                        if (isAuthenticated && email != null)
+                          Text(email,
+                              style: textTheme.bodySmall
+                                  ?.copyWith(color: onCard.withAlpha(180)),
+                              overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: onCard.withAlpha(30),
+                foregroundColor: onCard,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                textStyle: textTheme.bodySmall,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: openSenseMapBloc.isAuthenticating
+                  ? null
+                  : () async {
+                      if (isAuthenticated) {
+                        await openSenseMapBloc.logout();
+                      } else {
+                        await showAppModalSheet(
+                          context: context,
+                          useRootNavigator: true,
+                          builder: (ctx) => SizedBox(
+                            height: MediaQuery.of(ctx).size.height * 0.9,
+                            child: const LoginScreen(),
+                          ),
+                        );
+                      }
+                    },
+              child: openSenseMapBloc.isAuthenticating
+                  ? const SizedBox(
+                      height: 14,
+                      width: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(isAuthenticated
+                      ? AppLocalizations.of(context)!.generalLogout
+                      : AppLocalizations.of(context)!.generalLoginOrRegister),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SidebarAccountManagement extends StatefulWidget {
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  const _SidebarAccountManagement({
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  @override
+  State<_SidebarAccountManagement> createState() =>
+      _SidebarAccountManagementState();
+}
+
+class _SidebarAccountManagementState extends State<_SidebarAccountManagement> {
+  bool _isDeleting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    final isarService = context.read<TrackBloc>().isarService;
+
+    return TextButton.icon(
+      style: TextButton.styleFrom(
+        foregroundColor: widget.colorScheme.error,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        alignment: Alignment.centerLeft,
+      ),
+      icon: _isDeleting
+          ? SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: widget.colorScheme.error),
+            )
+          : const Icon(Icons.delete_outline, size: 18),
+      label: Text(localizations.settingsDeleteAllData,
+          style: widget.textTheme.bodyMedium
+              ?.copyWith(color: widget.colorScheme.error)),
+      onPressed: _isDeleting
+          ? null
+          : () async {
+              final confirmed = await showCustomDialog(
+                context: context,
+                message: localizations.settingsDeleteAllDataConfirmation,
+                type: DialogType.confirmation,
+              );
+              if (confirmed != true || !context.mounted) return;
+              setState(() => _isDeleting = true);
+              try {
+                await isarService.deleteAllData();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content:
+                          Text(localizations.settingsDeleteAllDataSuccess)));
+                }
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(localizations.settingsDeleteAllDataError)));
+                }
+              } finally {
+                if (mounted) setState(() => _isDeleting = false);
+              }
+            },
+    );
+  }
+}
+
+class _SidebarItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+  final VoidCallback onTap;
+
+  const _SidebarItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.colorScheme,
+    required this.textTheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fgColor = selected
+        ? colorScheme.onSecondaryContainer
+        : colorScheme.onSurfaceVariant;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color:
+                selected ? colorScheme.secondaryContainer : Colors.transparent,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: fgColor),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: fgColor,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
