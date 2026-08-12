@@ -200,12 +200,5 @@ void main() {
       expect(find.text('Connexion ou inscription'), findsOneWidget);
     });
 
-    testWidgets('always shows Data recording settings',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(const Locale('en')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Data recording'), findsOneWidget);
-    });
   });
 }

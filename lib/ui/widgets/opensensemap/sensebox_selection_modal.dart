@@ -4,6 +4,8 @@ import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
+import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
 import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
@@ -12,6 +14,7 @@ import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/sensebox_selection.dart';
+import 'package:sensebox_bike/ui/widgets/settings/data_collection_mode_fields.dart';
 
 void showSenseBoxManager(BuildContext context, OpenSenseMapBloc bloc,
     ConfigurationBloc configurationBloc) {
@@ -265,12 +268,174 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
   }
 
   Widget _buildSettingsGrid(BuildContext context) {
-    return Row(
+    return Column(
       spacing: 8,
       children: [
-        Expanded(child: _buildUploadModeTile(context)),
-        Expanded(child: _buildPrivacyZonesTile(context)),
+        // IntrinsicHeight + stretch so both cards match the taller sibling's
+        // height, since the upload-mode subtitle can wrap to two lines while
+        // the data-recording one is often a single line.
+        IntrinsicHeight(
+          child: Row(
+            spacing: 8,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _buildUploadModeTile(context)),
+              Expanded(child: _buildDataCollectionModeTile(context)),
+            ],
+          ),
+        ),
+        Row(
+          spacing: 8,
+          children: [
+            Expanded(child: _buildPrivacyZonesTile(context)),
+            // Empty spacer so the privacy zones tile keeps the same width as
+            // the tiles above instead of stretching to fill the row.
+            const Expanded(child: SizedBox.shrink()),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _buildDataCollectionModeTile(BuildContext context) {
+    final settingsBloc = context.read<SettingsBloc>();
+
+    return Consumer<SettingsBloc>(
+      builder: (context, settingsState, _) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+        final localizations = AppLocalizations.of(context)!;
+        final mode = settingsState.dataCollectionMode;
+        final modeLabel = dataCollectionModeSettingsLabel(mode, localizations);
+        final currentText = mode.usesPeriodicTimer
+            ? localizations.settingsDataCollectionModeCurrent(
+                localizations.trackCollectionModePeriodic(
+                  settingsState.collectionIntervalSeconds,
+                ),
+              )
+            : localizations.settingsDataCollectionModeCurrent(modeLabel);
+
+        return InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _showDataCollectionModeDialog(context, settingsBloc),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(borderRadiusSmall),
+                  ),
+                  child: Icon(
+                    settingsState.dataCollectionMode ==
+                            DataCollectionMode.periodic
+                        ? Icons.timer_outlined
+                        : settingsState.dataCollectionMode ==
+                                DataCollectionMode.onTap
+                            ? Icons.touch_app_outlined
+                            : Icons.track_changes_outlined,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  localizations.settingsDataCollectionMode,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  currentText,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Mode + interval in one dialog: selecting either applies immediately,
+  // Done just closes it.
+  void _showDataCollectionModeDialog(
+      BuildContext context, SettingsBloc settingsBloc) {
+    final localizations = AppLocalizations.of(context)!;
+
+    showAppDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final mode = settingsBloc.dataCollectionMode;
+
+          return AppAlertDialog(
+            title: Text(localizations.settingsDataCollectionMode),
+            contentPadding: EdgeInsets.zero,
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Scrollbar(
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DataCollectionModeRadioList(
+                        groupValue: mode,
+                        onChanged: (selected) async {
+                          await settingsBloc.setDataCollectionMode(selected);
+                          setDialogState(() {});
+                        },
+                      ),
+                      if (mode.usesPeriodicTimer) ...[
+                        const Divider(height: 1),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              localizations.settingsCollectionInterval,
+                              style:
+                                  Theme.of(dialogContext).textTheme.titleSmall,
+                            ),
+                          ),
+                        ),
+                        CollectionIntervalPresetList(
+                          selectedSeconds:
+                              settingsBloc.collectionIntervalSeconds,
+                          onSelected: (seconds) async {
+                            await settingsBloc
+                                .setCollectionIntervalSeconds(seconds);
+                            setDialogState(() {});
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(localizations.generalOk),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 

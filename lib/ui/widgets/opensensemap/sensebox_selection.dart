@@ -178,43 +178,46 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
         final senseBox = compatibleBoxes[index];
         final isSelected = senseBox.id == bloc.selectedSenseBox?.id;
 
-        return ListTile(
-          title: Text(
-            senseBox.name ?? localizations.openSenseMapBoxSelectionUnnamedBox,
-            style: theme.textTheme.bodyLarge?.copyWith(color: onTileColor),
-          ),
-          subtitle: senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
-              ? Wrap(
-                  spacing: 8,
-                  children: senseBox.grouptag!
-                      .map((tag) => Badge(
-                            label: Text(tag),
-                            textColor: colorScheme.onTertiaryContainer,
-                            backgroundColor:
-                                colorScheme.onTertiaryContainer.withValues(
-                              alpha: 0.14,
-                            ),
-                          ))
-                      .toList(),
-                )
-              : null,
-          trailing: isSelected ? Icon(Icons.check, color: onTileColor) : null,
-          onTap: () {
-            HapticFeedback.selectionClick();
-            Navigator.pop(context);
+        return Material(
+          color: Colors.transparent,
+          child: ListTile(
+            title: Text(
+              senseBox.name ?? localizations.openSenseMapBoxSelectionUnnamedBox,
+              style: theme.textTheme.bodyLarge?.copyWith(color: onTileColor),
+            ),
+            subtitle: senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
+                ? Wrap(
+                    spacing: 8,
+                    children: senseBox.grouptag!
+                        .map((tag) => Badge(
+                              label: Text(tag),
+                              textColor: colorScheme.onTertiaryContainer,
+                              backgroundColor:
+                                  colorScheme.onTertiaryContainer.withValues(
+                                alpha: 0.14,
+                              ),
+                            ))
+                        .toList(),
+                  )
+                : null,
+            trailing: isSelected ? Icon(Icons.check, color: onTileColor) : null,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              Navigator.pop(context);
 
-            final targetBox = isSelected ? null : senseBox;
-            unawaited(
-              bloc.setSelectedSenseBox(targetBox).catchError(
-                    (error, stackTrace) => ErrorService.handleError(
-                      'Error selecting senseBox: $error',
-                      stackTrace is StackTrace
-                          ? stackTrace
-                          : StackTrace.current,
+              final targetBox = isSelected ? null : senseBox;
+              unawaited(
+                bloc.setSelectedSenseBox(targetBox).catchError(
+                      (error, stackTrace) => ErrorService.handleError(
+                        'Error selecting senseBox: $error',
+                        stackTrace is StackTrace
+                            ? stackTrace
+                            : StackTrace.current,
+                      ),
                     ),
-                  ),
-            );
-          },
+              );
+            },
+          ),
         );
       },
     );

@@ -307,9 +307,11 @@ class MockRecordingBloc extends Mock implements RecordingBloc {
   DataCollectionMode _activeCollectionMode = DataCollectionMode.gpsDriven;
   int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
   late final ValueNotifier<bool> _isRecordingNotifier;
+  late final ValueNotifier<DataCollectionMode> _activeCollectionModeNotifier;
 
   MockRecordingBloc() {
     _isRecordingNotifier = ValueNotifier<bool>(_isRecording);
+    _activeCollectionModeNotifier = ValueNotifier<DataCollectionMode>(_activeCollectionMode);
   }
 
   @override
@@ -325,6 +327,7 @@ class MockRecordingBloc extends Mock implements RecordingBloc {
 
   void setActiveCollectionMode(DataCollectionMode mode) {
     _activeCollectionMode = mode;
+    _activeCollectionModeNotifier.value = mode;
   }
 
   @override
@@ -336,6 +339,10 @@ class MockRecordingBloc extends Mock implements RecordingBloc {
 
   @override
   ValueNotifier<bool> get isRecordingNotifier => _isRecordingNotifier;
+
+  @override
+  ValueNotifier<DataCollectionMode> get activeCollectionModeNotifier =>
+      _activeCollectionModeNotifier;
 }
 
 class MockSensorBloc extends Mock implements SensorBloc {

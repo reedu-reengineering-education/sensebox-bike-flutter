@@ -6,6 +6,7 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
@@ -460,12 +461,14 @@ class _ActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
     return ListenableBuilder(
       listenable: Listenable.merge([
         bleBloc.isConnectingNotifier,
         bleBloc.isReconnectingNotifier,
         bleBloc.selectedDeviceNotifier,
         recordingBloc,
+        settingsBloc,
       ]),
       builder: (context, _) {
         final isConnecting = bleBloc.isConnectingNotifier.value;
@@ -503,7 +506,7 @@ class _ActionButtons extends StatelessWidget {
                 ],
               ),
               if (recordingBloc.isRecording &&
-                  recordingBloc.activeCollectionMode.showsManualSampleButton)
+                  settingsBloc.dataCollectionMode.showsManualSampleButton)
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.tonalIcon(

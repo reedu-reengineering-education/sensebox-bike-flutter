@@ -83,6 +83,7 @@ class GeolocationBloc with ChangeNotifier {
 
     _recordingListener = _onRecordingChanged;
     recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
+    recordingBloc.activeCollectionModeNotifier.addListener(_onRecordingChanged);
   }
 
   void setCollectInstantSensorData(
