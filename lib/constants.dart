@@ -1,7 +1,7 @@
 import 'package:geolocator/geolocator.dart' as geolocator;
 
 // Tracks screen
-const tracksPerPage = 5;
+const tracksPerPage = 6;
 
 const defaultTimeout = 30; // in seconds
 

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -16,14 +19,14 @@ class SenseBoxSelectionWidget extends StatefulWidget {
   });
 
   @override
-  _SenseBoxSelectionWidgetState createState() =>
+  State<SenseBoxSelectionWidget> createState() =>
       _SenseBoxSelectionWidgetState();
 }
 
 class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
   static const _errorIcon = Icons.error_outline;
   static const int _initialPage = 0;
-  
+
   late final OpenSenseMapBloc _bloc;
   late ScrollController _scrollController;
   int page = _initialPage;
@@ -112,7 +115,7 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     final configurationBloc = widget.configurationBloc;
 
     if (isLoading && bloc.senseBoxes.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildLoadingSkeleton(theme);
     }
 
     if (_fetchError != null && bloc.senseBoxes.isEmpty) {
@@ -124,13 +127,12 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     }
 
     if (bloc.senseBoxes.isEmpty && !isLoading) {
-      return bloc.isAuthenticated
-          ? _buildEmptyState(localizations, theme, configurationBloc)
-          : ErrorMessage(
-              icon: _errorIcon,
-              title: localizations.openSenseMapBoxSelectionNoBoxes,
-              detail: 'Please login to view your senseBoxes',
-            );
+      return _buildEmptyState(
+        localizations,
+        theme,
+        configurationBloc,
+        isAuthenticated: bloc.isAuthenticated,
+      );
     }
 
     return _buildBoxList(
@@ -143,61 +145,77 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
       AppLocalizations localizations,
       ThemeData theme,
       ConfigurationBloc configurationBloc) {
+    final colorScheme = theme.colorScheme;
+    final onTileColor = colorScheme.onTertiaryContainer;
+
+    // Parse raw JSON list into SenseBox objects and filter incompatible boxes
+    final List<SenseBox> compatibleBoxes = bloc.senseBoxes
+        .map((e) => SenseBox.fromJson(e))
+        .where((b) => configurationBloc.isSenseBoxBikeCompatible(b))
+        .toList();
+
+    // If there are no compatible boxes and we're not currently loading, show empty state
+    if (compatibleBoxes.isEmpty && !isLoading) {
+      return _buildEmptyState(
+        localizations,
+        theme,
+        configurationBloc,
+        isAuthenticated: bloc.isAuthenticated,
+      );
+    }
+
     return ListView.builder(
       controller: _scrollController,
-      itemCount: bloc.senseBoxes.length + (isLoading ? 1 : 0),
+      itemCount: compatibleBoxes.length + (isLoading ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == bloc.senseBoxes.length && isLoading) {
+        if (index == compatibleBoxes.length && isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (index == bloc.senseBoxes.length) {
+        if (index == compatibleBoxes.length) {
           return const SizedBox();
         }
 
-        final senseBox = SenseBox.fromJson(bloc.senseBoxes[index]);
+        final senseBox = compatibleBoxes[index];
         final isSelected = senseBox.id == bloc.selectedSenseBox?.id;
-        final isSenseBoxBikeCompatible =
-            configurationBloc.isSenseBoxBikeCompatible(senseBox);
 
         return ListTile(
-          title: Text(senseBox.name ??
-              localizations.openSenseMapBoxSelectionUnnamedBox),
-          subtitle: !isSenseBoxBikeCompatible
-              ? Row(
-                  children: [
-                    const Icon(Icons.warning, size: 12),
-                    const SizedBox(width: 8),
-                    Text(localizations.openSenseMapBoxSelectionIncompatible),
-                  ],
+          title: Text(
+            senseBox.name ?? localizations.openSenseMapBoxSelectionUnnamedBox,
+            style: theme.textTheme.bodyLarge?.copyWith(color: onTileColor),
+          ),
+          subtitle: senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
+              ? Wrap(
+                  spacing: 8,
+                  children: senseBox.grouptag!
+                      .map((tag) => Badge(
+                            label: Text(tag),
+                            textColor: colorScheme.onTertiaryContainer,
+                            backgroundColor:
+                                colorScheme.onTertiaryContainer.withValues(
+                              alpha: 0.14,
+                            ),
+                          ))
+                      .toList(),
                 )
-              : senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
-                  ? Wrap(
-                      spacing: 8,
-                      children: senseBox.grouptag!
-                          .map((tag) => Badge(
-                                label: Text(tag),
-                                backgroundColor: theme.iconTheme.color,
-                              ))
-                          .toList(),
-                    )
-                  : null,
-          trailing: isSelected
-              ? Icon(Icons.check, color: theme.colorScheme.primary)
               : null,
-          enabled: isSenseBoxBikeCompatible,
-          onTap: isSenseBoxBikeCompatible
-              ? () async {
-                  if (isSelected) {
-                    await bloc.setSelectedSenseBox(null);
-                  } else {
-                    await bloc.setSelectedSenseBox(senseBox);
-                  }
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                  }
-                }
-              : null,
+          trailing: isSelected ? Icon(Icons.check, color: onTileColor) : null,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            Navigator.pop(context);
+
+            final targetBox = isSelected ? null : senseBox;
+            unawaited(
+              bloc.setSelectedSenseBox(targetBox).catchError(
+                    (error, stackTrace) => ErrorService.handleError(
+                      'Error selecting senseBox: $error',
+                      stackTrace is StackTrace
+                          ? stackTrace
+                          : StackTrace.current,
+                    ),
+                  ),
+            );
+          },
         );
       },
     );
@@ -206,32 +224,54 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
   @override
   Widget build(BuildContext context) {
     return Consumer<OpenSenseMapBloc>(
-      builder: (context, bloc, child) => _buildContent(context, bloc),
+      builder: (context, bloc, child) => _buildContent(context, _bloc),
     );
   }
 
-  Widget _buildEmptyState(AppLocalizations localizations, ThemeData theme,
-      ConfigurationBloc configurationBloc) {
+  Widget _buildEmptyState(
+    AppLocalizations localizations,
+    ThemeData theme,
+    ConfigurationBloc configurationBloc, {
+    required bool isAuthenticated,
+  }) {
     final isConfigurationLoaded = configurationBloc.boxConfigurations != null &&
         !configurationBloc.isLoadingBoxConfigurations;
+    final colorScheme = theme.colorScheme;
+    final hintText = !isAuthenticated
+        ? localizations.trackUploadLoginSelectHint
+        : (isConfigurationLoaded
+            ? localizations.openSenseMapBoxSelectionCreateHint
+            : null);
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.symmetric(vertical: 24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.directions_bike, size: 48),
+            Icon(
+              Icons.directions_bike,
+              size: 48,
+              color: colorScheme.onSurface,
+            ),
             const SizedBox(height: 16),
-            Text(localizations.openSenseMapBoxSelectionNoBoxes,
-                style: theme.textTheme.titleMedium,
-                textAlign: TextAlign.center),
-            if (isConfigurationLoaded) ...[
+            Text(
+              localizations.openSenseMapBoxSelectionNoBoxes,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (hintText != null) ...[
               const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Text(
-                  localizations.openSenseMapBoxSelectionCreateHint,
+                  hintText,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -239,6 +279,49 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLoadingSkeleton(ThemeData theme) {
+    final base = theme.colorScheme.surfaceContainerHighest;
+    final line = theme.colorScheme.onSurface.withValues(alpha: 0.10);
+
+    return ListView.separated(
+      itemCount: 6,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, _) {
+        return Container(
+          key: const ValueKey('sensebox-loading-skeleton-item'),
+          // margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: base,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 14,
+                width: 180,
+                decoration: BoxDecoration(
+                  color: line,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                height: 10,
+                width: 120,
+                decoration: BoxDecoration(
+                  color: line,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

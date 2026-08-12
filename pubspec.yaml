@@ -71,6 +71,7 @@ dependencies:
   webview_flutter: ^4.13.0
   retry: ^3.1.2
   dart_jsonwebtoken: ^2.12.1
+  google_fonts: ^8.1.0
 
 dev_dependencies:
   flutter_test:

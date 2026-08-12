@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
@@ -61,8 +61,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   @override
   void initState() {
     super.initState();
-    isarService = Provider.of<TrackBloc>(context, listen: false).isarService;
-    openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    isarService = context.read<TrackBloc>().isarService;
+    openSenseMapBloc = context.read<OpenSenseMapBloc>();
 
     // Initialize local track data
     _track = widget.track;
@@ -84,15 +84,15 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
   bool _shouldHideUploadButton() {
-    final openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    final openSenseMapBloc = context.read<OpenSenseMapBloc>();
     final uploadEligible = openSenseMapBloc.hasAuthAndSelectedSenseBox;
 
     return !uploadEligible;
   }
 
   bool _shouldShowUploadHint() {
-    final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
-    final openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context, listen: false);
+    final settingsBloc = context.read<SettingsBloc>();
+    final openSenseMapBloc = context.read<OpenSenseMapBloc>();
     final isPostRideMode = !settingsBloc.directUploadMode;
     final uploadEligible = openSenseMapBloc.hasAuthAndSelectedSenseBox;
 
@@ -119,8 +119,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         padding: const EdgeInsets.symmetric(vertical: padding),
         child: ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: spacing),
-          backgroundColor: theme.colorScheme.surfaceContainerHighest,
-          collapsedBackgroundColor: theme.colorScheme.surfaceContainerHighest,
+          // backgroundColor: theme.colorScheme.surfaceContainerHighest,
+          // collapsedBackgroundColor: theme.colorScheme.surfaceContainerHighest,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
@@ -141,6 +141,10 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     final statusColor = _getStatusColor(theme);
     final statusIcon = _getStatusIcon();
     final statusText = _getStatusText(localizations);
+    final chipBackground = Color.alphaBlend(
+      statusColor.withValues(alpha: 0.2),
+      theme.colorScheme.surfaceContainerHighest,
+    );
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -148,8 +152,11 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         padding: const EdgeInsets.symmetric(
             horizontal: spacing / 2, vertical: padding / 2),
         decoration: BoxDecoration(
-          color: statusColor.withOpacity(0.1),
+          color: chipBackground,
           borderRadius: BorderRadius.circular(borderRadiusSmall),
+          border: Border.all(
+            color: statusColor.withValues(alpha: 0.35),
+          ),
         ),
         constraints: const BoxConstraints(
           minWidth: 0,
@@ -167,8 +174,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             Text(
               statusText,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: statusColor,
-                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -183,7 +190,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     } else if (_track.uploadAttemptsCount > 0) {
       return theme.colorScheme.error;
     } else {
-      return theme.colorScheme.outline;
+      return theme.colorScheme.primaryFixedDim;
     }
   }
 
@@ -275,13 +282,14 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
         Icon(
           icon,
           size: iconSize,
-          color: theme.colorScheme.onSurfaceVariant,
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
         ),
         const SizedBox(width: spacing / 4),
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.82),
+            fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(width: spacing / 2),
@@ -324,7 +332,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       });
     }
   }
-
 
   Future<void> _shareFile(String filePath) async {
     final localization = AppLocalizations.of(context)!;
@@ -406,8 +413,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
       final String csvFilePath;
 
       if (isOpenSourceMapCompatible) {
-        csvFilePath = await isarService
-            .exportTrackToCsvInOpenSenseMapFormat(_track.id);
+        csvFilePath =
+            await isarService.exportTrackToCsvInOpenSenseMapFormat(_track.id);
       } else {
         csvFilePath = await isarService.exportTrackToCsv(_track.id);
       }
@@ -520,7 +527,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
     }
   }
 
-
   Widget _buildAppBarTitle(TrackData track, bool hideUploadButton) {
     final theme = Theme.of(context);
 
@@ -600,6 +606,16 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 child: Card.filled(
                   clipBehavior: Clip.hardEdge,
                   elevation: 4,
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withValues(alpha: 0.22),
+                    ),
+                  ),
                   child: TrajectoryWidget(
                       geolocationData: _geolocations, sensorType: _sensorType),
                 ),

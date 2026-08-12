@@ -1,65 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
-import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
-import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
-import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/api_url_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
+import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
+import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 
 class SettingsScreen extends StatelessWidget {
-
-    TextStyle _getPrimaryTextStyle(BuildContext context) {
-      return TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: Theme.of(context).colorScheme.onTertiaryContainer,
-      );
-    }
-
-    TextStyle _getSecondaryTextStyle(BuildContext context) {
-      return TextStyle(
-        color: Theme.of(context).colorScheme.onTertiaryContainer,
-      );
-    }
   final Future<bool> Function(Uri url, {LaunchMode mode}) launchUrlFunction;
 
   const SettingsScreen({super.key, this.launchUrlFunction = launchUrl});
 
   @override
   Widget build(BuildContext context) {
-    final settingsBloc = Provider.of<SettingsBloc>(context);
-    final OpenSenseMapBloc openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.generalSettings),
-      ),
-      body: ListView(
-        children: <Widget>[
-          _buildLoginLogoutSection(context, openSenseMapBloc),
-          _buildGeneralSettingsSection(context, settingsBloc),
-          _buildAccountManagementSection(context),
-          _buildHelpSection(context),
-        ],
-      ),
+    return Consumer<OpenSenseMapBloc>(
+      builder: (context, openSenseMapState, _) {
+        final openSenseMapBloc = context.read<OpenSenseMapBloc>();
+        return Consumer<SettingsBloc>(
+          builder: (context, settingsState, _) {
+            final settingsBloc = context.read<SettingsBloc>();
+            final configurationBloc = context.read<ConfigurationBloc>();
+            return ScreenWrapper(
+              title: AppLocalizations.of(context)!.generalSettings,
+              child: ListView(
+                children: <Widget>[
+                  _buildLoginLogoutSection(
+                    context,
+                    openSenseMapBloc,
+                    openSenseMapState,
+                  ),
+                  _buildGeneralSettingsSection(
+                    context,
+                    settingsBloc,
+                    settingsState,
+                    configurationBloc,
+                  ),
+                  _buildAccountManagementSection(context),
+                  _buildOtherSection(context),
+                  _buildHelpSection(context),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
   Widget _buildLoginLogoutSection(
-      BuildContext context, OpenSenseMapBloc openSenseMapBloc) {
-    final isAuthenticated = openSenseMapBloc.isAuthenticated;
+    BuildContext context,
+    OpenSenseMapBloc openSenseMapBloc,
+    OpenSenseMapBloc openSenseMapState,
+  ) {
+    final isAuthenticated = openSenseMapState.isAuthenticated;
 
     return _buildSettingsContainer(
       context,
@@ -97,11 +104,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildUserInfoRow(
-      BuildContext context,
-      bool isAuthenticated,
-      Map<String, dynamic>? userData,
-      OpenSenseMapBloc openSenseMapBloc) {
+  Widget _buildUserInfoRow(BuildContext context, bool isAuthenticated,
+      Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       spacing: 12,
@@ -130,10 +134,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAuthenticatedUserInfo(
-      BuildContext context,
-      Map<String, dynamic>? userData,
-      OpenSenseMapBloc openSenseMapBloc) {
+  Widget _buildAuthenticatedUserInfo(BuildContext context,
+      Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
     if (openSenseMapBloc.isAuthenticating) {
       return const CircularProgressIndicator();
     }
@@ -141,7 +143,7 @@ class SettingsScreen extends StatelessWidget {
     if (userData == null) {
       return const CircularProgressIndicator();
     }
-    
+
     return _buildUserDataDisplay(context, userData, openSenseMapBloc);
   }
 
@@ -196,7 +198,7 @@ class SettingsScreen extends StatelessWidget {
           ? null
           : () => _handleLoginLogoutAction(
               context, isAuthenticated, openSenseMapBloc),
-        text: isAuthenticated
+      text: isAuthenticated
           ? AppLocalizations.of(context)!.generalLogout
           : AppLocalizations.of(context)!.generalLoginOrRegister,
       width: 1,
@@ -214,9 +216,9 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _showModalBottomSheet(BuildContext context,
       Widget Function(BuildContext) contentBuilder) async {
-    await showModalBottomSheet(
+    await showAppModalSheet(
       context: context,
-      isScrollControlled: true,
+      useRootNavigator: true,
       builder: (context) => contentBuilder(context),
     );
   }
@@ -224,21 +226,26 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildLoginModalContent(BuildContext context) {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.9,
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(borderRadius),
-        ),
-        child: const Padding(
-          padding: EdgeInsets.only(top: 16),
-          child: LoginScreen(),
-        ),
-      ),
+      child: const LoginScreen(),
     );
   }
 
+  TextStyle _getPrimaryTextStyle(BuildContext context) {
+    return TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: Theme.of(context).colorScheme.onTertiaryContainer,
+    );
+  }
+
+  TextStyle _getSecondaryTextStyle(BuildContext context) {
+    return TextStyle(
+      color: Theme.of(context).colorScheme.onTertiaryContainer,
+    );
+  }
 
   Widget _buildAccountManagementSection(BuildContext context) {
-    final isarService = Provider.of<TrackBloc>(context).isarService;
+    final isarService = context.read<TrackBloc>().isarService;
     final localizations = AppLocalizations.of(context)!;
 
     return StatefulBuilder(
@@ -331,132 +338,125 @@ class SettingsScreen extends StatelessWidget {
 
   // General Settings Section
   Widget _buildGeneralSettingsSection(
-      BuildContext context, SettingsBloc settingsBloc) {
-    final configurationBloc = Provider.of<ConfigurationBloc>(context);
-    final isarService = Provider.of<TrackBloc>(context).isarService;
+    BuildContext context,
+    SettingsBloc settingsBloc,
+    SettingsBloc settingsState,
+    ConfigurationBloc configurationBloc,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(
             context, AppLocalizations.of(context)!.settingsGeneral),
-        StreamBuilder<bool>(
-          stream: settingsBloc.vibrateOnDisconnectStream,
-          initialData: settingsBloc.vibrateOnDisconnect,
-          builder: (context, snapshot) {
-            return ListTile(
-              leading: const Icon(Icons.vibration),
-              title: Text(
-                  AppLocalizations.of(context)!.settingsVibrateOnDisconnect),
-              trailing: Switch(
-                value: snapshot.data ?? false,
-                onChanged: (value) {
-                  settingsBloc.toggleVibrateOnDisconnect(value);
-                },
-              ),
-            );
-          },
-        ),
-        StreamBuilder<bool>(
-          stream: settingsBloc.directUploadModeStream,
-          initialData: settingsBloc.directUploadMode,
-          builder: (context, snapshot) {
-            final isDirectUpload = snapshot.data ?? false;
-            final uploadModeText = isDirectUpload
-                ? AppLocalizations.of(context)!.settingsUploadModeDirect
-                : AppLocalizations.of(context)!.settingsUploadModePostRide;
-
-            return ListTile(
-              leading: const Icon(Icons.cloud_upload),
-              title: Text(AppLocalizations.of(context)!.settingsUploadMode),
-              subtitle: Text(
-                AppLocalizations.of(context)!
-                    .settingsUploadModeCurrent(uploadModeText),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-              onTap: () => _showUploadModeDialog(context, settingsBloc),
-            );
-          },
+        ListTile(
+          leading: const Icon(Icons.vibration),
+          title:
+              Text(AppLocalizations.of(context)!.settingsVibrateOnDisconnect),
+          trailing: Switch(
+            value: settingsState.vibrateOnDisconnect,
+            onChanged: (value) {
+              settingsBloc.toggleVibrateOnDisconnect(value);
+            },
+          ),
         ),
         _buildApiUrlSection(context, settingsBloc, configurationBloc),
-        ListTile(
-          leading: const Icon(Icons.admin_panel_settings),
-          title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => const ExclusionZonesScreen()),
-          ),
-          trailing: Badge.count(
-            count: settingsBloc.privacyZones.length,
-            backgroundColor: Theme.of(context).iconTheme.color,
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.trending_up_outlined),
-          title: Text(AppLocalizations.of(context)!.trackStatistics),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) =>
-                    TrackStatisticsScreen(isarService: isarService)),
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc, ConfigurationBloc configurationBloc) {
-    return StatefulBuilder(
-      builder: (context, setState) {
-        final apiUrls = configurationBloc.apiUrls;
-        final isLoading = configurationBloc.isLoadingApiUrls;
-        final error = configurationBloc.apiUrlsError;
+  Widget _buildApiUrlSection(
+    BuildContext context,
+    SettingsBloc settingsBloc,
+    ConfigurationBloc configurationBloc,
+  ) {
+    return ListenableBuilder(
+      listenable: configurationBloc,
+      builder: (context, _) {
         final controller = TextEditingController(text: settingsBloc.apiUrl);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Consumer<SettingsBloc>(
-              builder: (context, bloc, _) => ListTile(
-                leading: const Icon(Icons.settings_ethernet_outlined),
-                title: Text(AppLocalizations.of(context)!.settingsApiUrl),
-                subtitle: Text(
-                  bloc.apiUrl,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
+
+        return ListTile(
+          leading: const Icon(Icons.settings_ethernet_outlined),
+          title: Text(AppLocalizations.of(context)!.settingsApiUrl),
+          subtitle: Text(
+            settingsBloc.apiUrl,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
                 ),
-                onTap: () {
-                  _showApiUrlDialog(context, bloc, controller, apiUrls: apiUrls, isLoading: isLoading, error: error, setState: setState);
-                },
-              ),
-            ),
-          ],
+          ),
+          onTap: () async {
+            if (configurationBloc.apiUrls == null &&
+                !configurationBloc.isLoadingApiUrls) {
+              await configurationBloc.loadApiUrls();
+            }
+            if (!context.mounted) return;
+            _showApiUrlDialog(
+              context,
+              settingsBloc,
+              controller,
+              apiUrls: configurationBloc.apiUrls,
+              isLoading: configurationBloc.isLoadingApiUrls,
+              error: configurationBloc.apiUrlsError,
+            );
+          },
         );
       },
     );
   }
 
-  void _showApiUrlDialog(BuildContext context, SettingsBloc settingsBloc,
-      TextEditingController controller,
-      {List<String>? apiUrls,
-      bool isLoading = false,
-      String? error,
-      void Function(void Function())? setState}) {
-    showDialog(
+  void _showApiUrlDialog(
+    BuildContext context,
+    SettingsBloc settingsBloc,
+    TextEditingController controller, {
+    List<String>? apiUrls,
+    bool isLoading = false,
+    String? error,
+  }) {
+    showAppDialog(
       context: context,
-      barrierDismissible: true,
       builder: (context) => ApiUrlDialog(
         settingsBloc: settingsBloc,
         controller: controller,
         apiUrls: apiUrls,
         isLoading: isLoading,
         error: error,
-        setState: setState,
       ),
+    );
+  }
+
+  Widget _buildOtherSection(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(context, localizations.settingsOther),
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: Text(localizations.settingsAbout),
+              subtitle: FutureBuilder(
+                future: PackageInfo.fromPlatform(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Text(localizations.settingsVersion(
+                        '${snapshot.data!.version}+${snapshot.data!.buildNumber}'));
+                  } else {
+                    return Text(localizations.generalLoading);
+                  }
+                },
+              ),
+            ),
+            _buildUrlTile(
+              context,
+              icon: Icons.privacy_tip,
+              title: localizations.settingsPrivacyPolicy,
+              url: senseBoxBikePrivacyPolicyUrl,
+            )
+          ],
+        );
+      },
     );
   }
 
@@ -512,114 +512,6 @@ class SettingsScreen extends StatelessWidget {
         } catch (error, stack) {
           ErrorService.handleError(error, stack);
         }
-      },
-    );
-  }
-
-  void _showUploadModeDialog(BuildContext context, SettingsBloc settingsBloc) {
-    final currentMode = settingsBloc.directUploadMode;
-    final localizations = AppLocalizations.of(context)!;
-    final screenSize = MediaQuery.of(context).size;
-    final isLargeScreen = screenSize.width > 375; // iPhone mini width is 375px
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(localizations.settingsUploadMode),
-          titlePadding: isLargeScreen
-              ? const EdgeInsets.fromLTRB(
-                  24, 24, 24, 24) // Extra padding on larger screens
-              : const EdgeInsets.fromLTRB(
-                  12, 12, 12, 12), // Standard padding on small screens
-          contentPadding: EdgeInsets.zero,
-          content: SizedBox(
-            width: double.maxFinite,
-            height: isLargeScreen
-                ? null
-                : MediaQuery.of(context).size.height *
-                    0.6, // Fixed height only on small screens
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(
-                    bottom: isLargeScreen
-                        ? 24.0
-                        : 0.0), // Add bottom padding on larger screens
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioListTile<bool>(
-                      title: Text(localizations.settingsUploadModePostRide),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(localizations.settingsUploadModePostRideTitle),
-                          const SizedBox(height: 8),
-                          Text(
-                            localizations.settingsUploadModePostRideDescription,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                          ),
-                        ],
-                      ),
-                      value: false,
-                      groupValue: currentMode,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          settingsBloc.toggleDirectUploadMode(value);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                    const SizedBox(height: 16),
-                    RadioListTile<bool>(
-                      title: Text(localizations.settingsUploadModeDirect),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(localizations.settingsUploadModeDirectTitle),
-                          const SizedBox(height: 8),
-                          Text(
-                            localizations.settingsUploadModeDirectDescription,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                          ),
-                        ],
-                      ),
-                      value: true,
-                      groupValue: currentMode,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          settingsBloc.toggleDirectUploadMode(value);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(localizations.generalCancel),
-            ),
-          ],
-        );
       },
     );
   }

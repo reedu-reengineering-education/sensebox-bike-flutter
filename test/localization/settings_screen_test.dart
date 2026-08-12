@@ -63,8 +63,10 @@ void main() {
       providers: [
         ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
         ChangeNotifierProvider<TrackBloc>.value(value: mockTrackBloc),
-        ChangeNotifierProvider<OpenSenseMapBloc>.value(value: mockOpenSenseMapBloc),
-        ChangeNotifierProvider<ConfigurationBloc>.value(value: configurationBloc),
+        ChangeNotifierProvider<OpenSenseMapBloc>.value(
+            value: mockOpenSenseMapBloc),
+        ChangeNotifierProvider<ConfigurationBloc>.value(
+            value: configurationBloc),
       ],
       child: createLocalizedTestApp(
         locale: locale,
@@ -81,14 +83,13 @@ void main() {
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('General'), findsOneWidget);
       expect(find.text('Vibrate on disconnect'), findsOneWidget);
-      expect(find.text('Privacy Zones'), findsOneWidget);
 
       // Scroll to make all sections visible
       await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
       await tester.pumpAndSettle();
-      
-      // 'Other' section is not present in the current UI
-      // 'About' section is not present in the current UI
+
+      expect(find.text('Other'), findsOneWidget);
+      expect(find.text('About'), findsOneWidget);
       expect(find.text('Help or feedback?'), findsOneWidget);
       expect(find.text('Knowledge Base'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
@@ -102,14 +103,13 @@ void main() {
       expect(find.text('Einstellungen'), findsOneWidget);
       expect(find.text('Allgemeine'), findsOneWidget);
       expect(find.text('Vibration bei Verbindungsabbruch'), findsOneWidget);
-      expect(find.text('Privatzonen'), findsOneWidget);
 
       // Scroll to make all sections visible
       await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
       await tester.pumpAndSettle();
-      
-      // 'Andere' section is not present in the current UI
-      // 'Über die App' section is not present in the current UI
+
+      expect(find.text('Andere'), findsOneWidget);
+      expect(find.text('Über die App'), findsOneWidget);
       expect(find.text('Hilfe oder Feedback?'), findsOneWidget);
       expect(find.text('E-Mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
@@ -122,14 +122,13 @@ void main() {
       expect(find.text('Configurações'), findsOneWidget);
       expect(find.text('Geral'), findsOneWidget);
       expect(find.text('Vibrar ao desconectar'), findsOneWidget);
-      expect(find.text('Áreas de Privacidade'), findsOneWidget);
 
       // Scroll to make all sections visible
       await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
       await tester.pumpAndSettle();
-      
-      // 'Outros' section is not present in the current UI
-      // 'Sobre' section is not present in the current UI
+
+      expect(find.text('Outros'), findsOneWidget);
+      expect(find.text('Sobre'), findsOneWidget);
       expect(find.text('Ajuda ou feedback?'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
@@ -142,14 +141,13 @@ void main() {
       expect(find.text('Paramètres'), findsOneWidget);
       expect(find.text('Général'), findsOneWidget);
       expect(find.text('Vibrer lors de la déconnexion'), findsOneWidget);
-      expect(find.text('Zones de confidentialité'), findsOneWidget);
 
       // Scroll to make all sections visible
       await tester.scrollUntilVisible(find.text('Ticket GitHub'), 500.0);
       await tester.pumpAndSettle();
-      
-      // 'Autre' section is not present in the current UI
-      // 'À propos' section is not present in the current UI
+
+      expect(find.text('Autre'), findsOneWidget);
+      expect(find.text('À propos'), findsOneWidget);
       expect(find.text('Aide ou retour ?'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('Ticket GitHub'), findsOneWidget);

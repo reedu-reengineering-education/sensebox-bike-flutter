@@ -43,7 +43,7 @@ void main() {
     setUp(() {
       mockConfigurationBloc = MockConfigurationBloc();
       mockOpenSenseMapBloc = TestableMockOpenSenseMapBloc();
-      
+
       when(() => mockConfigurationBloc.boxConfigurations)
           .thenReturn([mockBoxConfiguration]);
       when(() => mockConfigurationBloc.campaigns).thenReturn(null);
@@ -70,7 +70,7 @@ void main() {
                 ChangeNotifierProvider<OpenSenseMapBloc>.value(
                     value: mockOpenSenseMapBloc),
                 ChangeNotifierProvider<ConfigurationBloc>.value(
-                  value: mockConfigurationBloc),
+                    value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,
@@ -81,15 +81,17 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      
+      expect(find.byKey(const ValueKey('sensebox-loading-skeleton-item')),
+          findsWidgets);
+
       completer.complete([]);
       await tester.pumpAndSettle();
     });
 
     testWidgets('shows error message when boxes fetch fails',
         (WidgetTester tester) async {
-      mockOpenSenseMapBloc.setFetchSenseBoxesError(Exception('Failed to fetch boxes'));
+      mockOpenSenseMapBloc
+          .setFetchSenseBoxesError(Exception('Failed to fetch boxes'));
 
       await tester.pumpWidget(
         createLocalizedTestApp(
@@ -100,7 +102,7 @@ void main() {
                 ChangeNotifierProvider<OpenSenseMapBloc>.value(
                     value: mockOpenSenseMapBloc),
                 ChangeNotifierProvider<ConfigurationBloc>.value(
-                  value: mockConfigurationBloc),
+                    value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,
@@ -126,9 +128,9 @@ void main() {
             body: MultiProvider(
               providers: [
                 ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                  value: mockOpenSenseMapBloc),
+                    value: mockOpenSenseMapBloc),
                 ChangeNotifierProvider<ConfigurationBloc>.value(
-                  value: mockConfigurationBloc),
+                    value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,
@@ -160,7 +162,7 @@ void main() {
           'sensors': [],
         },
       ];
-      
+
       mockOpenSenseMapBloc.setSenseBoxes(mockBoxes);
       mockOpenSenseMapBloc.setFetchSenseBoxesResult(mockBoxes);
 
@@ -171,9 +173,9 @@ void main() {
             body: MultiProvider(
               providers: [
                 ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                  value: mockOpenSenseMapBloc),
+                    value: mockOpenSenseMapBloc),
                 ChangeNotifierProvider<ConfigurationBloc>.value(
-                  value: mockConfigurationBloc),
+                    value: mockConfigurationBloc),
               ],
               child: SenseBoxSelectionWidget(
                 configurationBloc: mockConfigurationBloc,
@@ -187,8 +189,5 @@ void main() {
       expect(find.text('Test Box 1'), findsOneWidget);
       expect(find.text('Test Box 2'), findsOneWidget);
     });
-
   });
 }
-
-

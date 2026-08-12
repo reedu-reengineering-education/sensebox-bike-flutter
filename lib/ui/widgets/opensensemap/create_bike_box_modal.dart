@@ -103,13 +103,8 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
         final selectedTag = _campaignKey.currentState?.value;
         final customTags = parseCustomTags(_customTagController.text);
 
-        await opensensemapBloc.createSenseBoxBike(
-            boxName,
-            position.longitude,
-            position.latitude,
-            boxConfig,
-            selectedTag,
-            customTags);
+        await opensensemapBloc.createSenseBoxBike(boxName, position.longitude,
+            position.latitude, boxConfig, selectedTag, customTags);
 
         await opensensemapBloc.fetchSenseBoxes(page: 0);
 
@@ -173,116 +168,109 @@ class _CreateBikeBoxModalState extends State<CreateBikeBoxModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      color: Colors.transparent,
-      child: Center(
-        child: Padding(
-          padding: MediaQuery.of(context).viewInsets,
-          child: SingleChildScrollView(
-            child: Container(
-              padding: const EdgeInsets.all(24.0),
-              constraints: const BoxConstraints(maxWidth: 500),
-              decoration: BoxDecoration(
-                color: Theme.of(context).dialogBackgroundColor,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)!.createBoxTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 24),
-                    if (widget.isLoadingBoxConfigurations)
-                      const CircularProgressIndicator()
-                    else
-                      _buildBoxConfigurationDropdown(context),
-                    const SizedBox(height: 16),
-                    LabeledTextFormField(
-                      key: _nameKey,
-                      labelText: AppLocalizations.of(context)!.createBoxName,
-                      enabled: !_loading,
-                      validator: (value) => boxNameValidator(context, value),
-                    ),
-                    const SizedBox(height: 16),
-                    if (widget.isLoadingCampaigns)
-                      const CircularProgressIndicator()
-                    else
-                      _buildCampaignDropdown(context),
-                    const SizedBox(height: 4),
-                    ExpansionTile(
-                      title: Text(
-                          AppLocalizations.of(context)!.createBoxAddCustomTag),
-                      initiallyExpanded: _customTagExpanded,
-                      onExpansionChanged: _loading
-                          ? null
-                          : (expanded) {
-                              setState(() {
-                                _customTagExpanded = expanded;
-                              });
-                            },
-                      shape: Border.all(color: Colors.transparent),
-                      collapsedShape: Border.all(color: Colors.transparent),
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              TextFormField(
-                                controller: _customTagController,
-                                enabled: !_loading,
-                                decoration: InputDecoration(
-                                  labelText: AppLocalizations.of(context)!
-                                      .createBoxCustomTag,
-                                ),
+    final localizations = AppLocalizations.of(context)!;
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        child: Form(
+          key: _formKey,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    localizations.createBoxTitle,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  if (widget.isLoadingBoxConfigurations)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    _buildBoxConfigurationDropdown(context),
+                  const SizedBox(height: 16),
+                  LabeledTextFormField(
+                    key: _nameKey,
+                    labelText: localizations.createBoxName,
+                    enabled: !_loading,
+                    validator: (value) => boxNameValidator(context, value),
+                  ),
+                  const SizedBox(height: 16),
+                  if (widget.isLoadingCampaigns)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    _buildCampaignDropdown(context),
+                  const SizedBox(height: 4),
+                  ExpansionTile(
+                    title: Text(localizations.createBoxAddCustomTag),
+                    initiallyExpanded: _customTagExpanded,
+                    onExpansionChanged: _loading
+                        ? null
+                        : (expanded) {
+                            setState(() {
+                              _customTagExpanded = expanded;
+                            });
+                          },
+                    shape: Border.all(color: Colors.transparent),
+                    collapsedShape: Border.all(color: Colors.transparent),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextFormField(
+                              controller: _customTagController,
+                              enabled: !_loading,
+                              decoration: InputDecoration(
+                                labelText: localizations.createBoxCustomTag,
                               ),
-                              Text(AppLocalizations.of(context)!
-                                  .createBoxCustomTagHelper)
-                            ],
-                          ),
+                            ),
+                            Text(localizations.createBoxCustomTagHelper),
+                          ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Icon(Icons.info_outline),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(AppLocalizations.of(context)!
-                              .createBoxGeolocationCurrentPosition),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          localizations.createBoxGeolocationCurrentPosition,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: _loading
-                              ? null
-                              : () {
-                                  Navigator.of(context).pop();
-                                },
-                          child:
-                              Text(AppLocalizations.of(context)!.generalCancel),
-                        ),
-                        const SizedBox(width: 8),
-                        ButtonWithLoader(
-                          isLoading: _loading,
-                          onPressed: _loading ? null : _submitForm,
-                          text: AppLocalizations.of(context)!.generalCreate,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: _loading
+                            ? null
+                            : () {
+                                Navigator.of(context).pop();
+                              },
+                        child: Text(localizations.generalCancel),
+                      ),
+                      const SizedBox(width: 8),
+                      ButtonWithLoader(
+                        isLoading: _loading,
+                        onPressed: _loading ? null : _submitForm,
+                        text: localizations.generalCreate,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),

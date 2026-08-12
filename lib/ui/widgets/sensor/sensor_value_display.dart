@@ -20,7 +20,10 @@ class SensorValueDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = isValid ? null : (invalidColor ?? Theme.of(context).colorScheme.primaryFixedDim);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textColor = isValid
+        ? colorScheme.onSurface
+        : (invalidColor ?? colorScheme.primaryFixedDim);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -31,12 +34,15 @@ class SensorValueDisplay extends StatelessWidget {
           style: TextStyle(
             fontSize: fontSize,
             color: textColor,
+            fontWeight: FontWeight.w700,
           ),
         ),
+        const SizedBox(width: 2),
         Text(
           unit,
           style: TextStyle(
             color: textColor,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
