@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
+import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
@@ -16,6 +17,8 @@ import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
 import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
+import 'package:sensebox_bike/ui/widgets/settings/app_info_section.dart';
+import 'package:sensebox_bike/ui/widgets/settings/data_collection_mode_fields.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -43,6 +46,7 @@ class SettingsScreen extends StatelessWidget {
                     openSenseMapBloc,
                     openSenseMapState,
                   ),
+                  _buildOtherSection(context),
                   _buildGeneralSettingsSection(
                     context,
                     settingsBloc,
@@ -50,7 +54,6 @@ class SettingsScreen extends StatelessWidget {
                     configurationBloc,
                   ),
                   _buildAccountManagementSection(context),
-                  _buildOtherSection(context),
                   _buildHelpSection(context),
                 ],
               ),
@@ -359,8 +362,141 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
         ),
+        _buildDataCollectionModeTile(context),
+        _buildCollectionIntervalTile(context),
         _buildApiUrlSection(context, settingsBloc, configurationBloc),
       ],
+    );
+  }
+
+  // How sensor data is sampled: GPS-driven, periodic or on tap.
+  Widget _buildDataCollectionModeTile(BuildContext context) {
+    return Consumer<SettingsBloc>(
+      builder: (context, bloc, _) {
+        final localizations = AppLocalizations.of(context)!;
+        final modeLabel = dataCollectionModeSettingsLabel(
+          bloc.dataCollectionMode,
+          localizations,
+        );
+
+        return ListTile(
+          leading: const Icon(Icons.sensors),
+          title: Text(localizations.settingsDataCollectionMode),
+          subtitle: Text(
+            localizations.settingsDataCollectionModeCurrent(modeLabel),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+          onTap: () => _showDataCollectionModeDialog(context, bloc),
+        );
+      },
+    );
+  }
+
+  // Only meaningful while the periodic mode is selected.
+  Widget _buildCollectionIntervalTile(BuildContext context) {
+    return Consumer<SettingsBloc>(
+      builder: (context, bloc, _) {
+        if (!bloc.dataCollectionMode.usesPeriodicTimer) {
+          return const SizedBox.shrink();
+        }
+        final localizations = AppLocalizations.of(context)!;
+
+        return ListTile(
+          leading: const Icon(Icons.schedule),
+          title: Text(localizations.settingsCollectionInterval),
+          subtitle: Text(
+            localizations.settingsCollectionIntervalCurrent(
+                bloc.collectionIntervalSeconds),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+          onTap: () => _showCollectionIntervalDialog(context, bloc),
+        );
+      },
+    );
+  }
+
+  void _showDataCollectionModeDialog(
+      BuildContext context, SettingsBloc settingsBloc) {
+    final localizations = AppLocalizations.of(context)!;
+
+    showAppDialog(
+      context: context,
+      builder: (dialogContext) => AppAlertDialog(
+        title: Text(localizations.settingsDataCollectionMode),
+        contentPadding: EdgeInsets.zero,
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Scrollbar(
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              child: DataCollectionModeRadioList(
+                groupValue: settingsBloc.dataCollectionMode,
+                onChanged: (selected) async {
+                  await settingsBloc.setDataCollectionMode(selected);
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                },
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(localizations.generalCancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCollectionIntervalDialog(
+      BuildContext context, SettingsBloc settingsBloc) {
+    final localizations = AppLocalizations.of(context)!;
+
+    showAppDialog(
+      context: context,
+      builder: (dialogContext) => AppAlertDialog(
+        title: Text(localizations.settingsCollectionInterval),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                localizations.settingsCollectionIntervalDescription,
+                style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
+                      color:
+                          Theme.of(dialogContext).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: spacing / 2),
+              CollectionIntervalPresetList(
+                selectedSeconds: settingsBloc.collectionIntervalSeconds,
+                onSelected: (seconds) async {
+                  await settingsBloc.setCollectionIntervalSeconds(seconds);
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(localizations.generalCancel),
+          ),
+        ],
+      ),
     );
   }
 
@@ -427,36 +563,12 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildOtherSection(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionHeader(context, localizations.settingsOther),
-            ListTile(
-              leading: const Icon(Icons.info),
-              title: Text(localizations.settingsAbout),
-              subtitle: FutureBuilder(
-                future: PackageInfo.fromPlatform(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return Text(localizations.settingsVersion(
-                        '${snapshot.data!.version}+${snapshot.data!.buildNumber}'));
-                  } else {
-                    return Text(localizations.generalLoading);
-                  }
-                },
-              ),
-            ),
-            _buildUrlTile(
-              context,
-              icon: Icons.privacy_tip,
-              title: localizations.settingsPrivacyPolicy,
-              url: senseBoxBikePrivacyPolicyUrl,
-            )
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(context, localizations.settingsAbout),
+        AppInfoSection(launchUrlFunction: launchUrlFunction),
+      ],
     );
   }
 

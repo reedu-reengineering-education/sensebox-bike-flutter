@@ -148,13 +148,12 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     final colorScheme = theme.colorScheme;
     final onTileColor = colorScheme.onTertiaryContainer;
 
-    // Parse raw JSON list into SenseBox objects and filter incompatible boxes
-    final List<SenseBox> compatibleBoxes = bloc.senseBoxes
-        .map((e) => SenseBox.fromJson(e))
-        .where((b) => configurationBloc.isSenseBoxBikeCompatible(b))
-        .toList();
+    // Parse raw JSON list into SenseBox objects. Compatibility gating was
+    // dropped upstream along with the new box configurations.
+    final List<SenseBox> compatibleBoxes =
+        bloc.senseBoxes.map((e) => SenseBox.fromJson(e)).toList();
 
-    // If there are no compatible boxes and we're not currently loading, show empty state
+    // If there are no boxes and we're not currently loading, show empty state
     if (compatibleBoxes.isEmpty && !isLoading) {
       return _buildEmptyState(
         localizations,

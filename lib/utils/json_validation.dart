@@ -12,6 +12,22 @@ String requireString(Map<String, dynamic> json, String fieldName, String classNa
   return value;
 }
 
+String? optionalString(Map<String, dynamic> json, String fieldName) {
+  if (!json.containsKey(fieldName)) {
+    return null;
+  }
+  final value = json[fieldName];
+  if (value == null) {
+    return null;
+  }
+  if (value is! String) {
+    throw FormatException(
+      'optionalString: field "$fieldName" must be a String, got ${value.runtimeType}',
+    );
+  }
+  return value;
+}
+
 /// Validates and extracts a required List field from JSON
 /// 
 /// Throws [FormatException] with descriptive message if field is missing or wrong type

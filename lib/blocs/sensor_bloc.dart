@@ -4,8 +4,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_availability.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/sensors/acceleration_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_sensor.dart';
 import 'package:sensebox_bike/sensors/distance_right_sensor.dart';
@@ -23,18 +24,17 @@ class SensorBloc with ChangeNotifier {
   final BleBloc bleBloc;
   final GeolocationBloc geolocationBloc;
   final RecordingBloc recordingBloc;
-  final SettingsBloc settingsBloc;
   final List<Sensor> _sensors = [];
   late final VoidCallback _characteristicsListener;
   late final VoidCallback _characteristicStreamsVersionListener;
   late final VoidCallback _selectedDeviceListener;
   late final VoidCallback _recordingListener;
   late final VoidCallback _reconnectingListener;
+  late final VoidCallback _livePayloadListener;
   List<String> _lastCharacteristicUuids = [];
   bool _isStartingListening = false;
 
-  SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc,
-      this.settingsBloc) {
+  SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc) {
     _initializeSensors();
 
     _selectedDeviceListener = () {
@@ -102,6 +102,17 @@ class SensorBloc with ChangeNotifier {
     bleBloc.availableCharacteristics.addListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .addListener(_characteristicStreamsVersionListener);
+    _livePayloadListener = () => notifyListeners();
+    bleBloc.characteristicStreams.livePayloadVersion
+        .addListener(_livePayloadListener);
+
+    geolocationBloc.setCollectInstantSensorData((geo) {
+      final rows = <SensorData>[];
+      for (final sensor in _sensors) {
+        rows.addAll(sensor.latestReadingAsSensorData(geo));
+      }
+      return rows;
+    });
   }
 
   Future<void> _onRecordingStart() async {
@@ -130,8 +141,11 @@ class SensorBloc with ChangeNotifier {
     if (!geolocationBloc.isListening) {
       geolocationBloc.startListening();
     }
-    geolocationBloc.getCurrentLocationAndEmit().catchError((e) {
-    });
+    // Periodic: take an immediate first sample. On-tap waits for the user;
+    // GPS-driven collection is driven by the position stream.
+    if (recordingBloc.activeCollectionMode.usesPeriodicTimer) {
+      await geolocationBloc.captureSample();
+    }
   }
 
   Future<void> _onRecordingStop() async {
@@ -197,7 +211,7 @@ class SensorBloc with ChangeNotifier {
     }
     _isStartingListening = true;
     try {
-      for (final sensor in availableSensors) {
+      for (final sensor in _discoveredSensors) {
         await sensor.startListening();
       }
     } finally {
@@ -227,13 +241,24 @@ class SensorBloc with ChangeNotifier {
   }
 
   Future<void> _flushAllSensorBuffers() async {
+    // Final geo flush is only for GPS-driven deferred aggregation.
+    // Relies on RecordingBloc firing isRecordingNotifier before resetting mode.
+    if (!recordingBloc.activeCollectionMode.isGpsDriven) {
+      return;
+    }
     await geolocationBloc.emitFinalGeolocation();
   }
 
 
   void _clearAllSensorBuffersForNewRecording() {
+    // Keep live BLE readings for periodic / on-tap so the first sample is not
+    // GPS-speed-only after Start clears aggregation buffers.
+    final clearLatestValues =
+        recordingBloc.activeCollectionMode.isGpsDriven;
     for (var sensor in _sensors) {
-      sensor.clearBuffersForNewRecording();
+      sensor.clearBuffersForNewRecording(
+        clearLatestValues: clearLatestValues,
+      );
     }
   }
 
@@ -244,9 +269,15 @@ class SensorBloc with ChangeNotifier {
           characteristic.uuidString,
       };
 
+  List<Sensor> get _discoveredSensors => filterDiscoveredSensors(
+        _sensors,
+        _characteristicUuids,
+      );
+
   List<Sensor> get availableSensors => filterAvailableSensors(
         _sensors,
         _characteristicUuids,
+        bleBloc.characteristicStreams.hasLivePayload,
       );
 
   @override
@@ -256,8 +287,11 @@ class SensorBloc with ChangeNotifier {
     bleBloc.availableCharacteristics.removeListener(_characteristicsListener);
     bleBloc.characteristicStreamsVersion
         .removeListener(_characteristicStreamsVersionListener);
+    bleBloc.characteristicStreams.livePayloadVersion
+        .removeListener(_livePayloadListener);
     recordingBloc.isRecordingNotifier.removeListener(_recordingListener);
-    
+    geolocationBloc.setCollectInstantSensorData(null);
+
     _stopListening().catchError((e, stackTrace) {
       debugPrint('Error during sensor cleanup: $e');
       debugPrintStack(stackTrace: stackTrace);

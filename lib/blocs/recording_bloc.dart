@@ -3,6 +3,7 @@ import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -13,7 +14,7 @@ import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
-import 'package:sensebox_bike/ui/widgets/common/upload_progress_modal.dart';
+import 'package:sensebox_bike/ui/widgets/common/operation_progress_overlay.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 
 class RecordingBloc with ChangeNotifier {
@@ -30,8 +31,11 @@ class RecordingBloc with ChangeNotifier {
   DirectUploadService? _directUploadService;
   BatchUploadService? _batchUploadService;
 
-  VoidCallback? _onRecordingStart;
-  VoidCallback? _onRecordingStop;
+  DataCollectionMode _activeCollectionMode = DataCollectionMode.gpsDriven;
+  int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
+
+  Future<void> Function()? _onRecordingStart;
+  Future<void> Function()? _onRecordingStop;
 
   // Context for showing upload modal
   BuildContext? _context;
@@ -45,8 +49,16 @@ class RecordingBloc with ChangeNotifier {
   SenseBox? get selectedSenseBox => _selectedSenseBox;
   DateTime? get lastRecordingStopTimestamp => _lastRecordingStopTimestamp;
 
-  RecordingBloc(this.isarService, this.bleBloc, this.trackBloc,
-      this.openSenseMapBloc, this.settingsBloc) {
+  DataCollectionMode get activeCollectionMode => _activeCollectionMode;
+  int get collectionIntervalSeconds => _collectionIntervalSeconds;
+
+  RecordingBloc(
+    this.isarService,
+    this.bleBloc,
+    this.trackBloc,
+    this.openSenseMapBloc,
+    this.settingsBloc,
+  ) {
     openSenseMapBloc.senseBoxStream.listen(_onSenseBoxChanged).onError((error) {
       ErrorService.handleError(error, StackTrace.current);
     });
@@ -74,8 +86,8 @@ class RecordingBloc with ChangeNotifier {
   }
 
   void setRecordingCallbacks({
-    VoidCallback? onRecordingStart,
-    VoidCallback? onRecordingStop,
+    Future<void> Function()? onRecordingStart,
+    Future<void> Function()? onRecordingStop,
   }) {
     _onRecordingStart = onRecordingStart;
     _onRecordingStop = onRecordingStop;
@@ -121,13 +133,20 @@ class RecordingBloc with ChangeNotifier {
       return;
     }
 
+    _activeCollectionMode = settingsBloc.dataCollectionMode;
+    _collectionIntervalSeconds = settingsBloc.collectionIntervalSeconds;
     _isRecording = true;
-    _isRecordingNotifier.value = true;
     _lastRecordingStopTimestamp = null;
     await trackBloc.startNewTrack(
-        isDirectUpload: settingsBloc.directUploadMode);
+      isDirectUpload: settingsBloc.directUploadMode,
+      dataCollectionMode: _activeCollectionMode,
+      collectionIntervalSeconds: _activeCollectionMode.usesPeriodicTimer
+          ? _collectionIntervalSeconds
+          : null,
+    );
 
     _currentTrack = trackBloc.currentTrack;
+    _isRecordingNotifier.value = true;
 
     try {
       if (_selectedSenseBox == null && settingsBloc.directUploadMode) {
@@ -152,7 +171,7 @@ class RecordingBloc with ChangeNotifier {
         );
       }
 
-      _onRecordingStart?.call();
+      await _onRecordingStart?.call();
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     }
@@ -167,7 +186,10 @@ class RecordingBloc with ChangeNotifier {
 
     _isRecording = false;
     _isRecordingNotifier.value = false;
-    _onRecordingStop?.call();
+    // Keep activeCollectionMode until the next startRecording snapshots
+    // settings. Resetting to gpsDriven made the idle GPS stream take the
+    // continuous persist path and race into the first on-tap/periodic point.
+    await _onRecordingStop?.call();
 
     // Store current track and sensebox for upload
     final trackToUpload = _currentTrack;
@@ -199,6 +221,25 @@ class RecordingBloc with ChangeNotifier {
     final canUpload =
         senseBox != null && openSenseMapBloc.hasAuthAndSelectedSenseBox;
 
+    if (!canUpload) {
+      final localizations = AppLocalizations.of(_context!);
+      final message = !openSenseMapBloc.isAuthenticated
+          ? localizations?.uploadBlockNotAuthenticated
+          : localizations?.uploadBlockNoBox;
+
+      if (message != null) {
+        showCustomDialog(
+          context: _context!,
+          message: message,
+          confirmButtonText: localizations?.generalOk,
+          type: DialogType.confirmation,
+        );
+      }
+
+      _cleanupBatchUploadService();
+      return;
+    }
+
     try {
       await track.geolocations.load();
       final geolocations = track.geolocations.toList();
@@ -207,28 +248,27 @@ class RecordingBloc with ChangeNotifier {
         throw TrackHasNoGeolocationsException(track.id);
       }
 
-      UploadProgressOverlay.show(
+      OperationProgressOverlay.show(
         _context!,
-        batchUploadService: _batchUploadService!,
-        canUpload: canUpload,
-        isAuthenticated: openSenseMapBloc.isAuthenticated,
-        hasSelectedBox: openSenseMapBloc.selectedSenseBox != null,
-        onUploadComplete: () {
-          _cleanupBatchUploadService();
-          debugPrint('[RecordingBloc] Batch upload completed successfully');
-        },
-        onUploadFailed: () {
-          _cleanupBatchUploadService();
-          debugPrint('[RecordingBloc] Batch upload failed permanently');
-        },
-        onStartUpload: () {
-          if (canUpload) _startBatchUpload(track, senseBox!);
-        },
+        config: OperationProgressOverlayConfig.upload(
+          uploadService: _batchUploadService!,
+          onComplete: () {
+            _cleanupBatchUploadService();
+            debugPrint('[RecordingBloc] Batch upload completed successfully');
+          },
+          onFailed: () {
+            _cleanupBatchUploadService();
+            debugPrint('[RecordingBloc] Batch upload failed permanently');
+          },
+          onStart: () {
+            _startBatchUpload(track, senseBox);
+          },
+        ),
       );
     } catch (e, stack) {
       debugPrint('[RecordingBloc] Error showing upload modal: $e');
       ErrorService.handleError(e, stack);
-      UploadProgressOverlay.hide();
+      OperationProgressOverlay.hide();
       _cleanupBatchUploadService();
     }
   }
@@ -265,7 +305,7 @@ class RecordingBloc with ChangeNotifier {
     _isRecordingNotifier.dispose();
 
     // Hide any open upload modal
-    UploadProgressOverlay.hide();
+    OperationProgressOverlay.hide();
 
     super.dispose();
   }

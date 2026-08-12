@@ -15,6 +15,7 @@
   "createBoxAddCustomTag": "Ajouter une étiquette de groupe personnalisée",
   "createBoxCustomTag": "Étiquette de groupe personnalisée",
   "createBoxCustomTagHelper": "Vous pouvez séparer les étiquettes par des virgules",
+  "createBoxDataRecording": "Enregistrement des données avancé",
   "@@locale": "fr",
   "generalLoading": "Chargement...",
   "generalError": "Erreur",
@@ -108,6 +109,15 @@
   "connectionButtonReconnecting": "Reconnexion...",
   "connectionButtonStart": "Démarrer",
   "connectionButtonStop": "Arrêter",
+  "recordingPeriodicCollectionMode": "Échantillonnage périodique toutes les {seconds} s",
+  "@recordingPeriodicCollectionMode": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "recordingSaveSample": "Enregistrer un point",
   "bleDeviceSelectTitle": "Touchez pour connecter",
   "noBleDevicesFound": "Aucune senseBox trouvée. Assurez-vous que votre senseBox est chargée, touchez en dehors de cette fenêtre et réessayez.",
   "selectOrCreateBox": "Sélectionner ou créer une senseBox:bike",
@@ -140,12 +150,49 @@
   "settingsUploadModePostRideDescription": "• Les données sont stockées localement pendant l’enregistrement\n• Le téléversement se fait en une seule fois à la fin\n• Plus fiable et stable\n• Utilise moins de batterie pendant l’enregistrement",
   "settingsUploadModeDirectTitle": "Téléverser les données en temps réel pendant l’enregistrement (expérimental)",
   "settingsUploadModeDirectDescription": "• Les données sont téléversées immédiatement dès leur collecte\n• Partage des données en temps réel (expérimental)\n• Nécessite une connexion internet stable\n• Peut utiliser plus de batterie pendant l’enregistrement",
+  "settingsDataCollectionMode": "Enregistrement des données",
+  "settingsDataCollectionModeCurrent": "Actuel : {mode}",
+  "@settingsDataCollectionModeCurrent": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDataCollectionModeGpsDriven": "Continu",
+  "settingsDataCollectionModePeriodic": "Périodique",
+  "settingsDataCollectionModeOnTap": "Échantillonnage manuel",
+  "settingsDataCollectionModeGpsDrivenDescription": "Enregistrer les données des capteurs le long de votre trajet GPS",
+  "settingsDataCollectionModePeriodicDescription": "Enregistrer automatiquement les données à l’intervalle choisi",
+  "settingsDataCollectionModeOnTapDescription": "Enregistrer les données uniquement lorsque vous appuyez sur Enregistrer un point pendant l’enregistrement",
+  "settingsCollectionInterval": "Intervalle d’échantillonnage",
+  "settingsCollectionIntervalDescription": "Fréquence d’enregistrement en mode périodique",
+  "settingsCollectionIntervalCurrent": "Actuel : toutes les {seconds} s",
+  "@settingsCollectionIntervalCurrent": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "settingsAbout": "À propos",
   "settingsPrivacyPolicy": "Politique de confidentialité",
   "settingsVersion": "Version : {versionNumber}",
   "@settingsVersion": {
     "placeholders": {
       "versionNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsStorageUsed": "Espace de stockage utilisé",
+  "settingsStorageDetails": "Données de l'app : {totalSize} (base de données : {databaseSize})",
+  "@settingsStorageDetails": {
+    "placeholders": {
+      "databaseSize": {
+        "type": "String"
+      },
+      "totalSize": {
         "type": "String"
       }
     }
@@ -160,8 +207,9 @@
   "privacyZonesStart": "Touchez la carte pour commencer à dessiner une zone. Touchez la coche pour terminer.",
   "privacyZonesDelete": "Touchez une zone pour la supprimer. Touchez la coche pour terminer.",
   "trackDetailsPermissionsError": "Permission refusée pour enregistrer le fichier dans le stockage externe.",
-  "trackDetailsFileSaved": "Fichier CSV enregistré dans le dossier Téléchargements.",
-  "trackDetailsExport": "Export CSV des données du parcours.",
+  "fileSavedDownloadsDirectory": "Fichier CSV enregistré dans le dossier Téléchargements.",
+  "trackDetailsFileSavedApplicationDirectory": "Fichier CSV enregistré dans le dossier du répertoire de l'application.",
+  "trackDetailsExport": "Export CSV des données du parcours",
   "trackDetailsLoadingError": "Erreur lors du chargement du parcours.",
   "trackDetailsNoTrackData": "Aucun parcours disponible.",
   "trackDelete": "Supprimer le parcours",
@@ -240,15 +288,15 @@
   "tracksStatisticsDistanceInfo": "distance parcourue",
   "tracksStatisticsTimeInfo": "temps passé sur la route",
   "trackStatistics": "Statistiques du parcours",
-  "uploadProgressTitle": "Progression du téléversement",
-  "uploadProgressPreparing": "Préparation du téléversement...",
-  "uploadProgressUploading": "Téléversement des données du parcours...",
-  "uploadProgressInfo": "Ne fermez pas l’application pendant le téléversement. Cela peut prendre un certain temps selon la longueur du parcours.\n\nSi vous souhaitez téléverser plus tard, vous pouvez le faire depuis l’écran d’aperçu des parcours.",
-  "uploadProgressRetrying": "Nouvelle tentative de téléversement...",
-  "uploadProgressCompleted": "Téléversement terminé avec succès",
-  "uploadProgressFailed": "Échec du téléversement",
+  "uploadProgressTitle": "Progression de l'Opération",
+  "uploadProgressPreparing": "Préparation de l'opération...",
+  "uploadProgressUploading": "Traitement des données du parcours...",
+  "uploadProgressInfo": "Ne fermez pas l'application pendant le traitement. Cela peut prendre un certain temps selon la longueur du parcours.\n\nSi vous souhaitez traiter plus tard, vous pouvez le faire depuis l'écran d'aperçu des parcours.",
+  "uploadProgressRetrying": "Nouvelle tentative de l'opération...",
+  "uploadProgressCompleted": "Opération terminée avec succès",
+  "uploadProgressFailed": "Échec de l'opération",
   "uploadProgressAuthenticationFailed": "Authentification requise",
-  "uploadProgressChunks": "{completed} sur {total, plural, =0{0 segments} =1{1 segment} other{{total} segments}} téléversés",
+  "uploadProgressChunks": "{completed} sur {total, plural, =0{0 segments} =1{1 segment} other{{total} segments}} traités",
   "@uploadProgressChunks": {
     "placeholders": {
       "completed": {
@@ -268,8 +316,10 @@
     }
   },
   "uploadProgressAuthenticationError": "Veuillez vous connecter pour téléverser les données.",
+  "exportRequiresLoginToOpenSenseMap": "Veuillez vous connecter à votre compte openSenseMap pour poursuivre l'export.",
+  "errorExportFailed": "Échec de l'export. Veuillez réessayer.",
   "uploadProgressNetworkError": "Échec de la connexion réseau. Veuillez vérifier votre connexion internet et réessayer.",
-  "uploadProgressGenericError": "Échec du téléversement. Veuillez réessayer.",
+  "uploadProgressGenericError": "Échec de l'opération. Veuillez réessayer.",
   "uploadConfirmTitle": "Téléverser les données du parcours",
   "uploadConfirmMessage": "Voulez-vous téléverser les données de votre parcours maintenant ?",
   "uploadConfirmUploadNow": "Téléverser",
@@ -296,6 +346,16 @@
   "trackUploadAttempts": "Tentatives de téléversement",
   "trackLastAttempt": "Dernière tentative",
   "trackStatus": "Statut",
+  "trackCollectionModeLabel": "Échantillonnage",
+  "trackCollectionModeOnTap": "Échantillonnage manuel",
+  "trackCollectionModePeriodic": "Toutes les {seconds} s",
+  "@trackCollectionModePeriodic": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "trackDirectUploadAuthFailed": "Ce parcours n’a pas pu être téléversé en temps réel car vous n’étiez pas connecté. Veuillez vous connecter et réessayer le téléversement.",
   "trackFilterAll": "Tous",
   "trackFilterUnuploaded": "Non téléversé",

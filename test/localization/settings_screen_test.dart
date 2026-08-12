@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -14,6 +15,7 @@ import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 
 import '../test_helpers.dart';
 import '../mocks.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MockIsarService extends Mock implements IsarService {}
 
@@ -42,10 +44,19 @@ void main() {
       return null;
     });
 
+    PackageInfo.setMockInitialValues(
+      appName: 'senseBox Bike',
+      packageName: 'de.reedu.senseboxbike',
+      version: '3.4.0',
+      buildNumber: '340',
+      buildSignature: 'test',
+    );
+
     initializeTestDependencies();
   });
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     mockIsarService = MockIsarService();
     mockTrackBloc = MockTrackBloc();
     mockSettingsBloc = SettingsBloc();
@@ -81,15 +92,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Settings'), findsOneWidget);
+      expect(find.text('About'), findsOneWidget);
+      expect(find.textContaining('Version:'), findsWidgets);
+      expect(find.text('Storage used'), findsOneWidget);
+      expect(find.text('Privacy Policy'), findsOneWidget);
       expect(find.text('General'), findsOneWidget);
       expect(find.text('Vibrate on disconnect'), findsOneWidget);
 
-      // Scroll to make all sections visible
       await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
       await tester.pumpAndSettle();
 
-      expect(find.text('Other'), findsOneWidget);
-      expect(find.text('About'), findsOneWidget);
       expect(find.text('Help or feedback?'), findsOneWidget);
       expect(find.text('Knowledge Base'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
@@ -101,15 +113,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Einstellungen'), findsOneWidget);
+      expect(find.text('Über die App'), findsOneWidget);
+      expect(find.textContaining('Version:'), findsWidgets);
+      expect(find.text('Speichernutzung'), findsOneWidget);
+      expect(find.text('Datenschutz'), findsOneWidget);
       expect(find.text('Allgemeine'), findsOneWidget);
       expect(find.text('Vibration bei Verbindungsabbruch'), findsOneWidget);
 
-      // Scroll to make all sections visible
       await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
       await tester.pumpAndSettle();
 
-      expect(find.text('Andere'), findsOneWidget);
-      expect(find.text('Über die App'), findsOneWidget);
       expect(find.text('Hilfe oder Feedback?'), findsOneWidget);
       expect(find.text('E-Mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
@@ -120,15 +133,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Configurações'), findsOneWidget);
+      expect(find.text('Sobre'), findsOneWidget);
+      expect(find.textContaining('Versão:'), findsWidgets);
+      expect(find.text('Armazenamento usado'), findsOneWidget);
+      expect(find.text('Política de Privacidade'), findsOneWidget);
       expect(find.text('Geral'), findsOneWidget);
       expect(find.text('Vibrar ao desconectar'), findsOneWidget);
 
-      // Scroll to make all sections visible
       await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
       await tester.pumpAndSettle();
 
-      expect(find.text('Outros'), findsOneWidget);
-      expect(find.text('Sobre'), findsOneWidget);
       expect(find.text('Ajuda ou feedback?'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('GitHub issue'), findsOneWidget);
@@ -139,15 +153,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Paramètres'), findsOneWidget);
+      expect(find.text('À propos'), findsOneWidget);
+      expect(find.textContaining('Version :'), findsWidgets);
+      expect(find.text('Espace de stockage utilisé'), findsOneWidget);
+      expect(find.text('Politique de confidentialité'), findsOneWidget);
       expect(find.text('Général'), findsOneWidget);
       expect(find.text('Vibrer lors de la déconnexion'), findsOneWidget);
 
-      // Scroll to make all sections visible
       await tester.scrollUntilVisible(find.text('Ticket GitHub'), 500.0);
       await tester.pumpAndSettle();
 
-      expect(find.text('Autre'), findsOneWidget);
-      expect(find.text('À propos'), findsOneWidget);
       expect(find.text('Aide ou retour ?'), findsOneWidget);
       expect(find.text('E-mail'), findsOneWidget);
       expect(find.text('Ticket GitHub'), findsOneWidget);
@@ -183,6 +198,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Connexion ou inscription'), findsOneWidget);
+    });
+
+    testWidgets('always shows Data recording settings',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestWidget(const Locale('en')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Data recording'), findsOneWidget);
     });
   });
 }

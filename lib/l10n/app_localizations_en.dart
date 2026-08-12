@@ -48,6 +48,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createBoxCustomTagHelper => 'You can separate tags with commas';
 
   @override
+  String get createBoxDataRecording => 'Advanced data recording';
+
+  @override
   String get generalLoading => 'Loading...';
 
   @override
@@ -244,6 +247,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionButtonStop => 'Stop';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Periodic sampling every $seconds s';
+  }
+
+  @override
+  String get recordingSaveSample => 'Save sample';
+
+  @override
   String get bleDeviceSelectTitle => 'Tap to connect';
 
   @override
@@ -334,6 +345,47 @@ class AppLocalizationsEn extends AppLocalizations {
       '• Data is uploaded immediately as it\'s collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording';
 
   @override
+  String get settingsDataCollectionMode => 'Data recording';
+
+  @override
+  String settingsDataCollectionModeCurrent(String mode) {
+    return 'Current: $mode';
+  }
+
+  @override
+  String get settingsDataCollectionModeGpsDriven => 'Continuous';
+
+  @override
+  String get settingsDataCollectionModePeriodic => 'Periodic';
+
+  @override
+  String get settingsDataCollectionModeOnTap => 'Manual sampling';
+
+  @override
+  String get settingsDataCollectionModeGpsDrivenDescription =>
+      'Save sensor data along your GPS track as you ride';
+
+  @override
+  String get settingsDataCollectionModePeriodicDescription =>
+      'Save data automatically at the interval you choose';
+
+  @override
+  String get settingsDataCollectionModeOnTapDescription =>
+      'Save data only when you tap Save sample during recording';
+
+  @override
+  String get settingsCollectionInterval => 'Sampling interval';
+
+  @override
+  String get settingsCollectionIntervalDescription =>
+      'How often data is saved in periodic sampling mode';
+
+  @override
+  String settingsCollectionIntervalCurrent(int seconds) {
+    return 'Current: Every $seconds s';
+  }
+
+  @override
   String get settingsApiUrl => 'Service URL';
 
   @override
@@ -355,6 +407,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String settingsVersion(String versionNumber) {
     return 'Version: $versionNumber';
+  }
+
+  @override
+  String get settingsStorageUsed => 'Storage used';
+
+  @override
+  String settingsStorageDetails(String databaseSize, String totalSize) {
+    return 'App data: $totalSize (database: $databaseSize)';
   }
 
   @override
@@ -382,10 +442,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Permission denied to save file to external storage.';
 
   @override
-  String get trackDetailsFileSaved => 'CSV file saved to Downloads folder.';
+  String get fileSavedDownloadsDirectory =>
+      'CSV file saved to Downloads folder.';
 
   @override
-  String get trackDetailsExport => 'Track data CSV export.';
+  String get trackDetailsFileSavedApplicationDirectory =>
+      'CSV file saved in the application directory folder.';
+
+  @override
+  String get trackDetailsExport => 'Track data CSV export';
 
   @override
   String get trackDetailsLoadingError => 'Error loading track.';
@@ -639,26 +704,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackStatistics => 'Track Statistics';
 
   @override
-  String get uploadProgressTitle => 'Upload Progress';
+  String get uploadProgressTitle => 'Operation Progress';
 
   @override
-  String get uploadProgressPreparing => 'Preparing upload...';
+  String get uploadProgressPreparing => 'Preparing operation...';
 
   @override
-  String get uploadProgressUploading => 'Uploading track data...';
+  String get uploadProgressUploading => 'Processing track data...';
 
   @override
   String get uploadProgressInfo =>
-      'Do not close the app while uploading. It can take some time depending on your track length.\n\nIf you would like to upload your track data later, you can do that from track overview screen.';
+      'Do not close the app while processing. It can take some time depending on your track length.\n\nIf you would like to process your track data later, you can do that from track overview screen.';
 
   @override
-  String get uploadProgressRetrying => 'Retrying upload...';
+  String get uploadProgressRetrying => 'Retrying operation...';
 
   @override
-  String get uploadProgressCompleted => 'Upload completed successfully';
+  String get uploadProgressCompleted => 'Operation completed successfully';
 
   @override
-  String get uploadProgressFailed => 'Upload failed';
+  String get uploadProgressFailed => 'Operation failed';
 
   @override
   String get uploadProgressAuthenticationFailed => 'Authentication required';
@@ -672,7 +737,7 @@ class AppLocalizationsEn extends AppLocalizations {
       one: '1 chunk',
       zero: '0 chunks',
     );
-    return '$completed of $_temp0 uploaded';
+    return '$completed of $_temp0 processed';
   }
 
   @override
@@ -685,11 +750,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please log in to upload data.';
 
   @override
+  String get exportRequiresLoginToOpenSenseMap =>
+      'Please log in to your openSenseMap account to proceed with export.';
+
+  @override
+  String get errorExportFailed => 'Export failed. Please try again.';
+
+  @override
   String get uploadProgressNetworkError =>
       'Network connection failed. Please check your internet connection and try again.';
 
   @override
-  String get uploadProgressGenericError => 'Upload failed. Please try again.';
+  String get uploadProgressGenericError =>
+      'Operation failed. Please try again.';
 
   @override
   String get uploadConfirmTitle => 'Upload Track Data';
@@ -732,6 +805,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trackStatus => 'Status';
+
+  @override
+  String get trackCollectionModeLabel => 'Sampling';
+
+  @override
+  String get trackCollectionModeOnTap => 'Manual sampling';
+
+  @override
+  String trackCollectionModePeriodic(int seconds) {
+    return 'Every $seconds s';
+  }
 
   @override
   String get trackDirectUploadAuthFailed =>

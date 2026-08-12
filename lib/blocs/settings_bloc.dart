@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/constants.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsBloc with ChangeNotifier {
@@ -16,6 +18,8 @@ class SettingsBloc with ChangeNotifier {
   bool _directUploadMode =
       false; // false = post-ride upload, true = direct upload
   String _apiUrl = '';
+  DataCollectionMode _dataCollectionMode = DataCollectionMode.gpsDriven;
+  int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
 
   SettingsBloc() {
     _loadSettings();
@@ -34,6 +38,10 @@ class SettingsBloc with ChangeNotifier {
   String get apiUrl =>
       _apiUrl.isEmpty ? 'https://api.opensensemap.org' : _apiUrl;
 
+  DataCollectionMode get dataCollectionMode => _dataCollectionMode;
+
+  int get collectionIntervalSeconds => _collectionIntervalSeconds;
+
   // Stream for vibrateOnDisconnect updates
   Stream<bool> get vibrateOnDisconnectStream =>
       _vibrateOnDisconnectController.stream;
@@ -44,13 +52,43 @@ class SettingsBloc with ChangeNotifier {
   // Stream for upload mode updates
   Stream<bool> get directUploadModeStream => _directUploadModeController.stream;
 
+  static DataCollectionMode _parseStoredCollectionMode(String? value) {
+    if (value == null) {
+      return DataCollectionMode.gpsDriven;
+    }
+    try {
+      return DataCollectionMode.fromJson(value);
+    } catch (_) {
+      return DataCollectionMode.gpsDriven;
+    }
+  }
+
+  static int _parseStoredCollectionIntervalSeconds(int? value) {
+    if (value == null) {
+      return defaultCollectionIntervalSeconds;
+    }
+    try {
+      return parseCollectionIntervalSeconds(value);
+    } catch (_) {
+      return defaultCollectionIntervalSeconds;
+    }
+  }
+
   // Load settings from Shared Preferences
   Future<void> _loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _vibrateOnDisconnect = prefs.getBool('vibrateOnDisconnect') ?? false;
+    _vibrateOnDisconnect =
+        prefs.getBool(SharedPreferencesKeys.vibrateOnDisconnect) ?? false;
     _privacyZones = prefs.getStringList('privacyZones') ?? [];
     _directUploadMode = prefs.getBool('directUploadMode') ?? false;
     _apiUrl = prefs.getString('apiUrl') ?? '';
+    // Prefs keys keep legacy "lastResolved*" names for migration compatibility.
+    _dataCollectionMode = _parseStoredCollectionMode(
+      prefs.getString(SharedPreferencesKeys.lastResolvedDataCollectionMode),
+    );
+    _collectionIntervalSeconds = _parseStoredCollectionIntervalSeconds(
+      prefs.getInt(SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds),
+    );
 
     // Emit the values to the streams
     _vibrateOnDisconnectController.add(_vibrateOnDisconnect);
@@ -65,7 +103,7 @@ class SettingsBloc with ChangeNotifier {
     _vibrateOnDisconnect = value;
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('vibrateOnDisconnect', value);
+    await prefs.setBool(SharedPreferencesKeys.vibrateOnDisconnect, value);
 
     // Emit the new value to the stream
     _vibrateOnDisconnectController.add(_vibrateOnDisconnect);
@@ -107,6 +145,40 @@ class SettingsBloc with ChangeNotifier {
 
     notifyListeners();
   }
+
+  Future<void> _writeCollectionPrefsToDisk() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      SharedPreferencesKeys.lastResolvedDataCollectionMode,
+      _dataCollectionMode.toJson(),
+    );
+    await prefs.setInt(
+      SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds,
+      _collectionIntervalSeconds,
+    );
+  }
+
+  /// Writes mode and/or interval in a single prefs update.
+  Future<void> setCollectionPreferences({
+    DataCollectionMode? mode,
+    int? intervalSeconds,
+  }) async {
+    if (mode != null) {
+      _dataCollectionMode = mode;
+    }
+    if (intervalSeconds != null) {
+      _collectionIntervalSeconds =
+          parseCollectionIntervalSeconds(intervalSeconds);
+    }
+    await _writeCollectionPrefsToDisk();
+    notifyListeners();
+  }
+
+  Future<void> setDataCollectionMode(DataCollectionMode mode) =>
+      setCollectionPreferences(mode: mode);
+
+  Future<void> setCollectionIntervalSeconds(int seconds) =>
+      setCollectionPreferences(intervalSeconds: seconds);
 
   @override
   void dispose() {

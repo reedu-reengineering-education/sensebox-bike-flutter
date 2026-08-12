@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
@@ -26,6 +28,8 @@ class HomeScreen extends StatelessWidget {
     final BleBloc bleBloc = Provider.of<BleBloc>(context);
     final RecordingBloc recordingBloc = Provider.of<RecordingBloc>(context);
     final SensorBloc sensorBloc = Provider.of<SensorBloc>(context);
+    final GeolocationBloc geolocationBloc =
+        Provider.of<GeolocationBloc>(context);
 
     recordingBloc.setContext(context);
 
@@ -37,6 +41,7 @@ class HomeScreen extends StatelessWidget {
             bleBloc: bleBloc,
             recordingBloc: recordingBloc,
             sensorBloc: sensorBloc,
+            geolocationBloc: geolocationBloc,
             connectionError: connectionError,
           );
         }
@@ -53,6 +58,10 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                   ],
                 ),
+              _PeriodicModeBanner(
+                recordingBloc: recordingBloc,
+                padding: const EdgeInsets.only(top: 48, bottom: 8),
+              ),
               // Main content
               Expanded(
                 child: CustomScrollView(
@@ -95,8 +104,10 @@ class HomeScreen extends StatelessWidget {
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: _FloatingButtons(
-                                    bleBloc: bleBloc,
-                                    recordingBloc: recordingBloc),
+                                  bleBloc: bleBloc,
+                                  recordingBloc: recordingBloc,
+                                  geolocationBloc: geolocationBloc,
+                                ),
                               ),
                             ),
                           ],
@@ -113,6 +124,9 @@ class HomeScreen extends StatelessWidget {
                         connectionError: connectionError,
                         empty:
                             const SliverToBoxAdapter(child: SizedBox.shrink()),
+                        loading: const SliverToBoxAdapter(
+                          child: _SensorLoadingMessage(),
+                        ),
                         builder: (context, widgets) =>
                             _SensorGrid(widgets: widgets),
                       ),
@@ -128,6 +142,53 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+/// Placeholder while the box is connected but no sensor has reported yet.
+class _SensorLoadingMessage extends StatelessWidget {
+  const _SensorLoadingMessage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Center(
+        child: Text(AppLocalizations.of(context)!.generalLoading),
+      ),
+    );
+  }
+}
+
+/// Shown while recording in periodic mode, naming the sampling interval.
+class _PeriodicModeBanner extends StatelessWidget {
+  final RecordingBloc recordingBloc;
+  final EdgeInsets padding;
+
+  const _PeriodicModeBanner({
+    required this.recordingBloc,
+    required this.padding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: recordingBloc,
+      builder: (context, _) {
+        if (!recordingBloc.isRecording ||
+            !recordingBloc.activeCollectionMode.usesPeriodicTimer) {
+          return const SizedBox.shrink();
+        }
+        return Padding(
+          padding: padding,
+          child: InfoBanner(
+            text: AppLocalizations.of(context)!.recordingPeriodicCollectionMode(
+              recordingBloc.collectionIntervalSeconds,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Resolves the sensor tiles that are currently available and hands them to
 /// [builder]. Renders [empty] while disconnected, in error, or with no tiles.
 class _SensorWidgets extends StatelessWidget {
@@ -135,6 +196,9 @@ class _SensorWidgets extends StatelessWidget {
   final SensorBloc sensorBloc;
   final bool connectionError;
   final Widget empty;
+
+  /// Shown once the box advertises characteristics but no tile has data yet.
+  final Widget loading;
   final Widget Function(BuildContext context, List<Widget> widgets) builder;
 
   const _SensorWidgets({
@@ -142,6 +206,7 @@ class _SensorWidgets extends StatelessWidget {
     required this.sensorBloc,
     required this.connectionError,
     required this.empty,
+    required this.loading,
     required this.builder,
   });
 
@@ -158,18 +223,26 @@ class _SensorWidgets extends StatelessWidget {
         return ValueListenableBuilder<List<BleCharacteristicRef>>(
           valueListenable: bleBloc.availableCharacteristics,
           builder: (context, characteristics, _) {
-            // Check if there are actually any sensor widgets available
-            final widgets = buildAvailableSensorWidgets(
-              sensors: sensorBloc.sensors,
-              availableCharacteristicUuids:
-                  characteristics.map((e) => e.uuidString).toSet(),
-            );
-            if (widgets.isEmpty) {
-              // Connected but no sensor data available: show nothing
-              return empty;
-            }
+            // Live payloads can arrive after the characteristic list, so
+            // rebuild on those too rather than sitting on an empty grid.
+            return ValueListenableBuilder<int>(
+              valueListenable: bleBloc.characteristicStreams.livePayloadVersion,
+              builder: (context, _, __) {
+                // Check if there are actually any sensor widgets available
+                final widgets = buildAvailableSensorWidgets(
+                  sensors: sensorBloc.sensors,
+                  availableCharacteristicUuids:
+                      characteristics.map((e) => e.uuidString).toSet(),
+                );
+                if (widgets.isEmpty) {
+                  // Characteristics are known but no tile has data yet, so the
+                  // box is still warming up; otherwise show nothing at all.
+                  return characteristics.isEmpty ? empty : loading;
+                }
 
-            return builder(context, widgets);
+                return builder(context, widgets);
+              },
+            );
           },
         );
       },
@@ -183,12 +256,14 @@ class _TabletLayout extends StatelessWidget {
   final BleBloc bleBloc;
   final RecordingBloc recordingBloc;
   final SensorBloc sensorBloc;
+  final GeolocationBloc geolocationBloc;
   final bool connectionError;
 
   const _TabletLayout({
     required this.bleBloc,
     required this.recordingBloc,
     required this.sensorBloc,
+    required this.geolocationBloc,
     required this.connectionError,
   });
 
@@ -198,16 +273,24 @@ class _TabletLayout extends StatelessWidget {
       body: Stack(
         children: [
           const Positioned.fill(child: GeolocationMapWidget()),
-          if (connectionError)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                minimum: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: _ConnectionErrorBanner(bleBloc: bleBloc),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              minimum: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (connectionError) _ConnectionErrorBanner(bleBloc: bleBloc),
+                  _PeriodicModeBanner(
+                    recordingBloc: recordingBloc,
+                    padding: EdgeInsets.only(top: connectionError ? 8 : 0),
+                  ),
+                ],
               ),
             ),
+          ),
           Positioned.fill(
             child: SafeArea(
               minimum: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -219,6 +302,7 @@ class _TabletLayout extends StatelessWidget {
                     bleBloc: bleBloc,
                     recordingBloc: recordingBloc,
                     sensorBloc: sensorBloc,
+                    geolocationBloc: geolocationBloc,
                     connectionError: connectionError,
                   ),
                 ),
@@ -237,12 +321,14 @@ class _SideRail extends StatelessWidget {
   final BleBloc bleBloc;
   final RecordingBloc recordingBloc;
   final SensorBloc sensorBloc;
+  final GeolocationBloc geolocationBloc;
   final bool connectionError;
 
   const _SideRail({
     required this.bleBloc,
     required this.recordingBloc,
     required this.sensorBloc,
+    required this.geolocationBloc,
     required this.connectionError,
   });
 
@@ -261,6 +347,10 @@ class _SideRail extends StatelessWidget {
               sensorBloc: sensorBloc,
               connectionError: connectionError,
               empty: const SizedBox.shrink(),
+              loading: const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: _SensorLoadingMessage(),
+              ),
               builder: (context, widgets) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: GridView.extent(
@@ -278,6 +368,7 @@ class _SideRail extends StatelessWidget {
           _ActionButtons(
             bleBloc: bleBloc,
             recordingBloc: recordingBloc,
+            geolocationBloc: geolocationBloc,
           ),
         ],
       ),
@@ -305,12 +396,21 @@ class _ConnectionErrorBanner extends StatelessWidget {
 class _FloatingButtons extends StatelessWidget {
   final BleBloc bleBloc;
   final RecordingBloc recordingBloc;
-  const _FloatingButtons({required this.bleBloc, required this.recordingBloc});
+  final GeolocationBloc geolocationBloc;
+  const _FloatingButtons({
+    required this.bleBloc,
+    required this.recordingBloc,
+    required this.geolocationBloc,
+  });
 
   @override
   Widget build(BuildContext context) {
     return _FloatingCard(
-      child: _ActionButtons(bleBloc: bleBloc, recordingBloc: recordingBloc),
+      child: _ActionButtons(
+        bleBloc: bleBloc,
+        recordingBloc: recordingBloc,
+        geolocationBloc: geolocationBloc,
+      ),
     );
   }
 }
@@ -351,18 +451,27 @@ class _FloatingCard extends StatelessWidget {
 class _ActionButtons extends StatelessWidget {
   final BleBloc bleBloc;
   final RecordingBloc recordingBloc;
-  const _ActionButtons({required this.bleBloc, required this.recordingBloc});
+  final GeolocationBloc geolocationBloc;
+  const _ActionButtons({
+    required this.bleBloc,
+    required this.recordingBloc,
+    required this.geolocationBloc,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: Listenable.merge([
+        bleBloc.isConnectingNotifier,
         bleBloc.isReconnectingNotifier,
         bleBloc.selectedDeviceNotifier,
+        recordingBloc,
       ]),
       builder: (context, _) {
+        final isConnecting = bleBloc.isConnectingNotifier.value;
         final isReconnecting = bleBloc.isReconnectingNotifier.value;
         final selectedDevice = bleBloc.selectedDeviceNotifier.value;
+        final buttonsBusy = isConnecting || isReconnecting;
         // Show buttons if device is connected or if reconnecting
         if (selectedDevice == null && !isReconnecting) {
           return Column(
@@ -393,6 +502,25 @@ class _ActionButtons extends StatelessWidget {
                   ),
                 ],
               ),
+              if (recordingBloc.isRecording &&
+                  recordingBloc.activeCollectionMode.showsManualSampleButton)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    style: const ButtonStyle(
+                      padding: WidgetStatePropertyAll(
+                        EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      ),
+                    ),
+                    onPressed: buttonsBusy
+                        ? null
+                        : () => geolocationBloc.captureSample(),
+                    icon: const Icon(Icons.add_location_alt),
+                    label: Text(
+                      AppLocalizations.of(context)!.recordingSaveSample,
+                    ),
+                  ),
+                ),
               // Always show sensebox selection button with different styling based on auth state
               const SenseBoxSelectionButton(),
             ],

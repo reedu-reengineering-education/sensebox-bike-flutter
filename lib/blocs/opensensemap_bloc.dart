@@ -146,19 +146,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     } else {
       final savedSenseBox = SenseBox.fromJson(jsonDecode(selectedSenseBoxJson));
 
-      final configurationBloc = _configurationBloc;
-      final isCompatible = configurationBloc == null ||
-          configurationBloc.isSenseBoxBikeCompatible(savedSenseBox);
-
-      if (isCompatible) {
-        if (_selectedSenseBox?.id != savedSenseBox.id) {
-          _senseBoxController.add(savedSenseBox);
-          _selectedSenseBox = savedSenseBox;
-        }
-      } else {
-        await prefs.remove('selectedSenseBox');
-        _senseBoxController.add(null);
-        _selectedSenseBox = null;
+      if (_selectedSenseBox?.id != savedSenseBox.id) {
+        _senseBoxController.add(savedSenseBox);
+        _selectedSenseBox = savedSenseBox;
       }
     }
     notifyListeners();
@@ -168,9 +158,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     final senseBoxesJson = await fetchSenseBoxes(page: 0);
     if (senseBoxesJson.isNotEmpty) {
       final senseBoxes = _convertJsonToSenseBoxes(senseBoxesJson);
-      final compatibleBox = _findFirstCompatibleBox(senseBoxes);
-      if (compatibleBox != null) {
-        await setSelectedSenseBox(compatibleBox);
+      final firstBox = _findFirstBox(senseBoxes);
+      if (firstBox != null) {
+        await setSelectedSenseBox(firstBox);
       }
     }
   }
@@ -236,9 +226,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
         final senseBoxesJson = await fetchSenseBoxes(page: 0);
         if (senseBoxesJson.isNotEmpty) {
           final senseBoxes = _convertJsonToSenseBoxes(senseBoxesJson);
-          final compatibleBox = _findFirstCompatibleBox(senseBoxes);
-          if (compatibleBox != null) {
-            await setSelectedSenseBox(compatibleBox);
+          final firstBox = _findFirstBox(senseBoxes);
+          if (firstBox != null) {
+            await setSelectedSenseBox(firstBox);
           }
         }
       } else {
@@ -356,18 +346,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     _senseBoxController.add(null);
   }
 
-  SenseBox? _findFirstCompatibleBox(List<SenseBox> senseBoxes) {
-    final configurationBloc = _configurationBloc;
-    if (configurationBloc == null) {
-      return senseBoxes.isNotEmpty ? senseBoxes.first : null;
-    }
-
-    for (final senseBox in senseBoxes) {
-      if (configurationBloc.isSenseBoxBikeCompatible(senseBox)) {
-        return senseBox;
-      }
-    }
-    return null;
+  SenseBox? _findFirstBox(List<SenseBox> senseBoxes) {
+    return senseBoxes.isNotEmpty ? senseBoxes.first : null;
   }
 
   /// Helper method to check if an error is authentication-related and handle it

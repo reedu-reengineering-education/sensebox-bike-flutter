@@ -52,8 +52,6 @@ void main() {
       when(() => mockConfigurationBloc.isLoadingCampaigns).thenReturn(false);
       when(() => mockConfigurationBloc.boxConfigurationsError).thenReturn(null);
       when(() => mockConfigurationBloc.campaignsError).thenReturn(null);
-      when(() => mockConfigurationBloc.isSenseBoxBikeCompatible(any()))
-          .thenReturn(true);
     });
 
     testWidgets('shows loader when boxes are loading',

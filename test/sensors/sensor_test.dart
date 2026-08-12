@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
+import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/sensors/temperature_sensor.dart';
 import '../mocks.dart';
@@ -251,6 +253,105 @@ void main() {
       // We expect at least one DB batch to be saved; previously, empty batches could starve saving.
       expect(saveCalls, greaterThan(0));
 
+      sensor.dispose();
+    });
+  });
+
+  group('Sensor periodic / on-tap collection mode', () {
+    late MockRecordingBloc recordingBloc;
+    late MockGeolocationBloc geolocationBloc;
+    late StreamController<GeolocationData> geoController;
+
+    setUp(() {
+      recordingBloc = MockRecordingBloc();
+      recordingBloc.setRecording(true);
+      recordingBloc.setActiveCollectionMode(DataCollectionMode.periodic);
+
+      geolocationBloc = MockGeolocationBloc();
+      geoController = StreamController<GeolocationData>.broadcast();
+      when(() => geolocationBloc.geolocationStream)
+          .thenAnswer((_) => geoController.stream);
+    });
+
+    tearDown(() async {
+      await geoController.close();
+    });
+
+    test('latestReadingAsSensorData returns last value not a mean', () async {
+      final sensor = _TestSingleValueSensor(
+        MockBleBloc(),
+        geolocationBloc,
+        recordingBloc,
+        MockIsarService(),
+      );
+
+      sensor.onDataReceived([10.0]);
+      sensor.onDataReceived([20.0]);
+
+      final geo = GeolocationData()
+        ..id = 1
+        ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0)
+        ..latitude = 52.0
+        ..longitude = 13.0;
+
+      final rows = sensor.latestReadingAsSensorData(geo);
+
+      expect(rows, hasLength(1));
+      expect(rows.first.value, 20.0);
+      expect(rows.first.title, 'test_sensor');
+
+      sensor.dispose();
+    });
+
+    test('onTap latestReadingAsSensorData returns last value', () async {
+      recordingBloc.setActiveCollectionMode(DataCollectionMode.onTap);
+
+      final sensor = _TestSingleValueSensor(
+        MockBleBloc(),
+        geolocationBloc,
+        recordingBloc,
+        MockIsarService(),
+      );
+
+      sensor.onDataReceived([7.5]);
+
+      final rows = sensor.latestReadingAsSensorData(GeolocationData()
+        ..id = 2
+        ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0)
+        ..latitude = 52.0
+        ..longitude = 13.0);
+
+      expect(rows, hasLength(1));
+      expect(rows.first.value, 7.5);
+      sensor.dispose();
+    });
+
+    test('geo stream does not double-write when sample already persisted',
+        () async {
+      final isarService = MockIsarService();
+      final sensorService = MockSensorService();
+      when(() => isarService.sensorService).thenReturn(sensorService);
+      when(() => sensorService.saveSensorDataBatch(any()))
+          .thenAnswer((_) async {});
+
+      final sensor = _TestSingleValueSensor(
+        MockBleBloc(),
+        geolocationBloc,
+        recordingBloc,
+        isarService,
+      );
+
+      await sensor.startListening();
+      sensor.onDataReceived([20.0]);
+
+      geoController.add(GeolocationData()
+        ..id = 1
+        ..timestamp = DateTime.utc(2024, 1, 1, 12, 0, 0)
+        ..latitude = 52.0
+        ..longitude = 13.0);
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      verifyNever(() => sensorService.saveSensorDataBatch(any()));
       sensor.dispose();
     });
   });

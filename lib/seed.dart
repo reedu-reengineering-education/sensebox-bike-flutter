@@ -137,10 +137,9 @@ Future<void> seedIsarWithSampleData(IsarService isarService) async {
       geolocationsPerMinute / 60.0; // ≈ 1 per second
   final now = DateTime.now();
 
-  final isar = await isarService.isarProvider.getDatabase();
   for (int t = 0; t < numTracks; t++) {
     debugPrint('Seeding track $t of $numTracks');
-    await isar.writeTxn(() async {
+    await isarService.isarProvider.runWriteTxn((isar) async {
       // Random start time within last 30 days
       final startOffset = random.nextInt(30 * 24 * 60 * 60); // seconds
       final startTime = now.subtract(Duration(seconds: startOffset));

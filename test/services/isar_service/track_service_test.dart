@@ -23,16 +23,15 @@ void main() {
     mockPathProvider(tempDirectory.path);
 
     isar = await initializeInMemoryIsar();
-    final mockIsarProvider = MockIsarProvider();
-    when(() => mockIsarProvider.getDatabase()).thenAnswer((_) async => isar);
-    trackService = TrackService(isarProvider: mockIsarProvider);
+    trackService = TrackService(isarProvider: TestIsarProvider(isar));
 
     await clearIsarDatabase(isar);
 
     trackData = createMockTrackData();
     trackData.isDirectUpload = 0; // Set to false for batch upload testing
     await isar.writeTxn(() async {
-      await isar.trackDatas.put(trackData);
+      final id = await isar.trackDatas.put(trackData);
+      trackData.id = id;
     });
   });
 
@@ -164,8 +163,8 @@ group('TrackService', () {
 
       test('can mark multiple tracks as uploaded', () async {
         // Create additional tracks
-        final trackData2 = TrackData();
-        final trackData3 = TrackData();
+        final trackData2 = TrackData()..id = 2;
+        final trackData3 = TrackData()..id = 3;
 
         await isar.writeTxn(() async {
           await isar.trackDatas.putAll([trackData2, trackData3]);
@@ -199,14 +198,17 @@ group('TrackService', () {
         
         // Create tracks with different combinations
         final track1 = TrackData()
+          ..id = 101
           ..uploaded = 0
           ..isDirectUpload = 0; // Batch upload, not uploaded
         
         final track2 = TrackData()
+          ..id = 102
           ..uploaded = 0
           ..isDirectUpload = 1; // Direct upload, not uploaded - should be excluded
         
         final track3 = TrackData()
+          ..id = 103
           ..uploaded = 0
           ..isDirectUpload = 0; // Batch upload, not uploaded
 
@@ -525,6 +527,41 @@ group('TrackService', () {
         expect(tracks[0].id, equals(unuploadedTrack3.id));
         expect(tracks[1].id, equals(unuploadedTrack2.id));
         expect(tracks[2].id, equals(unuploadedTrack1.id));
+      });
+
+      test(
+          'skipLastTrack does not skip extra item when newest track is filtered out',
+          () async {
+        await trackService.deleteAllTracks();
+
+        final newestFilteredOut = TrackData()
+          ..uploaded = 0
+          ..isDirectUpload = 1
+          ..uploadAttempts = 0;
+
+        final expectedFirst = TrackData()
+          ..uploaded = 0
+          ..isDirectUpload = 0;
+
+        final expectedSecond = TrackData()
+          ..uploaded = 0
+          ..isDirectUpload = 0;
+
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(newestFilteredOut);
+          await isar.trackDatas.put(expectedFirst);
+          await isar.trackDatas.put(expectedSecond);
+        });
+
+        final tracks = await trackService.getUnuploadedTracksPaginated(
+          offset: 0,
+          limit: 10,
+          skipLastTrack: true,
+        );
+
+        final ids = tracks.map((t) => t.id).toSet();
+        expect(ids, isNot(contains(newestFilteredOut.id)));
+        expect(tracks.length, equals(1));
       });
     });
 });

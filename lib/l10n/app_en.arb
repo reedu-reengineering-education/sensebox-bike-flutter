@@ -15,6 +15,7 @@
     "createBoxAddCustomTag": "Add custom group tag",
     "createBoxCustomTag": "Custom group tag",
     "createBoxCustomTagHelper": "You can separate tags with commas",
+    "createBoxDataRecording": "Advanced data recording",
     "@@locale": "en",
     "generalLoading": "Loading...",
     "generalError": "Error",
@@ -108,6 +109,15 @@
     "connectionButtonReconnecting": "Reconnecting...",
     "connectionButtonStart": "Start",
     "connectionButtonStop": "Stop",
+    "recordingPeriodicCollectionMode": "Periodic sampling every {seconds} s",
+    "@recordingPeriodicCollectionMode": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
+    "recordingSaveSample": "Save sample",
     "bleDeviceSelectTitle": "Tap to connect",
     "noBleDevicesFound": "No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.",
     "selectOrCreateBox": "Select or create senseBox:bike",
@@ -141,6 +151,31 @@
     "settingsUploadModePostRideDescription": "• Data is stored locally during recording\n• Upload happens all at once when you finish\n• More reliable and stable\n• Uses less battery during recording",
     "settingsUploadModeDirectTitle": "Upload data in real-time during recording (experimental)",
     "settingsUploadModeDirectDescription": "• Data is uploaded immediately as it's collected\n• Real-time data sharing (experimental)\n• Requires stable internet connection\n• May use more battery during recording",
+    "settingsDataCollectionMode": "Data recording",
+    "settingsDataCollectionModeCurrent": "Current: {mode}",
+    "@settingsDataCollectionModeCurrent": {
+        "placeholders": {
+            "mode": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsDataCollectionModeGpsDriven": "Continuous",
+    "settingsDataCollectionModePeriodic": "Periodic",
+    "settingsDataCollectionModeOnTap": "Manual sampling",
+    "settingsDataCollectionModeGpsDrivenDescription": "Save sensor data along your GPS track as you ride",
+    "settingsDataCollectionModePeriodicDescription": "Save data automatically at the interval you choose",
+    "settingsDataCollectionModeOnTapDescription": "Save data only when you tap Save sample during recording",
+    "settingsCollectionInterval": "Sampling interval",
+    "settingsCollectionIntervalDescription": "How often data is saved in periodic sampling mode",
+    "settingsCollectionIntervalCurrent": "Current: Every {seconds} s",
+    "@settingsCollectionIntervalCurrent": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "settingsApiUrl": "Service URL",
     "settingsApiUrlHelper": "Enter the API endpoint for data uploads",
     "settingsApiUrlError": "Please enter a valid URL (e.g., https://api.opensensemap.org)",
@@ -155,6 +190,18 @@
             }
         }
     },
+    "settingsStorageUsed": "Storage used",
+    "settingsStorageDetails": "App data: {totalSize} (database: {databaseSize})",
+    "@settingsStorageDetails": {
+        "placeholders": {
+            "databaseSize": {
+                "type": "String"
+            },
+            "totalSize": {
+                "type": "String"
+            }
+        }
+    },
     "settingsContact": "Help or feedback?",
     "settingsEmail": "E-mail",
     "settingsGithub": "GitHub issue",
@@ -162,8 +209,9 @@
     "privacyZonesStart": "Tap on the map to start drawing a zone. Tap the checkmark to finish.",
     "privacyZonesDelete": "Tap on a zone to delete it. Tap the checkmark to finish.",
     "trackDetailsPermissionsError": "Permission denied to save file to external storage.",
-    "trackDetailsFileSaved": "CSV file saved to Downloads folder.",
-    "trackDetailsExport": "Track data CSV export.",
+    "fileSavedDownloadsDirectory": "CSV file saved to Downloads folder.",
+    "trackDetailsFileSavedApplicationDirectory": "CSV file saved in the application directory folder.",
+    "trackDetailsExport": "Track data CSV export",
     "trackDetailsLoadingError": "Error loading track.",
     "trackDetailsNoTrackData": "No track available.",
     "trackDelete": "Delete Track",
@@ -242,15 +290,15 @@
     "tracksStatisticsDistanceInfo": "distance traveled",
     "tracksStatisticsTimeInfo": "time spent on the road",
     "trackStatistics": "Track Statistics",
-    "uploadProgressTitle": "Upload Progress",
-    "uploadProgressPreparing": "Preparing upload...",
-    "uploadProgressUploading": "Uploading track data...",
-    "uploadProgressInfo": "Do not close the app while uploading. It can take some time depending on your track length.\n\nIf you would like to upload your track data later, you can do that from track overview screen.",
-    "uploadProgressRetrying": "Retrying upload...",
-    "uploadProgressCompleted": "Upload completed successfully",
-    "uploadProgressFailed": "Upload failed",
+    "uploadProgressTitle": "Operation Progress",
+    "uploadProgressPreparing": "Preparing operation...",
+    "uploadProgressUploading": "Processing track data...",
+    "uploadProgressInfo": "Do not close the app while processing. It can take some time depending on your track length.\n\nIf you would like to process your track data later, you can do that from track overview screen.",
+    "uploadProgressRetrying": "Retrying operation...",
+    "uploadProgressCompleted": "Operation completed successfully",
+    "uploadProgressFailed": "Operation failed",
     "uploadProgressAuthenticationFailed": "Authentication required",
-    "uploadProgressChunks": "{completed} of {total, plural, =0{0 chunks} =1{1 chunk} other{{total} chunks}} uploaded",
+    "uploadProgressChunks": "{completed} of {total, plural, =0{0 chunks} =1{1 chunk} other{{total} chunks}} processed",
     "@uploadProgressChunks": {
         "placeholders": {
             "completed": {
@@ -270,8 +318,10 @@
         }
     },
     "uploadProgressAuthenticationError": "Please log in to upload data.",
+    "exportRequiresLoginToOpenSenseMap": "Please log in to your openSenseMap account to proceed with export.",
+    "errorExportFailed": "Export failed. Please try again.",
     "uploadProgressNetworkError": "Network connection failed. Please check your internet connection and try again.",
-    "uploadProgressGenericError": "Upload failed. Please try again.",
+    "uploadProgressGenericError": "Operation failed. Please try again.",
     "uploadConfirmTitle": "Upload Track Data",
     "uploadConfirmMessage": "Would you like to upload your track data now?",
     "uploadConfirmUploadNow": "Upload",
@@ -291,6 +341,16 @@
     "trackUploadAttempts": "Upload attempts",
     "trackLastAttempt": "Last attempt",
     "trackStatus": "Status",
+    "trackCollectionModeLabel": "Sampling",
+    "trackCollectionModeOnTap": "Manual sampling",
+    "trackCollectionModePeriodic": "Every {seconds} s",
+    "@trackCollectionModePeriodic": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
     "trackDirectUploadAuthFailed": "This track failed to upload in real-time because you weren't logged in. Please log in and try uploading again.",
     "trackFilterAll": "All",
     "trackFilterUnuploaded": "Not uploaded",

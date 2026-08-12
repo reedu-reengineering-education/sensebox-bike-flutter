@@ -49,6 +49,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get createBoxCustomTagHelper => 'Du kannst Tags mit Kommas trennen';
 
   @override
+  String get createBoxDataRecording => 'Erweiterte Datenaufzeichnung';
+
+  @override
   String get generalLoading => 'Lädt...';
 
   @override
@@ -247,6 +250,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionButtonStop => 'Stop';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Periodische Aufnahme alle $seconds s';
+  }
+
+  @override
+  String get recordingSaveSample => 'Messpunkt speichern';
+
+  @override
   String get bleDeviceSelectTitle => 'Tippen, um zu verbinden';
 
   @override
@@ -338,6 +349,47 @@ class AppLocalizationsDe extends AppLocalizations {
       '• Daten werden sofort hochgeladen, während sie gesammelt werden\n• Echtzeit-Datenaustausch (experimentell)\n• Erfordert stabile Internetverbindung\n• Kann mehr Akku während der Aufzeichnung verbrauchen';
 
   @override
+  String get settingsDataCollectionMode => 'Datenaufzeichnung';
+
+  @override
+  String settingsDataCollectionModeCurrent(String mode) {
+    return 'Aktuell: $mode';
+  }
+
+  @override
+  String get settingsDataCollectionModeGpsDriven => 'Kontinuierlich';
+
+  @override
+  String get settingsDataCollectionModePeriodic => 'Periodisch';
+
+  @override
+  String get settingsDataCollectionModeOnTap => 'Manuelle Erfassung';
+
+  @override
+  String get settingsDataCollectionModeGpsDrivenDescription =>
+      'Sensordaten entlang der GPS-Route während der Fahrt speichern';
+
+  @override
+  String get settingsDataCollectionModePeriodicDescription =>
+      'Daten automatisch im gewählten Intervall speichern';
+
+  @override
+  String get settingsDataCollectionModeOnTapDescription =>
+      'Daten nur speichern, wenn du während der Aufzeichnung auf Messpunkt speichern tippst';
+
+  @override
+  String get settingsCollectionInterval => 'Abtastintervall';
+
+  @override
+  String get settingsCollectionIntervalDescription =>
+      'Wie oft Daten im periodischen Modus gespeichert werden';
+
+  @override
+  String settingsCollectionIntervalCurrent(int seconds) {
+    return 'Aktuell: Alle $seconds s';
+  }
+
+  @override
   String get settingsApiUrl => 'Service-URL';
 
   @override
@@ -360,6 +412,14 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String settingsVersion(String versionNumber) {
     return 'Version: $versionNumber';
+  }
+
+  @override
+  String get settingsStorageUsed => 'Speichernutzung';
+
+  @override
+  String settingsStorageDetails(String databaseSize, String totalSize) {
+    return 'App-Daten: $totalSize (Datenbank: $databaseSize)';
   }
 
   @override
@@ -387,11 +447,15 @@ class AppLocalizationsDe extends AppLocalizations {
       'Keine Berechtigung zum Speichern der Datei auf externem Speicher.';
 
   @override
-  String get trackDetailsFileSaved =>
+  String get fileSavedDownloadsDirectory =>
       'Die CSV-Datei wird im Ordner Downloads gespeichert.';
 
   @override
-  String get trackDetailsExport => 'CSV-Export von Trackdaten.';
+  String get trackDetailsFileSavedApplicationDirectory =>
+      'Die CSV-Datei wird im Anwendungsordner gespeichert.';
+
+  @override
+  String get trackDetailsExport => 'CSV-Export von Trackdaten';
 
   @override
   String get trackDetailsLoadingError => 'Fehler beim Laden des Tracks.';
@@ -648,26 +712,26 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackStatistics => 'Track-Statistiken';
 
   @override
-  String get uploadProgressTitle => 'Track Upload';
+  String get uploadProgressTitle => 'Operationfortschritt';
 
   @override
-  String get uploadProgressPreparing => 'Upload wird vorbereitet...';
+  String get uploadProgressPreparing => 'Vorbereitung der Operation...';
 
   @override
-  String get uploadProgressUploading => 'Track wird hochgeladen...';
+  String get uploadProgressUploading => 'Fahrtdaten werden verarbeitet...';
 
   @override
   String get uploadProgressInfo =>
-      'Bitte schließen Sie die App während des Uploads nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.\n\nFalls Sie Ihre Track-Daten später hochladen möchten, können Sie das in der Trackübersicht tun.';
+      'Bitte schließen Sie die App während der Verarbeitung nicht. Je nach Länge Ihres Tracks kann dies etwas dauern.\n\nFalls Sie Ihre Track-Daten später verarbeiten möchten, können Sie das in der Trackübersicht tun.';
 
   @override
-  String get uploadProgressRetrying => 'Upload wird wiederholt...';
+  String get uploadProgressRetrying => 'Operation wird wiederholt...';
 
   @override
-  String get uploadProgressCompleted => 'Upload erfolgreich';
+  String get uploadProgressCompleted => 'Operation erfolgreich';
 
   @override
-  String get uploadProgressFailed => 'Upload fehlgeschlagen';
+  String get uploadProgressFailed => 'Operation fehlgeschlagen';
 
   @override
   String get uploadProgressAuthenticationFailed =>
@@ -682,7 +746,7 @@ class AppLocalizationsDe extends AppLocalizations {
       one: '1 Block',
       zero: '0 Blöcken',
     );
-    return '$completed von $_temp0 hochgeladen';
+    return '$completed von $_temp0 verarbeitet';
   }
 
   @override
@@ -695,12 +759,20 @@ class AppLocalizationsDe extends AppLocalizations {
       'Bitte melden Sie sich an, um Daten hochzuladen.';
 
   @override
+  String get exportRequiresLoginToOpenSenseMap =>
+      'Bitte melden Sie sich bei Ihrem openSenseMap-Konto an, um mit dem Export fortzufahren.';
+
+  @override
+  String get errorExportFailed =>
+      'Export fehlgeschlagen. Bitte versuchen Sie es erneut.';
+
+  @override
   String get uploadProgressNetworkError =>
       'Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
 
   @override
   String get uploadProgressGenericError =>
-      'Upload fehlgeschlagen. Bitte versuchen Sie es erneut.';
+      'Operation fehlgeschlagen. Bitte versuchen Sie es erneut.';
 
   @override
   String get uploadConfirmTitle => 'Track-Daten hochladen';
@@ -743,6 +815,17 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trackStatus => 'Status';
+
+  @override
+  String get trackCollectionModeLabel => 'Erfassung';
+
+  @override
+  String get trackCollectionModeOnTap => 'Manuelle Erfassung';
+
+  @override
+  String trackCollectionModePeriodic(int seconds) {
+    return 'Alle $seconds s';
+  }
 
   @override
   String get trackDirectUploadAuthFailed =>

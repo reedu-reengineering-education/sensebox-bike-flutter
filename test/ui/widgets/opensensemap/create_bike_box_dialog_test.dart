@@ -6,13 +6,61 @@ import 'package:provider/provider.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/campaign.dart';
+import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/opensensemap/create_bike_box_modal.dart';
 
 import '../../../mocks.dart';
 import '../../../test_helpers.dart';
+
+MockSettingsBloc _stubSettingsBloc() {
+  final settings = MockSettingsBloc();
+  when(() => settings.dataCollectionMode)
+      .thenReturn(DataCollectionMode.gpsDriven);
+  when(() => settings.collectionIntervalSeconds)
+      .thenReturn(defaultCollectionIntervalSeconds);
+  when(() => settings.setCollectionPreferences(
+        mode: any(named: 'mode'),
+        intervalSeconds: any(named: 'intervalSeconds'),
+      )).thenAnswer((_) async {});
+  when(() => settings.setDataCollectionMode(any())).thenAnswer((_) async {});
+  when(() => settings.setCollectionIntervalSeconds(any()))
+      .thenAnswer((_) async {});
+  return settings;
+}
+
+Widget _pumpCreateModal({
+  required ConfigurationBloc configurationBloc,
+  SettingsBloc? settingsBloc,
+  OpenSenseMapBloc? openSenseMapBloc,
+  GeolocationBloc? geolocationBloc,
+}) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<ConfigurationBloc>.value(value: configurationBloc),
+      ChangeNotifierProvider<SettingsBloc>.value(
+        value: settingsBloc ?? _stubSettingsBloc(),
+      ),
+      if (openSenseMapBloc != null)
+        ChangeNotifierProvider<OpenSenseMapBloc>.value(value: openSenseMapBloc),
+      if (geolocationBloc != null)
+        ChangeNotifierProvider<GeolocationBloc>.value(value: geolocationBloc),
+    ],
+    child: CreateBikeBoxModal(
+      boxConfigurations: configurationBloc.boxConfigurations,
+      campaigns: configurationBloc.campaigns,
+      isLoadingBoxConfigurations: configurationBloc.isLoadingBoxConfigurations,
+      isLoadingCampaigns: configurationBloc.isLoadingCampaigns,
+      boxConfigurationsError: configurationBloc.boxConfigurationsError,
+      campaignsError: configurationBloc.campaignsError,
+      getBoxConfigurationById: (id) =>
+          configurationBloc.getBoxConfigurationById(id),
+    ),
+  );
+}
 
 void main() {
   setUpAll(() {
@@ -22,6 +70,7 @@ void main() {
       defaultGrouptag: 'test',
       sensors: [],
     ));
+    registerFallbackValue(DataCollectionMode.gpsDriven);
   });
 
   group('CreateBikeBoxModal - Custom Grouptag', () {
@@ -56,31 +105,27 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
+          body: _pumpCreateModal(configurationBloc: mockConfigurationBloc),
         ),
       ));
       await tester.pumpAndSettle();
       expect(find.text('Add custom group tag'), findsOneWidget);
+      expect(find.text('Advanced data recording'), findsOneWidget);
     });
 
     testWidgets(
         'splits the custom grouptag input into individual tags and passes them to the createSenseBoxBike method',
         (WidgetTester tester) async {
       final mockGeolocationBloc = MockGeolocationBloc();
+      final mockSettingsBloc = _stubSettingsBloc();
+      when(() => mockOpenSenseMapBloc.createSenseBoxBike(
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+          )).thenAnswer((_) async {});
       when(() => mockGeolocationBloc.getCurrentLocation())
           .thenAnswer((_) async => Position(
                 latitude: 50.0,
@@ -98,27 +143,11 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: MultiProvider(
-            providers: [
-              ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                  value: mockOpenSenseMapBloc),
-              ChangeNotifierProvider<GeolocationBloc>.value(
-                  value: mockGeolocationBloc),
-                ChangeNotifierProvider<ConfigurationBloc>.value(
-                  value: mockConfigurationBloc),
-            ],
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
+          body: _pumpCreateModal(
+            configurationBloc: mockConfigurationBloc,
+            settingsBloc: mockSettingsBloc,
+            openSenseMapBloc: mockOpenSenseMapBloc,
+            geolocationBloc: mockGeolocationBloc,
           ),
         ),
       ));
@@ -129,11 +158,19 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField).last, 'foo, bar ,baz');
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.widgetWithText(ButtonWithLoader, 'Create'));
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ButtonWithLoader, 'Create'));
       await tester.pumpAndSettle();
       verify(() => mockOpenSenseMapBloc.createSenseBoxBike(
           any(), any(), any(),
           mockBoxConfiguration, any(), ['foo', 'bar', 'baz'])).called(1);
+      verify(
+        () => mockSettingsBloc.setCollectionPreferences(
+          mode: DataCollectionMode.gpsDriven,
+          intervalSeconds: defaultCollectionIntervalSeconds,
+        ),
+      ).called(1);
     });
   });
   group('CreateBikeBoxModal - Location Selection', () {
@@ -170,21 +207,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
+          body: _pumpCreateModal(configurationBloc: mockConfigurationBloc),
         ),
       ));
       await tester.pumpAndSettle();
@@ -203,21 +226,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('de'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
+          body: _pumpCreateModal(configurationBloc: mockConfigurationBloc),
         ),
       ));
       await tester.pumpAndSettle();
@@ -258,26 +267,14 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
+          body: _pumpCreateModal(configurationBloc: mockConfigurationBloc),
         ),
       ));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextFormField).first, 'A');
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.widgetWithText(ButtonWithLoader, 'Create'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ButtonWithLoader, 'Create'));
       await tester.pumpAndSettle();
@@ -316,21 +313,7 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: ChangeNotifierProvider<ConfigurationBloc>.value(
-            value: mockConfigurationBloc,
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
-          ),
+          body: _pumpCreateModal(configurationBloc: mockConfigurationBloc),
         ),
       ));
       await tester.pumpAndSettle();
@@ -348,33 +331,18 @@ void main() {
       await tester.pumpWidget(createLocalizedTestApp(
         locale: Locale('en'),
         child: Scaffold(
-          body: MultiProvider(
-            providers: [
-              ChangeNotifierProvider<OpenSenseMapBloc>.value(
-                  value: mockOpenSenseMapBloc),
-              ChangeNotifierProvider<GeolocationBloc>.value(
-                  value: mockGeolocationBloc),
-                ChangeNotifierProvider<ConfigurationBloc>.value(
-                  value: mockConfigurationBloc),
-            ],
-            child: CreateBikeBoxModal(
-              boxConfigurations: mockConfigurationBloc.boxConfigurations,
-              campaigns: mockConfigurationBloc.campaigns,
-              isLoadingBoxConfigurations:
-                  mockConfigurationBloc.isLoadingBoxConfigurations,
-              isLoadingCampaigns: mockConfigurationBloc.isLoadingCampaigns,
-              boxConfigurationsError:
-                  mockConfigurationBloc.boxConfigurationsError,
-              campaignsError: mockConfigurationBloc.campaignsError,
-              getBoxConfigurationById: (id) =>
-                  mockConfigurationBloc.getBoxConfigurationById(id),
-            ),
+          body: _pumpCreateModal(
+            configurationBloc: mockConfigurationBloc,
+            openSenseMapBloc: mockOpenSenseMapBloc,
+            geolocationBloc: mockGeolocationBloc,
           ),
         ),
       ));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextFormField).first, 'My Bike');
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.widgetWithText(ButtonWithLoader, 'Create'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ButtonWithLoader, 'Create'));
       await tester.pumpAndSettle();

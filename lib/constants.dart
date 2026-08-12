@@ -2,6 +2,7 @@ import 'package:geolocator/geolocator.dart' as geolocator;
 
 // Tracks screen
 const tracksPerPage = 6;
+const exportCsvWriteBatchSize = 500;
 
 const defaultTimeout = 30; // in seconds
 
@@ -9,7 +10,12 @@ class SharedPreferencesKeys {
   static const String privacyPolicyAcceptedAt = 'privacyPolicyAcceptedAt';
   static const String privacyZones = 'privacyZones';
   static const String selectedSenseBox = 'selectedSenseBox';
-  static const bool vibrateOnDisconnect = false;
+  static const String vibrateOnDisconnect = 'vibrateOnDisconnect';
+  // Legacy key names kept for prefs migration; Dart API uses dataCollectionMode.
+  static const String lastResolvedDataCollectionMode =
+      'lastResolvedDataCollectionMode';
+  static const String lastResolvedCollectionIntervalSeconds =
+      'lastResolvedCollectionIntervalSeconds';
 }
 
 
@@ -29,12 +35,18 @@ const githubDataBaseUrl =
 
 const apiUrlsPath = '/api_urls.json';
 const campaignsPath = '/locations.json';
-const boxConfigurationsPath = '/box_configurations.json';
+// Legacy inline format kept at /box_configurations.json for older app releases.
+// Current builds use the catalog-keyed v2 file.
+const boxConfigurationsPath = '/box_configurations_v2.json';
+const sensorsPath = '/sensors.json';
 
+const sensorsAssetPath = 'data/sensors.json';
+const boxConfigurationsAssetPath = 'data/box_configurations_v2.json';
 
 const apiUrlsUrl = '$githubDataBaseUrl$apiUrlsPath';
 const campaignsUrl = '$githubDataBaseUrl$campaignsPath';
 const boxConfigurationsUrl = '$githubDataBaseUrl$boxConfigurationsPath';
+const sensorsUrl = '$githubDataBaseUrl$sensorsPath';
 
 final globePosition = geolocator.Position(
     latitude: 0.0,

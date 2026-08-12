@@ -1,0 +1,63 @@
+[
+  {
+    "id": "lauds_26",
+    "displayName": "LAUDS 26",
+    "defaultGrouptag": "lauds_26",
+    "sensors": [
+      { "key": "distance", "title": "Distance Left" },
+      { "key": "distance_right" },
+      { "key": "overtaking" },
+      { "key": "finedust", "attribute": "pm1" },
+      { "key": "finedust", "attribute": "pm2.5" },
+      { "key": "finedust", "attribute": "pm4" },
+      { "key": "finedust", "attribute": "pm10" },
+      { "key": "surface_classification", "attribute": "asphalt" },
+      { "key": "surface_classification", "attribute": "sett" },
+      { "key": "surface_classification", "attribute": "compacted" },
+      { "key": "surface_classification", "attribute": "paving" },
+      { "key": "surface_classification", "attribute": "standing" },
+      { "key": "surface_anomaly" },
+      { "key": "gps", "attribute": "speed" }
+    ]
+  },
+  {
+    "id": "atrai",
+    "displayName": "2025",
+    "defaultGrouptag": "atrai",
+    "sensors": [
+      { "key": "distance", "title": "Overtaking Distance" },
+      { "key": "overtaking" },
+      { "key": "temperature" },
+      { "key": "humidity" },
+      { "key": "finedust", "attribute": "pm1" },
+      { "key": "finedust", "attribute": "pm2.5" },
+      { "key": "finedust", "attribute": "pm4" },
+      { "key": "finedust", "attribute": "pm10" },
+      { "key": "surface_classification", "attribute": "asphalt" },
+      { "key": "surface_classification", "attribute": "sett" },
+      { "key": "surface_classification", "attribute": "compacted" },
+      { "key": "surface_classification", "attribute": "paving" },
+      { "key": "surface_classification", "attribute": "standing" },
+      { "key": "surface_anomaly" },
+      { "key": "gps", "attribute": "speed" }
+    ]
+  },
+  {
+    "id": "classic",
+    "displayName": "2022",
+    "defaultGrouptag": "classic",
+    "sensors": [
+      { "key": "distance", "title": "Overtaking Distance" },
+      { "key": "temperature" },
+      { "key": "humidity" },
+      { "key": "finedust", "attribute": "pm1" },
+      { "key": "finedust", "attribute": "pm2.5" },
+      { "key": "finedust", "attribute": "pm4" },
+      { "key": "finedust", "attribute": "pm10" },
+      { "key": "acceleration", "attribute": "x" },
+      { "key": "acceleration", "attribute": "y" },
+      { "key": "acceleration", "attribute": "z" },
+      { "key": "gps", "attribute": "speed" }
+    ]
+  }
+]

@@ -51,6 +51,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Você pode separar etiquetas com vírgulas';
 
   @override
+  String get createBoxDataRecording => 'Gravação avançada de dados';
+
+  @override
   String get generalLoading => 'Carregando...';
 
   @override
@@ -248,6 +251,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionButtonStop => 'Parar';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Amostragem periódica a cada $seconds s';
+  }
+
+  @override
+  String get recordingSaveSample => 'Salvar amostra';
+
+  @override
   String get bleDeviceSelectTitle => 'Toque para conectar';
 
   @override
@@ -338,6 +349,47 @@ class AppLocalizationsPt extends AppLocalizations {
       '• Os dados são enviados imediatamente conforme são coletados\n• Compartilhamento de dados em tempo real (experimental)\n• Requer conexão com a internet estável\n• Pode consumir mais bateria durante a gravação';
 
   @override
+  String get settingsDataCollectionMode => 'Gravação de dados';
+
+  @override
+  String settingsDataCollectionModeCurrent(String mode) {
+    return 'Atual: $mode';
+  }
+
+  @override
+  String get settingsDataCollectionModeGpsDriven => 'Contínuo';
+
+  @override
+  String get settingsDataCollectionModePeriodic => 'Periódico';
+
+  @override
+  String get settingsDataCollectionModeOnTap => 'Amostragem manual';
+
+  @override
+  String get settingsDataCollectionModeGpsDrivenDescription =>
+      'Salvar dados dos sensores ao longo do trajeto GPS durante o passeio';
+
+  @override
+  String get settingsDataCollectionModePeriodicDescription =>
+      'Salvar dados automaticamente no intervalo escolhido';
+
+  @override
+  String get settingsDataCollectionModeOnTapDescription =>
+      'Salvar dados apenas ao tocar em Salvar amostra durante a gravação';
+
+  @override
+  String get settingsCollectionInterval => 'Intervalo de amostragem';
+
+  @override
+  String get settingsCollectionIntervalDescription =>
+      'Com que frequência os dados são salvos no modo periódico';
+
+  @override
+  String settingsCollectionIntervalCurrent(int seconds) {
+    return 'Atual: A cada $seconds s';
+  }
+
+  @override
   String get settingsApiUrl => 'URL do Serviço';
 
   @override
@@ -360,6 +412,14 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String settingsVersion(String versionNumber) {
     return 'Versão: $versionNumber';
+  }
+
+  @override
+  String get settingsStorageUsed => 'Armazenamento usado';
+
+  @override
+  String settingsStorageDetails(String databaseSize, String totalSize) {
+    return 'Dados do app: $totalSize (banco de dados: $databaseSize)';
   }
 
   @override
@@ -387,10 +447,15 @@ class AppLocalizationsPt extends AppLocalizations {
       'Permissão negada para salvar o arquivo no armazenamento externo.';
 
   @override
-  String get trackDetailsFileSaved => 'Arquivo CSV salvo na pasta Downloads.';
+  String get fileSavedDownloadsDirectory =>
+      'Arquivo CSV salvo na pasta Downloads.';
 
   @override
-  String get trackDetailsExport => 'Exportação de dados do trajeto em CSV.';
+  String get trackDetailsFileSavedApplicationDirectory =>
+      'Arquivo CSV salvo na pasta de diretório do aplicativo.';
+
+  @override
+  String get trackDetailsExport => 'Exportação de dados do trajeto em CSV';
 
   @override
   String get trackDetailsLoadingError => 'Erro ao carregar o trajeto.';
@@ -646,26 +711,26 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackStatistics => 'Estatísticas do Trajeto';
 
   @override
-  String get uploadProgressTitle => 'Progresso do Upload';
+  String get uploadProgressTitle => 'Progresso da Operação';
 
   @override
-  String get uploadProgressPreparing => 'Preparando upload...';
+  String get uploadProgressPreparing => 'Preparando operação...';
 
   @override
-  String get uploadProgressUploading => 'Enviando dados do trajeto...';
+  String get uploadProgressUploading => 'Processando dados do trajeto...';
 
   @override
   String get uploadProgressInfo =>
-      'Por favor, não feche o aplicativo durante o upload. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser enviar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.';
+      'Por favor, não feche o aplicativo durante o processamento. Dependendo do comprimento do seu trajeto, isso pode levar algum tempo.\n\nSe quiser processar os dados do seu trajeto mais tarde, pode fazê-lo a partir da tela de visão geral do trajeto.';
 
   @override
-  String get uploadProgressRetrying => 'Tentando upload novamente...';
+  String get uploadProgressRetrying => 'Tentando operação novamente...';
 
   @override
-  String get uploadProgressCompleted => 'Upload concluído com sucesso';
+  String get uploadProgressCompleted => 'Operação concluída com sucesso';
 
   @override
-  String get uploadProgressFailed => 'Upload falhou';
+  String get uploadProgressFailed => 'Operação falhou';
 
   @override
   String get uploadProgressAuthenticationFailed => 'Autenticação necessária';
@@ -679,7 +744,7 @@ class AppLocalizationsPt extends AppLocalizations {
       one: '1 bloco',
       zero: '0 blocos',
     );
-    return '$completed de $_temp0 enviados';
+    return '$completed de $_temp0 processados';
   }
 
   @override
@@ -692,11 +757,18 @@ class AppLocalizationsPt extends AppLocalizations {
       'Por favor, faça login para enviar dados.';
 
   @override
+  String get exportRequiresLoginToOpenSenseMap =>
+      'Por favor, faça login na sua conta openSenseMap para prosseguir com a exportação.';
+
+  @override
+  String get errorExportFailed => 'Falha na exportação. Tente novamente.';
+
+  @override
   String get uploadProgressNetworkError =>
       'Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.';
 
   @override
-  String get uploadProgressGenericError => 'Upload falhou. Tente novamente.';
+  String get uploadProgressGenericError => 'Operação falhou. Tente novamente.';
 
   @override
   String get uploadConfirmTitle => 'Enviar Dados do Trajeto';
@@ -724,7 +796,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String trackStatusUploadFailedAt(Object date) {
-    return 'Falha no envio em $date';
+    return 'Envio falhou em $date';
   }
 
   @override
@@ -739,6 +811,17 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trackStatus => 'Status';
+
+  @override
+  String get trackCollectionModeLabel => 'Amostragem';
+
+  @override
+  String get trackCollectionModeOnTap => 'Amostragem manual';
+
+  @override
+  String trackCollectionModePeriodic(int seconds) {
+    return 'A cada $seconds s';
+  }
 
   @override
   String get trackDirectUploadAuthFailed =>

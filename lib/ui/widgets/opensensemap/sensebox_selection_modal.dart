@@ -529,40 +529,38 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
     }
 
     final configurationBloc = widget.configurationBloc;
-    final isLoaded = configurationBloc.boxConfigurations != null &&
-        !configurationBloc.isLoadingBoxConfigurations;
-    final isLoading = configurationBloc.isLoadingBoxConfigurations;
-    final localizations = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (isLoaded) {
-      return FloatingActionButton(
-        onPressed: () async {
-          await _showCreateSenseBoxDialog(context);
-        },
-        backgroundColor: colorScheme.onTertiaryContainer,
-        foregroundColor: colorScheme.tertiaryContainer,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add),
-      );
-    } else {
-      return ButtonWithLoader(
-        isLoading: isLoading,
-        onPressed: isLoading
-            ? null
-            : () async {
-                await configurationBloc.loadBoxConfigurations();
-                if (mounted) {
-                  setState(() {});
-                  final bloc = widget.bloc;
-                  if (bloc.senseBoxes.isEmpty) {
-                    await bloc.fetchSenseBoxes();
+    // The button stays a create action and pulls the configurations in on
+    // demand, rather than showing a separate reload button first.
+    return ListenableBuilder(
+      listenable: configurationBloc,
+      builder: (context, _) {
+        final isLoading = configurationBloc.isLoadingBoxConfigurations;
+
+        return FloatingActionButton(
+          onPressed: isLoading
+              ? null
+              : () async {
+                  if (configurationBloc.boxConfigurations == null) {
+                    await configurationBloc.loadAll();
                   }
-                }
-              },
-        text: localizations.reloadConfiguration,
-      );
-    }
+                  if (!context.mounted) return;
+                  await _showCreateSenseBoxDialog(context);
+                },
+          backgroundColor: colorScheme.onTertiaryContainer,
+          foregroundColor: colorScheme.tertiaryContainer,
+          shape: const CircleBorder(),
+          child: isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.add),
+        );
+      },
+    );
   }
 
   Future<Object> _showCreateSenseBoxDialog(BuildContext context) async {

@@ -199,7 +199,7 @@ class _ApiUrlDialogState extends State<ApiUrlDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           DropdownButtonFormField<String>(
-            value: _dropdownValue,
+            initialValue: _dropdownValue,
             isExpanded: true,
             decoration: InputDecoration(labelText: translations.settingsApiUrl),
             selectedItemBuilder: (context) => [

@@ -51,6 +51,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'Vous pouvez séparer les étiquettes par des virgules';
 
   @override
+  String get createBoxDataRecording => 'Enregistrement des données avancé';
+
+  @override
   String get generalLoading => 'Chargement...';
 
   @override
@@ -250,6 +253,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get connectionButtonStop => 'Arrêter';
 
   @override
+  String recordingPeriodicCollectionMode(int seconds) {
+    return 'Échantillonnage périodique toutes les $seconds s';
+  }
+
+  @override
+  String get recordingSaveSample => 'Enregistrer un point';
+
+  @override
   String get bleDeviceSelectTitle => 'Touchez pour connecter';
 
   @override
@@ -341,6 +352,47 @@ class AppLocalizationsFr extends AppLocalizations {
       '• Les données sont téléversées immédiatement dès leur collecte\n• Partage des données en temps réel (expérimental)\n• Nécessite une connexion internet stable\n• Peut utiliser plus de batterie pendant l’enregistrement';
 
   @override
+  String get settingsDataCollectionMode => 'Enregistrement des données';
+
+  @override
+  String settingsDataCollectionModeCurrent(String mode) {
+    return 'Actuel : $mode';
+  }
+
+  @override
+  String get settingsDataCollectionModeGpsDriven => 'Continu';
+
+  @override
+  String get settingsDataCollectionModePeriodic => 'Périodique';
+
+  @override
+  String get settingsDataCollectionModeOnTap => 'Échantillonnage manuel';
+
+  @override
+  String get settingsDataCollectionModeGpsDrivenDescription =>
+      'Enregistrer les données des capteurs le long de votre trajet GPS';
+
+  @override
+  String get settingsDataCollectionModePeriodicDescription =>
+      'Enregistrer automatiquement les données à l’intervalle choisi';
+
+  @override
+  String get settingsDataCollectionModeOnTapDescription =>
+      'Enregistrer les données uniquement lorsque vous appuyez sur Enregistrer un point pendant l’enregistrement';
+
+  @override
+  String get settingsCollectionInterval => 'Intervalle d’échantillonnage';
+
+  @override
+  String get settingsCollectionIntervalDescription =>
+      'Fréquence d’enregistrement en mode périodique';
+
+  @override
+  String settingsCollectionIntervalCurrent(int seconds) {
+    return 'Actuel : toutes les $seconds s';
+  }
+
+  @override
   String get settingsApiUrl => 'URL du service';
 
   @override
@@ -363,6 +415,14 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String settingsVersion(String versionNumber) {
     return 'Version : $versionNumber';
+  }
+
+  @override
+  String get settingsStorageUsed => 'Espace de stockage utilisé';
+
+  @override
+  String settingsStorageDetails(String databaseSize, String totalSize) {
+    return 'Données de l\'app : $totalSize (base de données : $databaseSize)';
   }
 
   @override
@@ -390,11 +450,15 @@ class AppLocalizationsFr extends AppLocalizations {
       'Permission refusée pour enregistrer le fichier dans le stockage externe.';
 
   @override
-  String get trackDetailsFileSaved =>
+  String get fileSavedDownloadsDirectory =>
       'Fichier CSV enregistré dans le dossier Téléchargements.';
 
   @override
-  String get trackDetailsExport => 'Export CSV des données du parcours.';
+  String get trackDetailsFileSavedApplicationDirectory =>
+      'Fichier CSV enregistré dans le dossier du répertoire de l\'application.';
+
+  @override
+  String get trackDetailsExport => 'Export CSV des données du parcours';
 
   @override
   String get trackDetailsLoadingError =>
@@ -654,27 +718,26 @@ class AppLocalizationsFr extends AppLocalizations {
   String get trackStatistics => 'Statistiques du parcours';
 
   @override
-  String get uploadProgressTitle => 'Progression du téléversement';
+  String get uploadProgressTitle => 'Progression de l\'Opération';
 
   @override
-  String get uploadProgressPreparing => 'Préparation du téléversement...';
+  String get uploadProgressPreparing => 'Préparation de l\'opération...';
 
   @override
-  String get uploadProgressUploading =>
-      'Téléversement des données du parcours...';
+  String get uploadProgressUploading => 'Traitement des données du parcours...';
 
   @override
   String get uploadProgressInfo =>
-      'Ne fermez pas l’application pendant le téléversement. Cela peut prendre un certain temps selon la longueur du parcours.\n\nSi vous souhaitez téléverser plus tard, vous pouvez le faire depuis l’écran d’aperçu des parcours.';
+      'Ne fermez pas l\'application pendant le traitement. Cela peut prendre un certain temps selon la longueur du parcours.\n\nSi vous souhaitez traiter plus tard, vous pouvez le faire depuis l\'écran d\'aperçu des parcours.';
 
   @override
-  String get uploadProgressRetrying => 'Nouvelle tentative de téléversement...';
+  String get uploadProgressRetrying => 'Nouvelle tentative de l\'opération...';
 
   @override
-  String get uploadProgressCompleted => 'Téléversement terminé avec succès';
+  String get uploadProgressCompleted => 'Opération terminée avec succès';
 
   @override
-  String get uploadProgressFailed => 'Échec du téléversement';
+  String get uploadProgressFailed => 'Échec de l\'opération';
 
   @override
   String get uploadProgressAuthenticationFailed => 'Authentification requise';
@@ -688,7 +751,7 @@ class AppLocalizationsFr extends AppLocalizations {
       one: '1 segment',
       zero: '0 segments',
     );
-    return '$completed sur $_temp0 téléversés';
+    return '$completed sur $_temp0 traités';
   }
 
   @override
@@ -701,12 +764,19 @@ class AppLocalizationsFr extends AppLocalizations {
       'Veuillez vous connecter pour téléverser les données.';
 
   @override
+  String get exportRequiresLoginToOpenSenseMap =>
+      'Veuillez vous connecter à votre compte openSenseMap pour poursuivre l\'export.';
+
+  @override
+  String get errorExportFailed => 'Échec de l\'export. Veuillez réessayer.';
+
+  @override
   String get uploadProgressNetworkError =>
       'Échec de la connexion réseau. Veuillez vérifier votre connexion internet et réessayer.';
 
   @override
   String get uploadProgressGenericError =>
-      'Échec du téléversement. Veuillez réessayer.';
+      'Échec de l\'opération. Veuillez réessayer.';
 
   @override
   String get uploadConfirmTitle => 'Téléverser les données du parcours';
@@ -749,6 +819,17 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get trackStatus => 'Statut';
+
+  @override
+  String get trackCollectionModeLabel => 'Échantillonnage';
+
+  @override
+  String get trackCollectionModeOnTap => 'Échantillonnage manuel';
+
+  @override
+  String trackCollectionModePeriodic(int seconds) {
+    return 'Toutes les $seconds s';
+  }
 
   @override
   String get trackDirectUploadAuthFailed =>

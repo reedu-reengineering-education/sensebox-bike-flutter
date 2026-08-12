@@ -9,6 +9,7 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/track_detail_screen.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
+import 'package:sensebox_bike/ui/widgets/track/track_collection_mode_chip.dart';
 
 const double kMapPreviewHeight = 116;
 const double _cardRadius = 20;
@@ -194,6 +195,7 @@ class TrackListItem extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      TrackCollectionModeChip(track: track),
                       const Spacer(),
                       _buildMetricRow(
                         theme,
