@@ -35,12 +35,12 @@ extension FormFactorX on BuildContext {
   }
 
   /// Track overview sensor tiles: phone unchanged.
-  /// iPad: up to 4 (portrait) / 8 (landscape), or fewer if fewer tiles.
+  /// iPad: up to 6 (portrait) / 8 (landscape), or fewer if fewer tiles.
   int trackSensorCrossAxisCount({required int tileCount}) {
     if (!isTablet) {
       return MediaQuery.sizeOf(this).width < 400 ? 3 : 4;
     }
-    final maxColumns = isLandscape ? 8 : 4;
+    final maxColumns = isLandscape ? 8 : 6;
     if (tileCount <= 0) return maxColumns;
     return min(maxColumns, tileCount);
   }
