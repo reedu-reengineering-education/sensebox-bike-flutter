@@ -146,21 +146,21 @@ class _SensorTileRailState extends State<_SensorTileRail> {
     super.dispose();
   }
 
+  static const double _tileHeight = 96;
+
   @override
   Widget build(BuildContext context) {
     return Scrollbar(
       controller: _controller,
       thumbVisibility: true,
-      child: ListView.separated(
+      child: ListView.builder(
         controller: _controller,
         padding: const EdgeInsets.all(spacing / 2),
         itemCount: widget.tileList.length,
-        separatorBuilder: (_, __) => const SizedBox(height: spacing / 2),
+        itemExtent: _tileHeight + spacing / 2,
         itemBuilder: (context, index) {
-          // Keep a readable tile height even when the track rail is narrow;
-          // do not lock height to width (AspectRatio 1 made tiles shrink).
-          return SizedBox(
-            height: 112,
+          return Padding(
+            padding: const EdgeInsets.only(bottom: spacing / 2),
             child: widget.tileList[index],
           );
         },

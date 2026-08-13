@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/theme.dart';
 
+const double kSensorTileLabelHeight = 32;
+
 class SensorTile extends StatelessWidget {
   final String title;
   final Color cardColor;
@@ -18,49 +20,38 @@ class SensorTile extends StatelessWidget {
   });
 
   @override
-Widget build(BuildContext context) {
-  return Card.filled(
-    clipBehavior: Clip.hardEdge,
-    color: cardColor,
-    child: InkWell(
-      onTap: () => onTap(),
-      child: Padding(
-        padding: const EdgeInsets.all(spacing / 2),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SizedBox(
-              width: constraints.maxWidth,
-              height: constraints.maxHeight,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(sensorIcon, size: 24, color: sensorColor),
-                  const SizedBox(height: spacing),
-                  if (title.split(' ').length == 2)
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: title.split(' ').map((word) {
-                        return Text(
-                          word,
-                          style: TextStyle(fontSize: 12, color: sensorColor),
-                          textAlign: TextAlign.center,
-                        );
-                      }).toList(),
-                    )
-                  else
-                    Text(
-                      title,
-                      style: TextStyle(fontSize: 12, color: sensorColor),
-                      textAlign: TextAlign.center,
-                    ),
-                ],
+  Widget build(BuildContext context) {
+    return Card.filled(
+      clipBehavior: Clip.hardEdge,
+      color: cardColor,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(spacing / 2),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(sensorIcon, size: 24, color: sensorColor),
+              const SizedBox(height: spacing / 2),
+              SizedBox(
+                height: kSensorTileLabelHeight,
+                width: double.infinity,
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.25,
+                    color: sensorColor,
+                  ),
+                ),
               ),
-            );
-          },
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
