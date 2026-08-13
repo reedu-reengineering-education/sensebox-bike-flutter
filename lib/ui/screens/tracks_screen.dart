@@ -315,7 +315,10 @@ class TracksScreenState extends State<TracksScreen> {
                         maxCrossAxisExtent: kTrackTileMaxExtent,
                         mainAxisSpacing: spacing,
                         crossAxisSpacing: spacing,
-                        childAspectRatio: 0.74,
+                        // Was 0.74 - too tight for the date/time/chip + two
+                        // metric rows below the map preview, overflowing on
+                        // narrow phones. Taller cards give that content room.
+                        childAspectRatio: 0.62,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
