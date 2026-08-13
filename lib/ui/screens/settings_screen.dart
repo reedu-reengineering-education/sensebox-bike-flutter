@@ -52,6 +52,7 @@ class SettingsScreen extends StatelessWidget {
     final twoColumn = context.useTwoColumnLandscape;
 
     final login = _buildLoginLogoutSection(context, openSenseMapBloc);
+    final about = _buildAboutSection(context);
     final general = _buildGeneralSettingsSection(context, settingsBloc);
     final account = _buildAccountManagementSection(context);
     final help = _buildHelpSection(context);
@@ -76,13 +77,13 @@ class SettingsScreen extends StatelessWidget {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [login, account, help],
+                          children: [login, about, account, help],
                         ),
                       ),
                     ],
                   ),
                 ]
-              : [login, general, account, help],
+              : [login, about, general, account, help],
         ),
       ),
     );

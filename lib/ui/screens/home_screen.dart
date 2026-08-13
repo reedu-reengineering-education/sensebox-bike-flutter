@@ -258,8 +258,7 @@ class _HomeScrollBody extends StatelessWidget {
         slivers: [
           SliverPersistentHeader(
             delegate: _SliverAppBarDelegate(
-              minHeight:
-                  context.homeMapMinHeight(isConnected: bleBloc.isConnected),
+              minHeight: context.homeMapMinHeight(),
               maxHeight:
                   context.homeMapMaxHeight(isConnected: bleBloc.isConnected),
               child: mapStack,

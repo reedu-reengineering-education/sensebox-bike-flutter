@@ -60,7 +60,7 @@ extension FormFactorX on BuildContext {
   /// Narrower rail for track overview sensor tiles only.
   double get landscapeTrackSideRailWidth => landscapeSideRailWidth / 2;
 
-  double homeMapMinHeight({required bool isConnected}) {
+  double homeMapMinHeight() {
     return MediaQuery.sizeOf(this).height * 0.33;
   }
 
