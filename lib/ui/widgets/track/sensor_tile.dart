@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/theme.dart';
 
-const double kSensorTileLabelHeight = 32;
-
 class SensorTile extends StatelessWidget {
   final String title;
   final Color cardColor;

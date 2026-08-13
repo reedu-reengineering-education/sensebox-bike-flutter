@@ -146,7 +146,7 @@ class _SensorTileRailState extends State<_SensorTileRail> {
     super.dispose();
   }
 
-  static const double _tileHeight = 96;
+  static const double _tileHeight = kSensorTileRailHeight;
 
   @override
   Widget build(BuildContext context) {

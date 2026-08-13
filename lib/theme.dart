@@ -152,3 +152,7 @@ const double borderWidth = 1.5;
 const double padding = 8.0;
 const double borderRadius = 24.0;
 const double borderRadiusSmall = 8.0;
+
+/// Fixed height for landscape side-rail sensor tiles (home + track overview).
+const double kSensorTileRailHeight = 96;
+const double kSensorTileLabelHeight = 32;

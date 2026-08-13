@@ -25,13 +25,10 @@ extension FormFactorX on BuildContext {
   double get contentMaxWidth =>
       isTablet ? Breakpoints.contentMaxWidth : double.infinity;
 
-  /// Home sensor grid: phone stays at 2 columns.
-  /// iPad: up to 4 (portrait) / 8 (landscape), or fewer if fewer tiles.
+  /// Home sensor grid: always 2 columns; tile height fits content.
   int homeSensorCrossAxisCount({required int tileCount}) {
-    if (!isTablet) return 2;
-    final maxColumns = isLandscape ? 8 : 4;
-    if (tileCount <= 0) return maxColumns;
-    return min(maxColumns, tileCount);
+    if (tileCount <= 0) return 2;
+    return min(2, tileCount);
   }
 
   /// Track overview sensor tiles: phone unchanged.
@@ -52,13 +49,17 @@ extension FormFactorX on BuildContext {
   bool get useLandscapeSideRail => useTwoColumnLandscape;
 
   /// Width of the landscape side rail (actions / sensor tiles).
+  /// Sized so two sensor cards can sit side by side with full title text.
   double get landscapeSideRailWidth {
     final width = MediaQuery.sizeOf(this).width;
-    return (width * 0.28).clamp(240.0, 320.0);
+    return (width * 0.45).clamp(440.0, 560.0);
   }
 
   /// Narrower rail for track overview sensor tiles only.
-  double get landscapeTrackSideRailWidth => landscapeSideRailWidth / 2;
+  double get landscapeTrackSideRailWidth {
+    final width = MediaQuery.sizeOf(this).width;
+    return (width * 0.14).clamp(120.0, 160.0);
+  }
 
   double homeMapMinHeight() {
     return MediaQuery.sizeOf(this).height * 0.33;

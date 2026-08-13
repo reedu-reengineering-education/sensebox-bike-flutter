@@ -235,18 +235,19 @@ class _HomeScrollBody extends StatelessWidget {
     required this.mapStack,
   });
 
-  /// Height of one square sensor tile row (grid default aspect ratio is 1).
+  /// Estimated height of one content-sized sensor row (2 columns).
   double _oneSensorTileHeight(
       BuildContext context, double maxWidth, int tileCount) {
-    const horizontalPadding = 16.0; // SliverSafeArea left + right
-    const crossAxisSpacing = 8.0;
+    const horizontalPadding = spacing;
+    const crossAxisSpacing = spacing / 2;
     final crossAxisCount =
         context.homeSensorCrossAxisCount(tileCount: tileCount);
-    final tileExtent = (maxWidth -
+    final tileWidth = (maxWidth -
             horizontalPadding -
             crossAxisSpacing * (crossAxisCount - 1)) /
         crossAxisCount;
-    return tileExtent + 8; // one row + bottom padding
+    // Content-fit tiles are shorter than square; charts use ~1.3 aspect.
+    return tileWidth / 1.3 + spacing / 2;
   }
 
   @override
@@ -266,7 +267,8 @@ class _HomeScrollBody extends StatelessWidget {
             pinned: true,
           ),
           SliverSafeArea(
-            minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            minimum: const EdgeInsets.fromLTRB(
+                spacing / 2, 0, spacing / 2, spacing / 2),
             sliver: _SensorSliver(bleBloc: bleBloc, sensorBloc: sensorBloc),
           ),
         ],
@@ -305,7 +307,8 @@ class _HomeScrollBody extends StatelessWidget {
               pinned: true,
             ),
             SliverSafeArea(
-              minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              minimum: const EdgeInsets.fromLTRB(
+                  spacing / 2, 0, spacing / 2, spacing / 2),
               sliver: _SensorSliver(bleBloc: bleBloc, sensorBloc: sensorBloc),
             ),
           ],
@@ -834,7 +837,7 @@ class _BottomGradient extends StatelessWidget {
   }
 }
 
-// Widget for the sensor grid
+// Widget for the sensor grid — 2 per row, height fits each tile's content.
 class _SensorGrid extends StatelessWidget {
   final List<Sensor> sensors;
   const _SensorGrid({required this.sensors});
@@ -842,25 +845,36 @@ class _SensorGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sortedSensors = sortSensorsByUiPriority(sensors);
+    final rowCount = (sortedSensors.length + 1) ~/ 2;
 
-    return SliverGrid(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: context.homeSensorCrossAxisCount(
-            tileCount: sortedSensors.length),
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
+    return SliverList(
       delegate: SliverChildBuilderDelegate(
-        (BuildContext context, int index) {
-          return sortedSensors[index].buildWidget();
+        (context, rowIndex) {
+          final left = rowIndex * 2;
+          final right = left + 1;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: spacing / 2),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: sortedSensors[left].buildWidget()),
+                const SizedBox(width: spacing / 2),
+                Expanded(
+                  child: right < sortedSensors.length
+                      ? sortedSensors[right].buildWidget()
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          );
         },
-        childCount: sortedSensors.length,
+        childCount: rowCount,
       ),
     );
   }
 }
 
-/// Vertical sensor list for the landscape side rail.
+/// Landscape side rail: 2 tiles per row, height fits content.
 class _SensorRail extends StatelessWidget {
   final BleBloc bleBloc;
   final SensorBloc sensorBloc;
@@ -899,14 +913,27 @@ class _SensorRail extends StatelessWidget {
 
                 final sensors =
                     sortSensorsByUiPriority(sensorBloc.availableSensors);
-                return ListView.separated(
+                final rowCount = (sensors.length + 1) ~/ 2;
+                return ListView.builder(
                   padding: EdgeInsets.zero,
-                  itemCount: sensors.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    return AspectRatio(
-                      aspectRatio: 1,
-                      child: sensors[index].buildWidget(),
+                  itemCount: rowCount,
+                  itemBuilder: (context, rowIndex) {
+                    final left = rowIndex * 2;
+                    final right = left + 1;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: spacing / 2),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: sensors[left].buildWidget()),
+                          const SizedBox(width: spacing / 2),
+                          Expanded(
+                            child: right < sensors.length
+                                ? sensors[right].buildWidget()
+                                : const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 );
