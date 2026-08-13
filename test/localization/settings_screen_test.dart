@@ -84,10 +84,22 @@ void main() {
     );
   }
 
+  /// Phone-sized surface so localization tests exercise the single-column
+  /// layout (default 800x600 is tablet landscape and enables two-column).
+  Future<void> pumpSettingsScreen(
+      WidgetTester tester, Locale locale) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(buildTestWidget(locale));
+    await tester.pumpAndSettle();
+  }
+
   group("SettingsScreen Widget", () {
     testWidgets("is translated in English", (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(const Locale('en')));
-      await tester.pumpAndSettle();
+      await pumpSettingsScreen(tester, const Locale('en'));
 
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
@@ -108,8 +120,7 @@ void main() {
     });
 
     testWidgets("is translated in German", (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(const Locale('de')));
-      await tester.pumpAndSettle();
+      await pumpSettingsScreen(tester, const Locale('de'));
 
       expect(find.text('Einstellungen'), findsOneWidget);
       expect(find.text('Über die App'), findsOneWidget);
@@ -129,8 +140,7 @@ void main() {
     });
 
     testWidgets("is translated in Portuguese", (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(const Locale('pt')));
-      await tester.pumpAndSettle();
+      await pumpSettingsScreen(tester, const Locale('pt'));
 
       expect(find.text('Configurações'), findsOneWidget);
       expect(find.text('Sobre'), findsOneWidget);
@@ -150,8 +160,7 @@ void main() {
     });
 
     testWidgets("is translated in French", (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(const Locale('fr')));
-      await tester.pumpAndSettle();
+      await pumpSettingsScreen(tester, const Locale('fr'));
 
       expect(find.text('Paramètres'), findsOneWidget);
       expect(find.text('À propos'), findsOneWidget);
@@ -172,40 +181,35 @@ void main() {
 
     testWidgets("login and logout buttons are translated in English",
         (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(const Locale('en')));
-      await tester.pumpAndSettle();
+      await pumpSettingsScreen(tester, const Locale('en'));
 
       expect(find.text('Login or Register'), findsOneWidget);
     });
 
     testWidgets("login and logout buttons are translated in German",
         (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(const Locale('de')));
-      await tester.pumpAndSettle();
+      await pumpSettingsScreen(tester, const Locale('de'));
 
       expect(find.text('Anmelden oder Registrieren'), findsOneWidget);
     });
 
     testWidgets("login and logout buttons are translated in Portuguese",
         (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(const Locale('pt')));
-      await tester.pumpAndSettle();
+      await pumpSettingsScreen(tester, const Locale('pt'));
 
       expect(find.text('Entrar ou Registrar-se'), findsOneWidget);
     });
 
     testWidgets("login and logout buttons are translated in French",
         (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(const Locale('fr')));
-      await tester.pumpAndSettle();
+      await pumpSettingsScreen(tester, const Locale('fr'));
 
       expect(find.text('Connexion ou inscription'), findsOneWidget);
     });
 
     testWidgets('always shows Data recording settings',
         (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(const Locale('en')));
-      await tester.pumpAndSettle();
+      await pumpSettingsScreen(tester, const Locale('en'));
 
       expect(find.text('Data recording'), findsOneWidget);
     });

@@ -37,25 +37,39 @@ class ButtonWithLoader extends StatelessWidget {
       onPressed: onPressed,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           if (isLoading) ...[
-            Loader(),
-            SizedBox(width: 8),
+            const Loader(),
+            const SizedBox(width: 8),
           ],
-          Text(text),
+          Flexible(
+            child: Text(
+              text,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ),
         ],
       ),
     );
 
     if (width != null) {
-      final screenWidth = MediaQuery.sizeOf(context).width;
-      // Phone: fraction of screen (unchanged). Tablet: also cap to content width.
-      final base = context.isTablet
-          ? min(screenWidth, context.contentMaxWidth)
-          : screenWidth;
-      return SizedBox(
-        width: base * width!,
-        child: button,
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          // Prefer the parent width (e.g. settings two-column lane) so we do
+          // not size the button from full screen and overflow a narrow column.
+          final screenWidth = MediaQuery.sizeOf(context).width;
+          final fallback = context.isTablet
+              ? min(screenWidth, context.contentMaxWidth)
+              : screenWidth;
+          final available =
+              constraints.maxWidth.isFinite ? constraints.maxWidth : fallback;
+          return SizedBox(
+            width: available * width!,
+            child: button,
+          );
+        },
       );
     } else {
       return button;

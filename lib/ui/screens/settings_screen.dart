@@ -139,10 +139,12 @@ class SettingsScreen extends StatelessWidget {
       spacing: 12,
       children: [
         _buildUserIcon(context),
-        if (isAuthenticated)
-          _buildAuthenticatedUserInfo(context, userData, openSenseMapBloc)
-        else
-          _buildUnauthenticatedUserInfo(context),
+        Expanded(
+          child: isAuthenticated
+              ? _buildAuthenticatedUserInfo(
+                  context, userData, openSenseMapBloc)
+              : _buildUnauthenticatedUserInfo(context),
+        ),
       ],
     );
   }
@@ -404,52 +406,6 @@ class SettingsScreen extends StatelessWidget {
               value: AppLocalizations.of(context)!
                   .settingsUploadModeCurrent(uploadModeText),
               onTap: () => _showUploadModeDialog(context, settingsBloc),
-            );
-          },
-        ),
-        Consumer<SettingsBloc>(
-          builder: (context, bloc, _) {
-            final modeLabel = dataCollectionModeSettingsLabel(
-              bloc.dataCollectionMode,
-              AppLocalizations.of(context)!,
-            );
-            return ListTile(
-              leading: const Icon(Icons.sensors),
-              title: Text(
-                AppLocalizations.of(context)!.settingsDataCollectionMode,
-              ),
-              subtitle: Text(
-                AppLocalizations.of(context)!
-                    .settingsDataCollectionModeCurrent(modeLabel),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-              onTap: () => _showDataCollectionModeDialog(context, bloc),
-            );
-          },
-        ),
-        Consumer<SettingsBloc>(
-          builder: (context, bloc, _) {
-            if (!bloc.dataCollectionMode.usesPeriodicTimer) {
-              return const SizedBox.shrink();
-            }
-            final seconds = bloc.collectionIntervalSeconds;
-            return ListTile(
-              leading: const Icon(Icons.schedule),
-              title: Text(
-                AppLocalizations.of(context)!.settingsCollectionInterval,
-              ),
-              subtitle: Text(
-                AppLocalizations.of(context)!
-                    .settingsCollectionIntervalCurrent(seconds),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-              onTap: () => _showCollectionIntervalDialog(context, bloc),
             );
           },
         ),
