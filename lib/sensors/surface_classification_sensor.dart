@@ -124,70 +124,81 @@ class SurfaceClassificationSensor extends Sensor {
             title: AppLocalizations.of(context)!.sensorSurface,
             icon: getSensorIcon(title),
             color: getSensorColor(title),
-            child: Column(
-              children: [
-                const SizedBox(
-                  height: 2,
-                ),
-                for (int i = 0; i < value.length; i++)
-                  _buildLegendEntry(
-                      [
-                        AppLocalizations.of(context)!.sensorSurfaceAsphaltShort,
-                        AppLocalizations.of(context)!
-                            .sensorSurfaceCompactedShort,
-                        AppLocalizations.of(context)!.sensorSurfacePavingShort,
-                        AppLocalizations.of(context)!.sensorSurfaceSettShort,
-                        AppLocalizations.of(context)!.sensorSurfaceStanding
-                      ][i],
-                      [
-                        Colors.blue,
-                        Colors.green,
-                        Colors.purpleAccent,
-                        Colors.orange,
-                        Colors.blueGrey
-                      ][i],
-                      value[i],
-                      context),
-                SizedBox(
-                  width: double.infinity,
-                  height: 18,
-                  child: RotatedBox(
-                    quarterTurns: 1,
-                    child: BarChart(BarChartData(
-                      borderData: FlBorderData(show: false),
-                      barTouchData: BarTouchData(enabled: false),
-                      gridData: const FlGridData(show: false),
-                      titlesData: const FlTitlesData(show: false),
-                      barGroups: [
-                        BarChartGroupData(
-                          x: 0,
-                          barRods: [
-                            BarChartRodData(
-                              toY: 1,
-                              rodStackItems: [
-                                for (int i = 0; i < value.length; i++)
-                                  BarChartRodStackItem(
-                                    value.take(i).fold(0.0, (a, b) => a + b),
-                                    value
-                                        .take(i + 1)
-                                        .fold(0.0, (a, b) => a + b),
-                                    [
-                                      Colors.blue,
-                                      Colors.green,
-                                      Colors.purpleAccent,
-                                      Colors.orange,
-                                      Colors.blueGrey
-                                    ][i],
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
+            child: AspectRatio(
+              aspectRatio: kMultiValueSensorAspectRatio,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        for (int i = 0; i < value.length; i++)
+                          _buildLegendEntry(
+                              [
+                                AppLocalizations.of(context)!
+                                    .sensorSurfaceAsphaltShort,
+                                AppLocalizations.of(context)!
+                                    .sensorSurfaceCompactedShort,
+                                AppLocalizations.of(context)!
+                                    .sensorSurfacePavingShort,
+                                AppLocalizations.of(context)!
+                                    .sensorSurfaceSettShort,
+                                AppLocalizations.of(context)!
+                                    .sensorSurfaceStanding
+                              ][i],
+                              [
+                                Colors.blue,
+                                Colors.green,
+                                Colors.purpleAccent,
+                                Colors.orange,
+                                Colors.blueGrey
+                              ][i],
+                              value[i],
+                              context),
                       ],
-                    )),
+                    ),
                   ),
-                ),
-              ],
+                  SizedBox(
+                    width: double.infinity,
+                    height: 18,
+                    child: RotatedBox(
+                      quarterTurns: 1,
+                      child: BarChart(BarChartData(
+                        borderData: FlBorderData(show: false),
+                        barTouchData: BarTouchData(enabled: false),
+                        gridData: const FlGridData(show: false),
+                        titlesData: const FlTitlesData(show: false),
+                        barGroups: [
+                          BarChartGroupData(
+                            x: 0,
+                            barRods: [
+                              BarChartRodData(
+                                toY: 1,
+                                rodStackItems: [
+                                  for (int i = 0; i < value.length; i++)
+                                    BarChartRodStackItem(
+                                      value.take(i).fold(0.0, (a, b) => a + b),
+                                      value
+                                          .take(i + 1)
+                                          .fold(0.0, (a, b) => a + b),
+                                      [
+                                        Colors.blue,
+                                        Colors.green,
+                                        Colors.purpleAccent,
+                                        Colors.orange,
+                                        Colors.blueGrey
+                                      ][i],
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      )),
+                    ),
+                  ),
+                ],
+              ),
             ));
       },
     );

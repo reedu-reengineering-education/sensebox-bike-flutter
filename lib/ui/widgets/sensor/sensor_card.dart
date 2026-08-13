@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+/// Shared chart size for multi-value sensors (finedust, surface, acceleration).
+const double kMultiValueSensorAspectRatio = 1.3;
+
 class SensorCard extends StatelessWidget {
   final Widget child;
   final String title;

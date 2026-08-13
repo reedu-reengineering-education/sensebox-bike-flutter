@@ -235,7 +235,7 @@ class _HomeScrollBody extends StatelessWidget {
     required this.mapStack,
   });
 
-  /// Estimated height of one content-sized sensor row (2 columns).
+  /// Estimated height of one content-sized sensor row.
   double _oneSensorTileHeight(
       BuildContext context, double maxWidth, int tileCount) {
     const horizontalPadding = spacing;
@@ -837,7 +837,7 @@ class _BottomGradient extends StatelessWidget {
   }
 }
 
-// Widget for the sensor grid — 2 per row, height fits each tile's content.
+// Widget for the sensor grid — 3 per row in portrait, height fits content.
 class _SensorGrid extends StatelessWidget {
   final List<Sensor> sensors;
   const _SensorGrid({required this.sensors});
@@ -845,25 +845,27 @@ class _SensorGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sortedSensors = sortSensorsByUiPriority(sensors);
-    final rowCount = (sortedSensors.length + 1) ~/ 2;
+    final columns =
+        context.homeSensorCrossAxisCount(tileCount: sortedSensors.length);
+    final rowCount = (sortedSensors.length + columns - 1) ~/ columns;
 
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, rowIndex) {
-          final left = rowIndex * 2;
-          final right = left + 1;
+          final start = rowIndex * columns;
           return Padding(
             padding: const EdgeInsets.only(bottom: spacing / 2),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: sortedSensors[left].buildWidget()),
-                const SizedBox(width: spacing / 2),
-                Expanded(
-                  child: right < sortedSensors.length
-                      ? sortedSensors[right].buildWidget()
-                      : const SizedBox.shrink(),
-                ),
+                for (int i = 0; i < columns; i++) ...[
+                  if (i > 0) const SizedBox(width: spacing / 2),
+                  Expanded(
+                    child: start + i < sortedSensors.length
+                        ? sortedSensors[start + i].buildWidget()
+                        : const SizedBox.shrink(),
+                  ),
+                ],
               ],
             ),
           );

@@ -25,10 +25,11 @@ extension FormFactorX on BuildContext {
   double get contentMaxWidth =>
       isTablet ? Breakpoints.contentMaxWidth : double.infinity;
 
-  /// Home sensor grid: always 2 columns; tile height fits content.
+  /// Home sensor grid: 3 columns in portrait; tile height fits content.
   int homeSensorCrossAxisCount({required int tileCount}) {
-    if (tileCount <= 0) return 2;
-    return min(2, tileCount);
+    final maxColumns = isLandscape ? 2 : 3;
+    if (tileCount <= 0) return maxColumns;
+    return min(maxColumns, tileCount);
   }
 
   /// Track overview sensor tiles: phone unchanged.

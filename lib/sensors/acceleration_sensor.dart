@@ -68,7 +68,7 @@ class AccelerationSensor extends Sensor {
             icon: getSensorIcon(title),
             color: getSensorColor(title),
             child: AspectRatio(
-                aspectRatio: 1.4,
+                aspectRatio: kMultiValueSensorAspectRatio,
                 child: BarChart(
                   BarChartData(
                       borderData: FlBorderData(show: false),
