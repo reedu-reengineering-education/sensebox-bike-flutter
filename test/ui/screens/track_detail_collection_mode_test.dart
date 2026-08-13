@@ -103,8 +103,11 @@ void main() {
       );
 
       await pumpTrackDetail(tester, track, geolocations);
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
 
-      expect(find.text('Sampling'), findsOneWidget);
+      // The collection mode row now lives in the overflow menu and shows
+      // only the mode's value (no separate "Sampling" label).
       expect(find.text('Manual sampling'), findsOneWidget);
     });
 
@@ -115,8 +118,9 @@ void main() {
       final track = TestTrackBuilder.createTrack(geolocations: geolocations);
 
       await pumpTrackDetail(tester, track, geolocations);
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
 
-      expect(find.text('Sampling'), findsNothing);
       expect(find.text('Manual sampling'), findsNothing);
       expect(find.textContaining('Every'), findsNothing);
     });
