@@ -376,12 +376,29 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   }
 
 
+  Rect _sharePositionOrigin(BuildContext context) {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize && box.size > Size.zero) {
+      return box.localToGlobal(Offset.zero) & box.size;
+    }
+    final size = MediaQuery.sizeOf(context);
+    return Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: size.width / 2,
+      height: size.height / 2,
+    );
+  }
+
   Future<void> _shareFile(String filePath) async {
     final localization = AppLocalizations.of(context)!;
 
     try {
-      await Share.shareXFiles([XFile(filePath)],
-          text: localization.trackDetailsExport);
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        text: localization.trackDetailsExport,
+        // iPad requires a non-zero source rect for the share popover.
+        sharePositionOrigin: _sharePositionOrigin(context),
+      );
     } catch (e) {
       ErrorService.handleError('Error sharing file: $e', StackTrace.current);
     }
