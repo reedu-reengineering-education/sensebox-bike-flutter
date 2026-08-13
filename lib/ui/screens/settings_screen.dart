@@ -589,109 +589,85 @@ class SettingsScreen extends StatelessWidget {
   void _showUploadModeDialog(BuildContext context, SettingsBloc settingsBloc) {
     final currentMode = settingsBloc.directUploadMode;
     final localizations = AppLocalizations.of(context)!;
-    final screenSize = MediaQuery.of(context).size;
-    final isLargeScreen = screenSize.width > 375; // iPhone mini width is 375px
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: Text(localizations.settingsUploadMode),
-          titlePadding: isLargeScreen
-              ? const EdgeInsets.fromLTRB(
-                  24, 24, 24, 24) // Extra padding on larger screens
-              : const EdgeInsets.fromLTRB(
-                  12, 12, 12, 12), // Standard padding on small screens
-          contentPadding: EdgeInsets.zero,
-          content: SizedBox(
-            width: double.maxFinite,
-            height: isLargeScreen
-                ? null
-                : MediaQuery.of(context).size.height *
-                    0.6, // Fixed height only on small screens
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(
-                    bottom: isLargeScreen
-                        ? 24.0
-                        : 0.0), // Add bottom padding on larger screens
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioListTile<bool>(
-                      title: Text(localizations.settingsUploadModePostRide),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(localizations.settingsUploadModePostRideTitle),
-                          const SizedBox(height: 8),
-                          Text(
-                            localizations.settingsUploadModePostRideDescription,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                          ),
-                        ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<bool>(
+                  title: Text(localizations.settingsUploadModePostRide),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(localizations.settingsUploadModePostRideTitle),
+                      const SizedBox(height: 8),
+                      Text(
+                        localizations.settingsUploadModePostRideDescription,
+                        style: Theme.of(dialogContext)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                              color: Theme.of(dialogContext)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
                       ),
-                      value: false,
-                      groupValue: currentMode,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          settingsBloc.toggleDirectUploadMode(value);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                    const SizedBox(height: 16),
-                    RadioListTile<bool>(
-                      title: Text(localizations.settingsUploadModeDirect),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(localizations.settingsUploadModeDirectTitle),
-                          const SizedBox(height: 8),
-                          Text(
-                            localizations.settingsUploadModeDirectDescription,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                          ),
-                        ],
-                      ),
-                      value: true,
-                      groupValue: currentMode,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          settingsBloc.toggleDirectUploadMode(value);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ],
+                    ],
+                  ),
+                  value: false,
+                  groupValue: currentMode,
+                  onChanged: (bool? value) {
+                    if (value != null) {
+                      settingsBloc.toggleDirectUploadMode(value);
+                      Navigator.of(dialogContext).pop();
+                    }
+                  },
+                  isThreeLine: true,
+                  contentPadding: EdgeInsets.zero,
                 ),
-              ),
+                const SizedBox(height: spacing),
+                RadioListTile<bool>(
+                  title: Text(localizations.settingsUploadModeDirect),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(localizations.settingsUploadModeDirectTitle),
+                      const SizedBox(height: 8),
+                      Text(
+                        localizations.settingsUploadModeDirectDescription,
+                        style: Theme.of(dialogContext)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                              color: Theme.of(dialogContext)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                  value: true,
+                  groupValue: currentMode,
+                  onChanged: (bool? value) {
+                    if (value != null) {
+                      settingsBloc.toggleDirectUploadMode(value);
+                      Navigator.of(dialogContext).pop();
+                    }
+                  },
+                  isThreeLine: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(localizations.generalCancel),
             ),
           ],
@@ -704,32 +680,21 @@ class SettingsScreen extends StatelessWidget {
       BuildContext context, SettingsBloc settingsBloc) {
     final localizations = AppLocalizations.of(context)!;
     final currentMode = settingsBloc.dataCollectionMode;
-    final screenSize = MediaQuery.of(context).size;
-    final isLargeScreen = screenSize.width > 375;
 
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           title: Text(localizations.settingsDataCollectionMode),
-          titlePadding: isLargeScreen
-              ? const EdgeInsets.fromLTRB(24, 24, 24, 24)
-              : const EdgeInsets.fromLTRB(12, 12, 12, 12),
-          contentPadding: EdgeInsets.zero,
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(bottom: isLargeScreen ? 24.0 : 0.0),
-                child: DataCollectionModeRadioList(
-                  groupValue: currentMode,
-                  onChanged: (selected) async {
-                    await settingsBloc.setDataCollectionMode(selected);
-                    Navigator.of(dialogContext).pop();
-                  },
-                ),
-              ),
+          content: SingleChildScrollView(
+            child: DataCollectionModeRadioList(
+              groupValue: currentMode,
+              onChanged: (selected) async {
+                await settingsBloc.setDataCollectionMode(selected);
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+              },
             ),
           ),
           actions: [
@@ -771,7 +736,9 @@ class SettingsScreen extends StatelessWidget {
                   selectedSeconds: currentSeconds,
                   onSelected: (seconds) async {
                     await settingsBloc.setCollectionIntervalSeconds(seconds);
-                    Navigator.of(dialogContext).pop();
+                    if (dialogContext.mounted) {
+                      Navigator.of(dialogContext).pop();
+                    }
                   },
                 ),
               ],
