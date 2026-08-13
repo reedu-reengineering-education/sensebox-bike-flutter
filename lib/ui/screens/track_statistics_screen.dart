@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
@@ -50,13 +51,13 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
       _isLoading = true;
     });
     final tracks = await widget.isarService.trackService.getAllTracks();
-    
+
     // Find the first track with geolocations as fallback
     final firstTrackWithGeolocations = _findFirstTrackWithGeolocations(tracks);
     _start = firstTrackWithGeolocations != null
         ? firstTrackWithGeolocations.geolocations.first.timestamp
         : DateTime.now();
-        
+
     final tracksThisWeek = tracks
         .where((track) =>
             track.geolocations.isNotEmpty &&
@@ -84,87 +85,94 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final textTheme = Theme.of(context).textTheme;
+    final twoColumn = context.useTwoColumnLandscape;
     final totalSubtitle =
         '${DateFormat('dd.MM.yyyy').format(_start ?? _now)} - ${DateFormat('dd.MM.yyyy').format(_now)}';
     final thisWeekSubtitle =
         '${DateFormat('dd.MM.yyyy').format(_weekStart)} - ${DateFormat('dd.MM.yyyy').format(_now)}';
-    final stats = [
-      // TOTAL DATA CARD
-      _StatsCard(
-        icon: Icons.bar_chart_outlined,
-        title: l10n.tracksStatisticsTotalData,
-        subtitle: totalSubtitle,
-        stats: [
-          _StatRow(
-            icon: Icons.directions_bike_outlined,
-            value: '$_trackCount',
-            label: l10n.tracksStatisticsRidesInfo,
-            textTheme: textTheme,
-          ),
-          _StatRow(
-            icon: Icons.route_outlined,
-            value: l10n.generalTrackDistance(_totalDistance.toStringAsFixed(2)),
-            label: l10n.tracksStatisticsDistanceInfo,
-            textTheme: textTheme,
-          ),
-          _StatRow(
-            icon: Icons.timer_outlined,
-            value: l10n.generalTrackDurationShort(
-                _totalDuration.inHours.toString(),
-                _totalDuration.inMinutes
-                    .remainder(60)
-                    .toString()
-                    .padLeft(2, '0')),
-            label: l10n.tracksStatisticsTimeInfo,
-            textTheme: textTheme,
-          ),
-        ],
-      ),
-      // THIS WEEK CARD
-      _StatsCard(
-        icon: Icons.calendar_today_outlined,
-        title: l10n.tracksStatisticsThisWeek,
-        subtitle: thisWeekSubtitle,
-        stats: [
-          _StatRow(
-            icon: Icons.event_outlined,
-            value: '$_ridesThisWeek',
-            label: l10n.tracksStatisticsRidesInfo,
-            textTheme: textTheme,
-          ),
-          _StatRow(
-            icon: Icons.route_outlined,
-            value:
-                l10n.generalTrackDistance(_distanceThisWeek.toStringAsFixed(2)),
-            label: l10n.tracksStatisticsDistanceInfo,
-            textTheme: textTheme,
-          ),
-          _StatRow(
-            icon: Icons.timer_outlined,
-            value: l10n.generalTrackDurationShort(
-                _timeThisWeek.inHours.toString(),
-                _timeThisWeek.inMinutes
-                    .remainder(60)
-                    .toString()
-                    .padLeft(2, '0')),
-            label: l10n.tracksStatisticsTimeInfo,
-            textTheme: textTheme,
-          ),
-        ],
-      ),
-    ];
+    final totalCard = _StatsCard(
+      icon: Icons.bar_chart_outlined,
+      title: l10n.tracksStatisticsTotalData,
+      subtitle: totalSubtitle,
+      stats: [
+        _StatRow(
+          icon: Icons.directions_bike_outlined,
+          value: '$_trackCount',
+          label: l10n.tracksStatisticsRidesInfo,
+          textTheme: textTheme,
+        ),
+        _StatRow(
+          icon: Icons.route_outlined,
+          value: l10n.generalTrackDistance(_totalDistance.toStringAsFixed(2)),
+          label: l10n.tracksStatisticsDistanceInfo,
+          textTheme: textTheme,
+        ),
+        _StatRow(
+          icon: Icons.timer_outlined,
+          value: l10n.generalTrackDurationShort(
+              _totalDuration.inHours.toString(),
+              _totalDuration.inMinutes
+                  .remainder(60)
+                  .toString()
+                  .padLeft(2, '0')),
+          label: l10n.tracksStatisticsTimeInfo,
+          textTheme: textTheme,
+        ),
+      ],
+    );
+    final thisWeekCard = _StatsCard(
+      icon: Icons.calendar_today_outlined,
+      title: l10n.tracksStatisticsThisWeek,
+      subtitle: thisWeekSubtitle,
+      stats: [
+        _StatRow(
+          icon: Icons.event_outlined,
+          value: '$_ridesThisWeek',
+          label: l10n.tracksStatisticsRidesInfo,
+          textTheme: textTheme,
+        ),
+        _StatRow(
+          icon: Icons.route_outlined,
+          value:
+              l10n.generalTrackDistance(_distanceThisWeek.toStringAsFixed(2)),
+          label: l10n.tracksStatisticsDistanceInfo,
+          textTheme: textTheme,
+        ),
+        _StatRow(
+          icon: Icons.timer_outlined,
+          value: l10n.generalTrackDurationShort(
+              _timeThisWeek.inHours.toString(),
+              _timeThisWeek.inMinutes
+                  .remainder(60)
+                  .toString()
+                  .padLeft(2, '0')),
+          label: l10n.tracksStatisticsTimeInfo,
+          textTheme: textTheme,
+        ),
+      ],
+    );
 
     return ScreenWrapper(
       title: l10n.tracksStatisticsTitle,
       padding: spacing,
+      constrainContent: !twoColumn,
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.separated(
-              itemCount: stats.length,
-              separatorBuilder: (context, index) =>
-                  CustomDivider(showDivider: true),
-              itemBuilder: (context, index) => stats[index],
-            ),
+          : twoColumn
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: totalCard),
+                    Expanded(child: thisWeekCard),
+                  ],
+                )
+              : ListView.separated(
+                  itemCount: 2,
+                  separatorBuilder: (context, index) =>
+                      CustomDivider(showDivider: true),
+                  itemBuilder: (context, index) =>
+                      index == 0 ? totalCard : thisWeekCard,
+                ),
     );
   }
 }
@@ -196,7 +204,9 @@ class _StatsCard extends StatelessWidget {
             children: [
               Icon(icon, size: 28),
               const SizedBox(width: spacing),
-              Text(title, style: textTheme.titleLarge),
+              Flexible(
+                child: Text(title, style: textTheme.titleLarge),
+              ),
             ],
           ),
           const SizedBox(height: spacing / 2),
@@ -234,19 +244,17 @@ class _StatRow extends StatelessWidget {
       children: [
         Icon(icon, size: 28),
         const SizedBox(width: spacing),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(value,
-                    style: textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(width: spacing / 2),
-                Text(label),
-              ],
-            ),
-          ],
+        Expanded(
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: spacing / 2,
+            children: [
+              Text(value,
+                  style: textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(label),
+            ],
+          ),
         ),
       ],
     );
