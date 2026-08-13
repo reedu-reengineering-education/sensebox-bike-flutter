@@ -46,6 +46,7 @@ class IsarProvider {
         SensorDataSchema,
       ],
       directory: dir.path,
+      maxSizeMiB: 8196,
     );
   }
 
