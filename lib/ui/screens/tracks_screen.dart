@@ -6,6 +6,7 @@ import 'package:sensebox_bike/models/track_data.dart';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
+import 'package:sensebox_bike/ui/layout/content_constraint.dart';
 import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/no_tracks_message.dart';
@@ -167,30 +168,31 @@ class TracksScreenState extends State<TracksScreen> {
 
     return ScreenWrapper(
       title: localizations.tracksAppBarTitle,
-      // Full width in landscape so two track tiles sit side by side.
-      constrainContent: !twoColumn,
+      constrainContent: false,
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: spacing, vertical: padding),
-            width: double.infinity,
-            child: SegmentedButton<bool>(
-              showSelectedIcon: false,
-              segments: [
-                ButtonSegment<bool>(
-                  value: false,
-                  label: Text(localizations.trackFilterAll),
-                ),
-                ButtonSegment<bool>(
-                  value: true,
-                  label: Text(localizations.trackFilterUnuploaded),
-                ),
-              ],
-              selected: {_showOnlyUnuploaded},
-              onSelectionChanged: (Set<bool> selection) {
-                _toggleFilter();
-              },
+          ContentConstraint(
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: spacing, vertical: padding),
+              width: double.infinity,
+              child: SegmentedButton<bool>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment<bool>(
+                    value: false,
+                    label: Text(localizations.trackFilterAll),
+                  ),
+                  ButtonSegment<bool>(
+                    value: true,
+                    label: Text(localizations.trackFilterUnuploaded),
+                  ),
+                ],
+                selected: {_showOnlyUnuploaded},
+                onSelectionChanged: (Set<bool> selection) {
+                  _toggleFilter();
+                },
+              ),
             ),
           ),
           Expanded(
@@ -275,20 +277,16 @@ class TracksScreenState extends State<TracksScreen> {
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: spacing * 3),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisExtent: kTrackListItemExtent,
-              crossAxisSpacing: spacing,
-              mainAxisSpacing: spacing / 2,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) =>
-                  _buildTrackItem(context, localizations, index),
-              childCount: _displayedTracks.length,
-            ),
+        SliverGrid(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisExtent: kTrackListItemExtent,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing / 2,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => _buildTrackItem(context, localizations, index),
+            childCount: _displayedTracks.length,
           ),
         ),
         if (_hasMoreTracks)
