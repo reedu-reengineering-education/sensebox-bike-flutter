@@ -63,6 +63,8 @@ class TracksScreenState extends State<TracksScreen> {
     };
     _recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
 
+    // Initial load; AppHome also refreshes when the Tracks tab settles, so
+    // skip an immediate duplicate fetch race on first open.
     _fetchInitialTracks();
   }
 
@@ -278,7 +280,7 @@ class TracksScreenState extends State<TracksScreen> {
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisExtent: kMapPreviewHeight + spacing * 2,
+              mainAxisExtent: kTrackListItemExtent,
               crossAxisSpacing: spacing,
               mainAxisSpacing: spacing / 2,
             ),

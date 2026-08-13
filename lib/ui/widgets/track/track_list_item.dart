@@ -12,6 +12,11 @@ import 'package:sensebox_bike/ui/widgets/track/track_collection_mode_chip.dart';
 const double kMapPreviewWidth = 140;
 const double kMapPreviewHeight = 140;
 
+/// Height reserved for one track tile in the landscape grid (map preview,
+/// collection-mode chip, metrics, and vertical padding).
+const double kTrackListItemExtent =
+    kMapPreviewHeight + spacing * 2 + 48;
+
 class TrackListItem extends StatelessWidget {
   final TrackData track;
   final Function onDismissed;
@@ -139,7 +144,7 @@ class TrackListItem extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
             width: kMapPreviewWidth,
@@ -159,17 +164,15 @@ class TrackListItem extends StatelessWidget {
                     ))),
         const SizedBox(width: spacing),
         Expanded(
-          child: SizedBox(
-            height: kMapPreviewHeight,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(date, style: theme.textTheme.titleSmall),
@@ -177,30 +180,26 @@ class TrackListItem extends StatelessWidget {
                         TrackCollectionModeChip(track: track),
                       ],
                     ),
-                    _buildStatusIcon(context, localizations, theme),
-                  ],
-                ),
-                Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.timer_outlined, size: iconSizeLarge),
-                        const SizedBox(width: spacing / 4),
-                        Text(duration, style: theme.textTheme.headlineLarge),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Icon(Icons.straighten_outlined,
-                            size: iconSizeLarge),
-                        const SizedBox(width: spacing / 4),
-                        Text(distance, style: theme.textTheme.headlineLarge),
-                      ],
-                    ),
-                  ],
-                )
-              ],
-            ),
+                  ),
+                  _buildStatusIcon(context, localizations, theme),
+                ],
+              ),
+              const SizedBox(height: spacing / 2),
+              Row(
+                children: [
+                  const Icon(Icons.timer_outlined, size: iconSizeLarge),
+                  const SizedBox(width: spacing / 4),
+                  Text(duration, style: theme.textTheme.headlineLarge),
+                ],
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.straighten_outlined, size: iconSizeLarge),
+                  const SizedBox(width: spacing / 4),
+                  Text(distance, style: theme.textTheme.headlineLarge),
+                ],
+              ),
+            ],
           ),
         )
       ],

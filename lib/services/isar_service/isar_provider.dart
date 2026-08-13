@@ -8,6 +8,7 @@ import 'package:sensebox_bike/models/track_data.dart';
 class IsarProvider {
   static final IsarProvider _instance = IsarProvider._internal();
   static Isar? _isar;
+  static Future<Isar>? _openFuture;
   factory IsarProvider() => _instance;
   IsarProvider._internal();
 
@@ -16,7 +17,24 @@ class IsarProvider {
   Future<Isar> get db async {
     if (_isar != null && _isar!.isOpen) return _isar!;
 
-    return _isar = await _initDB();
+    // Reuse a native instance left over after hot restart / prior Dart isolate.
+    final existing = Isar.getInstance();
+    if (existing != null && existing.isOpen) {
+      return _isar = existing;
+    }
+
+    // Serialize concurrent openers (e.g. Tracks initState + page refresh).
+    return _openFuture ??= _openAndCache();
+  }
+
+  Future<Isar> _openAndCache() async {
+    try {
+      final isar = await _initDB();
+      _isar = isar;
+      return isar;
+    } finally {
+      _openFuture = null;
+    }
   }
 
   Future<Isar> _initDB() async {
@@ -46,10 +64,16 @@ class IsarProvider {
   }
 
   Future<void> close() async {
+    if (_openFuture != null) {
+      try {
+        await _openFuture;
+      } catch (_) {}
+    }
     if (_isar != null && _isar!.isOpen) {
       await _isar!.close();
     }
     _isar = null;
+    _openFuture = null;
     _writeChain = Future.value();
   }
 }

@@ -41,4 +41,21 @@ void main() {
       expect(tracks.length, 20);
     });
   });
+
+  group('IsarProvider.getDatabase', () {
+    test('shares one open across concurrent callers', () async {
+      await isarProvider.close();
+
+      final opened = await Future.wait([
+        isarProvider.getDatabase(),
+        isarProvider.getDatabase(),
+        isarProvider.getDatabase(),
+      ]);
+
+      expect(opened[0], same(opened[1]));
+      expect(opened[1], same(opened[2]));
+      expect(opened[0].isOpen, isTrue);
+      isar = opened[0];
+    });
+  });
 }

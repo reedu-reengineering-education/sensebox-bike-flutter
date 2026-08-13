@@ -85,6 +85,9 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
         _bleBloc!, _geolocationBloc!, _recordingBloc!);
     _mapboxDrawController = MapboxDrawController();
 
+    // Open Isar once at startup so tab navigation never races on first access.
+    await _isarService!.isarProvider.getDatabase();
+
     // Preload box configurations and campaigns
     _configurationBloc!.loadAll().catchError((error) {
       debugPrint('Failed to preload configurations: $error');
@@ -111,6 +114,8 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     // Initialize blocs if they haven't been initialized yet
     if (!_isInitialized) {
       _initializeBlocs().then((_) {
+        if (!mounted) return;
+        setState(() {});
         // Trigger authentication check after blocs are initialized
         _openSenseMapBloc?.performAuthenticationCheck();
       });
@@ -224,6 +229,18 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
       ),
     );
     
+    // Awaited Isar open made async init long enough that the first build ran
+    // before blocs existed. Gate providers until initialization finishes.
+    if (!_isInitialized) {
+      return MaterialApp(
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        home: const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: _settingsBloc!),
