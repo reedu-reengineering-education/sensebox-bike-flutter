@@ -91,6 +91,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('About'));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Privacy Policy'));
     await tester.pumpAndSettle();
 

@@ -868,11 +868,15 @@ class _SidebarItem extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: fgColor),
               const SizedBox(width: 12),
-              Text(
-                label,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: fgColor,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+              Expanded(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: fgColor,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],
