@@ -432,8 +432,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsGithub => 'GitHub issue';
 
   @override
-  String get privacyZoneDescription => 'Areas where no data will be recorded';
-
+  String get privacyZoneDescription =>
+      'Bereiche, in denen keine Daten aufgezeichnet werden';
   @override
   String get privacyZonesStart =>
       'Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.';
