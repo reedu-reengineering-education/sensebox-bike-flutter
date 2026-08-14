@@ -465,6 +465,7 @@ class GeolocationBloc with ChangeNotifier {
       recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
       _recordingListener = null;
     }
+    recordingBloc.activeCollectionModeNotifier.removeListener(_onRecordingChanged);
     stopListening();
     _privacyZonesSubscription?.cancel();
     _privacyZoneChecker.dispose();
