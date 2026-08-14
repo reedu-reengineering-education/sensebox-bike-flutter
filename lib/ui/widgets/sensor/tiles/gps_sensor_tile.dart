@@ -38,11 +38,13 @@ class _GpsSensorTileState extends State<GpsSensorTile> {
     }
 
     _subscription = widget.valueStream.listen((value) {
-      if (value.length >= 2) {
+      if (value.length < 2) return;
+      if (!mounted) return;
+      setState(() {
         _lat = value[0];
         _lng = value[1];
-        _updateMarkerAndCamera();
-      }
+      });
+      _updateMarkerAndCamera();
     });
   }
 
