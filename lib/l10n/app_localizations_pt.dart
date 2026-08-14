@@ -292,8 +292,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Nenhum senseBox disponível ou configuração não carregada';
 
   @override
-  String get openSenseMapBoxSelectionAvailableBoxes => 'Available senseBoxes';
-
+  String get openSenseMapBoxSelectionAvailableBoxes => 'senseBoxes disponíveis';
   @override
   String get openSenseMapBoxSelectionCreateHint =>
       'Crie um usando o botão \'+\'';
