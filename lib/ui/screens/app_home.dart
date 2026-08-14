@@ -5,6 +5,12 @@ import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
 
+/// Global Y (logical pixels, screen coordinates) of the floating pill nav
+/// bar's top edge, updated after every layout pass. Null until first
+/// measured. Full-bleed map layouts (tablet landscape) read this to keep map
+/// ornaments clear of the bar without hardcoding its height/position.
+final ValueNotifier<double?> bottomNavBarTopNotifier = ValueNotifier<double?>(null);
+
 class AppHome extends StatefulWidget {
   const AppHome({super.key});
 
@@ -17,6 +23,7 @@ class _AppHomeState extends State<AppHome> {
 
   final GlobalKey<TracksScreenState> _tracksScreenKey =
       GlobalKey<TracksScreenState>();
+  final GlobalKey _navBarKey = GlobalKey();
 
   late final List<Widget> _pages;
 
@@ -32,8 +39,22 @@ class _AppHomeState extends State<AppHome> {
   }
 
   @override
+  void dispose() {
+    bottomNavBarTopNotifier.value = null;
+    super.dispose();
+  }
+
+  void _publishNavBarTop(Duration _) {
+    final box = _navBarKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached) return;
+    bottomNavBarTopNotifier.value = box.localToGlobal(Offset.zero).dy;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    WidgetsBinding.instance.addPostFrameCallback(_publishNavBarTop);
 
     return Scaffold(
       extendBody: true,
@@ -44,6 +65,7 @@ class _AppHomeState extends State<AppHome> {
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 32, 16, 0),
         child: Container(
+          key: _navBarKey,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(36),

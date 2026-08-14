@@ -13,7 +13,28 @@ import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
+import 'package:sensebox_bike/ui/screens/app_home.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
+
+/// Where the Mapbox logo and attribution ornaments sit, split because in
+/// tablet landscape they anchor to opposite bottom corners. On phone,
+/// [attributionPosition] stays null so the SDK keeps its default bottom-left
+/// anchor, which stacks the attribution icon just above the logo instead of
+/// beside it.
+class _OrnamentMargins {
+  final EdgeInsets logo;
+  final double attributionBottom;
+  final double? attributionRight;
+  final OrnamentPosition? attributionPosition;
+
+  const _OrnamentMargins({
+    required this.logo,
+    required this.attributionBottom,
+    this.attributionRight,
+    this.attributionPosition,
+  });
+}
 
 class GeolocationMapWidget extends StatefulWidget {
   const GeolocationMapWidget({super.key});
@@ -56,6 +77,13 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
     _initializeMapBloc();
     _setupMapBlocListener();
     _setupPrivacyZonesListener();
+    bottomNavBarTopNotifier.addListener(_onNavBarMetricsChanged);
+  }
+
+  void _onNavBarMetricsChanged() {
+    if (!mounted) return;
+    setState(() {}); // build() re-reads ornament margins
+    _updateMapMargins(); // re-apply to the already-created map instance
   }
 
   void _initializeMapBloc() {
@@ -118,22 +146,19 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   void _updateMapMargins() {
     if (!_isMapReady) return;
 
-    var logoAttributionMargins = EdgeInsets.only(
-      bottom: mapOrnamentBottomMargin,
-      left: 8,
-      right: 8,
-    );
+    final ornaments = _getOrnamentMargins();
 
     mapInstance?.logo.updateSettings(
       LogoSettings(
-        marginBottom: logoAttributionMargins.bottom,
-        marginLeft: logoAttributionMargins.left,
+        marginBottom: ornaments.logo.bottom,
+        marginLeft: ornaments.logo.left,
       ),
     );
     mapInstance?.attribution.updateSettings(
       AttributionSettings(
-        marginBottom: logoAttributionMargins.bottom,
-        marginRight: logoAttributionMargins.right,
+        position: ornaments.attributionPosition,
+        marginBottom: ornaments.attributionBottom,
+        marginRight: ornaments.attributionRight,
       ),
     );
   }
@@ -254,6 +279,7 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    bottomNavBarTopNotifier.removeListener(_onNavBarMetricsChanged);
     _privacyZonesSubscription?.cancel();
     _trackRenderDebounce?.cancel();
     _mapBloc.removeListener(_onMapBlocChanged);
@@ -270,20 +296,52 @@ class _GeolocationMapWidgetState extends State<GeolocationMapWidget>
 
   @override
   Widget build(BuildContext context) {
-    final margins = _getMapMargins();
+    final ornaments = _getOrnamentMargins();
 
     return ReusableMapWidget(
-      logoMargins: margins,
-      attributionMargins: margins,
+      logoMargins: ornaments.logo,
+      // Only .bottom matters here; the authoritative left/right/position
+      // gets (re)applied by _updateMapMargins once the map is ready.
+      attributionMargins: EdgeInsets.only(bottom: ornaments.attributionBottom),
       onMapCreated: _onMapCreated,
     );
   }
 
-  EdgeInsets _getMapMargins() {
-    return EdgeInsets.only(
-      bottom: mapOrnamentBottomMargin,
-      left: 8,
-      right: 8,
+  _OrnamentMargins _getOrnamentMargins() {
+    // Tablet landscape shows a full-bleed map behind the floating pill nav
+    // bar (AppHome) instead of a map capped by the phone's SliverAppBar, so
+    // the ornaments need to clear that bar rather than the phone's floating
+    // action card. The attribution also has to dodge the floating side rail
+    // (connect/record buttons + sensor grid) docked bottom-right.
+    if (context.useSideRail) {
+      final viewPadding = MediaQuery.of(context).padding;
+      final navBarTop = bottomNavBarTopNotifier.value;
+      // Measured top edge of the pill beats a hardcoded height/gap guess.
+      // Falls back to an estimate for the one frame before AppHome measures
+      // it (nav bar height + its safe-area gap).
+      final bottomClearance = navBarTop != null
+          ? (MediaQuery.of(context).size.height - navBarTop) + 8
+          : 72 + viewPadding.bottom + 8;
+      // Matches _TabletLayout's SafeArea(minimum: EdgeInsets.fromLTRB(16, 16,
+      // 16, 16)) + the side rail width itself, plus a breathing gap.
+      final railClearance =
+          viewPadding.right + 16 + context.sideRailWidth + 16;
+
+      return _OrnamentMargins(
+        logo: EdgeInsets.only(bottom: bottomClearance, left: 8),
+        attributionBottom: bottomClearance,
+        attributionRight: railClearance,
+        attributionPosition: OrnamentPosition.BOTTOM_RIGHT,
+      );
+    }
+
+    // Original phone layout: no explicit position/marginLeft, so the SDK
+    // keeps its default bottom-left anchor and stacks the attribution icon
+    // just above the logo.
+    return const _OrnamentMargins(
+      logo: EdgeInsets.only(bottom: mapOrnamentBottomMargin, left: 8),
+      attributionBottom: mapOrnamentBottomMargin,
+      attributionRight: 8,
     );
   }
 

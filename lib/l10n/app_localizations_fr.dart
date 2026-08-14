@@ -296,6 +296,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get openSenseMapBoxSelectionAvailableBoxes => 'senseBoxes disponibles';
+
   @override
   String get openSenseMapBoxSelectionCreateHint =>
       'Créez-en une avec le bouton \'+\'';

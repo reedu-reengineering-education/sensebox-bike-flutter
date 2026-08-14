@@ -293,6 +293,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get openSenseMapBoxSelectionAvailableBoxes => 'senseBoxes disponíveis';
+
   @override
   String get openSenseMapBoxSelectionCreateHint =>
       'Crie um usando o botão \'+\'';

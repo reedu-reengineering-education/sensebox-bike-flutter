@@ -293,6 +293,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get openSenseMapBoxSelectionAvailableBoxes => 'Verfügbare senseBoxes';
+
   @override
   String get openSenseMapBoxSelectionCreateHint =>
       'Erstelle eine mit dem \'+\' Button';
@@ -433,6 +434,7 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get privacyZoneDescription =>
       'Bereiche, in denen keine Daten aufgezeichnet werden';
+
   @override
   String get privacyZonesStart =>
       'Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.';
