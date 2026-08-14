@@ -61,18 +61,20 @@ class TrackListItem extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(_cardRadius),
-        onTap: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TrackDetailScreen(
-                track: track,
-                onTrackUploaded: onTrackUpdated,
-              ),
-            ),
-          );
-          onTrackUpdated?.call();
-        },
+        onTap: hasGeolocations
+            ? () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TrackDetailScreen(
+                      track: track,
+                      onTrackUploaded: onTrackUpdated,
+                    ),
+                  ),
+                );
+                onTrackUpdated?.call();
+              }
+            : null,
         onLongPress: () async {
           final shouldDelete =
               await _confirmDismiss(context, localizations, theme) ?? false;
