@@ -68,6 +68,13 @@ void main() {
         .thenAnswer((_) async => [TrackData()]);
   });
 
+  void setPhoneSurfaceSize(WidgetTester tester) {
+    tester.view.physicalSize = const Size(800, 599);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+  }
+
   Widget buildTestWidget(Locale locale) {
     final configurationBloc = ConfigurationBloc();
     return MultiProvider(
@@ -88,6 +95,7 @@ void main() {
 
   group("SettingsScreen Widget", () {
     testWidgets("is translated in English", (WidgetTester tester) async {
+      setPhoneSurfaceSize(tester);
       await tester.pumpWidget(buildTestWidget(const Locale('en')));
       await tester.pumpAndSettle();
 
@@ -109,6 +117,7 @@ void main() {
     });
 
     testWidgets("is translated in German", (WidgetTester tester) async {
+      setPhoneSurfaceSize(tester);
       await tester.pumpWidget(buildTestWidget(const Locale('de')));
       await tester.pumpAndSettle();
 
@@ -129,6 +138,7 @@ void main() {
     });
 
     testWidgets("is translated in Portuguese", (WidgetTester tester) async {
+      setPhoneSurfaceSize(tester);
       await tester.pumpWidget(buildTestWidget(const Locale('pt')));
       await tester.pumpAndSettle();
 
@@ -149,6 +159,7 @@ void main() {
     });
 
     testWidgets("is translated in French", (WidgetTester tester) async {
+      setPhoneSurfaceSize(tester);
       await tester.pumpWidget(buildTestWidget(const Locale('fr')));
       await tester.pumpAndSettle();
 
