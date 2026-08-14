@@ -149,6 +149,7 @@ class TracksScreenState extends State<TracksScreen> {
     setState(() => _isStatsLoading = true);
 
     final tracks = await _isarService.trackService.getAllTracks();
+    if (!mounted) return;
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final tracksWithGeo =
