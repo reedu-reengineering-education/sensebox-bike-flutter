@@ -20,7 +20,7 @@ class GPSSensor extends Sensor {
     IsarService isarService,
   ) : super(
           sensorCharacteristicUuid,
-          'gps',
+          'sensor_gps',
           const ['latitude', 'longitude', 'speed'],
           bleBloc,
           geolocationBloc,
