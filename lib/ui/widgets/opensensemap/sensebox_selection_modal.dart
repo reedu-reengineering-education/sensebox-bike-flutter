@@ -183,8 +183,8 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
   Widget buildUserDataDisplay(BuildContext context,
       Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
     final user = userData?['data']?['me'];
-    final email = user?['email'] ?? "No email";
-    final name = user?['name'] ?? "John Doe";
+    final email = user?['email'] as String? ?? '';
+    final name = user?['name'] as String? ?? '';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
