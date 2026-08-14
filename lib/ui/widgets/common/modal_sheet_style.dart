@@ -13,9 +13,20 @@ Widget buildModalSheetSurface(
   BuildContext context,
   Widget child, {
   bool showHandle = true,
+  bool expand = false,
 }) {
   final theme = Theme.of(context);
   final handleColor = theme.colorScheme.onSurface.withValues(alpha: 0.28);
+  // Large sheets (e.g. a full map editor) need a fixed height instead of
+  // shrink-wrapping their content, otherwise a child that expands to fill
+  // (like a Scaffold+map) has no bound to expand into.
+  final sheetContent = expand
+      ? SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.92 -
+              MediaQuery.paddingOf(context).top,
+          child: child,
+        )
+      : child;
 
   return Container(
     decoration: BoxDecoration(
@@ -71,7 +82,7 @@ Widget buildModalSheetSurface(
                 ),
               ),
             ),
-          child,
+          sheetContent,
         ],
       ),
     ),
@@ -93,6 +104,7 @@ Future<T?> showAppModalSheet<T>({
       modalContext,
       builder(modalContext),
       showHandle: showHandle,
+      expand: expand,
     );
   }
 

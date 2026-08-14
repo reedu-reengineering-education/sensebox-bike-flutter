@@ -509,11 +509,11 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
         return InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ExclusionZonesScreen(),
-              ),
+            showAppModalSheet<void>(
+              context: context,
+              expand: true,
+              showHandle: false,
+              builder: (context) => const ExclusionZonesScreen(),
             );
           },
           child: Container(

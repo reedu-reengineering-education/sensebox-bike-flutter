@@ -57,9 +57,6 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.generalPrivacyZones),
-      ),
       body: Stack(
         children: [
           ReusableMapWidget(
@@ -70,46 +67,63 @@ class _ExclusionZonesScreenState extends State<ExclusionZonesScreen> {
           Positioned(
             right: 8,
             top: 8,
-            child: Column(
-              children: [
-                IconButton.filled(
-                  icon: const Icon(Icons.undo),
-                  onPressed: mapboxDrawController.editingMode ==
-                          EditingMode.DRAW_POLYGON
-                      ? () => mapboxDrawController.undoLastAction()
-                      : null,
-                ),
-                IconButton.filled(
-                  icon: mapboxDrawController.editingMode ==
-                          EditingMode.DRAW_POLYGON
-                      ? const Icon(Icons.check)
-                      : const Icon(Icons.crop_square_outlined),
-                  onPressed: () {
-                    if (mapboxDrawController.editingMode == EditingMode.NONE) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                            AppLocalizations.of(context)!.privacyZonesStart),
-                      ));
-                    }
-                    mapboxDrawController
-                        .toggleEditing(EditingMode.DRAW_POLYGON);
-                  },
-                ),
-                IconButton.filled(
-                    icon: mapboxDrawController.editingMode == EditingMode.DELETE
+            child: SafeArea(
+              bottom: false,
+              child: IconButton.filled(
+                icon: const Icon(Icons.close),
+                tooltip: AppLocalizations.of(context)!.generalClose,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 8,
+            bottom: 82,
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  IconButton.filled(
+                    icon: const Icon(Icons.undo),
+                    onPressed: mapboxDrawController.editingMode ==
+                            EditingMode.DRAW_POLYGON
+                        ? () => mapboxDrawController.undoLastAction()
+                        : null,
+                  ),
+                  IconButton.filled(
+                    icon: mapboxDrawController.editingMode ==
+                            EditingMode.DRAW_POLYGON
                         ? const Icon(Icons.check)
-                        : const Icon(Icons.delete),
+                        : const Icon(Icons.crop_square_outlined),
                     onPressed: () {
                       if (mapboxDrawController.editingMode ==
                           EditingMode.NONE) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text(
-                              AppLocalizations.of(context)!.privacyZonesDelete),
+                              AppLocalizations.of(context)!.privacyZonesStart),
                         ));
                       }
-                      mapboxDrawController.toggleDeleteMode();
-                    }),
-              ],
+                      mapboxDrawController
+                          .toggleEditing(EditingMode.DRAW_POLYGON);
+                    },
+                  ),
+                  IconButton.filled(
+                      icon:
+                          mapboxDrawController.editingMode == EditingMode.DELETE
+                              ? const Icon(Icons.check)
+                              : const Icon(Icons.delete),
+                      onPressed: () {
+                        if (mapboxDrawController.editingMode ==
+                            EditingMode.NONE) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(AppLocalizations.of(context)!
+                                .privacyZonesDelete),
+                          ));
+                        }
+                        mapboxDrawController.toggleDeleteMode();
+                      }),
+                ],
+              ),
             ),
           ),
         ],
