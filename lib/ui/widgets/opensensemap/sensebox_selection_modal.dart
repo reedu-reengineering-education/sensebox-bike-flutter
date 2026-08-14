@@ -628,9 +628,10 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
                         ),
                         value: false,
                         groupValue: currentMode,
-                        onChanged: (bool? value) {
-                          if (value != null) {
-                            settingsBloc.toggleDirectUploadMode(value);
+                        onChanged: (bool? value) async {
+                          if (value == null) return;
+                          await settingsBloc.toggleDirectUploadMode(value);
+                          if (context.mounted) {
                             Navigator.of(context).pop();
                           }
                         },
