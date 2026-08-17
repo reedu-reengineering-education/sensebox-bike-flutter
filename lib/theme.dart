@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 // Custom colors for specific use cases
 const Color loginRequiredColor =
@@ -29,8 +28,8 @@ TextStyle _headlineStyle({
   double? letterSpacing,
   required Color color,
 }) {
-  return GoogleFonts.getFont(
-    kHeadlineFontFamily,
+  return TextStyle(
+    fontFamily: kHeadlineFontFamily,
     fontSize: fontSize,
     fontWeight: fontWeight,
     height: height,
@@ -40,7 +39,9 @@ TextStyle _headlineStyle({
 }
 
 TextTheme _appTextTheme(Brightness brightness) {
-  final base = GoogleFonts.spaceGroteskTextTheme();
+  final base = ThemeData(brightness: brightness)
+      .textTheme
+      .apply(fontFamily: kHeadlineFontFamily);
 
   final headingColor =
       brightness == Brightness.dark ? _darkOnSurface : _lightOnSurface;
