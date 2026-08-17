@@ -207,6 +207,18 @@ class RecordingBloc with ChangeNotifier {
     final trackToUpload = _currentTrack;
     final senseBoxForUpload = _selectedSenseBox;
 
+    // Cache this track's distance/duration/point count/polyline now, while
+    // its geolocations are fresh in mind, so the tracks list and summary
+    // stats never need to walk its full GeolocationData history again. Non
+    // -fatal: a caching hiccup shouldn't block the user from stopping.
+    if (trackToUpload != null) {
+      try {
+        await isarService.trackService.cacheTrackAggregates(trackToUpload);
+      } catch (e, stack) {
+        ErrorService.handleError(e, stack);
+      }
+    }
+
     // Clean up services and handle post-ride upload if needed
     _directUploadService?.dispose();
     _directUploadService = null;

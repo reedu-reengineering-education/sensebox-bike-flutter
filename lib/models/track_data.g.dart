@@ -17,33 +17,63 @@ const TrackDataSchema = CollectionSchema(
   name: r'TrackData',
   id: -595095596094647637,
   properties: {
-    r'collectionIntervalSeconds': PropertySchema(
+    r'cachedDistanceKm': PropertySchema(
       id: 0,
+      name: r'cachedDistanceKm',
+      type: IsarType.double,
+    ),
+    r'cachedDurationMs': PropertySchema(
+      id: 1,
+      name: r'cachedDurationMs',
+      type: IsarType.long,
+    ),
+    r'cachedEndTimestamp': PropertySchema(
+      id: 2,
+      name: r'cachedEndTimestamp',
+      type: IsarType.dateTime,
+    ),
+    r'cachedPointCount': PropertySchema(
+      id: 3,
+      name: r'cachedPointCount',
+      type: IsarType.long,
+    ),
+    r'cachedPolyline': PropertySchema(
+      id: 4,
+      name: r'cachedPolyline',
+      type: IsarType.string,
+    ),
+    r'cachedStartTimestamp': PropertySchema(
+      id: 5,
+      name: r'cachedStartTimestamp',
+      type: IsarType.dateTime,
+    ),
+    r'collectionIntervalSeconds': PropertySchema(
+      id: 6,
       name: r'collectionIntervalSeconds',
       type: IsarType.long,
     ),
     r'dataCollectionMode': PropertySchema(
-      id: 1,
+      id: 7,
       name: r'dataCollectionMode',
       type: IsarType.string,
     ),
     r'isDirectUpload': PropertySchema(
-      id: 2,
+      id: 8,
       name: r'isDirectUpload',
       type: IsarType.long,
     ),
     r'lastUploadAttempt': PropertySchema(
-      id: 3,
+      id: 9,
       name: r'lastUploadAttempt',
       type: IsarType.dateTime,
     ),
     r'uploadAttempts': PropertySchema(
-      id: 4,
+      id: 10,
       name: r'uploadAttempts',
       type: IsarType.long,
     ),
     r'uploaded': PropertySchema(
-      id: 5,
+      id: 11,
       name: r'uploaded',
       type: IsarType.long,
     )
@@ -62,6 +92,19 @@ const TrackDataSchema = CollectionSchema(
       properties: [
         IndexPropertySchema(
           name: r'isDirectUpload',
+          type: IndexType.value,
+          caseSensitive: false,
+        )
+      ],
+    ),
+    r'cachedStartTimestamp': IndexSchema(
+      id: -3385800811155894414,
+      name: r'cachedStartTimestamp',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'cachedStartTimestamp',
           type: IndexType.value,
           caseSensitive: false,
         )
@@ -91,6 +134,12 @@ int _trackDataEstimateSize(
 ) {
   var bytesCount = offsets.last;
   {
+    final value = object.cachedPolyline;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.dataCollectionMode;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -105,12 +154,18 @@ void _trackDataSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.collectionIntervalSeconds);
-  writer.writeString(offsets[1], object.dataCollectionMode);
-  writer.writeLong(offsets[2], object.isDirectUpload);
-  writer.writeDateTime(offsets[3], object.lastUploadAttempt);
-  writer.writeLong(offsets[4], object.uploadAttempts);
-  writer.writeLong(offsets[5], object.uploaded);
+  writer.writeDouble(offsets[0], object.cachedDistanceKm);
+  writer.writeLong(offsets[1], object.cachedDurationMs);
+  writer.writeDateTime(offsets[2], object.cachedEndTimestamp);
+  writer.writeLong(offsets[3], object.cachedPointCount);
+  writer.writeString(offsets[4], object.cachedPolyline);
+  writer.writeDateTime(offsets[5], object.cachedStartTimestamp);
+  writer.writeLong(offsets[6], object.collectionIntervalSeconds);
+  writer.writeString(offsets[7], object.dataCollectionMode);
+  writer.writeLong(offsets[8], object.isDirectUpload);
+  writer.writeDateTime(offsets[9], object.lastUploadAttempt);
+  writer.writeLong(offsets[10], object.uploadAttempts);
+  writer.writeLong(offsets[11], object.uploaded);
 }
 
 TrackData _trackDataDeserialize(
@@ -120,13 +175,19 @@ TrackData _trackDataDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = TrackData();
-  object.collectionIntervalSeconds = reader.readLongOrNull(offsets[0]);
-  object.dataCollectionMode = reader.readStringOrNull(offsets[1]);
+  object.cachedDistanceKm = reader.readDoubleOrNull(offsets[0]);
+  object.cachedDurationMs = reader.readLongOrNull(offsets[1]);
+  object.cachedEndTimestamp = reader.readDateTimeOrNull(offsets[2]);
+  object.cachedPointCount = reader.readLongOrNull(offsets[3]);
+  object.cachedPolyline = reader.readStringOrNull(offsets[4]);
+  object.cachedStartTimestamp = reader.readDateTimeOrNull(offsets[5]);
+  object.collectionIntervalSeconds = reader.readLongOrNull(offsets[6]);
+  object.dataCollectionMode = reader.readStringOrNull(offsets[7]);
   object.id = id;
-  object.isDirectUpload = reader.readLongOrNull(offsets[2]);
-  object.lastUploadAttempt = reader.readDateTimeOrNull(offsets[3]);
-  object.uploadAttempts = reader.readLongOrNull(offsets[4]);
-  object.uploaded = reader.readLongOrNull(offsets[5]);
+  object.isDirectUpload = reader.readLongOrNull(offsets[8]);
+  object.lastUploadAttempt = reader.readDateTimeOrNull(offsets[9]);
+  object.uploadAttempts = reader.readLongOrNull(offsets[10]);
+  object.uploaded = reader.readLongOrNull(offsets[11]);
   return object;
 }
 
@@ -138,16 +199,28 @@ P _trackDataDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 1:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 2:
-      return (reader.readLongOrNull(offset)) as P;
-    case 3:
       return (reader.readDateTimeOrNull(offset)) as P;
-    case 4:
+    case 3:
       return (reader.readLongOrNull(offset)) as P;
+    case 4:
+      return (reader.readStringOrNull(offset)) as P;
     case 5:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 6:
+      return (reader.readLongOrNull(offset)) as P;
+    case 7:
+      return (reader.readStringOrNull(offset)) as P;
+    case 8:
+      return (reader.readLongOrNull(offset)) as P;
+    case 9:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 10:
+      return (reader.readLongOrNull(offset)) as P;
+    case 11:
       return (reader.readLongOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -180,6 +253,14 @@ extension TrackDataQueryWhereSort
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'isDirectUpload'),
+      );
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhere> anyCachedStartTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'cachedStartTimestamp'),
       );
     });
   }
@@ -363,10 +444,659 @@ extension TrackDataQueryWhere
       ));
     });
   }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause>
+      cachedStartTimestampIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'cachedStartTimestamp',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause>
+      cachedStartTimestampIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'cachedStartTimestamp',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause>
+      cachedStartTimestampEqualTo(DateTime? cachedStartTimestamp) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'cachedStartTimestamp',
+        value: [cachedStartTimestamp],
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause>
+      cachedStartTimestampNotEqualTo(DateTime? cachedStartTimestamp) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'cachedStartTimestamp',
+              lower: [],
+              upper: [cachedStartTimestamp],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'cachedStartTimestamp',
+              lower: [cachedStartTimestamp],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'cachedStartTimestamp',
+              lower: [cachedStartTimestamp],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'cachedStartTimestamp',
+              lower: [],
+              upper: [cachedStartTimestamp],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause>
+      cachedStartTimestampGreaterThan(
+    DateTime? cachedStartTimestamp, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'cachedStartTimestamp',
+        lower: [cachedStartTimestamp],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause>
+      cachedStartTimestampLessThan(
+    DateTime? cachedStartTimestamp, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'cachedStartTimestamp',
+        lower: [],
+        upper: [cachedStartTimestamp],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterWhereClause>
+      cachedStartTimestampBetween(
+    DateTime? lowerCachedStartTimestamp,
+    DateTime? upperCachedStartTimestamp, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'cachedStartTimestamp',
+        lower: [lowerCachedStartTimestamp],
+        includeLower: includeLower,
+        upper: [upperCachedStartTimestamp],
+        includeUpper: includeUpper,
+      ));
+    });
+  }
 }
 
 extension TrackDataQueryFilter
     on QueryBuilder<TrackData, TrackData, QFilterCondition> {
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDistanceKmIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'cachedDistanceKm',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDistanceKmIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'cachedDistanceKm',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDistanceKmEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'cachedDistanceKm',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDistanceKmGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'cachedDistanceKm',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDistanceKmLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'cachedDistanceKm',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDistanceKmBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'cachedDistanceKm',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDurationMsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'cachedDurationMs',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDurationMsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'cachedDurationMs',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDurationMsEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'cachedDurationMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDurationMsGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'cachedDurationMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDurationMsLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'cachedDurationMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedDurationMsBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'cachedDurationMs',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedEndTimestampIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'cachedEndTimestamp',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedEndTimestampIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'cachedEndTimestamp',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedEndTimestampEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'cachedEndTimestamp',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedEndTimestampGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'cachedEndTimestamp',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedEndTimestampLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'cachedEndTimestamp',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedEndTimestampBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'cachedEndTimestamp',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPointCountIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'cachedPointCount',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPointCountIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'cachedPointCount',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPointCountEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'cachedPointCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPointCountGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'cachedPointCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPointCountLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'cachedPointCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPointCountBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'cachedPointCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'cachedPolyline',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'cachedPolyline',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'cachedPolyline',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'cachedPolyline',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'cachedPolyline',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'cachedPolyline',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'cachedPolyline',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'cachedPolyline',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'cachedPolyline',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'cachedPolyline',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'cachedPolyline',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedPolylineIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'cachedPolyline',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedStartTimestampIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'cachedStartTimestamp',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedStartTimestampIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'cachedStartTimestamp',
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedStartTimestampEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'cachedStartTimestamp',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedStartTimestampGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'cachedStartTimestamp',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedStartTimestampLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'cachedStartTimestamp',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
+      cachedStartTimestampBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'cachedStartTimestamp',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<TrackData, TrackData, QAfterFilterCondition>
       collectionIntervalSecondsIsNull() {
     return QueryBuilder.apply(this, (query) {
@@ -1009,6 +1739,84 @@ extension TrackDataQueryLinks
 }
 
 extension TrackDataQuerySortBy on QueryBuilder<TrackData, TrackData, QSortBy> {
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByCachedDistanceKm() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedDistanceKm', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      sortByCachedDistanceKmDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedDistanceKm', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByCachedDurationMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedDurationMs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      sortByCachedDurationMsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedDurationMs', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByCachedEndTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedEndTimestamp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      sortByCachedEndTimestampDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedEndTimestamp', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByCachedPointCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedPointCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      sortByCachedPointCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedPointCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByCachedPolyline() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedPolyline', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> sortByCachedPolylineDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedPolyline', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      sortByCachedStartTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedStartTimestamp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      sortByCachedStartTimestampDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedStartTimestamp', Sort.desc);
+    });
+  }
+
   QueryBuilder<TrackData, TrackData, QAfterSortBy>
       sortByCollectionIntervalSeconds() {
     return QueryBuilder.apply(this, (query) {
@@ -1088,6 +1896,84 @@ extension TrackDataQuerySortBy on QueryBuilder<TrackData, TrackData, QSortBy> {
 
 extension TrackDataQuerySortThenBy
     on QueryBuilder<TrackData, TrackData, QSortThenBy> {
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByCachedDistanceKm() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedDistanceKm', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      thenByCachedDistanceKmDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedDistanceKm', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByCachedDurationMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedDurationMs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      thenByCachedDurationMsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedDurationMs', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByCachedEndTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedEndTimestamp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      thenByCachedEndTimestampDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedEndTimestamp', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByCachedPointCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedPointCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      thenByCachedPointCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedPointCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByCachedPolyline() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedPolyline', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy> thenByCachedPolylineDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedPolyline', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      thenByCachedStartTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedStartTimestamp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QAfterSortBy>
+      thenByCachedStartTimestampDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'cachedStartTimestamp', Sort.desc);
+    });
+  }
+
   QueryBuilder<TrackData, TrackData, QAfterSortBy>
       thenByCollectionIntervalSeconds() {
     return QueryBuilder.apply(this, (query) {
@@ -1179,6 +2065,45 @@ extension TrackDataQuerySortThenBy
 
 extension TrackDataQueryWhereDistinct
     on QueryBuilder<TrackData, TrackData, QDistinct> {
+  QueryBuilder<TrackData, TrackData, QDistinct> distinctByCachedDistanceKm() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'cachedDistanceKm');
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QDistinct> distinctByCachedDurationMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'cachedDurationMs');
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QDistinct> distinctByCachedEndTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'cachedEndTimestamp');
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QDistinct> distinctByCachedPointCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'cachedPointCount');
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QDistinct> distinctByCachedPolyline(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'cachedPolyline',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<TrackData, TrackData, QDistinct>
+      distinctByCachedStartTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'cachedStartTimestamp');
+    });
+  }
+
   QueryBuilder<TrackData, TrackData, QDistinct>
       distinctByCollectionIntervalSeconds() {
     return QueryBuilder.apply(this, (query) {
@@ -1224,6 +2149,45 @@ extension TrackDataQueryProperty
   QueryBuilder<TrackData, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<TrackData, double?, QQueryOperations>
+      cachedDistanceKmProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'cachedDistanceKm');
+    });
+  }
+
+  QueryBuilder<TrackData, int?, QQueryOperations> cachedDurationMsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'cachedDurationMs');
+    });
+  }
+
+  QueryBuilder<TrackData, DateTime?, QQueryOperations>
+      cachedEndTimestampProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'cachedEndTimestamp');
+    });
+  }
+
+  QueryBuilder<TrackData, int?, QQueryOperations> cachedPointCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'cachedPointCount');
+    });
+  }
+
+  QueryBuilder<TrackData, String?, QQueryOperations> cachedPolylineProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'cachedPolyline');
+    });
+  }
+
+  QueryBuilder<TrackData, DateTime?, QQueryOperations>
+      cachedStartTimestampProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'cachedStartTimestamp');
     });
   }
 
