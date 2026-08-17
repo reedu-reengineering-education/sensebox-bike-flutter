@@ -197,7 +197,6 @@ class RecordingBloc with ChangeNotifier {
     _lastRecordingStopTimestamp = DateTime.now().toUtc();
 
     _isRecording = false;
-    _isRecordingNotifier.value = false;
     // Keep activeCollectionMode until the next startRecording snapshots
     // settings. Resetting to gpsDriven made the idle GPS stream take the
     // continuous persist path and race into the first on-tap/periodic point.
@@ -211,6 +210,8 @@ class RecordingBloc with ChangeNotifier {
     // its geolocations are fresh in mind, so the tracks list and summary
     // stats never need to walk its full GeolocationData history again.
     // Non-fatal: a caching hiccup shouldn't block the user from stopping.
+    // Done before flipping isRecordingNotifier, since TracksScreen refreshes
+    // on that notifier and would otherwise read a stale/empty cache.
     if (trackToUpload != null) {
       try {
         await isarService.trackService.cacheTrackAggregates(trackToUpload);
@@ -218,6 +219,8 @@ class RecordingBloc with ChangeNotifier {
         ErrorService.handleError(e, stack);
       }
     }
+
+    _isRecordingNotifier.value = false;
 
     // Clean up services and handle post-ride upload if needed
     _directUploadService?.dispose();
