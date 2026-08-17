@@ -1,10 +1,16 @@
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_value_display.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class OvertakingPredictionSensor extends Sensor {
   static int get staticUiPriority => 30;
@@ -46,5 +52,28 @@ class OvertakingPredictionSensor extends Sensor {
 
     final maxValue = myValues.reduce(max);
     return [maxValue];
+  }
+
+  @override
+  Widget buildWidget() {
+    final safeInitial = latestValue.isEmpty ? const [0.0] : latestValue;
+
+    return SensorConditionalRerender(
+      valueStream: valueStream,
+      initialValue: safeInitial,
+      latestValue: safeInitial,
+      decimalPlaces: 4,
+      builder: (context, value) {
+        return SensorCard(
+          title: AppLocalizations.of(context)!.sensorOvertaking,
+          icon: getSensorIcon(title),
+          color: getSensorColor(title),
+          child: SensorValueDisplay(
+            value: (value[0] * 100).toStringAsFixed(0),
+            unit: '%',
+          ),
+        );
+      },
+    );
   }
 }

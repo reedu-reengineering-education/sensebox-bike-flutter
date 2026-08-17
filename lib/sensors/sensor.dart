@@ -138,6 +138,8 @@ abstract class Sensor {
 
   int get uiPriority;
 
+  Widget buildWidget();
+
   void setDirectUploadService(DirectUploadService uploadService) {
     _directUploadService = uploadService;
 

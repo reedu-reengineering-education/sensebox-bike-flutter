@@ -7,7 +7,9 @@ import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
+import 'package:sensebox_bike/feature_flags.dart';
 import 'package:sensebox_bike/models/data_collection_mode.dart';
+import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
@@ -18,7 +20,6 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/widgets/common/info_banner.dart';
-import 'package:sensebox_bike/ui/widgets/sensor/sensor_widget_factory.dart';
 
 // HomeScreen now delegates sections to smaller widgets
 class HomeScreen extends StatelessWidget {
@@ -143,6 +144,24 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+/// Resolves the sensors that currently have data available and returns their
+/// widgets, sorted by [Sensor.uiPriority].
+List<Widget> _buildAvailableSensorWidgets({
+  required List<Sensor> sensors,
+  required Set<String> availableCharacteristicUuids,
+}) {
+  final availableSensors = sensors.where((sensor) {
+    if (FeatureFlags.hideSurfaceAnomalySensor &&
+        sensor.title == 'surface_anomaly') {
+      return false;
+    }
+    return availableCharacteristicUuids.contains(sensor.characteristicUuid);
+  }).toList();
+
+  availableSensors.sort((a, b) => a.uiPriority.compareTo(b.uiPriority));
+  return availableSensors.map((sensor) => sensor.buildWidget()).toList();
+}
+
 /// Placeholder while the box is connected but no sensor has reported yet.
 class _SensorLoadingMessage extends StatelessWidget {
   const _SensorLoadingMessage();
@@ -230,7 +249,7 @@ class _SensorWidgets extends StatelessWidget {
               valueListenable: bleBloc.characteristicStreams.livePayloadVersion,
               builder: (context, _, __) {
                 // Check if there are actually any sensor widgets available
-                final widgets = buildAvailableSensorWidgets(
+                final widgets = _buildAvailableSensorWidgets(
                   sensors: sensorBloc.sensors,
                   availableCharacteristicUuids:
                       characteristics.map((e) => e.uuidString).toSet(),

@@ -1,8 +1,14 @@
+import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
+import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
+import 'package:sensebox_bike/ui/widgets/sensor/sensor_value_display.dart';
+import 'package:sensebox_bike/utils/sensor_utils.dart';
 
 class SurfaceAnomalySensor extends Sensor {
   static int get staticUiPriority => 60;
@@ -35,5 +41,28 @@ class SurfaceAnomalySensor extends Sensor {
   List<double> aggregateData(List<List<double>> valueBuffer) {
     final myValues = valueBuffer.map((e) => e[0]).toList();
     return [myValues.reduce((a, b) => a + b) / myValues.length];
+  }
+
+  @override
+  Widget buildWidget() {
+    final safeInitial = latestValue.isEmpty ? const [0.0] : latestValue;
+
+    return SensorConditionalRerender(
+      valueStream: valueStream,
+      initialValue: safeInitial,
+      latestValue: safeInitial,
+      decimalPlaces: 1,
+      builder: (context, value) {
+        return SensorCard(
+          title: AppLocalizations.of(context)!.sensorSurfaceAnomaly,
+          icon: getSensorIcon(title),
+          color: getSensorColor(title),
+          child: SensorValueDisplay(
+            value: value[0].toStringAsFixed(1),
+            unit: '',
+          ),
+        );
+      },
+    );
   }
 }
