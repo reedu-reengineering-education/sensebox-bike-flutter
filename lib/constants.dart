@@ -16,6 +16,8 @@ class SharedPreferencesKeys {
       'lastResolvedDataCollectionMode';
   static const String lastResolvedCollectionIntervalSeconds =
       'lastResolvedCollectionIntervalSeconds';
+  static const String rememberedDeviceId = 'rememberedDeviceId';
+  static const String rememberedDeviceName = 'rememberedDeviceName';
 }
 
 

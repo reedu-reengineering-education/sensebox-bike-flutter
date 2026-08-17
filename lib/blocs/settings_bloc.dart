@@ -20,6 +20,8 @@ class SettingsBloc with ChangeNotifier {
   String _apiUrl = '';
   DataCollectionMode _dataCollectionMode = DataCollectionMode.gpsDriven;
   int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
+  String? _rememberedDeviceId;
+  String? _rememberedDeviceName;
 
   SettingsBloc() {
     _loadSettings();
@@ -41,6 +43,10 @@ class SettingsBloc with ChangeNotifier {
   DataCollectionMode get dataCollectionMode => _dataCollectionMode;
 
   int get collectionIntervalSeconds => _collectionIntervalSeconds;
+
+  // Getters for the remembered auto-connect device (null = none remembered)
+  String? get rememberedDeviceId => _rememberedDeviceId;
+  String? get rememberedDeviceName => _rememberedDeviceName;
 
   // Stream for vibrateOnDisconnect updates
   Stream<bool> get vibrateOnDisconnectStream =>
@@ -89,6 +95,9 @@ class SettingsBloc with ChangeNotifier {
     _collectionIntervalSeconds = _parseStoredCollectionIntervalSeconds(
       prefs.getInt(SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds),
     );
+    _rememberedDeviceId = prefs.getString(SharedPreferencesKeys.rememberedDeviceId);
+    _rememberedDeviceName =
+        prefs.getString(SharedPreferencesKeys.rememberedDeviceName);
 
     // Emit the values to the streams
     _vibrateOnDisconnectController.add(_vibrateOnDisconnect);
@@ -179,6 +188,30 @@ class SettingsBloc with ChangeNotifier {
 
   Future<void> setCollectionIntervalSeconds(int seconds) =>
       setCollectionPreferences(intervalSeconds: seconds);
+
+  // Remember a device for auto-connect (id + display name), persisted.
+  Future<void> rememberDevice(String id, String name) async {
+    _rememberedDeviceId = id;
+    _rememberedDeviceName = name;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(SharedPreferencesKeys.rememberedDeviceId, id);
+    await prefs.setString(SharedPreferencesKeys.rememberedDeviceName, name);
+
+    notifyListeners();
+  }
+
+  // Forget the remembered auto-connect device, if any.
+  Future<void> forgetRememberedDevice() async {
+    _rememberedDeviceId = null;
+    _rememberedDeviceName = null;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(SharedPreferencesKeys.rememberedDeviceId);
+    await prefs.remove(SharedPreferencesKeys.rememberedDeviceName);
+
+    notifyListeners();
+  }
 
   @override
   void dispose() {

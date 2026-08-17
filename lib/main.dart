@@ -113,6 +113,8 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
       _initializeBlocs().then((_) {
         // Trigger authentication check after blocs are initialized
         _openSenseMapBloc?.performAuthenticationCheck();
+        // Silently try to connect to a remembered device if it's reachable
+        _bleBloc?.autoConnectToRememberedDevice();
       });
     }
 
