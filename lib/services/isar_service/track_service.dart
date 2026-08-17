@@ -167,7 +167,23 @@ class TrackService {
       }
 
       await isarProvider.runWriteTxn((isar) async {
-        await isar.trackDatas.putAll(batch);
+        final updates = <TrackData>[];
+        for (final computedTrack in batch) {
+          final latestTrack = await isar.trackDatas.get(computedTrack.id);
+          if (latestTrack == null || latestTrack.cachedPointCount != null) {
+            continue;
+          }
+          latestTrack.cachedPointCount = computedTrack.cachedPointCount;
+          latestTrack.cachedDistanceKm = computedTrack.cachedDistanceKm;
+          latestTrack.cachedDurationMs = computedTrack.cachedDurationMs;
+          latestTrack.cachedStartTimestamp = computedTrack.cachedStartTimestamp;
+          latestTrack.cachedEndTimestamp = computedTrack.cachedEndTimestamp;
+          latestTrack.cachedPolyline = computedTrack.cachedPolyline;
+          updates.add(latestTrack);
+        }
+        if (updates.isNotEmpty) {
+          await isar.trackDatas.putAll(updates);
+        }
       });
     }
   }
