@@ -160,7 +160,7 @@ class TrackData {
       // which leaves us with 7995 bytes for the polyline
       tolerance *= 1.5;
       attempts++;
-    } while (polyline.length > 7950 &&
+    } while (Uri.encodeComponent(polyline).length > 7950 &&
         tolerance <= 0.005 &&
         attempts < maxAttempts);
 
