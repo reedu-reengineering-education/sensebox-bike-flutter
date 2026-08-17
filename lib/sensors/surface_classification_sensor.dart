@@ -55,9 +55,8 @@ class SurfaceClassificationSensor extends Sensor {
 
   @override
   Widget buildWidget() {
-    final safeInitial = latestValue.length >= 5
-        ? latestValue
-        : const [0.0, 0.0, 0.0, 0.0, 0.0];
+    final safeInitial =
+        latestValue.length >= 5 ? latestValue : const [0.0, 0.0, 0.0, 0.0, 0.0];
 
     return SensorConditionalRerender(
       valueStream: valueStream.map(
@@ -102,52 +101,58 @@ class SurfaceClassificationSensor extends Sensor {
           title: AppLocalizations.of(context)!.sensorSurface,
           icon: getSensorIcon(title),
           color: getSensorColor(title),
-          child: Column(
-            children: [
-              const SizedBox(height: 2),
-              for (int i = 0; i < value.length; i++)
-                _legendEntry(
-                  context: context,
-                  title: labels[i],
-                  color: colors[i],
-                  value: value[i],
-                ),
-              SizedBox(
-                width: double.infinity,
-                height: 18,
-                child: RotatedBox(
-                  quarterTurns: 1,
-                  child: BarChart(
-                    BarChartData(
-                      borderData: FlBorderData(show: false),
-                      barTouchData: BarTouchData(enabled: false),
-                      gridData: const FlGridData(show: false),
-                      titlesData: const FlTitlesData(show: false),
-                      barGroups: [
-                        BarChartGroupData(
-                          x: 0,
-                          barRods: [
-                            BarChartRodData(
-                              toY: 1,
-                              rodStackItems: [
-                                for (int i = 0; i < value.length; i++)
-                                  BarChartRodStackItem(
-                                    value.take(i).fold(0.0, (a, b) => a + b),
-                                    value
-                                        .take(i + 1)
-                                        .fold(0.0, (a, b) => a + b),
-                                    colors[i],
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.topLeft,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 2),
+                for (int i = 0; i < value.length; i++)
+                  _legendEntry(
+                    context: context,
+                    title: labels[i],
+                    color: colors[i],
+                    value: value[i],
+                  ),
+                SizedBox(
+                  width: 150,
+                  height: 18,
+                  child: RotatedBox(
+                    quarterTurns: 1,
+                    child: BarChart(
+                      BarChartData(
+                        borderData: FlBorderData(show: false),
+                        barTouchData: BarTouchData(enabled: false),
+                        gridData: const FlGridData(show: false),
+                        titlesData: const FlTitlesData(show: false),
+                        barGroups: [
+                          BarChartGroupData(
+                            x: 0,
+                            barRods: [
+                              BarChartRodData(
+                                toY: 1,
+                                rodStackItems: [
+                                  for (int i = 0; i < value.length; i++)
+                                    BarChartRodStackItem(
+                                      value.take(i).fold(0.0, (a, b) => a + b),
+                                      value
+                                          .take(i + 1)
+                                          .fold(0.0, (a, b) => a + b),
+                                      colors[i],
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
