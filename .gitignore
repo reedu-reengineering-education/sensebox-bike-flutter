@@ -49,3 +49,7 @@ app.*.map.json
 
 # In-memory Isar instance used for testing
 default.isar*
+
+graphify-*
+CLAUDE.md
+.claude

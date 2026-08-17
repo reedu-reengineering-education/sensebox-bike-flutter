@@ -1,25 +1,20 @@
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/sensors/sensor.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
-import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart';
 import 'package:sensebox_bike/ui/widgets/sensor/sensor_card.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
-import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/ui/widgets/common/sensor_conditional_rerender.dart';
 
 class FinedustSensor extends Sensor {
-  double _latestPM1 = 0.0;
-  double _latestPM2_5 = 0.0;
-  double _latestPM4 = 0.0;
-  double _latestPM10 = 0.0;
-
   static int get staticUiPriority => 80;
 
   @override
-  get uiPriority => staticUiPriority;
+  int get uiPriority => staticUiPriority;
 
   @override
   Duration get lookbackWindow => const Duration(milliseconds: 1000);
@@ -28,58 +23,56 @@ class FinedustSensor extends Sensor {
       '7e14e070-84ea-489f-b45a-e1317364b979';
 
   FinedustSensor(
-      BleBloc bleBloc, GeolocationBloc geolocationBloc,
-      RecordingBloc recordingBloc,
-      IsarService isarService)
-      : super(
-            sensorCharacteristicUuid,
-            "finedust",
-            ['pm1', 'pm2.5', 'pm4', 'pm10'],
-            bleBloc,
-            geolocationBloc,
-            recordingBloc,
-            isarService);
-
-  @override
-  void onDataReceived(List<double> data) {
-    super.onDataReceived(data); // Call the parent class to handle buffering
-    if (data.length >= 4) {
-      _latestPM1 = data[0];
-      _latestPM2_5 = data[1];
-      _latestPM4 = data[2];
-      _latestPM10 = data[3];
-    }
-  }
+    BleBloc bleBloc,
+    GeolocationBloc geolocationBloc,
+    RecordingBloc recordingBloc,
+    IsarService isarService,
+  ) : super(
+          sensorCharacteristicUuid,
+          'finedust',
+          const ['pm1', 'pm2.5', 'pm4', 'pm10'],
+          bleBloc,
+          geolocationBloc,
+          recordingBloc,
+          isarService,
+        );
 
   @override
   List<double> aggregateData(List<List<double>> valueBuffer) {
-    List<double> sumValues = [0.0, 0.0, 0.0, 0.0];
-    int count = valueBuffer.length;
+    final sumValues = [0.0, 0.0, 0.0, 0.0];
+    final count = valueBuffer.length;
 
-    for (var values in valueBuffer) {
+    for (final values in valueBuffer) {
       sumValues[0] += values[0];
       sumValues[1] += values[1];
       sumValues[2] += values[2];
       sumValues[3] += values[3];
     }
 
-    // Calculate the mean for pm1, pm2.5, pm4, and pm10
     return sumValues.map((value) => value / count).toList();
   }
 
   @override
   Widget buildWidget() {
+    final safeInitial =
+        latestValue.length >= 4 ? latestValue : const [0.0, 0.0, 0.0, 0.0];
+
     return SensorConditionalRerender(
-      valueStream:
-          valueStream.map((event) => [event[0], event[1], event[2], event[3]]),
-      initialValue: [_latestPM1, _latestPM2_5, _latestPM4, _latestPM10],
-      latestValue: [_latestPM1, _latestPM2_5, _latestPM4, _latestPM10],
+      valueStream: valueStream.map(
+        (event) => [
+          _safeAt(event, 0),
+          _safeAt(event, 1),
+          _safeAt(event, 2),
+          _safeAt(event, 3),
+        ],
+      ),
+      initialValue: safeInitial,
+      latestValue: safeInitial,
       decimalPlaces: 2,
       shouldRerender: (old, next) {
         if (old.length != next.length) return true;
         for (int i = 0; i < old.length; i++) {
-          if (double.parse(old[i].toStringAsFixed(1)) !=
-              double.parse(next[i].toStringAsFixed(1))) {
+          if (old[i].toStringAsFixed(1) != next[i].toStringAsFixed(1)) {
             return true;
           }
         }
@@ -103,8 +96,8 @@ class FinedustSensor extends Sensor {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 30,
-                      getTitlesWidget: (value, _) {
-                        switch (value.toInt()) {
+                      getTitlesWidget: (axisValue, _) {
+                        switch (axisValue.toInt()) {
                           case 0:
                             return const Text('PM1',
                                 style: TextStyle(
@@ -121,8 +114,9 @@ class FinedustSensor extends Sensor {
                             return const Text('PM10',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 8));
+                          default:
+                            return const Text('');
                         }
-                        return const Text('');
                       },
                     ),
                   ),
@@ -131,9 +125,9 @@ class FinedustSensor extends Sensor {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 20,
-                      getTitlesWidget: (value, meta) {
+                      getTitlesWidget: (axisValue, _) {
                         return Text(
-                          value.toStringAsFixed(1),
+                          axisValue.toStringAsFixed(1),
                           textAlign: TextAlign.left,
                           style: const TextStyle(fontSize: 8),
                         );
@@ -146,30 +140,10 @@ class FinedustSensor extends Sensor {
                       sideTitles: SideTitles(showTitles: false)),
                 ),
                 barGroups: [
-                  BarChartGroupData(
-                    x: 0,
-                    barRods: [
-                      BarChartRodData(toY: value[0], color: Colors.blueGrey)
-                    ],
-                  ),
-                  BarChartGroupData(
-                    x: 1,
-                    barRods: [
-                      BarChartRodData(toY: value[1], color: Colors.blueGrey)
-                    ],
-                  ),
-                  BarChartGroupData(
-                    x: 2,
-                    barRods: [
-                      BarChartRodData(toY: value[2], color: Colors.blueGrey)
-                    ],
-                  ),
-                  BarChartGroupData(
-                    x: 3,
-                    barRods: [
-                      BarChartRodData(toY: value[3], color: Colors.blueGrey)
-                    ],
-                  ),
+                  _barGroup(0, value[0]),
+                  _barGroup(1, value[1]),
+                  _barGroup(2, value[2]),
+                  _barGroup(3, value[3]),
                 ],
               ),
             ),
@@ -177,5 +151,17 @@ class FinedustSensor extends Sensor {
         );
       },
     );
+  }
+
+  BarChartGroupData _barGroup(int x, double y) {
+    return BarChartGroupData(
+      x: x,
+      barRods: [BarChartRodData(toY: y, color: Colors.blueGrey)],
+    );
+  }
+
+  static double _safeAt(List<double> values, int index) {
+    if (index < 0 || index >= values.length) return 0.0;
+    return values[index];
   }
 }

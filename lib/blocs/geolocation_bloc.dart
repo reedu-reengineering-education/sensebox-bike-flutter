@@ -83,6 +83,7 @@ class GeolocationBloc with ChangeNotifier {
 
     _recordingListener = _onRecordingChanged;
     recordingBloc.isRecordingNotifier.addListener(_recordingListener!);
+    recordingBloc.activeCollectionModeNotifier.addListener(_onRecordingChanged);
   }
 
   void setCollectInstantSensorData(
@@ -464,6 +465,7 @@ class GeolocationBloc with ChangeNotifier {
       recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
       _recordingListener = null;
     }
+    recordingBloc.activeCollectionModeNotifier.removeListener(_onRecordingChanged);
     stopListening();
     _privacyZonesSubscription?.cancel();
     _privacyZoneChecker.dispose();

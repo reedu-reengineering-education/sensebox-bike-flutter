@@ -6,6 +6,7 @@ import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_progress_indicator.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_info_widget.dart';
 import 'package:sensebox_bike/theme.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 
 class OperationProgressModal extends StatefulWidget {
   final Stream<UploadProgress> progressStream;
@@ -142,7 +143,7 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
 
     final progress = _currentProgress;
     if (progress == null) {
-      return AlertDialog(
+      return AppAlertDialog(
         title: Text(widget.titleText ?? AppLocalizations.of(context)!.uploadProgressTitle),
         content: const SizedBox(
           height: 72,
@@ -163,7 +164,7 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
     final titleText = widget.titleText ?? localizations.uploadProgressTitle;
     final confirmText = widget.confirmMessageText ?? localizations.uploadConfirmMessage;
     
-    return AlertDialog(
+    return AppAlertDialog(
       title: Text(titleText),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -190,7 +191,7 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
   Widget _buildProgressDialog(BuildContext context, UploadProgress progress) {
     final theme = Theme.of(context);
     
-    return AlertDialog(
+    return AppAlertDialog(
       title: Text(widget.titleText ?? AppLocalizations.of(context)!.uploadProgressTitle),
       contentPadding: EdgeInsets.zero,
       content: Column(

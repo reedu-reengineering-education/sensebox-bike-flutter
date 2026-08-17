@@ -137,33 +137,33 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
 
 SPEC CHECKSUMS:
-  app_links: f3e17e4ee5e357b39d8b95290a9b2c299fca71c6
-  app_settings: 58017cd26b604ae98c3e65acbdd8ba173703cc82
-  device_info_plus: bf2e3232933866d73fe290f2942f2156cdd10342
+  app_links: 76b66b60cc809390ca1ad69bfd66b998d2387ac7
+  app_settings: 5127ae0678de1dcc19f2293271c51d37c89428b2
+  device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_local_notifications: df98d66e515e1ca797af436137b4459b160ad8c9
-  geolocator_apple: 9bcea1918ff7f0062d98345d238ae12718acfbc1
-  haptic_feedback: a366a27ec760f0e865651605b95de8a9bb04ef01
-  isar_community_flutter_libs: cf478bdca01f7fb2bde0320930a785456748f1ad
-  mapbox_maps_flutter: d7bef6687c5be0e49518c4c5423276ca68e2228a
+  flutter_local_notifications: 395056b3175ba4f08480a7c5de30cd36d69827e4
+  geolocator_apple: 1560c3c875af2a412242c7a923e15d0d401966ff
+  haptic_feedback: 1f22d7ad3abb43bb814aa42fdf548dc6d9e8245a
+  isar_community_flutter_libs: bede843185a61a05ff364a05c9b23209523f7e0d
+  mapbox_maps_flutter: a0d2087d3db56724200e9e1fe0c901eab43474e9
   MapboxCommon: 479562bceca6b10d1c3b8bca5006ef86c51d7255
   MapboxCoreMaps: b96038f97c62e0e72ebece2a3b909ca4eda8ab21
   MapboxMaps: 8c0f733a3250a03bcc4938347ca5f699b0804ce1
-  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
-  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
-  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
+  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
+  permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   Protobuf: 8d5596f7468be5400861a6bbfb2dfe9d0d1cde34
-  reactive_ble_mobile: 856183aeda09f2a676bbaecbea8915c3cb1d33df
+  reactive_ble_mobile: ea97709e18fa6f0b0592909725d7ae7e1c595b64
   Sentry: da60d980b197a46db0b35ea12cb8f39af48d8854
-  sentry_flutter: 2df8b0aab7e4aba81261c230cbea31c82a62dd1b
-  share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
-  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
-  sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
+  sentry_flutter: 27892878729f42701297c628eb90e7c6529f3684
+  share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
+  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
+  sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   SwiftProtobuf: d724b5145bfc609d9a49c1e3e3a3dabb07273ffb
   Turf: c9eb11a65d96af58cac523460fd40fec5061b081
-  url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
-  vibration: 8e4d81c3e73ab229a9fb5ab2692f789c4a46d74d
-  webview_flutter_wkwebview: a4af96a051138e28e29f60101d094683b9f82188
+  url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
+  vibration: ca8104a8875b9c493e15b21b04e456befd0ff6eb
+  webview_flutter_wkwebview: 1821ceac936eba6f7984d89a9f3bcb4dea99ebb2
 
 PODFILE CHECKSUM: 75f6e4afcdba93524ae2339e61f8e65305aad959
 

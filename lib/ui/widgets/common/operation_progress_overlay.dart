@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/operation_progress_modal.dart';
 import 'package:sensebox_bike/ui/widgets/common/operation_progress_overlay_config.dart';
 
@@ -19,8 +20,9 @@ class OperationProgressOverlay {
     _isVisible = true;
     _navigator = Navigator.maybeOf(context);
 
-    showDialog(
+    showAppDialog(
       context: context,
+      useRootNavigator: true,
       barrierDismissible: false,
       builder: (context) => OperationProgressModal(
         progressStream: config.progressStream,

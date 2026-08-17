@@ -1,71 +1,150 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
-import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
-import 'package:sensebox_bike/models/data_collection_mode.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/theme.dart';
-import 'package:sensebox_bike/utils/data_collection_mode_ui.dart';
-import 'package:sensebox_bike/utils/url_launch_utils.dart';
-import 'package:sensebox_bike/ui/screens/exclusion_zones_screen.dart';
+import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
-import 'package:sensebox_bike/ui/screens/track_statistics_screen.dart';
+import 'package:sensebox_bike/ui/widgets/common/app_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/api_url_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/button_with_loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_dialog.dart';
 import 'package:sensebox_bike/ui/widgets/common/hint.dart';
+import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
+import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/ui/widgets/settings/app_info_section.dart';
-import 'package:sensebox_bike/ui/widgets/settings/data_collection_mode_fields.dart';
-import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 
-class SettingsScreen extends StatelessWidget {
-
-    TextStyle _getPrimaryTextStyle(BuildContext context) {
-      return TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: Theme.of(context).colorScheme.onTertiaryContainer,
-      );
-    }
-
-    TextStyle _getSecondaryTextStyle(BuildContext context) {
-      return TextStyle(
-        color: Theme.of(context).colorScheme.onTertiaryContainer,
-      );
-    }
+class SettingsScreen extends StatefulWidget {
   final Future<bool> Function(Uri url, {LaunchMode mode}) launchUrlFunction;
 
   const SettingsScreen({super.key, this.launchUrlFunction = launchUrl});
 
   @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  int _selectedIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
-    final settingsBloc = Provider.of<SettingsBloc>(context);
-    final OpenSenseMapBloc openSenseMapBloc = Provider.of<OpenSenseMapBloc>(context);
+    return Consumer<OpenSenseMapBloc>(
+      builder: (context, openSenseMapState, _) {
+        final openSenseMapBloc = context.read<OpenSenseMapBloc>();
+        return Consumer<SettingsBloc>(
+          builder: (context, settingsState, _) {
+            final settingsBloc = context.read<SettingsBloc>();
+            final configurationBloc = context.read<ConfigurationBloc>();
+
+            if (context.isTablet) {
+              return _buildTabletLayout(
+                context,
+                openSenseMapBloc,
+                openSenseMapState,
+                settingsBloc,
+                settingsState,
+                configurationBloc,
+              );
+            }
+
+            return ScreenWrapper(
+              title: AppLocalizations.of(context)!.generalSettings,
+              child: ListView(
+                children: <Widget>[
+                  _buildLoginLogoutSection(
+                    context,
+                    openSenseMapBloc,
+                    openSenseMapState,
+                  ),
+                  _buildOtherSection(context),
+                  _buildGeneralSettingsSection(
+                    context,
+                    settingsBloc,
+                    settingsState,
+                    configurationBloc,
+                  ),
+                  _buildAccountManagementSection(context),
+                  _buildHelpSection(context),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ── Tablet two-pane layout ──────────────────────────────────────────────────
+
+  Widget _buildTabletLayout(
+    BuildContext context,
+    OpenSenseMapBloc openSenseMapBloc,
+    OpenSenseMapBloc openSenseMapState,
+    SettingsBloc settingsBloc,
+    SettingsBloc settingsState,
+    ConfigurationBloc configurationBloc,
+  ) {
+    final localizations = AppLocalizations.of(context)!;
+
+    final sections = [
+      (Icons.tune, localizations.settingsGeneral),
+      (Icons.info_outline, localizations.settingsAbout),
+      (Icons.help_outline, localizations.settingsContact),
+    ];
+
+    final sectionContent = [
+      ListView(children: [
+        _buildGeneralSettingsSection(
+            context, settingsBloc, settingsState, configurationBloc),
+        _buildAccountManagementSection(context),
+      ]),
+      ListView(children: [_buildOtherSection(context)]),
+      ListView(children: [_buildHelpSection(context)]),
+    ];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.generalSettings),
+        title: Text(
+          localizations.generalSettings,
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
       ),
-      body: ListView(
-        children: <Widget>[
-          _buildLoginLogoutSection(context, openSenseMapBloc),
-          _buildAboutSection(context),
-          _buildGeneralSettingsSection(context, settingsBloc),
-          _buildAccountManagementSection(context),
-          _buildHelpSection(context),
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SettingsSidebar(
+            selectedIndex: _selectedIndex,
+            sections: sections,
+            onSelected: (i) => setState(() => _selectedIndex = i),
+            openSenseMapBloc: openSenseMapBloc,
+            openSenseMapState: openSenseMapState,
+          ),
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: sectionContent,
+            ),
+          ),
         ],
       ),
     );
   }
 
+  // ── Shared section builders ─────────────────────────────────────────────────
+
   Widget _buildLoginLogoutSection(
-      BuildContext context, OpenSenseMapBloc openSenseMapBloc) {
-    final isAuthenticated = openSenseMapBloc.isAuthenticated;
+    BuildContext context,
+    OpenSenseMapBloc openSenseMapBloc,
+    OpenSenseMapBloc openSenseMapState,
+  ) {
+    final isAuthenticated = openSenseMapState.isAuthenticated;
 
     return _buildSettingsContainer(
       context,
@@ -103,11 +182,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildUserInfoRow(
-      BuildContext context,
-      bool isAuthenticated,
-      Map<String, dynamic>? userData,
-      OpenSenseMapBloc openSenseMapBloc) {
+  Widget _buildUserInfoRow(BuildContext context, bool isAuthenticated,
+      Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       spacing: 12,
@@ -136,10 +212,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAuthenticatedUserInfo(
-      BuildContext context,
-      Map<String, dynamic>? userData,
-      OpenSenseMapBloc openSenseMapBloc) {
+  Widget _buildAuthenticatedUserInfo(BuildContext context,
+      Map<String, dynamic>? userData, OpenSenseMapBloc openSenseMapBloc) {
     if (openSenseMapBloc.isAuthenticating) {
       return const CircularProgressIndicator();
     }
@@ -147,7 +221,7 @@ class SettingsScreen extends StatelessWidget {
     if (userData == null) {
       return const CircularProgressIndicator();
     }
-    
+
     return _buildUserDataDisplay(context, userData, openSenseMapBloc);
   }
 
@@ -202,7 +276,7 @@ class SettingsScreen extends StatelessWidget {
           ? null
           : () => _handleLoginLogoutAction(
               context, isAuthenticated, openSenseMapBloc),
-        text: isAuthenticated
+      text: isAuthenticated
           ? AppLocalizations.of(context)!.generalLogout
           : AppLocalizations.of(context)!.generalLoginOrRegister,
       width: 1,
@@ -220,9 +294,9 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _showModalBottomSheet(BuildContext context,
       Widget Function(BuildContext) contentBuilder) async {
-    await showModalBottomSheet(
+    await showAppModalSheet(
       context: context,
-      isScrollControlled: true,
+      useRootNavigator: true,
       builder: (context) => contentBuilder(context),
     );
   }
@@ -230,21 +304,26 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildLoginModalContent(BuildContext context) {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.9,
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(borderRadius),
-        ),
-        child: const Padding(
-          padding: EdgeInsets.only(top: 16),
-          child: LoginScreen(),
-        ),
-      ),
+      child: const LoginScreen(),
     );
   }
 
+  TextStyle _getPrimaryTextStyle(BuildContext context) {
+    return TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: Theme.of(context).colorScheme.onTertiaryContainer,
+    );
+  }
+
+  TextStyle _getSecondaryTextStyle(BuildContext context) {
+    return TextStyle(
+      color: Theme.of(context).colorScheme.onTertiaryContainer,
+    );
+  }
 
   Widget _buildAccountManagementSection(BuildContext context) {
-    final isarService = Provider.of<TrackBloc>(context).isarService;
+    final isarService = context.read<TrackBloc>().isarService;
     final localizations = AppLocalizations.of(context)!;
 
     return StatefulBuilder(
@@ -337,170 +416,101 @@ class SettingsScreen extends StatelessWidget {
 
   // General Settings Section
   Widget _buildGeneralSettingsSection(
-      BuildContext context, SettingsBloc settingsBloc) {
-    final configurationBloc = Provider.of<ConfigurationBloc>(context);
-    final isarService = Provider.of<TrackBloc>(context).isarService;
+    BuildContext context,
+    SettingsBloc settingsBloc,
+    SettingsBloc settingsState,
+    ConfigurationBloc configurationBloc,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(
             context, AppLocalizations.of(context)!.settingsGeneral),
-        StreamBuilder<bool>(
-          stream: settingsBloc.vibrateOnDisconnectStream,
-          initialData: settingsBloc.vibrateOnDisconnect,
-          builder: (context, snapshot) {
-            return ListTile(
-              leading: const Icon(Icons.vibration),
-              title: Text(
-                  AppLocalizations.of(context)!.settingsVibrateOnDisconnect),
-              trailing: Switch(
-                value: snapshot.data ?? false,
-                onChanged: (value) {
-                  settingsBloc.toggleVibrateOnDisconnect(value);
-                },
-              ),
-            );
-          },
-        ),
-        StreamBuilder<bool>(
-          stream: settingsBloc.directUploadModeStream,
-          initialData: settingsBloc.directUploadMode,
-          builder: (context, snapshot) {
-            final isDirectUpload = snapshot.data ?? false;
-            final uploadModeText = isDirectUpload
-                ? AppLocalizations.of(context)!.settingsUploadModeDirect
-                : AppLocalizations.of(context)!.settingsUploadModePostRide;
-
-            return SettingsValueTile(
-              icon: Icons.cloud_upload,
-              title: AppLocalizations.of(context)!.settingsUploadMode,
-              value: AppLocalizations.of(context)!
-                  .settingsUploadModeCurrent(uploadModeText),
-              onTap: () => _showUploadModeDialog(context, settingsBloc),
-            );
-          },
-        ),
-        Consumer<SettingsBloc>(
-          builder: (context, bloc, _) {
-            final modeLabel = dataCollectionModeSettingsLabel(
-              bloc.dataCollectionMode,
-              AppLocalizations.of(context)!,
-            );
-            return ListTile(
-              leading: const Icon(Icons.sensors),
-              title: Text(
-                AppLocalizations.of(context)!.settingsDataCollectionMode,
-              ),
-              subtitle: Text(
-                AppLocalizations.of(context)!
-                    .settingsDataCollectionModeCurrent(modeLabel),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-              onTap: () => _showDataCollectionModeDialog(context, bloc),
-            );
-          },
-        ),
-        Consumer<SettingsBloc>(
-          builder: (context, bloc, _) {
-            if (!bloc.dataCollectionMode.usesPeriodicTimer) {
-              return const SizedBox.shrink();
-            }
-            final seconds = bloc.collectionIntervalSeconds;
-            return ListTile(
-              leading: const Icon(Icons.schedule),
-              title: Text(
-                AppLocalizations.of(context)!.settingsCollectionInterval,
-              ),
-              subtitle: Text(
-                AppLocalizations.of(context)!
-                    .settingsCollectionIntervalCurrent(seconds),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-              onTap: () => _showCollectionIntervalDialog(context, bloc),
-            );
-          },
+        ListTile(
+          leading: const Icon(Icons.vibration),
+          title:
+              Text(AppLocalizations.of(context)!.settingsVibrateOnDisconnect),
+          trailing: Switch(
+            value: settingsState.vibrateOnDisconnect,
+            onChanged: (value) {
+              settingsBloc.toggleVibrateOnDisconnect(value);
+            },
+          ),
         ),
         _buildApiUrlSection(context, settingsBloc, configurationBloc),
-        SettingsNavigationTile(
-          icon: Icons.admin_panel_settings,
-          title: AppLocalizations.of(context)!.generalPrivacyZones,
-          trailingPrefix: Badge.count(
-            count: settingsBloc.privacyZones.length,
-            backgroundColor: Theme.of(context).iconTheme.color,
-          ),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => const ExclusionZonesScreen()),
-          ),
-        ),
-        SettingsNavigationTile(
-          icon: Icons.trending_up_outlined,
-          title: AppLocalizations.of(context)!.trackStatistics,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) =>
-                    TrackStatisticsScreen(isarService: isarService)),
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildApiUrlSection(BuildContext context, SettingsBloc settingsBloc, ConfigurationBloc configurationBloc) {
-    return StatefulBuilder(
-      builder: (context, setState) {
-        final apiUrls = configurationBloc.apiUrls;
-        final isLoading = configurationBloc.isLoadingApiUrls;
-        final error = configurationBloc.apiUrlsError;
+  Widget _buildApiUrlSection(
+    BuildContext context,
+    SettingsBloc settingsBloc,
+    ConfigurationBloc configurationBloc,
+  ) {
+    return ListenableBuilder(
+      listenable: configurationBloc,
+      builder: (context, _) {
         final controller = TextEditingController(text: settingsBloc.apiUrl);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Consumer<SettingsBloc>(
-              builder: (context, bloc, _) => SettingsValueTile(
-                icon: Icons.settings_ethernet_outlined,
-                title: AppLocalizations.of(context)!.settingsApiUrl,
-                value: bloc.apiUrl,
-                onTap: () {
-                  _showApiUrlDialog(context, bloc, controller,
-                      apiUrls: apiUrls,
-                      isLoading: isLoading,
-                      error: error,
-                      setState: setState);
-                },
-              ),
-            ),
-          ],
+
+        return ListTile(
+          leading: const Icon(Icons.settings_ethernet_outlined),
+          title: Text(AppLocalizations.of(context)!.settingsApiUrl),
+          subtitle: Text(
+            settingsBloc.apiUrl,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+          onTap: () async {
+            if (configurationBloc.apiUrls == null &&
+                !configurationBloc.isLoadingApiUrls) {
+              await configurationBloc.loadApiUrls();
+            }
+            if (!context.mounted) return;
+            _showApiUrlDialog(
+              context,
+              settingsBloc,
+              controller,
+              apiUrls: configurationBloc.apiUrls,
+              isLoading: configurationBloc.isLoadingApiUrls,
+              error: configurationBloc.apiUrlsError,
+            );
+          },
         );
       },
     );
   }
 
-  void _showApiUrlDialog(BuildContext context, SettingsBloc settingsBloc,
-      TextEditingController controller,
-      {List<String>? apiUrls,
-      bool isLoading = false,
-      String? error,
-      void Function(void Function())? setState}) {
-    showDialog(
+  void _showApiUrlDialog(
+    BuildContext context,
+    SettingsBloc settingsBloc,
+    TextEditingController controller, {
+    List<String>? apiUrls,
+    bool isLoading = false,
+    String? error,
+  }) {
+    showAppDialog(
       context: context,
-      barrierDismissible: true,
       builder: (context) => ApiUrlDialog(
         settingsBloc: settingsBloc,
         controller: controller,
         apiUrls: apiUrls,
         isLoading: isLoading,
         error: error,
-        setState: setState,
       ),
+    );
+  }
+
+  Widget _buildOtherSection(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(context, localizations.settingsAbout),
+        AppInfoSection(launchUrlFunction: widget.launchUrlFunction),
+      ],
     );
   }
 
@@ -533,229 +543,346 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAboutSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader(
-            context, AppLocalizations.of(context)!.settingsAbout),
-        AppInfoSection(launchUrlFunction: launchUrlFunction),
-      ],
-    );
-  }
-
   Widget _buildSectionHeader(BuildContext context, String title) {
-    return SettingsSectionHeader(title: title);
+    return Padding(
+      padding: const EdgeInsets.only(
+          top: spacing * 3, bottom: spacing, left: spacing, right: spacing),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+    );
   }
 
   Widget _buildUrlTile(BuildContext context,
       {required IconData icon, required String title, required String url}) {
-    return SettingsNavigationTile(
-      icon: icon,
-      title: title,
-      onTap: () => launchExternalUrl(url, launchUrlFunction: launchUrlFunction),
-    );
-  }
-
-  void _showUploadModeDialog(BuildContext context, SettingsBloc settingsBloc) {
-    final currentMode = settingsBloc.directUploadMode;
-    final localizations = AppLocalizations.of(context)!;
-    final screenSize = MediaQuery.of(context).size;
-    final isLargeScreen = screenSize.width > 375; // iPhone mini width is 375px
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(localizations.settingsUploadMode),
-          titlePadding: isLargeScreen
-              ? const EdgeInsets.fromLTRB(
-                  24, 24, 24, 24) // Extra padding on larger screens
-              : const EdgeInsets.fromLTRB(
-                  12, 12, 12, 12), // Standard padding on small screens
-          contentPadding: EdgeInsets.zero,
-          content: SizedBox(
-            width: double.maxFinite,
-            height: isLargeScreen
-                ? null
-                : MediaQuery.of(context).size.height *
-                    0.6, // Fixed height only on small screens
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(
-                    bottom: isLargeScreen
-                        ? 24.0
-                        : 0.0), // Add bottom padding on larger screens
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioListTile<bool>(
-                      title: Text(localizations.settingsUploadModePostRide),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(localizations.settingsUploadModePostRideTitle),
-                          const SizedBox(height: 8),
-                          Text(
-                            localizations.settingsUploadModePostRideDescription,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                          ),
-                        ],
-                      ),
-                      value: false,
-                      groupValue: currentMode,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          settingsBloc.toggleDirectUploadMode(value);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                    const SizedBox(height: 16),
-                    RadioListTile<bool>(
-                      title: Text(localizations.settingsUploadModeDirect),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(localizations.settingsUploadModeDirectTitle),
-                          const SizedBox(height: 8),
-                          Text(
-                            localizations.settingsUploadModeDirectDescription,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                          ),
-                        ],
-                      ),
-                      value: true,
-                      groupValue: currentMode,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          settingsBloc.toggleDirectUploadMode(value);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      isThreeLine: true,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(localizations.generalCancel),
-            ),
-          ],
-        );
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: () async {
+        try {
+          await widget.launchUrlFunction(Uri.parse(url),
+              mode: LaunchMode.externalApplication);
+        } catch (error, stack) {
+          ErrorService.handleError(error, stack);
+        }
       },
     );
   }
+}
 
-  void _showDataCollectionModeDialog(
-      BuildContext context, SettingsBloc settingsBloc) {
-    final localizations = AppLocalizations.of(context)!;
-    final currentMode = settingsBloc.dataCollectionMode;
-    final screenSize = MediaQuery.of(context).size;
-    final isLargeScreen = screenSize.width > 375;
+/// shadcn-style sidebar: account card at top, nav items in middle, delete at bottom.
+class _SettingsSidebar extends StatelessWidget {
+  final int selectedIndex;
+  final List<(IconData, String)> sections;
+  final ValueChanged<int> onSelected;
+  final OpenSenseMapBloc openSenseMapBloc;
+  final OpenSenseMapBloc openSenseMapState;
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(localizations.settingsDataCollectionMode),
-          titlePadding: isLargeScreen
-              ? const EdgeInsets.fromLTRB(24, 24, 24, 24)
-              : const EdgeInsets.fromLTRB(12, 12, 12, 12),
-          contentPadding: EdgeInsets.zero,
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(bottom: isLargeScreen ? 24.0 : 0.0),
-                child: DataCollectionModeRadioList(
-                  groupValue: currentMode,
-                  onChanged: (selected) async {
-                    await settingsBloc.setDataCollectionMode(selected);
-                    Navigator.of(dialogContext).pop();
-                  },
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(localizations.generalCancel),
+  const _SettingsSidebar({
+    required this.selectedIndex,
+    required this.sections,
+    required this.onSelected,
+    required this.openSenseMapBloc,
+    required this.openSenseMapState,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isAuthenticated = openSenseMapState.isAuthenticated;
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Container(
+        width: 280,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
-        );
-      },
-    );
-  }
-
-  void _showCollectionIntervalDialog(
-      BuildContext context, SettingsBloc settingsBloc) {
-    final localizations = AppLocalizations.of(context)!;
-    final currentSeconds = settingsBloc.collectionIntervalSeconds;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(localizations.settingsCollectionInterval),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  localizations.settingsCollectionIntervalDescription,
-                  style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(dialogContext)
-                            .colorScheme
-                            .onSurfaceVariant,
-                      ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SidebarAccountCard(
+                isAuthenticated: isAuthenticated,
+                openSenseMapBloc: openSenseMapBloc,
+                colorScheme: colorScheme,
+                textTheme: textTheme,
+              ),
+              const SizedBox(height: 16),
+              for (int i = 0; i < sections.length; i++) ...[
+                _SidebarItem(
+                  icon: sections[i].$1,
+                  label: sections[i].$2,
+                  selected: i == selectedIndex,
+                  colorScheme: colorScheme,
+                  textTheme: textTheme,
+                  onTap: () => onSelected(i),
                 ),
-                const SizedBox(height: spacing / 2),
-                CollectionIntervalPresetList(
-                  selectedSeconds: currentSeconds,
-                  onSelected: (seconds) async {
-                    await settingsBloc.setCollectionIntervalSeconds(seconds);
-                    Navigator.of(dialogContext).pop();
-                  },
-                ),
+                const SizedBox(height: 2),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarAccountCard extends StatelessWidget {
+  final bool isAuthenticated;
+  final OpenSenseMapBloc openSenseMapBloc;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  const _SidebarAccountCard({
+    required this.isAuthenticated,
+    required this.openSenseMapBloc,
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cardColor =
+        isAuthenticated ? colorScheme.tertiary : loginRequiredColor;
+    final onCard = colorScheme.onTertiaryContainer;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FutureBuilder<Map<String, dynamic>?>(
+            future: openSenseMapBloc.userData,
+            builder: (context, snapshot) {
+              final user = snapshot.data?['data']?['me'];
+              final email = user?['email'];
+              final name = user?['name'];
+              return Row(
+                spacing: 10,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: onCard.withAlpha(40),
+                    ),
+                    child: Icon(Icons.account_circle, size: 32, color: onCard),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (isAuthenticated && name != null)
+                          Text(name,
+                              style: textTheme.bodyLarge?.copyWith(
+                                  color: onCard, fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis)
+                        else
+                          Text(
+                            AppLocalizations.of(context)!.openSenseMapLogin,
+                            style: textTheme.bodyLarge?.copyWith(
+                                color: onCard, fontWeight: FontWeight.w600),
+                          ),
+                        if (isAuthenticated && email != null)
+                          Text(email,
+                              style: textTheme.bodySmall
+                                  ?.copyWith(color: onCard.withAlpha(180)),
+                              overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: onCard.withAlpha(30),
+                foregroundColor: onCard,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                textStyle: textTheme.bodySmall,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: openSenseMapBloc.isAuthenticating
+                  ? null
+                  : () async {
+                      if (isAuthenticated) {
+                        await openSenseMapBloc.logout();
+                      } else {
+                        await showAppModalSheet(
+                          context: context,
+                          useRootNavigator: true,
+                          builder: (ctx) => SizedBox(
+                            height: MediaQuery.of(ctx).size.height * 0.9,
+                            child: const LoginScreen(),
+                          ),
+                        );
+                      }
+                    },
+              child: openSenseMapBloc.isAuthenticating
+                  ? const SizedBox(
+                      height: 14,
+                      width: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(isAuthenticated
+                      ? AppLocalizations.of(context)!.generalLogout
+                      : AppLocalizations.of(context)!.generalLoginOrRegister),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(localizations.generalCancel),
-            ),
-          ],
-        );
-      },
+        ],
+      ),
+    );
+  }
+}
+
+class _SidebarAccountManagement extends StatefulWidget {
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  const _SidebarAccountManagement({
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  @override
+  State<_SidebarAccountManagement> createState() =>
+      _SidebarAccountManagementState();
+}
+
+class _SidebarAccountManagementState extends State<_SidebarAccountManagement> {
+  bool _isDeleting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    final isarService = context.read<TrackBloc>().isarService;
+
+    return TextButton.icon(
+      style: TextButton.styleFrom(
+        foregroundColor: widget.colorScheme.error,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        alignment: Alignment.centerLeft,
+      ),
+      icon: _isDeleting
+          ? SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: widget.colorScheme.error),
+            )
+          : const Icon(Icons.delete_outline, size: 18),
+      label: Text(localizations.settingsDeleteAllData,
+          style: widget.textTheme.bodyMedium
+              ?.copyWith(color: widget.colorScheme.error)),
+      onPressed: _isDeleting
+          ? null
+          : () async {
+              final confirmed = await showCustomDialog(
+                context: context,
+                message: localizations.settingsDeleteAllDataConfirmation,
+                type: DialogType.confirmation,
+              );
+              if (confirmed != true || !context.mounted) return;
+              setState(() => _isDeleting = true);
+              try {
+                await isarService.deleteAllData();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content:
+                          Text(localizations.settingsDeleteAllDataSuccess)));
+                }
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(localizations.settingsDeleteAllDataError)));
+                }
+              } finally {
+                if (mounted) setState(() => _isDeleting = false);
+              }
+            },
+    );
+  }
+}
+
+class _SidebarItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+  final VoidCallback onTap;
+
+  const _SidebarItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.colorScheme,
+    required this.textTheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fgColor = selected
+        ? colorScheme.onSecondaryContainer
+        : colorScheme.onSurfaceVariant;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color:
+                selected ? colorScheme.secondaryContainer : Colors.transparent,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: fgColor),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: fgColor,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

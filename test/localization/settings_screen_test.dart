@@ -68,14 +68,23 @@ void main() {
         .thenAnswer((_) async => [TrackData()]);
   });
 
+  void setPhoneSurfaceSize(WidgetTester tester) {
+    tester.view.physicalSize = const Size(800, 599);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+  }
+
   Widget buildTestWidget(Locale locale) {
     final configurationBloc = ConfigurationBloc();
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<SettingsBloc>.value(value: mockSettingsBloc),
         ChangeNotifierProvider<TrackBloc>.value(value: mockTrackBloc),
-        ChangeNotifierProvider<OpenSenseMapBloc>.value(value: mockOpenSenseMapBloc),
-        ChangeNotifierProvider<ConfigurationBloc>.value(value: configurationBloc),
+        ChangeNotifierProvider<OpenSenseMapBloc>.value(
+            value: mockOpenSenseMapBloc),
+        ChangeNotifierProvider<ConfigurationBloc>.value(
+            value: configurationBloc),
       ],
       child: createLocalizedTestApp(
         locale: locale,
@@ -86,6 +95,7 @@ void main() {
 
   group("SettingsScreen Widget", () {
     testWidgets("is translated in English", (WidgetTester tester) async {
+      setPhoneSurfaceSize(tester);
       await tester.pumpWidget(buildTestWidget(const Locale('en')));
       await tester.pumpAndSettle();
 
@@ -96,7 +106,6 @@ void main() {
       expect(find.text('Privacy Policy'), findsOneWidget);
       expect(find.text('General'), findsOneWidget);
       expect(find.text('Vibrate on disconnect'), findsOneWidget);
-      expect(find.text('Privacy Zones'), findsOneWidget);
 
       await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
       await tester.pumpAndSettle();
@@ -108,6 +117,7 @@ void main() {
     });
 
     testWidgets("is translated in German", (WidgetTester tester) async {
+      setPhoneSurfaceSize(tester);
       await tester.pumpWidget(buildTestWidget(const Locale('de')));
       await tester.pumpAndSettle();
 
@@ -118,7 +128,6 @@ void main() {
       expect(find.text('Datenschutz'), findsOneWidget);
       expect(find.text('Allgemeine'), findsOneWidget);
       expect(find.text('Vibration bei Verbindungsabbruch'), findsOneWidget);
-      expect(find.text('Privatzonen'), findsOneWidget);
 
       await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
       await tester.pumpAndSettle();
@@ -129,6 +138,7 @@ void main() {
     });
 
     testWidgets("is translated in Portuguese", (WidgetTester tester) async {
+      setPhoneSurfaceSize(tester);
       await tester.pumpWidget(buildTestWidget(const Locale('pt')));
       await tester.pumpAndSettle();
 
@@ -139,7 +149,6 @@ void main() {
       expect(find.text('Política de Privacidade'), findsOneWidget);
       expect(find.text('Geral'), findsOneWidget);
       expect(find.text('Vibrar ao desconectar'), findsOneWidget);
-      expect(find.text('Áreas de Privacidade'), findsOneWidget);
 
       await tester.scrollUntilVisible(find.text('GitHub issue'), 500.0);
       await tester.pumpAndSettle();
@@ -150,6 +159,7 @@ void main() {
     });
 
     testWidgets("is translated in French", (WidgetTester tester) async {
+      setPhoneSurfaceSize(tester);
       await tester.pumpWidget(buildTestWidget(const Locale('fr')));
       await tester.pumpAndSettle();
 
@@ -160,7 +170,6 @@ void main() {
       expect(find.text('Politique de confidentialité'), findsOneWidget);
       expect(find.text('Général'), findsOneWidget);
       expect(find.text('Vibrer lors de la déconnexion'), findsOneWidget);
-      expect(find.text('Zones de confidentialité'), findsOneWidget);
 
       await tester.scrollUntilVisible(find.text('Ticket GitHub'), 500.0);
       await tester.pumpAndSettle();
@@ -202,12 +211,5 @@ void main() {
       expect(find.text('Connexion ou inscription'), findsOneWidget);
     });
 
-    testWidgets('always shows Data recording settings',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(buildTestWidget(const Locale('en')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Data recording'), findsOneWidget);
-    });
   });
 }

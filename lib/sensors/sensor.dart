@@ -30,7 +30,7 @@ abstract class Sensor {
   StreamSubscription<List<double>>? _subscription;
   StreamSubscription<GeolocationData>? _geoSubscription;
   StreamSubscription<List<int>>? _uploadSuccessSubscription;
-  
+
   final Map<int, SensorBatch> _sensorBatches = {};
   final List<TimestampedSensorValue> _preGpsValues = [];
 
@@ -39,6 +39,13 @@ abstract class Sensor {
 
   bool get hasLatestValues =>
       _latestValues != null && _latestValues!.isNotEmpty;
+
+  /// Latest reading, exposed so the sensor tiles can seed themselves before
+  /// the first value arrives on [valueStream].
+  List<double> get latestValue {
+    final values = _latestValues;
+    return values == null ? const [] : List<double>.unmodifiable(values);
+  }
 
   /// Builds DB rows from the last BLE reading (periodic / on-tap; no aggregation).
   List<SensorData> latestReadingAsSensorData(GeolocationData geolocation) {
@@ -73,17 +80,17 @@ abstract class Sensor {
     }
     return rows;
   }
-  
+
   DirectUploadService? _directUploadService;
   VoidCallback? _recordingListener;
   bool _isFlushing = false;
   bool _isListening = false;
   bool _isStartingListening = false;
-  
+
   // Track pending aggregations (geolocations waiting for lookback window to close)
   // Key: geoId, Value: Completer that can be used to cancel the future
   final Map<int, Completer<void>> _pendingAggregations = {};
-  
+
   // Track pending geolocation data for event-driven re-aggregation
   // Key: geoId, Value: GeolocationData with timestamp for window checking
   final Map<int, GeolocationData> _pendingGeolocations = {};
@@ -121,7 +128,7 @@ abstract class Sensor {
   );
 
   Stream<List<double>> get valueStream => _valueController.stream;
-  
+
   /// Stream that emits sensor values with their timestamps (used for aggregation)
   /// This stream uses the same timestamp that's used for aggregation window calculation
   Stream<TimestampedSensorValue> get timestampedValueStream =>
@@ -131,9 +138,11 @@ abstract class Sensor {
 
   int get uiPriority;
 
+  Widget buildWidget();
+
   void setDirectUploadService(DirectUploadService uploadService) {
     _directUploadService = uploadService;
-    
+
     _uploadSuccessSubscription?.cancel();
     _uploadSuccessSubscription =
         uploadService.uploadSuccessStream.listen((uploadedGeoIds) {
@@ -168,7 +177,7 @@ abstract class Sensor {
       _cleanupOldValues();
       _timestampedValueController.add(timestampedValue);
     }
-    
+
     _valueController.add(data);
   }
 
@@ -189,7 +198,7 @@ abstract class Sensor {
       final geoId = entry.key;
       final geo = entry.value;
       final geoTimeUtc = _toUtc(geo.timestamp);
-      
+
       final batch = _sensorBatches[geoId];
       final geoArrivalTime = batch?.timestamp ?? geo.timestamp;
       final waitUntilTime = geoArrivalTime.add(lookbackWindow);
@@ -264,7 +273,7 @@ abstract class Sensor {
 
   List<List<double>> _getValuesInLookbackWindow(DateTime geoTime) {
     final geoTimeUtc = _toUtc(geoTime);
-    
+
     DateTime windowStart;
 
     // Calculate window start: end of previous processed window, or "beginning" for first window.
@@ -283,8 +292,8 @@ abstract class Sensor {
         }
       }
     } else {
-      windowStart =
-          _lastAggregatedGeolocationTimeUtc!.add(const Duration(microseconds: 1));
+      windowStart = _lastAggregatedGeolocationTimeUtc!
+          .add(const Duration(microseconds: 1));
     }
 
     final windowEnd = geoTimeUtc;
@@ -370,7 +379,6 @@ abstract class Sensor {
     }
   }
 
-
   Future<void> startListening() async {
     if (_isListening) {
       return;
@@ -381,7 +389,7 @@ abstract class Sensor {
       }
     }
     _isStartingListening = true;
-    
+
     try {
       if (_subscription != null) {
         await _subscription?.cancel();
@@ -392,12 +400,12 @@ abstract class Sensor {
         _geoSubscription = null;
       }
 
-      final stream =
-          bleBloc.characteristicStreams.characteristicStream(characteristicUuid);
+      final stream = bleBloc.characteristicStreams
+          .characteristicStream(characteristicUuid);
       _subscription = stream.listen((data) {
         onDataReceived(data);
       });
-      
+
       _geoSubscription = geolocationBloc.geolocationStream.listen((geo) async {
         final geoId = geo.id;
         final isRecording = recordingBloc.isRecording;
@@ -435,7 +443,7 @@ abstract class Sensor {
       if (_recordingListener != null) {
         recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
       }
-      
+
       _recordingListener = () {
         if (!recordingBloc.isRecording) {
           _flushBuffers();
@@ -455,14 +463,14 @@ abstract class Sensor {
     if (!_isListening) {
       return;
     }
-    
+
     // Cancel all pending aggregations
     for (final geoId in _pendingAggregations.keys.toList()) {
       _cancelPendingAggregation(geoId);
     }
     _pendingAggregations.clear();
     _pendingGeolocations.clear();
-    
+
     if (_subscription != null) {
       await _subscription?.cancel();
       _subscription = null;
@@ -473,7 +481,7 @@ abstract class Sensor {
     }
     await _uploadSuccessSubscription?.cancel();
     _uploadSuccessSubscription = null;
-    
+
     if (_recordingListener != null) {
       recordingBloc.isRecordingNotifier.removeListener(_recordingListener!);
       _recordingListener = null;
@@ -521,7 +529,6 @@ abstract class Sensor {
     _isFlushing = true;
 
     try {
-
       final batchesToProcess = _sensorBatches.values
           .where((b) =>
               !b.isUploaded &&
@@ -543,7 +550,7 @@ abstract class Sensor {
 
       for (final batch in batchesToSave) {
         final geolocation = batch.geoLocation;
-        
+
         if (geolocation.id == Isar.autoIncrement || geolocation.id == 0) {
           continue;
         }
@@ -587,7 +594,7 @@ abstract class Sensor {
       if (dbBatch.isNotEmpty) {
         try {
           await isarService.sensorService.saveSensorDataBatch(dbBatch);
-          
+
           for (final geoId in geoIdsToSave) {
             final batch = _sensorBatches[geoId];
             if (batch != null) {
@@ -596,7 +603,8 @@ abstract class Sensor {
           }
 
           // In non-upload mode, we can drop saved batches to prevent unbounded memory growth.
-          if (_directUploadService == null || !_directUploadService!.isEnabled) {
+          if (_directUploadService == null ||
+              !_directUploadService!.isEnabled) {
             for (final geoId in geoIdsToSave) {
               _sensorBatches.remove(geoId);
             }
@@ -617,7 +625,7 @@ abstract class Sensor {
             .where((b) => b != null && !b.isUploaded)
             .cast<SensorBatch>()
             .toList();
-        
+
         for (final batch in batchRefs) {
           if (batch.isUploadPending) {
             batch.isUploadPending = false;
@@ -633,8 +641,6 @@ abstract class Sensor {
     }
   }
 
-  Widget buildWidget();
-  
   void dispose() {
     stopListening();
     _valueController.close();

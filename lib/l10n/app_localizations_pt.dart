@@ -292,6 +292,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Nenhum senseBox disponível ou configuração não carregada';
 
   @override
+  String get openSenseMapBoxSelectionAvailableBoxes => 'senseBoxes disponíveis';
+
+  @override
   String get openSenseMapBoxSelectionCreateHint =>
       'Crie um usando o botão \'+\'';
 
@@ -427,6 +430,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsGithub => 'GitHub issue';
+
+  @override
+  String get privacyZoneDescription => 'Areas where no data will be recorded';
 
   @override
   String get privacyZonesStart =>

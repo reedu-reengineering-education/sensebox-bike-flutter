@@ -6,16 +6,18 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:sensebox_bike/ui/widgets/common/reusable_map_widget.dart';
 import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
-import '../../../secrets.dart'; 
+import '../../../secrets.dart';
 
 class TrajectoryWidget extends StatefulWidget {
   final List<GeolocationData> geolocationData;
   final String sensorType;
+  final ValueNotifier<int?>? highlightGeoIndex;
 
   const TrajectoryWidget({
     super.key,
     required this.geolocationData,
     required this.sensorType,
+    this.highlightGeoIndex,
   });
 
   @override
@@ -31,24 +33,35 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   static const String lineLayerBGId = "line_layer_bg";
   static const String sensorLayerId = "sensorLayer";
   static const String sensorSourceId = "sensorSource";
+  static const String _highlightSourceId = "highlightSource";
+  static const String _highlightLayerId = "highlightLayer";
 
   @override
   void initState() {
     super.initState();
-    // Set the access token for Mapbox
     MapboxOptions.setAccessToken(mapboxAccessToken);
-
     _updateSensorRange();
+    widget.highlightGeoIndex?.addListener(_onHighlightChanged);
   }
 
   @override
   void didUpdateWidget(TrajectoryWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.highlightGeoIndex != widget.highlightGeoIndex) {
+      oldWidget.highlightGeoIndex?.removeListener(_onHighlightChanged);
+      widget.highlightGeoIndex?.addListener(_onHighlightChanged);
+    }
     if (oldWidget.sensorType != widget.sensorType ||
         oldWidget.geolocationData != widget.geolocationData) {
       _updateSensorRange();
       addLayer();
     }
+  }
+
+  @override
+  void dispose() {
+    widget.highlightGeoIndex?.removeListener(_onHighlightChanged);
+    super.dispose();
   }
 
   void _updateSensorRange() {
@@ -59,8 +72,8 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   }
 
   Future<void> _removeLayersAndSources(MapboxMap map) async {
-    final layers = [lineLayerBGId, sensorLayerId];
-    final sources = [lineSourceId, sensorSourceId];
+    final layers = [lineLayerBGId, sensorLayerId, _highlightLayerId];
+    final sources = [lineSourceId, sensorSourceId, _highlightSourceId];
 
     for (final layer in layers) {
       try {
@@ -165,7 +178,6 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
       "transparent"
     ];
   }
-
 
   Future<void> _addLineLayer() async {
     try {
@@ -278,7 +290,6 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
   }
 
   Future<void> addLayer() async {
-    // If sensor values are not available, return early
     if (minSensorValue == double.infinity ||
         maxSensorValue == double.negativeInfinity) {
       debugPrint(
@@ -289,7 +300,60 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
     await _removeLayersAndSources(mapInstance);
     await _addBackgroundLineLayer();
     await _addLineLayer();
+    await _addHighlightCircleLayer();
     await _fitCameraToTrajectory();
+  }
+
+  void _onHighlightChanged() =>
+      _updateHighlightCircle(widget.highlightGeoIndex?.value);
+
+  Future<void> _addHighlightCircleLayer() async {
+    try {
+      await mapInstance.style.addSource(GeoJsonSource(
+        id: _highlightSourceId,
+        data: jsonEncode({"type": "FeatureCollection", "features": []}),
+      ));
+      await mapInstance.style.addLayer(CircleLayer(
+        id: _highlightLayerId,
+        sourceId: _highlightSourceId,
+        circleRadius: 8.0,
+        circleColor: Colors.white.value,
+        circleStrokeWidth: 2.0,
+        circleStrokeColor: Colors.black.value,
+        circleEmissiveStrength: 1,
+      ));
+    } catch (e) {
+      debugPrint("Error adding highlight circle layer: $e");
+    }
+  }
+
+  Future<void> _updateHighlightCircle(int? index) async {
+    if (!mounted) return;
+    try {
+      final String data;
+      if (index != null &&
+          index >= 0 &&
+          index < widget.geolocationData.length) {
+        final geo = widget.geolocationData[index];
+        data = jsonEncode({
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "geometry": {
+                "type": "Point",
+                "coordinates": [geo.longitude, geo.latitude]
+              },
+              "properties": {}
+            }
+          ]
+        });
+      } else {
+        data = jsonEncode({"type": "FeatureCollection", "features": []});
+      }
+      await mapInstance.style
+          .setStyleSourceProperty(_highlightSourceId, "data", data);
+    } catch (_) {}
   }
 
   @override
@@ -305,7 +369,7 @@ class _TrajectoryWidgetState extends State<TrajectoryWidget> {
           enabled: true,
           showAccuracyRing: true,
         ));
-        addLayer(); 
+        addLayer();
       },
     );
   }

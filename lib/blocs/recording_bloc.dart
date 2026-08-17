@@ -33,6 +33,8 @@ class RecordingBloc with ChangeNotifier {
 
   DataCollectionMode _activeCollectionMode = DataCollectionMode.gpsDriven;
   int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
+  final ValueNotifier<DataCollectionMode> activeCollectionModeNotifier =
+      ValueNotifier<DataCollectionMode>(DataCollectionMode.gpsDriven);
 
   Future<void> Function()? _onRecordingStart;
   Future<void> Function()? _onRecordingStop;
@@ -65,6 +67,7 @@ class RecordingBloc with ChangeNotifier {
 
     // Listen to BLE connection errors and stop recording
     bleBloc.connectionErrorNotifier.addListener(_onBleConnectionError);
+    settingsBloc.addListener(_onSettingsChanged);
   }
 
   void _onBleConnectionError() {
@@ -72,6 +75,14 @@ class RecordingBloc with ChangeNotifier {
       // Stop recording will automatically trigger batch upload if needed
       stopRecording();
     }
+  }
+
+  void _onSettingsChanged() {
+    if (!_isRecording) return;
+    _activeCollectionMode = settingsBloc.dataCollectionMode;
+    _collectionIntervalSeconds = settingsBloc.collectionIntervalSeconds;
+    activeCollectionModeNotifier.value = _activeCollectionMode;
+    notifyListeners();
   }
 
   void _onDirectUploadFailed() {
@@ -135,6 +146,7 @@ class RecordingBloc with ChangeNotifier {
 
     _activeCollectionMode = settingsBloc.dataCollectionMode;
     _collectionIntervalSeconds = settingsBloc.collectionIntervalSeconds;
+    activeCollectionModeNotifier.value = _activeCollectionMode;
     _isRecording = true;
     _lastRecordingStopTimestamp = null;
     await trackBloc.startNewTrack(
@@ -300,9 +312,11 @@ class RecordingBloc with ChangeNotifier {
   @override
   void dispose() {
     bleBloc.connectionErrorNotifier.removeListener(_onBleConnectionError);
+    settingsBloc.removeListener(_onSettingsChanged);
     _directUploadService?.dispose();
     _batchUploadService?.dispose();
     _isRecordingNotifier.dispose();
+    activeCollectionModeNotifier.dispose();
 
     // Hide any open upload modal
     OperationProgressOverlay.hide();

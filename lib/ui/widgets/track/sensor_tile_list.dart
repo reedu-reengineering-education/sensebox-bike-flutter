@@ -29,6 +29,46 @@ class SensorTileList extends StatelessWidget {
     );
   }
 
+  static List<SensorEntry> filteredEntries(List<SensorData> sensorData) {
+    final entries = getUniqueSortedSensorEntries(sensorData);
+    if (FeatureFlags.hideSurfaceAnomalySensor) {
+      return entries.where((e) => e.title != 'surface_anomaly').toList();
+    }
+    return entries;
+  }
+
+  static List<Widget> buildTileWidgets(
+    BuildContext context,
+    List<SensorEntry> entries,
+    String selectedSensorType,
+    ValueChanged<String> onSensorTypeSelected,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return entries.map((entry) {
+      final sensorKey = entry.title;
+      final attribute = entry.attribute;
+      final displayTitle =
+          getTranslatedTitleFromSensorKey(sensorKey, attribute, context) ??
+              sensorKey;
+      final sensorTypeKey =
+          '$sensorKey${attribute == null ? '' : '_$attribute'}';
+      final cardColor = selectedSensorType == sensorTypeKey
+          ? Color.alphaBlend(
+              getSensorColor(sensorKey).withValues(alpha: 0.24),
+              colorScheme.surfaceContainerHigh,
+            )
+          : colorScheme.surfaceContainerHigh;
+      return SensorTile(
+        title: displayTitle,
+        cardColor: cardColor,
+        sensorColor: getSensorColor(sensorKey),
+        sensorIcon: getSensorIcon(sensorKey),
+        isSelected: selectedSensorType == sensorTypeKey,
+        onTap: () => onSensorTypeSelected(sensorTypeKey),
+      );
+    }).toList();
+  }
+
   List<SensorEntry> _filterSensorEntries(List<SensorEntry> entries) {
     if (FeatureFlags.hideSurfaceAnomalySensor) {
       return entries
@@ -40,26 +80,8 @@ class SensorTileList extends StatelessWidget {
 
   List<Widget> _buildSensorTiles(
       BuildContext context, List<SensorEntry> entries) {
-    return entries.map((entry) {
-      final sensorKey = entry.title;
-      final attribute = entry.attribute;
-      final displayTitle =
-          getTranslatedTitleFromSensorKey(sensorKey, attribute, context) ??
-              sensorKey;
-      final sensorTypeKey =
-          '$sensorKey${attribute == null ? '' : '_$attribute'}';
-      final cardColor = selectedSensorType == sensorTypeKey
-          ? getSensorColor(sensorKey).withOpacity(0.25)
-          : Theme.of(context).canvasColor;
-
-      return SensorTile(
-        title: displayTitle,
-        cardColor: cardColor,
-        sensorColor: getSensorColor(sensorKey),
-        sensorIcon: getSensorIcon(sensorKey),
-        onTap: () => onSensorTypeSelected(sensorTypeKey),
-      );
-    }).toList();
+    return buildTileWidgets(
+        context, entries, selectedSensorType, onSensorTypeSelected);
   }
 }
 

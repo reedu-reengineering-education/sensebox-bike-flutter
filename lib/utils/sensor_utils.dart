@@ -205,6 +205,21 @@ IconData getSensorIcon(String sensorType) {
 }
 
 Color getSensorColor(String sensorType) {
+  // Sensors with attributes (e.g. 'acceleration_x', 'gps_latitude',
+  // 'surface_classification_asphalt') carry the base title as a prefix of
+  // their canonical key. Match on the base title first so these don't fall
+  // through to the grey default.
+  if (sensorType == 'acceleration' || sensorType.startsWith('acceleration_')) {
+    return Colors.greenAccent;
+  }
+  if (sensorType == 'gps' || sensorType.startsWith('gps_')) {
+    return Colors.blue;
+  }
+  if (sensorType == 'surface_classification' ||
+      sensorType.startsWith('surface_classification_')) {
+    return Colors.brown;
+  }
+
   switch (sensorType) {
     case 'temperature':
       return Colors.redAccent;
@@ -212,19 +227,14 @@ Color getSensorColor(String sensorType) {
       return Colors.blueAccent;
     case 'distance':
       return Colors.deepPurpleAccent;
-    case 'acceleration':
-      return Colors.greenAccent;
     case 'finedust':
       return Colors.blueGrey;
-    case 'gps':
     case 'sensor_gps':
       return Colors.blue;
     case 'overtaking':
       return Colors.teal;
     case 'surface_anomaly':
       return Colors.yellow.shade700;
-    case 'surface_classification':
-      return Colors.brown;
     default:
       return Colors.grey;
   }

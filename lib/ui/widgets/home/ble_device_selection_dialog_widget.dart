@@ -7,13 +7,13 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/empty_state_message.dart';
+import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
 import 'package:sensebox_bike/ui/widgets/common/surface_outlined_icon_button.dart';
 
 void showDeviceSelectionDialog(BuildContext context, BleBloc bleBloc) async {
-  final selected = await showModalBottomSheet<bool>(
-    showDragHandle: true,
-    isScrollControlled: true,
+  final selected = await showAppModalSheet<bool>(
     context: context,
+    useRootNavigator: true,
     builder: (sheetContext) => _BleDeviceSelectionBottomSheet(
       bleBloc: bleBloc,
     ),
@@ -75,7 +75,7 @@ class _BleDeviceSelectionBottomSheetState
       children: [
         Text(
           localizations.bleDeviceSelectTitle,
-          style: Theme.of(context).textTheme.headlineSmall,
+          style: Theme.of(context).textTheme.headlineMedium,
           textAlign: TextAlign.center,
         ),
         DeviceSelectionSheet(
