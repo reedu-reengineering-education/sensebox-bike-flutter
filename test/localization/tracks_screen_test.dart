@@ -5,6 +5,7 @@ import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/models/track_summary_stats.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
@@ -51,6 +52,12 @@ void main() {
           limit: any(named: 'limit'),
           skipLastTrack: any(named: 'skipLastTrack'),
         )).thenAnswer((_) async => <TrackData>[]);
+    when(() => mockTrackService.backfillMissingAggregates(
+          batchSize: any(named: 'batchSize'),
+        )).thenAnswer((_) async {});
+    when(() => mockTrackService.getSummaryStats(
+          recentSince: any(named: 'recentSince'),
+        )).thenAnswer((_) async => TrackSummaryStats.empty);
 
     // Mock OpenSenseMapBloc dependencies
     final mockOpenSenseMapBloc = MockOpenSenseMapBloc();

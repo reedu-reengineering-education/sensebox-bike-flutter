@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar_community/isar.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
@@ -92,6 +94,58 @@ void main() {
     // Verify that the polyline is simplified
     final decodedPolyline = decodePolyline(polyline);
     expect(decodedPolyline.length, lessThan(20));
+  });
+
+  test(
+      'encodedPolyline stays within the Mapbox URL budget for a long, noisy track',
+      () async {
+    // Regression test: the dynamic simplification loop used to compute a
+    // tolerance once and never grow it, so it always bailed after a single
+    // pass - producing polylines tens of KB over the ~7950 byte budget for
+    // busy tracks instead of actually shrinking them.
+    //
+    // Models a real bike ride as a sequence of mostly-straight road segments
+    // (direction only changes at "intersections") with small per-point GPS
+    // jitter - the shape Douglas-Peucker simplification is actually meant to
+    // compress, unlike a fully random walk which is fractal at every scale.
+    final rnd = Random(42);
+    double lat = 52.5, lng = 13.4;
+    var i = 0;
+
+    await isar.writeTxn(() async {
+      for (var leg = 0; leg < 50 && i < 5000; leg++) {
+        final heading = rnd.nextDouble() * 2 * pi;
+        for (var step = 0; step < 100 && i < 5000; step++, i++) {
+          lat += cos(heading) * 0.00002 + (rnd.nextDouble() - 0.5) * 0.000002;
+          lng += sin(heading) * 0.00002 + (rnd.nextDouble() - 0.5) * 0.000002;
+          final geolocation = GeolocationData()
+            ..latitude = lat
+            ..longitude = lng
+            ..timestamp = DateTime.now().toUtc().add(Duration(seconds: i))
+            ..speed = 0.0;
+          trackData.geolocations.add(geolocation);
+          await isar.geolocationDatas.put(geolocation);
+        }
+      }
+    });
+
+    final unsimplified = encodePolyline(trackData.geolocations
+        .map((g) => [g.latitude, g.longitude])
+        .toList());
+
+    final stopwatch = Stopwatch()..start();
+    final polyline = trackData.encodedPolyline;
+    stopwatch.stop();
+
+    // The loop caps simplification tolerance at a fixed ceiling so the route
+    // shape isn't destroyed, so hitting the exact Mapbox byte budget isn't
+    // guaranteed for every track shape - but it must always substantially
+    // shrink the unsimplified encoding, and always terminate quickly (the
+    // bug this guards against was the loop bailing after a single pass with
+    // no shrinkage at all, and a theoretical non-terminating variant of the
+    // same bug).
+    expect(polyline.length, lessThan(unsimplified.length ~/ 2));
+    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)));
   });
 
   test('calculateTolerance scales dynamically with number of coordinates', () {

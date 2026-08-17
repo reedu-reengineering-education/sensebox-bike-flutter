@@ -148,34 +148,29 @@ class TracksScreenState extends State<TracksScreen> {
   Future<void> _loadSummaryStats() async {
     setState(() => _isStatsLoading = true);
 
-    final tracks = await _isarService.trackService.getAllTracks();
+    // One-time (per not-yet-migrated track) backfill of the cached* fields
+    // for tracks recorded before they existed. Self-terminating: a no-op
+    // query once every track has been migrated.
+    await _isarService.trackService.backfillMissingAggregates();
     if (!mounted) return;
+
     final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final tracksWithGeo =
-        tracks.where((track) => track.geolocations.isNotEmpty).toList();
-    final weeklyTracks = tracksWithGeo
-        .where((track) =>
-            track.geolocations.first.timestamp.isAfter(weekStart) ||
-            DateUtils.isSameDay(track.geolocations.first.timestamp, weekStart))
-        .toList();
+    final weekStart = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+
+    final stats = await _isarService.trackService
+        .getSummaryStats(recentSince: weekStart);
+    if (!mounted) return;
 
     setState(() {
-      _totalTrackCount = tracks.length;
-      _totalDuration =
-          tracks.fold(Duration.zero, (prev, track) => prev + track.duration);
-      _totalDistance = tracks.fold(0.0, (prev, track) => prev + track.distance);
-      _statsStartDate = tracksWithGeo.isEmpty
-          ? null
-          : tracksWithGeo
-              .map((track) => track.geolocations.first.timestamp)
-              .reduce((a, b) => a.isBefore(b) ? a : b);
+      _totalTrackCount = stats.totalTrackCount;
+      _totalDuration = stats.totalDuration;
+      _totalDistance = stats.totalDistanceKm;
+      _statsStartDate = stats.earliestStartTimestamp;
 
-      _ridesThisWeek = weeklyTracks.length;
-      _durationThisWeek = weeklyTracks.fold(
-          Duration.zero, (prev, track) => prev + track.duration);
-      _distanceThisWeek =
-          weeklyTracks.fold(0.0, (prev, track) => prev + track.distance);
+      _ridesThisWeek = stats.recentTrackCount;
+      _durationThisWeek = stats.recentDuration;
+      _distanceThisWeek = stats.recentDistanceKm;
       _isStatsLoading = false;
     });
   }

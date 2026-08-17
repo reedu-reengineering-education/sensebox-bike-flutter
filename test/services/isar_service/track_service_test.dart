@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar_community/isar.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:flutter/services.dart';
@@ -562,6 +563,189 @@ group('TrackService', () {
         final ids = tracks.map((t) => t.id).toSet();
         expect(ids, isNot(contains(newestFilteredOut.id)));
         expect(tracks.length, equals(1));
+      });
+    });
+
+    group('cacheTrackAggregates', () {
+      Future<TrackData> putTrackWithGeolocations(
+          List<GeolocationData> geolocations) async {
+        final track = TrackData();
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(track);
+          for (final geo in geolocations) {
+            geo.track.value = track;
+            await isar.geolocationDatas.put(geo);
+            await geo.track.save();
+          }
+        });
+        return track;
+      }
+
+      test('computes and persists distance/duration/point count/polyline',
+          () async {
+        final start = DateTime(2024, 1, 1, 10, 0, 0);
+        final track = await putTrackWithGeolocations([
+          GeolocationData()
+            ..latitude = 52.5200
+            ..longitude = 13.4050
+            ..timestamp = start
+            ..speed = 0,
+          GeolocationData()
+            ..latitude = 52.5300
+            ..longitude = 13.4150
+            ..timestamp = start.add(const Duration(minutes: 10))
+            ..speed = 0,
+        ]);
+
+        await trackService.cacheTrackAggregates(track);
+
+        final reloaded = await isar.trackDatas.get(track.id);
+        expect(reloaded, isNotNull);
+        expect(reloaded!.cachedPointCount, equals(2));
+        expect(reloaded.cachedStartTimestamp, equals(start));
+        expect(reloaded.cachedEndTimestamp,
+            equals(start.add(const Duration(minutes: 10))));
+        expect(reloaded.cachedDurationMs,
+            equals(const Duration(minutes: 10).inMilliseconds));
+        expect(reloaded.cachedDistanceKm, greaterThan(0));
+        expect(reloaded.cachedPolyline, isNotEmpty);
+
+        // The plain getters should now read straight from the cache without
+        // touching the geolocations link.
+        expect(reloaded.duration, equals(const Duration(minutes: 10)));
+        expect(reloaded.distance, equals(reloaded.cachedDistanceKm));
+      });
+
+      test('caches zeroed-out fields for a track with no geolocations',
+          () async {
+        final track = await putTrackWithGeolocations([]);
+
+        await trackService.cacheTrackAggregates(track);
+
+        final reloaded = await isar.trackDatas.get(track.id);
+        expect(reloaded!.cachedPointCount, equals(0));
+        expect(reloaded.cachedStartTimestamp, isNull);
+        expect(reloaded.cachedEndTimestamp, isNull);
+        expect(reloaded.cachedDurationMs, equals(0));
+        expect(reloaded.cachedDistanceKm, equals(0));
+        expect(reloaded.hasGeolocationData, isFalse);
+      });
+    });
+
+    group('backfillMissingAggregates', () {
+      test('populates cached fields for legacy tracks missing them',
+          () async {
+        await clearIsarDatabase(isar);
+
+        final start = DateTime(2024, 1, 1, 10, 0, 0);
+        final legacyTrack = TrackData();
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(legacyTrack);
+          final geo = GeolocationData()
+            ..latitude = 52.5200
+            ..longitude = 13.4050
+            ..timestamp = start
+            ..speed = 0
+            ..track.value = legacyTrack;
+          await isar.geolocationDatas.put(geo);
+          await geo.track.save();
+        });
+
+        expect(legacyTrack.cachedPointCount, isNull);
+
+        await trackService.backfillMissingAggregates();
+
+        final reloaded = await isar.trackDatas.get(legacyTrack.id);
+        expect(reloaded!.cachedPointCount, equals(1));
+        expect(reloaded.cachedStartTimestamp, equals(start));
+      });
+
+      test('is a no-op once every track is already cached', () async {
+        await clearIsarDatabase(isar);
+
+        final track = TrackData()
+          ..cachedPointCount = 0
+          ..cachedDistanceKm = 0
+          ..cachedDurationMs = 0;
+        await isar.writeTxn(() async {
+          await isar.trackDatas.put(track);
+        });
+
+        // Should return promptly without throwing, touching nothing.
+        await expectLater(
+          trackService.backfillMissingAggregates(),
+          completes,
+        );
+      });
+    });
+
+    group('getSummaryStats', () {
+      test('sums cached fields across all tracks without recentSince',
+          () async {
+        await clearIsarDatabase(isar);
+
+        final trackA = TrackData()
+          ..cachedDistanceKm = 5.0
+          ..cachedDurationMs = const Duration(minutes: 10).inMilliseconds
+          ..cachedStartTimestamp = DateTime(2024, 1, 1);
+        final trackB = TrackData()
+          ..cachedDistanceKm = 7.5
+          ..cachedDurationMs = const Duration(minutes: 20).inMilliseconds
+          ..cachedStartTimestamp = DateTime(2024, 2, 1);
+
+        await isar.writeTxn(() async {
+          await isar.trackDatas.putAll([trackA, trackB]);
+        });
+
+        final stats = await trackService.getSummaryStats();
+
+        expect(stats.totalTrackCount, equals(2));
+        expect(stats.totalDistanceKm, equals(12.5));
+        expect(stats.totalDuration, equals(const Duration(minutes: 30)));
+        expect(stats.earliestStartTimestamp, equals(DateTime(2024, 1, 1)));
+        expect(stats.recentTrackCount, equals(0));
+      });
+
+      test('scopes recent* fields to tracks starting on/after recentSince',
+          () async {
+        await clearIsarDatabase(isar);
+
+        final oldTrack = TrackData()
+          ..cachedDistanceKm = 3.0
+          ..cachedDurationMs = const Duration(minutes: 5).inMilliseconds
+          ..cachedStartTimestamp = DateTime(2024, 1, 1);
+        final recentTrack = TrackData()
+          ..cachedDistanceKm = 4.0
+          ..cachedDurationMs = const Duration(minutes: 8).inMilliseconds
+          ..cachedStartTimestamp = DateTime(2024, 6, 15);
+
+        await isar.writeTxn(() async {
+          await isar.trackDatas.putAll([oldTrack, recentTrack]);
+        });
+
+        final stats = await trackService.getSummaryStats(
+          recentSince: DateTime(2024, 6, 1),
+        );
+
+        expect(stats.totalTrackCount, equals(2));
+        expect(stats.totalDistanceKm, equals(7.0));
+        expect(stats.recentTrackCount, equals(1));
+        expect(stats.recentDistanceKm, equals(4.0));
+        expect(stats.recentDuration, equals(const Duration(minutes: 8)));
+      });
+
+      test('returns zeroed stats for an empty database', () async {
+        await clearIsarDatabase(isar);
+
+        final stats = await trackService.getSummaryStats(
+          recentSince: DateTime(2024, 1, 1),
+        );
+
+        expect(stats.totalTrackCount, equals(0));
+        expect(stats.totalDistanceKm, equals(0));
+        expect(stats.totalDuration, equals(Duration.zero));
+        expect(stats.earliestStartTimestamp, isNull);
+        expect(stats.recentTrackCount, equals(0));
       });
     });
 });

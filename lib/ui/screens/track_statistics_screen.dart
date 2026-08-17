@@ -5,7 +5,6 @@ import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/models/track_data.dart';
 
 class TrackStatisticsScreen extends StatefulWidget {
   final IsarService isarService;
@@ -31,51 +30,35 @@ class _TrackStatisticsScreenState extends State<TrackStatisticsScreen> {
   void initState() {
     super.initState();
     _now = DateTime.now();
-    _weekStart = _now.subtract(Duration(days: _now.weekday - 1));
+    _weekStart = DateTime(_now.year, _now.month, _now.day)
+        .subtract(Duration(days: _now.weekday - 1));
     _loadStats();
-  }
-
-  /// Helper method to find the first track with geolocations
-  TrackData? _findFirstTrackWithGeolocations(List<TrackData> tracks) {
-    for (final track in tracks) {
-      if (track.geolocations.isNotEmpty) {
-        return track;
-      }
-    }
-    return null;
   }
 
   Future<void> _loadStats() async {
     setState(() {
       _isLoading = true;
     });
-    final tracks = await widget.isarService.trackService.getAllTracks();
-    
-    // Find the first track with geolocations as fallback
-    final firstTrackWithGeolocations = _findFirstTrackWithGeolocations(tracks);
-    _start = firstTrackWithGeolocations != null
-        ? firstTrackWithGeolocations.geolocations.first.timestamp
-        : DateTime.now();
-        
-    final tracksThisWeek = tracks
-        .where((track) =>
-            track.geolocations.isNotEmpty &&
-            (track.geolocations.first.timestamp.isAfter(_weekStart) ||
-                DateUtils.isSameDay(
-                    track.geolocations.first.timestamp, _weekStart)))
-        .toList();
+
+    // One-time (per not-yet-migrated track) backfill of the cached* fields
+    // for tracks recorded before they existed. Self-terminating: a no-op
+    // query once every track has been migrated.
+    await widget.isarService.trackService.backfillMissingAggregates();
+    if (!mounted) return;
+
+    final stats = await widget.isarService.trackService
+        .getSummaryStats(recentSince: _weekStart);
+    if (!mounted) return;
 
     setState(() {
-      _trackCount = tracks.length;
-      _totalDuration =
-          tracks.fold(Duration.zero, (prev, track) => prev + track.duration);
-      _totalDistance = tracks.fold(0.0, (prev, track) => prev + track.distance);
+      _start = stats.earliestStartTimestamp ?? DateTime.now();
+      _trackCount = stats.totalTrackCount;
+      _totalDuration = stats.totalDuration;
+      _totalDistance = stats.totalDistanceKm;
 
-      _ridesThisWeek = tracksThisWeek.length;
-      _distanceThisWeek =
-          tracksThisWeek.fold(0.0, (prev, track) => prev + track.distance);
-      _timeThisWeek = tracksThisWeek.fold(
-          Duration.zero, (prev, track) => prev + track.duration);
+      _ridesThisWeek = stats.recentTrackCount;
+      _distanceThisWeek = stats.recentDistanceKm;
+      _timeThisWeek = stats.recentDuration;
       _isLoading = false;
     });
   }

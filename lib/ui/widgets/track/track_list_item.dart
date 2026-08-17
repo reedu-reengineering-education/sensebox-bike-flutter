@@ -39,18 +39,17 @@ class TrackListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
-    final hasGeolocations = track.geolocations.isNotEmpty;
+    final hasGeolocations = track.hasGeolocationData;
     final colorScheme = theme.colorScheme;
     final statusInfo =
         trackBloc.getEstimatedTrackStatusInfo(track, theme, localizations);
-    final date = hasGeolocations
-        ? trackBloc.formatTrackDate(track.geolocations.first.timestamp)
+    final startTimestamp = track.startTimestamp;
+    final endTimestamp = track.endTimestamp;
+    final date = startTimestamp != null
+        ? trackBloc.formatTrackDate(startTimestamp)
         : '-';
-    final times = hasGeolocations
-        ? trackBloc.formatTrackTimeRange(
-            track.geolocations.first.timestamp,
-            track.geolocations.last.timestamp,
-          )
+    final times = startTimestamp != null && endTimestamp != null
+        ? trackBloc.formatTrackTimeRange(startTimestamp, endTimestamp)
         : localizations.trackNoGeolocations;
     final duration =
         trackBloc.formatTrackDuration(track.duration, localizations);
