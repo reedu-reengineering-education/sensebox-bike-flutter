@@ -209,8 +209,8 @@ class RecordingBloc with ChangeNotifier {
 
     // Cache this track's distance/duration/point count/polyline now, while
     // its geolocations are fresh in mind, so the tracks list and summary
-    // stats never need to walk its full GeolocationData history again. Non
-    // -fatal: a caching hiccup shouldn't block the user from stopping.
+    // stats never need to walk its full GeolocationData history again.
+    // Non-fatal: a caching hiccup shouldn't block the user from stopping.
     if (trackToUpload != null) {
       try {
         await isarService.trackService.cacheTrackAggregates(trackToUpload);
