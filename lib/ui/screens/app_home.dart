@@ -4,6 +4,7 @@ import 'package:sensebox_bike/ui/screens/home_screen.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
 import 'package:sensebox_bike/ui/screens/settings_screen.dart';
 import 'package:sensebox_bike/ui/screens/tracks_screen.dart';
+import 'package:sensebox_bike/ui/widgets/common/changelog_modal.dart';
 
 /// Global Y (logical pixels, screen coordinates) of the floating pill nav
 /// bar's top edge, updated after every layout pass. Null until first
@@ -36,6 +37,10 @@ class _AppHomeState extends State<AppHome> {
       const SettingsScreen(),
       const LoginScreen(),
     ];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      maybeShowChangelogModal(context);
+    });
   }
 
   @override

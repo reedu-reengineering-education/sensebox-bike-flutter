@@ -118,6 +118,14 @@
         }
     },
     "recordingSaveSample": "Save sample",
+    "changelogModalTitle": "What's new in {version}",
+    "@changelogModalTitle": {
+        "placeholders": {
+            "version": {
+                "type": "String"
+            }
+        }
+    },
     "bleDeviceSelectTitle": "Tap to connect",
     "noBleDevicesFound": "No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.",
     "selectOrCreateBox": "Select or create senseBox:bike",

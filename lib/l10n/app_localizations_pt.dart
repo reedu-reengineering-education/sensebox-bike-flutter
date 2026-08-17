@@ -259,6 +259,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get recordingSaveSample => 'Salvar amostra';
 
   @override
+  String changelogModalTitle(String version) {
+    return 'Novidades da versão $version';
+  }
+
+  @override
   String get bleDeviceSelectTitle => 'Toque para conectar';
 
   @override

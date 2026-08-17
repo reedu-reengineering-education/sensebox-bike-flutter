@@ -116,6 +116,7 @@
         }
     },
     "recordingSaveSample": "Messpunkt speichern",
+    "changelogModalTitle": "Neu in {version}",
     "bleDeviceSelectTitle": "Tippen, um zu verbinden",
     "noBleDevicesFound": "Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.",
     "selectOrCreateBox": "senseBox wählen oder erstellen",

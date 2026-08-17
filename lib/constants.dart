@@ -16,6 +16,7 @@ class SharedPreferencesKeys {
       'lastResolvedDataCollectionMode';
   static const String lastResolvedCollectionIntervalSeconds =
       'lastResolvedCollectionIntervalSeconds';
+  static const String lastSeenAppVersion = 'lastSeenAppVersion';
 }
 
 

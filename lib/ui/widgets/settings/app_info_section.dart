@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/ui/widgets/common/changelog_modal.dart';
 import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
 import 'package:sensebox_bike/utils/storage_utils.dart';
 import 'package:sensebox_bike/utils/url_launch_utils.dart';
@@ -61,6 +62,7 @@ class _AppInfoSectionState extends State<AppInfoSection> {
             return SettingsInfoTile(
               icon: Icons.info_outline,
               title: versionText,
+              onTap: () => showChangelogModalForCurrentVersion(context),
             );
           },
         ),
