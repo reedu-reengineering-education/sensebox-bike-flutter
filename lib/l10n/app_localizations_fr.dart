@@ -273,6 +273,18 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucune senseBox trouvée. Assurez-vous que votre senseBox est chargée, touchez en dehors de cette fenêtre et réessayez.';
 
   @override
+  String get bleDeviceMoreOptions => 'Plus d\'options';
+
+  @override
+  String get bleDeviceRememberDevice => 'Mémoriser & connecter automatiquement';
+
+  @override
+  String get bleDeviceForgetDevice => 'Oublier l\'appareil';
+
+  @override
+  String get bleDeviceAutoConnectBadge => 'Connexion automatique';
+
+  @override
   String get selectOrCreateBox => 'Sélectionner ou créer une senseBox:bike';
 
   @override

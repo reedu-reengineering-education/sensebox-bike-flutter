@@ -270,6 +270,18 @@ class AppLocalizationsDe extends AppLocalizations {
       'Keine senseBoxen gefunden. Bitte stelle sicher, dass deine senseBox eingeschaltet ist, tippe dann außerhalb dieses Fensters und versuche es erneut.';
 
   @override
+  String get bleDeviceMoreOptions => 'Weitere Optionen';
+
+  @override
+  String get bleDeviceRememberDevice => 'Merken & automatisch verbinden';
+
+  @override
+  String get bleDeviceForgetDevice => 'Gerät vergessen';
+
+  @override
+  String get bleDeviceAutoConnectBadge => 'Verbindet automatisch';
+
+  @override
   String get selectOrCreateBox => 'senseBox wählen oder erstellen';
 
   @override

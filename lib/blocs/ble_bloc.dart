@@ -87,6 +87,7 @@ class BleBloc with ChangeNotifier {
   bool _scanAfterDisconnect = false;
   bool _linkLostDueToAdapterPowerOff = false;
   String? _vibratedForDisconnectDeviceId;
+  bool _autoConnectInProgress = false;
 
   bool get isConnected => _phase == BleConnectionPhase.connected;
 
@@ -155,6 +156,7 @@ class BleBloc with ChangeNotifier {
 
   Future<void> _onBluetoothPoweredOn() async {
     if (_userInitiatedDisconnect || selectedDevice == null) {
+      unawaited(autoConnectToRememberedDevice());
       return;
     }
     if (_phase == BleConnectionPhase.connecting) {
@@ -712,6 +714,46 @@ class BleBloc with ChangeNotifier {
     characteristicStreamsVersion.dispose();
     connectionErrorNotifier.dispose();
     super.dispose();
+  }
+
+  /// Best-effort, silent connect to the device remembered via
+  /// [SettingsBloc.rememberDevice]. Does a short bounded scan for the
+  /// device's advertisement; if it isn't found (box off / out of range) this
+  /// gives up quietly without reporting an error — that's the expected case,
+  /// not a failure. Safe to call repeatedly (e.g. on every adapter power-on).
+  Future<void> autoConnectToRememberedDevice({
+    Duration scanTimeout = bleAutoConnectScanTimeout,
+  }) async {
+    final id = settingsBloc.rememberedDeviceId;
+    if (id == null || id.isEmpty) {
+      return;
+    }
+    if (_autoConnectInProgress ||
+        selectedDevice != null ||
+        _userInitiatedDisconnect ||
+        !isBluetoothEnabledNotifier.value ||
+        _phase == BleConnectionPhase.connecting ||
+        _phase == BleConnectionPhase.reconnecting) {
+      return;
+    }
+
+    _autoConnectInProgress = true;
+    try {
+      final target = BleDevice(id: id, name: settingsBloc.rememberedDeviceName ?? '');
+      final found = await _scanner.waitForAdvertisingDevice(
+        target,
+        shouldCancel: () => _userInitiatedDisconnect || selectedDevice != null,
+        timeout: scanTimeout,
+      );
+      if (found == null || selectedDevice != null || _userInitiatedDisconnect) {
+        return;
+      }
+      await connectToDevice(found);
+    } catch (_) {
+      // Auto-connect is best-effort; never surface an error for it.
+    } finally {
+      _autoConnectInProgress = false;
+    }
   }
 
   Future<void> requestEnableBluetooth() async {

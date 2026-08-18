@@ -552,6 +552,30 @@ abstract class AppLocalizations {
   /// **'No senseBoxes found. Please make sure your senseBox is loaded, tap outside this window, and try again.'**
   String get noBleDevicesFound;
 
+  /// No description provided for @bleDeviceMoreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get bleDeviceMoreOptions;
+
+  /// No description provided for @bleDeviceRememberDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember & auto-connect'**
+  String get bleDeviceRememberDevice;
+
+  /// No description provided for @bleDeviceForgetDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget device'**
+  String get bleDeviceForgetDevice;
+
+  /// No description provided for @bleDeviceAutoConnectBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-connects'**
+  String get bleDeviceAutoConnectBadge;
+
   /// No description provided for @selectOrCreateBox.
   ///
   /// In en, this message translates to:
