@@ -269,5 +269,133 @@ void main() {
         verify(() => platform.disconnect(testBleDevice.id)).called(1);
       });
     });
+
+    group('Auto-connect to remembered device', () {
+      test('does nothing when no device is remembered', () async {
+        final platform = MockBlePlatform();
+        when(() => mockSettingsBloc.rememberedDeviceId).thenReturn(null);
+
+        final bleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        addTearDown(bleBloc.dispose);
+        bleBloc.updateBluetoothStatus(true);
+
+        await bleBloc.autoConnectToRememberedDevice();
+
+        verifyNever(() => platform.scanForDevices());
+      });
+
+      test('does nothing when bluetooth is disabled', () async {
+        final platform = MockBlePlatform();
+        when(() => mockSettingsBloc.rememberedDeviceId)
+            .thenReturn(testDeviceId);
+        when(() => mockSettingsBloc.rememberedDeviceName)
+            .thenReturn(testBleDevice.name);
+
+        final bleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        addTearDown(bleBloc.dispose);
+        // Bluetooth left disabled (default).
+
+        await bleBloc.autoConnectToRememberedDevice();
+
+        verifyNever(() => platform.scanForDevices());
+      });
+
+      test('does nothing when a device is already selected', () async {
+        final platform = MockBlePlatform();
+        when(() => mockSettingsBloc.rememberedDeviceId)
+            .thenReturn(testDeviceId);
+        when(() => mockSettingsBloc.rememberedDeviceName)
+            .thenReturn(testBleDevice.name);
+
+        final bleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        addTearDown(bleBloc.dispose);
+        bleBloc.updateBluetoothStatus(true);
+        bleBloc.selectedDevice = testBleDevice;
+
+        await bleBloc.autoConnectToRememberedDevice();
+
+        verifyNever(() => platform.scanForDevices());
+      });
+
+      test(
+          'gives up quietly without a connection error when the device never advertises',
+          () async {
+        final platform = MockBlePlatform();
+        when(() => platform.scanForDevices())
+            .thenAnswer((_) => const Stream<BleDevice>.empty());
+        when(() => mockSettingsBloc.rememberedDeviceId)
+            .thenReturn(testDeviceId);
+        when(() => mockSettingsBloc.rememberedDeviceName)
+            .thenReturn(testBleDevice.name);
+
+        final bleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        addTearDown(bleBloc.dispose);
+        bleBloc.updateBluetoothStatus(true);
+
+        await bleBloc.autoConnectToRememberedDevice(
+          scanTimeout: const Duration(milliseconds: 50),
+        );
+
+        expect(bleBloc.selectedDevice, isNull);
+        expect(bleBloc.connectionErrorNotifier.value, isFalse);
+        expect(bleBloc.isConnectingNotifier.value, isFalse);
+      });
+
+      test('attempts to connect once the remembered device advertises',
+          () async {
+        final platform = MockBlePlatform();
+        stubBlePlatformLifecycle(platform);
+        when(() => platform.scanForDevices())
+            .thenAnswer((_) => Stream.value(testBleDevice));
+        when(() => platform.isConnected(any())).thenReturn(false);
+        when(() => platform.connect(any(), timeout: any(named: 'timeout')))
+            .thenThrow(Exception('Connection failed'));
+        when(() => mockSettingsBloc.rememberedDeviceId)
+            .thenReturn(testDeviceId);
+        when(() => mockSettingsBloc.rememberedDeviceName)
+            .thenReturn(testBleDevice.name);
+
+        final bleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        addTearDown(bleBloc.dispose);
+        bleBloc.updateBluetoothStatus(true);
+
+        await bleBloc.autoConnectToRememberedDevice(
+          scanTimeout: const Duration(milliseconds: 50),
+        );
+
+        // A real advertisement was found, so this is a genuine connect
+        // attempt (and failure) rather than a silent "box is off" give-up.
+        verify(() => platform.connect(testBleDevice.id,
+            timeout: any(named: 'timeout'))).called(greaterThanOrEqualTo(1));
+        expect(bleBloc.connectionErrorNotifier.value, isTrue);
+      });
+
+      test('bluetooth powering back on retries auto-connect', () async {
+        final platform = MockBlePlatform();
+        stubBlePlatformLifecycle(platform);
+        var scanCalled = false;
+        when(() => platform.scanForDevices()).thenAnswer((_) {
+          scanCalled = true;
+          return const Stream<BleDevice>.empty();
+        });
+        when(() => mockSettingsBloc.rememberedDeviceId)
+            .thenReturn(testDeviceId);
+        when(() => mockSettingsBloc.rememberedDeviceName)
+            .thenReturn(testBleDevice.name);
+
+        final bleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        addTearDown(bleBloc.dispose);
+        bleBloc.updateBluetoothStatus(true);
+        // No selected device: this is the "nothing to reconnect" branch that
+        // now also kicks off a silent auto-connect attempt.
+
+        unawaited(bleBloc.debugOnBluetoothPoweredOn());
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(scanCalled, isTrue);
+
+        await bleBloc.disconnectDevice(reason: BleDisconnectReason.userRequested);
+      });
+    });
   });
 }

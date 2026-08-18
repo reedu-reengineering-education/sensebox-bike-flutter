@@ -73,6 +73,53 @@ void main() {
         throwsA(isA<FormatException>()),
       );
     });
+
+    test('rememberDevice persists id and name and updates getters', () async {
+      await settingsBloc.rememberDevice('AA:BB:CC', 'senseBox:bike test');
+
+      expect(settingsBloc.rememberedDeviceId, 'AA:BB:CC');
+      expect(settingsBloc.rememberedDeviceName, 'senseBox:bike test');
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getString(SharedPreferencesKeys.rememberedDeviceId),
+        'AA:BB:CC',
+      );
+      expect(
+        prefs.getString(SharedPreferencesKeys.rememberedDeviceName),
+        'senseBox:bike test',
+      );
+    });
+
+    test('forgetRememberedDevice clears id, name and prefs', () async {
+      await settingsBloc.rememberDevice('AA:BB:CC', 'senseBox:bike test');
+      await settingsBloc.forgetRememberedDevice();
+
+      expect(settingsBloc.rememberedDeviceId, isNull);
+      expect(settingsBloc.rememberedDeviceName, isNull);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(SharedPreferencesKeys.rememberedDeviceId), isNull);
+      expect(
+        prefs.getString(SharedPreferencesKeys.rememberedDeviceName),
+        isNull,
+      );
+    });
+
+    test('rememberedDeviceId is restored from persisted prefs on load',
+        () async {
+      SharedPreferences.setMockInitialValues({
+        SharedPreferencesKeys.rememberedDeviceId: 'ZZ:99',
+        SharedPreferencesKeys.rememberedDeviceName: 'senseBox:bike restored',
+      });
+      final restored = SettingsBloc();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(restored.rememberedDeviceId, 'ZZ:99');
+      expect(restored.rememberedDeviceName, 'senseBox:bike restored');
+
+      restored.dispose();
+    });
   });
 
   group('SettingsBloc Upload Mode Tests', () {

@@ -235,17 +235,52 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
                   );
                 }
 
-                return ListView.separated(
-                  separatorBuilder: (context, index) =>
-                      CustomDivider(showDivider: true),
-                  itemCount: devices.length,
-                  itemBuilder: (context, index) {
-                    final device = devices[index];
-                    return ClickableTile(
-                      child: Text(bleDevicePickerLabel(device)),
-                      onTap: () {
-                        widget.bleBloc.connectToDevice(device);
-                        Navigator.pop(context, true);
+                return ListenableBuilder(
+                  listenable: widget.bleBloc.settingsBloc,
+                  builder: (context, _) {
+                    final rememberedId =
+                        widget.bleBloc.settingsBloc.rememberedDeviceId;
+
+                    return ListView.separated(
+                      separatorBuilder: (context, index) => SizedBox(
+                        height: 8,
+                      ),
+                      itemCount: devices.length,
+                      itemBuilder: (context, index) {
+                        final device = devices[index];
+                        final isRemembered = device.id == rememberedId;
+
+                        return ClickableTile(
+                          onTap: () {
+                            widget.bleBloc.connectToDevice(device);
+                            Navigator.pop(context, true);
+                          },
+                          trailing: _DeviceOptionsMenu(
+                            bleBloc: widget.bleBloc,
+                            device: device,
+                            isRemembered: isRemembered,
+                          ),
+                          child: isRemembered
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(bleDevicePickerLabel(device)),
+                                    Text(
+                                      localizations.bleDeviceAutoConnectBadge,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                    ),
+                                  ],
+                                )
+                              : Text(bleDevicePickerLabel(device)),
+                        );
                       },
                     );
                   },
@@ -255,6 +290,55 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
           },
         ),
       ),
+    );
+  }
+}
+
+enum _DeviceOption { remember, forget }
+
+class _DeviceOptionsMenu extends StatelessWidget {
+  final BleBloc bleBloc;
+  final BleDevice device;
+  final bool isRemembered;
+
+  const _DeviceOptionsMenu({
+    required this.bleBloc,
+    required this.device,
+    required this.isRemembered,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
+    return PopupMenuButton<_DeviceOption>(
+      icon: const Icon(Icons.more_vert),
+      tooltip: localizations.bleDeviceMoreOptions,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      onSelected: (option) {
+        switch (option) {
+          case _DeviceOption.remember:
+            bleBloc.settingsBloc.rememberDevice(device.id, device.name);
+            break;
+          case _DeviceOption.forget:
+            bleBloc.settingsBloc.forgetRememberedDevice();
+            break;
+        }
+      },
+      itemBuilder: (context) => [
+        if (isRemembered)
+          PopupMenuItem(
+            value: _DeviceOption.forget,
+            child: Text(localizations.bleDeviceForgetDevice),
+          )
+        else
+          PopupMenuItem(
+            value: _DeviceOption.remember,
+            child: Text(localizations.bleDeviceRememberDevice),
+          ),
+      ],
     );
   }
 }
