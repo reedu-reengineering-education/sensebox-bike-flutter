@@ -261,6 +261,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get recordingSaveSample => 'Enregistrer un point';
 
   @override
+  String changelogModalTitle(String version) {
+    return 'Nouveautés de la version $version';
+  }
+
+  @override
   String get bleDeviceSelectTitle => 'Touchez pour connecter';
 
   @override

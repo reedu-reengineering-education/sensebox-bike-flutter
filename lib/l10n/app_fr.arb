@@ -118,6 +118,7 @@
     }
   },
   "recordingSaveSample": "Enregistrer un point",
+  "changelogModalTitle": "Nouveautés de la version {version}",
   "bleDeviceSelectTitle": "Touchez pour connecter",
   "noBleDevicesFound": "Aucune senseBox trouvée. Assurez-vous que votre senseBox est chargée, touchez en dehors de cette fenêtre et réessayez.",
   "bleDeviceMoreOptions": "Plus d'options",

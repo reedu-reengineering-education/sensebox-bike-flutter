@@ -255,6 +255,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recordingSaveSample => 'Save sample';
 
   @override
+  String changelogModalTitle(String version) {
+    return 'What\'s new in $version';
+  }
+
+  @override
   String get bleDeviceSelectTitle => 'Tap to connect';
 
   @override

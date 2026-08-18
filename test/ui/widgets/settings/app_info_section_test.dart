@@ -45,6 +45,17 @@ void main() {
       expect(find.text('Storage used'), findsOneWidget);
     });
 
+    testWidgets('shows the changelog for the current version on tap',
+        (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Version: 3.4.0 (340)'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining("What's new in 3.4.0"), findsOneWidget);
+    });
+
     testWidgets('launches privacy policy URL on tap', (tester) async {
       Uri? launchedUrl;
 

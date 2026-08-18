@@ -258,6 +258,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get recordingSaveSample => 'Messpunkt speichern';
 
   @override
+  String changelogModalTitle(String version) {
+    return 'Neu in $version';
+  }
+
+  @override
   String get bleDeviceSelectTitle => 'Tippen, um zu verbinden';
 
   @override

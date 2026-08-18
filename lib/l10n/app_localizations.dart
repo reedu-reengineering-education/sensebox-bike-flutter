@@ -534,6 +534,12 @@ abstract class AppLocalizations {
   /// **'Save sample'**
   String get recordingSaveSample;
 
+  /// No description provided for @changelogModalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s new in {version}'**
+  String changelogModalTitle(String version);
+
   /// No description provided for @bleDeviceSelectTitle.
   ///
   /// In en, this message translates to:
