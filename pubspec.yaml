@@ -53,7 +53,7 @@ dependencies:
   flutter_dotenv: ^5.1.0
   fl_chart: ^0.70.2
   flutter_svg: ^2.0.10+1
-  intl: any
+  intl: 0.20.3
   turf: ^0.0.10
   haptic_feedback: ^0.6.4+3
   vibration: ^3.1.3
