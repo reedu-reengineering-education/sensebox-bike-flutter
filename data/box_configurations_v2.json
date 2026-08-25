@@ -59,5 +59,14 @@
       { "key": "acceleration", "attribute": "z" },
       { "key": "gps", "attribute": "speed" }
     ]
+  },
+  {
+    "id": "temphumi_logger",
+    "displayName": "Heisses Pflaster HN 2026",
+    "defaultGrouptag": "heilbronn",
+    "sensors": [
+      { "key": "temperature" },
+      { "key": "humidity" }
+    ]
   }
 ]
