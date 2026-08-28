@@ -50,7 +50,7 @@ dependencies:
   shared_preferences: ^2.3.2
   http: ^1.2.2
   sentry_flutter: ^9.27.0
-  flutter_dotenv: ^5.1.0
+  flutter_dotenv: ^6.0.1
   fl_chart: ^0.70.2
   flutter_svg: ^2.0.10+1
   intl: any
