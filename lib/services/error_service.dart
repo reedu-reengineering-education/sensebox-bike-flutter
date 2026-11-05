@@ -150,4 +150,20 @@ class ErrorService {
   static void logToConsole(dynamic error, StackTrace stack) {
     debugPrintStack(stackTrace: stack, label: error.toString());
   }
+
+  static void logEvent(
+    String category,
+    String message, {
+    Map<String, Object?>? data,
+    SentryLevel level = SentryLevel.info,
+  }) {
+    final details = data == null || data.isEmpty ? '' : ' $data';
+    debugPrint('[$category] $message$details');
+    unawaited(Sentry.addBreadcrumb(Breadcrumb(
+      category: category,
+      message: message,
+      data: data,
+      level: level,
+    )));
+  }
 }

@@ -19,6 +19,7 @@ class SharedPreferencesKeys {
   static const String lastSeenAppVersion = 'lastSeenAppVersion';
   static const String rememberedDeviceId = 'rememberedDeviceId';
   static const String rememberedDeviceName = 'rememberedDeviceName';
+  static const String supportId = 'supportId';
 }
 
 

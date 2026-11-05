@@ -15,6 +15,7 @@ import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/utils/device_vibration.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 enum BleDisconnectReason {
   userRequested,
@@ -92,6 +93,10 @@ class BleBloc with ChangeNotifier {
   bool get isConnected => _phase == BleConnectionPhase.connected;
 
   void _setPhase(BleConnectionPhase phase) {
+    if (_phase != phase) {
+      ErrorService.logEvent('ble', 'phase ${phase.name}',
+          data: {'from': _phase.name});
+    }
     _phase = phase;
     isConnectingNotifier.value = phase == BleConnectionPhase.connecting;
     isReconnectingNotifier.value = phase == BleConnectionPhase.reconnecting;
@@ -207,7 +212,7 @@ class BleBloc with ChangeNotifier {
 
   void _maybeVibrateOnUnexpectedDisconnect(String deviceId) {
     if (!settingsBloc.vibrateOnDisconnect) {
-      debugPrint('[BLE] vibrate skipped: setting disabled');
+      ErrorService.logEvent('ble', 'vibrate skipped: setting disabled');
       return;
     }
     if (_userInitiatedDisconnect || _appInitiatedTeardown) {
@@ -221,7 +226,8 @@ class BleBloc with ChangeNotifier {
       return;
     }
     _vibratedForDisconnectDeviceId = deviceId;
-    debugPrint('[BLE] vibrate on unexpected disconnect $deviceId');
+    ErrorService.logEvent('ble', 'vibrate on unexpected disconnect',
+        data: {'device': deviceId});
     unawaited(_pulseDisconnectVibration(deviceId));
   }
 
@@ -238,7 +244,8 @@ class BleBloc with ChangeNotifier {
     if (_platform.isConnected(deviceId)) {
       return;
     }
-    debugPrint('[BLE] vibrate retry after disconnect $deviceId');
+    ErrorService.logEvent('ble', 'vibrate retry after disconnect',
+        data: {'device': deviceId});
     await vibrateDisconnectFeedback();
   }
 
@@ -481,11 +488,11 @@ class BleBloc with ChangeNotifier {
       prepareForRetry: _prepareForRetry,
       onExhausted: onExhausted ??
           () => _onSessionRetriesExhausted(
-            device,
-            failurePhase,
-            cause: initialLinkError,
-            stackTrace: initialLinkErrorStack,
-          ),
+                device,
+                failurePhase,
+                cause: initialLinkError,
+                stackTrace: initialLinkErrorStack,
+              ),
     );
   }
 
@@ -517,12 +524,20 @@ class BleBloc with ChangeNotifier {
 
   Future<void> _onSessionRetriesExhausted(
     BleDevice device,
-    BleConnectionFailurePhase failurePhase,
-    {
+    BleConnectionFailurePhase failurePhase, {
     Object? cause,
     StackTrace? stackTrace,
-  }
-  ) async {
+  }) async {
+    ErrorService.logEvent(
+      'ble',
+      'connection retries exhausted',
+      data: {
+        'device': device.id,
+        'phase': failurePhase.name,
+        if (cause != null) 'cause': cause.toString(),
+      },
+      level: SentryLevel.warning,
+    );
     await ErrorService.reportToSentry(
       BleConnectionFailed(failurePhase, cause),
       stackTrace ?? StackTrace.current,
@@ -538,6 +553,8 @@ class BleBloc with ChangeNotifier {
     bool publishConnectedState = true,
   }) async {
     if (!_platform.isConnected(device.id)) {
+      ErrorService.logEvent('ble', 'session attempt skipped: link down',
+          data: {'device': device.id});
       return false;
     }
 
@@ -555,6 +572,12 @@ class BleBloc with ChangeNotifier {
         streams: characteristicStreams,
         livenessTimeout: livenessTimeout,
       );
+      ErrorService.logEvent('ble', 'session probe', data: {
+        'device': device.id,
+        'probe': probe,
+        'success': result.success,
+        'timeoutSeconds': livenessTimeout.inSeconds,
+      });
 
       if (result.success) {
         availableCharacteristics.value = result.characteristics;
@@ -739,7 +762,8 @@ class BleBloc with ChangeNotifier {
 
     _autoConnectInProgress = true;
     try {
-      final target = BleDevice(id: id, name: settingsBloc.rememberedDeviceName ?? '');
+      final target =
+          BleDevice(id: id, name: settingsBloc.rememberedDeviceName ?? '');
       final found = await _scanner.waitForAdvertisingDevice(
         target,
         shouldCancel: () => _userInitiatedDisconnect || selectedDevice != null,

@@ -49,6 +49,7 @@ app.*.map.json
 
 # In-memory Isar instance used for testing
 default.isar*
+*.dylib
 
 graphify-*
 CLAUDE.md
@@ -57,3 +58,4 @@ CLAUDE.md
 libisar.dylib
 libisar.so
 isar.dll
+

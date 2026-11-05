@@ -204,6 +204,8 @@
         }
     },
     "settingsStorageUsed": "Armazenamento usado",
+    "settingsSupportId": "ID de suporte",
+    "settingsSupportIdCopied": "ID de suporte copiado para a área de transferência",
     "settingsStorageDetails": "Dados do app: {totalSize} (banco de dados: {databaseSize})",
     "@settingsStorageDetails": {
         "placeholders": {
