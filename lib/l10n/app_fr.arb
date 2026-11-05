@@ -192,6 +192,8 @@
     }
   },
   "settingsStorageUsed": "Espace de stockage utilisé",
+  "settingsSupportId": "ID d'assistance",
+  "settingsSupportIdCopied": "ID d'assistance copié dans le presse-papiers",
   "settingsStorageDetails": "Données de l'app : {totalSize} (base de données : {databaseSize})",
   "@settingsStorageDetails": {
     "placeholders": {

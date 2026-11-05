@@ -110,6 +110,7 @@ class SettingsInfoTile extends StatelessWidget {
   final String title;
   final Widget? subtitle;
   final VoidCallback? onTap;
+  final Widget? trailing;
 
   const SettingsInfoTile({
     super.key,
@@ -117,6 +118,7 @@ class SettingsInfoTile extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.onTap,
+    this.trailing,
   });
 
   @override
@@ -127,7 +129,8 @@ class SettingsInfoTile extends StatelessWidget {
       leading: Icon(icon, color: infoColor),
       title: Text(title, style: TextStyle(color: infoColor)),
       subtitle: subtitle,
-      trailing: onTap == null ? null : settingsNavigationChevron(context),
+      trailing: trailing ??
+          (onTap == null ? null : settingsNavigationChevron(context)),
       onTap: onTap,
     );
   }

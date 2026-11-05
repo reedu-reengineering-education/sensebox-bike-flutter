@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_constants.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_uuids.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 
 enum BleLinkState {
   disconnected,
@@ -131,19 +131,21 @@ class BlePlatform {
         .listen(
       (update) {
         final state = _mapConnectionState(update.connectionState);
-        _emitLinkState(deviceId, state);
+        _emitLinkState(deviceId, state, error: update.failure);
         if (state == BleLinkState.connected && !connected.isCompleted) {
           connected.complete();
         }
       },
       onError: (Object error, StackTrace stack) {
-        _emitLinkState(deviceId, BleLinkState.disconnected);
+        _emitLinkState(deviceId, BleLinkState.disconnected,
+            source: 'connect-error', error: error);
         if (!connected.isCompleted) {
           connected.completeError(error, stack);
         }
       },
       onDone: () {
-        _emitLinkState(deviceId, BleLinkState.disconnected);
+        _emitLinkState(deviceId, BleLinkState.disconnected,
+            source: 'connect-stream-closed');
         if (!connected.isCompleted) {
           connected.completeError(
             TimeoutException('BLE connection stream closed before connected'),
@@ -152,23 +154,26 @@ class BlePlatform {
       },
     );
 
-    _emitLinkState(deviceId, BleLinkState.connecting);
+    _emitLinkState(deviceId, BleLinkState.connecting, source: 'app-connect');
     try {
       await connected.future.timeout(timeout);
     } catch (error) {
-      _emitLinkState(deviceId, BleLinkState.disconnected);
+      _emitLinkState(deviceId, BleLinkState.disconnected,
+          source: 'connect-failed', error: error);
       rethrow;
     }
   }
 
   Future<void> disconnect(String deviceId) async {
-    _emitLinkState(deviceId, BleLinkState.disconnecting);
+    _emitLinkState(deviceId, BleLinkState.disconnecting,
+        source: 'app-disconnect');
 
     await _connectionSubs[deviceId]?.cancel();
     _connectionSubs.remove(deviceId);
 
     _characteristics.remove(deviceId);
-    _emitLinkState(deviceId, BleLinkState.disconnected);
+    _emitLinkState(deviceId, BleLinkState.disconnected,
+        source: 'app-disconnect');
   }
 
   Future<List<BleService>> discoverServices(String deviceId) async {
@@ -221,8 +226,13 @@ class BlePlatform {
         .map((value) {
       _armDataWatchdog(deviceId);
       return value;
-    }).handleError((Object _) {
-      _emitLinkState(deviceId, BleLinkState.disconnected);
+    }).handleError((Object error) {
+      _emitLinkState(
+        deviceId,
+        BleLinkState.disconnected,
+        source: 'notify-error',
+        error: error,
+      );
     });
   }
 
@@ -232,7 +242,7 @@ class BlePlatform {
     }
     _dataWatchdogs[deviceId]?.cancel();
     _dataWatchdogs[deviceId] = Timer(bleDataStaleTimeout, () {
-      _emitLinkState(deviceId, BleLinkState.disconnected);
+      _emitLinkState(deviceId, BleLinkState.disconnected, source: 'watchdog');
     });
   }
 
@@ -244,10 +254,20 @@ class BlePlatform {
     return BleDevice(id: device.id, name: device.name);
   }
 
-  void _emitLinkState(String deviceId, BleLinkState state) {
+  void _emitLinkState(
+    String deviceId,
+    BleLinkState state, {
+    String source = 'platform',
+    Object? error,
+  }) {
     final previous = _linkStates[deviceId];
     if (previous != state) {
-      debugPrint('[BLE][platform] $deviceId link=$state');
+      ErrorService.logEvent('ble', 'link ${state.name}', data: {
+        'device': deviceId,
+        'from': previous?.name,
+        'source': source,
+        if (error != null) 'error': error.toString(),
+      });
       onLinkStateChanged?.call(deviceId, previous, state);
     }
     if (state != BleLinkState.connected) {

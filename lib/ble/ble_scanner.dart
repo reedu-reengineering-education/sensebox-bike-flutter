@@ -5,6 +5,7 @@ import 'package:sensebox_bike/ble/ble_constants.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/error_service.dart';
 
 const _senseBoxDeviceNamePrefix = 'senseBox';
 
@@ -92,6 +93,10 @@ class BleScanner {
     Duration timeout = bleScanTimeout,
   }) async {
     await stopScanning();
+    ErrorService.logEvent('ble', 'scan for device started', data: {
+      'device': device.id,
+      'timeoutSeconds': timeout.inSeconds,
+    });
 
     final found = Completer<BleDevice?>();
     _scanSubscription = platform.scanForDevices().listen((discovered) {
@@ -107,11 +112,16 @@ class BleScanner {
     isScanningNotifier.value = true;
 
     try {
-      return await Future.any<BleDevice?>([
+      final result = await Future.any<BleDevice?>([
         found.future,
         Future<BleDevice?>.delayed(timeout, () => null),
         _waitUntilCancelled(shouldCancel),
       ]);
+      ErrorService.logEvent('ble', 'scan for device finished', data: {
+        'device': device.id,
+        'found': result != null,
+      });
+      return result;
     } finally {
       await stopScanning();
     }

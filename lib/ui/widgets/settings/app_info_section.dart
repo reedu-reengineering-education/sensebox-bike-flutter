@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
+import 'package:sensebox_bike/services/support_id_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/changelog_modal.dart';
 import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
 import 'package:sensebox_bike/utils/storage_utils.dart';
@@ -67,6 +69,7 @@ class _AppInfoSectionState extends State<AppInfoSection> {
           },
         ),
         const _StorageUsageTile(),
+        const _SupportIdTile(),
         SettingsNavigationTile(
           icon: Icons.privacy_tip_outlined,
           title: localizations.settingsPrivacyPolicy,
@@ -76,6 +79,52 @@ class _AppInfoSectionState extends State<AppInfoSection> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SupportIdTile extends StatefulWidget {
+  const _SupportIdTile();
+
+  @override
+  State<_SupportIdTile> createState() => _SupportIdTileState();
+}
+
+class _SupportIdTileState extends State<_SupportIdTile> {
+  final Future<String> _supportIdFuture = SupportIdService.getOrCreate();
+
+  Future<void> _copy(String supportId) async {
+    await Clipboard.setData(ClipboardData(text: supportId));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.settingsSupportIdCopied),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    final subtitleStyle = settingsInfoSubtitleStyle(context);
+
+    return FutureBuilder<String>(
+      future: _supportIdFuture,
+      builder: (context, snapshot) {
+        final supportId = snapshot.data;
+        return SettingsInfoTile(
+          icon: Icons.support_agent,
+          title: localizations.settingsSupportId,
+          subtitle: Text(
+            supportId ?? (snapshot.hasError ? '—' : '...'),
+            style: subtitleStyle,
+          ),
+          trailing: supportId == null
+              ? null
+              : Icon(Icons.copy, color: settingsInfoColor(context)),
+          onTap: supportId == null ? null : () => _copy(supportId),
+        );
+      },
     );
   }
 }
@@ -122,7 +171,8 @@ class _StorageUsageTileState extends State<_StorageUsageTile> {
           ConnectionState.waiting ||
           ConnectionState.active =>
             Text('...', style: subtitleStyle),
-          ConnectionState.done when snapshot.hasError || snapshot.data == null =>
+          ConnectionState.done
+              when snapshot.hasError || snapshot.data == null =>
             Text('—', style: subtitleStyle),
           ConnectionState.done => Text(
               localizations.settingsStorageDetails(

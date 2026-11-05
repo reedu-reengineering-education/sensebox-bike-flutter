@@ -197,6 +197,8 @@
         }
     },
     "settingsStorageUsed": "Speichernutzung",
+    "settingsSupportId": "Support-ID",
+    "settingsSupportIdCopied": "Support-ID in die Zwischenablage kopiert",
     "settingsStorageDetails": "App-Daten: {totalSize} (Datenbank: {databaseSize})",
     "@settingsStorageDetails": {
         "placeholders": {

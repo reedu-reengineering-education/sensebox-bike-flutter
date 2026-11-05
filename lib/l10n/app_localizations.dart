@@ -834,6 +834,18 @@ abstract class AppLocalizations {
   /// **'Storage used'**
   String get settingsStorageUsed;
 
+  /// No description provided for @settingsSupportId.
+  ///
+  /// In en, this message translates to:
+  /// **'Support ID'**
+  String get settingsSupportId;
+
+  /// No description provided for @settingsSupportIdCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Support ID copied to clipboard'**
+  String get settingsSupportIdCopied;
+
   /// No description provided for @settingsStorageDetails.
   ///
   /// In en, this message translates to:
