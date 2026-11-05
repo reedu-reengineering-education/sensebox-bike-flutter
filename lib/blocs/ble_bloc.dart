@@ -15,7 +15,6 @@ import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/permission_service.dart';
 import 'package:sensebox_bike/utils/device_vibration.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 enum BleDisconnectReason {
   userRequested,
@@ -212,7 +211,6 @@ class BleBloc with ChangeNotifier {
 
   void _maybeVibrateOnUnexpectedDisconnect(String deviceId) {
     if (!settingsBloc.vibrateOnDisconnect) {
-      ErrorService.logEvent('ble', 'vibrate skipped: setting disabled');
       return;
     }
     if (_userInitiatedDisconnect || _appInitiatedTeardown) {
@@ -528,16 +526,6 @@ class BleBloc with ChangeNotifier {
     Object? cause,
     StackTrace? stackTrace,
   }) async {
-    ErrorService.logEvent(
-      'ble',
-      'connection retries exhausted',
-      data: {
-        'device': device.id,
-        'phase': failurePhase.name,
-        if (cause != null) 'cause': cause.toString(),
-      },
-      level: SentryLevel.warning,
-    );
     await ErrorService.reportToSentry(
       BleConnectionFailed(failurePhase, cause),
       stackTrace ?? StackTrace.current,
@@ -553,8 +541,6 @@ class BleBloc with ChangeNotifier {
     bool publishConnectedState = true,
   }) async {
     if (!_platform.isConnected(device.id)) {
-      ErrorService.logEvent('ble', 'session attempt skipped: link down',
-          data: {'device': device.id});
       return false;
     }
 

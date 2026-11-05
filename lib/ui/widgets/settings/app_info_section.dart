@@ -83,46 +83,24 @@ class _AppInfoSectionState extends State<AppInfoSection> {
   }
 }
 
-class _SupportIdTile extends StatefulWidget {
+class _SupportIdTile extends StatelessWidget {
   const _SupportIdTile();
-
-  @override
-  State<_SupportIdTile> createState() => _SupportIdTileState();
-}
-
-class _SupportIdTileState extends State<_SupportIdTile> {
-  final Future<String> _supportIdFuture = SupportIdService.getOrCreate();
-
-  Future<void> _copy(String supportId) async {
-    await Clipboard.setData(ClipboardData(text: supportId));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context)!.settingsSupportIdCopied),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    final subtitleStyle = settingsInfoSubtitleStyle(context);
+    final supportId = SupportIdService.id;
 
-    return FutureBuilder<String>(
-      future: _supportIdFuture,
-      builder: (context, snapshot) {
-        final supportId = snapshot.data;
-        return SettingsInfoTile(
-          icon: Icons.support_agent,
-          title: localizations.settingsSupportId,
-          subtitle: Text(
-            supportId ?? (snapshot.hasError ? '—' : '...'),
-            style: subtitleStyle,
-          ),
-          trailing: supportId == null
-              ? null
-              : Icon(Icons.copy, color: settingsInfoColor(context)),
-          onTap: supportId == null ? null : () => _copy(supportId),
+    return SettingsInfoTile(
+      icon: Icons.support_agent,
+      title: localizations.settingsSupportId,
+      subtitle: Text(supportId, style: settingsInfoSubtitleStyle(context)),
+      trailing: Icon(Icons.copy, color: settingsInfoColor(context)),
+      onTap: () async {
+        final messenger = ScaffoldMessenger.of(context);
+        await Clipboard.setData(ClipboardData(text: supportId));
+        messenger.showSnackBar(
+          SnackBar(content: Text(localizations.settingsSupportIdCopied)),
         );
       },
     );

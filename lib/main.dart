@@ -31,7 +31,7 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env", mergeWith: Platform.environment);
-  final supportId = await SupportIdService.getOrCreate();
+  final supportId = await SupportIdService.init();
 
   await SentryFlutter.init(
     (options) => options
