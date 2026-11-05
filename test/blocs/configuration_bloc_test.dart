@@ -183,7 +183,7 @@ void main() {
         await bloc.loadBoxConfigurations();
 
         expectBundledProfilesLoaded();
-        expect(bloc.boxConfigurations!.length, 4);
+        expect(bloc.boxConfigurations!.length, 5);
         expect(bloc.isLoadingBoxConfigurations, false);
       });
 
