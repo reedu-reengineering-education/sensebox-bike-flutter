@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/support_id_service.dart';
@@ -10,25 +8,17 @@ void main() {
 
   final supportIdFormat = RegExp(r'^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}$');
 
-  setUp(SupportIdService.resetCacheForTesting);
-
-  test('generates a short, readable hex ID', () {
-    expect(SupportIdService.generateSupportId(), matches(supportIdFormat));
-    expect(
-      SupportIdService.generateSupportId(Random(1)),
-      SupportIdService.generateSupportId(Random(1)),
-    );
-  });
+  setUp(() => SupportIdService.setIdForTesting(null));
 
   test('creates an ID once and persists it', () async {
     SharedPreferences.setMockInitialValues({});
 
-    final first = await SupportIdService.getOrCreate();
-    SupportIdService.resetCacheForTesting();
-    final second = await SupportIdService.getOrCreate();
+    final first = await SupportIdService.init();
+    final second = await SupportIdService.init();
 
     expect(first, matches(supportIdFormat));
     expect(second, first);
+    expect(SupportIdService.id, first);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(SharedPreferencesKeys.supportId), first);
   });
@@ -38,6 +28,8 @@ void main() {
       SharedPreferencesKeys.supportId: 'abcd-1234-ef56',
     });
 
-    expect(await SupportIdService.getOrCreate(), 'abcd-1234-ef56');
+    await SupportIdService.init();
+
+    expect(SupportIdService.id, 'abcd-1234-ef56');
   });
 }

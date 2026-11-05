@@ -17,6 +17,7 @@ import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
+import 'package:sensebox_bike/services/support_id_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'sensor_catalog_test_data.dart';
@@ -41,6 +42,8 @@ void initializeTestDependencies() {
 
   // Ensure SharedPreferences is initialized
   SharedPreferences.setMockInitialValues({});
+
+  SupportIdService.setIdForTesting('test-support-id');
 }
 
 /// Creates a MaterialApp wrapper with localization support

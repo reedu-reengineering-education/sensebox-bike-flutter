@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/support_id_service.dart';
 import 'package:sensebox_bike/ui/widgets/settings/app_info_section.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../test_helpers.dart';
@@ -13,6 +12,7 @@ import '../../../test_helpers.dart';
 void main() {
   setUpAll(() {
     initializeTestDependencies();
+    SupportIdService.setIdForTesting('abcd-1234-ef56');
 
     PackageInfo.setMockInitialValues(
       appName: 'senseBox Bike',
@@ -79,15 +79,6 @@ void main() {
     });
 
     group('support ID', () {
-      setUp(() {
-        SupportIdService.resetCacheForTesting();
-        SharedPreferences.setMockInitialValues({
-          SharedPreferencesKeys.supportId: 'abcd-1234-ef56',
-        });
-      });
-
-      tearDown(SupportIdService.resetCacheForTesting);
-
       testWidgets('shows the stored support ID', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();

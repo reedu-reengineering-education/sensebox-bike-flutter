@@ -1,31 +1,33 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SupportIdService {
   SupportIdService._();
 
-  static Future<String>? _supportId;
+  static String? _id;
 
-  static Future<String> getOrCreate() => _supportId ??= _loadOrCreate();
+  static String get id =>
+      _id ?? (throw StateError('SupportIdService.init() was not called'));
 
-  static Future<String> _loadOrCreate() async {
+  static Future<String> init() async {
     final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getString(SharedPreferencesKeys.supportId);
-    if (stored != null && stored.isNotEmpty) {
-      return stored;
+    var id = prefs.getString(SharedPreferencesKeys.supportId);
+    if (id == null || id.isEmpty) {
+      id = generateSupportId();
+      await prefs.setString(SharedPreferencesKeys.supportId, id);
     }
-    final created = generateSupportId();
-    await prefs.setString(SharedPreferencesKeys.supportId, created);
-    return created;
+    return _id = id;
   }
 
-  static String generateSupportId([Random? random]) {
-    final rng = random ?? Random.secure();
-    String group() => rng.nextInt(0x10000).toRadixString(16).padLeft(4, '0');
+  static String generateSupportId() {
+    final random = Random.secure();
+    String group() => random.nextInt(0x10000).toRadixString(16).padLeft(4, '0');
     return '${group()}-${group()}-${group()}';
   }
 
-  static void resetCacheForTesting() => _supportId = null;
+  @visibleForTesting
+  static void setIdForTesting(String? id) => _id = id;
 }

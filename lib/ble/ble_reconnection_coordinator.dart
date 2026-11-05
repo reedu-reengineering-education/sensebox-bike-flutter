@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
-import 'package:sensebox_bike/services/error_service.dart';
 
 class BleReconnectionCoordinator {
   BleReconnectionCoordinator({required this.platform});
@@ -44,13 +43,6 @@ class BleReconnectionCoordinator {
 
     _subscription = platform.connectionState(device.id).listen((state) async {
       try {
-        if (state == BleLinkState.disconnected) {
-          ErrorService.logEvent('ble', 'coordinator saw disconnect', data: {
-            'ignored': shouldIgnoreDisconnect(),
-            'reconnectInProgress': _reconnectionInProgress,
-            'aborted': _abortReconnection,
-          });
-        }
         if (state == BleLinkState.disconnected &&
             !shouldIgnoreDisconnect() &&
             !_reconnectionInProgress) {
