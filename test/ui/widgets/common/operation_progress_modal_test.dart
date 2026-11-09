@@ -260,7 +260,7 @@ void main() {
         completedChunks: 0,
         failedChunks: 1,
         status: UploadStatus.failed,
-        errorMessage: BatchUploadService.uploadFailedTryLaterErrorToken,
+        errorMessage: 'Server error 503',
         errorDetail: 'HTTP 503: Service Unavailable',
         failureKind: UploadFailureKind.apiResponse,
         canRetry: true,
@@ -287,7 +287,7 @@ void main() {
         completedChunks: 0,
         failedChunks: 1,
         status: UploadStatus.failed,
-        errorMessage: BatchUploadService.uploadFailedTryLaterErrorToken,
+        errorMessage: 'Server error 503',
         errorDetail:
             "Failed host lookup: 'api.opensensemap.org' (No address associated with hostname)",
         failureKind: UploadFailureKind.connection,

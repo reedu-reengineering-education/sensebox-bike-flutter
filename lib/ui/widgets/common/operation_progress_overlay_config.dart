@@ -49,7 +49,6 @@ class OperationProgressOverlayConfig {
       onFailed: onFailed,
       onStart: onStart,
       onDismiss: onDismiss,
-      // Closing the modal while uploading stops the upload.
       onCancel: uploadService.cancelUpload,
     );
   }

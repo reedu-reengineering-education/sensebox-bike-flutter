@@ -4,6 +4,7 @@ import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/upload_error_classifier.dart';
 import 'package:sensebox_bike/services/direct_upload_service.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/opensensemap_service.dart';
 
 void main() {
   group('BatchUploadService', () {
@@ -169,7 +170,7 @@ void main() {
 
       test('should classify permanent client errors correctly', () {
         // Test that permanent client errors are classified correctly
-        final clientError = Exception('Client error 400');
+        final clientError = OpenSenseMapApiException(400, 'Upload failed', '{}');
         final errorType = UploadErrorClassifier.classifyError(clientError);
         
         expect(errorType, UploadErrorType.permanentClient);

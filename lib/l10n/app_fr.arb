@@ -374,7 +374,6 @@
   "trackDirectUploadAuthFailed": "Ce parcours n’a pas pu être téléversé en temps réel car vous n’étiez pas connecté. Veuillez vous connecter et réessayer le téléversement.",
   "trackFilterAll": "Tous",
   "trackFilterUnuploaded": "Non téléversé",
-  "trackUploadRetryFailed": "La nouvelle tentative de téléversement a échoué. Veuillez réessayer.",
   "errorTrackNoGeolocations": "Le parcours ne contient pas de données de géolocalisation et ne peut pas être téléversé.",
   "openSenseMapInfoText": "Vos données senseBox:bike seront partagées sur openSenseMap, contribuant à la science citoyenne et à la surveillance environnementale.",
   "openSenseMapInfoLink": "Visiter openSenseMap.org",

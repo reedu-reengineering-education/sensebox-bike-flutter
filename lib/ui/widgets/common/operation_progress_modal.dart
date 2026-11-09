@@ -15,9 +15,8 @@ class OperationProgressModal extends StatefulWidget {
   final VoidCallback? onStart;
   final VoidCallback? onDismiss;
 
-  /// Called when the user closes the modal while the operation is still
-  /// running (Cancel button or system back). When null, no Cancel button is
-  /// shown during the operation.
+  /// Called when the modal is closed while the operation is running.
+  /// When null, no Cancel button is shown.
   final VoidCallback? onCancel;
   final bool showConfirmation;
   final String? titleText;

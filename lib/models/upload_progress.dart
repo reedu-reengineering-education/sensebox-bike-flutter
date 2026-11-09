@@ -2,48 +2,27 @@
 enum UploadStatus {
   /// Initial state when preparing data for upload
   preparing,
-  
+
   /// Upload is currently in progress
   uploading,
-  
+
   /// Upload has completed successfully
   completed,
-  
+
   /// Upload has failed
   failed,
-  
+
   /// Upload is being retried after a failure
   retrying,
 }
 
-/// Why an upload failed, decides how [UploadProgress.errorDetail] is shown.
-enum UploadFailureKind {
-  /// openSenseMap could not be reached (no network, DNS, timeout, TLS).
-  connection,
+enum UploadFailureKind { connection, apiResponse, other }
 
-  /// openSenseMap answered with an error response.
-  apiResponse,
-
-  /// Anything else, e.g. an unexpected app error.
-  other,
-}
-
-/// Finer-grained step of a running upload, used for the status text.
-/// Null for operations that don't report steps (e.g. export).
 enum UploadStage {
-  /// Waiting for the openSenseMap login check to finish.
   checkingLogin,
-
-  /// Loading the track's points from the local database.
   loadingTrack,
-
-  /// Loading sensor data and building the request for the current chunk.
   preparingChunk,
-
-  /// Request for the current chunk is being sent to openSenseMap.
   sendingChunk,
-
-  /// The request failed and is sent once more.
   retryingChunk,
 }
 
@@ -51,30 +30,26 @@ enum UploadStage {
 class UploadProgress {
   /// Total number of chunks to be uploaded
   final int totalChunks;
-  
+
   /// Number of chunks that have been successfully uploaded
   final int completedChunks;
-  
+
   /// Number of chunks that have failed to upload
   final int failedChunks;
-  
+
   /// Current status of the upload operation
   final UploadStatus status;
-  
+
   /// Error message if upload failed, null otherwise
   final String? errorMessage;
 
-  /// The actual reason shown below [errorMessage]: the message returned by
-  /// the API, or the network error (e.g. "Failed host lookup: ...").
   final String? errorDetail;
 
-  /// Kind of failure, decides how [errorDetail] is presented.
   final UploadFailureKind? failureKind;
-  
+
   /// Whether the upload can be retried
   final bool canRetry;
 
-  /// Current step of a running upload, see [UploadStage].
   final UploadStage? stage;
 
   const UploadProgress({

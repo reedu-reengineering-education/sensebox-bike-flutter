@@ -1614,12 +1614,6 @@ abstract class AppLocalizations {
   /// **'Not uploaded'**
   String get trackFilterUnuploaded;
 
-  /// No description provided for @trackUploadRetryFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload retry failed. Please try again.'**
-  String get trackUploadRetryFailed;
-
   /// No description provided for @errorTrackNoGeolocations.
   ///
   /// In en, this message translates to:

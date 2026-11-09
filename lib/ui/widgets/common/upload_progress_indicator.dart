@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
-import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:sensebox_bike/services/export_progress_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/theme.dart';
@@ -300,8 +299,6 @@ class UploadProgressIndicator extends StatelessWidget {
     }
   }
 
-  /// Text for the current step of a running upload, null when the operation
-  /// does not report steps or is already finished.
   String? _getStageText(AppLocalizations localizations) {
     final stage = progress.stage;
     if (stage == null || progress.isCompleted || progress.hasFailed) {
@@ -343,7 +340,7 @@ class UploadProgressIndicator extends StatelessWidget {
       return localizations.errorExportFailed;
     }
 
-    if (errorMessage == BatchUploadService.uploadFailedTryLaterErrorToken) {
+    if (progress.failureKind != null) {
       return localizations.uploadErrorTryLater;
     }
 
@@ -358,8 +355,6 @@ class UploadProgressIndicator extends StatelessWidget {
     }
   }
 
-  /// Detail line under the error message: why the upload failed, either
-  /// "could not connect" or the response returned by openSenseMap.
   String? _getErrorDetail(AppLocalizations localizations) {
     final detail = progress.errorDetail;
     if (detail == null || detail.isEmpty) return null;

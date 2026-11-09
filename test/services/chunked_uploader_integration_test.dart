@@ -30,7 +30,6 @@ void main() {
       // Verify all required methods exist
       expect(uploader.splitIntoChunks, isA<Function>());
       expect(uploader.uploadChunk, isA<Function>());
-      expect(uploader.uploadTrackInChunks, isA<Function>());
     });
 
     test('should split large datasets correctly', () {

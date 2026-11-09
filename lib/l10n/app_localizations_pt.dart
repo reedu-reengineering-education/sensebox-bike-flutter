@@ -885,10 +885,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackFilterUnuploaded => 'Não enviados';
 
   @override
-  String get trackUploadRetryFailed =>
-      'Tentativa de envio falhou. Tente novamente.';
-
-  @override
   String get errorTrackNoGeolocations =>
       'Trajeto não possui dados de geolocalização e não pode ser enviado.';
 

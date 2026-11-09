@@ -1,8 +1,8 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/services/upload_error_classifier.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retry/retry.dart';
@@ -35,9 +35,6 @@ class ServerErrorException implements Exception {
   String toString() => 'Server error $statusCode';
 }
 
-/// Non-success response from the openSenseMap API that is not retried
-/// (typically a 4xx). Keeps the status code and response body so callers can
-/// show the API's own error message to the user.
 class OpenSenseMapApiException implements Exception {
   final int statusCode;
   final String context;
@@ -558,9 +555,7 @@ class OpenSenseMapService {
   bool _isRetryableHttpError(Object e) =>
       e is TooManyRequestsException ||
       e is ServerErrorException ||
-      e is SocketException ||
-      e is HttpException ||
-      e is TimeoutException;
+      UploadErrorClassifier.isConnectionError(e);
 
   bool _isRetryableUploadError(Object e) =>
       _isRetryableHttpError(e) || e is UploadRetryException;
@@ -614,13 +609,6 @@ class OpenSenseMapService {
     maxDelay: Duration(seconds: 15),
   );
 
-  /// Uploads measurements to [senseBox].
-  ///
-  /// [retryOptions] and [requestTimeout] let callers with a user waiting on
-  /// the result (batch upload) use a much shorter budget than the default,
-  /// which is tuned for background direct upload.
-  /// When [reportErrors] is false, the final failure is only rethrown and the
-  /// caller is responsible for reporting / showing it.
   Future<void> uploadData(
     SenseBox senseBox,
     Map<String, dynamic> sensorData, {

@@ -290,8 +290,6 @@ class RecordingBloc with ChangeNotifier {
           onStart: () {
             _startBatchUpload(track, senseBox);
           },
-          // Closing the modal (cancel during upload, or close after a
-          // failure) ends this upload session.
           onDismiss: _cleanupBatchUploadService,
         ),
       );
@@ -309,8 +307,6 @@ class RecordingBloc with ChangeNotifier {
     try {
       await _batchUploadService!.uploadTrack(track, senseBox);
     } catch (e, stack) {
-      // Don't prevent recording from stopping. The modal shows the error and
-      // BatchUploadService already reported it, so only log here.
       ErrorService.logToConsole(
           'Batch upload failed after recording stop: $e', stack);
     }

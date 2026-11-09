@@ -126,11 +126,9 @@ void main() {
     });
 
     group('uploadChunk', () {
-      test('should return success for empty chunk', () async {
-        final result = await chunkedUploader.uploadChunk([], testSenseBox, 0);
-        
-        expect(result.success, isTrue);
-        expect(result.chunkIndex, equals(0));
+      test('does nothing for an empty chunk', () async {
+        await chunkedUploader.uploadChunk([], testSenseBox);
+
         verifyNever(() => mockOpenSenseMapService.uploadData(
               any(),
               any(),
@@ -141,7 +139,7 @@ void main() {
             ));
       });
 
-      test('should handle upload service errors correctly', () async {
+      test('rethrows upload service errors', () async {
         final chunk = _createGeolocationList(1); // Single point to minimize Isar issues
         when(() => mockOpenSenseMapService.uploadData(
               any(),
@@ -153,20 +151,8 @@ void main() {
             ))
             .thenThrow(Exception('Network error'));
 
-        final result = await chunkedUploader.uploadChunk(chunk, testSenseBox, 0);
-        
-        expect(result.success, isFalse);
-        expect(result.chunkIndex, equals(0));
-        expect(result.errorMessage, isNotNull);
-      });
-    });
-
-    // Note: uploadTrackInChunks tests are simplified due to Isar complexity
-    // In a real implementation, these would require proper Isar test setup
-    group('uploadTrackInChunks', () {
-      test('should handle track upload flow', () {
-        // This test verifies the method exists and has the correct signature
-        expect(chunkedUploader.uploadTrackInChunks, isA<Function>());
+        await expectLater(
+            chunkedUploader.uploadChunk(chunk, testSenseBox), throwsException);
       });
     });
   });

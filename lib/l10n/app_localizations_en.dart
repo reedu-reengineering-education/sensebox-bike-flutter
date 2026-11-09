@@ -878,9 +878,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackFilterUnuploaded => 'Not uploaded';
 
   @override
-  String get trackUploadRetryFailed => 'Upload retry failed. Please try again.';
-
-  @override
   String get errorTrackNoGeolocations =>
       'Track has no geolocation data and cannot be uploaded.';
 

@@ -90,3 +90,9 @@ class TrackHasNoGeolocationsException implements Exception {
   @override
   String toString() => 'Track has no geolocation data and cannot be uploaded.';
 }
+class UploadCancelledException implements Exception {
+  const UploadCancelledException();
+
+  @override
+  String toString() => 'Upload cancelled';
+}

@@ -895,10 +895,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get trackFilterUnuploaded => 'Non téléversé';
 
   @override
-  String get trackUploadRetryFailed =>
-      'La nouvelle tentative de téléversement a échoué. Veuillez réessayer.';
-
-  @override
   String get errorTrackNoGeolocations =>
       'Le parcours ne contient pas de données de géolocalisation et ne peut pas être téléversé.';
 

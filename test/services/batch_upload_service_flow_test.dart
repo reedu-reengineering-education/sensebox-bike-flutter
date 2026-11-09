@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:isar_community/isar.dart';
@@ -12,6 +10,7 @@ import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/batch_upload_service.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 
 import '../mocks.dart';
@@ -105,6 +104,17 @@ void main() {
   }
 
   void verifyUploadCalls(int times) {
+    if (times == 0) {
+      verifyNever(() => osemService.uploadData(
+            any(),
+            any(),
+            retryOptions: any(named: 'retryOptions'),
+            requestTimeout: any(named: 'requestTimeout'),
+            reportErrors: any(named: 'reportErrors'),
+            onRetry: any(named: 'onRetry'),
+          ));
+      return;
+    }
     verify(() => osemService.uploadData(
           any(),
           any(),
@@ -155,7 +165,7 @@ void main() {
 
     final stopwatch = Stopwatch()..start();
     await expectLater(service.uploadTrack(track, senseBox),
-        throwsA(isA<BatchUploadException>()));
+        throwsA(isA<TimeoutException>()));
     stopwatch.stop();
     await pumpEventQueue();
 
@@ -165,8 +175,6 @@ void main() {
     expect(track.uploaded, isNot(1));
     expect(events.last.status, UploadStatus.failed);
     expect(events.last.canRetry, isTrue);
-    expect(events.last.errorMessage,
-        BatchUploadService.uploadFailedTryLaterErrorToken);
     expect(events.last.failureKind, UploadFailureKind.connection);
     expect(events.last.errorDetail, 'No response within 2 s');
     service.dispose();
@@ -181,13 +189,11 @@ void main() {
     service.uploadProgressStream.listen(events.add);
 
     await expectLater(service.uploadTrack(track, senseBox),
-        throwsA(isA<BatchUploadException>()));
+        throwsA(isA<OpenSenseMapApiException>()));
     await pumpEventQueue();
 
     verifyUploadCalls(1);
     expect(events.last.status, UploadStatus.failed);
-    expect(events.last.errorMessage,
-        BatchUploadService.uploadFailedTryLaterErrorToken);
     expect(events.last.errorDetail, 'HTTP 422: Invalid location');
     expect(events.last.failureKind, UploadFailureKind.apiResponse);
   });
@@ -257,7 +263,7 @@ void main() {
     service.uploadProgressStream.listen(events.add);
 
     await expectLater(service.uploadTrack(track, senseBox),
-        throwsA(isA<BatchUploadException>()));
+        throwsA(isA<http.ClientException>()));
     await pumpEventQueue();
 
     expect(events.last.failureKind, UploadFailureKind.connection);
@@ -265,36 +271,23 @@ void main() {
         "Failed host lookup: 'api.opensensemap.org' (No address associated with hostname)");
   });
 
-  group('describeUploadError', () {
-    test('describes timeouts', () {
-      expect(
-          BatchUploadService.describeUploadError(
-              TimeoutException('x', const Duration(seconds: 25))),
-          'No response within 25 s');
-      expect(BatchUploadService.failureKindOf(TimeoutException('x')),
-          UploadFailureKind.connection);
-    });
+  test('asks to log in again when the user is not logged in', () async {
+    final track = await createTrack(10);
+    osemBloc.isAuthenticated = false;
+    final service = createService();
+    final events = <UploadProgress>[];
+    service.uploadProgressStream.listen(events.add);
 
-    test('describes socket errors', () {
-      expect(
-          BatchUploadService.describeUploadError(const SocketException(
-              'Connection refused',
-              osError: OSError('Connection refused', 111))),
-          'Connection refused (Connection refused)');
-    });
+    await expectLater(service.uploadTrack(track, senseBox),
+        throwsA(isA<PermanentAuthenticationError>()));
+    await pumpEventQueue();
 
-    test('includes status code and API message for server errors', () {
-      expect(
-          BatchUploadService.describeUploadError(
-              ServerErrorException(503, '{"message":"Service Unavailable"}')),
-          'HTTP 503: Service Unavailable');
-    });
-
-    test('drops HTML error pages', () {
-      expect(
-          BatchUploadService.describeUploadError(
-              ServerErrorException(502, '<html>Bad gateway</html>')),
-          'HTTP 502');
-    });
+    verifyUploadCalls(0);
+    expect(events.last.status, UploadStatus.failed);
+    expect(events.last.errorMessage,
+        BatchUploadService.authenticationFailedMessage);
+    expect(events.last.failureKind, isNull);
+    expect(events.last.canRetry, isFalse);
+    service.dispose();
   });
 }

@@ -335,76 +335,35 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
 
     setState(() => _isUploading = true);
 
-    try {
-      OperationProgressOverlay.show(
-        context,
-        config: OperationProgressOverlayConfig.upload(
-          uploadService: batchUploadService,
-          onComplete: () {
-            // Upload completed successfully
-            setState(() => _isUploading = false);
-            if (mounted) {
-              // Refresh the track data to show updated status
-              _loadTrackData();
-              widget.onTrackUploaded?.call(); // Call the callback
-            }
-          },
-          onFailed: () {
-            // Upload failed permanently
-            setState(() => _isUploading = false);
-            if (mounted) {
-              // Refresh the track data to show updated error status and upload attempts
-              _loadTrackData();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(localizations.trackUploadRetryFailed),
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-              );
-            }
-          },
-          onStart: () async {
-            // Start the upload when user confirms
-            try {
-              await batchUploadService.uploadTrack(
-                  _track, openSenseMapBloc.selectedSenseBox!);
-            } catch (e) {
-              setState(() => _isUploading = false);
-              // Show error message and refresh track data
-              if (mounted) {
-                // Refresh the track data to show any status changes
-                _loadTrackData();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(localizations.trackUploadRetryFailed),
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                  ),
-                );
-              }
-            }
-          },
-          onDismiss: () {
-            // User canceled the upload modal
-            setState(() => _isUploading = false);
-          },
-        ),
-      );
-
-      // Don't start upload immediately - wait for user confirmation
-    } catch (e) {
+    void finishUpload() {
+      if (!mounted) return;
       setState(() => _isUploading = false);
-      // Show error message and refresh track data
-      if (mounted) {
-        // Refresh the track data to show any status changes
-        _loadTrackData();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.trackUploadRetryFailed),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
+      _loadTrackData();
     }
+
+    OperationProgressOverlay.show(
+      context,
+      config: OperationProgressOverlayConfig.upload(
+        uploadService: batchUploadService,
+        onComplete: () {
+          finishUpload();
+          widget.onTrackUploaded?.call();
+        },
+        onFailed: finishUpload,
+        onStart: () async {
+          try {
+            await batchUploadService.uploadTrack(
+                _track, openSenseMapBloc.selectedSenseBox!);
+          } catch (_) {
+            // The modal shows the error.
+            finishUpload();
+          }
+        },
+        onDismiss: () {
+          if (mounted) setState(() => _isUploading = false);
+        },
+      ),
+    );
   }
 
   List<({GeolocationData geo, double value, int geoIndex})> _getChartData() {
