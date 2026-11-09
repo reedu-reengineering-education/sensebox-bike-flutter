@@ -284,9 +284,7 @@ void main() {
 
     verifyUploadCalls(0);
     expect(events.last.status, UploadStatus.failed);
-    expect(events.last.errorMessage,
-        BatchUploadService.authenticationFailedMessage);
-    expect(events.last.failureKind, isNull);
+    expect(events.last.failureKind, UploadFailureKind.authentication);
     expect(events.last.canRetry, isFalse);
     service.dispose();
   });

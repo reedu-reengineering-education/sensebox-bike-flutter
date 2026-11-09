@@ -134,7 +134,9 @@ void main() {
           completedChunks: 1,
           failedChunks: 2,
           status: UploadStatus.failed,
-          errorMessage: 'Network connection failed',
+          errorMessage: 'SocketException: Connection refused',
+          errorDetail: 'Connection refused',
+          failureKind: UploadFailureKind.connection,
           canRetry: true,
         );
 
@@ -148,7 +150,7 @@ void main() {
         
         // Should show error message
         expect(
-          find.text(t(tester, (l10n) => l10n.uploadProgressNetworkError)),
+          find.text(t(tester, (l10n) => l10n.uploadErrorTryLater)),
           findsOneWidget,
         );
       });
@@ -159,7 +161,8 @@ void main() {
           completedChunks: 0,
           failedChunks: 0,
           status: UploadStatus.failed,
-          errorMessage: 'Authentication failed - user needs to re-login',
+          errorMessage: 'Not logged in to openSenseMap',
+          failureKind: UploadFailureKind.authentication,
           canRetry: false,
         );
 
@@ -314,14 +317,19 @@ void main() {
           completedChunks: 1,
           failedChunks: 2,
           status: UploadStatus.failed,
-          errorMessage: 'network connection timeout',
+          errorMessage: 'TimeoutException',
+          errorDetail: 'No response within 25 s',
+          failureKind: UploadFailureKind.connection,
           canRetry: true,
         );
 
         await tester.pumpWidget(createTestWidget(progress));
 
+        final l10n = AppLocalizations.of(
+            tester.element(find.byType(UploadProgressIndicator)))!;
         expect(
-          find.text(t(tester, (l10n) => l10n.uploadProgressNetworkError)),
+          find.text('${l10n.uploadErrorCannotConnect}\n'
+              '${l10n.errorReasonPrefix} No response within 25 s'),
           findsOneWidget,
         );
       });
@@ -332,7 +340,8 @@ void main() {
           completedChunks: 0,
           failedChunks: 0,
           status: UploadStatus.failed,
-          errorMessage: 'Authentication failed - user needs to re-login',
+          errorMessage: 'Not logged in to openSenseMap',
+          failureKind: UploadFailureKind.authentication,
           canRetry: false,
         );
 

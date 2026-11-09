@@ -16,7 +16,7 @@ enum UploadStatus {
   retrying,
 }
 
-enum UploadFailureKind { connection, apiResponse, other }
+enum UploadFailureKind { authentication, connection, apiResponse, other }
 
 enum UploadStage {
   checkingLogin,

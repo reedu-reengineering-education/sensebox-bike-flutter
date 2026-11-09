@@ -1446,12 +1446,6 @@ abstract class AppLocalizations {
   /// **'Export failed. Please try again.'**
   String get errorExportFailed;
 
-  /// No description provided for @uploadProgressNetworkError.
-  ///
-  /// In en, this message translates to:
-  /// **'Network connection failed. Please check your internet connection and try again.'**
-  String get uploadProgressNetworkError;
-
   /// No description provided for @uploadProgressGenericError.
   ///
   /// In en, this message translates to:

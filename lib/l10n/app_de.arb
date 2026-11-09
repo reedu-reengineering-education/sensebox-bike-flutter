@@ -327,7 +327,6 @@
     "uploadProgressAuthenticationError": "Bitte melden Sie sich an, um Daten hochzuladen.",
     "exportRequiresLoginToOpenSenseMap": "Bitte melden Sie sich bei Ihrem openSenseMap-Konto an, um mit dem Export fortzufahren.",
     "errorExportFailed": "Export fehlgeschlagen. Bitte versuchen Sie es erneut.",
-    "uploadProgressNetworkError": "Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
     "uploadProgressGenericError": "Operation fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "uploadErrorTryLater": "Der Upload konnte nicht abgeschlossen werden. openSenseMap ist gerade möglicherweise ausgelastet oder nicht erreichbar. Bitte versuchen Sie es später erneut. Ihr Track bleibt auf diesem Gerät gespeichert.",
     "uploadErrorCannotConnect": "Keine Verbindung zu openSenseMap möglich.",

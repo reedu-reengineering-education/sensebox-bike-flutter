@@ -774,10 +774,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorExportFailed => 'Export failed. Please try again.';
 
   @override
-  String get uploadProgressNetworkError =>
-      'Network connection failed. Please check your internet connection and try again.';
-
-  @override
   String get uploadProgressGenericError =>
       'Operation failed. Please try again.';
 

@@ -332,7 +332,6 @@
     "uploadProgressAuthenticationError": "Please log in to upload data.",
     "exportRequiresLoginToOpenSenseMap": "Please log in to your openSenseMap account to proceed with export.",
     "errorExportFailed": "Export failed. Please try again.",
-    "uploadProgressNetworkError": "Network connection failed. Please check your internet connection and try again.",
     "uploadProgressGenericError": "Operation failed. Please try again.",
     "uploadErrorTryLater": "The upload could not be completed. openSenseMap may be busy or unreachable right now. Please try again later. Your track is saved on this device.",
     "uploadErrorCannotConnect": "Could not connect to openSenseMap.",

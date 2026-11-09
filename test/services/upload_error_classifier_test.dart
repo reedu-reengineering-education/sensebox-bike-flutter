@@ -63,6 +63,8 @@ void main() {
           UploadFailureKind.apiResponse);
       expect(UploadErrorClassifier.failureKindOf(Exception('x')),
           UploadFailureKind.other);
+      expect(UploadErrorClassifier.failureKindOf(AuthException()),
+          UploadFailureKind.authentication);
     });
   });
 

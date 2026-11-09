@@ -785,10 +785,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Export fehlgeschlagen. Bitte versuchen Sie es erneut.';
 
   @override
-  String get uploadProgressNetworkError =>
-      'Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
-
-  @override
   String get uploadProgressGenericError =>
       'Operation fehlgeschlagen. Bitte versuchen Sie es erneut.';
 

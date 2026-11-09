@@ -104,6 +104,7 @@ class UploadProgressIndicator extends StatelessWidget {
               borderRadius: BorderRadius.circular(borderRadiusSmall),
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatusIcon(theme),
                 const SizedBox(width: spacing),
@@ -257,11 +258,9 @@ class UploadProgressIndicator extends StatelessWidget {
       case UploadStatus.completed:
         return localizations.uploadProgressCompleted;
       case UploadStatus.failed:
-        if (progress.errorMessage?.contains('Authentication failed') == true ||
-            progress.errorMessage?.contains('user needs to re-login') == true) {
-          return localizations.uploadProgressAuthenticationFailed;
-        }
-        return localizations.uploadProgressFailed;
+        return progress.failureKind == UploadFailureKind.authentication
+            ? localizations.uploadProgressAuthenticationFailed
+            : localizations.uploadProgressFailed;
     }
   }
 
@@ -305,18 +304,15 @@ class UploadProgressIndicator extends StatelessWidget {
       return localizations.errorExportFailed;
     }
 
-    if (progress.failureKind != null) {
-      return localizations.uploadErrorTryLater;
-    }
-
-    if (errorMessage.contains('Authentication failed') ||
-        errorMessage.contains('user needs to re-login')) {
-      return localizations.uploadProgressAuthenticationError;
-    } else if (errorMessage.contains('network') ||
-        errorMessage.contains('connection')) {
-      return localizations.uploadProgressNetworkError;
-    } else {
-      return localizations.uploadProgressGenericError;
+    switch (progress.failureKind) {
+      case UploadFailureKind.authentication:
+        return localizations.uploadProgressAuthenticationError;
+      case UploadFailureKind.connection:
+      case UploadFailureKind.apiResponse:
+      case UploadFailureKind.other:
+        return localizations.uploadErrorTryLater;
+      case null:
+        return localizations.uploadProgressGenericError;
     }
   }
 
@@ -325,6 +321,8 @@ class UploadProgressIndicator extends StatelessWidget {
     if (detail == null || detail.isEmpty) return null;
     final reason = '${localizations.errorReasonPrefix} $detail';
     switch (progress.failureKind) {
+      case UploadFailureKind.authentication:
+        return null;
       case UploadFailureKind.connection:
         return '${localizations.uploadErrorCannotConnect}\n$reason';
       case UploadFailureKind.apiResponse:

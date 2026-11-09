@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
@@ -339,6 +340,33 @@ void main() {
           find.text(
               'No response from openSenseMap, retrying part 2 of 3...'),
           findsOneWidget);
+    });
+
+    testWidgets('long status text wraps instead of being cut',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(360 * 3, 800 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await pumpRunningModal(tester, onCancel: () {});
+
+      progressController.add(const UploadProgress(
+        totalChunks: 1,
+        completedChunks: 0,
+        failedChunks: 0,
+        status: UploadStatus.uploading,
+        canRetry: false,
+        stage: UploadStage.sendingChunk,
+      ));
+      await tester.pumpAndSettle();
+
+      const text = 'Uploading part 1 of 1 to openSenseMap...';
+      final status = tester.renderObject<RenderParagraph>(find.text(text));
+      expect(status.didExceedMaxLines, isFalse);
+      final lineHeight = status.getFullHeightForCaret(
+          const TextPosition(offset: 0));
+      expect(status.size.height, greaterThan(lineHeight * 1.5),
+          reason: 'status should wrap onto several lines');
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('no Cancel button without onCancel (e.g. export)',

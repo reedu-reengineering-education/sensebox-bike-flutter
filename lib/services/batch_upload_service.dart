@@ -1,23 +1,18 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:sensebox_bike/models/geolocation_data.dart';
-import 'package:sensebox_bike/models/track_data.dart';
+import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
+import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/chunked_uploader.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/services/isar_service/track_service.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/upload_error_classifier.dart';
-import 'package:sensebox_bike/services/isar_service/track_service.dart';
-import 'package:sensebox_bike/services/error_service.dart';
-import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 
 class BatchUploadService {
-  static const String authenticationFailedMessage =
-      'Authentication failed. Please log in again to upload your tracks.';
-
   static const Duration defaultChunkUploadTimeout = Duration(seconds: 60);
-  static const Duration _authValidationTimeout = Duration(seconds: 15);
+  static const Duration _authCheckTimeout = Duration(seconds: 15);
 
   final OpenSenseMapService _openSenseMapService;
   final TrackService _trackService;
@@ -26,11 +21,10 @@ class BatchUploadService {
   /// Hard limit for uploading a single chunk, including its retry.
   final Duration chunkUploadTimeout;
 
-  final StreamController<UploadProgress> _progressController =
-      StreamController<UploadProgress>.broadcast();
+  final _progressController = StreamController<UploadProgress>.broadcast();
 
-  Completer<void>? _cancelSignal;
-  bool _isUploading = false;
+  /// Completed when the running upload is cancelled or has ended.
+  Completer<void>? _session;
   int _totalChunks = 0;
   int _completedChunks = 0;
 
@@ -45,77 +39,83 @@ class BatchUploadService {
 
   Stream<UploadProgress> get uploadProgressStream => _progressController.stream;
 
-  bool get isUploading => _isUploading;
+  bool get isUploading => _session != null;
 
   /// Stops at the first chunk that fails and rethrows its error.
   /// Returns normally when cancelled via [cancelUpload].
   Future<void> uploadTrack(TrackData track, SenseBox senseBox) async {
-    if (_isUploading) {
+    if (isUploading) {
       final error = Exception('Another upload is already in progress');
       unawaited(ErrorService.reportToSentry(error, StackTrace.current));
       throw error;
     }
 
-    _isUploading = true;
+    final session = _session = Completer<void>();
     _totalChunks = 0;
     _completedChunks = 0;
-    final cancelSignal = Completer<void>();
-    _cancelSignal = cancelSignal;
-    _log('Upload of track ${track.id} started');
+
+    // Work given up on (timeout, cancel) keeps running in the background;
+    // once the session is over it must not report progress or send data.
+    bool isActive() => !session.isCompleted;
+    void report(UploadStatus status, UploadStage stage) {
+      if (isActive()) _emit(status, stage: stage);
+    }
 
     try {
       track.uploadAttempts = (track.uploadAttempts ?? 0) + 1;
       track.lastUploadAttempt = DateTime.now();
       await _trackService.saveTrack(track);
 
-      _emit(UploadStatus.preparing, stage: UploadStage.checkingLogin);
-      await _untilCancelled(_waitForAuthentication());
+      report(UploadStatus.preparing, UploadStage.checkingLogin);
+      await _orCancelled(session, _waitForAuthentication());
 
-      _emit(UploadStatus.preparing, stage: UploadStage.loadingTrack);
-      await _untilCancelled(track.geolocations.load());
+      report(UploadStatus.preparing, UploadStage.loadingTrack);
+      await _orCancelled(session, track.geolocations.load());
       final geolocations = track.geolocations.toList()
         ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-      if (geolocations.isEmpty) {
-        _log('Track ${track.id} has no points, nothing to upload');
-        _emit(UploadStatus.completed);
-        return;
-      }
 
-      final chunkedUploader = ChunkedUploader(
-        openSenseMapService: _openSenseMapService,
-        senseBox: senseBox,
-      );
-      final chunks = chunkedUploader.splitIntoChunks(geolocations);
+      final uploader = ChunkedUploader(
+          openSenseMapService: _openSenseMapService, senseBox: senseBox);
+      final chunks = uploader.splitIntoChunks(geolocations);
       _totalChunks = chunks.length;
-      _log('Track ${track.id}: ${geolocations.length} points in '
-          '$_totalChunks chunks');
 
       for (final chunk in chunks) {
-        await _uploadChunk(chunkedUploader, chunk, cancelSignal);
+        report(UploadStatus.uploading, UploadStage.preparingChunk);
+        await _orCancelled(
+          session,
+          uploader
+              .uploadChunk(
+                chunk,
+                shouldSend: isActive,
+                onSending: () =>
+                    report(UploadStatus.uploading, UploadStage.sendingChunk),
+                onRetry: (_) =>
+                    report(UploadStatus.retrying, UploadStage.retryingChunk),
+              )
+              .timeout(chunkUploadTimeout),
+        );
         _completedChunks++;
       }
 
-      track.uploaded = 1;
-      await _trackService.saveTrack(track);
+      if (chunks.isNotEmpty) {
+        track.uploaded = 1;
+        await _trackService.saveTrack(track);
+      }
       _emit(UploadStatus.completed);
-      _log('Upload of track ${track.id} completed');
     } on UploadCancelledException {
       // A request already in flight may still reach the server.
-      _log('Upload of track ${track.id} cancelled');
     } catch (e, stackTrace) {
       await _fail(track, e, stackTrace);
       rethrow;
     } finally {
-      _isUploading = false;
-      if (identical(_cancelSignal, cancelSignal)) _cancelSignal = null;
+      if (!session.isCompleted) session.complete();
+      _session = null;
     }
   }
 
   void cancelUpload() {
-    final signal = _cancelSignal;
-    if (signal == null || signal.isCompleted) return;
-    _log('Cancel requested');
-    signal.complete();
+    final session = _session;
+    if (session != null && !session.isCompleted) session.complete();
   }
 
   void dispose() {
@@ -123,68 +123,33 @@ class BatchUploadService {
     _progressController.close();
   }
 
-  /// Work that was given up on (timeout, cancel) keeps running in the
-  /// background; [isActive] stops it from reporting progress or sending.
-  Future<void> _uploadChunk(
-    ChunkedUploader uploader,
-    List<GeolocationData> chunk,
-    Completer<void> cancelSignal,
-  ) async {
-    var abandoned = false;
-    bool isActive() => !abandoned && !cancelSignal.isCompleted;
-    void emitIfActive(UploadStatus status, UploadStage stage) {
-      if (isActive()) _emit(status, stage: stage);
-    }
-
-    emitIfActive(UploadStatus.uploading, UploadStage.preparingChunk);
-    try {
-      await _untilCancelled(uploader
-          .uploadChunk(
-            chunk,
-            shouldSend: isActive,
-            onSending: () =>
-                emitIfActive(UploadStatus.uploading, UploadStage.sendingChunk),
-            onRetry: (_) =>
-                emitIfActive(UploadStatus.retrying, UploadStage.retryingChunk),
-          )
-          .timeout(chunkUploadTimeout));
-    } finally {
-      abandoned = true;
-    }
-  }
-
   Future<void> _fail(TrackData track, Object error, StackTrace stackTrace) async {
-    _log('Upload of track ${track.id} failed after '
-        '$_completedChunks/$_totalChunks chunks: $error');
     unawaited(ErrorService.reportToSentry(
-        'Batch upload of track ${track.id} failed: $error', stackTrace));
+        'Batch upload of track ${track.id} failed after '
+        '$_completedChunks/$_totalChunks chunks: $error',
+        stackTrace));
 
-    final isAuthError = UploadErrorClassifier.classifyError(error) ==
-        UploadErrorType.permanentAuth;
+    final kind = UploadErrorClassifier.failureKindOf(error);
+    final isAuthError = kind == UploadFailureKind.authentication;
     if (isAuthError) {
-      try {
-        await _openSenseMapBloc.markAuthenticationFailed();
-      } catch (e) {
-        _log('Could not mark authentication as failed: $e');
-      }
+      await _openSenseMapBloc.markAuthenticationFailed().catchError(
+          (Object e, StackTrace s) => ErrorService.reportToSentry(e, s));
     }
 
     _emit(
       UploadStatus.failed,
-      errorMessage: isAuthError ? authenticationFailedMessage : '$error',
-      errorDetail: isAuthError ? null : UploadErrorClassifier.describe(error),
-      failureKind:
-          isAuthError ? null : UploadErrorClassifier.failureKindOf(error),
+      errorMessage: '$error',
+      errorDetail: UploadErrorClassifier.describe(error),
+      failureKind: kind,
       canRetry: !isAuthError,
     );
   }
 
   Future<void> _waitForAuthentication() async {
-    final deadline = DateTime.now().add(_authValidationTimeout);
+    final deadline = DateTime.now().add(_authCheckTimeout);
     while (_openSenseMapBloc.isAuthenticating) {
       if (DateTime.now().isAfter(deadline)) {
-        throw TimeoutException(
-            'Login check did not finish', _authValidationTimeout);
+        throw TimeoutException('Login check did not finish', _authCheckTimeout);
       }
       await Future.delayed(const Duration(milliseconds: 500));
     }
@@ -193,17 +158,12 @@ class BatchUploadService {
     }
   }
 
-  /// The underlying work is not aborted, its result is just ignored.
-  Future<T> _untilCancelled<T>(Future<T> future) {
-    final signal = _cancelSignal;
-    if (signal == null) return future;
-    if (signal.isCompleted) {
-      future.ignore();
-      throw const UploadCancelledException();
-    }
+  /// Throws [UploadCancelledException] as soon as [session] is over. The
+  /// underlying work is not aborted, its result is just ignored.
+  Future<T> _orCancelled<T>(Completer<void> session, Future<T> future) {
     return Future.any<T>([
       future,
-      signal.future.then<T>((_) => throw const UploadCancelledException()),
+      session.future.then<T>((_) => throw const UploadCancelledException()),
     ]);
   }
 
@@ -219,8 +179,7 @@ class BatchUploadService {
     if (_progressController.isClosed) return;
     _progressController.add(UploadProgress(
       totalChunks: _totalChunks,
-      completedChunks:
-          status == UploadStatus.completed ? _totalChunks : _completedChunks,
+      completedChunks: _completedChunks,
       failedChunks: status == UploadStatus.failed ? 1 : 0,
       status: status,
       stage: stage,
@@ -229,10 +188,5 @@ class BatchUploadService {
       failureKind: failureKind,
       canRetry: canRetry,
     ));
-  }
-
-  void _log(String message) {
-    debugPrint(
-        '[${DateTime.now().toIso8601String()}] [BatchUploadService] $message');
   }
 }

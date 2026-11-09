@@ -56,6 +56,9 @@ class UploadErrorClassifier {
       error is OpenSenseMapApiException;
 
   static UploadFailureKind failureKindOf(Object? error) {
+    if (classifyError(error) == UploadErrorType.permanentAuth) {
+      return UploadFailureKind.authentication;
+    }
     if (isConnectionError(error)) return UploadFailureKind.connection;
     if (isApiResponseError(error)) return UploadFailureKind.apiResponse;
     return UploadFailureKind.other;
