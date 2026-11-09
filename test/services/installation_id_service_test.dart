@@ -1,35 +1,35 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/constants.dart';
-import 'package:sensebox_bike/services/support_id_service.dart';
+import 'package:sensebox_bike/services/installation_id_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  final supportIdFormat = RegExp(r'^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}$');
+  final installationIdFormat = RegExp(r'^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}$');
 
-  setUp(() => SupportIdService.setIdForTesting(null));
+  setUp(() => InstallationIdService.setIdForTesting(null));
 
   test('creates an ID once and persists it', () async {
     SharedPreferences.setMockInitialValues({});
 
-    final first = await SupportIdService.init();
-    final second = await SupportIdService.init();
+    final first = await InstallationIdService.init();
+    final second = await InstallationIdService.init();
 
-    expect(first, matches(supportIdFormat));
+    expect(first, matches(installationIdFormat));
     expect(second, first);
-    expect(SupportIdService.id, first);
+    expect(InstallationIdService.id, first);
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString(SharedPreferencesKeys.supportId), first);
+    expect(prefs.getString(SharedPreferencesKeys.installationId), first);
   });
 
   test('reuses an ID that is already stored', () async {
     SharedPreferences.setMockInitialValues({
-      SharedPreferencesKeys.supportId: 'abcd-1234-ef56',
+      SharedPreferencesKeys.installationId: 'abcd-1234-ef56',
     });
 
-    await SupportIdService.init();
+    await InstallationIdService.init();
 
-    expect(SupportIdService.id, 'abcd-1234-ef56');
+    expect(InstallationIdService.id, 'abcd-1234-ef56');
   });
 }

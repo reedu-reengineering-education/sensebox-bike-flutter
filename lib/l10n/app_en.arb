@@ -203,8 +203,8 @@
         }
     },
     "settingsStorageUsed": "Storage used",
-    "settingsSupportId": "Support ID",
-    "settingsSupportIdCopied": "Support ID copied to clipboard",
+    "settingsInstallationId": "Installation ID",
+    "settingsInstallationIdCopied": "Installation ID copied to clipboard",
     "settingsStorageDetails": "App data: {totalSize} (database: {databaseSize})",
     "@settingsStorageDetails": {
         "placeholders": {

@@ -419,27 +419,31 @@ class BleBloc with ChangeNotifier {
       resetConnectionError();
       _setPhase(BleConnectionPhase.connecting);
 
-      final success = await _runConnectionSessions(
+      final result = await _runConnectionSessions(
         device,
         reconnectMode: false,
-        failurePhase: BleConnectionFailurePhase.initialConnect,
       );
 
-      if (success) {
+      if (result.success) {
         selectedDevice = device;
         selectedDeviceNotifier.value = selectedDevice;
         _linkWatchDevice = device;
         _setPhase(BleConnectionPhase.connected);
         _attachReconnectionListener(device);
+      } else if (!_userInitiatedDisconnect) {
+        await _failConnection(
+          device,
+          BleConnectionFailurePhase.initialConnect,
+          result.error,
+          result.stackTrace,
+        );
       }
-    } catch (e, stack) {
-      await disconnectDevice(
-        device: device,
-        reason: BleDisconnectReason.connectionFailed,
-      );
-      await ErrorService.reportToSentry(
-        BleConnectionFailed(BleConnectionFailurePhase.initialConnect, e),
-        stack,
+    } catch (error, stackTrace) {
+      await _failConnection(
+        device,
+        BleConnectionFailurePhase.initialConnect,
+        error,
+        stackTrace,
       );
     } finally {
       if (_phase != BleConnectionPhase.connected) {
@@ -449,34 +453,30 @@ class BleBloc with ChangeNotifier {
     }
   }
 
-  Future<bool> _runConnectionSessions(
+  Future<BleSessionRetryResult> _runConnectionSessions(
     BleDevice device, {
     required bool reconnectMode,
-    required BleConnectionFailurePhase failurePhase,
     bool publishConnectedState = true,
-    Future<void> Function()? onExhausted,
   }) async {
     Object? initialLinkError;
-    StackTrace? initialLinkErrorStack;
+    StackTrace? initialLinkStackTrace;
 
     await _waitForBluetoothReady();
-    if (_userInitiatedDisconnect) {
-      return false;
-    }
-    if (reconnectMode && _shouldAbortReconnection()) {
-      return false;
+    if (_userInitiatedDisconnect ||
+        (reconnectMode && _shouldAbortReconnection())) {
+      return const BleSessionRetryResult.failure();
     }
 
     if (!_platform.isConnected(device.id)) {
       try {
         await _connectLink(device);
-      } catch (error, stack) {
-        initialLinkError ??= error;
-        initialLinkErrorStack ??= stack;
+      } catch (error, stackTrace) {
+        initialLinkError = error;
+        initialLinkStackTrace = stackTrace;
       }
     }
 
-    return _sessionRetryRunner.run(
+    final result = await _sessionRetryRunner.run(
       device: device,
       maxAttempts: bleConnectMaxAttempts,
       attemptSession: (_, __) => _attemptSingleConnection(
@@ -484,13 +484,13 @@ class BleBloc with ChangeNotifier {
         publishConnectedState: publishConnectedState,
       ),
       prepareForRetry: _prepareForRetry,
-      onExhausted: onExhausted ??
-          () => _onSessionRetriesExhausted(
-                device,
-                failurePhase,
-                cause: initialLinkError,
-                stackTrace: initialLinkErrorStack,
-              ),
+    );
+    if (result.success || result.error != null) {
+      return result;
+    }
+    return BleSessionRetryResult.failure(
+      initialLinkError,
+      initialLinkStackTrace,
     );
   }
 
@@ -520,12 +520,12 @@ class BleBloc with ChangeNotifier {
     return advertised;
   }
 
-  Future<void> _onSessionRetriesExhausted(
+  Future<void> _failConnection(
     BleDevice device,
-    BleConnectionFailurePhase failurePhase, {
+    BleConnectionFailurePhase failurePhase,
     Object? cause,
     StackTrace? stackTrace,
-  }) async {
+  ) async {
     await ErrorService.reportToSentry(
       BleConnectionFailed(failurePhase, cause),
       stackTrace ?? StackTrace.current,
@@ -580,7 +580,10 @@ class BleBloc with ChangeNotifier {
       device: device,
       reason: BleDisconnectReason.retryRelease,
     );
-    return false;
+    throw TimeoutException(
+      'Connected, but no sensor data received',
+      bleConnectionSessionExtendedProbeTimeout,
+    );
   }
 
   Future<void> _prepareForRetry(BleDevice device) async {
@@ -629,31 +632,14 @@ class BleBloc with ChangeNotifier {
       onReconnectEpisodeEnded: (success) {
         if (success) {
           _attachReconnectionListener(device);
-          return;
-        }
-        if (_userInitiatedDisconnect) {
-          return;
-        }
-        if (_phase == BleConnectionPhase.connecting) {
-          return;
-        }
-        if (selectedDevice == device) {
-          unawaited(disconnectDevice(
-            device: device,
-            reason: BleDisconnectReason.connectionFailed,
-          ));
         }
       },
-      onListenerError: (device, error) async {
-        await ErrorService.reportToSentry(
-          BleConnectionFailed(BleConnectionFailurePhase.reconnection, error),
-          StackTrace.current,
-        );
-        await disconnectDevice(
-          device: device,
-          reason: BleDisconnectReason.connectionFailed,
-        );
-      },
+      onListenerError: (device, error) => _failConnection(
+        device,
+        BleConnectionFailurePhase.reconnection,
+        error,
+        null,
+      ),
     );
   }
 
@@ -663,21 +649,23 @@ class BleBloc with ChangeNotifier {
     }
     _linkWatchDevice = device;
 
-    return _runConnectionSessions(
+    final result = await _runConnectionSessions(
       device,
       reconnectMode: true,
-      failurePhase: BleConnectionFailurePhase.reconnection,
       publishConnectedState: false,
-      onExhausted: () async {
-        if (_userInitiatedDisconnect || selectedDevice != device) {
-          return;
-        }
-        await _onSessionRetriesExhausted(
-          device,
-          BleConnectionFailurePhase.reconnection,
-        );
-      },
     );
+    if (!result.success &&
+        !_userInitiatedDisconnect &&
+        !_shouldAbortReconnection() &&
+        selectedDevice == device) {
+      await _failConnection(
+        device,
+        BleConnectionFailurePhase.reconnection,
+        result.error,
+        result.stackTrace,
+      );
+    }
+    return result.success;
   }
 
   void resetConnectionError() {
