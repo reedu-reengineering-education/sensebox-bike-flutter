@@ -577,7 +577,8 @@ void main() {
       await tester.pump();
 
       expect(started, isTrue);
-      expect(find.byType(UploadInfoWidget), findsNothing);
+      expect(find.text('Would you like to upload your track data now?'),
+          findsNothing);
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
 
       OperationProgressOverlay.hide();

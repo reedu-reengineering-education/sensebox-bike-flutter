@@ -3,6 +3,7 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/export_progress_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
+import 'package:sensebox_bike/ui/widgets/common/upload_info_widget.dart';
 import 'package:sensebox_bike/theme.dart';
 
 /// A widget that displays upload progress with status text, progress bar, and action buttons.
@@ -90,133 +91,126 @@ class UploadProgressIndicator extends StatelessWidget {
   /// Builds the full version of the progress indicator with detailed information
   Widget _buildFullIndicator(
       BuildContext context, AppLocalizations localizations, ThemeData theme) {
-    return Container(
-      margin: const EdgeInsets.all(spacing),
-      child: Padding(
-        padding: const EdgeInsets.all(spacing * 1.5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Status text with icon
-            Container(
-                margin: const EdgeInsets.only(bottom: spacing / 2),
-                padding: const EdgeInsets.all(padding),
-                decoration: BoxDecoration(
-                  color: _getBackgroundColor(theme).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(borderRadiusSmall),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Status text with icon
+        Container(
+            margin: const EdgeInsets.only(bottom: spacing / 2),
+            padding: const EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              color: _getBackgroundColor(theme).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(borderRadiusSmall),
+            ),
+            child: Row(
+              children: [
+                _buildStatusIcon(theme),
+                const SizedBox(width: spacing),
+                Expanded(
+                  child: Text(
+                    _getStatusText(localizations),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: _getTextColor(theme),
+                    ),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    _buildStatusIcon(theme),
-                    const SizedBox(width: spacing),
-                    Expanded(
-                      child: Text(
-                        _getStatusText(localizations),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: _getTextColor(theme),
+              ],
+            )),
+
+        const SizedBox(height: spacing / 2),
+
+        // Info box with warning not to close the app during upload
+        if (progress.isInProgress) ...[
+          const UploadInfoWidget(),
+          const SizedBox(height: spacing / 2),
+        ],
+
+        // Progress information and bar
+        if (progress.totalChunks > 0) ...[
+          const SizedBox(height: spacing),
+
+          // Progress text
+          Text(
+            localizations.uploadProgressChunks(
+              progress.completedChunks,
+              progress.totalChunks,
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+
+          const SizedBox(height: spacing / 2),
+
+          // Progress bar
+          LinearProgressIndicator(
+            value: progress.progressPercentage,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              _getProgressColor(theme),
+            ),
+          ),
+
+          const SizedBox(height: spacing / 2),
+
+          // Percentage text
+          Text(
+            localizations
+                .uploadProgressPercentage(progress.progressPercentageInt),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+
+        // Error message
+        if (progress.hasFailed && progress.errorMessage != null) ...[
+          const SizedBox(height: spacing),
+          Container(
+            padding: const EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(borderRadiusSmall),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: theme.colorScheme.onErrorContainer,
+                  size: iconSizeLarge,
+                ),
+                const SizedBox(width: spacing / 2),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _getErrorMessage(localizations, progress.errorMessage!),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onErrorContainer,
                         ),
                       ),
-                    ),
-                  ],
-                )),
-
-            const SizedBox(height: spacing / 2),
-
-            // Info box with warning not to close the app during upload
-            if (progress.isInProgress) ...[
-              _buildInfoBox(localizations, theme),
-              const SizedBox(height: spacing / 2),
-            ],
-
-            // Progress information and bar
-            if (progress.totalChunks > 0) ...[
-              const SizedBox(height: spacing),
-
-              // Progress text
-              Text(
-                localizations.uploadProgressChunks(
-                  progress.completedChunks,
-                  progress.totalChunks,
-                ),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-
-              const SizedBox(height: spacing / 2),
-
-              // Progress bar
-              LinearProgressIndicator(
-                value: progress.progressPercentage,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  _getProgressColor(theme),
-                ),
-              ),
-
-              const SizedBox(height: spacing / 2),
-
-              // Percentage text
-              Text(
-                localizations
-                    .uploadProgressPercentage(progress.progressPercentageInt),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-
-            // Error message
-            if (progress.hasFailed && progress.errorMessage != null) ...[
-              const SizedBox(height: spacing),
-              Container(
-                padding: const EdgeInsets.all(padding),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(borderRadiusSmall),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: theme.colorScheme.onErrorContainer,
-                      size: iconSizeLarge,
-                    ),
-                    const SizedBox(width: spacing / 2),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _getErrorMessage(
-                                localizations, progress.errorMessage!),
+                      if (_getErrorDetail(localizations) case final detail?)
+                        Padding(
+                          padding: const EdgeInsets.only(top: spacing / 2),
+                          child: Text(
+                            detail,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onErrorContainer,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          if (_getErrorDetail(localizations) case final detail?)
-                            Padding(
-                              padding: const EdgeInsets.only(top: spacing / 2),
-                              child: Text(
-                                detail,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onErrorContainer,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -246,34 +240,6 @@ class UploadProgressIndicator extends StatelessWidget {
           size: circleSize,
         );
     }
-  }
-
-  Widget _buildInfoBox(AppLocalizations localizations, ThemeData theme) {
-    return Container(
-        padding: const EdgeInsets.all(padding),
-        decoration: BoxDecoration(
-          color:
-              theme.colorScheme.info.withOpacity(0.2), // light blue background
-          borderRadius: BorderRadius.circular(borderRadiusSmall),
-        ),
-        child: Row(
-          spacing: spacing / 2,
-          children: [
-            Icon(
-              Icons.info,
-              color: theme.colorScheme.info,
-              size: circleSize,
-            ),
-            Expanded(
-              child: Text(
-                localizations.uploadProgressInfo,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            )
-          ],
-        ));
   }
 
   /// Gets the appropriate status text based on upload state
@@ -331,8 +297,7 @@ class UploadProgressIndicator extends StatelessWidget {
       return localizations.errorTrackNoGeolocations;
     }
 
-    if (errorMessage ==
-        ExportProgressService.exportDirectoryAccessErrorToken) {
+    if (errorMessage == ExportProgressService.exportDirectoryAccessErrorToken) {
       return localizations.errorExportDirectoryAccess;
     }
 

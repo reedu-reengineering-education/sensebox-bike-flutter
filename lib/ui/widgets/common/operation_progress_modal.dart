@@ -44,57 +44,39 @@ class OperationProgressModal extends StatefulWidget {
 }
 
 class _OperationProgressModalState extends State<OperationProgressModal> {
-  late StreamSubscription<UploadProgress> _progressSubscription;
-  UploadProgress? _currentProgress;
-  bool _hasStartedOperation = false;
-  bool _dismissCallbackHandled = false;
-  bool _cancelHandled = false;
+  late final StreamSubscription<UploadProgress> _progressSubscription;
+  UploadProgress? _progress;
+  late bool _started = !widget.showConfirmation;
 
-  bool get _isOperationRunning {
-    if (!_hasStartedOperation) return false;
-    final progress = _currentProgress;
-    return progress == null ||
-        progress.status == UploadStatus.preparing ||
-        progress.isInProgress;
-  }
-
-  void _cancelIfRunning() {
-    if (_cancelHandled || !_isOperationRunning) return;
-    _cancelHandled = true;
-    widget.onCancel?.call();
+  bool get _isRunning {
+    final status = _progress?.status;
+    return _started &&
+        status != UploadStatus.completed &&
+        status != UploadStatus.failed;
   }
 
   @override
   void initState() {
     super.initState();
-
-    _progressSubscription =
-        widget.progressStream.listen(
-      _onProgressUpdate,
-      onError: (error) {
-        debugPrint('[OperationProgressModal] Stream error: $error');
-        setState(() {
-          _currentProgress = UploadProgress(
-            totalChunks: 0,
-            completedChunks: 0,
-            failedChunks: 0,
-            status: UploadStatus.failed,
-            errorMessage: error.toString(),
-            canRetry: true,
-          );
-        });
-      },
+    _progressSubscription = widget.progressStream.listen(
+      _onProgress,
+      onError: (Object error) => setState(() {
+        _progress = UploadProgress(
+          totalChunks: 0,
+          completedChunks: 0,
+          failedChunks: 0,
+          status: UploadStatus.failed,
+          errorMessage: '$error',
+          canRetry: true,
+        );
+      }),
     );
 
-    if (!widget.showConfirmation) {
-      _hasStartedOperation = true;
+    if (_started) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          widget.onStart?.call();
-        }
+        if (mounted) widget.onStart?.call();
       });
     }
-
   }
 
   @override
@@ -103,221 +85,127 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
     super.dispose();
   }
 
-  void _onProgressUpdate(UploadProgress progress) {
-    setState(() {
-      _currentProgress = progress;
-    });
+  void _onProgress(UploadProgress progress) {
+    setState(() => _progress = progress);
 
     if (progress.isCompleted) {
-      _handleOperationComplete();
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) widget.onComplete?.call();
+      });
     }
-
     if (progress.hasFailed && !progress.canRetry) {
-      _handleOperationFailed();
+      widget.onFailed?.call();
     }
   }
 
-  void _handleOperationComplete() {
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        widget.onComplete?.call();
-      }
-    });
-  }
-
-  void _handleOperationFailed() {
-    widget.onFailed?.call();
-  }
-
-  void _handleDismiss() {
-    _cancelIfRunning();
-    if (!_dismissCallbackHandled) {
-      _dismissCallbackHandled = true;
-      widget.onDismiss?.call();
-    }
-    Navigator.of(context).pop();
-  }
-
-  void _handleStartOperation() {
-    setState(() {
-      _hasStartedOperation = true;
-    });
+  void _start() {
+    setState(() => _started = true);
     widget.onStart?.call();
   }
 
-  void _handlePopInvoked(bool didPop) {
-    if (didPop) _cancelIfRunning();
-    if (didPop && !_dismissCallbackHandled) {
-      _dismissCallbackHandled = true;
-      widget.onDismiss?.call();
-    }
+  void _close() => Navigator.of(context).pop();
+
+  /// Runs for every way the dialog closes: buttons, system back and
+  /// programmatic pops.
+  void _onPopped() {
+    if (_isRunning) widget.onCancel?.call();
+    widget.onDismiss?.call();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.showConfirmation && !_hasStartedOperation) {
-      return PopScope(
-        canPop: true,
-        onPopInvokedWithResult: (didPop, result) => _handlePopInvoked(didPop),
-        child: _buildConfirmationDialog(context),
-      );
-    }
-
-    final progress = _currentProgress;
-    if (progress == null) {
-      return PopScope(
-        canPop: true,
-        onPopInvokedWithResult: (didPop, result) => _handlePopInvoked(didPop),
-        child: AppAlertDialog(
-          title: Text(widget.titleText ??
-              AppLocalizations.of(context)!.uploadProgressTitle),
-          content: const SizedBox(
-            height: 72,
-            child: Center(child: CircularProgressIndicator()),
-          ),
-          actions: _buildCancelAction(context),
-        ),
-      );
-    }
+    final localizations = AppLocalizations.of(context)!;
+    final progress = _progress;
 
     return PopScope(
       canPop: true,
-      onPopInvokedWithResult: (didPop, result) => _handlePopInvoked(didPop),
-      child: _buildProgressDialog(context, progress),
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) _onPopped();
+      },
+      child: AppAlertDialog(
+        title: Text(widget.titleText ?? localizations.uploadProgressTitle),
+        content: !_started
+            ? _buildConfirmation(localizations)
+            : progress == null
+                ? const SizedBox(
+                    height: 72,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : _buildProgress(localizations, progress),
+        actions: _buildActions(localizations),
+      ),
     );
   }
 
-  Widget _buildConfirmationDialog(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
-    final titleText = widget.titleText ?? localizations.uploadProgressTitle;
-    final confirmText = widget.confirmMessageText ?? localizations.uploadConfirmMessage;
-    
-    return AppAlertDialog(
-      title: Text(titleText),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(confirmText),
-          const SizedBox(height: 16),
-          if (widget.showConfirmation) const UploadInfoWidget(),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: _handleDismiss,
-          child: Text(localizations.generalCancel),
-        ),
-        FilledButton(
-          onPressed: _handleStartOperation,
-          child: Text(localizations.generalUpload),
-        ),
+  Widget _buildConfirmation(AppLocalizations localizations) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(widget.confirmMessageText ?? localizations.uploadConfirmMessage),
+        const SizedBox(height: 16),
+        const UploadInfoWidget(),
       ],
     );
   }
 
-  Widget _buildProgressDialog(BuildContext context, UploadProgress progress) {
-    final theme = Theme.of(context);
-    
-    return AppAlertDialog(
-      title: Text(widget.titleText ?? AppLocalizations.of(context)!.uploadProgressTitle),
-      contentPadding: EdgeInsets.zero,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          UploadProgressIndicator(
-            progress: progress,
-            compact: false,
-          ),
-          // Show info message for completed export with file path
-          if (progress.isCompleted && widget.exportFilePath != null) ...[
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.info.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  spacing: 8,
-                  children: [
-                    Icon(
-                      Icons.info,
-                      color: theme.colorScheme.info,
-                      size: 20,
-                    ),
-                    Expanded(
-                      child: Text(
-                        Platform.isIOS
-                            ? AppLocalizations.of(context)!
-                                .trackDetailsFileSavedApplicationDirectory
-                          : AppLocalizations.of(context)!
-                            .fileSavedDownloadsDirectory,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
+  Widget _buildProgress(
+      AppLocalizations localizations, UploadProgress progress) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        UploadProgressIndicator(progress: progress),
+        if (progress.isCompleted && widget.exportFilePath != null)
+          Padding(
+            padding: const EdgeInsets.only(top: spacing),
+            child: UploadInfoWidget(
+              text: Platform.isIOS
+                  ? localizations.trackDetailsFileSavedApplicationDirectory
+                  : localizations.fileSavedDownloadsDirectory,
             ),
-          ],
-        ],
-      ),
-      actions: _buildActions(context, progress),
+          ),
+      ],
     );
   }
 
-  List<Widget> _buildCancelAction(BuildContext context) {
-    if (widget.onCancel == null) return [];
-    return [
-      TextButton(
-        onPressed: _handleDismiss,
-        child: Text(AppLocalizations.of(context)!.generalCancel),
-      ),
-    ];
-  }
-
-  List<Widget> _buildActions(BuildContext context, UploadProgress progress) {
-    switch (progress.status) {
-      case UploadStatus.preparing:
-      case UploadStatus.uploading:
-      case UploadStatus.retrying:
-        return _buildCancelAction(context);
-
-      case UploadStatus.completed:
-        // For export operations, show share button
-        if (widget.exportFilePath != null && widget.onShare != null) {
-          return [
-            TextButton(
-              onPressed: _handleDismiss,
-              child: Text(AppLocalizations.of(context)!.generalClose),
-            ),
-            FilledButton(
-              onPressed: () async {
-                await widget.onShare?.call();
-                if (mounted) _handleDismiss();
-              },
-              child: Text(AppLocalizations.of(context)!.generalShare),
-            ),
-          ];
-        }
-        return [
-          FilledButton(
-            onPressed: _handleDismiss,
-            child: Text(AppLocalizations.of(context)!.generalClose),
-          ),
-        ];
-
-      case UploadStatus.failed:
-        return [
-          TextButton(
-            onPressed: _handleDismiss,
-            child: Text(AppLocalizations.of(context)!.generalClose),
-          ),
-        ];
+  List<Widget> _buildActions(AppLocalizations localizations) {
+    if (!_started) {
+      return [
+        TextButton(onPressed: _close, child: Text(localizations.generalCancel)),
+        FilledButton(
+            onPressed: _start, child: Text(localizations.generalUpload)),
+      ];
     }
+
+    if (_isRunning) {
+      return [
+        if (widget.onCancel != null)
+          TextButton(
+              onPressed: _close, child: Text(localizations.generalCancel)),
+      ];
+    }
+
+    final canShare = _progress!.isCompleted &&
+        widget.exportFilePath != null &&
+        widget.onShare != null;
+    final close = Text(localizations.generalClose);
+    if (canShare) {
+      return [
+        TextButton(onPressed: _close, child: close),
+        FilledButton(
+          onPressed: () async {
+            await widget.onShare!();
+            if (mounted) _close();
+          },
+          child: Text(localizations.generalShare),
+        ),
+      ];
+    }
+    return [
+      if (_progress!.isCompleted)
+        FilledButton(onPressed: _close, child: close)
+      else
+        TextButton(onPressed: _close, child: close),
+    ];
   }
 }

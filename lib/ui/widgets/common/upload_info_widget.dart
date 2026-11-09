@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/theme.dart';
 
-/// A widget that displays important upload information to the user.
-///
-/// This widget shows a consistent info box with:
-/// - Warning not to close the app during upload
-/// - Information about upload time depending on track length
-/// - Instructions for uploading later if needed
+/// Info box used in the upload and export dialogs. Shows the "don't close
+/// the app while uploading" hint unless [text] is given.
 class UploadInfoWidget extends StatelessWidget {
-  const UploadInfoWidget({super.key});
+  final String? text;
+
+  const UploadInfoWidget({super.key, this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +31,7 @@ class UploadInfoWidget extends StatelessWidget {
           const SizedBox(width: spacing / 2),
           Expanded(
             child: Text(
-              localizations.uploadProgressInfo,
+              text ?? localizations.uploadProgressInfo,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
