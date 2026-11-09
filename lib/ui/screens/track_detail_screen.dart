@@ -355,7 +355,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             await batchUploadService.uploadTrack(
                 _track, openSenseMapBloc.selectedSenseBox!);
           } catch (_) {
-            // The modal shows the error.
             finishUpload();
           }
         },

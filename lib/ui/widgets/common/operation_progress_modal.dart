@@ -15,8 +15,6 @@ class OperationProgressModal extends StatefulWidget {
   final VoidCallback? onStart;
   final VoidCallback? onDismiss;
 
-  /// Called when the modal is closed while the operation is running.
-  /// When null, no Cancel button is shown.
   final VoidCallback? onCancel;
   final bool showConfirmation;
   final String? titleText;
@@ -105,8 +103,6 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
 
   void _close() => Navigator.of(context).pop();
 
-  /// Runs for every way the dialog closes: buttons, system back and
-  /// programmatic pops.
   void _onPopped() {
     if (_isRunning) widget.onCancel?.call();
     widget.onDismiss?.call();

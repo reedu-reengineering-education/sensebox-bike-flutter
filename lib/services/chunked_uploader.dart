@@ -10,10 +10,8 @@ import 'package:sensebox_bike/utils/sensor_utils.dart';
 import 'package:sensebox_bike/utils/track_utils.dart';
 
 class ChunkedUploader {
-  /// The API accepts 2500 measurements per request; keep a safety margin.
   static const int maxMeasurementsPerChunk = 2000;
 
-  /// Worst case: 2 x [chunkRequestTimeout] + ~3 s delay, i.e. under a minute.
   static const RetryOptions chunkRetryOptions = RetryOptions(
     maxAttempts: 2,
     delayFactor: Duration(seconds: 2),
@@ -32,8 +30,6 @@ class ChunkedUploader {
         _senseBox = senseBox,
         _dataPreparer = UploadDataPreparer(senseBox: senseBox);
 
-  /// Each sensor of the box gets at most one value per point, so the sensor
-  /// count bounds the measurements per point.
   List<List<GeolocationData>> splitIntoChunks(
       List<GeolocationData> geolocations) {
     final sensorCount = max(1, _senseBox.sensors?.length ?? 0);
@@ -44,8 +40,6 @@ class ChunkedUploader {
     ];
   }
 
-  /// [shouldSend] is checked right before the request goes out, so work the
-  /// caller has given up on does not upload data in the background.
   Future<void> uploadChunk(
     List<GeolocationData> chunk, {
     bool Function()? shouldSend,

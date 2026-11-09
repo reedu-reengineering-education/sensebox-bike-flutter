@@ -18,9 +18,9 @@ import '../test_helpers.dart';
 
 class _MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 
-/// Measurements per chunk is capped at 2000 and this box produces one
-/// measurement (speed) per point, so this yields exactly 2 chunks.
 const _pointsForTwoChunks = 2001;
+
+Future<void> neverCompletes() => Completer<void>().future;
 
 void main() {
   late Isar isar;
@@ -46,7 +46,8 @@ void main() {
       sId: 'box-id',
       name: 'Test box',
       sensors: [
-        Sensor(id: 'speed-id', title: 'Speed', unit: 'm/s', sensorType: 'speed'),
+        Sensor(
+            id: 'speed-id', title: 'Speed', unit: 'm/s', sensorType: 'speed'),
       ],
     );
     when(() => trackService.saveTrack(any())).thenAnswer((_) async => 1);
@@ -81,7 +82,6 @@ void main() {
   }
 
   BatchUploadService createService({
-    // Loading sensor data for 2000 points takes a moment even in tests.
     Duration chunkUploadTimeout = const Duration(seconds: 2),
   }) {
     return BatchUploadService(
@@ -143,10 +143,10 @@ void main() {
       events.map((e) => (e.stage, e.completedChunks)).toList(),
       [
         (UploadStage.checkingLogin, 0),
-        (null, 0), // loading track
+        (null, 0),
         (UploadStage.uploadingPart, 0),
         (UploadStage.uploadingPart, 1),
-        (null, 2), // completed
+        (null, 2),
       ],
     );
     service.dispose();
@@ -156,18 +156,17 @@ void main() {
       'stops at the first chunk that does not finish in time and reports a '
       'connection problem', () async {
     final track = await createTrack(_pointsForTwoChunks);
-    stubUpload(() => Completer<void>().future); // never completes
+    stubUpload(neverCompletes);
     final service = createService();
     final events = <UploadProgress>[];
     service.uploadProgressStream.listen(events.add);
 
     final stopwatch = Stopwatch()..start();
-    await expectLater(service.uploadTrack(track, senseBox),
-        throwsA(isA<TimeoutException>()));
+    await expectLater(
+        service.uploadTrack(track, senseBox), throwsA(isA<TimeoutException>()));
     stopwatch.stop();
     await pumpEventQueue();
 
-    // Second chunk is never attempted.
     verifyUploadCalls(1);
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)));
     expect(track.uploaded, isNot(1));
@@ -202,16 +201,17 @@ void main() {
     final firstChunkStarted = Completer<void>();
     stubUpload(() {
       if (!firstChunkStarted.isCompleted) firstChunkStarted.complete();
-      return Completer<void>().future; // hangs until cancelled
+      return neverCompletes();
     });
-    final service = createService(chunkUploadTimeout: const Duration(minutes: 1));
+    final service =
+        createService(chunkUploadTimeout: const Duration(minutes: 1));
 
     final upload = service.uploadTrack(track, senseBox);
     await firstChunkStarted.future;
     expect(service.isUploading, isTrue);
 
     service.cancelUpload();
-    await upload; // completes normally, does not wait for the minute
+    await upload;
 
     expect(service.isUploading, isFalse);
     verifyUploadCalls(1);
@@ -240,8 +240,7 @@ void main() {
     await service.uploadTrack(track, senseBox);
     await pumpEventQueue();
 
-    final retry =
-        events.firstWhere((e) => e.status == UploadStatus.retrying);
+    final retry = events.firstWhere((e) => e.status == UploadStatus.retrying);
     expect(retry.totalChunks, 1);
     service.dispose();
   });
@@ -249,7 +248,6 @@ void main() {
   test('shows the real network error when openSenseMap cannot be reached',
       () async {
     final track = await createTrack(10);
-    // Exact error seen on Android without connectivity.
     stubUpload(() async => throw http.ClientException(
           "SocketException: Failed host lookup: 'api.opensensemap.org' "
           '(OS Error: No address associated with hostname, errno = 7)',

@@ -18,12 +18,10 @@ class BatchUploadService {
   final TrackService _trackService;
   final OpenSenseMapBloc _openSenseMapBloc;
 
-  /// Hard limit for uploading a single chunk, including its retry.
   final Duration chunkUploadTimeout;
 
   final _progressController = StreamController<UploadProgress>.broadcast();
 
-  /// Completed when the running upload is cancelled or has ended.
   Completer<void>? _session;
   int _totalChunks = 0;
   int _completedChunks = 0;
@@ -41,8 +39,6 @@ class BatchUploadService {
 
   bool get isUploading => _session != null;
 
-  /// Stops at the first chunk that fails and rethrows its error.
-  /// Returns normally when cancelled via [cancelUpload].
   Future<void> uploadTrack(TrackData track, SenseBox senseBox) async {
     if (isUploading) {
       final error = Exception('Another upload is already in progress');
@@ -54,8 +50,6 @@ class BatchUploadService {
     _totalChunks = 0;
     _completedChunks = 0;
 
-    // Work given up on (timeout, cancel) keeps running in the background;
-    // once the session is over it must not report progress or send data.
     bool isActive() => !session.isCompleted;
     void report(UploadStatus status, [UploadStage? stage]) {
       if (isActive()) _emit(status, stage: stage);
@@ -99,9 +93,8 @@ class BatchUploadService {
         await _trackService.saveTrack(track);
       }
       _emit(UploadStatus.completed);
-    } on UploadCancelledException {
-      // A request already in flight may still reach the server.
     } catch (e, stackTrace) {
+      if (e is UploadCancelledException) return;
       await _fail(track, e, stackTrace);
       rethrow;
     } finally {
@@ -120,7 +113,8 @@ class BatchUploadService {
     _progressController.close();
   }
 
-  Future<void> _fail(TrackData track, Object error, StackTrace stackTrace) async {
+  Future<void> _fail(
+      TrackData track, Object error, StackTrace stackTrace) async {
     unawaited(ErrorService.reportToSentry(
         'Batch upload of track ${track.id} failed after '
         '$_completedChunks/$_totalChunks chunks: $error',
@@ -155,8 +149,6 @@ class BatchUploadService {
     }
   }
 
-  /// Throws [UploadCancelledException] as soon as [session] is over. The
-  /// underlying work is not aborted, its result is just ignored.
   Future<T> _orCancelled<T>(Completer<void> session, Future<T> future) {
     return Future.any<T>([
       future,
@@ -172,7 +164,6 @@ class BatchUploadService {
     UploadFailureKind? failureKind,
     bool canRetry = false,
   }) {
-    // The service may be disposed while an upload is still finishing.
     if (_progressController.isClosed) return;
     _progressController.add(UploadProgress(
       totalChunks: _totalChunks,

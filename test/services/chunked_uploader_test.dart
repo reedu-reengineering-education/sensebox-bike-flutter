@@ -135,7 +135,6 @@ void main() {
 
       final chunks = uploader.splitIntoChunks(_createGeolocationList(250));
 
-      // 2000 measurements / 20 sensors = 100 points per chunk.
       expect(chunks.map((c) => c.length), [100, 100, 50]);
     });
 

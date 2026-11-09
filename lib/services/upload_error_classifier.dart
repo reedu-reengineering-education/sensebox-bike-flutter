@@ -98,9 +98,6 @@ class UploadErrorClassifier {
     return error?.toString() ?? '';
   }
 
-  /// Shortens dart:io error text, e.g. "SocketException: Failed host lookup:
-  /// 'x' (OS Error: No address associated with hostname, errno = 7)" becomes
-  /// "Failed host lookup: 'x' (No address associated with hostname)".
   static String _cleanNetworkMessage(String message) {
     return message
         .replaceFirst(
@@ -127,10 +124,7 @@ class UploadErrorClassifier {
           if (value is String && value.isNotEmpty) return value;
         }
       }
-    } catch (_) {
-      // Not JSON.
-    }
-    // HTML error pages (e.g. from a proxy) are not useful to show.
+    } catch (_) {}
     if (trimmed.startsWith('<')) return null;
     return trimmed.length > 200 ? '${trimmed.substring(0, 200)}…' : trimmed;
   }

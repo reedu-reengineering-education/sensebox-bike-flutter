@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/theme.dart';
 
-/// Info box used in the upload and export dialogs. Shows the "don't close
-/// the app while uploading" hint unless [text] is given.
 class UploadInfoWidget extends StatelessWidget {
   final String? text;
 
