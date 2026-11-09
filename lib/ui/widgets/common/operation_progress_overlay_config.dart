@@ -33,20 +33,14 @@ class OperationProgressOverlayConfig {
 
   factory OperationProgressOverlayConfig.upload({
     required BatchUploadService uploadService,
-    String? titleText,
-    String? confirmMessageText,
     VoidCallback? onComplete,
-    VoidCallback? onFailed,
     VoidCallback? onStart,
     VoidCallback? onDismiss,
   }) {
     return OperationProgressOverlayConfig._(
       progressStream: uploadService.uploadProgressStream,
       showConfirmation: true,
-      titleText: titleText,
-      confirmMessageText: confirmMessageText,
       onComplete: onComplete,
-      onFailed: onFailed,
       onStart: onStart,
       onDismiss: onDismiss,
       onCancel: uploadService.cancelUpload,

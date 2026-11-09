@@ -9,43 +9,21 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/upload_error_classifier.dart';
 
 void main() {
-  group('classifyError', () {
-    test('login problems are permanent auth errors', () {
-      for (final error in [
-        PermanentAuthenticationError('Token expired'),
-        AuthException(),
-        Exception('Authentication failed - user needs to re-login'),
-        Exception('No refresh token found'),
-        Exception('Failed to refresh token: invalid token'),
-        Exception('Not authenticated'),
-      ]) {
-        expect(UploadErrorClassifier.classifyError(error),
-            UploadErrorType.permanentAuth,
-            reason: '$error');
-      }
+  group('isAuthError', () {
+    test('login problems are auth errors', () {
+      expect(UploadErrorClassifier.isAuthError(PermanentAuthenticationError()),
+          isTrue);
+      expect(UploadErrorClassifier.isAuthError(AuthException()), isTrue);
     });
 
-    test('4xx API responses are permanent client errors', () {
-      expect(
-          UploadErrorClassifier.classifyError(
-              OpenSenseMapApiException(422, 'Upload failed', '')),
-          UploadErrorType.permanentClient);
-      expect(
-          UploadErrorClassifier.classifyError(
-              OpenSenseMapApiException(408, 'Upload failed', '')),
-          UploadErrorType.temporary);
-    });
-
-    test('network, rate limit, server and unknown errors are temporary', () {
+    test('other errors are not', () {
       for (final error in [
         TimeoutException('x'),
-        TooManyRequestsException(60),
         ServerErrorException(503),
+        OpenSenseMapApiException(422, 'Upload failed', ''),
         Exception('Some unknown error'),
-        StateError('Invalid state'),
       ]) {
-        expect(UploadErrorClassifier.classifyError(error),
-            UploadErrorType.temporary,
+        expect(UploadErrorClassifier.isAuthError(error), isFalse,
             reason: '$error');
       }
     });

@@ -60,12 +60,8 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
       _onProgress,
       onError: (Object error) => setState(() {
         _progress = UploadProgress(
-          totalChunks: 0,
-          completedChunks: 0,
-          failedChunks: 0,
           status: UploadStatus.failed,
           errorMessage: '$error',
-          canRetry: true,
         );
       }),
     );
@@ -91,7 +87,7 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
         if (mounted) widget.onComplete?.call();
       });
     }
-    if (progress.hasFailed && !progress.canRetry) {
+    if (progress.hasFailed) {
       widget.onFailed?.call();
     }
   }

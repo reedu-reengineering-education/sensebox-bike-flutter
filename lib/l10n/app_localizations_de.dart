@@ -756,23 +756,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Authentifizierung erforderlich';
 
   @override
-  String uploadProgressChunks(int completed, int total) {
-    String _temp0 = intl.Intl.pluralLogic(
-      total,
-      locale: localeName,
-      other: '$total Blöcken',
-      one: '1 Block',
-      zero: '0 Blöcken',
-    );
-    return '$completed von $_temp0 verarbeitet';
-  }
-
-  @override
-  String uploadProgressPercentage(int percentage) {
-    return '$percentage% abgeschlossen';
-  }
-
-  @override
   String get uploadProgressAuthenticationError =>
       'Bitte melden Sie sich an, um Daten hochzuladen.';
 

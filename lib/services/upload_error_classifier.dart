@@ -7,41 +7,9 @@ import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 
-enum UploadErrorType {
-  temporary,
-  permanentAuth,
-  permanentClient,
-}
-
 class UploadErrorClassifier {
-  static const List<String> _permanentAuthErrorPatterns = [
-    'Authentication failed - user needs to re-login',
-    'No refresh token found',
-    'Failed to refresh token:',
-    'Not authenticated',
-  ];
-
-  static UploadErrorType classifyError(Object? error) {
-    if (error is PermanentAuthenticationError || error is AuthException) {
-      return UploadErrorType.permanentAuth;
-    }
-
-    if (error is OpenSenseMapApiException &&
-        error.statusCode >= 400 &&
-        error.statusCode < 500 &&
-        error.statusCode != 408) {
-      return UploadErrorType.permanentClient;
-    }
-
-    final errorString = error.toString();
-    for (final pattern in _permanentAuthErrorPatterns) {
-      if (errorString.contains(pattern)) {
-        return UploadErrorType.permanentAuth;
-      }
-    }
-
-    return UploadErrorType.temporary;
-  }
+  static bool isAuthError(Object? error) =>
+      error is PermanentAuthenticationError || error is AuthException;
 
   static bool isConnectionError(Object? error) =>
       error is TimeoutException ||
@@ -50,17 +18,14 @@ class UploadErrorClassifier {
       error is HandshakeException ||
       error is http.ClientException;
 
-  static bool isApiResponseError(Object? error) =>
-      error is TooManyRequestsException ||
-      error is ServerErrorException ||
-      error is OpenSenseMapApiException;
-
   static UploadFailureKind failureKindOf(Object? error) {
-    if (classifyError(error) == UploadErrorType.permanentAuth) {
-      return UploadFailureKind.authentication;
-    }
+    if (isAuthError(error)) return UploadFailureKind.authentication;
     if (isConnectionError(error)) return UploadFailureKind.connection;
-    if (isApiResponseError(error)) return UploadFailureKind.apiResponse;
+    if (error is TooManyRequestsException ||
+        error is ServerErrorException ||
+        error is OpenSenseMapApiException) {
+      return UploadFailureKind.apiResponse;
+    }
     return UploadFailureKind.other;
   }
 

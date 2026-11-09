@@ -1,207 +1,89 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/export_progress_service.dart';
+import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/ui/widgets/common/upload_info_widget.dart';
-import 'package:sensebox_bike/theme.dart';
 
-/// A widget that displays upload progress with status text, progress bar, and action buttons.
-///
-/// This widget integrates with BatchUploadService progress stream to show real-time
-/// upload status including:
-/// - Progress bar for upload completion
-/// - Status text for current upload state
-/// - Loading indicators during upload
-/// - Success confirmation messages
-/// - Error messages with retry options
-/// - Authentication failure handling
 class UploadProgressIndicator extends StatelessWidget {
-  /// Current upload progress state
   final UploadProgress progress;
 
-  /// Whether to show the progress indicator in a compact form
-  final bool compact;
-
-  const UploadProgressIndicator({
-    super.key,
-    required this.progress,
-    this.compact = false,
-  });
+  const UploadProgressIndicator({super.key, required this.progress});
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final statusColor = _statusColor(colors);
+    final errorDetail = _errorDetail(localizations);
 
-    if (compact) {
-      return _buildCompactIndicator(context, localizations, theme);
-    } else {
-      return _buildFullIndicator(context, localizations, theme);
-    }
-  }
-
-  /// Builds a compact version of the progress indicator for use in lists or small spaces
-  Widget _buildCompactIndicator(
-      BuildContext context, AppLocalizations localizations, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(padding),
-      decoration: BoxDecoration(
-        color: _getBackgroundColor(theme),
-        borderRadius: BorderRadius.circular(borderRadiusSmall),
-        border: Border.all(
-          color: _getBorderColor(theme),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          _buildStatusIcon(theme),
-          const SizedBox(width: spacing),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _getStatusText(localizations),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: _getTextColor(theme),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (progress.isInProgress) ...[
-                  const SizedBox(height: 4),
-                  LinearProgressIndicator(
-                    value: progress.progressPercentage,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      theme.colorScheme.primary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds the full version of the progress indicator with detailed information
-  Widget _buildFullIndicator(
-      BuildContext context, AppLocalizations localizations, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
+      spacing: spacing,
       children: [
-        // Status text with icon
         Container(
-            margin: const EdgeInsets.only(bottom: spacing / 2),
-            padding: const EdgeInsets.all(padding),
-            decoration: BoxDecoration(
-              color: _getBackgroundColor(theme).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(borderRadiusSmall),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStatusIcon(theme),
-                const SizedBox(width: spacing),
-                Expanded(
-                  child: Text(
-                    _getStatusText(localizations),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: _getTextColor(theme),
-                    ),
+          padding: const EdgeInsets.all(padding),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(borderRadiusSmall),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: spacing,
+            children: [
+              _statusIcon(colors),
+              Expanded(
+                child: Text(
+                  _statusText(localizations),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: progress.hasFailed ? colors.error : colors.onSurface,
                   ),
                 ),
-              ],
-            )),
-
-        const SizedBox(height: spacing / 2),
-
-        // Info box with warning not to close the app during upload
-        if (progress.isInProgress) ...[
-          const UploadInfoWidget(),
-          const SizedBox(height: spacing / 2),
-        ],
-
-        // Progress information and bar
-        if (progress.totalChunks > 0) ...[
-          const SizedBox(height: spacing),
-
-          // Progress text
-          Text(
-            localizations.uploadProgressChunks(
-              progress.completedChunks,
-              progress.totalChunks,
-            ),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+              ),
+            ],
           ),
-
-          const SizedBox(height: spacing / 2),
-
-          // Progress bar
+        ),
+        if (progress.isInProgress) const UploadInfoWidget(),
+        if (progress.totalChunks > 0)
           LinearProgressIndicator(
             value: progress.progressPercentage,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              _getProgressColor(theme),
-            ),
+            backgroundColor: colors.surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation<Color>(statusColor),
           ),
-
-          const SizedBox(height: spacing / 2),
-
-          // Percentage text
-          Text(
-            localizations
-                .uploadProgressPercentage(progress.progressPercentageInt),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-
-        // Error message
-        if (progress.hasFailed && progress.errorMessage != null) ...[
-          const SizedBox(height: spacing),
+        if (progress.hasFailed && progress.errorMessage != null)
           Container(
             padding: const EdgeInsets.all(padding),
             decoration: BoxDecoration(
-              color: theme.colorScheme.errorContainer,
+              color: colors.errorContainer,
               borderRadius: BorderRadius.circular(borderRadiusSmall),
             ),
             child: Row(
+              spacing: spacing / 2,
               children: [
-                Icon(
-                  Icons.error_outline,
-                  color: theme.colorScheme.onErrorContainer,
-                  size: iconSizeLarge,
-                ),
-                const SizedBox(width: spacing / 2),
+                Icon(Icons.error_outline,
+                    color: colors.onErrorContainer, size: iconSizeLarge),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
+                    spacing: spacing / 2,
                     children: [
                       Text(
-                        _getErrorMessage(localizations, progress.errorMessage!),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onErrorContainer,
-                        ),
+                        _errorMessage(localizations, progress.errorMessage!),
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: colors.onErrorContainer),
                       ),
-                      if (_getErrorDetail(localizations) case final detail?)
-                        Padding(
-                          padding: const EdgeInsets.only(top: spacing / 2),
-                          child: Text(
-                            detail,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onErrorContainer,
-                              fontWeight: FontWeight.w600,
-                            ),
+                      if (errorDetail != null)
+                        Text(
+                          errorDetail,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.onErrorContainer,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                     ],
@@ -210,108 +92,74 @@ class UploadProgressIndicator extends StatelessWidget {
               ],
             ),
           ),
-        ],
       ],
     );
   }
 
-  /// Builds the appropriate status icon based on upload state
-  Widget _buildStatusIcon(ThemeData theme) {
-    switch (progress.status) {
-      case UploadStatus.preparing:
-        return const Loader();
-      case UploadStatus.uploading:
-        return Icon(
-          Icons.cloud_upload,
-          color: theme.colorScheme.primary,
-          size: circleSize,
-        );
-      case UploadStatus.retrying:
-        return const Loader();
-      case UploadStatus.completed:
-        return Icon(
-          Icons.check_circle,
-          color: theme.colorScheme.primary,
-          size: circleSize,
-        );
-      case UploadStatus.failed:
-        return Icon(
-          Icons.error,
-          color: theme.colorScheme.error,
-          size: circleSize,
-        );
-    }
+  Widget _statusIcon(ColorScheme colors) {
+    return switch (progress.status) {
+      UploadStatus.preparing || UploadStatus.retrying => const Loader(),
+      UploadStatus.uploading =>
+        Icon(Icons.cloud_upload, color: colors.primary, size: circleSize),
+      UploadStatus.completed =>
+        Icon(Icons.check_circle, color: colors.primary, size: circleSize),
+      UploadStatus.failed =>
+        Icon(Icons.error, color: colors.error, size: circleSize),
+    };
   }
 
-  /// Gets the appropriate status text based on upload state
-  String _getStatusText(AppLocalizations localizations) {
-    final stageText = _getStageText(localizations);
-    if (stageText != null) return stageText;
-
-    switch (progress.status) {
-      case UploadStatus.preparing:
-        return localizations.uploadProgressPreparing;
-      case UploadStatus.uploading:
-        return localizations.uploadProgressUploading;
-      case UploadStatus.retrying:
-        return localizations.uploadProgressRetrying;
-      case UploadStatus.completed:
-        return localizations.uploadProgressCompleted;
-      case UploadStatus.failed:
-        return progress.failureKind == UploadFailureKind.authentication
-            ? localizations.uploadProgressAuthenticationFailed
-            : localizations.uploadProgressFailed;
-    }
+  Color _statusColor(ColorScheme colors) {
+    return switch (progress.status) {
+      UploadStatus.preparing || UploadStatus.uploading => colors.primary,
+      UploadStatus.retrying => colors.secondary,
+      UploadStatus.completed => colors.success,
+      UploadStatus.failed => colors.error,
+    };
   }
 
-  String? _getStageText(AppLocalizations localizations) {
-    final stage = progress.stage;
-    if (stage == null || progress.isCompleted || progress.hasFailed) {
-      return null;
-    }
+  String _statusText(AppLocalizations localizations) {
     final total = progress.totalChunks;
-    final current =
-        total == 0 ? 0 : (progress.completedChunks + 1).clamp(1, total);
-    switch (stage) {
-      case UploadStage.checkingLogin:
-        return localizations.uploadStageCheckingLogin;
-      case UploadStage.uploadingPart:
-        return localizations.uploadStageUploadingPart(current, total);
-    }
+    final current = min(progress.completedChunks + 1, max(total, 1));
+    final stage = progress.stage;
+    return switch (progress.status) {
+      UploadStatus.preparing when stage == UploadStage.checkingLogin =>
+        localizations.uploadStageCheckingLogin,
+      UploadStatus.preparing => localizations.uploadProgressPreparing,
+      UploadStatus.uploading when stage == UploadStage.uploadingPart =>
+        localizations.uploadStageUploadingPart(current, total),
+      UploadStatus.uploading => localizations.uploadProgressUploading,
+      UploadStatus.retrying => localizations.uploadProgressRetrying,
+      UploadStatus.completed => localizations.uploadProgressCompleted,
+      UploadStatus.failed
+          when progress.failureKind == UploadFailureKind.authentication =>
+        localizations.uploadProgressAuthenticationFailed,
+      UploadStatus.failed => localizations.uploadProgressFailed,
+    };
   }
 
-  /// Gets user-friendly error message
-  String _getErrorMessage(AppLocalizations localizations, String errorMessage) {
-    if (errorMessage == ExportProgressService.exportLoginRequiredErrorToken) {
-      return localizations.exportRequiresLoginToOpenSenseMap;
-    }
-
-    if (errorMessage == ExportProgressService.exportNoGeolocationsErrorToken) {
-      return localizations.errorTrackNoGeolocations;
-    }
-
-    if (errorMessage == ExportProgressService.exportDirectoryAccessErrorToken) {
-      return localizations.errorExportDirectoryAccess;
-    }
-
-    if (errorMessage == ExportProgressService.exportFailedErrorToken) {
-      return localizations.errorExportFailed;
-    }
-
-    switch (progress.failureKind) {
-      case UploadFailureKind.authentication:
-        return localizations.uploadProgressAuthenticationError;
-      case UploadFailureKind.connection:
-        return localizations.errorUploadFailed;
-      case UploadFailureKind.apiResponse:
-      case UploadFailureKind.other:
-        return localizations.uploadErrorTryLater;
-      case null:
-        return localizations.uploadProgressGenericError;
-    }
+  String _errorMessage(AppLocalizations localizations, String errorMessage) {
+    return switch (errorMessage) {
+      ExportProgressService.exportLoginRequiredErrorToken =>
+        localizations.exportRequiresLoginToOpenSenseMap,
+      ExportProgressService.exportNoGeolocationsErrorToken =>
+        localizations.errorTrackNoGeolocations,
+      ExportProgressService.exportDirectoryAccessErrorToken =>
+        localizations.errorExportDirectoryAccess,
+      ExportProgressService.exportFailedErrorToken =>
+        localizations.errorExportFailed,
+      _ => switch (progress.failureKind) {
+          UploadFailureKind.authentication =>
+            localizations.uploadProgressAuthenticationError,
+          UploadFailureKind.connection => localizations.errorUploadFailed,
+          UploadFailureKind.apiResponse ||
+          UploadFailureKind.other =>
+            localizations.uploadErrorTryLater,
+          null => localizations.uploadProgressGenericError,
+        },
+    };
   }
 
-  String? _getErrorDetail(AppLocalizations localizations) {
+  String? _errorDetail(AppLocalizations localizations) {
     final detail = progress.errorDetail;
     if (detail == null ||
         detail.isEmpty ||
@@ -319,60 +167,5 @@ class UploadProgressIndicator extends StatelessWidget {
       return null;
     }
     return '${localizations.errorReasonPrefix} $detail';
-  }
-
-  /// Gets the appropriate text color based on upload state
-  Color _getTextColor(ThemeData theme) {
-    switch (progress.status) {
-      case UploadStatus.preparing:
-      case UploadStatus.uploading:
-      case UploadStatus.retrying:
-      case UploadStatus.completed:
-        return theme.colorScheme.onSurface;
-      case UploadStatus.failed:
-        return theme.colorScheme.error;
-    }
-  }
-
-  /// Gets the appropriate background color for compact mode
-  Color _getBackgroundColor(ThemeData theme) {
-    switch (progress.status) {
-      case UploadStatus.preparing:
-      case UploadStatus.uploading:
-      case UploadStatus.retrying:
-        return theme.colorScheme.primary;
-      case UploadStatus.completed:
-        return theme.colorScheme.success;
-      case UploadStatus.failed:
-        return theme.colorScheme.errorContainer;
-    }
-  }
-
-  /// Gets the appropriate border color for compact mode
-  Color _getBorderColor(ThemeData theme) {
-    switch (progress.status) {
-      case UploadStatus.preparing:
-      case UploadStatus.uploading:
-      case UploadStatus.retrying:
-        return theme.colorScheme.outline;
-      case UploadStatus.completed:
-        return theme.colorScheme.success;
-      case UploadStatus.failed:
-        return theme.colorScheme.error;
-    }
-  }
-
-  /// Gets the appropriate progress bar color
-  Color _getProgressColor(ThemeData theme) {
-    switch (progress.status) {
-      case UploadStatus.preparing:
-      case UploadStatus.uploading:
-      case UploadStatus.completed:
-        return theme.colorScheme.primary;
-      case UploadStatus.retrying:
-        return theme.colorScheme.secondary;
-      case UploadStatus.failed:
-        return theme.colorScheme.error;
-    }
   }
 }

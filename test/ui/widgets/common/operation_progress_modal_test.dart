@@ -71,9 +71,7 @@ void main() {
       progressController.add(const UploadProgress(
         totalChunks: 5,
         completedChunks: 0,
-        failedChunks: 0,
         status: UploadStatus.preparing,
-        canRetry: false,
       ));
       await tester.pump();
 
@@ -100,9 +98,7 @@ void main() {
       progressController.add(const UploadProgress(
         totalChunks: 10,
         completedChunks: 3,
-        failedChunks: 0,
         status: UploadStatus.uploading,
-        canRetry: false,
       ));
 
       await tester.pump();
@@ -132,9 +128,7 @@ void main() {
       progressController.add(const UploadProgress(
         totalChunks: 5,
         completedChunks: 5,
-        failedChunks: 0,
         status: UploadStatus.completed,
-        canRetry: false,
       ));
 
       await tester.pump(const Duration(seconds: 3));
@@ -217,9 +211,7 @@ void main() {
       progressController.add(const UploadProgress(
         totalChunks: 0,
         completedChunks: 0,
-        failedChunks: 0,
         status: UploadStatus.preparing,
-        canRetry: false,
       ));
       await tester.pump();
 
@@ -239,9 +231,7 @@ void main() {
       progressController.add(const UploadProgress(
         totalChunks: 3,
         completedChunks: 1,
-        failedChunks: 0,
         status: UploadStatus.uploading,
-        canRetry: false,
       ));
       await tester.pump();
 
@@ -259,12 +249,10 @@ void main() {
       progressController.add(const UploadProgress(
         totalChunks: 2,
         completedChunks: 0,
-        failedChunks: 1,
         status: UploadStatus.failed,
         errorMessage: 'Server error 503',
         errorDetail: 'HTTP 503: Service Unavailable',
         failureKind: UploadFailureKind.apiResponse,
-        canRetry: true,
       ));
       await tester.pump();
 
@@ -286,13 +274,11 @@ void main() {
       progressController.add(const UploadProgress(
         totalChunks: 2,
         completedChunks: 0,
-        failedChunks: 1,
         status: UploadStatus.failed,
         errorMessage: 'Server error 503',
         errorDetail:
             "Failed host lookup: 'api.opensensemap.org' (No address associated with hostname)",
         failureKind: UploadFailureKind.connection,
-        canRetry: true,
       ));
       await tester.pump();
 
@@ -312,9 +298,7 @@ void main() {
         progressController.add(UploadProgress(
           totalChunks: total,
           completedChunks: completed,
-          failedChunks: 0,
           status: status,
-          canRetry: false,
           stage: stage,
         ));
         await tester.pump();
@@ -345,9 +329,7 @@ void main() {
       progressController.add(const UploadProgress(
         totalChunks: 1,
         completedChunks: 0,
-        failedChunks: 0,
         status: UploadStatus.uploading,
-        canRetry: false,
         stage: UploadStage.uploadingPart,
       ));
       await tester.pumpAndSettle();
@@ -369,9 +351,7 @@ void main() {
       progressController.add(const UploadProgress(
         totalChunks: 0,
         completedChunks: 0,
-        failedChunks: 0,
         status: UploadStatus.preparing,
-        canRetry: false,
       ));
       await tester.pump();
 
@@ -406,9 +386,7 @@ void main() {
                           progressController.add(const UploadProgress(
                             totalChunks: 5,
                             completedChunks: 1,
-                            failedChunks: 0,
                             status: UploadStatus.uploading,
-                            canRetry: false,
                           ));
                         },
                       ),
@@ -438,9 +416,7 @@ void main() {
       progressController.add(const UploadProgress(
         totalChunks: 5,
         completedChunks: 1,
-        failedChunks: 0,
         status: UploadStatus.uploading,
-        canRetry: false,
       ));
 
       await tester.pump();
@@ -576,9 +552,7 @@ void main() {
                           progressController.add(const UploadProgress(
                             totalChunks: 1,
                             completedChunks: 0,
-                            failedChunks: 0,
                             status: UploadStatus.uploading,
-                            canRetry: false,
                           ));
                         },
                       ),

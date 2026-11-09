@@ -303,25 +303,6 @@
   "uploadProgressCompleted": "Opération terminée avec succès",
   "uploadProgressFailed": "Échec de l'opération",
   "uploadProgressAuthenticationFailed": "Authentification requise",
-  "uploadProgressChunks": "{completed} sur {total, plural, =0{0 segments} =1{1 segment} other{{total} segments}} traités",
-  "@uploadProgressChunks": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "uploadProgressPercentage": "{percentage}% terminé",
-  "@uploadProgressPercentage": {
-    "placeholders": {
-      "percentage": {
-        "type": "int"
-      }
-    }
-  },
   "uploadProgressAuthenticationError": "Veuillez vous connecter pour téléverser les données.",
   "exportRequiresLoginToOpenSenseMap": "Veuillez vous connecter à votre compte openSenseMap pour poursuivre l'export.",
   "errorExportFailed": "Échec de l'export. Veuillez réessayer.",

@@ -1416,18 +1416,6 @@ abstract class AppLocalizations {
   /// **'Authentication required'**
   String get uploadProgressAuthenticationFailed;
 
-  /// No description provided for @uploadProgressChunks.
-  ///
-  /// In en, this message translates to:
-  /// **'{completed} of {total, plural, =0{0 chunks} =1{1 chunk} other{{total} chunks}} processed'**
-  String uploadProgressChunks(int completed, int total);
-
-  /// No description provided for @uploadProgressPercentage.
-  ///
-  /// In en, this message translates to:
-  /// **'{percentage}% complete'**
-  String uploadProgressPercentage(int percentage);
-
   /// No description provided for @uploadProgressAuthenticationError.
   ///
   /// In en, this message translates to:

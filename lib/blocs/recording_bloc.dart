@@ -283,10 +283,6 @@ class RecordingBloc with ChangeNotifier {
             _cleanupBatchUploadService();
             debugPrint('[RecordingBloc] Batch upload completed successfully');
           },
-          onFailed: () {
-            _cleanupBatchUploadService();
-            debugPrint('[RecordingBloc] Batch upload failed permanently');
-          },
           onStart: () {
             _startBatchUpload(track, senseBox);
           },

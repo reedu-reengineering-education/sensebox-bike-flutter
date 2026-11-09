@@ -349,7 +349,6 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           finishUpload();
           widget.onTrackUploaded?.call();
         },
-        onFailed: finishUpload,
         onStart: () async {
           try {
             await batchUploadService.uploadTrack(

@@ -121,8 +121,7 @@ class BatchUploadService {
         stackTrace));
 
     final kind = UploadErrorClassifier.failureKindOf(error);
-    final isAuthError = kind == UploadFailureKind.authentication;
-    if (isAuthError) {
+    if (kind == UploadFailureKind.authentication) {
       await _openSenseMapBloc.markAuthenticationFailed().catchError(
           (Object e, StackTrace s) => ErrorService.reportToSentry(e, s));
     }
@@ -132,7 +131,6 @@ class BatchUploadService {
       errorMessage: '$error',
       errorDetail: UploadErrorClassifier.describe(error),
       failureKind: kind,
-      canRetry: !isAuthError,
     );
   }
 
@@ -162,19 +160,16 @@ class BatchUploadService {
     String? errorMessage,
     String? errorDetail,
     UploadFailureKind? failureKind,
-    bool canRetry = false,
   }) {
     if (_progressController.isClosed) return;
     _progressController.add(UploadProgress(
       totalChunks: _totalChunks,
       completedChunks: _completedChunks,
-      failedChunks: status == UploadStatus.failed ? 1 : 0,
       status: status,
       stage: stage,
       errorMessage: errorMessage,
       errorDetail: errorDetail,
       failureKind: failureKind,
-      canRetry: canRetry,
     ));
   }
 }

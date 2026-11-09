@@ -761,23 +761,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get uploadProgressAuthenticationFailed => 'Authentification requise';
 
   @override
-  String uploadProgressChunks(int completed, int total) {
-    String _temp0 = intl.Intl.pluralLogic(
-      total,
-      locale: localeName,
-      other: '$total segments',
-      one: '1 segment',
-      zero: '0 segments',
-    );
-    return '$completed sur $_temp0 traités';
-  }
-
-  @override
-  String uploadProgressPercentage(int percentage) {
-    return '$percentage% terminé';
-  }
-
-  @override
   String get uploadProgressAuthenticationError =>
       'Veuillez vous connecter pour téléverser les données.';
 
