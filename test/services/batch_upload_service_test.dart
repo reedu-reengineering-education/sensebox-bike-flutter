@@ -81,14 +81,11 @@ void main() {
     return track;
   }
 
-  BatchUploadService createService({
-    Duration chunkUploadTimeout = const Duration(seconds: 2),
-  }) {
+  BatchUploadService createService() {
     return BatchUploadService(
       openSenseMapService: osemService,
       trackService: trackService,
       openSenseMapBloc: osemBloc,
-      chunkUploadTimeout: chunkUploadTimeout,
     );
   }
 
@@ -153,26 +150,24 @@ void main() {
   });
 
   test(
-      'stops at the first chunk that does not finish in time and reports a '
-      'connection problem', () async {
+      'stops at the first chunk that times out and reports a connection problem',
+      () async {
     final track = await createTrack(_pointsForTwoChunks);
-    stubUpload(neverCompletes);
+    stubUpload(() async =>
+        throw TimeoutException('No response', const Duration(seconds: 25)));
     final service = createService();
     final events = <UploadProgress>[];
     service.uploadProgressStream.listen(events.add);
 
-    final stopwatch = Stopwatch()..start();
     await expectLater(
         service.uploadTrack(track, senseBox), throwsA(isA<TimeoutException>()));
-    stopwatch.stop();
     await pumpEventQueue();
 
     verifyUploadCalls(1);
-    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)));
     expect(track.uploaded, isNot(1));
     expect(events.last.status, UploadStatus.failed);
     expect(events.last.failureKind, UploadFailureKind.connection);
-    expect(events.last.errorDetail, 'No response within 2 s');
+    expect(events.last.errorDetail, 'No response within 25 s');
     service.dispose();
   });
 
@@ -202,8 +197,7 @@ void main() {
       if (!firstChunkStarted.isCompleted) firstChunkStarted.complete();
       return neverCompletes();
     });
-    final service =
-        createService(chunkUploadTimeout: const Duration(minutes: 1));
+    final service = createService();
 
     final upload = service.uploadTrack(track, senseBox);
     await firstChunkStarted.future;

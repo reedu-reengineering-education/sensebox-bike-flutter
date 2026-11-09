@@ -11,14 +11,11 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/upload_error_classifier.dart';
 
 class BatchUploadService {
-  static const Duration defaultChunkUploadTimeout = Duration(seconds: 60);
   static const Duration _authCheckTimeout = Duration(seconds: 15);
 
   final OpenSenseMapService _openSenseMapService;
   final TrackService _trackService;
   final OpenSenseMapBloc _openSenseMapBloc;
-
-  final Duration chunkUploadTimeout;
 
   final _progressController = StreamController<UploadProgress>.broadcast();
 
@@ -30,7 +27,6 @@ class BatchUploadService {
     required OpenSenseMapService openSenseMapService,
     required TrackService trackService,
     required OpenSenseMapBloc openSenseMapBloc,
-    this.chunkUploadTimeout = defaultChunkUploadTimeout,
   })  : _openSenseMapService = openSenseMapService,
         _trackService = trackService,
         _openSenseMapBloc = openSenseMapBloc;
@@ -77,13 +73,11 @@ class BatchUploadService {
         report(UploadStatus.uploading, UploadStage.uploadingPart);
         await _orCancelled(
           session,
-          uploader
-              .uploadChunk(
-                chunk,
-                shouldSend: isActive,
-                onRetry: (_) => report(UploadStatus.retrying),
-              )
-              .timeout(chunkUploadTimeout),
+          uploader.uploadChunk(
+            chunk,
+            shouldSend: isActive,
+            onRetry: (_) => report(UploadStatus.retrying),
+          ),
         );
         _completedChunks++;
       }
