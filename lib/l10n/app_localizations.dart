@@ -1473,31 +1473,31 @@ abstract class AppLocalizations {
   /// No description provided for @uploadStageCheckingLogin.
   ///
   /// In en, this message translates to:
-  /// **'Checking openSenseMap login...'**
+  /// **'Checking openSenseMap login'**
   String get uploadStageCheckingLogin;
 
   /// No description provided for @uploadStageLoadingTrack.
   ///
   /// In en, this message translates to:
-  /// **'Loading track data...'**
+  /// **'Loading track data'**
   String get uploadStageLoadingTrack;
 
   /// No description provided for @uploadStagePreparingChunk.
   ///
   /// In en, this message translates to:
-  /// **'Preparing part {current} of {total}...'**
+  /// **'Preparing part {current} of {total}'**
   String uploadStagePreparingChunk(int current, int total);
 
   /// No description provided for @uploadStageSendingChunk.
   ///
   /// In en, this message translates to:
-  /// **'Uploading part {current} of {total} to openSenseMap...'**
+  /// **'Uploading part {current} of {total} to openSenseMap'**
   String uploadStageSendingChunk(int current, int total);
 
   /// No description provided for @uploadStageRetryingChunk.
   ///
   /// In en, this message translates to:
-  /// **'No response from openSenseMap, retrying part {current} of {total}...'**
+  /// **'No response from openSenseMap, retrying part {current} of {total}'**
   String uploadStageRetryingChunk(int current, int total);
 
   /// No description provided for @uploadConfirmTitle.

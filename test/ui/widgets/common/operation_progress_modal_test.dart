@@ -323,22 +323,22 @@ void main() {
 
       await emit(UploadStage.checkingLogin, 0,
           status: UploadStatus.preparing);
-      expect(find.text('Checking openSenseMap login...'), findsOneWidget);
+      expect(find.text('Checking openSenseMap login'), findsOneWidget);
 
       await emit(UploadStage.loadingTrack, 0, status: UploadStatus.preparing);
-      expect(find.text('Loading track data...'), findsOneWidget);
+      expect(find.text('Loading track data'), findsOneWidget);
 
       await emit(UploadStage.preparingChunk, 1);
-      expect(find.text('Preparing part 2 of 3...'), findsOneWidget);
+      expect(find.text('Preparing part 2 of 3'), findsOneWidget);
 
       await emit(UploadStage.sendingChunk, 1);
-      expect(find.text('Uploading part 2 of 3 to openSenseMap...'),
+      expect(find.text('Uploading part 2 of 3 to openSenseMap'),
           findsOneWidget);
 
       await emit(UploadStage.retryingChunk, 1, status: UploadStatus.retrying);
       expect(
           find.text(
-              'No response from openSenseMap, retrying part 2 of 3...'),
+              'No response from openSenseMap, retrying part 2 of 3'),
           findsOneWidget);
     });
 
@@ -359,7 +359,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      const text = 'Uploading part 1 of 1 to openSenseMap...';
+      const text = 'Uploading part 1 of 1 to openSenseMap';
       final status = tester.renderObject<RenderParagraph>(find.text(text));
       expect(status.didExceedMaxLines, isFalse);
       final lineHeight = status.getFullHeightForCaret(

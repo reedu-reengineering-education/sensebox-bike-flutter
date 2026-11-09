@@ -797,24 +797,24 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get uploadStageCheckingLogin => 'Verificando login no openSenseMap...';
+  String get uploadStageCheckingLogin => 'Verificando login no openSenseMap';
 
   @override
-  String get uploadStageLoadingTrack => 'Carregando dados do trajeto...';
+  String get uploadStageLoadingTrack => 'Carregando dados do trajeto';
 
   @override
   String uploadStagePreparingChunk(int current, int total) {
-    return 'Preparando parte $current de $total...';
+    return 'Preparando parte $current de $total';
   }
 
   @override
   String uploadStageSendingChunk(int current, int total) {
-    return 'Enviando parte $current de $total para o openSenseMap...';
+    return 'Enviando parte $current de $total para o openSenseMap';
   }
 
   @override
   String uploadStageRetryingChunk(int current, int total) {
-    return 'Sem resposta do openSenseMap, reenviando parte $current de $total...';
+    return 'Sem resposta do openSenseMap, reenviando parte $current de $total';
   }
 
   @override

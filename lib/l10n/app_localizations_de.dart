@@ -802,25 +802,24 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get uploadStageCheckingLogin =>
-      'openSenseMap-Anmeldung wird geprüft...';
+  String get uploadStageCheckingLogin => 'openSenseMap-Anmeldung wird geprüft';
 
   @override
-  String get uploadStageLoadingTrack => 'Fahrtdaten werden geladen...';
+  String get uploadStageLoadingTrack => 'Fahrtdaten werden geladen';
 
   @override
   String uploadStagePreparingChunk(int current, int total) {
-    return 'Teil $current von $total wird vorbereitet...';
+    return 'Teil $current von $total wird vorbereitet';
   }
 
   @override
   String uploadStageSendingChunk(int current, int total) {
-    return 'Teil $current von $total wird zu openSenseMap hochgeladen...';
+    return 'Teil $current von $total wird zu openSenseMap hochgeladen';
   }
 
   @override
   String uploadStageRetryingChunk(int current, int total) {
-    return 'Keine Antwort von openSenseMap, Teil $current von $total wird erneut gesendet...';
+    return 'Keine Antwort von openSenseMap, Teil $current von $total wird erneut gesendet';
   }
 
   @override

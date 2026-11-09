@@ -807,24 +807,24 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get uploadStageCheckingLogin =>
-      'Vérification de la connexion à openSenseMap...';
+      'Vérification de la connexion à openSenseMap';
 
   @override
-  String get uploadStageLoadingTrack => 'Chargement des données du trajet...';
+  String get uploadStageLoadingTrack => 'Chargement des données du trajet';
 
   @override
   String uploadStagePreparingChunk(int current, int total) {
-    return 'Préparation de la partie $current sur $total...';
+    return 'Préparation de la partie $current sur $total';
   }
 
   @override
   String uploadStageSendingChunk(int current, int total) {
-    return 'Envoi de la partie $current sur $total vers openSenseMap...';
+    return 'Envoi de la partie $current sur $total vers openSenseMap';
   }
 
   @override
   String uploadStageRetryingChunk(int current, int total) {
-    return 'Pas de réponse d\'openSenseMap, nouvel envoi de la partie $current sur $total...';
+    return 'Pas de réponse d\'openSenseMap, nouvel envoi de la partie $current sur $total';
   }
 
   @override
