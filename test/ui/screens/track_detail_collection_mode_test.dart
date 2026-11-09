@@ -39,7 +39,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(TrackData());
-    dotenv.testLoad(fileInput: 'MAPBOX_ACCESS_TOKEN=test_token');
+    dotenv.loadFromString(envString: 'MAPBOX_ACCESS_TOKEN=test_token');
   });
 
   setUp(() {
