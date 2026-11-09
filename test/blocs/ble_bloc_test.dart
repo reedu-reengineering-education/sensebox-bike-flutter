@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
+import 'package:sensebox_bike/ble/ble_platform.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../ble/ble_test_helpers.dart';
 import '../ble/mock_ble_platform.dart';
 import '../mocks.dart';
@@ -127,6 +130,68 @@ void main() {
         expect(realBleBloc.isConnectingNotifier.value, isFalse);
         expect(realBleBloc.selectedDeviceNotifier.value, isNull);
         expect(realBleBloc.isConnected, isFalse);
+      });
+
+      test('reports a failed initial connect once, with the connect error',
+          () async {
+        final reported = await _captureSentryEvents();
+
+        final platform = MockBlePlatform();
+        stubBlePlatformLifecycle(platform);
+        const device = BleDevice(id: 'AA:BB:CC:DD:EE:02', name: 'senseBox:test');
+        when(() => platform.scanForDevices())
+            .thenAnswer((_) => Stream.value(device));
+        when(() => platform.isConnected(any())).thenReturn(false);
+        when(() => platform.connect(any(), timeout: any(named: 'timeout')))
+            .thenThrow(Exception('Connection failed'));
+
+        final realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        addTearDown(realBleBloc.dispose);
+        realBleBloc.updateBluetoothStatus(true);
+
+        await realBleBloc.connectToDevice(device);
+
+        expect(reported, hasLength(1));
+        final failure = reported.single as BleConnectionFailed;
+        expect(failure.phase, BleConnectionFailurePhase.initialConnect);
+        expect(failure.cause.toString(), contains('Connection failed'));
+      });
+
+      test('reports a failed reconnect once, with the last error as cause',
+          () async {
+        final reported = await _captureSentryEvents();
+
+        final platform = MockBlePlatform();
+        stubBlePlatformLifecycle(platform);
+        const device = BleDevice(id: 'AA:BB:CC:DD:EE:03', name: 'senseBox:test');
+        final linkStates = StreamController<BleLinkState>.broadcast();
+        addTearDown(linkStates.close);
+        when(() => platform.connectionState(device.id))
+            .thenAnswer((_) => linkStates.stream);
+        when(() => platform.scanForDevices())
+            .thenAnswer((_) => Stream.value(device));
+        when(() => platform.isConnected(any())).thenReturn(false);
+        when(() => platform.connect(any(), timeout: any(named: 'timeout')))
+            .thenThrow(Exception('Reconnect failed'));
+        when(() => mockSettingsBloc.vibrateOnDisconnect).thenReturn(false);
+
+        final realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        addTearDown(realBleBloc.dispose);
+        realBleBloc.updateBluetoothStatus(true);
+        realBleBloc.selectedDevice = device;
+        realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
+        realBleBloc.debugAttachReconnectionListener(device);
+
+        linkStates.add(BleLinkState.disconnected);
+        while (realBleBloc.selectedDevice != null) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+
+        expect(reported, hasLength(1));
+        final failure = reported.single as BleConnectionFailed;
+        expect(failure.phase, BleConnectionFailurePhase.reconnection);
+        expect(failure.cause.toString(), contains('Reconnect failed'));
+        expect(realBleBloc.connectionErrorNotifier.value, isTrue);
       });
     });
 
@@ -398,4 +463,17 @@ void main() {
       });
     });
   });
+}
+
+Future<List<Object?>> _captureSentryEvents() async {
+  final reported = <Object?>[];
+  await Sentry.init((options) {
+    options.dsn = 'https://public@example.com/1';
+    options.beforeSend = (event, hint) {
+      reported.add(event.throwable);
+      return null;
+    };
+  });
+  addTearDown(Sentry.close);
+  return reported;
 }

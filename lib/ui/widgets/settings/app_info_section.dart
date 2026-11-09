@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/services/support_id_service.dart';
+import 'package:sensebox_bike/services/installation_id_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/changelog_modal.dart';
 import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
 import 'package:sensebox_bike/utils/storage_utils.dart';
@@ -69,7 +69,7 @@ class _AppInfoSectionState extends State<AppInfoSection> {
           },
         ),
         const _StorageUsageTile(),
-        const _SupportIdTile(),
+        const _InstallationIdTile(),
         SettingsNavigationTile(
           icon: Icons.privacy_tip_outlined,
           title: localizations.settingsPrivacyPolicy,
@@ -83,24 +83,24 @@ class _AppInfoSectionState extends State<AppInfoSection> {
   }
 }
 
-class _SupportIdTile extends StatelessWidget {
-  const _SupportIdTile();
+class _InstallationIdTile extends StatelessWidget {
+  const _InstallationIdTile();
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    final supportId = SupportIdService.id;
+    final installationId = InstallationIdService.id;
 
     return SettingsInfoTile(
-      icon: Icons.support_agent,
-      title: localizations.settingsSupportId,
-      subtitle: Text(supportId, style: settingsInfoSubtitleStyle(context)),
+      icon: Icons.fingerprint,
+      title: localizations.settingsInstallationId,
+      subtitle: Text(installationId, style: settingsInfoSubtitleStyle(context)),
       trailing: Icon(Icons.copy, color: settingsInfoColor(context)),
       onTap: () async {
         final messenger = ScaffoldMessenger.of(context);
-        await Clipboard.setData(ClipboardData(text: supportId));
+        await Clipboard.setData(ClipboardData(text: installationId));
         messenger.showSnackBar(
-          SnackBar(content: Text(localizations.settingsSupportIdCopied)),
+          SnackBar(content: Text(localizations.settingsInstallationIdCopied)),
         );
       },
     );

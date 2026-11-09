@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:sensebox_bike/constants.dart';
-import 'package:sensebox_bike/services/support_id_service.dart';
+import 'package:sensebox_bike/services/installation_id_service.dart';
 import 'package:sensebox_bike/ui/widgets/settings/app_info_section.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -12,7 +12,7 @@ import '../../../test_helpers.dart';
 void main() {
   setUpAll(() {
     initializeTestDependencies();
-    SupportIdService.setIdForTesting('abcd-1234-ef56');
+    InstallationIdService.setIdForTesting('abcd-1234-ef56');
 
     PackageInfo.setMockInitialValues(
       appName: 'senseBox Bike',
@@ -78,16 +78,16 @@ void main() {
       expect(launchedUrl, Uri.parse(senseBoxBikePrivacyPolicyUrl));
     });
 
-    group('support ID', () {
-      testWidgets('shows the stored support ID', (tester) async {
+    group('installation ID', () {
+      testWidgets('shows the stored installation ID', (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
-        expect(find.text('Support ID'), findsOneWidget);
+        expect(find.text('Installation ID'), findsOneWidget);
         expect(find.text('abcd-1234-ef56'), findsOneWidget);
       });
 
-      testWidgets('copies the support ID on tap', (tester) async {
+      testWidgets('copies the installation ID on tap', (tester) async {
         String? copiedText;
         tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
           SystemChannels.platform,
@@ -104,11 +104,11 @@ void main() {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
-        await tester.tap(find.text('Support ID'));
+        await tester.tap(find.text('Installation ID'));
         await tester.pumpAndSettle();
 
         expect(copiedText, 'abcd-1234-ef56');
-        expect(find.text('Support ID copied to clipboard'), findsOneWidget);
+        expect(find.text('Installation ID copied to clipboard'), findsOneWidget);
       });
     });
   });

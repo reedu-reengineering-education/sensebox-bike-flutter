@@ -435,11 +435,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsStorageUsed => 'Speichernutzung';
 
   @override
-  String get settingsSupportId => 'Support-ID';
+  String get settingsInstallationId => 'Installations-ID';
 
   @override
-  String get settingsSupportIdCopied =>
-      'Support-ID in die Zwischenablage kopiert';
+  String get settingsInstallationIdCopied =>
+      'Installations-ID in die Zwischenablage kopiert';
 
   @override
   String settingsStorageDetails(String databaseSize, String totalSize) {

@@ -14,29 +14,27 @@ void main() {
   });
 
   group('BleSessionRetryRunner.run', () {
-    test('returns true on first successful attempt', () async {
+    test('succeeds on first successful attempt', () async {
       var prepareCalls = 0;
-      var exhausted = false;
 
-      final success = await runner.run(
+      final result = await runner.run(
         device: device,
         maxAttempts: 3,
         attemptSession: (_, __) async => true,
         prepareForRetry: (_) async => prepareCalls++,
-        onExhausted: () async => exhausted = true,
       );
 
-      expect(success, isTrue);
+      expect(result.success, isTrue);
+      expect(result.error, isNull);
       expect(prepareCalls, 0);
-      expect(exhausted, isFalse);
     });
 
-    test('retries after failure and returns true when a later attempt succeeds',
+    test('retries after failure and succeeds when a later attempt succeeds',
         () async {
       var attempt = 0;
       var prepareCalls = 0;
 
-      final success = await runner.run(
+      final result = await runner.run(
         device: device,
         maxAttempts: 3,
         attemptSession: (_, index) async {
@@ -46,33 +44,31 @@ void main() {
         prepareForRetry: (_) async => prepareCalls++,
       );
 
-      expect(success, isTrue);
+      expect(result.success, isTrue);
       expect(attempt, 1);
       expect(prepareCalls, 1);
     });
 
-    test('returns false and calls onExhausted when all attempts fail', () async {
+    test('fails without preparing after the last attempt', () async {
       var prepareCalls = 0;
-      var exhausted = false;
 
-      final success = await runner.run(
+      final result = await runner.run(
         device: device,
         maxAttempts: 2,
         attemptSession: (_, __) async => false,
         prepareForRetry: (_) async => prepareCalls++,
-        onExhausted: () async => exhausted = true,
       );
 
-      expect(success, isFalse);
+      expect(result.success, isFalse);
+      expect(result.error, isNull);
       expect(prepareCalls, 1);
-      expect(exhausted, isTrue);
     });
 
     test('treats thrown attempt errors as failure and continues retrying',
         () async {
       var attempts = 0;
 
-      final success = await runner.run(
+      final result = await runner.run(
         device: device,
         maxAttempts: 2,
         attemptSession: (_, __) async {
@@ -85,48 +81,61 @@ void main() {
         prepareForRetry: (_) async {},
       );
 
-      expect(success, isTrue);
+      expect(result.success, isTrue);
       expect(attempts, 2);
     });
 
-    test('invokes retry lifecycle callbacks', () async {
-      var entered = false;
-      var exited = false;
-      var betweenAttempts = <int>[];
+    test('reports the most recent error as the failure cause', () async {
+      final prepareError = StateError('device not advertising');
+      final attemptError = Exception('no sensor data');
 
-      await runner.run(
+      final result = await runner.run(
         device: device,
         maxAttempts: 2,
-        onEnterRetryMode: () => entered = true,
-        onExitRetryMode: () => exited = true,
-        onBetweenAttempts: betweenAttempts.add,
-        attemptSession: (_, index) async => index == 1,
-        prepareForRetry: (_) async {},
+        attemptSession: (_, index) async {
+          if (index == 1) {
+            throw attemptError;
+          }
+          return false;
+        },
+        prepareForRetry: (_) async => throw prepareError,
       );
 
-      expect(entered, isTrue);
-      expect(exited, isTrue);
-      expect(betweenAttempts, [1]);
+      expect(result.success, isFalse);
+      expect(result.error, same(attemptError));
+      expect(result.stackTrace, isNotNull);
+    });
+
+    test('keeps a prepare error as the cause when attempts fail silently',
+        () async {
+      final prepareError = StateError('device not advertising');
+
+      final result = await runner.run(
+        device: device,
+        maxAttempts: 2,
+        attemptSession: (_, __) async => false,
+        prepareForRetry: (_) async => throw prepareError,
+      );
+
+      expect(result.success, isFalse);
+      expect(result.error, same(prepareError));
     });
   });
 
   group('BleSessionRetryRunner.prepareDeviceLink', () {
-    test('disconnects, connects, and does not throw when connect fails',
-        () async {
+    test('disconnects and propagates a connect failure', () async {
       var disconnected = false;
-      var connectCalls = 0;
 
-      await runner.prepareDeviceLink(
-        device,
-        disconnect: () async => disconnected = true,
-        connect: () async {
-          connectCalls++;
-          throw Exception('connect failed');
-        },
+      await expectLater(
+        runner.prepareDeviceLink(
+          device,
+          disconnect: () async => disconnected = true,
+          connect: () async => throw Exception('connect failed'),
+        ),
+        throwsException,
       );
 
       expect(disconnected, isTrue);
-      expect(connectCalls, 1);
     });
 
     test('completes link preparation when connect succeeds', () async {

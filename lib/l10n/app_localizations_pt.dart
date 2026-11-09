@@ -435,11 +435,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsStorageUsed => 'Armazenamento usado';
 
   @override
-  String get settingsSupportId => 'ID de suporte';
+  String get settingsInstallationId => 'ID de instalação';
 
   @override
-  String get settingsSupportIdCopied =>
-      'ID de suporte copiado para a área de transferência';
+  String get settingsInstallationIdCopied =>
+      'ID de instalação copiado para a área de transferência';
 
   @override
   String settingsStorageDetails(String databaseSize, String totalSize) {
