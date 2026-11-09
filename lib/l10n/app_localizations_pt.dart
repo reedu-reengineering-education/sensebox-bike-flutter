@@ -788,33 +788,11 @@ class AppLocalizationsPt extends AppLocalizations {
       'Não foi possível concluir o envio. O openSenseMap pode estar sobrecarregado ou inacessível no momento. Tente novamente mais tarde. Seu trajeto está salvo neste dispositivo.';
 
   @override
-  String get uploadErrorCannotConnect =>
-      'Não foi possível conectar ao openSenseMap.';
-
-  @override
-  String uploadErrorApiResponse(String details) {
-    return 'Resposta do openSenseMap: $details';
-  }
-
-  @override
   String get uploadStageCheckingLogin => 'Verificando login no openSenseMap';
 
   @override
-  String get uploadStageLoadingTrack => 'Carregando dados do trajeto';
-
-  @override
-  String uploadStagePreparingChunk(int current, int total) {
-    return 'Preparando parte $current de $total';
-  }
-
-  @override
-  String uploadStageSendingChunk(int current, int total) {
+  String uploadStageUploadingPart(int current, int total) {
     return 'Enviando parte $current de $total para o openSenseMap';
-  }
-
-  @override
-  String uploadStageRetryingChunk(int current, int total) {
-    return 'Sem resposta do openSenseMap, reenviando parte $current de $total';
   }
 
   @override

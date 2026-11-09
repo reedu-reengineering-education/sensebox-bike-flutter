@@ -797,34 +797,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Le téléversement n\'a pas pu être terminé. openSenseMap est peut-être surchargé ou injoignable pour le moment. Veuillez réessayer plus tard. Votre trajet est enregistré sur cet appareil.';
 
   @override
-  String get uploadErrorCannotConnect =>
-      'Impossible de se connecter à openSenseMap.';
-
-  @override
-  String uploadErrorApiResponse(String details) {
-    return 'Réponse d\'openSenseMap : $details';
-  }
-
-  @override
   String get uploadStageCheckingLogin =>
       'Vérification de la connexion à openSenseMap';
 
   @override
-  String get uploadStageLoadingTrack => 'Chargement des données du trajet';
-
-  @override
-  String uploadStagePreparingChunk(int current, int total) {
-    return 'Préparation de la partie $current sur $total';
-  }
-
-  @override
-  String uploadStageSendingChunk(int current, int total) {
+  String uploadStageUploadingPart(int current, int total) {
     return 'Envoi de la partie $current sur $total vers openSenseMap';
-  }
-
-  @override
-  String uploadStageRetryingChunk(int current, int total) {
-    return 'Pas de réponse d\'openSenseMap, nouvel envoi de la partie $current sur $total';
   }
 
   @override

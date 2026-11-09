@@ -150,7 +150,7 @@ void main() {
         
         // Should show error message
         expect(
-          find.text(t(tester, (l10n) => l10n.uploadErrorTryLater)),
+          find.text(t(tester, (l10n) => l10n.errorUploadFailed)),
           findsOneWidget,
         );
       });
@@ -327,9 +327,9 @@ void main() {
 
         final l10n = AppLocalizations.of(
             tester.element(find.byType(UploadProgressIndicator)))!;
+        expect(find.text(l10n.errorUploadFailed), findsOneWidget);
         expect(
-          find.text('${l10n.uploadErrorCannotConnect}\n'
-              '${l10n.errorReasonPrefix} No response within 25 s'),
+          find.text('${l10n.errorReasonPrefix} No response within 25 s'),
           findsOneWidget,
         );
       });

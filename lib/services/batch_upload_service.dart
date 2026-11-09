@@ -57,7 +57,7 @@ class BatchUploadService {
     // Work given up on (timeout, cancel) keeps running in the background;
     // once the session is over it must not report progress or send data.
     bool isActive() => !session.isCompleted;
-    void report(UploadStatus status, UploadStage stage) {
+    void report(UploadStatus status, [UploadStage? stage]) {
       if (isActive()) _emit(status, stage: stage);
     }
 
@@ -69,7 +69,7 @@ class BatchUploadService {
       report(UploadStatus.preparing, UploadStage.checkingLogin);
       await _orCancelled(session, _waitForAuthentication());
 
-      report(UploadStatus.preparing, UploadStage.loadingTrack);
+      report(UploadStatus.preparing);
       await _orCancelled(session, track.geolocations.load());
       final geolocations = track.geolocations.toList()
         ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
@@ -80,17 +80,14 @@ class BatchUploadService {
       _totalChunks = chunks.length;
 
       for (final chunk in chunks) {
-        report(UploadStatus.uploading, UploadStage.preparingChunk);
+        report(UploadStatus.uploading, UploadStage.uploadingPart);
         await _orCancelled(
           session,
           uploader
               .uploadChunk(
                 chunk,
                 shouldSend: isActive,
-                onSending: () =>
-                    report(UploadStatus.uploading, UploadStage.sendingChunk),
-                onRetry: (_) =>
-                    report(UploadStatus.retrying, UploadStage.retryingChunk),
+                onRetry: (_) => report(UploadStatus.retrying),
               )
               .timeout(chunkUploadTimeout),
         );

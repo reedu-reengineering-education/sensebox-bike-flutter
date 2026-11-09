@@ -334,36 +334,12 @@
     "errorExportFailed": "Export failed. Please try again.",
     "uploadProgressGenericError": "Operation failed. Please try again.",
     "uploadErrorTryLater": "The upload could not be completed. openSenseMap may be busy or unreachable right now. Please try again later. Your track is saved on this device.",
-    "uploadErrorCannotConnect": "Could not connect to openSenseMap.",
-    "uploadErrorApiResponse": "openSenseMap responded: {details}",
     "uploadStageCheckingLogin": "Checking openSenseMap login",
-    "uploadStageLoadingTrack": "Loading track data",
-    "uploadStagePreparingChunk": "Preparing part {current} of {total}",
-    "@uploadStagePreparingChunk": {
+    "uploadStageUploadingPart": "Uploading part {current} of {total} to openSenseMap",
+    "@uploadStageUploadingPart": {
         "placeholders": {
             "current": {"type": "int"},
             "total": {"type": "int"}
-        }
-    },
-    "uploadStageSendingChunk": "Uploading part {current} of {total} to openSenseMap",
-    "@uploadStageSendingChunk": {
-        "placeholders": {
-            "current": {"type": "int"},
-            "total": {"type": "int"}
-        }
-    },
-    "uploadStageRetryingChunk": "No response from openSenseMap, retrying part {current} of {total}",
-    "@uploadStageRetryingChunk": {
-        "placeholders": {
-            "current": {"type": "int"},
-            "total": {"type": "int"}
-        }
-    },
-    "@uploadErrorApiResponse": {
-        "placeholders": {
-            "details": {
-                "type": "String"
-            }
         }
     },
     "uploadConfirmTitle": "Upload Track Data",

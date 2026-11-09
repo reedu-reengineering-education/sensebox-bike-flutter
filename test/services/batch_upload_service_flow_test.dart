@@ -143,11 +143,9 @@ void main() {
       events.map((e) => (e.stage, e.completedChunks)).toList(),
       [
         (UploadStage.checkingLogin, 0),
-        (UploadStage.loadingTrack, 0),
-        (UploadStage.preparingChunk, 0),
-        (UploadStage.sendingChunk, 0),
-        (UploadStage.preparingChunk, 1),
-        (UploadStage.sendingChunk, 1),
+        (null, 0), // loading track
+        (UploadStage.uploadingPart, 0),
+        (UploadStage.uploadingPart, 1),
         (null, 2), // completed
       ],
     );
@@ -243,8 +241,7 @@ void main() {
     await pumpEventQueue();
 
     final retry =
-        events.firstWhere((e) => e.stage == UploadStage.retryingChunk);
-    expect(retry.status, UploadStatus.retrying);
+        events.firstWhere((e) => e.status == UploadStatus.retrying);
     expect(retry.totalChunks, 1);
     service.dispose();
   });

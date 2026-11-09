@@ -1458,47 +1458,17 @@ abstract class AppLocalizations {
   /// **'The upload could not be completed. openSenseMap may be busy or unreachable right now. Please try again later. Your track is saved on this device.'**
   String get uploadErrorTryLater;
 
-  /// No description provided for @uploadErrorCannotConnect.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not connect to openSenseMap.'**
-  String get uploadErrorCannotConnect;
-
-  /// No description provided for @uploadErrorApiResponse.
-  ///
-  /// In en, this message translates to:
-  /// **'openSenseMap responded: {details}'**
-  String uploadErrorApiResponse(String details);
-
   /// No description provided for @uploadStageCheckingLogin.
   ///
   /// In en, this message translates to:
   /// **'Checking openSenseMap login'**
   String get uploadStageCheckingLogin;
 
-  /// No description provided for @uploadStageLoadingTrack.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading track data'**
-  String get uploadStageLoadingTrack;
-
-  /// No description provided for @uploadStagePreparingChunk.
-  ///
-  /// In en, this message translates to:
-  /// **'Preparing part {current} of {total}'**
-  String uploadStagePreparingChunk(int current, int total);
-
-  /// No description provided for @uploadStageSendingChunk.
+  /// No description provided for @uploadStageUploadingPart.
   ///
   /// In en, this message translates to:
   /// **'Uploading part {current} of {total} to openSenseMap'**
-  String uploadStageSendingChunk(int current, int total);
-
-  /// No description provided for @uploadStageRetryingChunk.
-  ///
-  /// In en, this message translates to:
-  /// **'No response from openSenseMap, retrying part {current} of {total}'**
-  String uploadStageRetryingChunk(int current, int total);
+  String uploadStageUploadingPart(int current, int total);
 
   /// No description provided for @uploadConfirmTitle.
   ///

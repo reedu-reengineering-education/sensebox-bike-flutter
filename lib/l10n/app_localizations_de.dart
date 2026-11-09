@@ -793,33 +793,11 @@ class AppLocalizationsDe extends AppLocalizations {
       'Der Upload konnte nicht abgeschlossen werden. openSenseMap ist gerade möglicherweise ausgelastet oder nicht erreichbar. Bitte versuchen Sie es später erneut. Ihr Track bleibt auf diesem Gerät gespeichert.';
 
   @override
-  String get uploadErrorCannotConnect =>
-      'Keine Verbindung zu openSenseMap möglich.';
-
-  @override
-  String uploadErrorApiResponse(String details) {
-    return 'Antwort von openSenseMap: $details';
-  }
-
-  @override
   String get uploadStageCheckingLogin => 'openSenseMap-Anmeldung wird geprüft';
 
   @override
-  String get uploadStageLoadingTrack => 'Fahrtdaten werden geladen';
-
-  @override
-  String uploadStagePreparingChunk(int current, int total) {
-    return 'Teil $current von $total wird vorbereitet';
-  }
-
-  @override
-  String uploadStageSendingChunk(int current, int total) {
+  String uploadStageUploadingPart(int current, int total) {
     return 'Teil $current von $total wird zu openSenseMap hochgeladen';
-  }
-
-  @override
-  String uploadStageRetryingChunk(int current, int total) {
-    return 'Keine Antwort von openSenseMap, Teil $current von $total wird erneut gesendet';
   }
 
   @override

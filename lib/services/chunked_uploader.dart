@@ -49,7 +49,6 @@ class ChunkedUploader {
   Future<void> uploadChunk(
     List<GeolocationData> chunk, {
     bool Function()? shouldSend,
-    void Function()? onSending,
     void Function(Object error)? onRetry,
   }) async {
     final groupedData = {
@@ -63,7 +62,6 @@ class ChunkedUploader {
     if (shouldSend != null && !shouldSend()) {
       throw const UploadCancelledException();
     }
-    onSending?.call();
 
     await _openSenseMapService.uploadData(
       _senseBox,

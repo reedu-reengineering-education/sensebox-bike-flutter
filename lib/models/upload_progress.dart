@@ -18,13 +18,7 @@ enum UploadStatus {
 
 enum UploadFailureKind { authentication, connection, apiResponse, other }
 
-enum UploadStage {
-  checkingLogin,
-  loadingTrack,
-  preparingChunk,
-  sendingChunk,
-  retryingChunk,
-}
+enum UploadStage { checkingLogin, uploadingPart }
 
 /// Model representing the progress of a track upload operation
 class UploadProgress {

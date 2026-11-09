@@ -269,7 +269,7 @@ void main() {
       await tester.pump();
 
       expect(find.textContaining('Please try again later'), findsOneWidget);
-      expect(find.text('openSenseMap responded: HTTP 503: Service Unavailable'),
+      expect(find.text('Reason: HTTP 503: Service Unavailable'),
           findsOneWidget);
       expect(find.text('Cancel'), findsNothing);
 
@@ -296,8 +296,10 @@ void main() {
       ));
       await tester.pump();
 
+      expect(find.textContaining('check your internet connection'),
+          findsOneWidget);
       expect(
-          find.text('Could not connect to openSenseMap.\n'
+          find.text(
               "Reason: Failed host lookup: 'api.opensensemap.org' (No address associated with hostname)"),
           findsOneWidget);
     });
@@ -305,13 +307,10 @@ void main() {
     testWidgets('shows the current upload step', (WidgetTester tester) async {
       await pumpRunningModal(tester, onCancel: () {});
 
-      Future<void> emit(UploadStage stage, int completed,
-          {UploadStatus status = UploadStatus.uploading}) async {
+      Future<void> emit(UploadStatus status,
+          {UploadStage? stage, int total = 0, int completed = 0}) async {
         progressController.add(UploadProgress(
-          totalChunks: stage == UploadStage.checkingLogin ||
-                  stage == UploadStage.loadingTrack
-              ? 0
-              : 3,
+          totalChunks: total,
           completedChunks: completed,
           failedChunks: 0,
           status: status,
@@ -321,25 +320,19 @@ void main() {
         await tester.pump();
       }
 
-      await emit(UploadStage.checkingLogin, 0,
-          status: UploadStatus.preparing);
+      await emit(UploadStatus.preparing, stage: UploadStage.checkingLogin);
       expect(find.text('Checking openSenseMap login'), findsOneWidget);
 
-      await emit(UploadStage.loadingTrack, 0, status: UploadStatus.preparing);
-      expect(find.text('Loading track data'), findsOneWidget);
+      await emit(UploadStatus.preparing);
+      expect(find.text('Preparing operation...'), findsOneWidget);
 
-      await emit(UploadStage.preparingChunk, 1);
-      expect(find.text('Preparing part 2 of 3'), findsOneWidget);
-
-      await emit(UploadStage.sendingChunk, 1);
+      await emit(UploadStatus.uploading,
+          stage: UploadStage.uploadingPart, total: 3, completed: 1);
       expect(find.text('Uploading part 2 of 3 to openSenseMap'),
           findsOneWidget);
 
-      await emit(UploadStage.retryingChunk, 1, status: UploadStatus.retrying);
-      expect(
-          find.text(
-              'No response from openSenseMap, retrying part 2 of 3'),
-          findsOneWidget);
+      await emit(UploadStatus.retrying, total: 3, completed: 1);
+      expect(find.text('Retrying operation...'), findsOneWidget);
     });
 
     testWidgets('long status text wraps instead of being cut',
@@ -355,7 +348,7 @@ void main() {
         failedChunks: 0,
         status: UploadStatus.uploading,
         canRetry: false,
-        stage: UploadStage.sendingChunk,
+        stage: UploadStage.uploadingPart,
       ));
       await tester.pumpAndSettle();
 

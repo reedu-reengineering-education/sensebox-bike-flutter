@@ -275,14 +275,8 @@ class UploadProgressIndicator extends StatelessWidget {
     switch (stage) {
       case UploadStage.checkingLogin:
         return localizations.uploadStageCheckingLogin;
-      case UploadStage.loadingTrack:
-        return localizations.uploadStageLoadingTrack;
-      case UploadStage.preparingChunk:
-        return localizations.uploadStagePreparingChunk(current, total);
-      case UploadStage.sendingChunk:
-        return localizations.uploadStageSendingChunk(current, total);
-      case UploadStage.retryingChunk:
-        return localizations.uploadStageRetryingChunk(current, total);
+      case UploadStage.uploadingPart:
+        return localizations.uploadStageUploadingPart(current, total);
     }
   }
 
@@ -308,6 +302,7 @@ class UploadProgressIndicator extends StatelessWidget {
       case UploadFailureKind.authentication:
         return localizations.uploadProgressAuthenticationError;
       case UploadFailureKind.connection:
+        return localizations.errorUploadFailed;
       case UploadFailureKind.apiResponse:
       case UploadFailureKind.other:
         return localizations.uploadErrorTryLater;
@@ -318,19 +313,12 @@ class UploadProgressIndicator extends StatelessWidget {
 
   String? _getErrorDetail(AppLocalizations localizations) {
     final detail = progress.errorDetail;
-    if (detail == null || detail.isEmpty) return null;
-    final reason = '${localizations.errorReasonPrefix} $detail';
-    switch (progress.failureKind) {
-      case UploadFailureKind.authentication:
-        return null;
-      case UploadFailureKind.connection:
-        return '${localizations.uploadErrorCannotConnect}\n$reason';
-      case UploadFailureKind.apiResponse:
-        return localizations.uploadErrorApiResponse(detail);
-      case UploadFailureKind.other:
-      case null:
-        return reason;
+    if (detail == null ||
+        detail.isEmpty ||
+        progress.failureKind == UploadFailureKind.authentication) {
+      return null;
     }
+    return '${localizations.errorReasonPrefix} $detail';
   }
 
   /// Gets the appropriate text color based on upload state
