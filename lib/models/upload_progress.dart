@@ -16,6 +16,18 @@ enum UploadStatus {
   retrying,
 }
 
+/// Why an upload failed, decides how [UploadProgress.errorDetail] is shown.
+enum UploadFailureKind {
+  /// openSenseMap could not be reached (no network, DNS, timeout, TLS).
+  connection,
+
+  /// openSenseMap answered with an error response.
+  apiResponse,
+
+  /// Anything else, e.g. an unexpected app error.
+  other,
+}
+
 /// Finer-grained step of a running upload, used for the status text.
 /// Null for operations that don't report steps (e.g. export).
 enum UploadStage {
@@ -52,9 +64,12 @@ class UploadProgress {
   /// Error message if upload failed, null otherwise
   final String? errorMessage;
 
-  /// Optional detail shown below [errorMessage], e.g. the message returned by
-  /// the API or a token for "could not connect".
+  /// The actual reason shown below [errorMessage]: the message returned by
+  /// the API, or the network error (e.g. "Failed host lookup: ...").
   final String? errorDetail;
+
+  /// Kind of failure, decides how [errorDetail] is presented.
+  final UploadFailureKind? failureKind;
   
   /// Whether the upload can be retried
   final bool canRetry;
@@ -69,6 +84,7 @@ class UploadProgress {
     required this.status,
     this.errorMessage,
     this.errorDetail,
+    this.failureKind,
     required this.canRetry,
     this.stage,
   });
@@ -107,6 +123,7 @@ class UploadProgress {
     UploadStatus? status,
     String? errorMessage,
     String? errorDetail,
+    UploadFailureKind? failureKind,
     bool? canRetry,
     UploadStage? stage,
   }) {
@@ -117,6 +134,7 @@ class UploadProgress {
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
       errorDetail: errorDetail ?? this.errorDetail,
+      failureKind: failureKind ?? this.failureKind,
       canRetry: canRetry ?? this.canRetry,
       stage: stage ?? this.stage,
     );
@@ -132,6 +150,7 @@ class UploadProgress {
         other.status == status &&
         other.errorMessage == errorMessage &&
         other.errorDetail == errorDetail &&
+        other.failureKind == failureKind &&
         other.canRetry == canRetry &&
         other.stage == stage;
   }
@@ -145,6 +164,7 @@ class UploadProgress {
       status,
       errorMessage,
       errorDetail,
+      failureKind,
       canRetry,
       stage,
     );
@@ -159,6 +179,7 @@ class UploadProgress {
         'status: $status, '
         'errorMessage: $errorMessage, '
         'errorDetail: $errorDetail, '
+        'failureKind: $failureKind, '
         'canRetry: $canRetry, '
         'stage: $stage)';
   }

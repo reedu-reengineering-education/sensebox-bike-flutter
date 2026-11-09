@@ -262,6 +262,7 @@ void main() {
         status: UploadStatus.failed,
         errorMessage: BatchUploadService.uploadFailedTryLaterErrorToken,
         errorDetail: 'HTTP 503: Service Unavailable',
+        failureKind: UploadFailureKind.apiResponse,
         canRetry: true,
       ));
       await tester.pump();
@@ -287,12 +288,17 @@ void main() {
         failedChunks: 1,
         status: UploadStatus.failed,
         errorMessage: BatchUploadService.uploadFailedTryLaterErrorToken,
-        errorDetail: BatchUploadService.connectionFailedDetailToken,
+        errorDetail:
+            "Failed host lookup: 'api.opensensemap.org' (No address associated with hostname)",
+        failureKind: UploadFailureKind.connection,
         canRetry: true,
       ));
       await tester.pump();
 
-      expect(find.text('Could not connect to openSenseMap.'), findsOneWidget);
+      expect(
+          find.text('Could not connect to openSenseMap.\n'
+              "Reason: Failed host lookup: 'api.opensensemap.org' (No address associated with hostname)"),
+          findsOneWidget);
     });
 
     testWidgets('shows the current upload step', (WidgetTester tester) async {

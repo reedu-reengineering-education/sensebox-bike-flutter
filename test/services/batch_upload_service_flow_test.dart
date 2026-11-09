@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:isar_community/isar.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:retry/retry.dart';
@@ -164,8 +167,8 @@ void main() {
     expect(events.last.canRetry, isTrue);
     expect(events.last.errorMessage,
         BatchUploadService.uploadFailedTryLaterErrorToken);
-    expect(events.last.errorDetail,
-        BatchUploadService.connectionFailedDetailToken);
+    expect(events.last.failureKind, UploadFailureKind.connection);
+    expect(events.last.errorDetail, 'No response within 2 s');
     service.dispose();
   });
 
@@ -186,6 +189,7 @@ void main() {
     expect(events.last.errorMessage,
         BatchUploadService.uploadFailedTryLaterErrorToken);
     expect(events.last.errorDetail, 'HTTP 422: Invalid location');
+    expect(events.last.failureKind, UploadFailureKind.apiResponse);
   });
 
   test('cancelUpload stops a running upload without marking it uploaded',
@@ -239,10 +243,44 @@ void main() {
     service.dispose();
   });
 
+  test('shows the real network error when openSenseMap cannot be reached',
+      () async {
+    final track = await createTrack(10);
+    // Exact error seen on Android without connectivity.
+    stubUpload(() async => throw http.ClientException(
+          "SocketException: Failed host lookup: 'api.opensensemap.org' "
+          '(OS Error: No address associated with hostname, errno = 7)',
+          Uri.parse('https://api.opensensemap.org/boxes/box-id/data'),
+        ));
+    final service = createService();
+    final events = <UploadProgress>[];
+    service.uploadProgressStream.listen(events.add);
+
+    await expectLater(service.uploadTrack(track, senseBox),
+        throwsA(isA<BatchUploadException>()));
+    await pumpEventQueue();
+
+    expect(events.last.failureKind, UploadFailureKind.connection);
+    expect(events.last.errorDetail,
+        "Failed host lookup: 'api.opensensemap.org' (No address associated with hostname)");
+  });
+
   group('describeUploadError', () {
-    test('maps network failures to the connection token', () {
-      expect(BatchUploadService.describeUploadError(TimeoutException('x')),
-          BatchUploadService.connectionFailedDetailToken);
+    test('describes timeouts', () {
+      expect(
+          BatchUploadService.describeUploadError(
+              TimeoutException('x', const Duration(seconds: 25))),
+          'No response within 25 s');
+      expect(BatchUploadService.failureKindOf(TimeoutException('x')),
+          UploadFailureKind.connection);
+    });
+
+    test('describes socket errors', () {
+      expect(
+          BatchUploadService.describeUploadError(const SocketException(
+              'Connection refused',
+              osError: OSError('Connection refused', 111))),
+          'Connection refused (Connection refused)');
     });
 
     test('includes status code and API message for server errors', () {

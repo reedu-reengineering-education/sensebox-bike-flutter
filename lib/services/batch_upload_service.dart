@@ -25,14 +25,11 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 /// 5. Handles authentication failures and other errors
 class BatchUploadService {
   /// [UploadProgress.errorMessage] when a chunk could not be uploaded and the
-  /// user should try again later. [UploadProgress.errorDetail] holds the API
-  /// response or [connectionFailedDetailToken].
+  /// user should try again later. [UploadProgress.errorDetail] holds the
+  /// actual reason, [UploadProgress.failureKind] what kind of failure it was.
   static const String uploadFailedTryLaterErrorToken =
       'batch_upload_failed_try_later';
 
-  /// [UploadProgress.errorDetail] when openSenseMap could not be reached.
-  static const String connectionFailedDetailToken =
-      'batch_upload_connection_failed';
 
   static const Duration defaultChunkUploadTimeout = Duration(seconds: 60);
 
@@ -298,6 +295,7 @@ class BatchUploadService {
         status: UploadStatus.failed,
         errorMessage: e.message,
         errorDetail: e.detail,
+        failureKind: e.kind,
         canRetry: e.canRetry,
       ));
       rethrow;
@@ -323,6 +321,7 @@ class BatchUploadService {
             ? _getAuthenticationErrorMessage(e.toString())
             : uploadFailedTryLaterErrorToken,
         errorDetail: isAuthError ? null : describeUploadError(e),
+        failureKind: isAuthError ? null : failureKindOf(e),
         canRetry: !isAuthError,
       ));
 
@@ -386,21 +385,35 @@ class BatchUploadService {
     throw BatchUploadException(
       uploadFailedTryLaterErrorToken,
       detail: describeUploadError(error),
+      kind: failureKindOf(error),
       canRetry: true,
       cause: error,
     );
   }
 
-  /// Turns an upload error into the detail line shown to the user: either
-  /// [connectionFailedDetailToken] when openSenseMap could not be reached, or
-  /// the HTTP status plus the message returned by the API.
+  /// Turns an upload error into the reason shown to the user: the network
+  /// error (shortened) or the HTTP status plus the message returned by the API.
   static String describeUploadError(Object? error) {
-    if (error is TimeoutException ||
-        error is SocketException ||
-        error is HttpException ||
-        error is HandshakeException ||
-        error is http.ClientException) {
-      return connectionFailedDetailToken;
+    if (error is TimeoutException) {
+      final seconds = error.duration?.inSeconds;
+      return seconds != null
+          ? 'No response within $seconds s'
+          : 'No response (timeout)';
+    }
+    if (error is SocketException) {
+      final osMessage = error.osError?.message;
+      return _cleanNetworkMessage(osMessage != null && osMessage.isNotEmpty
+          ? '${error.message} ($osMessage)'
+          : error.message);
+    }
+    if (error is http.ClientException) {
+      return _cleanNetworkMessage(error.message);
+    }
+    if (error is HttpException) {
+      return _cleanNetworkMessage(error.message);
+    }
+    if (error is HandshakeException) {
+      return _cleanNetworkMessage('Secure connection failed: ${error.message}');
     }
     if (error is TooManyRequestsException) {
       return 'HTTP 429: Too many requests';
@@ -412,6 +425,36 @@ class BatchUploadService {
       return _withApiMessage('HTTP ${error.statusCode}', error.body);
     }
     return error?.toString() ?? '';
+  }
+
+  /// Whether [error] means openSenseMap could not be reached, or it answered
+  /// with an error response.
+  static UploadFailureKind failureKindOf(Object? error) {
+    if (error is TimeoutException ||
+        error is SocketException ||
+        error is HttpException ||
+        error is HandshakeException ||
+        error is http.ClientException) {
+      return UploadFailureKind.connection;
+    }
+    if (error is TooManyRequestsException ||
+        error is ServerErrorException ||
+        error is OpenSenseMapApiException) {
+      return UploadFailureKind.apiResponse;
+    }
+    return UploadFailureKind.other;
+  }
+
+  /// Shortens dart:io error text for display, e.g.
+  /// "SocketException: Failed host lookup: 'x' (OS Error: No address
+  /// associated with hostname, errno = 7)" becomes
+  /// "Failed host lookup: 'x' (No address associated with hostname)".
+  static String _cleanNetworkMessage(String message) {
+    return message
+        .replaceFirst(RegExp(r'^(SocketException|HttpException|HandshakeException):\s*'), '')
+        .replaceAll('OS Error: ', '')
+        .replaceAll(RegExp(r',\s*errno = \d+'), '')
+        .trim();
   }
 
   static String _withApiMessage(String prefix, String? body) {
@@ -595,12 +638,14 @@ class BatchUploadService {
 class BatchUploadException implements Exception {
   final String message;
   final String? detail;
+  final UploadFailureKind? kind;
   final bool canRetry;
   final Object? cause;
 
   const BatchUploadException(
     this.message, {
     this.detail,
+    this.kind,
     this.canRetry = true,
     this.cause,
   });

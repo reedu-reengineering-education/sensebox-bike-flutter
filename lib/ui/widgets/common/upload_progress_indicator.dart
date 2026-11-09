@@ -363,10 +363,16 @@ class UploadProgressIndicator extends StatelessWidget {
   String? _getErrorDetail(AppLocalizations localizations) {
     final detail = progress.errorDetail;
     if (detail == null || detail.isEmpty) return null;
-    if (detail == BatchUploadService.connectionFailedDetailToken) {
-      return localizations.uploadErrorCannotConnect;
+    final reason = '${localizations.errorReasonPrefix} $detail';
+    switch (progress.failureKind) {
+      case UploadFailureKind.connection:
+        return '${localizations.uploadErrorCannotConnect}\n$reason';
+      case UploadFailureKind.apiResponse:
+        return localizations.uploadErrorApiResponse(detail);
+      case UploadFailureKind.other:
+      case null:
+        return reason;
     }
-    return localizations.uploadErrorApiResponse(detail);
   }
 
   /// Gets the appropriate text color based on upload state
