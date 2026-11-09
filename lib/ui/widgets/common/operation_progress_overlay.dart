@@ -40,6 +40,7 @@ class OperationProgressOverlay {
         },
         onFailed: config.onFailed,
         onStart: config.onStart,
+        onCancel: config.onCancel,
         onDismiss: () {
           if (!_isHidingProgrammatically) {
             config.onDismiss?.call();

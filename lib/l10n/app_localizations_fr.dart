@@ -452,7 +452,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsGithub => 'Ticket GitHub';
 
   @override
-  String get privacyZoneDescription => 'Areas where no data will be recorded';
+  String get privacyZoneDescription =>
+      'Zones où aucune donnée n\'est enregistrée';
 
   @override
   String get privacyZonesStart =>
@@ -794,6 +795,41 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get uploadProgressGenericError =>
       'Échec de l\'opération. Veuillez réessayer.';
+
+  @override
+  String get uploadErrorTryLater =>
+      'Le téléversement n\'a pas pu être terminé. openSenseMap est peut-être surchargé ou injoignable pour le moment. Veuillez réessayer plus tard. Votre trajet est enregistré sur cet appareil.';
+
+  @override
+  String get uploadErrorCannotConnect =>
+      'Impossible de se connecter à openSenseMap.';
+
+  @override
+  String uploadErrorApiResponse(String details) {
+    return 'Réponse d\'openSenseMap : $details';
+  }
+
+  @override
+  String get uploadStageCheckingLogin =>
+      'Vérification de la connexion à openSenseMap...';
+
+  @override
+  String get uploadStageLoadingTrack => 'Chargement des données du trajet...';
+
+  @override
+  String uploadStagePreparingChunk(int current, int total) {
+    return 'Préparation de la partie $current sur $total...';
+  }
+
+  @override
+  String uploadStageSendingChunk(int current, int total) {
+    return 'Envoi de la partie $current sur $total vers openSenseMap...';
+  }
+
+  @override
+  String uploadStageRetryingChunk(int current, int total) {
+    return 'Pas de réponse d\'openSenseMap, nouvel envoi de la partie $current sur $total...';
+  }
 
   @override
   String get uploadConfirmTitle => 'Téléverser les données du parcours';

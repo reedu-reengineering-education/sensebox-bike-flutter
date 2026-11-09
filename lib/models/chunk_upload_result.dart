@@ -12,11 +12,16 @@ class ChunkUploadResult {
   /// Index of the chunk that was uploaded (0-based)
   final int chunkIndex;
 
+  /// Original error that caused the failure, if any. Lets callers classify
+  /// the failure (network vs. API response) without parsing [errorMessage].
+  final Object? error;
+
   const ChunkUploadResult({
     required this.success,
     this.errorMessage,
     required this.isRetryable,
     required this.chunkIndex,
+    this.error,
   });
 
   /// Create a successful chunk upload result
@@ -32,26 +37,30 @@ class ChunkUploadResult {
   /// Create a failed chunk upload result with retryable error
   factory ChunkUploadResult.retryableFailure(
     int chunkIndex,
-    String errorMessage,
-  ) {
+    String errorMessage, {
+    Object? error,
+  }) {
     return ChunkUploadResult(
       success: false,
       errorMessage: errorMessage,
       isRetryable: true,
       chunkIndex: chunkIndex,
+      error: error,
     );
   }
 
   /// Create a failed chunk upload result with permanent error
   factory ChunkUploadResult.permanentFailure(
     int chunkIndex,
-    String errorMessage,
-  ) {
+    String errorMessage, {
+    Object? error,
+  }) {
     return ChunkUploadResult(
       success: false,
       errorMessage: errorMessage,
       isRetryable: false,
       chunkIndex: chunkIndex,
+      error: error,
     );
   }
 

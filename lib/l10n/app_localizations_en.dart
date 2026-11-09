@@ -782,6 +782,39 @@ class AppLocalizationsEn extends AppLocalizations {
       'Operation failed. Please try again.';
 
   @override
+  String get uploadErrorTryLater =>
+      'The upload could not be completed. openSenseMap may be busy or unreachable right now. Please try again later. Your track is saved on this device.';
+
+  @override
+  String get uploadErrorCannotConnect => 'Could not connect to openSenseMap.';
+
+  @override
+  String uploadErrorApiResponse(String details) {
+    return 'openSenseMap responded: $details';
+  }
+
+  @override
+  String get uploadStageCheckingLogin => 'Checking openSenseMap login...';
+
+  @override
+  String get uploadStageLoadingTrack => 'Loading track data...';
+
+  @override
+  String uploadStagePreparingChunk(int current, int total) {
+    return 'Preparing part $current of $total...';
+  }
+
+  @override
+  String uploadStageSendingChunk(int current, int total) {
+    return 'Uploading part $current of $total to openSenseMap...';
+  }
+
+  @override
+  String uploadStageRetryingChunk(int current, int total) {
+    return 'No response from openSenseMap, retrying part $current of $total...';
+  }
+
+  @override
   String get uploadConfirmTitle => 'Upload Track Data';
 
   @override

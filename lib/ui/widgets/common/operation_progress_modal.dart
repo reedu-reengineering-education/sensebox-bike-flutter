@@ -14,6 +14,11 @@ class OperationProgressModal extends StatefulWidget {
   final VoidCallback? onFailed;
   final VoidCallback? onStart;
   final VoidCallback? onDismiss;
+
+  /// Called when the user closes the modal while the operation is still
+  /// running (Cancel button or system back). When null, no Cancel button is
+  /// shown during the operation.
+  final VoidCallback? onCancel;
   final bool showConfirmation;
   final String? titleText;
   final String? confirmMessageText;
@@ -27,6 +32,7 @@ class OperationProgressModal extends StatefulWidget {
     this.onFailed,
     this.onStart,
     this.onDismiss,
+    this.onCancel,
     this.showConfirmation = true,
     this.titleText,
     this.confirmMessageText,
@@ -43,6 +49,21 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
   UploadProgress? _currentProgress;
   bool _hasStartedOperation = false;
   bool _dismissCallbackHandled = false;
+  bool _cancelHandled = false;
+
+  bool get _isOperationRunning {
+    if (!_hasStartedOperation) return false;
+    final progress = _currentProgress;
+    return progress == null ||
+        progress.status == UploadStatus.preparing ||
+        progress.isInProgress;
+  }
+
+  void _cancelIfRunning() {
+    if (_cancelHandled || !_isOperationRunning) return;
+    _cancelHandled = true;
+    widget.onCancel?.call();
+  }
 
   @override
   void initState() {
@@ -110,6 +131,7 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
   }
 
   void _handleDismiss() {
+    _cancelIfRunning();
     if (!_dismissCallbackHandled) {
       _dismissCallbackHandled = true;
       widget.onDismiss?.call();
@@ -125,6 +147,7 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
   }
 
   void _handlePopInvoked(bool didPop) {
+    if (didPop) _cancelIfRunning();
     if (didPop && !_dismissCallbackHandled) {
       _dismissCallbackHandled = true;
       widget.onDismiss?.call();
@@ -143,11 +166,17 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
 
     final progress = _currentProgress;
     if (progress == null) {
-      return AppAlertDialog(
-        title: Text(widget.titleText ?? AppLocalizations.of(context)!.uploadProgressTitle),
-        content: const SizedBox(
-          height: 72,
-          child: Center(child: CircularProgressIndicator()),
+      return PopScope(
+        canPop: true,
+        onPopInvokedWithResult: (didPop, result) => _handlePopInvoked(didPop),
+        child: AppAlertDialog(
+          title: Text(widget.titleText ??
+              AppLocalizations.of(context)!.uploadProgressTitle),
+          content: const SizedBox(
+            height: 72,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          actions: _buildCancelAction(context),
         ),
       );
     }
@@ -242,12 +271,22 @@ class _OperationProgressModalState extends State<OperationProgressModal> {
     );
   }
 
+  List<Widget> _buildCancelAction(BuildContext context) {
+    if (widget.onCancel == null) return [];
+    return [
+      TextButton(
+        onPressed: _handleDismiss,
+        child: Text(AppLocalizations.of(context)!.generalCancel),
+      ),
+    ];
+  }
+
   List<Widget> _buildActions(BuildContext context, UploadProgress progress) {
     switch (progress.status) {
       case UploadStatus.preparing:
       case UploadStatus.uploading:
       case UploadStatus.retrying:
-        return [];
+        return _buildCancelAction(context);
 
       case UploadStatus.completed:
         // For export operations, show share button

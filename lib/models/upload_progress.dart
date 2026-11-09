@@ -16,6 +16,25 @@ enum UploadStatus {
   retrying,
 }
 
+/// Finer-grained step of a running upload, used for the status text.
+/// Null for operations that don't report steps (e.g. export).
+enum UploadStage {
+  /// Waiting for the openSenseMap login check to finish.
+  checkingLogin,
+
+  /// Loading the track's points from the local database.
+  loadingTrack,
+
+  /// Loading sensor data and building the request for the current chunk.
+  preparingChunk,
+
+  /// Request for the current chunk is being sent to openSenseMap.
+  sendingChunk,
+
+  /// The request failed and is sent once more.
+  retryingChunk,
+}
+
 /// Model representing the progress of a track upload operation
 class UploadProgress {
   /// Total number of chunks to be uploaded
@@ -32,9 +51,16 @@ class UploadProgress {
   
   /// Error message if upload failed, null otherwise
   final String? errorMessage;
+
+  /// Optional detail shown below [errorMessage], e.g. the message returned by
+  /// the API or a token for "could not connect".
+  final String? errorDetail;
   
   /// Whether the upload can be retried
   final bool canRetry;
+
+  /// Current step of a running upload, see [UploadStage].
+  final UploadStage? stage;
 
   const UploadProgress({
     required this.totalChunks,
@@ -42,7 +68,9 @@ class UploadProgress {
     required this.failedChunks,
     required this.status,
     this.errorMessage,
+    this.errorDetail,
     required this.canRetry,
+    this.stage,
   });
 
   /// Calculate the progress percentage (0.0 to 1.0)
@@ -78,7 +106,9 @@ class UploadProgress {
     int? failedChunks,
     UploadStatus? status,
     String? errorMessage,
+    String? errorDetail,
     bool? canRetry,
+    UploadStage? stage,
   }) {
     return UploadProgress(
       totalChunks: totalChunks ?? this.totalChunks,
@@ -86,7 +116,9 @@ class UploadProgress {
       failedChunks: failedChunks ?? this.failedChunks,
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
+      errorDetail: errorDetail ?? this.errorDetail,
       canRetry: canRetry ?? this.canRetry,
+      stage: stage ?? this.stage,
     );
   }
 
@@ -99,7 +131,9 @@ class UploadProgress {
         other.failedChunks == failedChunks &&
         other.status == status &&
         other.errorMessage == errorMessage &&
-        other.canRetry == canRetry;
+        other.errorDetail == errorDetail &&
+        other.canRetry == canRetry &&
+        other.stage == stage;
   }
 
   @override
@@ -110,7 +144,9 @@ class UploadProgress {
       failedChunks,
       status,
       errorMessage,
+      errorDetail,
       canRetry,
+      stage,
     );
   }
 
@@ -122,6 +158,8 @@ class UploadProgress {
         'failedChunks: $failedChunks, '
         'status: $status, '
         'errorMessage: $errorMessage, '
-        'canRetry: $canRetry)';
+        'errorDetail: $errorDetail, '
+        'canRetry: $canRetry, '
+        'stage: $stage)';
   }
 }

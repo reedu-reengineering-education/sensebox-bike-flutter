@@ -27,11 +27,26 @@ class UploadRetryException implements Exception {
 
 class ServerErrorException implements Exception {
   final int statusCode;
+  final String? body;
 
-  ServerErrorException(this.statusCode);
+  ServerErrorException(this.statusCode, [this.body]);
 
   @override
   String toString() => 'Server error $statusCode';
+}
+
+/// Non-success response from the openSenseMap API that is not retried
+/// (typically a 4xx). Keeps the status code and response body so callers can
+/// show the API's own error message to the user.
+class OpenSenseMapApiException implements Exception {
+  final int statusCode;
+  final String context;
+  final String body;
+
+  OpenSenseMapApiException(this.statusCode, this.context, this.body);
+
+  @override
+  String toString() => '$context ($statusCode): $body';
 }
 
 class AuthException implements Exception {
@@ -553,15 +568,16 @@ class OpenSenseMapService {
   Never _throwForStatus(http.Response response, String context) {
     if (response.statusCode == 429) _updateRateLimitFromResponse(response);
     if (response.statusCode >= 500) {
-      throw ServerErrorException(response.statusCode);
+      throw ServerErrorException(response.statusCode, response.body);
     }
-    throw Exception('$context (${response.statusCode}): ${response.body}');
+    throw OpenSenseMapApiException(response.statusCode, context, response.body);
   }
 
   Future<void> _attemptUploadOnce({
     required String senseBoxId,
     required List<dynamic> data,
     required String tokenForRequest,
+    required Duration requestTimeout,
   }) async {
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -574,7 +590,7 @@ class OpenSenseMapService {
           body: jsonEncode(data),
           headers: headers,
         )
-        .timeout(const Duration(seconds: defaultTimeout));
+        .timeout(requestTimeout);
 
     if (response.statusCode == 201) {
       return;
@@ -591,10 +607,28 @@ class OpenSenseMapService {
     _throwForStatus(response, 'Upload to box $senseBoxId failed');
   }
 
+  // API allows up to 6 requests per minute, so set maxAttempts and delays accordingly
+  static const RetryOptions defaultUploadRetryOptions = RetryOptions(
+    maxAttempts: 6, // 6 attempts per minute
+    delayFactor: Duration(seconds: 10), // 10s between attempts
+    maxDelay: Duration(seconds: 15),
+  );
+
+  /// Uploads measurements to [senseBox].
+  ///
+  /// [retryOptions] and [requestTimeout] let callers with a user waiting on
+  /// the result (batch upload) use a much shorter budget than the default,
+  /// which is tuned for background direct upload.
+  /// When [reportErrors] is false, the final failure is only rethrown and the
+  /// caller is responsible for reporting / showing it.
   Future<void> uploadData(
     SenseBox senseBox,
-    Map<String, dynamic> sensorData,
-  ) async {
+    Map<String, dynamic> sensorData, {
+    RetryOptions retryOptions = defaultUploadRetryOptions,
+    Duration requestTimeout = const Duration(seconds: defaultTimeout),
+    bool reportErrors = true,
+    void Function(Object error)? onRetry,
+  }) async {
     final senseBoxId = senseBox.id?.toString();
     if (senseBoxId == null || senseBoxId.isEmpty) {
       throw Exception('SenseBox id is missing');
@@ -605,12 +639,7 @@ class OpenSenseMapService {
 
     _throwIfRateLimited();
 
-    // API allows up to 6 requests per minute, so set maxAttempts and delays accordingly
-    final r = RetryOptions(
-      maxAttempts: 6, // 6 attempts per minute
-      delayFactor: const Duration(seconds: 10), // 10s between attempts
-      maxDelay: const Duration(seconds: 15),
-    );
+    final r = retryOptions;
 
     try {
       await r.retry(
@@ -620,7 +649,8 @@ class OpenSenseMapService {
             await _attemptUploadOnce(
                 senseBoxId: senseBoxId,
                 data: data,
-                tokenForRequest: boxToken!);
+                tokenForRequest: boxToken!,
+                requestTimeout: requestTimeout);
           } on UploadRetryException catch (e) {
             if (e.refreshedBoxToken?.isNotEmpty == true) {
               boxToken = e.refreshedBoxToken;
@@ -630,17 +660,20 @@ class OpenSenseMapService {
         },
         retryIf: _isRetryableUploadError,
         onRetry: (e) async {
+          onRetry?.call(e);
           if (e is TooManyRequestsException) {
             await Future.delayed(Duration(seconds: e.retryAfter));
           }
         },
       );
     } catch (e, stackTrace) {
-      ErrorService.handleError(
-        'Upload failed after retries for box $senseBoxId: $e',
-        stackTrace,
-        sendToSentry: true,
-      );
+      if (reportErrors) {
+        ErrorService.handleError(
+          'Upload failed after retries for box $senseBoxId: $e',
+          stackTrace,
+          sendToSentry: true,
+        );
+      }
       rethrow;
     }
   }

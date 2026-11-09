@@ -13,6 +13,7 @@ class OperationProgressOverlayConfig {
   final VoidCallback? onFailed;
   final VoidCallback? onStart;
   final VoidCallback? onDismiss;
+  final VoidCallback? onCancel;
   final String? exportFilePath;
   final Future<void> Function()? onShare;
 
@@ -25,6 +26,7 @@ class OperationProgressOverlayConfig {
     this.onFailed,
     this.onStart,
     this.onDismiss,
+    this.onCancel,
     this.exportFilePath,
     this.onShare,
   });
@@ -47,6 +49,8 @@ class OperationProgressOverlayConfig {
       onFailed: onFailed,
       onStart: onStart,
       onDismiss: onDismiss,
+      // Closing the modal while uploading stops the upload.
+      onCancel: uploadService.cancelUpload,
     );
   }
 

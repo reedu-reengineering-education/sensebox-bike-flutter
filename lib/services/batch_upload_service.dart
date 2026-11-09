@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:sensebox_bike/models/chunk_upload_result.dart';
 import 'package:sensebox_bike/models/track_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
 import 'package:sensebox_bike/services/chunked_uploader.dart';
-import 'package:sensebox_bike/services/upload_retry_manager.dart';
+import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/services/upload_error_classifier.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
@@ -15,15 +19,31 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 /// 
 /// This service handles the complete upload flow:
 /// 1. Splits tracks into chunks using ChunkedUploader
-/// 2. Uploads chunks with retry logic using UploadRetryManager
+/// 2. Uploads chunks, failing fast (see [chunkUploadTimeout])
 /// 3. Provides real-time progress updates via stream
 /// 4. Updates track status when upload completes
 /// 5. Handles authentication failures and other errors
 class BatchUploadService {
+  /// [UploadProgress.errorMessage] when a chunk could not be uploaded and the
+  /// user should try again later. [UploadProgress.errorDetail] holds the API
+  /// response or [connectionFailedDetailToken].
+  static const String uploadFailedTryLaterErrorToken =
+      'batch_upload_failed_try_later';
+
+  /// [UploadProgress.errorDetail] when openSenseMap could not be reached.
+  static const String connectionFailedDetailToken =
+      'batch_upload_connection_failed';
+
+  static const Duration defaultChunkUploadTimeout = Duration(seconds: 60);
+
   final OpenSenseMapService _openSenseMapService;
   final TrackService _trackService;
-  final UploadRetryManager _retryManager;
   final OpenSenseMapBloc _openSenseMapBloc;
+
+  /// Hard limit for uploading a single chunk, including its retry.
+  final Duration chunkUploadTimeout;
+
+  Completer<void>? _cancelSignal;
   
   // Progress stream controller for real-time upload status
   final StreamController<UploadProgress> _progressController = 
@@ -37,11 +57,10 @@ class BatchUploadService {
     required OpenSenseMapService openSenseMapService,
     required TrackService trackService,
     required OpenSenseMapBloc openSenseMapBloc,
-    UploadRetryManager? retryManager,
-  }) : _openSenseMapService = openSenseMapService,
-       _trackService = trackService,
-       _openSenseMapBloc = openSenseMapBloc,
-       _retryManager = retryManager ?? UploadRetryManager.forNetworkOperations();
+    this.chunkUploadTimeout = defaultChunkUploadTimeout,
+  })  : _openSenseMapService = openSenseMapService,
+        _trackService = trackService,
+        _openSenseMapBloc = openSenseMapBloc;
 
   /// Stream of upload progress updates
   Stream<UploadProgress> get uploadProgressStream => _progressController.stream;
@@ -90,21 +109,20 @@ class BatchUploadService {
         'Authentication validation completed successfully', null);
   }
 
-  /// Uploads a complete track by splitting it into chunks and uploading them sequentially.
-  /// 
-  /// This method handles the complete upload flow:
-  /// 1. Validates track and authentication
-  /// 2. Splits track into chunks using ChunkedUploader
-  /// 3. Uploads each chunk with retry logic
-  /// 4. Updates track status on success
-  /// 5. Provides progress updates throughout the process
-  /// 6. Preserves data locally on failures for manual retry
-  /// 7. Implements comprehensive error handling and logging
-  /// 
-  /// [track] - The TrackData to upload
-  /// [senseBox] - SenseBox configuration containing sensor mappings
-  /// 
-  /// Throws [Exception] if upload fails permanently or authentication fails
+  /// Uploads a complete track by splitting it into chunks and uploading them
+  /// sequentially.
+  ///
+  /// The user is watching a progress modal, so the upload fails fast: each
+  /// chunk gets at most [chunkUploadTimeout] (including one quick retry inside
+  /// [ChunkedUploader]). The first chunk that cannot be uploaded stops the
+  /// whole track and emits a failed status with the API's error message or a
+  /// "could not connect" detail. The track is not marked uploaded, so the
+  /// user can try again later.
+  ///
+  /// The upload can be stopped with [cancelUpload]. A cancelled upload
+  /// returns normally without marking the track as uploaded.
+  ///
+  /// Throws if the upload fails.
   Future<void> uploadTrack(TrackData track, SenseBox senseBox) async {
     if (_isUploading) {
       const errorMessage = 'Another upload is already in progress';
@@ -113,29 +131,28 @@ class BatchUploadService {
     }
 
     _isUploading = true;
+    final cancelSignal = Completer<void>();
+    _cancelSignal = cancelSignal;
     _logInfo('Starting upload', 'Track ${track.id} upload initiated', track.id);
-    
+
     try {
-      // Update track upload attempt tracking with data preservation
       track.uploadAttempts = (track.uploadAttempts ?? 0) + 1;
       track.lastUploadAttempt = DateTime.now();
       await _trackService.saveTrack(track);
       _logInfo('Upload attempt tracked',
           'Attempt ${track.uploadAttempts} for track ${track.id}', track.id);
 
-      // Emit preparing status
-      _updateProgress(UploadProgress(
+      _updateProgress(const UploadProgress(
         totalChunks: 0,
         completedChunks: 0,
         failedChunks: 0,
         status: UploadStatus.preparing,
         canRetry: false,
+        stage: UploadStage.checkingLogin,
       ));
 
-      // Wait for authentication validation to complete before checking authentication
-      await _waitForAuthenticationValidation();
+      await _untilCancelled(_waitForAuthenticationValidation());
 
-      // Check authentication before starting upload
       if (!_openSenseMapBloc.isAuthenticated) {
         const errorMessage = 'Authentication failed - user needs to re-login';
         _logError('Authentication check failed', errorMessage, track.id);
@@ -143,15 +160,24 @@ class BatchUploadService {
         throw Exception(_getAuthenticationErrorMessage(errorMessage));
       }
 
-      // Create chunked uploader for this track
       final chunkedUploader = ChunkedUploader(
         openSenseMapService: _openSenseMapService,
         senseBox: senseBox,
       );
 
-      // Load track data and split into chunks with error handling
+      _updateProgress(const UploadProgress(
+        totalChunks: 0,
+        completedChunks: 0,
+        failedChunks: 0,
+        status: UploadStatus.preparing,
+        canRetry: false,
+        stage: UploadStage.loadingTrack,
+      ));
+
       try {
-        await track.geolocations.load();
+        await _untilCancelled(track.geolocations.load());
+      } on UploadCancelledException {
+        rethrow;
       } catch (e, stackTrace) {
         const errorMessage = 'Failed to load track geolocation data';
         _logError('Data loading failed', '$errorMessage: $e', track.id);
@@ -162,12 +188,13 @@ class BatchUploadService {
         );
         throw Exception('$errorMessage. Data preserved locally for retry.');
       }
-      
+
       final geolocations = track.geolocations.toList();
-      
+
       if (geolocations.isEmpty) {
-        _logInfo('Empty track', 'No geolocation data found for track ${track.id}', track.id);
-        _updateProgress(UploadProgress(
+        _logInfo('Empty track',
+            'No geolocation data found for track ${track.id}', track.id);
+        _updateProgress(const UploadProgress(
           totalChunks: 0,
           completedChunks: 0,
           failedChunks: 0,
@@ -177,209 +204,238 @@ class BatchUploadService {
         return;
       }
 
-      // Sort geolocations by timestamp to ensure chronological order
       geolocations.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-      
-      // Split into chunks with error handling based on measurement estimation
+
       final chunks = chunkedUploader.splitIntoChunks(geolocations, senseBox);
       final totalChunks = chunks.length;
 
-      _logInfo('Upload preparation complete', 
-        'Track ${track.id} split into $totalChunks chunks (${geolocations.length} total points)', 
-        track.id);
+      _logInfo(
+          'Upload preparation complete',
+          'Track ${track.id} split into $totalChunks chunks (${geolocations.length} total points)',
+          track.id);
 
-      // Emit uploading status with total chunks
+      for (int i = 0; i < chunks.length; i++) {
+        _logInfo('Chunk upload start',
+            'Starting upload of chunk $i/$totalChunks for track ${track.id}',
+            track.id);
+
+        var abandoned = false;
+        bool isActive() => !abandoned && !cancelSignal.isCompleted;
+        void emitStage(UploadStage stage, UploadStatus status) {
+          // Abandoned chunks may still report late; ignore them.
+          if (!isActive()) return;
+          _updateProgress(UploadProgress(
+            totalChunks: totalChunks,
+            completedChunks: i,
+            failedChunks: 0,
+            status: status,
+            canRetry: false,
+            stage: stage,
+          ));
+        }
+
+        emitStage(UploadStage.preparingChunk, UploadStatus.uploading);
+
+        ChunkUploadResult result;
+        try {
+          result = await _untilCancelled(chunkedUploader
+              .uploadChunk(
+                chunks[i],
+                senseBox,
+                i,
+                shouldSend: isActive,
+                onSending: () => emitStage(
+                    UploadStage.sendingChunk, UploadStatus.uploading),
+                onRetry: (_) => emitStage(
+                    UploadStage.retryingChunk, UploadStatus.retrying),
+              )
+              .timeout(chunkUploadTimeout));
+        } on TimeoutException catch (e) {
+          abandoned = true;
+          result = ChunkUploadResult.retryableFailure(
+            i,
+            'Chunk $i did not finish within ${chunkUploadTimeout.inSeconds}s',
+            error: e,
+          );
+        }
+
+        if (result.failed) {
+          _failTrackUpload(track, result, i, totalChunks);
+        }
+
+        _logInfo('Chunk upload success',
+            'Successfully uploaded chunk $i of track ${track.id}', track.id);
+      }
+
+      track.uploaded = 1;
+      await _trackService.saveTrack(track);
+
       _updateProgress(UploadProgress(
         totalChunks: totalChunks,
-        completedChunks: 0,
+        completedChunks: totalChunks,
         failedChunks: 0,
-        status: UploadStatus.uploading,
+        status: UploadStatus.completed,
         canRetry: false,
       ));
 
-      // Upload each chunk with comprehensive error handling and retry logic
-      int completedChunks = 0;
-      int failedChunks = 0;
-      String? lastError;
-      bool canRetry = true;
-      final List<int> failedChunkIndices = [];
-
-      for (int i = 0; i < chunks.length; i++) {
-        final chunk = chunks[i];
-        
-        try {
-          _logInfo('Chunk upload start', 'Starting upload of chunk $i/${chunks.length} for track ${track.id}', track.id);
-          
-          // Upload chunk with retry logic and comprehensive error handling
-          await _retryManager.executeWithRetry(
-            () async {
-              final result = await chunkedUploader.uploadChunk(chunk, senseBox, i);
-              if (result.failed) {
-                final errorMessage = result.errorMessage ?? 'Chunk upload failed';
-                _logError('Chunk upload failed', 'Chunk $i failed: $errorMessage', track.id);
-                throw Exception(errorMessage);
-              }
-              return result;
-            },
-            onRetry: (exception, attempt) {
-              _logInfo('Chunk retry', 'Retrying chunk $i upload, attempt $attempt: $exception', track.id);
-              
-              // Emit retrying status with detailed information
-              _updateProgress(UploadProgress(
-                totalChunks: totalChunks,
-                completedChunks: completedChunks,
-                failedChunks: failedChunks,
-                status: UploadStatus.retrying,
-                errorMessage: 'Retrying chunk $i (attempt $attempt): ${exception.toString()}',
-                canRetry: true,
-              ));
-            },
-          );
-
-          // Chunk uploaded successfully
-          completedChunks++;
-          _logInfo('Chunk upload success', 'Successfully uploaded chunk $i of track ${track.id}', track.id);
-          
-          // Emit progress update
-          _updateProgress(UploadProgress(
-            totalChunks: totalChunks,
-            completedChunks: completedChunks,
-            failedChunks: failedChunks,
-            status: UploadStatus.uploading,
-            canRetry: false,
-          ));
-
-        } catch (e, stackTrace) {
-          failedChunks++;
-          failedChunkIndices.add(i);
-          lastError = e.toString();
-          
-          // Classify the error to determine how to handle it
-          final errorType = UploadErrorClassifier.classifyError(e as Exception);
-          
-          // Log the error with appropriate severity
-          _logError('Chunk upload failed permanently', 
-            'Chunk $i of track ${track.id} failed after retries: $e', 
-            track.id);
-          
-          // Report to error service for monitoring
-          ErrorService.handleError(
-            'Chunk upload failed for track ${track.id}, chunk $i: $e',
-            stackTrace,
-            sendToSentry: errorType != UploadErrorType.temporary,
-          );
-          
-          // Handle authentication errors
-          if (errorType == UploadErrorType.permanentAuth) {
-            canRetry = false;
-            await _handleAuthenticationError(lastError);
-            lastError = _getAuthenticationErrorMessage(lastError);
-            _logError('Authentication failure', 'Authentication failed during upload of track ${track.id}', track.id);
-            break;
-          }
-
-          // Check if this is a permanent client error
-          if (errorType == UploadErrorType.permanentClient) {
-            canRetry = false;
-            _logError('Permanent client error', 'Permanent error during upload of track ${track.id}: $e', track.id);
-            break;
-          }
-
-          // For temporary errors, continue with next chunk but preserve data
-          _logInfo('Temporary error handled', 'Temporary error for chunk $i, continuing with next chunk', track.id);
-        }
-      }
-
-      // Log final upload statistics
-      _logInfo('Upload completed', 
-        'Track ${track.id} upload finished: $completedChunks successful, $failedChunks failed chunks. Failed indices: $failedChunkIndices', 
-        track.id);
-
-      // Determine final status with comprehensive data preservation
-      if (failedChunks == 0) {
-        // All chunks uploaded successfully - mark track as uploaded
-        track.uploaded = 1;
-        await _trackService.saveTrack(track);
-        
-        _updateProgress(UploadProgress(
-          totalChunks: totalChunks,
-          completedChunks: completedChunks,
-          failedChunks: failedChunks,
-          status: UploadStatus.completed,
-          canRetry: false,
-        ));
-
-        _logInfo('Upload success', 'Successfully uploaded track ${track.id} with all $totalChunks chunks', track.id);
-        
-      } else {
-        // Some chunks failed - preserve data locally and emit failed status
-        // Data is automatically preserved since we don't mark track as uploaded
-        
-        final errorMessage = canRetry 
-          ? 'Upload failed for $failedChunks chunks. Data preserved locally for retry.'
-          : lastError ?? 'Upload failed permanently for $failedChunks chunks. Data preserved locally.';
-        
-        _updateProgress(UploadProgress(
-          totalChunks: totalChunks,
-          completedChunks: completedChunks,
-          failedChunks: failedChunks,
-          status: UploadStatus.failed,
-          errorMessage: errorMessage,
-          canRetry: canRetry,
-        ));
-
-        _logError('Upload failed', 
-          'Failed to upload track ${track.id}: $completedChunks/$totalChunks chunks succeeded. Data preserved locally.', 
+      _logInfo('Upload success',
+          'Successfully uploaded track ${track.id} with all $totalChunks chunks',
           track.id);
-        
-        // Throw exception to indicate failure, but data is preserved
-        throw Exception(errorMessage);
-      }
+    } on UploadCancelledException {
+      // The user closed the modal. The track stays not uploaded; nothing to
+      // show. A request already in flight may still reach the server.
+      _logInfo('Upload cancelled',
+          'Upload of track ${track.id} cancelled by user', track.id);
+    } on BatchUploadException catch (e, stackTrace) {
+      _logError('Upload failed', e.toString(), track.id);
+      unawaited(ErrorService.reportToSentry(
+          'Batch upload of track ${track.id} failed: $e', stackTrace));
 
+      _updateProgress(UploadProgress(
+        totalChunks: _currentProgress?.totalChunks ?? 0,
+        completedChunks: _currentProgress?.completedChunks ?? 0,
+        failedChunks: 1,
+        status: UploadStatus.failed,
+        errorMessage: e.message,
+        errorDetail: e.detail,
+        canRetry: e.canRetry,
+      ));
+      rethrow;
     } catch (e, stackTrace) {
-      // Handle any unexpected errors with comprehensive logging and data preservation
-      _logError('Unexpected upload error', 'Unexpected error during upload of track ${track.id}: $e', track.id);
-      
-      // Report to error service for monitoring
-      ErrorService.handleError(
-        'Unexpected error during batch upload of track ${track.id}: $e',
-        stackTrace,
-        sendToSentry: true,
-      );
-      
-      // Classify the error to determine how to handle it
-      final errorType = UploadErrorClassifier.classifyError(e as Exception);
-      bool canRetry = true;
-      
-      // Handle authentication errors
-      if (errorType == UploadErrorType.permanentAuth) {
-        canRetry = false;
+      _logError('Unexpected upload error',
+          'Unexpected error during upload of track ${track.id}: $e', track.id);
+      unawaited(ErrorService.reportToSentry(
+          'Unexpected error during batch upload of track ${track.id}: $e',
+          stackTrace));
+
+      final errorType = UploadErrorClassifier.classifyError(e);
+      final isAuthError = errorType == UploadErrorType.permanentAuth;
+      if (isAuthError) {
         await _handleAuthenticationError(e.toString());
       }
-      
-      // Use user-friendly error message for authentication errors
-      String displayErrorMessage = e.toString();
-      if (errorType == UploadErrorType.permanentAuth) {
-        displayErrorMessage = _getAuthenticationErrorMessage(e.toString());
-      } else {
-        // Add data preservation message for other errors
-        displayErrorMessage = '$displayErrorMessage Data preserved locally for retry.';
-      }
-      
+
       _updateProgress(UploadProgress(
         totalChunks: _currentProgress?.totalChunks ?? 0,
         completedChunks: _currentProgress?.completedChunks ?? 0,
         failedChunks: _currentProgress?.failedChunks ?? 0,
         status: UploadStatus.failed,
-        errorMessage: displayErrorMessage,
-        canRetry: canRetry,
+        errorMessage: isAuthError
+            ? _getAuthenticationErrorMessage(e.toString())
+            : uploadFailedTryLaterErrorToken,
+        errorDetail: isAuthError ? null : describeUploadError(e),
+        canRetry: !isAuthError,
       ));
-      
+
       rethrow;
     } finally {
       _isUploading = false;
-      _logInfo('Upload session ended', 'Upload session for track ${track.id} completed', track.id);
+      if (identical(_cancelSignal, cancelSignal)) {
+        _cancelSignal = null;
+      }
+      _logInfo('Upload session ended',
+          'Upload session for track ${track.id} completed', track.id);
     }
+  }
+
+  /// Stops the running upload. Remaining chunks are not uploaded and the track
+  /// is not marked as uploaded. Does nothing if no upload is running.
+  void cancelUpload() {
+    final signal = _cancelSignal;
+    if (signal == null || signal.isCompleted) return;
+    _logInfo('Upload cancel requested', 'Cancelling running upload', null);
+    signal.complete();
+  }
+
+  /// Completes with [future], or throws [UploadCancelledException] as soon as
+  /// [cancelUpload] is called. The underlying work is not aborted, its result
+  /// is just ignored.
+  Future<T> _untilCancelled<T>(Future<T> future) {
+    final signal = _cancelSignal;
+    if (signal == null) return future;
+    if (signal.isCompleted) {
+      // Avoid an unhandled error from the ignored future.
+      future.ignore();
+      throw const UploadCancelledException();
+    }
+    return Future.any<T>([
+      future,
+      signal.future.then<T>((_) => throw const UploadCancelledException()),
+    ]);
+  }
+
+  /// Throws a [BatchUploadException] describing why chunk [chunkIndex] failed.
+  Never _failTrackUpload(
+    TrackData track,
+    ChunkUploadResult result,
+    int chunkIndex,
+    int totalChunks,
+  ) {
+    final error = result.error ?? Exception(result.errorMessage);
+    _logError(
+        'Chunk upload failed',
+        'Chunk $chunkIndex/$totalChunks of track ${track.id} failed, stopping upload: $error',
+        track.id);
+
+    if (UploadErrorClassifier.classifyError(error) ==
+        UploadErrorType.permanentAuth) {
+      // Handled by the generic catch in uploadTrack (marks auth as failed).
+      throw Exception(
+          'Authentication failed - user needs to re-login: $error');
+    }
+
+    throw BatchUploadException(
+      uploadFailedTryLaterErrorToken,
+      detail: describeUploadError(error),
+      canRetry: true,
+      cause: error,
+    );
+  }
+
+  /// Turns an upload error into the detail line shown to the user: either
+  /// [connectionFailedDetailToken] when openSenseMap could not be reached, or
+  /// the HTTP status plus the message returned by the API.
+  static String describeUploadError(Object? error) {
+    if (error is TimeoutException ||
+        error is SocketException ||
+        error is HttpException ||
+        error is HandshakeException ||
+        error is http.ClientException) {
+      return connectionFailedDetailToken;
+    }
+    if (error is TooManyRequestsException) {
+      return 'HTTP 429: Too many requests';
+    }
+    if (error is ServerErrorException) {
+      return _withApiMessage('HTTP ${error.statusCode}', error.body);
+    }
+    if (error is OpenSenseMapApiException) {
+      return _withApiMessage('HTTP ${error.statusCode}', error.body);
+    }
+    return error?.toString() ?? '';
+  }
+
+  static String _withApiMessage(String prefix, String? body) {
+    final message = _extractApiMessage(body);
+    return message == null ? prefix : '$prefix: $message';
+  }
+
+  static String? _extractApiMessage(String? body) {
+    final trimmed = body?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(trimmed);
+      if (decoded is Map) {
+        for (final key in const ['message', 'error', 'code']) {
+          final value = decoded[key];
+          if (value is String && value.isNotEmpty) return value;
+        }
+      }
+    } catch (_) {
+      // Not JSON, fall through.
+    }
+    // HTML error pages (e.g. from a proxy) are not useful to show.
+    if (trimmed.startsWith('<')) return null;
+    return trimmed.length > 200 ? '${trimmed.substring(0, 200)}…' : trimmed;
   }
 
   /// Retries upload for tracks that have failed uploads with comprehensive error handling.
@@ -446,7 +502,7 @@ class BatchUploadService {
         _logError('Track retry failed', 'Failed to retry upload for track ${track.id}: $e', track.id);
         
         // Classify the error to determine how to handle it
-        final errorType = UploadErrorClassifier.classifyError(e as Exception);
+        final errorType = UploadErrorClassifier.classifyError(e);
         
         // If authentication failed, stop retrying other tracks
         if (errorType == UploadErrorType.permanentAuth) {
@@ -505,7 +561,11 @@ class BatchUploadService {
   /// Updates the current progress and emits it to the stream
   void _updateProgress(UploadProgress progress) {
     _currentProgress = progress;
-    _progressController.add(progress);
+    // The owner may dispose the service while an upload is still finishing
+    // (e.g. the modal was closed); drop late updates instead of throwing.
+    if (!_progressController.isClosed) {
+      _progressController.add(progress);
+    }
   }
 
   /// Logs informational messages with structured format
@@ -525,6 +585,35 @@ class BatchUploadService {
   /// Disposes of the service and closes the progress stream
   void dispose() {
     _logInfo('Service disposal', 'BatchUploadService disposed', null);
+    cancelUpload();
     _progressController.close();
   }
+}
+
+/// Thrown by [BatchUploadService.uploadTrack] when a chunk could not be
+/// uploaded. [message] and [detail] are what the progress modal shows.
+class BatchUploadException implements Exception {
+  final String message;
+  final String? detail;
+  final bool canRetry;
+  final Object? cause;
+
+  const BatchUploadException(
+    this.message, {
+    this.detail,
+    this.canRetry = true,
+    this.cause,
+  });
+
+  @override
+  String toString() =>
+      'BatchUploadException: ${detail ?? message}${cause != null ? ' ($cause)' : ''}';
+}
+
+/// Internal signal that the user cancelled the running upload.
+class UploadCancelledException implements Exception {
+  const UploadCancelledException();
+
+  @override
+  String toString() => 'Upload cancelled by user';
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:retry/retry.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/models/track_data.dart';
@@ -13,6 +14,16 @@ import 'package:sensebox_bike/utils/sensor_utils.dart';
 /// Service responsible for uploading track data in chunks to handle large datasets
 /// and comply with API limitations (max 2500 points per chunk).
 class ChunkedUploader {
+  /// Batch upload happens while the user is watching a progress modal, so a
+  /// chunk gets one quick retry instead of the long background-upload policy.
+  /// Worst case: 2 x [chunkRequestTimeout] + ~3 s delay, i.e. under a minute.
+  static const RetryOptions chunkRetryOptions = RetryOptions(
+    maxAttempts: 2,
+    delayFactor: Duration(seconds: 2),
+    maxDelay: Duration(seconds: 3),
+  );
+  static const Duration chunkRequestTimeout = Duration(seconds: 25);
+
   final OpenSenseMapService _openSenseMapService;
   final UploadDataPreparer _dataPreparer;
 
@@ -122,12 +133,22 @@ class ChunkedUploader {
   /// [senseBox] - SenseBox configuration containing sensor mappings
   /// [chunkIndex] - Index of this chunk for tracking purposes
   ///
+  /// [shouldSend] is checked right before the request goes out. The caller
+  /// returns false once it has given up on this chunk (timeout or user
+  /// cancel), so abandoned work does not upload data in the background.
+  ///
+  /// [onSending] is called when the request is about to be sent (data is
+  /// prepared), [onRetry] when the request failed and is sent again.
+  ///
   /// Returns a ChunkUploadResult indicating success or failure with error details
   Future<ChunkUploadResult> uploadChunk(
     List<GeolocationData> chunk,
     SenseBox senseBox,
-    int chunkIndex,
-  ) async {
+    int chunkIndex, {
+    bool Function()? shouldSend,
+    void Function()? onSending,
+    void Function(Object error)? onRetry,
+  }) async {
     try {
       if (chunk.isEmpty) {
         _logInfo('Empty chunk', 'Chunk $chunkIndex is empty, skipping upload',
@@ -223,24 +244,29 @@ class ChunkedUploader {
         return ChunkUploadResult.success(chunkIndex);
       }
 
+      if (shouldSend != null && !shouldSend()) {
+        _logInfo('Chunk abandoned',
+            'Chunk $chunkIndex no longer needed, not sending', chunkIndex);
+        return ChunkUploadResult.permanentFailure(
+            chunkIndex, 'Chunk upload abandoned');
+      }
+
+      onSending?.call();
+
       // Upload the prepared data with error handling
       try {
-        debugPrint('length: ${uploadData.keys.length.toString()}');
         await _openSenseMapService.uploadData(
           senseBox,
           uploadData,
+          retryOptions: chunkRetryOptions,
+          requestTimeout: chunkRequestTimeout,
+          // The progress modal shows the failure; don't pop a snackbar too.
+          reportErrors: false,
+          onRetry: onRetry,
         );
-      } catch (e, stackTrace) {
+      } catch (e) {
         _logError('Upload API failed',
             'API call failed for chunk $chunkIndex: $e', chunkIndex);
-
-        // Report to error service for monitoring
-        ErrorService.handleError(
-          'Upload API call failed for chunk $chunkIndex: $e',
-          stackTrace,
-          sendToSentry: true,
-        );
-
         rethrow; // Let the outer catch handle error classification
       }
 
@@ -257,12 +283,15 @@ class ChunkedUploader {
       final errorType = UploadErrorClassifier.classifyError(e);
       final isRetryable = errorType == UploadErrorType.temporary;
 
-      // Report to error service based on error type
-      ErrorService.handleError(
-        'Chunk upload failed for chunk $chunkIndex: $e',
-        stackTrace,
-        sendToSentry: !isRetryable, // Only send permanent errors to Sentry
-      );
+      // Report without a user-facing snackbar: the upload modal shows the
+      // failure. Only permanent errors go to Sentry.
+      if (isRetryable) {
+        ErrorService.logToConsole(
+            'Chunk upload failed for chunk $chunkIndex: $e', stackTrace);
+      } else {
+        unawaited(ErrorService.reportToSentry(
+            'Chunk upload failed for chunk $chunkIndex: $e', stackTrace));
+      }
 
       if (isRetryable) {
         _logInfo(
@@ -270,14 +299,16 @@ class ChunkedUploader {
             'Chunk $chunkIndex failed with retryable error, data preserved',
             chunkIndex);
         return ChunkUploadResult.retryableFailure(
-            chunkIndex, '$e (Data preserved for retry)');
+            chunkIndex, '$e (Data preserved for retry)',
+            error: e);
       } else {
         _logError(
             'Permanent failure',
             'Chunk $chunkIndex failed permanently, data preserved locally',
             chunkIndex);
         return ChunkUploadResult.permanentFailure(
-            chunkIndex, '$e (Data preserved locally)');
+            chunkIndex, '$e (Data preserved locally)',
+            error: e);
       }
     }
   }

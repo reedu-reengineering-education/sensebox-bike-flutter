@@ -449,7 +449,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsGithub => 'GitHub issue';
 
   @override
-  String get privacyZoneDescription => 'Areas where no data will be recorded';
+  String get privacyZoneDescription => 'Áreas onde nenhum dado será registrado';
 
   @override
   String get privacyZonesStart =>
@@ -786,6 +786,40 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get uploadProgressGenericError => 'Operação falhou. Tente novamente.';
+
+  @override
+  String get uploadErrorTryLater =>
+      'Não foi possível concluir o envio. O openSenseMap pode estar sobrecarregado ou inacessível no momento. Tente novamente mais tarde. Seu trajeto está salvo neste dispositivo.';
+
+  @override
+  String get uploadErrorCannotConnect =>
+      'Não foi possível conectar ao openSenseMap.';
+
+  @override
+  String uploadErrorApiResponse(String details) {
+    return 'Resposta do openSenseMap: $details';
+  }
+
+  @override
+  String get uploadStageCheckingLogin => 'Verificando login no openSenseMap...';
+
+  @override
+  String get uploadStageLoadingTrack => 'Carregando dados do trajeto...';
+
+  @override
+  String uploadStagePreparingChunk(int current, int total) {
+    return 'Preparando parte $current de $total...';
+  }
+
+  @override
+  String uploadStageSendingChunk(int current, int total) {
+    return 'Enviando parte $current de $total para o openSenseMap...';
+  }
+
+  @override
+  String uploadStageRetryingChunk(int current, int total) {
+    return 'Sem resposta do openSenseMap, reenviando parte $current de $total...';
+  }
 
   @override
   String get uploadConfirmTitle => 'Enviar Dados do Trajeto';

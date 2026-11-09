@@ -165,6 +165,193 @@ void main() {
     });
   });
 
+  group('OperationProgressModal cancel and errors', () {
+    late StreamController<UploadProgress> progressController;
+
+    setUp(() {
+      progressController = StreamController<UploadProgress>.broadcast();
+    });
+
+    tearDown(() async {
+      await progressController.close();
+    });
+
+    Future<void> pumpRunningModal(
+      WidgetTester tester, {
+      VoidCallback? onCancel,
+      VoidCallback? onDismiss,
+    }) async {
+      await tester.pumpWidget(
+        createLocalizedTestApp(
+          child: Builder(
+            builder: (context) => Scaffold(
+              body: ElevatedButton(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => OperationProgressModal(
+                    progressStream: progressController.stream,
+                    showConfirmation: false,
+                    onCancel: onCancel,
+                    onDismiss: onDismiss,
+                  ),
+                ),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+          locale: const Locale('en'),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+    }
+
+    testWidgets('Cancel is available while preparing and cancels the upload',
+        (WidgetTester tester) async {
+      var cancelled = 0;
+      var dismissed = 0;
+      await pumpRunningModal(tester,
+          onCancel: () => cancelled++, onDismiss: () => dismissed++);
+
+      progressController.add(const UploadProgress(
+        totalChunks: 0,
+        completedChunks: 0,
+        failedChunks: 0,
+        status: UploadStatus.preparing,
+        canRetry: false,
+      ));
+      await tester.pump();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(cancelled, 1);
+      expect(dismissed, 1);
+      expect(find.byType(OperationProgressModal), findsNothing);
+    });
+
+    testWidgets('Cancel is available while uploading',
+        (WidgetTester tester) async {
+      var cancelled = 0;
+      await pumpRunningModal(tester, onCancel: () => cancelled++);
+
+      progressController.add(const UploadProgress(
+        totalChunks: 3,
+        completedChunks: 1,
+        failedChunks: 0,
+        status: UploadStatus.uploading,
+        canRetry: false,
+      ));
+      await tester.pump();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(cancelled, 1);
+    });
+
+    testWidgets('closing after a failure does not cancel',
+        (WidgetTester tester) async {
+      var cancelled = 0;
+      await pumpRunningModal(tester, onCancel: () => cancelled++);
+
+      progressController.add(const UploadProgress(
+        totalChunks: 2,
+        completedChunks: 0,
+        failedChunks: 1,
+        status: UploadStatus.failed,
+        errorMessage: BatchUploadService.uploadFailedTryLaterErrorToken,
+        errorDetail: 'HTTP 503: Service Unavailable',
+        canRetry: true,
+      ));
+      await tester.pump();
+
+      expect(find.textContaining('Please try again later'), findsOneWidget);
+      expect(find.text('openSenseMap responded: HTTP 503: Service Unavailable'),
+          findsOneWidget);
+      expect(find.text('Cancel'), findsNothing);
+
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+
+      expect(cancelled, 0);
+    });
+
+    testWidgets('shows a connection problem detail',
+        (WidgetTester tester) async {
+      await pumpRunningModal(tester, onCancel: () {});
+
+      progressController.add(const UploadProgress(
+        totalChunks: 2,
+        completedChunks: 0,
+        failedChunks: 1,
+        status: UploadStatus.failed,
+        errorMessage: BatchUploadService.uploadFailedTryLaterErrorToken,
+        errorDetail: BatchUploadService.connectionFailedDetailToken,
+        canRetry: true,
+      ));
+      await tester.pump();
+
+      expect(find.text('Could not connect to openSenseMap.'), findsOneWidget);
+    });
+
+    testWidgets('shows the current upload step', (WidgetTester tester) async {
+      await pumpRunningModal(tester, onCancel: () {});
+
+      Future<void> emit(UploadStage stage, int completed,
+          {UploadStatus status = UploadStatus.uploading}) async {
+        progressController.add(UploadProgress(
+          totalChunks: stage == UploadStage.checkingLogin ||
+                  stage == UploadStage.loadingTrack
+              ? 0
+              : 3,
+          completedChunks: completed,
+          failedChunks: 0,
+          status: status,
+          canRetry: false,
+          stage: stage,
+        ));
+        await tester.pump();
+      }
+
+      await emit(UploadStage.checkingLogin, 0,
+          status: UploadStatus.preparing);
+      expect(find.text('Checking openSenseMap login...'), findsOneWidget);
+
+      await emit(UploadStage.loadingTrack, 0, status: UploadStatus.preparing);
+      expect(find.text('Loading track data...'), findsOneWidget);
+
+      await emit(UploadStage.preparingChunk, 1);
+      expect(find.text('Preparing part 2 of 3...'), findsOneWidget);
+
+      await emit(UploadStage.sendingChunk, 1);
+      expect(find.text('Uploading part 2 of 3 to openSenseMap...'),
+          findsOneWidget);
+
+      await emit(UploadStage.retryingChunk, 1, status: UploadStatus.retrying);
+      expect(
+          find.text(
+              'No response from openSenseMap, retrying part 2 of 3...'),
+          findsOneWidget);
+    });
+
+    testWidgets('no Cancel button without onCancel (e.g. export)',
+        (WidgetTester tester) async {
+      await pumpRunningModal(tester);
+
+      progressController.add(const UploadProgress(
+        totalChunks: 0,
+        completedChunks: 0,
+        failedChunks: 0,
+        status: UploadStatus.preparing,
+        canRetry: false,
+      ));
+      await tester.pump();
+
+      expect(find.text('Cancel'), findsNothing);
+    });
+  });
+
   group('OperationProgressOverlay', () {
     testWidgets('show/hide works with upload service mode',
         (WidgetTester tester) async {

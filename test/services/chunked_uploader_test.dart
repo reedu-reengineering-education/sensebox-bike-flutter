@@ -1,6 +1,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:retry/retry.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/chunked_uploader.dart';
@@ -12,6 +13,8 @@ void main() {
   setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
     registerFallbackValue(SenseBox());
+    registerFallbackValue(const RetryOptions());
+    registerFallbackValue(Duration.zero);
   });
   
   group('ChunkedUploader', () {
@@ -128,12 +131,26 @@ void main() {
         
         expect(result.success, isTrue);
         expect(result.chunkIndex, equals(0));
-        verifyNever(() => mockOpenSenseMapService.uploadData(any(), any()));
+        verifyNever(() => mockOpenSenseMapService.uploadData(
+              any(),
+              any(),
+              retryOptions: any(named: 'retryOptions'),
+              requestTimeout: any(named: 'requestTimeout'),
+              reportErrors: any(named: 'reportErrors'),
+              onRetry: any(named: 'onRetry'),
+            ));
       });
 
       test('should handle upload service errors correctly', () async {
         final chunk = _createGeolocationList(1); // Single point to minimize Isar issues
-        when(() => mockOpenSenseMapService.uploadData(any(), any()))
+        when(() => mockOpenSenseMapService.uploadData(
+              any(),
+              any(),
+              retryOptions: any(named: 'retryOptions'),
+              requestTimeout: any(named: 'requestTimeout'),
+              reportErrors: any(named: 'reportErrors'),
+              onRetry: any(named: 'onRetry'),
+            ))
             .thenThrow(Exception('Network error'));
 
         final result = await chunkedUploader.uploadChunk(chunk, testSenseBox, 0);

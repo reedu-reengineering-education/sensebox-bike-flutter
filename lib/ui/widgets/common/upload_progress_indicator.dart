@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/models/upload_progress.dart';
+import 'package:sensebox_bike/services/batch_upload_service.dart';
 import 'package:sensebox_bike/services/export_progress_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/loader.dart';
 import 'package:sensebox_bike/theme.dart';
@@ -185,11 +186,29 @@ class UploadProgressIndicator extends StatelessWidget {
                     ),
                     const SizedBox(width: spacing / 2),
                     Expanded(
-                      child: Text(
-                        _getErrorMessage(localizations, progress.errorMessage!),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onErrorContainer,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _getErrorMessage(
+                                localizations, progress.errorMessage!),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onErrorContainer,
+                            ),
+                          ),
+                          if (_getErrorDetail(localizations) case final detail?)
+                            Padding(
+                              padding: const EdgeInsets.only(top: spacing / 2),
+                              child: Text(
+                                detail,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onErrorContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],
@@ -260,6 +279,9 @@ class UploadProgressIndicator extends StatelessWidget {
 
   /// Gets the appropriate status text based on upload state
   String _getStatusText(AppLocalizations localizations) {
+    final stageText = _getStageText(localizations);
+    if (stageText != null) return stageText;
+
     switch (progress.status) {
       case UploadStatus.preparing:
         return localizations.uploadProgressPreparing;
@@ -275,6 +297,30 @@ class UploadProgressIndicator extends StatelessWidget {
           return localizations.uploadProgressAuthenticationFailed;
         }
         return localizations.uploadProgressFailed;
+    }
+  }
+
+  /// Text for the current step of a running upload, null when the operation
+  /// does not report steps or is already finished.
+  String? _getStageText(AppLocalizations localizations) {
+    final stage = progress.stage;
+    if (stage == null || progress.isCompleted || progress.hasFailed) {
+      return null;
+    }
+    final total = progress.totalChunks;
+    final current =
+        total == 0 ? 0 : (progress.completedChunks + 1).clamp(1, total);
+    switch (stage) {
+      case UploadStage.checkingLogin:
+        return localizations.uploadStageCheckingLogin;
+      case UploadStage.loadingTrack:
+        return localizations.uploadStageLoadingTrack;
+      case UploadStage.preparingChunk:
+        return localizations.uploadStagePreparingChunk(current, total);
+      case UploadStage.sendingChunk:
+        return localizations.uploadStageSendingChunk(current, total);
+      case UploadStage.retryingChunk:
+        return localizations.uploadStageRetryingChunk(current, total);
     }
   }
 
@@ -297,6 +343,10 @@ class UploadProgressIndicator extends StatelessWidget {
       return localizations.errorExportFailed;
     }
 
+    if (errorMessage == BatchUploadService.uploadFailedTryLaterErrorToken) {
+      return localizations.uploadErrorTryLater;
+    }
+
     if (errorMessage.contains('Authentication failed') ||
         errorMessage.contains('user needs to re-login')) {
       return localizations.uploadProgressAuthenticationError;
@@ -306,6 +356,17 @@ class UploadProgressIndicator extends StatelessWidget {
     } else {
       return localizations.uploadProgressGenericError;
     }
+  }
+
+  /// Detail line under the error message: why the upload failed, either
+  /// "could not connect" or the response returned by openSenseMap.
+  String? _getErrorDetail(AppLocalizations localizations) {
+    final detail = progress.errorDetail;
+    if (detail == null || detail.isEmpty) return null;
+    if (detail == BatchUploadService.connectionFailedDetailToken) {
+      return localizations.uploadErrorCannotConnect;
+    }
+    return localizations.uploadErrorApiResponse(detail);
   }
 
   /// Gets the appropriate text color based on upload state
