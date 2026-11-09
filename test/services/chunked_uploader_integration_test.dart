@@ -41,7 +41,7 @@ void main() {
       );
 
       final largeDataset = _createGeolocationList(10000);
-      final chunks = uploader.splitIntoChunks(largeDataset, testSenseBox);
+      final chunks = uploader.splitIntoChunks(largeDataset);
 
       // Should create multiple chunks based on measurement estimation
       expect(chunks.length, greaterThan(1));

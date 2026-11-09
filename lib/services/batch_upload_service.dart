@@ -85,13 +85,13 @@ class BatchUploadService {
         openSenseMapService: _openSenseMapService,
         senseBox: senseBox,
       );
-      final chunks = chunkedUploader.splitIntoChunks(geolocations, senseBox);
+      final chunks = chunkedUploader.splitIntoChunks(geolocations);
       _totalChunks = chunks.length;
       _log('Track ${track.id}: ${geolocations.length} points in '
           '$_totalChunks chunks');
 
       for (final chunk in chunks) {
-        await _uploadChunk(chunkedUploader, chunk, senseBox, cancelSignal);
+        await _uploadChunk(chunkedUploader, chunk, cancelSignal);
         _completedChunks++;
       }
 
@@ -128,7 +128,6 @@ class BatchUploadService {
   Future<void> _uploadChunk(
     ChunkedUploader uploader,
     List<GeolocationData> chunk,
-    SenseBox senseBox,
     Completer<void> cancelSignal,
   ) async {
     var abandoned = false;
@@ -142,7 +141,6 @@ class BatchUploadService {
       await _untilCancelled(uploader
           .uploadChunk(
             chunk,
-            senseBox,
             shouldSend: isActive,
             onSending: () =>
                 emitIfActive(UploadStatus.uploading, UploadStage.sendingChunk),
