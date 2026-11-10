@@ -82,7 +82,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
-  isar_community_generator: ^3.3.2
+  isar_community_generator: ^3.4.1
   build_runner: any
 
 # For information on the generic Dart part of this file, see the
