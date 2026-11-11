@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -45,6 +47,25 @@ void main() {
       final stream = platform.connectionState(deviceId);
       expect(stream.isBroadcast, isTrue);
       expect(platform.connectionState(deviceId), isNotNull);
+    });
+
+    test('scanForDevices maps discovered devices', () async {
+      when(() => reactiveBle.scanForDevices(
+            withServices: any(named: 'withServices'),
+            scanMode: ScanMode.lowLatency,
+          )).thenAnswer((_) => Stream.value(DiscoveredDevice(
+            id: deviceId,
+            name: 'senseBox:bike',
+            serviceData: const {},
+            manufacturerData: Uint8List(0),
+            rssi: -60,
+            serviceUuids: const [],
+          )));
+
+      final devices = await platform.scanForDevices().toList();
+
+      expect(devices.single.id, deviceId);
+      expect(devices.single.name, 'senseBox:bike');
     });
 
     test('isConnected is false before connecting', () {

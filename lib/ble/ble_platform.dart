@@ -83,36 +83,12 @@ class BlePlatform {
     }
   }
 
-  Stream<BleDevice> scanForDevices({
-    List<BleUuid> withServices = const [],
-  }) {
-    late final StreamController<BleDevice> controller;
-    StreamSubscription<DiscoveredDevice>? scanSubscription;
-
-    controller = StreamController<BleDevice>(
-      onListen: () async {
-        scanSubscription = _reactiveBle
-            .scanForDevices(
-          withServices: withServices.map(_toUuid).toList(),
-          scanMode: ScanMode.lowLatency,
-        )
-            .listen(
-          (device) {
-            if (!controller.isClosed) {
-              controller.add(_bleDeviceFromScanResult(device));
-            }
-          },
-          onError: controller.addError,
-        );
-      },
-      onCancel: () async {
-        await scanSubscription?.cancel();
-        scanSubscription = null;
-      },
-    );
-
-    return controller.stream;
-  }
+  Stream<BleDevice> scanForDevices() => _reactiveBle
+      .scanForDevices(
+        withServices: const [],
+        scanMode: ScanMode.lowLatency,
+      )
+      .map((device) => BleDevice(id: device.id, name: device.name));
 
   Future<void> connect(
     String deviceId, {
@@ -248,10 +224,6 @@ class BlePlatform {
 
   void _cancelDataWatchdog(String deviceId) {
     _dataWatchdogs.remove(deviceId)?.cancel();
-  }
-
-  BleDevice _bleDeviceFromScanResult(DiscoveredDevice device) {
-    return BleDevice(id: device.id, name: device.name);
   }
 
   void _emitLinkState(
