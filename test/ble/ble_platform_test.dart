@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -8,6 +9,10 @@ import 'package:sensebox_bike/ble/ble_platform.dart';
 import 'package:sensebox_bike/ble/ble_uuids.dart';
 
 class _MockReactiveBle extends Mock implements FlutterReactiveBle {}
+
+class _MockService extends Mock implements Service {}
+
+class _MockCharacteristic extends Mock implements Characteristic {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -84,6 +89,61 @@ void main() {
         platform.subscribeToCharacteristic(ref),
         emitsError(isA<StateError>()),
       );
+    });
+
+    test('watchdog drops the connection when data stops arriving', () async {
+      registerFallbackValue(QualifiedCharacteristic(
+        characteristicId: Uuid.parse(senseBoxServiceUuid.value),
+        serviceId: Uuid.parse(senseBoxServiceUuid.value),
+        deviceId: deviceId,
+      ));
+      platform = BlePlatform(
+        reactiveBle: reactiveBle,
+        dataStaleTimeout: const Duration(milliseconds: 50),
+      );
+      final connection = StreamController<ConnectionStateUpdate>();
+      addTearDown(connection.close);
+      when(() => reactiveBle.connectToDevice(
+            id: deviceId,
+            connectionTimeout: any(named: 'connectionTimeout'),
+          )).thenAnswer((_) => connection.stream);
+      final characteristicUuid = BleUuid('11111111-2222-3333-4444-555555555555');
+      final characteristic = _MockCharacteristic();
+      when(() => characteristic.id)
+          .thenReturn(Uuid.parse(characteristicUuid.value));
+      final service = _MockService();
+      when(() => service.id).thenReturn(Uuid.parse(senseBoxServiceUuid.value));
+      when(() => service.characteristics).thenReturn([characteristic]);
+      when(() => reactiveBle.discoverAllServices(deviceId))
+          .thenAnswer((_) async {});
+      when(() => reactiveBle.getDiscoveredServices(deviceId))
+          .thenAnswer((_) async => [service]);
+      when(() => reactiveBle.subscribeToCharacteristic(any()))
+          .thenAnswer((_) => Stream.value([0, 0, 0, 0]));
+
+      final connecting = platform.connect(deviceId);
+      connection.add(const ConnectionStateUpdate(
+        deviceId: deviceId,
+        connectionState: DeviceConnectionState.connected,
+        failure: null,
+      ));
+      await connecting;
+      await platform.discoverServices(deviceId);
+      final states = <BleLinkState>[];
+      platform.connectionState(deviceId).listen(states.add);
+
+      await platform
+          .subscribeToCharacteristic(BleCharacteristicRef(
+            deviceId: deviceId,
+            serviceUuid: senseBoxServiceUuid,
+            characteristicUuid: characteristicUuid,
+          ))
+          .drain<void>();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect(connection.hasListener, isFalse);
+      expect(platform.isConnected(deviceId), isFalse);
+      expect(states.last, BleLinkState.disconnected);
     });
 
     test('connectionState emits disconnected when connection stream closes',
