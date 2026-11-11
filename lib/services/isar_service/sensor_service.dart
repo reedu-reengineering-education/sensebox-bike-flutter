@@ -23,8 +23,14 @@ Future<void> putSensorRows(
 
 class SensorService {
   final IsarProvider isarProvider;
+  final Duration batchWriteDelay;
+  final List<SensorData> _queuedRows = [];
+  Future<void>? _queuedWrite;
 
-  SensorService({required this.isarProvider});
+  SensorService({
+    required this.isarProvider,
+    this.batchWriteDelay = const Duration(seconds: 2),
+  });
 
   Future<Id> saveSensorData(SensorData sensorData) async {
     return isarProvider.runWriteTxn((isar) async {
@@ -80,11 +86,18 @@ class SensorService {
     });
   }
 
-  Future<void> saveSensorDataBatch(List<SensorData> batch) async {
-    if (batch.isEmpty) return;
+  Future<void> saveSensorDataBatch(List<SensorData> batch) {
+    if (batch.isEmpty) {
+      return Future.value();
+    }
+    _queuedRows.addAll(batch);
+    return _queuedWrite ??= Future.delayed(batchWriteDelay, _writeQueuedRows);
+  }
 
-    await isarProvider.runWriteTxn((isar) async {
-      await putSensorRows(isar, batch);
-    });
+  Future<void> _writeQueuedRows() {
+    final rows = List.of(_queuedRows);
+    _queuedRows.clear();
+    _queuedWrite = null;
+    return isarProvider.runWriteTxn((isar) => putSensorRows(isar, rows));
   }
 }
