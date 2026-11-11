@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
 import 'package:sensebox_bike/ble/ble_uuids.dart';
@@ -331,29 +330,30 @@ void main() {
         );
       });
 
-      test('powered on reconnects when platform still reports connected after adapter off',
-          () async {
+      test('powered on reconnects when the link is down', () async {
         primeConnectedAndWatchingLink(
           realBleBloc,
           bluetoothEnabled: true,
         );
-        realBleBloc.debugMarkLinkLostDueToAdapterPowerOff();
-        when(() => platform.isConnected(testBleDevice.id)).thenReturn(true);
-        when(() => platform.discoverServices(testBleDevice.id))
-            .thenAnswer((_) => Completer<List<BleService>>().future);
+        when(() => platform.isConnected(testBleDevice.id)).thenReturn(false);
+        final scan = StreamController<BleDevice>();
+        addTearDown(scan.close);
+        when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
+            .thenAnswer((_) => scan.stream);
 
         unawaited(realBleBloc.debugOnBluetoothPoweredOn());
         await Future<void>.delayed(const Duration(milliseconds: 50));
 
         expect(realBleBloc.isReconnectingNotifier.value, isTrue);
-        verify(() => platform.discoverServices(testBleDevice.id)).called(1);
+        verify(() => platform.scanForDevices(withServices: any(named: 'withServices')))
+            .called(1);
 
         await realBleBloc.disconnectDevice(
           reason: BleDisconnectReason.userRequested,
         );
       });
 
-      test('powered on skips reconnect when link is live and adapter was not powered off',
+      test('powered on skips reconnect when the link is live',
           () async {
         primeConnectedAndWatchingLink(realBleBloc);
         when(() => platform.isConnected(testBleDevice.id)).thenReturn(true);
@@ -362,6 +362,52 @@ void main() {
 
         expect(realBleBloc.isReconnectingNotifier.value, isFalse);
         verifyNever(() => platform.disconnect(testBleDevice.id));
+      });
+    });
+
+    group('Disconnect vibration', () {
+      late MockBlePlatform platform;
+      late BleBloc realBleBloc;
+      late void Function(String, BleLinkState?, BleLinkState) linkChanged;
+
+      setUp(() {
+        platform = MockBlePlatform();
+        when(() => mockSettingsBloc.vibrateOnDisconnect).thenReturn(false);
+        when(() => platform.isConnected(any())).thenReturn(true);
+        when(() => platform.connectionState(any()))
+            .thenAnswer((_) => const Stream.empty());
+        realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        linkChanged = verify(() => platform.onLinkStateChanged = captureAny())
+            .captured
+            .single as void Function(String, BleLinkState?, BleLinkState);
+        primeConnectedAndWatchingLink(realBleBloc);
+      });
+
+      tearDown(() => realBleBloc.dispose());
+
+      test('considers vibrating when a connected box drops', () {
+        linkChanged(
+            testBleDevice.id, BleLinkState.connected, BleLinkState.disconnected);
+
+        verify(() => mockSettingsBloc.vibrateOnDisconnect).called(1);
+      });
+
+      test('does not vibrate when the user disconnects', () async {
+        await realBleBloc.disconnectDevice(
+          reason: BleDisconnectReason.userRequested,
+        );
+        linkChanged(
+            testBleDevice.id, BleLinkState.connected, BleLinkState.disconnected);
+
+        verifyNever(() => mockSettingsBloc.vibrateOnDisconnect);
+      });
+
+      test('does not vibrate for links dropped while reconnecting', () {
+        realBleBloc.debugSetConnectionPhase(BleConnectionPhase.reconnecting);
+        linkChanged(
+            testBleDevice.id, BleLinkState.connected, BleLinkState.disconnected);
+
+        verifyNever(() => mockSettingsBloc.vibrateOnDisconnect);
       });
     });
 
