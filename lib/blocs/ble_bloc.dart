@@ -494,6 +494,14 @@ class BleBloc with ChangeNotifier {
     await _platform.connect(device.id);
   }
 
+  // Always scan before connecting, even when the device id is known.
+  // On Android, flutter_reactive_ble caches the native connection per device
+  // and only drops it when the connect subscription is cancelled while still
+  // active. After a link loss that stream ends on its own, so a direct
+  // reconnect reuses the dead connection: notifications get enabled but never
+  // deliver data. The scan gives the plugin time to clear that state.
+  // Trade-off: on iOS an unfiltered scan returns nothing in the background,
+  // so background reconnects depend on the app being in the foreground.
   Future<BleDevice> _connectLink(BleDevice device) async {
     final advertised = await _waitForAdvertisingTarget(device);
     if (advertised == null) {

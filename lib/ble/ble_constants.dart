@@ -24,4 +24,4 @@ const bleAutoConnectScanTimeout = Duration(seconds: 8);
 
 const blePostDisconnectSettleDelay = Duration(milliseconds: 800);
 const bleLinkOnlyDisconnectSettleDelay = Duration(milliseconds: 300);
-const bleDataStaleTimeout = Duration(seconds: 6);
+const bleDataStaleTimeout = Duration(seconds: 15);

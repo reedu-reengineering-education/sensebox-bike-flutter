@@ -26,10 +26,13 @@ bool isBluetoothAdapterEnabled(BleAdapterState status) =>
     status == BleAdapterState.ready;
 
 class BlePlatform {
-  BlePlatform({FlutterReactiveBle? reactiveBle})
-      : _reactiveBle = reactiveBle ?? FlutterReactiveBle();
+  BlePlatform({
+    FlutterReactiveBle? reactiveBle,
+    this.dataStaleTimeout = bleDataStaleTimeout,
+  }) : _reactiveBle = reactiveBle ?? FlutterReactiveBle();
 
   final FlutterReactiveBle _reactiveBle;
+  final Duration dataStaleTimeout;
 
   final Map<String, StreamSubscription<ConnectionStateUpdate>> _connectionSubs =
       {};
@@ -140,16 +143,18 @@ class BlePlatform {
     }
   }
 
-  Future<void> disconnect(String deviceId) async {
-    _emitLinkState(deviceId, BleLinkState.disconnecting,
-        source: 'app-disconnect');
+  Future<void> disconnect(
+    String deviceId, {
+    String source = 'app-disconnect',
+  }) async {
+    _cancelDataWatchdog(deviceId);
+    _emitLinkState(deviceId, BleLinkState.disconnecting, source: source);
 
     await _connectionSubs[deviceId]?.cancel();
     _connectionSubs.remove(deviceId);
 
     _characteristics.remove(deviceId);
-    _emitLinkState(deviceId, BleLinkState.disconnected,
-        source: 'app-disconnect');
+    _emitLinkState(deviceId, BleLinkState.disconnected, source: source);
   }
 
   Future<List<BleService>> discoverServices(String deviceId) async {
@@ -217,8 +222,8 @@ class BlePlatform {
       return;
     }
     _dataWatchdogs[deviceId]?.cancel();
-    _dataWatchdogs[deviceId] = Timer(bleDataStaleTimeout, () {
-      _emitLinkState(deviceId, BleLinkState.disconnected, source: 'watchdog');
+    _dataWatchdogs[deviceId] = Timer(dataStaleTimeout, () {
+      unawaited(disconnect(deviceId, source: 'watchdog'));
     });
   }
 
