@@ -56,8 +56,7 @@ void main() {
     when(() => platform.scanForDevices()).thenAnswer((_) => Stream.fromIterable(
         [const BleDevice(id: 'other', name: 'senseBox:test'), testBleDevice]));
 
-    final found = await scanner.waitForAdvertisingDevice(testBleDevice,
-        shouldCancel: () => false);
+    final found = await scanner.waitForAdvertisingDevice(testBleDevice);
 
     expect(found, testBleDevice);
     expect(isScanning.value, isFalse);
@@ -69,8 +68,7 @@ void main() {
         .thenAnswer((_) => Stream.value(testBleDevice));
 
     final found = await scanner.waitForAdvertisingDevice(
-        const BleDevice(id: '', name: 'senseBox:test'),
-        shouldCancel: () => false);
+        const BleDevice(id: '', name: 'senseBox:test'));
 
     expect(found, testBleDevice);
   });
@@ -81,11 +79,23 @@ void main() {
         .thenAnswer((_) => Stream.error(scanError));
 
     await expectLater(
-      scanner.waitForAdvertisingDevice(testBleDevice,
-          shouldCancel: () => false),
+      scanner.waitForAdvertisingDevice(testBleDevice),
       throwsA(same(scanError)),
     );
     expect(isScanning.value, isFalse);
+  });
+
+  test('stopScanning ends a pending wait with no device', () async {
+    final scan = StreamController<BleDevice>();
+    addTearDown(scan.close);
+    when(() => platform.scanForDevices()).thenAnswer((_) => scan.stream);
+
+    final waiting = scanner.waitForAdvertisingDevice(testBleDevice);
+    await pumpEventQueue();
+    await scanner.stopScanning();
+
+    expect(await waiting, isNull);
+    expect(scan.hasListener, isFalse);
   });
 
   test('waitForAdvertisingDevice returns null after the timeout', () async {
@@ -94,7 +104,7 @@ void main() {
     when(() => platform.scanForDevices()).thenAnswer((_) => scan.stream);
 
     final found = await scanner.waitForAdvertisingDevice(testBleDevice,
-        shouldCancel: () => false, timeout: const Duration(milliseconds: 50));
+        timeout: const Duration(milliseconds: 50));
 
     expect(found, isNull);
     expect(scan.hasListener, isFalse);

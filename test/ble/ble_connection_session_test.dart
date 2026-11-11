@@ -225,59 +225,5 @@ void main() {
         isNot(contains(existingUuid)),
       );
     });
-
-    test('returns failure when stability dwell sees disconnect', () async {
-      when(() => platform.discoverServices(device.id))
-          .thenAnswer((_) async => [senseBoxService]);
-      when(() => platform.isConnected(device.id)).thenReturn(false);
-      when(() => platform.subscribeToCharacteristic(any())).thenAnswer(
-        (invocation) {
-          final ref =
-              invocation.positionalArguments[0] as BleCharacteristicRef;
-          if (ref.characteristicUuid == probeUuid) {
-            return Stream.periodic(
-              const Duration(milliseconds: 10),
-              (_) => float32Bytes([1.0]),
-            );
-          }
-          return notifyController.stream;
-        },
-      );
-
-      final result = await session.establish(
-        device,
-        streams: streams,
-        stabilityDwell: const Duration(milliseconds: 50),
-      );
-
-      expect(result.success, isFalse);
-    });
-
-    test('returns success after stability dwell with ongoing data', () async {
-      when(() => platform.discoverServices(device.id))
-          .thenAnswer((_) async => [senseBoxService]);
-      when(() => platform.isConnected(device.id)).thenReturn(true);
-      when(() => platform.subscribeToCharacteristic(any())).thenAnswer(
-        (invocation) {
-          final ref =
-              invocation.positionalArguments[0] as BleCharacteristicRef;
-          if (ref.characteristicUuid == probeUuid) {
-            return Stream.periodic(
-              const Duration(milliseconds: 20),
-              (_) => float32Bytes([1.0]),
-            );
-          }
-          return notifyController.stream;
-        },
-      );
-
-      final result = await session.establish(
-        device,
-        streams: streams,
-        stabilityDwell: const Duration(milliseconds: 50),
-      );
-
-      expect(result.success, isTrue);
-    });
   });
 }

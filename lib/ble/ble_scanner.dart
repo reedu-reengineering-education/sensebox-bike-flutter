@@ -24,6 +24,7 @@ class BleScanner {
 
   StreamSubscription<BleDevice>? _scanSubscription;
   Timer? _scanTimeoutTimer;
+  Completer<BleDevice?>? _pendingWait;
 
   Stream<List<BleDevice>> get devicesListStream =>
       _devicesListController.stream;
@@ -47,6 +48,7 @@ class BleScanner {
   }
 
   Future<void> stopScanning() async {
+    _endPendingWait();
     _scanTimeoutTimer?.cancel();
     _scanTimeoutTimer = null;
     await _scanSubscription?.cancel();
@@ -56,7 +58,6 @@ class BleScanner {
 
   Future<BleDevice?> waitForAdvertisingDevice(
     BleDevice device, {
-    required bool Function() shouldCancel,
     Duration timeout = bleScanTimeout,
   }) async {
     ErrorService.logEvent('ble', 'scan for device started', data: {
@@ -81,13 +82,10 @@ class BleScanner {
       },
       timeout: timeout,
     );
+    _pendingWait = found;
 
     try {
-      final result = await Future.any<BleDevice?>([
-        found.future,
-        Future<BleDevice?>.delayed(timeout, () => null),
-        _waitUntilCancelled(shouldCancel),
-      ]);
+      final result = await found.future;
       ErrorService.logEvent('ble', 'scan for device finished', data: {
         'device': device.id,
         'found': result != null,
@@ -103,6 +101,7 @@ class BleScanner {
     required void Function(Object error, StackTrace stackTrace) onError,
     required Duration timeout,
   }) {
+    _endPendingWait();
     _scanTimeoutTimer?.cancel();
     unawaited(_scanSubscription?.cancel());
     _scanSubscription = platform.scanForDevices().listen(
@@ -110,19 +109,20 @@ class BleScanner {
       onError: (Object error, StackTrace stackTrace) {
         ErrorService.logEvent('ble', 'scan failed',
             data: {'error': error}, level: SentryLevel.warning);
-        unawaited(stopScanning());
         onError(error, stackTrace);
+        unawaited(stopScanning());
       },
     );
     _scanTimeoutTimer = Timer(timeout, () => unawaited(stopScanning()));
     isScanningNotifier.value = true;
   }
 
-  Future<BleDevice?> _waitUntilCancelled(bool Function() shouldCancel) async {
-    while (!shouldCancel()) {
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+  void _endPendingWait() {
+    final pending = _pendingWait;
+    _pendingWait = null;
+    if (pending != null && !pending.isCompleted) {
+      pending.complete(null);
     }
-    return null;
   }
 
   void _onDiscoveredDevice(BleDevice device) {
