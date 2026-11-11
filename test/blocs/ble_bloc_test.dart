@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
+import 'package:sensebox_bike/ble/ble_uuids.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -20,6 +21,7 @@ void main() {
       TestWidgetsFlutterBinding.ensureInitialized();
       registerFallbackValue(const BleDevice(id: 'fallback', name: 'fallback'));
       registerFallbackValue(const Duration(seconds: 10));
+      registerFallbackValue(<BleUuid>[]);
     });
 
     setUp(() {
@@ -114,7 +116,7 @@ void main() {
         final platform = MockBlePlatform();
         stubBlePlatformLifecycle(platform);
         const device = BleDevice(id: 'AA:BB:CC:DD:EE:02', name: 'senseBox:test');
-        when(() => platform.scanForDevices())
+        when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
             .thenAnswer((_) => Stream.value(device));
         when(() => platform.isConnected(any())).thenReturn(false);
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
@@ -140,7 +142,7 @@ void main() {
         final platform = MockBlePlatform();
         stubBlePlatformLifecycle(platform);
         const device = BleDevice(id: 'AA:BB:CC:DD:EE:02', name: 'senseBox:test');
-        when(() => platform.scanForDevices())
+        when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
             .thenAnswer((_) => Stream.value(device));
         when(() => platform.isConnected(any())).thenReturn(false);
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
@@ -165,7 +167,7 @@ void main() {
         stubBlePlatformLifecycle(platform);
         const device = BleDevice(id: 'AA:BB:CC:DD:EE:04', name: 'senseBox:test');
         final scanError = Exception('Bluetooth disabled');
-        when(() => platform.scanForDevices())
+        when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
             .thenAnswer((_) => Stream.error(scanError, StackTrace.empty));
         when(() => platform.isConnected(any())).thenReturn(false);
 
@@ -191,7 +193,7 @@ void main() {
         addTearDown(linkStates.close);
         when(() => platform.connectionState(device.id))
             .thenAnswer((_) => linkStates.stream);
-        when(() => platform.scanForDevices())
+        when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
             .thenAnswer((_) => Stream.value(device));
         when(() => platform.isConnected(any())).thenReturn(false);
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
@@ -229,7 +231,7 @@ void main() {
         final pendingConnect = Completer<void>();
         when(() => platform.connectionState(device.id))
             .thenAnswer((_) => linkStates.stream);
-        when(() => platform.scanForDevices())
+        when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
             .thenAnswer((_) => Stream.value(device));
         when(() => platform.isConnected(any())).thenReturn(false);
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
@@ -314,7 +316,7 @@ void main() {
         );
         // Link is gone after the adapter-off blip.
         when(() => platform.isConnected(testBleDevice.id)).thenReturn(false);
-        when(() => platform.scanForDevices())
+        when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
             .thenAnswer((_) => const Stream.empty());
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
             .thenAnswer((_) async {});
@@ -384,7 +386,7 @@ void main() {
         when(() => platform.disconnect(any())).thenAnswer((_) async {
           expect(scanCalled, isFalse);
         });
-        when(() => platform.scanForDevices()).thenAnswer((_) {
+        when(() => platform.scanForDevices(withServices: any(named: 'withServices'))).thenAnswer((_) {
           scanCalled = true;
           return const Stream<BleDevice>.empty();
         });
@@ -413,7 +415,7 @@ void main() {
 
         await bleBloc.autoConnectToRememberedDevice();
 
-        verifyNever(() => platform.scanForDevices());
+        verifyNever(() => platform.scanForDevices(withServices: any(named: 'withServices')));
       });
 
       test('does nothing when bluetooth is disabled', () async {
@@ -429,7 +431,7 @@ void main() {
 
         await bleBloc.autoConnectToRememberedDevice();
 
-        verifyNever(() => platform.scanForDevices());
+        verifyNever(() => platform.scanForDevices(withServices: any(named: 'withServices')));
       });
 
       test('does nothing when a device is already selected', () async {
@@ -446,14 +448,14 @@ void main() {
 
         await bleBloc.autoConnectToRememberedDevice();
 
-        verifyNever(() => platform.scanForDevices());
+        verifyNever(() => platform.scanForDevices(withServices: any(named: 'withServices')));
       });
 
       test(
           'gives up quietly without a connection error when the device never advertises',
           () async {
         final platform = MockBlePlatform();
-        when(() => platform.scanForDevices())
+        when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
             .thenAnswer((_) => const Stream<BleDevice>.empty());
         when(() => mockSettingsBloc.rememberedDeviceId)
             .thenReturn(testDeviceId);
@@ -477,7 +479,7 @@ void main() {
           () async {
         final platform = MockBlePlatform();
         stubBlePlatformLifecycle(platform);
-        when(() => platform.scanForDevices())
+        when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
             .thenAnswer((_) => Stream.value(testBleDevice));
         when(() => platform.isConnected(any())).thenReturn(false);
         when(() => platform.connect(any(), timeout: any(named: 'timeout')))
@@ -506,7 +508,7 @@ void main() {
         final platform = MockBlePlatform();
         stubBlePlatformLifecycle(platform);
         var scanCalled = false;
-        when(() => platform.scanForDevices()).thenAnswer((_) {
+        when(() => platform.scanForDevices(withServices: any(named: 'withServices'))).thenAnswer((_) {
           scanCalled = true;
           return const Stream<BleDevice>.empty();
         });

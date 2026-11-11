@@ -64,13 +64,14 @@ void main() {
             serviceData: const {},
             manufacturerData: Uint8List(0),
             rssi: -60,
-            serviceUuids: const [],
+            serviceUuids: [Uuid.parse(senseBoxServiceUuid.value)],
           )));
 
       final devices = await platform.scanForDevices().toList();
 
       expect(devices.single.id, deviceId);
       expect(devices.single.name, 'senseBox:bike');
+      expect(devices.single.serviceUuids, [senseBoxServiceUuid]);
     });
 
     test('isConnected is false before connecting', () {

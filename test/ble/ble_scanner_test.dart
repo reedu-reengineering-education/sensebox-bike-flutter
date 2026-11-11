@@ -5,10 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_scanner.dart';
+import 'package:sensebox_bike/ble/ble_uuids.dart';
 import 'ble_test_helpers.dart';
 import 'mock_ble_platform.dart';
 
 void main() {
+  setUpAll(() => registerFallbackValue(<BleUuid>[]));
+
   late MockBlePlatform platform;
   late ValueNotifier<bool> isScanning;
   late BleScanner scanner;
@@ -26,7 +29,7 @@ void main() {
   });
 
   test('startScanning lists only senseBox devices', () async {
-    when(() => platform.scanForDevices()).thenAnswer((_) => Stream.fromIterable(
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices'))).thenAnswer((_) => Stream.fromIterable(
         [const BleDevice(id: 'other', name: 'OtherDevice'), testBleDevice]));
 
     await scanner.startScanning();
@@ -38,7 +41,7 @@ void main() {
 
   test('startScanning puts scan errors on the device list stream', () async {
     final scanError = Exception('Bluetooth disabled');
-    when(() => platform.scanForDevices())
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
         .thenAnswer((_) => Stream.error(scanError));
 
     final emitted = expectLater(
@@ -53,7 +56,7 @@ void main() {
 
   test('waitForAdvertisingDevice returns the device with the same id',
       () async {
-    when(() => platform.scanForDevices()).thenAnswer((_) => Stream.fromIterable(
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices'))).thenAnswer((_) => Stream.fromIterable(
         [const BleDevice(id: 'other', name: 'senseBox:test'), testBleDevice]));
 
     final found = await scanner.waitForAdvertisingDevice(testBleDevice);
@@ -62,9 +65,34 @@ void main() {
     expect(isScanning.value, isFalse);
   });
 
+  test('waitForAdvertisingDevice scans only for the services the device advertised',
+      () async {
+    final service = BleUuid('cf06a218-f68e-e0be-ad04-8ebc1eb0bc84');
+    final known = BleDevice(
+      id: testBleDevice.id,
+      name: testBleDevice.name,
+      serviceUuids: [service],
+    );
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
+        .thenAnswer((_) => Stream.value(testBleDevice));
+
+    await scanner.waitForAdvertisingDevice(known);
+
+    verify(() => platform.scanForDevices(withServices: [service])).called(1);
+  });
+
+  test('startScanning does not filter by service', () async {
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
+        .thenAnswer((_) => const Stream.empty());
+
+    await scanner.startScanning();
+
+    verify(() => platform.scanForDevices(withServices: const [])).called(1);
+  });
+
   test('waitForAdvertisingDevice matches by name when no id is given',
       () async {
-    when(() => platform.scanForDevices())
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
         .thenAnswer((_) => Stream.value(testBleDevice));
 
     final found = await scanner.waitForAdvertisingDevice(
@@ -75,7 +103,7 @@ void main() {
 
   test('waitForAdvertisingDevice fails with the scan error', () async {
     final scanError = Exception('Bluetooth disabled');
-    when(() => platform.scanForDevices())
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
         .thenAnswer((_) => Stream.error(scanError));
 
     await expectLater(
@@ -88,7 +116,7 @@ void main() {
   test('stopScanning ends a pending wait with no device', () async {
     final scan = StreamController<BleDevice>();
     addTearDown(scan.close);
-    when(() => platform.scanForDevices()).thenAnswer((_) => scan.stream);
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices'))).thenAnswer((_) => scan.stream);
 
     final waiting = scanner.waitForAdvertisingDevice(testBleDevice);
     await pumpEventQueue();
@@ -101,7 +129,7 @@ void main() {
   test('waitForAdvertisingDevice returns null after the timeout', () async {
     final scan = StreamController<BleDevice>();
     addTearDown(scan.close);
-    when(() => platform.scanForDevices()).thenAnswer((_) => scan.stream);
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices'))).thenAnswer((_) => scan.stream);
 
     final found = await scanner.waitForAdvertisingDevice(testBleDevice,
         timeout: const Duration(milliseconds: 50));

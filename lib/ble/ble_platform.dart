@@ -86,12 +86,19 @@ class BlePlatform {
     }
   }
 
-  Stream<BleDevice> scanForDevices() => _reactiveBle
-      .scanForDevices(
-        withServices: const [],
-        scanMode: ScanMode.lowLatency,
-      )
-      .map((device) => BleDevice(id: device.id, name: device.name));
+  Stream<BleDevice> scanForDevices({List<BleUuid> withServices = const []}) =>
+      _reactiveBle
+          .scanForDevices(
+            withServices: withServices.map(_toUuid).toList(),
+            scanMode: ScanMode.lowLatency,
+          )
+          .map((device) => BleDevice(
+                id: device.id,
+                name: device.name,
+                serviceUuids: [
+                  for (final uuid in device.serviceUuids) BleUuid('$uuid'),
+                ],
+              ));
 
   Future<void> connect(
     String deviceId, {

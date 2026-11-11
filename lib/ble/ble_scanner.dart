@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/ble/ble_constants.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
+import 'package:sensebox_bike/ble/ble_uuids.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -63,6 +64,7 @@ class BleScanner {
     ErrorService.logEvent('ble', 'scan for device started', data: {
       'device': device.id,
       'timeoutSeconds': timeout.inSeconds,
+      'services': [for (final uuid in device.serviceUuids) '$uuid'],
     });
 
     final found = Completer<BleDevice?>();
@@ -81,6 +83,7 @@ class BleScanner {
         }
       },
       timeout: timeout,
+      withServices: device.serviceUuids,
     );
     _pendingWait = found;
 
@@ -100,11 +103,13 @@ class BleScanner {
     void Function(BleDevice device) onDevice, {
     required void Function(Object error, StackTrace stackTrace) onError,
     required Duration timeout,
+    List<BleUuid> withServices = const [],
   }) {
     _endPendingWait();
     _scanTimeoutTimer?.cancel();
     unawaited(_scanSubscription?.cancel());
-    _scanSubscription = platform.scanForDevices().listen(
+    _scanSubscription =
+        platform.scanForDevices(withServices: withServices).listen(
       onDevice,
       onError: (Object error, StackTrace stackTrace) {
         ErrorService.logEvent('ble', 'scan failed',
