@@ -620,10 +620,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'L\'enregistrement en arrière-plan nécessite que l\'accès à la localisation soit réglé sur « Toujours ». Ouvrez les Réglages système, trouvez cette application et définissez la localisation sur « Toujours ».';
 
   @override
-  String get errorNoScanAccess =>
-      'Pour vous connecter à la senseBox, autorisez l’application à rechercher des appareils à proximité dans les paramètres du téléphone.';
-
-  @override
   String get errorNoSenseBoxSelected =>
       'Pour permettre le téléversement des données des capteurs vers le cloud, veuillez vous connecter à votre compte openSenseMap et sélectionner la box.';
 

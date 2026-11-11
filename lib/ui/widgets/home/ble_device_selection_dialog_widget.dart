@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/widgets/common/clickable_tile.dart';
-import 'package:sensebox_bike/ui/widgets/common/custom_divider.dart';
 import 'package:sensebox_bike/ui/widgets/common/empty_state_message.dart';
 import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
 import 'package:sensebox_bike/ui/widgets/common/surface_outlined_icon_button.dart';
@@ -36,26 +35,12 @@ class _BleDeviceSelectionBottomSheet extends StatefulWidget {
 
 class _BleDeviceSelectionBottomSheetState
     extends State<_BleDeviceSelectionBottomSheet> {
-  Object? _scanError;
   bool _showRetry = false;
 
   @override
   void initState() {
     super.initState();
-    _startScan();
-  }
-
-  Future<void> _startScan() async {
-    try {
-      await widget.bleBloc.startScanning();
-      if (mounted) {
-        setState(() => _scanError = null);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _scanError = e);
-      }
-    }
+    widget.bleBloc.startScanning();
   }
 
   void _onShowRetryChanged(bool showRetry) {
@@ -64,7 +49,6 @@ class _BleDeviceSelectionBottomSheetState
     }
   }
 
-  bool get _useRetryButton => _scanError != null || _showRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +64,6 @@ class _BleDeviceSelectionBottomSheetState
         ),
         DeviceSelectionSheet(
           bleBloc: widget.bleBloc,
-          scanError: _scanError,
           onShowRetryChanged: _onShowRetryChanged,
         ),
         Padding(
@@ -91,14 +74,13 @@ class _BleDeviceSelectionBottomSheetState
             bottom: spacing * 2 + MediaQuery.of(context).viewPadding.bottom,
           ),
           child: SurfaceOutlinedIconButton(
-            icon: _useRetryButton ? Icons.refresh : Icons.close,
-            label: _useRetryButton
+            icon: _showRetry ? Icons.refresh : Icons.close,
+            label: _showRetry
                 ? localizations.generalRetry
                 : localizations.generalCancel,
             onPressed: () async {
-              if (_useRetryButton) {
-                setState(() => _scanError = null);
-                await _startScan();
+              if (_showRetry) {
+                await widget.bleBloc.startScanning();
               } else {
                 await widget.bleBloc.stopScanning();
                 if (context.mounted) {
@@ -115,13 +97,11 @@ class _BleDeviceSelectionBottomSheetState
 
 class DeviceSelectionSheet extends StatefulWidget {
   final BleBloc bleBloc;
-  final Object? scanError;
   final ValueChanged<bool>? onShowRetryChanged;
 
   const DeviceSelectionSheet({
     super.key,
     required this.bleBloc,
-    this.scanError,
     this.onShowRetryChanged,
   });
 
@@ -149,9 +129,6 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
     required bool isScanning,
     required AsyncSnapshot<List<BleDevice>> snapshot,
   }) {
-    if (widget.scanError != null) {
-      return true;
-    }
     if (snapshot.hasError) {
       return true;
     }
@@ -165,27 +142,6 @@ class _DeviceSelectionSheetState extends State<DeviceSelectionSheet> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-
-    if (widget.scanError != null) {
-      _reportShowRetry(true);
-      return Padding(
-        padding: const EdgeInsets.only(
-          top: spacing * 4,
-          bottom: spacing,
-          left: spacing,
-          right: spacing,
-        ),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.6,
-          child: Center(
-            child: Text(
-              widget.scanError.toString(),
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
-        ),
-      );
-    }
 
     return Padding(
       padding: const EdgeInsets.only(

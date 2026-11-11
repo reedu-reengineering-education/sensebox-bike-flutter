@@ -27,6 +27,7 @@ void main() {
     when(() => bleBloc.devicesList).thenReturn([]);
     when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
     when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
+    when(() => bleBloc.startScanning()).thenAnswer((_) async {});
   });
 
   testWidgets('shows dialog title', (tester) async {
@@ -49,17 +50,17 @@ void main() {
   });
 
   testWidgets('shows scan error', (tester) async {
+    when(() => bleBloc.devicesListStream)
+        .thenAnswer((_) => Stream.error('Test error'));
     await tester.pumpWidget(
       createLocalizedTestApp(
         locale: const Locale('en'),
         child: Material(
-          child: DeviceSelectionSheet(
-            bleBloc: bleBloc,
-            scanError: 'Test error',
-          ),
+          child: DeviceSelectionSheet(bleBloc: bleBloc),
         ),
       ),
     );
+    await tester.pump();
 
     expect(find.textContaining('Test error'), findsOneWidget);
   });

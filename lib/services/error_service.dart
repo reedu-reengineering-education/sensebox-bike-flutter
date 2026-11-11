@@ -25,7 +25,6 @@ class ErrorService {
       if (error is LocationPermissionDenied ||
           error is LoginError ||
           error is RegistrationError ||
-          error is ScanPermissionDenied ||
           error is NoSenseBoxSelected ||
           error is ExportDirectoryAccessError ||
           error is UploadFailureError ||
@@ -107,9 +106,6 @@ class ErrorService {
     if (error is LocationPermissionDenied) {
       return localizations?.errorLocationAlwaysRequired ??
           'Background recording requires Location access set to "Always". Open System Settings, find this app, and change Location to "Always".';
-    } else if (error is ScanPermissionDenied) {
-      return localizations?.errorNoScanAccess ??
-          'Please allow the app to scan nearby devices in the phone settings.';
     } else if (error is NoSenseBoxSelected) {
       return localizations?.errorNoSenseBoxSelected ??
           'Please log in to your openSenseMap account and select a box to upload sensor data to the cloud.';

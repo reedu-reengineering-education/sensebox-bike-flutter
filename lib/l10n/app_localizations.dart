@@ -1170,12 +1170,6 @@ abstract class AppLocalizations {
   /// **'Background recording requires Location access set to \"Always\". Open System Settings, find this app, and change Location to \"Always\".'**
   String get errorLocationAlwaysRequired;
 
-  /// No description provided for @errorNoScanAccess.
-  ///
-  /// In en, this message translates to:
-  /// **'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.'**
-  String get errorNoScanAccess;
-
   /// No description provided for @errorNoSenseBoxSelected.
   ///
   /// In en, this message translates to:

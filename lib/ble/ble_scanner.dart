@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/ble/ble_constants.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
-import 'package:sensebox_bike/services/custom_exceptions.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 const _senseBoxDeviceNamePrefix = 'senseBox';
 
@@ -33,58 +33,25 @@ class BleScanner {
     _emitDevicesList();
   }
 
-  Future<void> startScanning({bool afterDisconnect = false}) async {
-    await stopScanning(keepScanningIndicator: true);
+  Future<void> startScanning() async {
     clearDiscoveredDevices();
-
-    if (afterDisconnect) {
-      await Future<void>.delayed(blePostDisconnectSettleDelay);
-    }
-
-    try {
-      _scanSubscription = platform.scanForDevices().listen(_onDiscoveredDevice);
-      _scanTimeoutTimer = Timer(bleScanTimeout, () {
-        unawaited(stopScanning());
-      });
-      isScanningNotifier.value = true;
-    } catch (_) {
-      await _scanSubscription?.cancel();
-      _scanSubscription = null;
-      throw ScanPermissionDenied();
-    }
+    _startScan(
+      _onDiscoveredDevice,
+      onError: (error, stackTrace) {
+        if (!_devicesListController.isClosed) {
+          _devicesListController.addError(error, stackTrace);
+        }
+      },
+      timeout: bleScanTimeout,
+    );
   }
 
-  Future<void> stopScanning({bool keepScanningIndicator = false}) async {
+  Future<void> stopScanning() async {
     _scanTimeoutTimer?.cancel();
     _scanTimeoutTimer = null;
     await _scanSubscription?.cancel();
     _scanSubscription = null;
-
-    if (!keepScanningIndicator) {
-      isScanningNotifier.value = false;
-    }
-  }
-
-  Future<void> scanForBox({
-    required String name,
-    required Future<void> Function(BleDevice device) onDeviceFound,
-  }) async {
-    await stopScanning();
-    var matchHandled = false;
-    _scanSubscription = platform.scanForDevices().listen((device) async {
-      if (matchHandled) {
-        return;
-      }
-      if (deviceDisplayName(device) == name) {
-        matchHandled = true;
-        await stopScanning();
-        await onDeviceFound(device);
-      }
-    });
-    _scanTimeoutTimer = Timer(bleScanTimeout, () {
-      unawaited(stopScanning());
-    });
-    isScanningNotifier.value = true;
+    isScanningNotifier.value = false;
   }
 
   Future<BleDevice?> waitForAdvertisingDevice(
@@ -92,24 +59,28 @@ class BleScanner {
     required bool Function() shouldCancel,
     Duration timeout = bleScanTimeout,
   }) async {
-    await stopScanning();
     ErrorService.logEvent('ble', 'scan for device started', data: {
       'device': device.id,
       'timeoutSeconds': timeout.inSeconds,
     });
 
     final found = Completer<BleDevice?>();
-    _scanSubscription = platform.scanForDevices().listen((discovered) {
-      final hasTargetId = device.id.isNotEmpty;
-      final idMatches = hasTargetId && discovered.id == device.id;
-      final nameMatches = !hasTargetId &&
-          device.name.isNotEmpty &&
-          deviceDisplayName(discovered) == deviceDisplayName(device);
-      if ((idMatches || nameMatches) && !found.isCompleted) {
-        found.complete(discovered);
-      }
-    });
-    isScanningNotifier.value = true;
+    _startScan(
+      (discovered) {
+        final matches = device.id.isNotEmpty
+            ? discovered.id == device.id
+            : device.name.isNotEmpty && discovered.name == device.name;
+        if (matches && !found.isCompleted) {
+          found.complete(discovered);
+        }
+      },
+      onError: (error, stackTrace) {
+        if (!found.isCompleted) {
+          found.completeError(error, stackTrace);
+        }
+      },
+      timeout: timeout,
+    );
 
     try {
       final result = await Future.any<BleDevice?>([
@@ -125,6 +96,26 @@ class BleScanner {
     } finally {
       await stopScanning();
     }
+  }
+
+  void _startScan(
+    void Function(BleDevice device) onDevice, {
+    required void Function(Object error, StackTrace stackTrace) onError,
+    required Duration timeout,
+  }) {
+    _scanTimeoutTimer?.cancel();
+    unawaited(_scanSubscription?.cancel());
+    _scanSubscription = platform.scanForDevices().listen(
+      onDevice,
+      onError: (Object error, StackTrace stackTrace) {
+        ErrorService.logEvent('ble', 'scan failed',
+            data: {'error': error}, level: SentryLevel.warning);
+        unawaited(stopScanning());
+        onError(error, stackTrace);
+      },
+    );
+    _scanTimeoutTimer = Timer(timeout, () => unawaited(stopScanning()));
+    isScanningNotifier.value = true;
   }
 
   Future<BleDevice?> _waitUntilCancelled(bool Function() shouldCancel) async {
@@ -161,36 +152,10 @@ class BleScanner {
   }
 }
 
-String deviceDisplayName(BleDevice device) {
-  return device.name;
-}
-
 String bleDevicePickerLabel(BleDevice device) {
-  final name = deviceDisplayName(device);
-  if (name.isNotEmpty) {
-    return name;
-  }
-  return device.id;
+  return device.name.isNotEmpty ? device.name : device.id;
 }
 
 bool isSenseBoxDiscoveredDevice(BleDevice device) {
   return device.name.startsWith(_senseBoxDeviceNamePrefix);
-}
-
-List<BleDevice> senseBoxDevicesFromDiscovered(
-  Iterable<BleDevice> devices,
-) {
-  final results = <BleDevice>[];
-  final seen = <String>{};
-  for (final device in devices) {
-    if (!isSenseBoxDiscoveredDevice(device)) {
-      continue;
-    }
-    if (seen.contains(device.id)) {
-      continue;
-    }
-    seen.add(device.id);
-    results.add(device);
-  }
-  return results;
 }

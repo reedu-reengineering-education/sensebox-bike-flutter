@@ -157,6 +157,28 @@ void main() {
         expect(failure.cause.toString(), contains('Connection failed'));
       });
 
+      test('reports a scan error as the connect failure cause', () async {
+        final reported = await _captureSentryEvents();
+
+        final platform = MockBlePlatform();
+        stubBlePlatformLifecycle(platform);
+        const device = BleDevice(id: 'AA:BB:CC:DD:EE:04', name: 'senseBox:test');
+        final scanError = Exception('Bluetooth disabled');
+        when(() => platform.scanForDevices())
+            .thenAnswer((_) => Stream.error(scanError, StackTrace.empty));
+        when(() => platform.isConnected(any())).thenReturn(false);
+
+        final realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        addTearDown(realBleBloc.dispose);
+        realBleBloc.updateBluetoothStatus(true);
+
+        await realBleBloc.connectToDevice(device);
+
+        expect(reported, hasLength(1));
+        final failure = reported.single as BleConnectionFailed;
+        expect(failure.cause, same(scanError));
+      });
+
       test('reports a failed reconnect once, with the last error as cause',
           () async {
         final reported = await _captureSentryEvents();
