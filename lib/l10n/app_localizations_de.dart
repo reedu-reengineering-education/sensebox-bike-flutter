@@ -756,23 +756,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Authentifizierung erforderlich';
 
   @override
-  String uploadProgressChunks(int completed, int total) {
-    String _temp0 = intl.Intl.pluralLogic(
-      total,
-      locale: localeName,
-      other: '$total Blöcken',
-      one: '1 Block',
-      zero: '0 Blöcken',
-    );
-    return '$completed von $_temp0 verarbeitet';
-  }
-
-  @override
-  String uploadProgressPercentage(int percentage) {
-    return '$percentage% abgeschlossen';
-  }
-
-  @override
   String get uploadProgressAuthenticationError =>
       'Bitte melden Sie sich an, um Daten hochzuladen.';
 
@@ -785,12 +768,20 @@ class AppLocalizationsDe extends AppLocalizations {
       'Export fehlgeschlagen. Bitte versuchen Sie es erneut.';
 
   @override
-  String get uploadProgressNetworkError =>
-      'Netzwerkverbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
-
-  @override
   String get uploadProgressGenericError =>
       'Operation fehlgeschlagen. Bitte versuchen Sie es erneut.';
+
+  @override
+  String get uploadErrorTryLater =>
+      'Der Upload konnte nicht abgeschlossen werden. openSenseMap ist gerade möglicherweise ausgelastet oder nicht erreichbar. Bitte versuchen Sie es später erneut. Ihr Track bleibt auf diesem Gerät gespeichert.';
+
+  @override
+  String get uploadStageCheckingLogin => 'openSenseMap-Anmeldung wird geprüft';
+
+  @override
+  String uploadStageUploadingPart(int current, int total) {
+    return 'Teil $current von $total wird zu openSenseMap hochgeladen';
+  }
 
   @override
   String get uploadConfirmTitle => 'Track-Daten hochladen';
@@ -854,10 +845,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trackFilterUnuploaded => 'Nicht hochgeladen';
-
-  @override
-  String get trackUploadRetryFailed =>
-      'Upload-Wiederholung fehlgeschlagen. Bitte versuchen Sie es erneut.';
 
   @override
   String get errorTrackNoGeolocations =>

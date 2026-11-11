@@ -283,13 +283,10 @@ class RecordingBloc with ChangeNotifier {
             _cleanupBatchUploadService();
             debugPrint('[RecordingBloc] Batch upload completed successfully');
           },
-          onFailed: () {
-            _cleanupBatchUploadService();
-            debugPrint('[RecordingBloc] Batch upload failed permanently');
-          },
           onStart: () {
             _startBatchUpload(track, senseBox);
           },
+          onDismiss: _cleanupBatchUploadService,
         ),
       );
     } catch (e, stack) {
@@ -306,13 +303,8 @@ class RecordingBloc with ChangeNotifier {
     try {
       await _batchUploadService!.uploadTrack(track, senseBox);
     } catch (e, stack) {
-      // Log error but don't prevent recording from stopping
-      // The modal will show the error state and allow retry
-      ErrorService.handleError(
-        'Batch upload failed after recording stop: $e',
-        stack,
-        sendToSentry: true,
-      );
+      ErrorService.logToConsole(
+          'Batch upload failed after recording stop: $e', stack);
     }
   }
 

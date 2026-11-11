@@ -449,7 +449,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsGithub => 'GitHub issue';
 
   @override
-  String get privacyZoneDescription => 'Areas where no data will be recorded';
+  String get privacyZoneDescription => 'Áreas onde nenhum dado será registrado';
 
   @override
   String get privacyZonesStart =>
@@ -753,23 +753,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get uploadProgressAuthenticationFailed => 'Autenticação necessária';
 
   @override
-  String uploadProgressChunks(int completed, int total) {
-    String _temp0 = intl.Intl.pluralLogic(
-      total,
-      locale: localeName,
-      other: '$total blocos',
-      one: '1 bloco',
-      zero: '0 blocos',
-    );
-    return '$completed de $_temp0 processados';
-  }
-
-  @override
-  String uploadProgressPercentage(int percentage) {
-    return '$percentage% concluído';
-  }
-
-  @override
   String get uploadProgressAuthenticationError =>
       'Por favor, faça login para enviar dados.';
 
@@ -781,11 +764,19 @@ class AppLocalizationsPt extends AppLocalizations {
   String get errorExportFailed => 'Falha na exportação. Tente novamente.';
 
   @override
-  String get uploadProgressNetworkError =>
-      'Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.';
+  String get uploadProgressGenericError => 'Operação falhou. Tente novamente.';
 
   @override
-  String get uploadProgressGenericError => 'Operação falhou. Tente novamente.';
+  String get uploadErrorTryLater =>
+      'Não foi possível concluir o envio. O openSenseMap pode estar sobrecarregado ou inacessível no momento. Tente novamente mais tarde. Seu trajeto está salvo neste dispositivo.';
+
+  @override
+  String get uploadStageCheckingLogin => 'Verificando login no openSenseMap';
+
+  @override
+  String uploadStageUploadingPart(int current, int total) {
+    return 'Enviando parte $current de $total para o openSenseMap';
+  }
 
   @override
   String get uploadConfirmTitle => 'Enviar Dados do Trajeto';
@@ -849,10 +840,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trackFilterUnuploaded => 'Não enviados';
-
-  @override
-  String get trackUploadRetryFailed =>
-      'Tentativa de envio falhou. Tente novamente.';
 
   @override
   String get errorTrackNoGeolocations =>

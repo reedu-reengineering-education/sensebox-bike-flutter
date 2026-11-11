@@ -13,6 +13,7 @@ class OperationProgressOverlayConfig {
   final VoidCallback? onFailed;
   final VoidCallback? onStart;
   final VoidCallback? onDismiss;
+  final VoidCallback? onCancel;
   final String? exportFilePath;
   final Future<void> Function()? onShare;
 
@@ -25,28 +26,24 @@ class OperationProgressOverlayConfig {
     this.onFailed,
     this.onStart,
     this.onDismiss,
+    this.onCancel,
     this.exportFilePath,
     this.onShare,
   });
 
   factory OperationProgressOverlayConfig.upload({
     required BatchUploadService uploadService,
-    String? titleText,
-    String? confirmMessageText,
     VoidCallback? onComplete,
-    VoidCallback? onFailed,
     VoidCallback? onStart,
     VoidCallback? onDismiss,
   }) {
     return OperationProgressOverlayConfig._(
       progressStream: uploadService.uploadProgressStream,
       showConfirmation: true,
-      titleText: titleText,
-      confirmMessageText: confirmMessageText,
       onComplete: onComplete,
-      onFailed: onFailed,
       onStart: onStart,
       onDismiss: onDismiss,
+      onCancel: uploadService.cancelUpload,
     );
   }
 

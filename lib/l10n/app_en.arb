@@ -310,30 +310,19 @@
     "uploadProgressCompleted": "Operation completed successfully",
     "uploadProgressFailed": "Operation failed",
     "uploadProgressAuthenticationFailed": "Authentication required",
-    "uploadProgressChunks": "{completed} of {total, plural, =0{0 chunks} =1{1 chunk} other{{total} chunks}} processed",
-    "@uploadProgressChunks": {
-        "placeholders": {
-            "completed": {
-                "type": "int"
-            },
-            "total": {
-                "type": "int"
-            }
-        }
-    },
-    "uploadProgressPercentage": "{percentage}% complete",
-    "@uploadProgressPercentage": {
-        "placeholders": {
-            "percentage": {
-                "type": "int"
-            }
-        }
-    },
     "uploadProgressAuthenticationError": "Please log in to upload data.",
     "exportRequiresLoginToOpenSenseMap": "Please log in to your openSenseMap account to proceed with export.",
     "errorExportFailed": "Export failed. Please try again.",
-    "uploadProgressNetworkError": "Network connection failed. Please check your internet connection and try again.",
     "uploadProgressGenericError": "Operation failed. Please try again.",
+    "uploadErrorTryLater": "The upload could not be completed. openSenseMap may be busy or unreachable right now. Please try again later. Your track is saved on this device.",
+    "uploadStageCheckingLogin": "Checking openSenseMap login",
+    "uploadStageUploadingPart": "Uploading part {current} of {total} to openSenseMap",
+    "@uploadStageUploadingPart": {
+        "placeholders": {
+            "current": {"type": "int"},
+            "total": {"type": "int"}
+        }
+    },
     "uploadConfirmTitle": "Upload Track Data",
     "uploadConfirmMessage": "Would you like to upload your track data now?",
     "uploadConfirmUploadNow": "Upload",
@@ -366,7 +355,6 @@
     "trackDirectUploadAuthFailed": "This track failed to upload in real-time because you weren't logged in. Please log in and try uploading again.",
     "trackFilterAll": "All",
     "trackFilterUnuploaded": "Not uploaded",
-    "trackUploadRetryFailed": "Upload retry failed. Please try again.",
     "errorTrackNoGeolocations": "Track has no geolocation data and cannot be uploaded.",
     "openSenseMapInfoText": "Your senseBox:bike data will be shared on openSenseMap, contributing to citizen science and environmental monitoring.",
     "openSenseMapInfoLink": "Visit openSenseMap.org",

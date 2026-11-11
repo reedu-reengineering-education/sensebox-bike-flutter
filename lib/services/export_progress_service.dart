@@ -64,10 +64,7 @@ class ExportProgressService {
           UploadProgress(
             totalChunks: totalChunks,
             completedChunks: completedChunks,
-            failedChunks: 0,
             status: UploadStatus.completed,
-            errorMessage: null,
-            canRetry: false,
           ),
         );
       }
@@ -79,10 +76,8 @@ class ExportProgressService {
           UploadProgress(
             totalChunks: _currentTotalChunks <= 0 ? 1 : _currentTotalChunks,
             completedChunks: _currentCompletedChunks,
-            failedChunks: 1,
             status: UploadStatus.failed,
             errorMessage: _mapExportErrorToToken(e),
-            canRetry: false,
           ),
         );
       }
@@ -106,10 +101,7 @@ class ExportProgressService {
           completedChunks: _currentTotalChunks > 0
               ? (progressValue == 1.0 ? _currentTotalChunks : 0)
               : 0,
-          failedChunks: 0,
           status: status,
-          errorMessage: null,
-          canRetry: false,
         ),
       );
     }
@@ -123,10 +115,7 @@ class ExportProgressService {
       UploadProgress(
         totalChunks: _currentTotalChunks,
         completedChunks: _currentCompletedChunks,
-        failedChunks: 0,
         status: UploadStatus.uploading,
-        errorMessage: null,
-        canRetry: false,
       ),
     );
   }
@@ -139,10 +128,7 @@ class ExportProgressService {
       UploadProgress(
         totalChunks: _currentTotalChunks,
         completedChunks: 0,
-        failedChunks: 0,
         status: UploadStatus.uploading,
-        errorMessage: null,
-        canRetry: false,
       ),
     );
   }

@@ -218,6 +218,7 @@
     "settingsContact": "Ajuda ou feedback?",
     "settingsEmail": "E-mail",
     "settingsGithub": "GitHub issue",
+    "privacyZoneDescription": "Áreas onde nenhum dado será registrado",
     "privacyZonesStart": "Toque no mapa para começar a desenhar uma área. Toque na marca de seleção para finalizar.",
     "privacyZonesDelete": "Toque em uma área para excluí-la. Toque na marca de seleção para finalizar.",
     "trackDetailsPermissionsError": "Permissão negada para salvar o arquivo no armazenamento externo.",
@@ -311,30 +312,13 @@
     "uploadProgressCompleted": "Operação concluída com sucesso",
     "uploadProgressFailed": "Operação falhou",
     "uploadProgressAuthenticationFailed": "Autenticação necessária",
-    "uploadProgressChunks": "{completed} de {total, plural, =0{0 blocos} =1{1 bloco} other{{total} blocos}} processados",
-    "@uploadProgressChunks": {
-        "placeholders": {
-            "completed": {
-                "type": "int"
-            },
-            "total": {
-                "type": "int"
-            }
-        }
-    },
-    "uploadProgressPercentage": "{percentage}% concluído",
-    "@uploadProgressPercentage": {
-        "placeholders": {
-            "percentage": {
-                "type": "int"
-            }
-        }
-    },
     "uploadProgressAuthenticationError": "Por favor, faça login para enviar dados.",
     "exportRequiresLoginToOpenSenseMap": "Por favor, faça login na sua conta openSenseMap para prosseguir com a exportação.",
     "errorExportFailed": "Falha na exportação. Tente novamente.",
-    "uploadProgressNetworkError": "Falha na conexão de rede. Verifique sua conexão com a internet e tente novamente.",
     "uploadProgressGenericError": "Operação falhou. Tente novamente.",
+    "uploadErrorTryLater": "Não foi possível concluir o envio. O openSenseMap pode estar sobrecarregado ou inacessível no momento. Tente novamente mais tarde. Seu trajeto está salvo neste dispositivo.",
+    "uploadStageCheckingLogin": "Verificando login no openSenseMap",
+    "uploadStageUploadingPart": "Enviando parte {current} de {total} para o openSenseMap",
     "uploadConfirmTitle": "Enviar Dados do Trajeto",
     "uploadConfirmMessage": "Gostaria de enviar os dados do seu trajeto agora ou mais tarde?",
     "uploadConfirmUploadNow": "Enviar agora",
@@ -367,7 +351,6 @@
     "trackStatusUploadFailedAt": "Envio falhou em {date}",
     "trackFilterAll": "Todos",
     "trackFilterUnuploaded": "Não enviados",
-    "trackUploadRetryFailed": "Tentativa de envio falhou. Tente novamente.",
     "errorTrackNoGeolocations": "Trajeto não possui dados de geolocalização e não pode ser enviado.",
     "openSenseMapInfoText": "Os dados da sua senseBox:bike serão compartilhados no openSenseMap, contribuindo para a ciência cidadã e o monitoramento ambiental.",
     "openSenseMapInfoLink": "Visite openSenseMap.org",

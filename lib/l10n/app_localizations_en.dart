@@ -746,23 +746,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uploadProgressAuthenticationFailed => 'Authentication required';
 
   @override
-  String uploadProgressChunks(int completed, int total) {
-    String _temp0 = intl.Intl.pluralLogic(
-      total,
-      locale: localeName,
-      other: '$total chunks',
-      one: '1 chunk',
-      zero: '0 chunks',
-    );
-    return '$completed of $_temp0 processed';
-  }
-
-  @override
-  String uploadProgressPercentage(int percentage) {
-    return '$percentage% complete';
-  }
-
-  @override
   String get uploadProgressAuthenticationError =>
       'Please log in to upload data.';
 
@@ -774,12 +757,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorExportFailed => 'Export failed. Please try again.';
 
   @override
-  String get uploadProgressNetworkError =>
-      'Network connection failed. Please check your internet connection and try again.';
-
-  @override
   String get uploadProgressGenericError =>
       'Operation failed. Please try again.';
+
+  @override
+  String get uploadErrorTryLater =>
+      'The upload could not be completed. openSenseMap may be busy or unreachable right now. Please try again later. Your track is saved on this device.';
+
+  @override
+  String get uploadStageCheckingLogin => 'Checking openSenseMap login';
+
+  @override
+  String uploadStageUploadingPart(int current, int total) {
+    return 'Uploading part $current of $total to openSenseMap';
+  }
 
   @override
   String get uploadConfirmTitle => 'Upload Track Data';
@@ -843,9 +834,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trackFilterUnuploaded => 'Not uploaded';
-
-  @override
-  String get trackUploadRetryFailed => 'Upload retry failed. Please try again.';
 
   @override
   String get errorTrackNoGeolocations =>

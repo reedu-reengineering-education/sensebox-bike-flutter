@@ -30,7 +30,6 @@ void main() {
       // Verify all required methods exist
       expect(uploader.splitIntoChunks, isA<Function>());
       expect(uploader.uploadChunk, isA<Function>());
-      expect(uploader.uploadTrackInChunks, isA<Function>());
     });
 
     test('should split large datasets correctly', () {
@@ -42,7 +41,7 @@ void main() {
       );
 
       final largeDataset = _createGeolocationList(10000);
-      final chunks = uploader.splitIntoChunks(largeDataset, testSenseBox);
+      final chunks = uploader.splitIntoChunks(largeDataset);
 
       // Should create multiple chunks based on measurement estimation
       expect(chunks.length, greaterThan(1));

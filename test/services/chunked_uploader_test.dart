@@ -1,6 +1,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:retry/retry.dart';
 import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/chunked_uploader.dart';
@@ -12,6 +13,8 @@ void main() {
   setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
     registerFallbackValue(SenseBox());
+    registerFallbackValue(const RetryOptions());
+    registerFallbackValue(Duration.zero);
   });
   
   group('ChunkedUploader', () {
@@ -30,13 +33,13 @@ void main() {
 
     group('splitIntoChunks', () {
       test('should return empty list for empty input', () {
-        final result = chunkedUploader.splitIntoChunks([], testSenseBox);
+        final result = chunkedUploader.splitIntoChunks([]);
         expect(result, isEmpty);
       });
 
       test('should return single chunk for data under limit', () {
         final geolocations = _createGeolocationList(100);
-        final result = chunkedUploader.splitIntoChunks(geolocations, testSenseBox);
+        final result = chunkedUploader.splitIntoChunks(geolocations);
         
         expect(result.length, equals(1));
         expect(result[0].length, equals(100));
@@ -45,7 +48,7 @@ void main() {
 
       test('should split large datasets into multiple chunks based on measurement estimation', () {
         final geolocations = _createGeolocationList(1000);
-        final result = chunkedUploader.splitIntoChunks(geolocations, testSenseBox);
+        final result = chunkedUploader.splitIntoChunks(geolocations);
         
         // With estimated measurements per point, should create multiple smaller chunks
         expect(result.length, greaterThan(1));
@@ -53,7 +56,7 @@ void main() {
 
       test('should create appropriate chunks based on measurement estimation', () {
         final geolocations = _createGeolocationList(2000); // Use more points to force multiple chunks
-        final result = chunkedUploader.splitIntoChunks(geolocations, testSenseBox);
+        final result = chunkedUploader.splitIntoChunks(geolocations);
         
         // Should create multiple chunks based on estimated measurements per point
         expect(result.length, greaterThan(1));
@@ -67,7 +70,7 @@ void main() {
 
       test('should maintain chronological order in chunks', () {
         final geolocations = _createGeolocationList(1000);
-        final result = chunkedUploader.splitIntoChunks(geolocations, testSenseBox);
+        final result = chunkedUploader.splitIntoChunks(geolocations);
         
         // Check that timestamps are in order within each chunk
         for (final chunk in result) {
@@ -96,7 +99,7 @@ void main() {
         final geolocations = _createGeolocationList(5000);
         final stopwatch = Stopwatch()..start();
         
-        final result = chunkedUploader.splitIntoChunks(geolocations, testSenseBox);
+        final result = chunkedUploader.splitIntoChunks(geolocations);
         
         stopwatch.stop();
         
@@ -110,7 +113,7 @@ void main() {
         // Should estimate: 1 (speed) + 1 (temperature) + 1 (humidity) = 3 measurements per point
         // With 2500 max measurements, chunk size should be around 2500/3 = 833 points
         final geolocations = _createGeolocationList(2000);
-        final result = chunkedUploader.splitIntoChunks(geolocations, testSenseBox);
+        final result = chunkedUploader.splitIntoChunks(geolocations);
         
         // Should create multiple chunks
         expect(result.length, greaterThan(2));
@@ -122,34 +125,47 @@ void main() {
       });
     });
 
-    group('uploadChunk', () {
-      test('should return success for empty chunk', () async {
-        final result = await chunkedUploader.uploadChunk([], testSenseBox, 0);
-        
-        expect(result.success, isTrue);
-        expect(result.chunkIndex, equals(0));
-        verifyNever(() => mockOpenSenseMapService.uploadData(any(), any()));
-      });
+    test('counts every sensor of the box, including unknown ones', () {
+      final box = SenseBox(sensors: [
+        for (var i = 0; i < 20; i++)
+          Sensor(id: 's$i', title: 'Custom $i', unit: '', sensorType: ''),
+      ]);
+      final uploader = ChunkedUploader(
+          openSenseMapService: mockOpenSenseMapService, senseBox: box);
 
-      test('should handle upload service errors correctly', () async {
-        final chunk = _createGeolocationList(1); // Single point to minimize Isar issues
-        when(() => mockOpenSenseMapService.uploadData(any(), any()))
-            .thenThrow(Exception('Network error'));
+      final chunks = uploader.splitIntoChunks(_createGeolocationList(250));
 
-        final result = await chunkedUploader.uploadChunk(chunk, testSenseBox, 0);
-        
-        expect(result.success, isFalse);
-        expect(result.chunkIndex, equals(0));
-        expect(result.errorMessage, isNotNull);
-      });
+      expect(chunks.map((c) => c.length), [100, 100, 50]);
     });
 
-    // Note: uploadTrackInChunks tests are simplified due to Isar complexity
-    // In a real implementation, these would require proper Isar test setup
-    group('uploadTrackInChunks', () {
-      test('should handle track upload flow', () {
-        // This test verifies the method exists and has the correct signature
-        expect(chunkedUploader.uploadTrackInChunks, isA<Function>());
+    group('uploadChunk', () {
+      test('does nothing for an empty chunk', () async {
+        await chunkedUploader.uploadChunk([]);
+
+        verifyNever(() => mockOpenSenseMapService.uploadData(
+              any(),
+              any(),
+              retryOptions: any(named: 'retryOptions'),
+              requestTimeout: any(named: 'requestTimeout'),
+              reportErrors: any(named: 'reportErrors'),
+              onRetry: any(named: 'onRetry'),
+            ));
+      });
+
+      test('rethrows upload service errors', () async {
+        final chunk = _createGeolocationList(1); // Single point to minimize Isar issues
+        when(() => mockOpenSenseMapService.uploadData(
+              any(),
+              any(),
+              retryOptions: any(named: 'retryOptions'),
+              requestTimeout: any(named: 'requestTimeout'),
+              reportErrors: any(named: 'reportErrors'),
+              onRetry: any(named: 'onRetry'),
+            ))
+            .thenThrow(Exception('Network error'));
+
+        await expectLater(
+            chunkedUploader.uploadChunk(chunk), throwsException);
       });
     });
   });

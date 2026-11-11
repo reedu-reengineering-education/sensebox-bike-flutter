@@ -1416,18 +1416,6 @@ abstract class AppLocalizations {
   /// **'Authentication required'**
   String get uploadProgressAuthenticationFailed;
 
-  /// No description provided for @uploadProgressChunks.
-  ///
-  /// In en, this message translates to:
-  /// **'{completed} of {total, plural, =0{0 chunks} =1{1 chunk} other{{total} chunks}} processed'**
-  String uploadProgressChunks(int completed, int total);
-
-  /// No description provided for @uploadProgressPercentage.
-  ///
-  /// In en, this message translates to:
-  /// **'{percentage}% complete'**
-  String uploadProgressPercentage(int percentage);
-
   /// No description provided for @uploadProgressAuthenticationError.
   ///
   /// In en, this message translates to:
@@ -1446,17 +1434,29 @@ abstract class AppLocalizations {
   /// **'Export failed. Please try again.'**
   String get errorExportFailed;
 
-  /// No description provided for @uploadProgressNetworkError.
-  ///
-  /// In en, this message translates to:
-  /// **'Network connection failed. Please check your internet connection and try again.'**
-  String get uploadProgressNetworkError;
-
   /// No description provided for @uploadProgressGenericError.
   ///
   /// In en, this message translates to:
   /// **'Operation failed. Please try again.'**
   String get uploadProgressGenericError;
+
+  /// No description provided for @uploadErrorTryLater.
+  ///
+  /// In en, this message translates to:
+  /// **'The upload could not be completed. openSenseMap may be busy or unreachable right now. Please try again later. Your track is saved on this device.'**
+  String get uploadErrorTryLater;
+
+  /// No description provided for @uploadStageCheckingLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking openSenseMap login'**
+  String get uploadStageCheckingLogin;
+
+  /// No description provided for @uploadStageUploadingPart.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading part {current} of {total} to openSenseMap'**
+  String uploadStageUploadingPart(int current, int total);
 
   /// No description provided for @uploadConfirmTitle.
   ///
@@ -1565,12 +1565,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not uploaded'**
   String get trackFilterUnuploaded;
-
-  /// No description provided for @trackUploadRetryFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload retry failed. Please try again.'**
-  String get trackUploadRetryFailed;
 
   /// No description provided for @errorTrackNoGeolocations.
   ///
