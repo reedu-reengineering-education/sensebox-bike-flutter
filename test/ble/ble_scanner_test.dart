@@ -65,20 +65,58 @@ void main() {
     expect(isScanning.value, isFalse);
   });
 
-  test('waitForAdvertisingDevice scans only for the services the device advertised',
-      () async {
-    final service = BleUuid('cf06a218-f68e-e0be-ad04-8ebc1eb0bc84');
-    final known = BleDevice(
-      id: testBleDevice.id,
-      name: testBleDevice.name,
-      serviceUuids: [service],
-    );
+  BleDevice advertising(String uuid) => BleDevice(
+        id: testBleDevice.id,
+        name: testBleDevice.name,
+        serviceUuids: [BleUuid(uuid)],
+      );
+
+  const bootUuid = '2456e1b9-26e2-8f83-e744-f34f01e9d701';
+  const runningUuid = 'cddf0001-30f7-4671-8b43-5e40ba53514a';
+
+  test('filters by every service a box advertised in earlier scans', () async {
+    final results = [advertising(bootUuid), advertising(runningUuid)];
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
+        .thenAnswer((_) => Stream.value(results.removeAt(0)));
+    await scanner.waitForAdvertisingDevice(testBleDevice);
+    await scanner.waitForAdvertisingDevice(testBleDevice);
     when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
         .thenAnswer((_) => Stream.value(testBleDevice));
 
-    await scanner.waitForAdvertisingDevice(known);
+    await scanner.waitForAdvertisingDevice(testBleDevice);
 
-    verify(() => platform.scanForDevices(withServices: [service])).called(1);
+    final filters = verify(() => platform.scanForDevices(
+            withServices: captureAny(named: 'withServices')))
+        .captured
+        .cast<List<BleUuid>>();
+    expect(filters.first, isEmpty);
+    expect(filters.last.toSet(), {BleUuid(bootUuid), BleUuid(runningUuid)});
+  });
+
+  test('scans unfiltered once after a filtered scan missed the box', () async {
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
+        .thenAnswer((_) => Stream.value(advertising(bootUuid)));
+    await scanner.waitForAdvertisingDevice(testBleDevice);
+    final silent = StreamController<BleDevice>();
+    addTearDown(silent.close);
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
+        .thenAnswer((_) => silent.stream);
+    await scanner.waitForAdvertisingDevice(testBleDevice,
+        timeout: const Duration(milliseconds: 20));
+    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
+        .thenAnswer((_) => Stream.value(advertising(runningUuid)));
+
+    final found = await scanner.waitForAdvertisingDevice(testBleDevice);
+    await scanner.waitForAdvertisingDevice(testBleDevice);
+
+    final filters = verify(() => platform.scanForDevices(
+            withServices: captureAny(named: 'withServices')))
+        .captured
+        .cast<List<BleUuid>>();
+    expect(found, testBleDevice);
+    expect(filters[1], [BleUuid(bootUuid)]);
+    expect(filters[2], isEmpty);
+    expect(filters[3].toSet(), {BleUuid(bootUuid), BleUuid(runningUuid)});
   });
 
   test('startScanning does not filter by service', () async {

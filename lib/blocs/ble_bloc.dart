@@ -385,9 +385,11 @@ class BleBloc with ChangeNotifier {
   // active. After a link loss that stream ends on its own, so a direct
   // reconnect reuses the dead connection: notifications get enabled but never
   // deliver data. The scan gives the plugin time to clear that state.
-  // The scan is filtered by the service UUIDs this device advertised when it
-  // was found: iOS returns nothing for unfiltered scans in the background, and
-  // Android pauses them while the screen is off.
+  // The scan is filtered by every service UUID this box has advertised so far:
+  // iOS returns nothing for unfiltered scans in the background, and Android
+  // pauses them while the screen is off. A box advertises a different UUID
+  // while it is still booting, so after a filtered scan misses, the next scan
+  // for that box is unfiltered and picks up the new UUID.
   Future<void> _connectLink(BleDevice device) async {
     final advertised = await _scanner.waitForAdvertisingDevice(device);
     if (advertised == null) {
