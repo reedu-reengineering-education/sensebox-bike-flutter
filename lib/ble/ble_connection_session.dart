@@ -30,7 +30,6 @@ class BleConnectionSession {
     BleDevice device, {
     required BleCharacteristicStreams streams,
     Duration? livenessTimeout,
-    Duration? stabilityDwell,
   }) async {
     _platform.beginSessionEstablishment(device.id);
     try {
@@ -73,17 +72,6 @@ class BleConnectionSession {
       );
       if (!linkIsLive) {
         return const BleConnectionSessionResult(success: false);
-      }
-
-      final dwell = stabilityDwell ?? Duration.zero;
-      if (dwell > Duration.zero) {
-        final linkIsStable = await _awaitStabilityDwell(
-          deviceId: device.id,
-          dwell: dwell,
-        );
-        if (!linkIsStable) {
-          return const BleConnectionSessionResult(success: false);
-        }
       }
 
       return BleConnectionSessionResult(
@@ -161,20 +149,6 @@ class BleConnectionSession {
         await subscription.cancel();
       }
     }
-  }
-
-  Future<bool> _awaitStabilityDwell({
-    required String deviceId,
-    required Duration dwell,
-  }) async {
-    final deadline = DateTime.now().add(dwell);
-    while (DateTime.now().isBefore(deadline)) {
-      if (!_platform.isConnected(deviceId)) {
-        return false;
-      }
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
-    return true;
   }
 
   static bool _isValidParsedPayload(List<double> values) {

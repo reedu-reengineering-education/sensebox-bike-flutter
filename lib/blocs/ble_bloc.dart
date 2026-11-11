@@ -251,11 +251,25 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> _waitForBluetoothReady() async {
-    while (!isBluetoothEnabledNotifier.value) {
-      if (_userInitiatedDisconnect || _shouldAbortReconnection()) {
-        return;
+    bool canContinue() =>
+        isBluetoothEnabledNotifier.value ||
+        _userInitiatedDisconnect ||
+        _shouldAbortReconnection();
+    if (canContinue()) {
+      return;
+    }
+    final ready = Completer<void>();
+    void onChange() {
+      if (canContinue() && !ready.isCompleted) {
+        ready.complete();
       }
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+    }
+
+    addListener(onChange);
+    try {
+      await ready.future;
+    } finally {
+      removeListener(onChange);
     }
   }
 
@@ -336,6 +350,7 @@ class BleBloc with ChangeNotifier {
 
   void _cancelReconnectionFlow() {
     _reconnectionCoordinator.cancelReconnection();
+    unawaited(_scanner.stopScanning());
   }
 
   Future<void> _teardownForDisconnect(
@@ -384,7 +399,6 @@ class BleBloc with ChangeNotifier {
     resetConnectionError();
     final found = await _scanner.waitForAdvertisingDevice(
       BleDevice(id: '', name: name),
-      shouldCancel: () => _userInitiatedDisconnect || selectedDevice != null,
     );
     if (found != null) {
       await _connectResolvedDevice(found);
@@ -488,16 +502,6 @@ class BleBloc with ChangeNotifier {
     );
   }
 
-  Future<BleDevice?> _waitForAdvertisingTarget(BleDevice device) {
-    return _scanner.waitForAdvertisingDevice(
-      device,
-      shouldCancel: () =>
-          _userInitiatedDisconnect ||
-          (_phase == BleConnectionPhase.reconnecting &&
-              _shouldAbortReconnection()),
-    );
-  }
-
   Future<void> _platformConnect(BleDevice device) async {
     await stopScanning();
     await _platform.connect(device.id);
@@ -512,7 +516,7 @@ class BleBloc with ChangeNotifier {
   // Trade-off: on iOS an unfiltered scan returns nothing in the background,
   // so background reconnects depend on the app being in the foreground.
   Future<BleDevice> _connectLink(BleDevice device) async {
-    final advertised = await _waitForAdvertisingTarget(device);
+    final advertised = await _scanner.waitForAdvertisingDevice(device);
     if (advertised == null) {
       throw StateError('BLE device not advertising');
     }
@@ -740,7 +744,6 @@ class BleBloc with ChangeNotifier {
           BleDevice(id: id, name: settingsBloc.rememberedDeviceName ?? '');
       final found = await _scanner.waitForAdvertisingDevice(
         target,
-        shouldCancel: () => _userInitiatedDisconnect || selectedDevice != null,
         timeout: scanTimeout,
       );
       if (found == null || selectedDevice != null || _userInitiatedDisconnect) {
