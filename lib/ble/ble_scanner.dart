@@ -26,6 +26,8 @@ class BleScanner {
   StreamSubscription<BleDevice>? _scanSubscription;
   Timer? _scanTimeoutTimer;
   Completer<BleDevice?>? _pendingWait;
+  final Map<String, Set<BleUuid>> _advertisedServices = {};
+  final Set<String> _filteredScanMissed = {};
 
   Stream<List<BleDevice>> get devicesListStream =>
       _devicesListController.stream;
@@ -61,10 +63,11 @@ class BleScanner {
     BleDevice device, {
     Duration timeout = bleScanTimeout,
   }) async {
+    final filter = _scanFilterFor(device.id);
     ErrorService.logEvent('ble', 'scan for device started', data: {
       'device': device.id,
       'timeoutSeconds': timeout.inSeconds,
-      'services': [for (final uuid in device.serviceUuids) '$uuid'],
+      'services': [for (final uuid in filter) '$uuid'],
     });
 
     final found = Completer<BleDevice?>();
@@ -83,12 +86,17 @@ class BleScanner {
         }
       },
       timeout: timeout,
-      withServices: device.serviceUuids,
+      withServices: filter,
     );
     _pendingWait = found;
 
     try {
       final result = await found.future;
+      if (result == null && filter.isNotEmpty) {
+        _filteredScanMissed.add(device.id);
+      } else {
+        _filteredScanMissed.remove(device.id);
+      }
       ErrorService.logEvent('ble', 'scan for device finished', data: {
         'device': device.id,
         'found': result != null,
@@ -110,7 +118,10 @@ class BleScanner {
     unawaited(_scanSubscription?.cancel());
     _scanSubscription =
         platform.scanForDevices(withServices: withServices).listen(
-      onDevice,
+      (device) {
+        _rememberAdvertisedServices(device);
+        onDevice(device);
+      },
       onError: (Object error, StackTrace stackTrace) {
         ErrorService.logEvent('ble', 'scan failed',
             data: {'error': error}, level: SentryLevel.warning);
@@ -127,6 +138,21 @@ class BleScanner {
     _pendingWait = null;
     if (pending != null && !pending.isCompleted) {
       pending.complete(null);
+    }
+  }
+
+  List<BleUuid> _scanFilterFor(String deviceId) {
+    if (_filteredScanMissed.contains(deviceId)) {
+      return const [];
+    }
+    return [...?_advertisedServices[deviceId]];
+  }
+
+  void _rememberAdvertisedServices(BleDevice device) {
+    if (device.id.isNotEmpty && device.serviceUuids.isNotEmpty) {
+      _advertisedServices.putIfAbsent(device.id, () => {}).addAll(
+            device.serviceUuids,
+          );
     }
   }
 
