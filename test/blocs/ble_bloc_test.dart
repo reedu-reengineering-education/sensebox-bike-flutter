@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
@@ -202,7 +203,7 @@ void main() {
         realBleBloc.updateBluetoothStatus(true);
         realBleBloc.selectedDevice = device;
         realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
-        realBleBloc.debugAttachReconnectionListener(device);
+        realBleBloc.debugWatchLink(device);
 
         linkStates.add(BleLinkState.disconnected);
         while (realBleBloc.selectedDevice != null) {
@@ -214,6 +215,49 @@ void main() {
         expect(failure.phase, BleConnectionFailurePhase.reconnection);
         expect(failure.cause.toString(), contains('Reconnect failed'));
         expect(realBleBloc.connectionErrorNotifier.value, isTrue);
+      });
+
+      test('user disconnect during a reconnect stops it without reporting',
+          () async {
+        final reported = await _captureSentryEvents();
+
+        final platform = MockBlePlatform();
+        stubBlePlatformLifecycle(platform);
+        const device = BleDevice(id: 'AA:BB:CC:DD:EE:05', name: 'senseBox:test');
+        final linkStates = StreamController<BleLinkState>.broadcast();
+        addTearDown(linkStates.close);
+        final pendingConnect = Completer<void>();
+        when(() => platform.connectionState(device.id))
+            .thenAnswer((_) => linkStates.stream);
+        when(() => platform.scanForDevices())
+            .thenAnswer((_) => Stream.value(device));
+        when(() => platform.isConnected(any())).thenReturn(false);
+        when(() => platform.connect(any(), timeout: any(named: 'timeout')))
+            .thenAnswer((_) => pendingConnect.future);
+        when(() => mockSettingsBloc.vibrateOnDisconnect).thenReturn(false);
+
+        final realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
+        addTearDown(realBleBloc.dispose);
+        realBleBloc.updateBluetoothStatus(true);
+        realBleBloc.selectedDevice = device;
+        realBleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
+        realBleBloc.debugWatchLink(device);
+
+        linkStates.add(BleLinkState.disconnected);
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        expect(realBleBloc.isReconnectingNotifier.value, isTrue);
+
+        await realBleBloc.disconnectDevice(
+          reason: BleDisconnectReason.userRequested,
+        );
+        when(() => platform.isConnected(any())).thenReturn(true);
+        pendingConnect.complete();
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(reported, isEmpty);
+        expect(realBleBloc.isConnected, isFalse);
+        expect(realBleBloc.selectedDevice, isNull);
+        verify(() => platform.disconnect(device.id)).called(greaterThanOrEqualTo(2));
       });
     });
 
@@ -249,7 +293,7 @@ void main() {
 
       test('powered off ignores transient blip when link survives debounce',
           () async {
-        primeConnectedWithReconnectionListener(
+        primeConnectedAndWatchingLink(
           realBleBloc,
           bluetoothEnabled: true,
         );
@@ -264,7 +308,7 @@ void main() {
 
       test('powered off starts reconnecting when listener is attached',
           () async {
-        primeConnectedWithReconnectionListener(
+        primeConnectedAndWatchingLink(
           realBleBloc,
           bluetoothEnabled: true,
         );
@@ -287,19 +331,20 @@ void main() {
 
       test('powered on reconnects when platform still reports connected after adapter off',
           () async {
-        primeConnectedWithReconnectionListener(
+        primeConnectedAndWatchingLink(
           realBleBloc,
           bluetoothEnabled: true,
         );
         realBleBloc.debugMarkLinkLostDueToAdapterPowerOff();
         when(() => platform.isConnected(testBleDevice.id)).thenReturn(true);
-        when(() => platform.connect(any(), timeout: any(named: 'timeout')))
-            .thenAnswer((_) async {});
+        when(() => platform.discoverServices(testBleDevice.id))
+            .thenAnswer((_) => Completer<List<BleService>>().future);
 
         unawaited(realBleBloc.debugOnBluetoothPoweredOn());
         await Future<void>.delayed(const Duration(milliseconds: 50));
 
         expect(realBleBloc.isReconnectingNotifier.value, isTrue);
+        verify(() => platform.discoverServices(testBleDevice.id)).called(1);
 
         await realBleBloc.disconnectDevice(
           reason: BleDisconnectReason.userRequested,
@@ -308,7 +353,7 @@ void main() {
 
       test('powered on skips reconnect when link is live and adapter was not powered off',
           () async {
-        primeConnectedWithReconnectionListener(realBleBloc);
+        primeConnectedAndWatchingLink(realBleBloc);
         when(() => platform.isConnected(testBleDevice.id)).thenReturn(true);
 
         await realBleBloc.debugOnBluetoothPoweredOn();
