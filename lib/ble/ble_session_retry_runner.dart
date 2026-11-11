@@ -24,15 +24,17 @@ class BleSessionRetryRunner {
 
   Future<BleSessionRetryResult> run({
     required BleDevice device,
-    required int maxAttempts,
+    required Duration timeLimit,
+    required bool Function() shouldStop,
     required Future<bool> Function(BleDevice device, int attemptIndex)
         attemptSession,
     required Future<void> Function(BleDevice device) prepareForRetry,
   }) async {
+    final elapsed = Stopwatch()..start();
     Object? lastError;
     StackTrace? lastStackTrace;
 
-    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+    for (var attempt = 0; !shouldStop(); attempt++) {
       try {
         if (await attemptSession(device, attempt)) {
           return const BleSessionRetryResult.success();
@@ -42,7 +44,7 @@ class BleSessionRetryRunner {
         lastStackTrace = stackTrace;
       }
 
-      if (attempt == maxAttempts - 1) {
+      if (elapsed.elapsed >= timeLimit || shouldStop()) {
         break;
       }
 

@@ -14,12 +14,68 @@ void main() {
   });
 
   group('BleSessionRetryRunner.run', () {
-    test('succeeds on first successful attempt', () async {
+    Future<BleSessionRetryResult> runAttempts(
+      int attempts, {
+      required Future<bool> Function(BleDevice device, int attemptIndex)
+          attemptSession,
+      required Future<void> Function(BleDevice device) prepareForRetry,
+    }) {
+      var started = 0;
+      return runner.run(
+        device: device,
+        timeLimit: const Duration(minutes: 1),
+        shouldStop: () => started >= attempts,
+        attemptSession: (device, index) {
+          started++;
+          return attemptSession(device, index);
+        },
+        prepareForRetry: prepareForRetry,
+      );
+    }
+
+    test('stops retrying once the time limit is reached', () async {
+      var attempts = 0;
       var prepareCalls = 0;
 
       final result = await runner.run(
         device: device,
-        maxAttempts: 3,
+        timeLimit: Duration.zero,
+        shouldStop: () => false,
+        attemptSession: (_, __) async {
+          attempts++;
+          return false;
+        },
+        prepareForRetry: (_) async => prepareCalls++,
+      );
+
+      expect(result.success, isFalse);
+      expect(attempts, 1);
+      expect(prepareCalls, 0);
+    });
+
+    test('does not attempt when asked to stop', () async {
+      var attempts = 0;
+
+      final result = await runner.run(
+        device: device,
+        timeLimit: const Duration(minutes: 1),
+        shouldStop: () => true,
+        attemptSession: (_, __) async {
+          attempts++;
+          return true;
+        },
+        prepareForRetry: (_) async {},
+      );
+
+      expect(result.success, isFalse);
+      expect(attempts, 0);
+    });
+
+    test('succeeds on first successful attempt', () async {
+      var prepareCalls = 0;
+
+      final result = await runAttempts(
+        3,
         attemptSession: (_, __) async => true,
         prepareForRetry: (_) async => prepareCalls++,
       );
@@ -34,9 +90,8 @@ void main() {
       var attempt = 0;
       var prepareCalls = 0;
 
-      final result = await runner.run(
-        device: device,
-        maxAttempts: 3,
+      final result = await runAttempts(
+        3,
         attemptSession: (_, index) async {
           attempt = index;
           return index == 1;
@@ -52,9 +107,8 @@ void main() {
     test('fails without preparing after the last attempt', () async {
       var prepareCalls = 0;
 
-      final result = await runner.run(
-        device: device,
-        maxAttempts: 2,
+      final result = await runAttempts(
+        2,
         attemptSession: (_, __) async => false,
         prepareForRetry: (_) async => prepareCalls++,
       );
@@ -68,9 +122,8 @@ void main() {
         () async {
       var attempts = 0;
 
-      final result = await runner.run(
-        device: device,
-        maxAttempts: 2,
+      final result = await runAttempts(
+        2,
         attemptSession: (_, __) async {
           attempts++;
           if (attempts == 1) {
@@ -89,9 +142,8 @@ void main() {
       final prepareError = StateError('device not advertising');
       final attemptError = Exception('no sensor data');
 
-      final result = await runner.run(
-        device: device,
-        maxAttempts: 2,
+      final result = await runAttempts(
+        2,
         attemptSession: (_, index) async {
           if (index == 1) {
             throw attemptError;
@@ -110,9 +162,8 @@ void main() {
         () async {
       final prepareError = StateError('device not advertising');
 
-      final result = await runner.run(
-        device: device,
-        maxAttempts: 2,
+      final result = await runAttempts(
+        2,
         attemptSession: (_, __) async => false,
         prepareForRetry: (_) async => throw prepareError,
       );

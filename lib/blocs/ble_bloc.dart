@@ -35,6 +35,8 @@ class BleBloc with ChangeNotifier {
     bool initializePlatformBle = true,
     BlePlatform? platform,
     Duration adapterOffDebounce = bleAdapterOffDebounce,
+    this.connectTimeLimit = bleConnectTimeLimit,
+    this.reconnectTimeLimit = bleReconnectTimeLimit,
   })  : _platform = platform ?? BlePlatform(),
         _adapterOffDebounce = adapterOffDebounce {
     _scanner = BleScanner(
@@ -57,6 +59,8 @@ class BleBloc with ChangeNotifier {
   final SettingsBloc settingsBloc;
   final BlePlatform _platform;
   final Duration _adapterOffDebounce;
+  final Duration connectTimeLimit;
+  final Duration reconnectTimeLimit;
 
   final ValueNotifier<bool> isBluetoothEnabledNotifier = ValueNotifier(false);
   final ValueNotifier<bool> isScanningNotifier = ValueNotifier(false);
@@ -446,9 +450,13 @@ class BleBloc with ChangeNotifier {
     Object? initialLinkError;
     StackTrace? initialLinkStackTrace;
 
+    bool shouldStop() =>
+        _userInitiatedDisconnect ||
+        (reconnectMode &&
+            (_shouldAbortReconnection() || selectedDevice != device));
+
     await _waitForBluetoothReady();
-    if (_userInitiatedDisconnect ||
-        (reconnectMode && _shouldAbortReconnection())) {
+    if (shouldStop()) {
       return const BleSessionRetryResult.failure();
     }
 
@@ -463,7 +471,8 @@ class BleBloc with ChangeNotifier {
 
     final result = await _sessionRetryRunner.run(
       device: device,
-      maxAttempts: bleConnectMaxAttempts,
+      timeLimit: reconnectMode ? reconnectTimeLimit : connectTimeLimit,
+      shouldStop: shouldStop,
       attemptSession: (_, __) => _attemptSingleConnection(
         device,
         publishConnectedState: publishConnectedState,
