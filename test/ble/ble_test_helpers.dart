@@ -57,6 +57,8 @@ BleBloc createTestBleBloc(
     initializePlatformBle: false,
     platform: blePlatform,
     adapterOffDebounce: adapterOffDebounce,
+    connectTimeLimit: Duration.zero,
+    reconnectTimeLimit: Duration.zero,
   );
 }
 

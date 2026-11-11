@@ -1,4 +1,5 @@
-const bleConnectMaxAttempts = 10;
+const bleConnectTimeLimit = Duration(minutes: 2);
+const bleReconnectTimeLimit = Duration(minutes: 10);
 
 const bleDeviceConnectTimeout = Duration(seconds: 10);
 const bleSessionRetryDelay = Duration(seconds: 1);
