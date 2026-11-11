@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
-import 'package:sensebox_bike/ble/ble_reconnection_coordinator.dart';
 import 'package:sensebox_bike/ble/ble_uuids.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
@@ -62,7 +61,7 @@ BleBloc createTestBleBloc(
   );
 }
 
-void primeConnectedWithReconnectionListener(
+void primeConnectedAndWatchingLink(
   BleBloc bleBloc, {
   bool bluetoothEnabled = false,
 }) {
@@ -72,41 +71,5 @@ void primeConnectedWithReconnectionListener(
     bleBloc.isBluetoothEnabledNotifier.value = true;
   }
   bleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
-  bleBloc.debugAttachReconnectionListener(testBleDevice);
-}
-
-class ReconnectionTestSpy {
-  int linkLostCalls = 0;
-  int reconnectCalls = 0;
-  bool? episodeSuccess;
-  Object? listenerError;
-
-  void attach(
-    BleReconnectionCoordinator coordinator,
-    BleDevice device, {
-    bool Function()? shouldIgnoreDisconnect,
-    void Function()? onLinkLost,
-    Future<bool> Function(BleDevice device)? runReconnectSessions,
-    void Function()? onReconnectSucceeded,
-    void Function(bool success)? onReconnectEpisodeEnded,
-    Future<void> Function(BleDevice device, Object error)? onListenerError,
-  }) {
-    coordinator.attach(
-      device,
-      shouldIgnoreDisconnect: shouldIgnoreDisconnect ?? (() => false),
-      onLinkLost: onLinkLost ?? () => linkLostCalls++,
-      runReconnectSessions: runReconnectSessions ??
-          (_) async {
-            reconnectCalls++;
-            return true;
-          },
-      onReconnectSucceeded: onReconnectSucceeded ?? () {},
-      onReconnectEpisodeEnded:
-          onReconnectEpisodeEnded ?? (success) => episodeSuccess = success,
-      onListenerError: onListenerError ??
-          (_, error) async {
-            listenerError = error;
-          },
-    );
-  }
+  bleBloc.debugWatchLink(testBleDevice);
 }
