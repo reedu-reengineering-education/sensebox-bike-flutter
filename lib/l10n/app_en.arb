@@ -269,7 +269,6 @@
     "loginScreenTitle": "openSenseMap Account",
     "connectionButtonEnableBluetooth": "Enable Bluetooth",
     "errorLocationAlwaysRequired": "Background recording requires Location access set to \"Always\". Open System Settings, find this app, and change Location to \"Always\".",
-    "errorNoScanAccess": "To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.",
     "errorNoSenseBoxSelected": "To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.",
     "trackUploadLoginSelectHint": "Log in and select a senseBox to upload.",
     "uploadRequirementsTitle": "Upload not available",

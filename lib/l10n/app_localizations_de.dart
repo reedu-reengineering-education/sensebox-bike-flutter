@@ -616,10 +616,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Für Aufzeichnungen im Hintergrund muss der Standortzugriff auf \"Immer\" gesetzt sein. Öffnen Sie die Systemeinstellungen, wählen Sie diese App aus und stellen Sie den Standortzugriff auf \"Immer\".';
 
   @override
-  String get errorNoScanAccess =>
-      'Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.';
-
-  @override
   String get errorNoSenseBoxSelected =>
       'Um den Upload von Sensordaten in die Cloud zu ermöglichen, melden Sie sich bitte in Ihrem openSenseMap-Konto an und wählen Sie die Box aus.';
 

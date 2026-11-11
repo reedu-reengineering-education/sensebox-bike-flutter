@@ -608,10 +608,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Background recording requires Location access set to \"Always\". Open System Settings, find this app, and change Location to \"Always\".';
 
   @override
-  String get errorNoScanAccess =>
-      'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.';
-
-  @override
   String get errorNoSenseBoxSelected =>
       'To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.';
 

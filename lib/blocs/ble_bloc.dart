@@ -84,7 +84,6 @@ class BleBloc with ChangeNotifier {
   BleConnectionPhase _phase = BleConnectionPhase.idle;
   bool _userInitiatedDisconnect = false;
   bool _appInitiatedTeardown = false;
-  bool _scanAfterDisconnect = false;
   bool _linkLostDueToAdapterPowerOff = false;
   String? _vibratedForDisconnectDeviceId;
   bool _autoConnectInProgress = false;
@@ -263,17 +262,7 @@ class BleBloc with ChangeNotifier {
     }
   }
 
-  Future<void> startScanning() async {
-    isScanningNotifier.value = true;
-    try {
-      final afterDisconnect = _scanAfterDisconnect;
-      _scanAfterDisconnect = false;
-      await _scanner.startScanning(afterDisconnect: afterDisconnect);
-    } catch (_) {
-      isScanningNotifier.value = false;
-      rethrow;
-    }
-  }
+  Future<void> startScanning() => _scanner.startScanning();
 
   Future<void> stopScanning() => _scanner.stopScanning();
 
@@ -369,8 +358,6 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> _applyDisconnectOutcome(BleDisconnectReason reason) async {
-    _scanAfterDisconnect = true;
-
     if (reason == BleDisconnectReason.connectionFailed) {
       connectionErrorNotifier.value = true;
       _reconnectionCoordinator.reset();
@@ -389,17 +376,15 @@ class BleBloc with ChangeNotifier {
     _setPhase(BleConnectionPhase.idle);
   }
 
-  Future<void> connectToId(String id) async {
-    await _connectToBox(id);
-  }
-
-  Future<void> _connectToBox(String name) async {
+  Future<void> connectToId(String name) async {
     resetConnectionError();
-
-    await _scanner.scanForBox(
-      name: name,
-      onDeviceFound: _connectResolvedDevice,
+    final found = await _scanner.waitForAdvertisingDevice(
+      BleDevice(id: '', name: name),
+      shouldCancel: () => _userInitiatedDisconnect || selectedDevice != null,
     );
+    if (found != null) {
+      await _connectResolvedDevice(found);
+    }
   }
 
   Future<void> connectToDevice(BleDevice device) async {
@@ -505,9 +490,7 @@ class BleBloc with ChangeNotifier {
   }
 
   Future<void> _platformConnect(BleDevice device) async {
-    if (isScanningNotifier.value) {
-      await stopScanning();
-    }
+    await stopScanning();
     await _platform.connect(device.id);
   }
 

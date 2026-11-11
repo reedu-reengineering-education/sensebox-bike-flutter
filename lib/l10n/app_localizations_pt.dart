@@ -614,10 +614,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'A gravação em segundo plano requer que o acesso à Localização esteja definido como \"Sempre\". Abra as Definições do sistema, encontre esta aplicação e altere a Localização para \"Sempre\".';
 
   @override
-  String get errorNoScanAccess =>
-      'Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.';
-
-  @override
   String get errorNoSenseBoxSelected =>
       'Para permitir o upload de dados do sensor para a nuvem, faça login na sua conta openSenseMap e selecione a caixa.';
 
