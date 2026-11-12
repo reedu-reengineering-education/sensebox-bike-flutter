@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
@@ -10,169 +9,179 @@ import 'ble_test_helpers.dart';
 import 'mock_ble_platform.dart';
 
 void main() {
-  setUpAll(() => registerFallbackValue(<BleUuid>[]));
-
   late MockBlePlatform platform;
-  late ValueNotifier<bool> isScanning;
   late BleScanner scanner;
+
+  setUpAll(registerBleFallbackValues);
 
   setUp(() {
     platform = MockBlePlatform();
-    isScanning = ValueNotifier(false);
-    scanner = BleScanner(platform: platform, isScanningNotifier: isScanning);
+    scanner = BleScanner(platform);
     addTearDown(scanner.dispose);
   });
 
-  test('devicesListStream is available before scanning', () {
-    expect(scanner.devicesListStream, isA<Stream<List<BleDevice>>>());
-    expect(scanner.devicesList, isEmpty);
+  List<List<BleUuid>> scanFilters() => verify(() => platform.scanForDevices(
+          withServices: captureAny(named: 'withServices')))
+      .captured
+      .cast<List<BleUuid>>();
+
+  group('scanForDevices', () {
+    test('lists each senseBox device once, without a filter', () async {
+      final scan = StreamController<BleDevice>();
+      addTearDown(scan.close);
+      stubScan(platform, scan.stream);
+
+      final lists = <List<BleDevice>>[];
+      final subscription = scanner.scanForDevices().listen(lists.add);
+      scan
+        ..add(const BleDevice(id: 'other', name: 'OtherDevice'))
+        ..add(testBleDevice)
+        ..add(testBleDevice);
+      await pumpEventQueue();
+      await subscription.cancel();
+
+      expect(lists, [
+        [testBleDevice],
+        [testBleDevice],
+      ]);
+      expect(scanFilters().single, isEmpty);
+      expect(scan.hasListener, isFalse);
+    });
+
+    test('forwards scan errors and ends', () async {
+      final scanError = Exception('Bluetooth disabled');
+      stubScan(platform, Stream.error(scanError));
+
+      await expectLater(
+        scanner.scanForDevices(),
+        emitsInOrder([emitsError(same(scanError)), emitsDone]),
+      );
+    });
+
+    test('ends when the scan is stopped', () async {
+      final scan = StreamController<BleDevice>();
+      addTearDown(scan.close);
+      stubScan(platform, scan.stream);
+
+      final done = expectLater(scanner.scanForDevices(), emitsDone);
+      await pumpEventQueue();
+      await scanner.stopScanning();
+
+      await done;
+    });
   });
 
-  test('startScanning lists only senseBox devices', () async {
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices'))).thenAnswer((_) => Stream.fromIterable(
-        [const BleDevice(id: 'other', name: 'OtherDevice'), testBleDevice]));
-
-    scanner.startScanning();
-    await pumpEventQueue();
-
-    expect(scanner.devicesList, [testBleDevice]);
-    expect(isScanning.value, isTrue);
-  });
-
-  test('startScanning puts scan errors on the device list stream', () async {
-    final scanError = Exception('Bluetooth disabled');
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
-        .thenAnswer((_) => Stream.error(scanError));
-
-    final emitted = expectLater(
-      scanner.devicesListStream,
-      emitsThrough(emitsError(same(scanError))),
-    );
-    scanner.startScanning();
-
-    await emitted;
-    expect(isScanning.value, isFalse);
-  });
-
-  test('waitForAdvertisingDevice returns the device with the same id',
-      () async {
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices'))).thenAnswer((_) => Stream.fromIterable(
-        [const BleDevice(id: 'other', name: 'senseBox:test'), testBleDevice]));
-
-    final found = await scanner.waitForAdvertisingDevice(testBleDevice);
-
-    expect(found, testBleDevice);
-    expect(isScanning.value, isFalse);
-  });
-
-  BleDevice advertising(String uuid) => BleDevice(
-        id: testBleDevice.id,
-        name: testBleDevice.name,
-        serviceUuids: [BleUuid(uuid)],
+  group('waitForAdvertisingDevice', () {
+    test('returns the device with the same id', () async {
+      stubScan(
+        platform,
+        Stream.fromIterable([
+          const BleDevice(id: 'other', name: 'senseBox:test'),
+          testBleDevice,
+        ]),
       );
 
-  const bootUuid = '2456e1b9-26e2-8f83-e744-f34f01e9d701';
-  const runningUuid = 'cddf0001-30f7-4671-8b43-5e40ba53514a';
+      expect(
+        await scanner.waitForAdvertisingDevice(testBleDevice),
+        testBleDevice,
+      );
+    });
 
-  test('filters by every service a box advertised in earlier scans', () async {
-    final results = [advertising(bootUuid), advertising(runningUuid)];
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
-        .thenAnswer((_) => Stream.value(results.removeAt(0)));
-    await scanner.waitForAdvertisingDevice(testBleDevice);
-    await scanner.waitForAdvertisingDevice(testBleDevice);
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
-        .thenAnswer((_) => Stream.value(testBleDevice));
+    test('matches by name when no id is given', () async {
+      stubScan(platform, Stream.value(testBleDevice));
 
-    await scanner.waitForAdvertisingDevice(testBleDevice);
+      final found = await scanner.waitForAdvertisingDevice(
+        const BleDevice(id: '', name: 'senseBox:test'),
+      );
 
-    final filters = verify(() => platform.scanForDevices(
-            withServices: captureAny(named: 'withServices')))
-        .captured
-        .cast<List<BleUuid>>();
-    expect(filters.first, isEmpty);
-    expect(filters.last.toSet(), {BleUuid(bootUuid), BleUuid(runningUuid)});
+      expect(found, testBleDevice);
+    });
+
+    test('fails with the scan error', () async {
+      final scanError = Exception('Bluetooth disabled');
+      stubScan(platform, Stream.error(scanError));
+
+      await expectLater(
+        scanner.waitForAdvertisingDevice(testBleDevice),
+        throwsA(same(scanError)),
+      );
+    });
+
+    test('returns null after the timeout and stops the scan', () async {
+      final scan = StreamController<BleDevice>();
+      addTearDown(scan.close);
+      stubScan(platform, scan.stream);
+
+      final found = await scanner.waitForAdvertisingDevice(
+        testBleDevice,
+        timeout: const Duration(milliseconds: 50),
+      );
+
+      expect(found, isNull);
+      expect(scan.hasListener, isFalse);
+    });
+
+    test('returns null when the scan is stopped', () async {
+      final scan = StreamController<BleDevice>();
+      addTearDown(scan.close);
+      stubScan(platform, scan.stream);
+
+      final waiting = scanner.waitForAdvertisingDevice(testBleDevice);
+      await pumpEventQueue();
+      await scanner.stopScanning();
+
+      expect(await waiting, isNull);
+      expect(scan.hasListener, isFalse);
+    });
   });
 
-  test('scans unfiltered once after a filtered scan missed the box', () async {
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
-        .thenAnswer((_) => Stream.value(advertising(bootUuid)));
-    await scanner.waitForAdvertisingDevice(testBleDevice);
-    final silent = StreamController<BleDevice>();
-    addTearDown(silent.close);
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
-        .thenAnswer((_) => silent.stream);
-    await scanner.waitForAdvertisingDevice(testBleDevice,
-        timeout: const Duration(milliseconds: 20));
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
-        .thenAnswer((_) => Stream.value(advertising(runningUuid)));
+  group('scan filter', () {
+    BleDevice advertising(String uuid) => BleDevice(
+          id: testBleDevice.id,
+          name: testBleDevice.name,
+          serviceUuids: [BleUuid(uuid)],
+        );
+    const bootUuid = '2456e1b9-26e2-8f83-e744-f34f01e9d701';
+    const runningUuid = 'cddf0001-30f7-4671-8b43-5e40ba53514a';
 
-    final found = await scanner.waitForAdvertisingDevice(testBleDevice);
-    await scanner.waitForAdvertisingDevice(testBleDevice);
+    test('filters by every service a box advertised in earlier scans',
+        () async {
+      final results = [advertising(bootUuid), advertising(runningUuid)];
+      when(() => platform.scanForDevices(
+              withServices: any(named: 'withServices')))
+          .thenAnswer((_) => Stream.value(results.removeAt(0)));
+      await scanner.waitForAdvertisingDevice(testBleDevice);
+      await scanner.waitForAdvertisingDevice(testBleDevice);
+      stubScan(platform, Stream.value(testBleDevice));
 
-    final filters = verify(() => platform.scanForDevices(
-            withServices: captureAny(named: 'withServices')))
-        .captured
-        .cast<List<BleUuid>>();
-    expect(found, testBleDevice);
-    expect(filters[1], [BleUuid(bootUuid)]);
-    expect(filters[2], isEmpty);
-    expect(filters[3].toSet(), {BleUuid(bootUuid), BleUuid(runningUuid)});
-  });
+      await scanner.waitForAdvertisingDevice(testBleDevice);
 
-  test('startScanning does not filter by service', () async {
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
-        .thenAnswer((_) => const Stream.empty());
+      final filters = scanFilters();
+      expect(filters.first, isEmpty);
+      expect(filters.last.toSet(), {BleUuid(bootUuid), BleUuid(runningUuid)});
+    });
 
-    scanner.startScanning();
+    test('scans unfiltered once after a filtered scan missed the box',
+        () async {
+      stubScan(platform, Stream.value(advertising(bootUuid)));
+      await scanner.waitForAdvertisingDevice(testBleDevice);
+      final silent = StreamController<BleDevice>();
+      addTearDown(silent.close);
+      stubScan(platform, silent.stream);
+      await scanner.waitForAdvertisingDevice(
+        testBleDevice,
+        timeout: const Duration(milliseconds: 20),
+      );
+      stubScan(platform, Stream.value(advertising(runningUuid)));
 
-    verify(() => platform.scanForDevices(withServices: const [])).called(1);
-  });
+      final found = await scanner.waitForAdvertisingDevice(testBleDevice);
+      await scanner.waitForAdvertisingDevice(testBleDevice);
 
-  test('waitForAdvertisingDevice matches by name when no id is given',
-      () async {
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
-        .thenAnswer((_) => Stream.value(testBleDevice));
-
-    final found = await scanner.waitForAdvertisingDevice(
-        const BleDevice(id: '', name: 'senseBox:test'));
-
-    expect(found, testBleDevice);
-  });
-
-  test('waitForAdvertisingDevice fails with the scan error', () async {
-    final scanError = Exception('Bluetooth disabled');
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
-        .thenAnswer((_) => Stream.error(scanError));
-
-    await expectLater(
-      scanner.waitForAdvertisingDevice(testBleDevice),
-      throwsA(same(scanError)),
-    );
-    expect(isScanning.value, isFalse);
-  });
-
-  test('stopScanning ends a pending wait with no device', () async {
-    final scan = StreamController<BleDevice>();
-    addTearDown(scan.close);
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices'))).thenAnswer((_) => scan.stream);
-
-    final waiting = scanner.waitForAdvertisingDevice(testBleDevice);
-    await pumpEventQueue();
-    await scanner.stopScanning();
-
-    expect(await waiting, isNull);
-    expect(scan.hasListener, isFalse);
-  });
-
-  test('waitForAdvertisingDevice returns null after the timeout', () async {
-    final scan = StreamController<BleDevice>();
-    addTearDown(scan.close);
-    when(() => platform.scanForDevices(withServices: any(named: 'withServices'))).thenAnswer((_) => scan.stream);
-
-    final found = await scanner.waitForAdvertisingDevice(testBleDevice,
-        timeout: const Duration(milliseconds: 50));
-
-    expect(found, isNull);
-    expect(scan.hasListener, isFalse);
+      final filters = scanFilters();
+      expect(found, testBleDevice);
+      expect(filters[1], [BleUuid(bootUuid)]);
+      expect(filters[2], isEmpty);
+      expect(filters[3].toSet(), {BleUuid(bootUuid), BleUuid(runningUuid)});
+    });
   });
 }

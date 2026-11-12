@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:sensebox_bike/ble/ble_constants.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_platform.dart';
@@ -11,57 +10,41 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 const _senseBoxDeviceNamePrefix = 'senseBox';
 
 class BleScanner {
-  BleScanner({
-    required this.platform,
-    required this.isScanningNotifier,
-  });
+  BleScanner(this.platform);
 
   final BlePlatform platform;
-  final ValueNotifier<bool> isScanningNotifier;
-
-  final List<BleDevice> devicesList = [];
-  final StreamController<List<BleDevice>> _devicesListController =
-      StreamController<List<BleDevice>>.broadcast();
 
   StreamSubscription<BleDevice>? _scanSubscription;
   Timer? _scanTimeoutTimer;
-  Completer<BleDevice?>? _pendingWait;
+  void Function()? _onScanEnded;
   final Map<String, Set<BleUuid>> _advertisedServices = {};
   final Set<String> _filteredScanMissed = {};
 
-  Stream<List<BleDevice>> get devicesListStream =>
-      _devicesListController.stream;
-
-  void clearDiscoveredDevices() {
-    devicesList.clear();
-    _emitDevicesList();
-  }
-
-  void startScanning() {
-    clearDiscoveredDevices();
-    _startScan(
-      _onDiscoveredDevice,
-      onError: (error, stackTrace) {
-        if (!_devicesListController.isClosed) {
-          _devicesListController.addError(error, stackTrace);
+  Stream<List<BleDevice>> scanForDevices() {
+    final devices = <BleDevice>[];
+    late final StreamController<List<BleDevice>> controller;
+    void onEnded() => controller.close();
+    controller = StreamController<List<BleDevice>>(
+      onListen: () => _startScan(
+        (device) {
+          if (!isSenseBoxDiscoveredDevice(device)) {
+            return;
+          }
+          final index = devices.indexWhere((entry) => entry.id == device.id);
+          index >= 0 ? devices[index] = device : devices.add(device);
+          controller.add(List.of(devices));
+        },
+        onError: controller.addError,
+        onEnded: onEnded,
+      ),
+      onCancel: () {
+        if (identical(_onScanEnded, onEnded)) {
+          return stopScanning();
         }
+        return null;
       },
-      timeout: bleScanTimeout,
     );
-  }
-
-  Future<void> stopScanning() async {
-    await _cancelScan();
-    isScanningNotifier.value = false;
-  }
-
-  Future<void> _cancelScan() async {
-    _endPendingWait();
-    _scanTimeoutTimer?.cancel();
-    _scanTimeoutTimer = null;
-    final subscription = _scanSubscription;
-    _scanSubscription = null;
-    await subscription?.cancel();
+    return controller.stream;
   }
 
   Future<BleDevice?> waitForAdvertisingDevice(
@@ -90,10 +73,14 @@ class BleScanner {
           found.completeError(error, stackTrace);
         }
       },
+      onEnded: () {
+        if (!found.isCompleted) {
+          found.complete(null);
+        }
+      },
       timeout: timeout,
       withServices: filter,
     );
-    _pendingWait = found;
 
     try {
       final result = await found.future;
@@ -112,13 +99,26 @@ class BleScanner {
     }
   }
 
+  Future<void> stopScanning() async {
+    _scanTimeoutTimer?.cancel();
+    _scanTimeoutTimer = null;
+    final subscription = _scanSubscription;
+    final onEnded = _onScanEnded;
+    _scanSubscription = null;
+    _onScanEnded = null;
+    await subscription?.cancel();
+    onEnded?.call();
+  }
+
   void _startScan(
     void Function(BleDevice device) onDevice, {
     required void Function(Object error, StackTrace stackTrace) onError,
-    required Duration timeout,
+    required void Function() onEnded,
+    Duration timeout = bleScanTimeout,
     List<BleUuid> withServices = const [],
   }) {
-    unawaited(_cancelScan());
+    unawaited(stopScanning());
+    _onScanEnded = onEnded;
     _scanSubscription =
         platform.scanForDevices(withServices: withServices).listen(
       (device) {
@@ -133,15 +133,6 @@ class BleScanner {
       },
     );
     _scanTimeoutTimer = Timer(timeout, () => unawaited(stopScanning()));
-    isScanningNotifier.value = true;
-  }
-
-  void _endPendingWait() {
-    final pending = _pendingWait;
-    _pendingWait = null;
-    if (pending != null && !pending.isCompleted) {
-      pending.complete(null);
-    }
   }
 
   List<BleUuid> _scanFilterFor(String deviceId) {
@@ -153,35 +144,14 @@ class BleScanner {
 
   void _rememberAdvertisedServices(BleDevice device) {
     if (device.id.isNotEmpty && device.serviceUuids.isNotEmpty) {
-      _advertisedServices.putIfAbsent(device.id, () => {}).addAll(
-            device.serviceUuids,
-          );
-    }
-  }
-
-  void _onDiscoveredDevice(BleDevice device) {
-    if (!isSenseBoxDiscoveredDevice(device)) {
-      return;
-    }
-    final existingIndex =
-        devicesList.indexWhere((entry) => entry.id == device.id);
-    if (existingIndex >= 0) {
-      devicesList[existingIndex] = device;
-    } else {
-      devicesList.add(device);
-    }
-    _emitDevicesList();
-  }
-
-  void _emitDevicesList() {
-    if (!_devicesListController.isClosed) {
-      _devicesListController.add(List<BleDevice>.from(devicesList));
+      _advertisedServices
+          .putIfAbsent(device.id, () => {})
+          .addAll(device.serviceUuids);
     }
   }
 
   void dispose() {
-    unawaited(_cancelScan());
-    _devicesListController.close();
+    unawaited(stopScanning());
   }
 }
 

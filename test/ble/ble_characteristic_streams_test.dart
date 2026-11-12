@@ -3,101 +3,122 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
+import 'package:sensebox_bike/ble/ble_uuids.dart';
 import 'ble_test_helpers.dart';
 import 'mock_ble_platform.dart';
 
 void main() {
-  setUpAll(() {
-    registerFallbackValue(
-      testCharacteristicRef('11111111-2222-3333-4444-555555555555'),
+  late MockBlePlatform platform;
+  late BleCharacteristicStreams streams;
+  late StreamController<List<int>> silent;
+  final other = BleUuid('bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee');
+  final third = BleUuid('cccccccc-bbbb-cccc-dddd-eeeeeeeeeeee');
+
+  setUpAll(registerBleFallbackValues);
+
+  setUp(() {
+    platform = MockBlePlatform();
+    streams = BleCharacteristicStreams(
+      platform: platform,
+      probeTimeout: const Duration(milliseconds: 100),
     );
+    silent = StreamController<List<int>>.broadcast();
+    when(() => platform.discoverCharacteristics())
+        .thenAnswer((_) async => [testCharacteristic, other]);
+    when(() => platform.subscribeToCharacteristic(any()))
+        .thenAnswer((_) => silent.stream);
   });
 
-  group('BleCharacteristicStreams', () {
-    late MockBlePlatform platform;
-    late BleCharacteristicStreams streams;
-    late StreamController<List<int>> notifyController;
-    const uuid = '11111111-2222-3333-4444-555555555555';
+  tearDown(() async {
+    await streams.clear();
+    await silent.close();
+  });
 
-    setUp(() {
-      platform = MockBlePlatform();
-      streams = BleCharacteristicStreams(platform: platform);
-      notifyController = StreamController<List<int>>.broadcast();
+  void stubData(BleUuid characteristic, List<double> values) {
+    when(() => platform.subscribeToCharacteristic(characteristic))
+        .thenAnswer((_) => Stream.value(float32Bytes(values)));
+  }
 
-      when(() => platform.subscribeToCharacteristic(any()))
-          .thenAnswer((_) => notifyController.stream);
-    });
+  test('characteristicStream throws when uuid is not subscribed', () {
+    expect(() => streams.characteristicStream('$testCharacteristic'),
+        throwsStateError);
+  });
 
-    tearDown(() async {
-      await streams.clear();
-      await notifyController.close();
-    });
+  test('establish fails when the box has no characteristics', () async {
+    when(() => platform.discoverCharacteristics()).thenAnswer((_) async => []);
 
-    test('characteristicStream throws when uuid is not subscribed', () {
-      expect(
-        () => streams.characteristicStream(uuid),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'message',
-          contains('Characteristic stream not found for UUID: $uuid'),
-        )),
-      );
-    });
+    expect(streams.establish(), throwsStateError);
+  });
 
-    test('subscribe emits parsed values from platform stream', () async {
-      await streams.subscribe(testCharacteristicRef(uuid));
+  test('establish fails when discovery fails', () async {
+    when(() => platform.discoverCharacteristics())
+        .thenThrow(StateError('senseBox service not found'));
 
-      verify(() => platform.subscribeToCharacteristic(any())).called(1);
+    expect(streams.establish(), throwsStateError);
+  });
 
-      final values = <List<double>>[];
-      final subscription =
-          streams.characteristicStream(uuid).listen(values.add);
+  test('establish times out when no data arrives', () async {
+    await expectLater(streams.establish(), throwsA(isA<TimeoutException>()));
+    verify(() => platform.subscribeToCharacteristic(any())).called(2);
+  });
 
-      notifyController.add(float32Bytes([1.0, 2.0]));
-      await Future<void>.delayed(Duration.zero);
+  test('establish succeeds on zero-valued sensor frames', () async {
+    stubData(other, [0.0]);
 
-      expect(values, [
-        [1.0, 2.0],
-      ]);
+    expect(await streams.establish(), [testCharacteristic, other]);
+  });
 
-      await subscription.cancel();
-    });
+  test('establish subscribes every characteristic even when data arrives early',
+      () async {
+    when(() => platform.discoverCharacteristics())
+        .thenAnswer((_) async => [testCharacteristic, other, third]);
+    stubData(testCharacteristic, [1.0]);
 
-    test('resubscribe replaces prior stream for the same uuid', () async {
-      await streams.subscribe(testCharacteristicRef(uuid));
+    await streams.establish();
 
-      final firstValues = <List<double>>[];
-      final firstSubscription =
-          streams.characteristicStream(uuid).listen(firstValues.add);
-      notifyController.add(float32Bytes([1.0]));
-      await Future<void>.delayed(Duration.zero);
+    for (final uuid in [testCharacteristic, other, third]) {
+      expect(streams.characteristicStream('$uuid'), isNotNull);
+    }
+  });
 
-      await streams.subscribe(testCharacteristicRef(uuid));
+  test('establish replaces the streams of an earlier session', () async {
+    stubData(testCharacteristic, [1.0]);
+    await streams.establish();
+    when(() => platform.discoverCharacteristics())
+        .thenAnswer((_) async => [other]);
+    stubData(other, [2.0]);
 
-      final secondValues = <List<double>>[];
-      streams.characteristicStream(uuid).listen(secondValues.add);
-      notifyController.add(float32Bytes([2.0]));
-      await Future<void>.delayed(Duration.zero);
+    await streams.establish();
 
-      expect(firstValues, [
-        [1.0],
-      ]);
-      expect(secondValues, [
-        [2.0],
-      ]);
+    expect(() => streams.characteristicStream('$testCharacteristic'),
+        throwsStateError);
+    expect(streams.characteristicStream('$other'), isNotNull);
+  });
 
-      await firstSubscription.cancel();
-    });
+  test('streams parsed values and tracks which characteristics are live',
+      () async {
+    stubData(other, [1.0]);
+    await streams.establish();
+    final values = <List<double>>[];
+    streams.characteristicStream('$testCharacteristic').listen(values.add);
 
-    test('clear removes subscriptions and closes streams', () async {
-      await streams.subscribe(testCharacteristicRef(uuid));
-      await streams.clear();
+    silent.add(float32Bytes([1.5, 2.5]));
+    await pumpEventQueue();
 
-      expect(streams.subscribedCharacteristicUuids, isEmpty);
-      expect(
-        () => streams.characteristicStream(uuid),
-        throwsA(isA<Exception>()),
-      );
-    });
+    expect(values, [
+      [1.5, 2.5]
+    ]);
+    expect(streams.hasLivePayload('$testCharacteristic'), isTrue);
+    expect(streams.hasLivePayload('$other'), isTrue);
+  });
+
+  test('clear closes streams and forgets live payloads', () async {
+    stubData(other, [1.0]);
+    await streams.establish();
+
+    await streams.clear();
+
+    expect(() => streams.characteristicStream('$other'), throwsStateError);
+    expect(streams.hasLivePayload('$other'), isFalse);
   });
 }
