@@ -176,7 +176,7 @@ class BlePlatform {
 
   Future<void> dispose() async {
     await disconnect();
-    await _linkStates.close();
+    unawaited(_linkStates.close());
   }
 
   static Uuid _toUuid(BleUuid uuid) => Uuid.parse(uuid.value);

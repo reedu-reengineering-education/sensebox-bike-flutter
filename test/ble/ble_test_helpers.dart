@@ -18,6 +18,7 @@ void registerBleFallbackValues() {
   registerFallbackValue(testBleDevice);
   registerFallbackValue(testCharacteristic);
   registerFallbackValue(<BleUuid>[]);
+  registerFallbackValue(Duration.zero);
 }
 
 Uint8List float32Bytes(List<double> values) {
@@ -28,9 +29,9 @@ Uint8List float32Bytes(List<double> values) {
   return byteData.buffer.asUint8List();
 }
 
-void stubScan(MockBlePlatform platform, Stream<BleDevice> results) {
+void stubScan(MockBlePlatform platform, Stream<BleDevice> Function() scan) {
   when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
-      .thenAnswer((_) => results);
+      .thenAnswer((_) => scan());
 }
 
 class BleTestHarness {
@@ -55,13 +56,13 @@ class BleTestHarness {
   late final BleBloc bloc;
 
   void stubConnectFailure(Object error) {
-    stubScan(platform, Stream.value(testBleDevice));
+    stubScan(platform, () => Stream.value(testBleDevice));
     when(() => platform.connect(any(), timeout: any(named: 'timeout')))
         .thenThrow(error);
   }
 
   void stubConnectSuccess() {
-    stubScan(platform, Stream.value(testBleDevice));
+    stubScan(platform, () => Stream.value(testBleDevice));
     when(() => platform.connect(any(), timeout: any(named: 'timeout')))
         .thenAnswer((_) async {
       when(() => platform.isConnected).thenReturn(true);
@@ -86,6 +87,9 @@ class BleTestHarness {
   }
 
   Future<void> dispose() async {
+    if (bloc.phase != BleConnectionPhase.idle) {
+      await bloc.disconnectDevice();
+    }
     bloc.dispose();
     await adapterStates.close();
     await linkStates.close();

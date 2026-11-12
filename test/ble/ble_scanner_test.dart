@@ -29,7 +29,7 @@ void main() {
     test('lists each senseBox device once, without a filter', () async {
       final scan = StreamController<BleDevice>();
       addTearDown(scan.close);
-      stubScan(platform, scan.stream);
+      stubScan(platform, () => scan.stream);
 
       final lists = <List<BleDevice>>[];
       final subscription = scanner.scanForDevices().listen(lists.add);
@@ -50,7 +50,7 @@ void main() {
 
     test('forwards scan errors and ends', () async {
       final scanError = Exception('Bluetooth disabled');
-      stubScan(platform, Stream.error(scanError));
+      stubScan(platform, () => Stream.error(scanError));
 
       await expectLater(
         scanner.scanForDevices(),
@@ -61,7 +61,7 @@ void main() {
     test('ends when the scan is stopped', () async {
       final scan = StreamController<BleDevice>();
       addTearDown(scan.close);
-      stubScan(platform, scan.stream);
+      stubScan(platform, () => scan.stream);
 
       final done = expectLater(scanner.scanForDevices(), emitsDone);
       await pumpEventQueue();
@@ -73,9 +73,7 @@ void main() {
 
   group('waitForAdvertisingDevice', () {
     test('returns the device with the same id', () async {
-      stubScan(
-        platform,
-        Stream.fromIterable([
+      stubScan(platform, () => Stream.fromIterable([
           const BleDevice(id: 'other', name: 'senseBox:test'),
           testBleDevice,
         ]),
@@ -88,7 +86,7 @@ void main() {
     });
 
     test('matches by name when no id is given', () async {
-      stubScan(platform, Stream.value(testBleDevice));
+      stubScan(platform, () => Stream.value(testBleDevice));
 
       final found = await scanner.waitForAdvertisingDevice(
         const BleDevice(id: '', name: 'senseBox:test'),
@@ -99,7 +97,7 @@ void main() {
 
     test('fails with the scan error', () async {
       final scanError = Exception('Bluetooth disabled');
-      stubScan(platform, Stream.error(scanError));
+      stubScan(platform, () => Stream.error(scanError));
 
       await expectLater(
         scanner.waitForAdvertisingDevice(testBleDevice),
@@ -110,7 +108,7 @@ void main() {
     test('returns null after the timeout and stops the scan', () async {
       final scan = StreamController<BleDevice>();
       addTearDown(scan.close);
-      stubScan(platform, scan.stream);
+      stubScan(platform, () => scan.stream);
 
       final found = await scanner.waitForAdvertisingDevice(
         testBleDevice,
@@ -124,7 +122,7 @@ void main() {
     test('returns null when the scan is stopped', () async {
       final scan = StreamController<BleDevice>();
       addTearDown(scan.close);
-      stubScan(platform, scan.stream);
+      stubScan(platform, () => scan.stream);
 
       final waiting = scanner.waitForAdvertisingDevice(testBleDevice);
       await pumpEventQueue();
@@ -152,7 +150,7 @@ void main() {
           .thenAnswer((_) => Stream.value(results.removeAt(0)));
       await scanner.waitForAdvertisingDevice(testBleDevice);
       await scanner.waitForAdvertisingDevice(testBleDevice);
-      stubScan(platform, Stream.value(testBleDevice));
+      stubScan(platform, () => Stream.value(testBleDevice));
 
       await scanner.waitForAdvertisingDevice(testBleDevice);
 
@@ -163,16 +161,16 @@ void main() {
 
     test('scans unfiltered once after a filtered scan missed the box',
         () async {
-      stubScan(platform, Stream.value(advertising(bootUuid)));
+      stubScan(platform, () => Stream.value(advertising(bootUuid)));
       await scanner.waitForAdvertisingDevice(testBleDevice);
       final silent = StreamController<BleDevice>();
       addTearDown(silent.close);
-      stubScan(platform, silent.stream);
+      stubScan(platform, () => silent.stream);
       await scanner.waitForAdvertisingDevice(
         testBleDevice,
         timeout: const Duration(milliseconds: 20),
       );
-      stubScan(platform, Stream.value(advertising(runningUuid)));
+      stubScan(platform, () => Stream.value(advertising(runningUuid)));
 
       final found = await scanner.waitForAdvertisingDevice(testBleDevice);
       await scanner.waitForAdvertisingDevice(testBleDevice);
