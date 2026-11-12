@@ -63,9 +63,13 @@ jobs:
         run: flutter pub get
 
       - name: Decode keystore file
-        if: env.KEYSTORE_PASSWORD != ''
         run: |
-          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > ${{ github.workspace }}/android/app/release.keystore
+          if [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "Release signing secrets are missing."
+            exit 1
+          fi
+          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > "${{ github.workspace }}/android/app/release.keystore"
+          test -s "${{ github.workspace }}/android/app/release.keystore"
 
       - name: Create key.properties file
         run: |

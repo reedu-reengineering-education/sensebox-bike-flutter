@@ -49,18 +49,13 @@ android {
 
     signingConfigs {
         release {
-            // Codemagic exports CM_KEYSTORE_PATH. GitHub Actions also sets CI,
-            // but signs with android/key.properties instead.
-            if (System.getenv("CM_KEYSTORE_PATH")) {
-                storeFile file(System.getenv("CM_KEYSTORE_PATH"))
-                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
-                keyAlias System.getenv("CM_KEY_ALIAS")
-                keyPassword System.getenv("CM_KEY_PASSWORD")
-            } else {
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-                storePassword keystoreProperties['storePassword']
+            // Codemagic sets CM_KEYSTORE_PATH. GitHub Actions and local builds use key.properties.
+            def keystorePath = System.getenv("CM_KEYSTORE_PATH") ?: keystoreProperties.getProperty("storeFile")
+            if (keystorePath) {
+                storeFile file(keystorePath)
+                storePassword System.getenv("CM_KEYSTORE_PASSWORD") ?: keystoreProperties.getProperty("storePassword")
+                keyAlias System.getenv("CM_KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias")
+                keyPassword System.getenv("CM_KEY_PASSWORD") ?: keystoreProperties.getProperty("keyPassword")
             }
         }
     }
