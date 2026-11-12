@@ -192,6 +192,8 @@
     }
   },
   "settingsStorageUsed": "Espace de stockage utilisé",
+  "settingsInstallationId": "ID d'installation",
+  "settingsInstallationIdCopied": "ID d'installation copié dans le presse-papiers",
   "settingsStorageDetails": "Données de l'app : {totalSize} (base de données : {databaseSize})",
   "@settingsStorageDetails": {
     "placeholders": {
@@ -205,6 +207,11 @@
   },
   "settingsContact": "Aide ou retour ?",
   "settingsEmail": "E-mail",
+  "supportEmailSubject": "Demande d'assistance : application senseBox:bike",
+  "supportEmailIntro": "Veuillez décrire le problème que vous rencontrez :",
+  "supportEmailDetails": "Informations sur cette installation (merci de les laisser dans l'e-mail) :",
+  "supportEmailBox": "senseBox : {name}",
+  "supportEmailCampaign": "Campagne et tags : {tags}",
   "settingsGithub": "Ticket GitHub",
   "settingsApiUrl": "URL du service",
   "settingsApiUrlHelper": "Saisir le point de terminaison de l'API pour les téléversements de données",
@@ -260,7 +267,6 @@
   "loginScreenTitle": "Compte openSenseMap",
   "connectionButtonEnableBluetooth": "Activer le Bluetooth",
   "errorLocationAlwaysRequired": "L'enregistrement en arrière-plan nécessite que l'accès à la localisation soit réglé sur « Toujours ». Ouvrez les Réglages système, trouvez cette application et définissez la localisation sur « Toujours ».",
-  "errorNoScanAccess": "Pour vous connecter à la senseBox, autorisez l’application à rechercher des appareils à proximité dans les paramètres du téléphone.",
   "errorNoSenseBoxSelected": "Pour permettre le téléversement des données des capteurs vers le cloud, veuillez vous connecter à votre compte openSenseMap et sélectionner la box.",
   "trackUploadLoginSelectHint": "Connectez-vous et sélectionnez une senseBox pour téléverser.",
   "uploadRequirementsTitle": "Téléversement indisponible",

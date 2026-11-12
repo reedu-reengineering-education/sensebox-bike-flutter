@@ -45,7 +45,10 @@ void main() {
         .thenAnswer((_) async => 1);
 
     isar = await initializeInMemoryIsar();
-    sensorService = SensorService(isarProvider: TestIsarProvider(isar));
+    sensorService = SensorService(
+      isarProvider: TestIsarProvider(isar),
+      batchWriteDelay: Duration.zero,
+    );
 
     await clearIsarDatabase(isar);
 
@@ -203,6 +206,30 @@ void main() {
         await geo!.sensorData.load();
         expect(geo.sensorData.length, equals(4));
       });
+
+      test('writes batches that arrive within the delay in one transaction',
+          () async {
+        final provider = _CountingIsarProvider(isar);
+        final service = SensorService(
+          isarProvider: provider,
+          batchWriteDelay: const Duration(milliseconds: 50),
+        );
+        final geolocation = await isar.geolocationDatas.get(testGeolocationId);
+        SensorData row(double value) => SensorData()
+          ..title = 'temperature'
+          ..value = value
+          ..attribute = null
+          ..characteristicUuid = 'test-uuid'
+          ..geolocationData.value = geolocation;
+
+        await Future.wait([
+          service.saveSensorDataBatch([row(1)]),
+          service.saveSensorDataBatch([row(2), row(3)]),
+        ]);
+
+        expect(provider.writes, 1);
+        expect(await isar.sensorDatas.count(), greaterThanOrEqualTo(3));
+      });
     });
 
     group('getSensorData', () {
@@ -248,4 +275,16 @@ void main() {
       });
     });
   });
+}
+
+class _CountingIsarProvider extends TestIsarProvider {
+  _CountingIsarProvider(super.isar);
+
+  int writes = 0;
+
+  @override
+  Future<T> runWriteTxn<T>(Future<T> Function(Isar isar) action) {
+    writes++;
+    return super.runWriteTxn(action);
+  }
 }

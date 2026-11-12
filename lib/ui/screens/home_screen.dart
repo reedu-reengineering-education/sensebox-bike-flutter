@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:provider/provider.dart';
-import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
+import 'package:sensebox_bike/ble/ble_uuids.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
@@ -240,7 +240,7 @@ class _SensorWidgets extends StatelessWidget {
           return empty;
         }
 
-        return ValueListenableBuilder<List<BleCharacteristicRef>>(
+        return ValueListenableBuilder<List<BleUuid>>(
           valueListenable: bleBloc.availableCharacteristics,
           builder: (context, characteristics, _) {
             // Live payloads can arrive after the characteristic list, so
@@ -252,7 +252,7 @@ class _SensorWidgets extends StatelessWidget {
                 final widgets = _buildAvailableSensorWidgets(
                   sensors: sensorBloc.sensors,
                   availableCharacteristicUuids:
-                      characteristics.map((e) => e.uuidString).toSet(),
+                      characteristics.map((e) => '$e').toSet(),
                 );
                 if (widgets.isEmpty) {
                   // Characteristics are known but no tile has data yet, so the
@@ -483,15 +483,15 @@ class _ActionButtons extends StatelessWidget {
     final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
     return ListenableBuilder(
       listenable: Listenable.merge([
-        bleBloc.isConnectingNotifier,
-        bleBloc.isReconnectingNotifier,
+        bleBloc.phaseNotifier,
         bleBloc.selectedDeviceNotifier,
         recordingBloc,
         settingsBloc,
       ]),
       builder: (context, _) {
-        final isConnecting = bleBloc.isConnectingNotifier.value;
-        final isReconnecting = bleBloc.isReconnectingNotifier.value;
+        final isConnecting = bleBloc.phase == BleConnectionPhase.connecting;
+        final isReconnecting =
+            bleBloc.phase == BleConnectionPhase.reconnecting;
         final selectedDevice = bleBloc.selectedDeviceNotifier.value;
         final buttonsBusy = isConnecting || isReconnecting;
         // Show buttons if device is connected or if reconnecting
@@ -562,11 +562,11 @@ class _ConnectButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: Listenable.merge([
-        bleBloc.isConnectingNotifier,
+        bleBloc.phaseNotifier,
         bleBloc.isBluetoothEnabledNotifier,
       ]),
       builder: (context, _) {
-        final isConnecting = bleBloc.isConnectingNotifier.value;
+        final isConnecting = bleBloc.phase == BleConnectionPhase.connecting;
         final isBluetoothEnabled = bleBloc.isBluetoothEnabledNotifier.value;
         if (isConnecting) {
           return Align(
@@ -687,9 +687,10 @@ class _DisconnectButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: bleBloc.isReconnectingNotifier,
-      builder: (context, isReconnecting, _) {
+    return ValueListenableBuilder<BleConnectionPhase>(
+      valueListenable: bleBloc.phaseNotifier,
+      builder: (context, phase, _) {
+        final isReconnecting = phase == BleConnectionPhase.reconnecting;
         return OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,

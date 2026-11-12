@@ -66,21 +66,6 @@ void main() {
         }
       });
 
-      testWidgets('returns correct message for ScanPermissionDenied',
-          (WidgetTester tester) async {
-        await initializeContext(tester);
-
-        final message = ErrorService.parseError(
-          ScanPermissionDenied(),
-          mockContext,
-        );
-
-        expect(
-          message,
-          'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.',
-        );
-      });
-
       testWidgets('returns correct message for NoSenseBoxSelected',
           (WidgetTester tester) async {
         await initializeContext(tester);

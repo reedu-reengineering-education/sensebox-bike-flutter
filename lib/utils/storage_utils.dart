@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:sensebox_bike/l10n/app_localizations.dart';
 
 class AppStorageInfo {
   final int isarSize;
@@ -61,4 +62,22 @@ String formatStorageSize(int bytes) {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
   return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+}
+
+Future<AppStorageInfo?> tryGetAppStorageInfo() async {
+  try {
+    return await getAppStorageInfo();
+  } catch (_) {
+    return null;
+  }
+}
+
+String formatStorageDetails(
+  AppLocalizations localizations,
+  AppStorageInfo info,
+) {
+  return localizations.settingsStorageDetails(
+    formatStorageSize(info.isarSize),
+    formatStorageSize(info.totalAppDataSize),
+  );
 }

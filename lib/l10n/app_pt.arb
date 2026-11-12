@@ -204,6 +204,8 @@
         }
     },
     "settingsStorageUsed": "Armazenamento usado",
+    "settingsInstallationId": "ID de instalação",
+    "settingsInstallationIdCopied": "ID de instalação copiado para a área de transferência",
     "settingsStorageDetails": "Dados do app: {totalSize} (banco de dados: {databaseSize})",
     "@settingsStorageDetails": {
         "placeholders": {
@@ -217,6 +219,11 @@
     },
     "settingsContact": "Ajuda ou feedback?",
     "settingsEmail": "E-mail",
+    "supportEmailSubject": "Pedido de suporte: aplicação senseBox:bike",
+    "supportEmailIntro": "Descreva o problema que está a ter:",
+    "supportEmailDetails": "Informações sobre esta instalação (por favor mantenha-as no e-mail):",
+    "supportEmailBox": "senseBox: {name}",
+    "supportEmailCampaign": "Campanha e etiquetas: {tags}",
     "settingsGithub": "GitHub issue",
     "privacyZoneDescription": "Áreas onde nenhum dado será registrado",
     "privacyZonesStart": "Toque no mapa para começar a desenhar uma área. Toque na marca de seleção para finalizar.",
@@ -269,7 +276,6 @@
     "loginScreenTitle": "openSenseMap Conta",
     "connectionButtonEnableBluetooth": "Ativar Bluetooth",
     "errorLocationAlwaysRequired": "A gravação em segundo plano requer que o acesso à Localização esteja definido como \"Sempre\". Abra as Definições do sistema, encontre esta aplicação e altere a Localização para \"Sempre\".",
-    "errorNoScanAccess": "Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.",
     "errorNoSenseBoxSelected": "Para permitir o upload de dados do sensor para a nuvem, faça login na sua conta openSenseMap e selecione a caixa.",
     "trackUploadLoginSelectHint": "Faça login e selecione uma senseBox para enviar os dados.",
     "uploadRequirementsTitle": "Envio indisponível",

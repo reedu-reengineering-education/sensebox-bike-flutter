@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -24,7 +25,7 @@ class GeolocationMapBloc extends ChangeNotifier {
   VoidCallback? _osemListener;
 
   // Getters
-  List<GeolocationData> get gpsBuffer => List.unmodifiable(_gpsBuffer);
+  List<GeolocationData> get gpsBuffer => UnmodifiableListView(_gpsBuffer);
   bool get isRecording => _isRecording;
   bool get isAuthenticated => osemBloc.isAuthenticated;
   GeolocationData? get latestLocation => _latestLocation;
@@ -96,23 +97,10 @@ class GeolocationMapBloc extends ChangeNotifier {
     if (shouldNotify) {
       _lastNotifiedLocation = geoData;
       if (_isRecording) {
-        _addToGpsBuffer(geoData);
+        _gpsBuffer.add(geoData);
       }
       notifyListeners();
     }
-  }
-
-  // GPS Buffer Management
-  void _addToGpsBuffer(GeolocationData geoData) {
-    if (_isDuplicatePoint(geoData)) return;
-    _gpsBuffer.add(geoData);
-  }
-
-  bool _isDuplicatePoint(GeolocationData geoData) {
-    return _gpsBuffer.any((point) =>
-        point.latitude == geoData.latitude &&
-        point.longitude == geoData.longitude &&
-        point.timestamp == geoData.timestamp);
   }
 
   void _clearGpsBuffer() {

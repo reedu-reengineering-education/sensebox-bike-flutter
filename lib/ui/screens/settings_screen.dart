@@ -6,6 +6,10 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
+import 'package:sensebox_bike/services/installation_id_service.dart';
+import 'package:sensebox_bike/utils/app_version.dart';
+import 'package:sensebox_bike/utils/storage_utils.dart';
+import 'package:sensebox_bike/utils/support_email.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/layout/form_factor.dart';
 import 'package:sensebox_bike/ui/screens/login_screen.dart';
@@ -527,11 +531,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: AppLocalizations.of(context)!.settingsKnowledgeBase,
           url: knowledgeBaseUrl,
         ),
-        _buildUrlTile(
-          context,
-          icon: Icons.contact_mail,
-          title: AppLocalizations.of(context)!.settingsEmail,
-          url: 'mailto:$contactEmail?subject=senseBox:bike%20App',
+        ListTile(
+          leading: const Icon(Icons.contact_mail),
+          title: Text(AppLocalizations.of(context)!.settingsEmail),
+          onTap: () => _openSupportEmail(context),
         ),
         _buildUrlTile(
           context,
@@ -552,6 +555,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         style: Theme.of(context).textTheme.titleMedium,
       ),
     );
+  }
+
+  Future<void> _openSupportEmail(BuildContext context) async {
+    final localizations = AppLocalizations.of(context)!;
+    final senseBox = context.read<OpenSenseMapBloc>().selectedSenseBox;
+    try {
+      final storage = await tryGetAppStorageInfo();
+      final uri = buildSupportEmailUri(
+        localizations,
+        installationId: InstallationIdService.id,
+        appVersion: await loadAppVersionLabel(),
+        storageDetails:
+            storage == null ? null : formatStorageDetails(localizations, storage),
+        senseBox: senseBox,
+      );
+      await widget.launchUrlFunction(uri, mode: LaunchMode.externalApplication);
+    } catch (error, stack) {
+      ErrorService.handleError(error, stack);
+    }
   }
 
   Widget _buildUrlTile(BuildContext context,

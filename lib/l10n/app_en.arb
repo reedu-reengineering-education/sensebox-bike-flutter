@@ -203,6 +203,8 @@
         }
     },
     "settingsStorageUsed": "Storage used",
+    "settingsInstallationId": "Installation ID",
+    "settingsInstallationIdCopied": "Installation ID copied to clipboard",
     "settingsStorageDetails": "App data: {totalSize} (database: {databaseSize})",
     "@settingsStorageDetails": {
         "placeholders": {
@@ -216,6 +218,25 @@
     },
     "settingsContact": "Help or feedback?",
     "settingsEmail": "E-mail",
+    "supportEmailSubject": "Support request: senseBox:bike app",
+    "supportEmailIntro": "Please describe the issue you are having:",
+    "supportEmailDetails": "Details about this installation (please keep them in the email):",
+    "supportEmailBox": "senseBox: {name}",
+    "@supportEmailBox": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "supportEmailCampaign": "Campaign and tags: {tags}",
+    "@supportEmailCampaign": {
+        "placeholders": {
+            "tags": {
+                "type": "String"
+            }
+        }
+    },
     "settingsGithub": "GitHub issue",
     "privacyZoneDescription": "Areas where no data will be recorded",
     "privacyZonesStart": "Tap on the map to start drawing a zone. Tap the checkmark to finish.",
@@ -267,7 +288,6 @@
     "loginScreenTitle": "openSenseMap Account",
     "connectionButtonEnableBluetooth": "Enable Bluetooth",
     "errorLocationAlwaysRequired": "Background recording requires Location access set to \"Always\". Open System Settings, find this app, and change Location to \"Always\".",
-    "errorNoScanAccess": "To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.",
     "errorNoSenseBoxSelected": "To allow upload of sensor data to the cloud, please log in to your openSenseMap account and select the box.",
     "trackUploadLoginSelectHint": "Log in and select a senseBox to upload.",
     "uploadRequirementsTitle": "Upload not available",

@@ -435,6 +435,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsStorageUsed => 'Armazenamento usado';
 
   @override
+  String get settingsInstallationId => 'ID de instalação';
+
+  @override
+  String get settingsInstallationIdCopied =>
+      'ID de instalação copiado para a área de transferência';
+
+  @override
   String settingsStorageDetails(String databaseSize, String totalSize) {
     return 'Dados do app: $totalSize (banco de dados: $databaseSize)';
   }
@@ -444,6 +451,27 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsEmail => 'E-mail';
+
+  @override
+  String get supportEmailSubject =>
+      'Pedido de suporte: aplicação senseBox:bike';
+
+  @override
+  String get supportEmailIntro => 'Descreva o problema que está a ter:';
+
+  @override
+  String get supportEmailDetails =>
+      'Informações sobre esta instalação (por favor mantenha-as no e-mail):';
+
+  @override
+  String supportEmailBox(String name) {
+    return 'senseBox: $name';
+  }
+
+  @override
+  String supportEmailCampaign(String tags) {
+    return 'Campanha e etiquetas: $tags';
+  }
 
   @override
   String get settingsGithub => 'GitHub issue';
@@ -605,10 +633,6 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get errorLocationAlwaysRequired =>
       'A gravação em segundo plano requer que o acesso à Localização esteja definido como \"Sempre\". Abra as Definições do sistema, encontre esta aplicação e altere a Localização para \"Sempre\".';
-
-  @override
-  String get errorNoScanAccess =>
-      'Para se conectar à SenseBox, permita que a aplicação procure dispositivos próximos nas definições do telemóvel.';
 
   @override
   String get errorNoSenseBoxSelected =>

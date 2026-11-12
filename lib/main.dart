@@ -22,6 +22,7 @@ import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/services/sensor_csv_logger_service.dart';
+import 'package:sensebox_bike/services/installation_id_service.dart';
 import 'package:sensebox_bike/theme.dart';
 import 'package:sensebox_bike/ui/screens/initial_screen.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -30,14 +31,21 @@ import 'package:sensebox_bike/l10n/app_localizations.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env", mergeWith: Platform.environment);
+  final installationId = await InstallationIdService.init();
 
   await SentryFlutter.init(
     (options) => options
       ..dsn = sentryDsn
       ..sampleRate = 1.0
       // Disable sending request headers and IP for users
-      ..sendDefaultPii = false,
-    appRunner: () => runApp(SentryWidget(child: SenseBoxBikeApp())),
+      ..sendDefaultPii = false
+      ..enableAppLifecycleBreadcrumbs = true,
+    appRunner: () async {
+      await Sentry.configureScope(
+        (scope) => scope.setUser(SentryUser(id: installationId)),
+      );
+      runApp(SentryWidget(child: SenseBoxBikeApp()));
+    },
   );
 }
 
@@ -134,7 +142,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
 
           final fullId = "senseBox:bike [$id]";
           debugPrint('Connecting to $fullId');
-          await _bleBloc!.connectToId(fullId);
+          await _bleBloc!.connectToName(fullId);
           await Future.delayed(const Duration(seconds: 2));
           _recordingBloc!.startRecording();
         }

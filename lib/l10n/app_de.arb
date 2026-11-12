@@ -197,6 +197,8 @@
         }
     },
     "settingsStorageUsed": "Speichernutzung",
+    "settingsInstallationId": "Installations-ID",
+    "settingsInstallationIdCopied": "Installations-ID in die Zwischenablage kopiert",
     "settingsStorageDetails": "App-Daten: {totalSize} (Datenbank: {databaseSize})",
     "@settingsStorageDetails": {
         "placeholders": {
@@ -210,6 +212,11 @@
     },
     "settingsContact": "Hilfe oder Feedback?",
     "settingsEmail": "E-Mail",
+    "supportEmailSubject": "Support-Anfrage: senseBox:bike App",
+    "supportEmailIntro": "Bitte beschreiben Sie das Problem, das bei Ihnen auftritt:",
+    "supportEmailDetails": "Angaben zu dieser Installation (bitte in der E-Mail lassen):",
+    "supportEmailBox": "senseBox: {name}",
+    "supportEmailCampaign": "Kampagne und Tags: {tags}",
     "settingsGithub": "GitHub issue",
     "privacyZoneDescription": "Bereiche, in denen keine Daten aufgezeichnet werden",
     "privacyZonesStart": "Tippen Sie auf die Karte, um mit dem Zeichnen einer Zone zu beginnen. Tippen Sie auf das Häkchen, um den Vorgang zu beenden.",
@@ -262,7 +269,6 @@
     "loginScreenTitle": "openSenseMap Konto",
     "connectionButtonEnableBluetooth": "Bluetooth aktivieren",
     "errorLocationAlwaysRequired": "Für Aufzeichnungen im Hintergrund muss der Standortzugriff auf \"Immer\" gesetzt sein. Öffnen Sie die Systemeinstellungen, wählen Sie diese App aus und stellen Sie den Standortzugriff auf \"Immer\".",
-    "errorNoScanAccess": "Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.",
     "errorNoSenseBoxSelected": "Um den Upload von Sensordaten in die Cloud zu ermöglichen, melden Sie sich bitte in Ihrem openSenseMap-Konto an und wählen Sie die Box aus.",
     "trackUploadLoginSelectHint": "Bitte melde dich an und wähle eine senseBox zum Hochladen aus.",
     "uploadRequirementsTitle": "Upload nicht möglich",

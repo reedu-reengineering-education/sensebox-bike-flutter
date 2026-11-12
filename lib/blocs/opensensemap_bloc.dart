@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
@@ -299,7 +300,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     final sensorsList = boxConfiguration.sensorsAsMap;
     final defaultGrouptag = boxConfiguration.defaultGrouptag;
 
-    final List<String> baseGroupTags = ['bike', defaultGrouptag];
+    final List<String> baseGroupTags = [bikeGrouptag, defaultGrouptag];
 
     if (selectedTag != null && selectedTag.isNotEmpty) {
       baseGroupTags.add(selectedTag);
