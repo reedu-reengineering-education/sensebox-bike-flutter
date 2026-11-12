@@ -53,3 +53,7 @@ default.isar*
 graphify-*
 CLAUDE.md
 .claude
+# Isar native core, downloaded by tests via Isar.initializeIsarCore(download: true)
+libisar.dylib
+libisar.so
+isar.dll
