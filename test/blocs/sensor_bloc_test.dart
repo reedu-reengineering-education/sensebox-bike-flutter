@@ -30,10 +30,9 @@ void main() {
     characteristicUuid: BleUuid(TemperatureSensor.sensorCharacteristicUuid),
   );
 
-  void connect(int streamsVersion) {
+  void connect() {
     bleBloc.selectedDevice = testBleDevice;
     bleBloc.availableCharacteristics.value = [temperature];
-    bleBloc.characteristicStreamsVersion.value = streamsVersion;
     bleBloc.connected = true;
     bleBloc.notifyListeners();
   }
@@ -54,7 +53,7 @@ void main() {
   tearDown(() => sensorBloc.dispose());
 
   test('starts sensors once per connected session', () async {
-    connect(1);
+    connect();
     bleBloc.notifyListeners();
     bleBloc.isBluetoothEnabledNotifier.value = true;
     bleBloc.notifyListeners();
@@ -65,13 +64,13 @@ void main() {
 
   test('stops sensors while reconnecting and restarts them once after',
       () async {
-    connect(1);
+    connect();
     await pumpEventQueue();
     expect(sensorStarts(), 1);
 
     bleBloc.connected = false;
     bleBloc.notifyListeners();
-    connect(2);
+    connect();
     await pumpEventQueue();
 
     expect(sensorStarts(), 1);
@@ -79,7 +78,7 @@ void main() {
   });
 
   test('stops location updates when the box is disconnected', () async {
-    connect(1);
+    connect();
     await pumpEventQueue();
 
     bleBloc.connected = false;

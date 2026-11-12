@@ -61,9 +61,7 @@ class BleCharacteristicStreams {
     );
   }
 
-  Future<void> clear({
-    Iterable<BleCharacteristicRef> characteristics = const [],
-  }) async {
+  Future<void> clear() async {
     final subscriptions = _subscriptions.values.toList();
     _subscriptions.clear();
     _livePayloadUuids.clear();

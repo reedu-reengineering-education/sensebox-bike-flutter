@@ -29,129 +29,57 @@ class BleConnectionSession {
   Future<BleConnectionSessionResult> establish(
     BleDevice device, {
     required BleCharacteristicStreams streams,
-    Duration? livenessTimeout,
   }) async {
-    _platform.beginSessionEstablishment(device.id);
+    const failure = BleConnectionSessionResult(success: false);
+    if (!_platform.isConnected(device.id)) {
+      return failure;
+    }
     try {
-      if (!_platform.isConnected(device.id)) {
-        return const BleConnectionSessionResult(success: false);
-      }
-
       await streams.clear();
-
       final services = await _platform.discoverServices(device.id);
-      if (services.isEmpty) {
-        return const BleConnectionSessionResult(success: false);
-      }
-
-      if (!_platform.isConnected(device.id)) {
-        return const BleConnectionSessionResult(success: false);
-      }
-
-      BleService senseBoxService;
-      try {
-        senseBoxService = findSenseBoxService(services);
-      } catch (_) {
-        return const BleConnectionSessionResult(success: false);
-      }
-
-      if (senseBoxService.characteristics.isEmpty) {
-        return const BleConnectionSessionResult(success: false);
-      }
-
       final characteristics = characteristicRefsFromService(
         deviceId: device.id,
-        service: senseBoxService,
+        service: findSenseBoxService(services),
       );
-
-      final linkIsLive = await _subscribeAllAndAwaitLiveness(
-        characteristics,
-        streams: streams,
-        deviceId: device.id,
-        timeout: livenessTimeout ?? probeTimeout,
-      );
-      if (!linkIsLive) {
-        return const BleConnectionSessionResult(success: false);
+      if (characteristics.isEmpty ||
+          !await _awaitFirstPayload(characteristics, streams)) {
+        return failure;
       }
-
       return BleConnectionSessionResult(
         success: true,
         characteristics: characteristics,
       );
     } catch (_) {
-      return const BleConnectionSessionResult(success: false);
-    } finally {
-      _platform.endSessionEstablishment(device.id);
+      return failure;
     }
   }
 
-  Future<void> release(
-    BleDevice device, {
-    Duration settle = Duration.zero,
-  }) async {
-    try {
-      await _platform.disconnect(device.id);
-    } catch (_) {}
-    if (settle > Duration.zero) {
-      await Future<void>.delayed(settle);
-    }
-  }
-
-  Future<bool> _subscribeAllAndAwaitLiveness(
-    List<BleCharacteristicRef> characteristics, {
-    required BleCharacteristicStreams streams,
-    required String deviceId,
-    required Duration timeout,
-  }) async {
-    final dataReceivedCompleter = Completer<bool>();
-    final livenessSubscriptions = <StreamSubscription<List<double>>>[];
-
-    void onPayload(List<double> values) {
-      if (!dataReceivedCompleter.isCompleted &&
-          _isValidParsedPayload(values)) {
-        dataReceivedCompleter.complete(true);
-      }
-    }
-
+  Future<bool> _awaitFirstPayload(
+    List<BleCharacteristicRef> characteristics,
+    BleCharacteristicStreams streams,
+  ) async {
+    final firstPayload = Completer<void>();
+    final subscriptions = <StreamSubscription<List<double>>>[];
     try {
       for (final characteristic in characteristics) {
-        if (!_platform.isConnected(deviceId)) {
-          return false;
-        }
-
         await streams.subscribe(characteristic);
-
-        livenessSubscriptions.add(
-          streams
-              .characteristicStream(characteristic.uuidString)
-              .listen(onPayload),
-        );
-
-        if (streams.hasLivePayload(characteristic.uuidString)) {
-          return true;
-        }
-        if (dataReceivedCompleter.isCompleted) {
-          return true;
-        }
+        subscriptions.add(streams
+            .characteristicStream(characteristic.uuidString)
+            .listen((values) {
+          if (BleCharacteristicStreams.isLivePayload(values) &&
+              !firstPayload.isCompleted) {
+            firstPayload.complete();
+          }
+        }));
       }
-
-      if (!_platform.isConnected(deviceId)) {
-        return false;
-      }
-
-      await Future.any([
-        dataReceivedCompleter.future,
-        Future.delayed(timeout),
-      ]);
-      return dataReceivedCompleter.isCompleted;
+      await firstPayload.future.timeout(probeTimeout);
+      return true;
+    } on TimeoutException {
+      return false;
     } finally {
-      for (final subscription in livenessSubscriptions) {
+      for (final subscription in subscriptions) {
         await subscription.cancel();
       }
     }
-  }
-
-  static bool _isValidParsedPayload(List<double> values) {
-    return BleCharacteristicStreams.isLivePayload(values);
   }
 }

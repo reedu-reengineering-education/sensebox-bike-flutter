@@ -76,9 +76,7 @@ class _TestBleCharacteristicStreams extends BleCharacteristicStreams {
   }
 
   @override
-  Future<void> clear({
-    Iterable<BleCharacteristicRef> characteristics = const [],
-  }) async {
+  Future<void> clear() async {
     _testLivePayloadUuids.clear();
     livePayloadVersion.value++;
     final controllers = _testStreams.values.toList();
@@ -113,9 +111,6 @@ class MockBleBloc extends Mock implements BleBloc {
       ValueNotifier([]);
 
   @override
-  final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
-
-  @override
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
 
   @override
@@ -139,14 +134,8 @@ class MockBleBloc extends Mock implements BleBloc {
   Future<void> connectToDevice(BleDevice device) async {}
 
   @override
-  Future<void> disconnectDevice({
-    BleDevice? device,
-    BleDisconnectReason reason = BleDisconnectReason.userRequested,
-  }) async {
-    if (reason != BleDisconnectReason.retryRelease) {
-      selectedDevice = null;
-      selectedDeviceNotifier.value = null;
-    }
+  Future<void> disconnectDevice() async {
+    selectedDevice = null;
   }
 
   @override
@@ -154,7 +143,7 @@ class MockBleBloc extends Mock implements BleBloc {
 
   @override
   Future<void> scanForNewDevices() async {
-    await disconnectDevice(reason: BleDisconnectReason.userRequested);
+    await disconnectDevice();
     await startScanning();
   }
 

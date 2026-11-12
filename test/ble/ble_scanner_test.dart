@@ -32,7 +32,7 @@ void main() {
     when(() => platform.scanForDevices(withServices: any(named: 'withServices'))).thenAnswer((_) => Stream.fromIterable(
         [const BleDevice(id: 'other', name: 'OtherDevice'), testBleDevice]));
 
-    await scanner.startScanning();
+    scanner.startScanning();
     await pumpEventQueue();
 
     expect(scanner.devicesList, [testBleDevice]);
@@ -48,7 +48,7 @@ void main() {
       scanner.devicesListStream,
       emitsThrough(emitsError(same(scanError))),
     );
-    await scanner.startScanning();
+    scanner.startScanning();
 
     await emitted;
     expect(isScanning.value, isFalse);
@@ -123,7 +123,7 @@ void main() {
     when(() => platform.scanForDevices(withServices: any(named: 'withServices')))
         .thenAnswer((_) => const Stream.empty());
 
-    await scanner.startScanning();
+    scanner.startScanning();
 
     verify(() => platform.scanForDevices(withServices: const [])).called(1);
   });

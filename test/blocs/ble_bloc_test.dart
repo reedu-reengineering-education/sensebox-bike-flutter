@@ -38,7 +38,6 @@ void main() {
         expect(bleBloc.isReconnectingNotifier.value, isFalse);
         expect(bleBloc.selectedDeviceNotifier.value, isNull);
         expect(bleBloc.availableCharacteristics.value, isEmpty);
-        expect(bleBloc.characteristicStreamsVersion.value, equals(0));
         expect(bleBloc.connectionErrorNotifier.value, isFalse);
         expect(bleBloc.isConnected, isFalse);
         expect(bleBloc.devicesList, isEmpty);
@@ -81,33 +80,13 @@ void main() {
         addTearDown(realBleBloc.dispose);
 
         realBleBloc.selectedDevice = testBleDevice;
-        realBleBloc.selectedDeviceNotifier.value = testBleDevice;
 
-        await realBleBloc.disconnectDevice(
-            reason: BleDisconnectReason.userRequested);
+        await realBleBloc.disconnectDevice();
 
         verify(() => platform.disconnect(testBleDevice.id))
             .called(greaterThanOrEqualTo(1));
         expect(realBleBloc.selectedDevice, isNull);
         expect(realBleBloc.selectedDeviceNotifier.value, isNull);
-      });
-
-      test('linkOnly disconnect keeps selected device and reconnecting state',
-          () async {
-        final platform = MockBlePlatform();
-        final realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
-        addTearDown(realBleBloc.dispose);
-
-        realBleBloc.selectedDevice = testBleDevice;
-        realBleBloc.selectedDeviceNotifier.value = testBleDevice;
-        realBleBloc.isReconnectingNotifier.value = true;
-
-        await realBleBloc.disconnectDevice(
-            device: testBleDevice, reason: BleDisconnectReason.retryRelease);
-
-        expect(realBleBloc.selectedDevice, testBleDevice);
-        expect(realBleBloc.selectedDeviceNotifier.value, testBleDevice);
-        expect(realBleBloc.isReconnectingNotifier.value, isTrue);
       });
 
       test('shows connection error when platform.connect throws on initial connect',
@@ -248,9 +227,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 50));
         expect(realBleBloc.isReconnectingNotifier.value, isTrue);
 
-        await realBleBloc.disconnectDevice(
-          reason: BleDisconnectReason.userRequested,
-        );
+        await realBleBloc.disconnectDevice();
         when(() => platform.isConnected(any())).thenReturn(true);
         pendingConnect.complete();
         await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -325,9 +302,7 @@ void main() {
 
         expect(realBleBloc.isReconnectingNotifier.value, isTrue);
 
-        await realBleBloc.disconnectDevice(
-          reason: BleDisconnectReason.userRequested,
-        );
+        await realBleBloc.disconnectDevice();
       });
 
       test('powered on reconnects when the link is down', () async {
@@ -348,9 +323,7 @@ void main() {
         verify(() => platform.scanForDevices(withServices: any(named: 'withServices')))
             .called(1);
 
-        await realBleBloc.disconnectDevice(
-          reason: BleDisconnectReason.userRequested,
-        );
+        await realBleBloc.disconnectDevice();
       });
 
       test('powered on skips reconnect when the link is live',
@@ -368,44 +341,46 @@ void main() {
     group('Disconnect vibration', () {
       late MockBlePlatform platform;
       late BleBloc realBleBloc;
-      late void Function(String, BleLinkState?, BleLinkState) linkChanged;
+      late StreamController<BleLinkState> linkStates;
+
+      Future<void> linkDrops() async {
+        linkStates.add(BleLinkState.disconnected);
+        await pumpEventQueue();
+      }
 
       setUp(() {
         platform = MockBlePlatform();
+        linkStates = StreamController<BleLinkState>.broadcast();
         when(() => mockSettingsBloc.vibrateOnDisconnect).thenReturn(false);
-        when(() => platform.isConnected(any())).thenReturn(true);
+        when(() => platform.isConnected(any())).thenReturn(false);
         when(() => platform.connectionState(any()))
-            .thenAnswer((_) => const Stream.empty());
+            .thenAnswer((_) => linkStates.stream);
         realBleBloc = createTestBleBloc(mockSettingsBloc, platform: platform);
-        linkChanged = verify(() => platform.onLinkStateChanged = captureAny())
-            .captured
-            .single as void Function(String, BleLinkState?, BleLinkState);
         primeConnectedAndWatchingLink(realBleBloc);
       });
 
-      tearDown(() => realBleBloc.dispose());
+      tearDown(() async {
+        realBleBloc.dispose();
+        await linkStates.close();
+      });
 
-      test('considers vibrating when a connected box drops', () {
-        linkChanged(
-            testBleDevice.id, BleLinkState.connected, BleLinkState.disconnected);
+      test('considers vibrating when a connected box drops', () async {
+        await linkDrops();
 
         verify(() => mockSettingsBloc.vibrateOnDisconnect).called(1);
+        expect(realBleBloc.isReconnectingNotifier.value, isTrue);
       });
 
       test('does not vibrate when the user disconnects', () async {
-        await realBleBloc.disconnectDevice(
-          reason: BleDisconnectReason.userRequested,
-        );
-        linkChanged(
-            testBleDevice.id, BleLinkState.connected, BleLinkState.disconnected);
+        await realBleBloc.disconnectDevice();
+        await linkDrops();
 
         verifyNever(() => mockSettingsBloc.vibrateOnDisconnect);
       });
 
-      test('does not vibrate for links dropped while reconnecting', () {
+      test('does not vibrate for links dropped while reconnecting', () async {
         realBleBloc.debugSetConnectionPhase(BleConnectionPhase.reconnecting);
-        linkChanged(
-            testBleDevice.id, BleLinkState.connected, BleLinkState.disconnected);
+        await linkDrops();
 
         verifyNever(() => mockSettingsBloc.vibrateOnDisconnect);
       });
@@ -417,7 +392,6 @@ void main() {
         addTearDown(bleBloc.dispose);
 
         bleBloc.selectedDevice = testBleDevice;
-        bleBloc.selectedDeviceNotifier.value = testBleDevice;
 
         await bleBloc.scanForNewDevices();
 
@@ -441,7 +415,6 @@ void main() {
         addTearDown(bleBloc.dispose);
 
         bleBloc.selectedDevice = testBleDevice;
-        bleBloc.selectedDeviceNotifier.value = testBleDevice;
 
         await bleBloc.scanForNewDevices();
 
@@ -491,6 +464,7 @@ void main() {
         addTearDown(bleBloc.dispose);
         bleBloc.updateBluetoothStatus(true);
         bleBloc.selectedDevice = testBleDevice;
+        bleBloc.debugSetConnectionPhase(BleConnectionPhase.connected);
 
         await bleBloc.autoConnectToRememberedDevice();
 
@@ -574,7 +548,7 @@ void main() {
 
         expect(scanCalled, isTrue);
 
-        await bleBloc.disconnectDevice(reason: BleDisconnectReason.userRequested);
+        await bleBloc.disconnectDevice();
       });
     });
   });

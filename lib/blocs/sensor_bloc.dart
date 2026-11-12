@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -25,11 +26,9 @@ class SensorBloc with ChangeNotifier {
   final GeolocationBloc geolocationBloc;
   final RecordingBloc recordingBloc;
   final List<Sensor> _sensors = [];
-  late final Listenable _connection;
   late final VoidCallback _recordingListener;
-  late final VoidCallback _livePayloadListener;
   Future<void> _sensorSync = Future.value();
-  int? _listeningSession;
+  List<BleCharacteristicRef>? _listeningTo;
 
   SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc) {
     _initializeSensors();
@@ -45,12 +44,9 @@ class SensorBloc with ChangeNotifier {
       onRecordingStop: _onRecordingStop,
     );
 
-    _connection = Listenable.merge(
-        [bleBloc, bleBloc.characteristicStreamsVersion]);
-    _connection.addListener(_onConnectionChanged);
-    _livePayloadListener = () => notifyListeners();
+    bleBloc.addListener(_onConnectionChanged);
     bleBloc.characteristicStreams.livePayloadVersion
-        .addListener(_livePayloadListener);
+        .addListener(notifyListeners);
 
     geolocationBloc.setCollectInstantSensorData((geo) {
       final rows = <SensorData>[];
@@ -151,12 +147,12 @@ class SensorBloc with ChangeNotifier {
 
   Future<void> _syncSensorsWithConnection() async {
     final session = bleBloc.selectedDevice != null && bleBloc.isConnected
-        ? bleBloc.characteristicStreamsVersion.value
+        ? bleBloc.availableCharacteristics.value
         : null;
-    if (session == _listeningSession) {
+    if (identical(session, _listeningTo)) {
       return;
     }
-    _listeningSession = session;
+    _listeningTo = session;
     await _stopListening();
     if (session != null) {
       for (final sensor in _discoveredSensors) {
@@ -218,9 +214,9 @@ class SensorBloc with ChangeNotifier {
 
   @override
   void dispose() {
-    _connection.removeListener(_onConnectionChanged);
+    bleBloc.removeListener(_onConnectionChanged);
     bleBloc.characteristicStreams.livePayloadVersion
-        .removeListener(_livePayloadListener);
+        .removeListener(notifyListeners);
     recordingBloc.isRecordingNotifier.removeListener(_recordingListener);
     geolocationBloc.setCollectInstantSensorData(null);
 
