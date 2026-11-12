@@ -1,0 +1,45 @@
+name: Translations
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+concurrency:
+  group: flutter-l10n-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  translations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          flutter-version: "3.47.9"
+
+      - name: Check German, French, and Portuguese against English
+        run: |
+          mkdir -p build
+          flutter gen-l10n
+          report=build/untranslated-messages.json
+          for locale in de fr pt; do
+            if [ ! -f "lib/l10n/app_${locale}.arb" ]; then
+              echo "Missing lib/l10n/app_${locale}.arb"
+              exit 1
+            fi
+          done
+          if [ ! -f "$report" ]; then
+            echo "Expected $report from flutter gen-l10n"
+            exit 1
+          fi
+          if [ "$(jq 'length' "$report")" != "0" ]; then
+            echo "Locale files are missing English messages:"
+            jq . "$report"
+            exit 1
+          fi
+          echo "de, fr, and pt include every English message."
