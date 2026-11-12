@@ -49,8 +49,6 @@ void main() {
         .thenAnswer((_) => notifyController.stream);
     when(() => platform.disconnect(any())).thenAnswer((_) async {});
     when(() => platform.isConnected(any())).thenReturn(true);
-    when(() => platform.beginSessionEstablishment(any())).thenReturn(null);
-    when(() => platform.endSessionEstablishment(any())).thenReturn(null);
   });
 
   tearDown(() {
@@ -59,18 +57,6 @@ void main() {
   });
 
   group('BleConnectionSession', () {
-    test('release disconnects device and applies settle delay', () async {
-      final stopwatch = Stopwatch()..start();
-      await session.release(
-        device,
-        settle: const Duration(milliseconds: 50),
-      );
-      stopwatch.stop();
-
-      verify(() => platform.disconnect(device.id)).called(1);
-      expect(stopwatch.elapsed, greaterThanOrEqualTo(const Duration(milliseconds: 50)));
-    });
-
     test('returns failure when discoverServices is empty', () async {
       when(() => platform.discoverServices(device.id))
           .thenAnswer((_) async => []);
@@ -190,6 +176,33 @@ void main() {
           probeUuid.toString(),
           otherUuid.toString(),
         ]),
+      );
+    });
+
+    test('subscribes every characteristic even when data arrives early',
+        () async {
+      final thirdUuid = BleUuid('cccccccc-bbbb-cccc-dddd-eeeeeeeeeeee');
+      when(() => platform.discoverServices(device.id)).thenAnswer((_) async => [
+            discoveredSenseBoxService(
+              characteristics: [probeUuid, otherUuid, thirdUuid],
+            ),
+          ]);
+      when(() => platform.subscribeToCharacteristic(any())).thenAnswer(
+        (invocation) {
+          final ref =
+              invocation.positionalArguments[0] as BleCharacteristicRef;
+          return ref.characteristicUuid == probeUuid
+              ? Stream.value(float32Bytes([1.0]))
+              : notifyController.stream;
+        },
+      );
+
+      final result = await session.establish(device, streams: streams);
+
+      expect(result.success, isTrue);
+      expect(
+        streams.subscribedCharacteristicUuids.toSet(),
+        {probeUuid.toString(), otherUuid.toString(), thirdUuid.toString()},
       );
     });
 

@@ -66,7 +66,6 @@ void primeConnectedAndWatchingLink(
   bool bluetoothEnabled = false,
 }) {
   bleBloc.selectedDevice = testBleDevice;
-  bleBloc.selectedDeviceNotifier.value = testBleDevice;
   if (bluetoothEnabled) {
     bleBloc.isBluetoothEnabledNotifier.value = true;
   }

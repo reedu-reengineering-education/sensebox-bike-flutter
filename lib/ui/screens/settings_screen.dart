@@ -7,6 +7,7 @@ import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/services/installation_id_service.dart';
+import 'package:sensebox_bike/utils/app_version.dart';
 import 'package:sensebox_bike/utils/storage_utils.dart';
 import 'package:sensebox_bike/utils/support_email.dart';
 import 'package:sensebox_bike/theme.dart';
@@ -20,7 +21,6 @@ import 'package:sensebox_bike/ui/widgets/common/hint.dart';
 import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/ui/widgets/settings/app_info_section.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -561,21 +561,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final localizations = AppLocalizations.of(context)!;
     final senseBox = context.read<OpenSenseMapBloc>().selectedSenseBox;
     try {
-      final packageInfo = await PackageInfo.fromPlatform();
-      final storage = await getAppStorageInfo().then<AppStorageInfo?>(
-        (info) => info,
-        onError: (_) => null,
-      );
+      final storage = await tryGetAppStorageInfo();
       final uri = buildSupportEmailUri(
         localizations,
         installationId: InstallationIdService.id,
-        appVersion: '${packageInfo.version} (${packageInfo.buildNumber})',
-        storageDetails: storage == null
-            ? null
-            : localizations.settingsStorageDetails(
-                formatStorageSize(storage.isarSize),
-                formatStorageSize(storage.totalAppDataSize),
-              ),
+        appVersion: await loadAppVersionLabel(),
+        storageDetails:
+            storage == null ? null : formatStorageDetails(localizations, storage),
         senseBox: senseBox,
       );
       await widget.launchUrlFunction(uri, mode: LaunchMode.externalApplication);

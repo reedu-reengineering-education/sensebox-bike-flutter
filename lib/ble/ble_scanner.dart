@@ -37,7 +37,7 @@ class BleScanner {
     _emitDevicesList();
   }
 
-  Future<void> startScanning() async {
+  void startScanning() {
     clearDiscoveredDevices();
     _startScan(
       _onDiscoveredDevice,
@@ -51,12 +51,17 @@ class BleScanner {
   }
 
   Future<void> stopScanning() async {
+    await _cancelScan();
+    isScanningNotifier.value = false;
+  }
+
+  Future<void> _cancelScan() async {
     _endPendingWait();
     _scanTimeoutTimer?.cancel();
     _scanTimeoutTimer = null;
-    await _scanSubscription?.cancel();
+    final subscription = _scanSubscription;
     _scanSubscription = null;
-    isScanningNotifier.value = false;
+    await subscription?.cancel();
   }
 
   Future<BleDevice?> waitForAdvertisingDevice(
@@ -113,9 +118,7 @@ class BleScanner {
     required Duration timeout,
     List<BleUuid> withServices = const [],
   }) {
-    _endPendingWait();
-    _scanTimeoutTimer?.cancel();
-    unawaited(_scanSubscription?.cancel());
+    unawaited(_cancelScan());
     _scanSubscription =
         platform.scanForDevices(withServices: withServices).listen(
       (device) {
@@ -177,8 +180,7 @@ class BleScanner {
   }
 
   void dispose() {
-    unawaited(_scanSubscription?.cancel());
-    _scanTimeoutTimer?.cancel();
+    unawaited(_cancelScan());
     _devicesListController.close();
   }
 }

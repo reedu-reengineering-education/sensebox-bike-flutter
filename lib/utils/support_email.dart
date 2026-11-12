@@ -11,7 +11,7 @@ Uri buildSupportEmailUri(
 }) {
   final campaignTags = [
     for (final tag in senseBox?.grouptag ?? const <String>[])
-      if (tag != 'bike') tag,
+      if (tag != bikeGrouptag) tag,
   ];
   final details = [
     '${localizations.settingsInstallationId}: $installationId',

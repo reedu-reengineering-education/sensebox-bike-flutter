@@ -40,10 +40,6 @@ class BlePlatform {
   final Map<String, BleLinkState> _linkStates = {};
   final Map<String, Set<String>> _characteristics = {};
   final Map<String, Timer> _dataWatchdogs = {};
-  final Map<String, int> _sessionEstablishmentDepth = {};
-
-  void Function(String deviceId, BleLinkState? previous, BleLinkState next)?
-      onLinkStateChanged;
 
   Stream<BleAdapterState> get statusStream =>
       _reactiveBle.statusStream.map(_mapAdapterState);
@@ -66,24 +62,6 @@ class BlePlatform {
 
   bool isConnected(String deviceId) {
     return _linkStates[deviceId] == BleLinkState.connected;
-  }
-
-  void beginSessionEstablishment(String deviceId) {
-    _sessionEstablishmentDepth[deviceId] =
-        (_sessionEstablishmentDepth[deviceId] ?? 0) + 1;
-    _cancelDataWatchdog(deviceId);
-  }
-
-  void endSessionEstablishment(String deviceId) {
-    final depth = _sessionEstablishmentDepth[deviceId];
-    if (depth == null) {
-      return;
-    }
-    if (depth <= 1) {
-      _sessionEstablishmentDepth.remove(deviceId);
-    } else {
-      _sessionEstablishmentDepth[deviceId] = depth - 1;
-    }
   }
 
   Stream<BleDevice> scanForDevices({List<BleUuid> withServices = const []}) =>
@@ -225,9 +203,6 @@ class BlePlatform {
   }
 
   void _armDataWatchdog(String deviceId) {
-    if ((_sessionEstablishmentDepth[deviceId] ?? 0) > 0) {
-      return;
-    }
     _dataWatchdogs[deviceId]?.cancel();
     _dataWatchdogs[deviceId] = Timer(dataStaleTimeout, () {
       unawaited(disconnect(deviceId, source: 'watchdog'));
@@ -252,7 +227,6 @@ class BlePlatform {
         'source': source,
         if (error != null) 'error': error.toString(),
       });
-      onLinkStateChanged?.call(deviceId, previous, state);
     }
     if (state != BleLinkState.connected) {
       _cancelDataWatchdog(deviceId);
@@ -277,7 +251,6 @@ class BlePlatform {
     }
 
     _dataWatchdogs.clear();
-    _sessionEstablishmentDepth.clear();
     _linkStateControllers.clear();
     _characteristics.clear();
     _linkStates.clear();
