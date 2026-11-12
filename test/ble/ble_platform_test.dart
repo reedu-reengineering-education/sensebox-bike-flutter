@@ -22,6 +22,7 @@ void main() {
   late StreamController<ConnectionStateUpdate> connection;
 
   setUpAll(() {
+    registerBleFallbackValues();
     registerFallbackValue(QualifiedCharacteristic(
       characteristicId: Uuid.parse(senseBoxServiceUuid.value),
       serviceId: Uuid.parse(senseBoxServiceUuid.value),
@@ -48,15 +49,16 @@ void main() {
 
   tearDown(() async {
     await platform.dispose();
-    await connection.close();
+    unawaited(connection.close());
   });
 
   Service service(BleUuid id, List<BleUuid> characteristics) {
+    final mockCharacteristics = [
+      for (final uuid in characteristics) _characteristicWithId(uuid),
+    ];
     final service = _MockService();
     when(() => service.id).thenReturn(Uuid.parse(id.value));
-    when(() => service.characteristics).thenReturn([
-      for (final uuid in characteristics) _characteristicWithId(uuid),
-    ]);
+    when(() => service.characteristics).thenReturn(mockCharacteristics);
     return service;
   }
 
@@ -112,8 +114,9 @@ void main() {
   test('discoverCharacteristics returns the senseBox characteristics',
       () async {
     await connect();
-    when(() => reactiveBle.getDiscoveredServices(testDeviceId)).thenAnswer(
-        (_) async => [service(senseBoxServiceUuid, [testCharacteristic])]);
+    final senseBox = service(senseBoxServiceUuid, [testCharacteristic]);
+    when(() => reactiveBle.getDiscoveredServices(testDeviceId))
+        .thenAnswer((_) async => [senseBox]);
 
     expect(await platform.discoverCharacteristics(), [testCharacteristic]);
   });
@@ -121,9 +124,9 @@ void main() {
   test('discoverCharacteristics fails when the senseBox service is missing',
       () async {
     await connect();
-    when(() => reactiveBle.getDiscoveredServices(testDeviceId)).thenAnswer(
-        (_) async =>
-            [service(BleUuid('0000180f-0000-1000-8000-00805f9b34fb'), [])]);
+    final battery = service(BleUuid('0000180f-0000-1000-8000-00805f9b34fb'), []);
+    when(() => reactiveBle.getDiscoveredServices(testDeviceId))
+        .thenAnswer((_) async => [battery]);
 
     expect(platform.discoverCharacteristics(), throwsStateError);
   });

@@ -108,7 +108,7 @@ void main() {
       final reported = await _captureSentryEvents();
       ble.bloc.updateBluetoothStatus(true);
       final scanError = Exception('Bluetooth disabled');
-      stubScan(ble.platform, Stream.error(scanError, StackTrace.empty));
+      stubScan(ble.platform, () => Stream.error(scanError, StackTrace.empty));
 
       await ble.bloc.connectToDevice(testBleDevice);
 
@@ -223,7 +223,7 @@ void main() {
 
     test('is skipped for links dropped while reconnecting', () async {
       await ble.connect();
-      stubScan(ble.platform, const Stream.empty());
+      stubScan(ble.platform, () => const Stream.empty());
 
       await ble.linkDrops();
       await ble.linkDrops();
@@ -276,7 +276,7 @@ void main() {
     test('gives up quietly when the device never advertises', () async {
       rememberDevice();
       ble.bloc.updateBluetoothStatus(true);
-      stubScan(ble.platform, const Stream.empty());
+      stubScan(ble.platform, () => const Stream.empty());
 
       await ble.bloc.autoConnectToRememberedDevice(
         scanTimeout: const Duration(milliseconds: 50),
@@ -299,7 +299,7 @@ void main() {
 
     test('runs when Bluetooth comes on while idle', () async {
       rememberDevice();
-      stubScan(ble.platform, const Stream.empty());
+      stubScan(ble.platform, () => const Stream.empty());
 
       ble.adapterStates.add(BleAdapterState.ready);
       await pumpEventQueue();
