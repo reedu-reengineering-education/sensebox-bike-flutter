@@ -34,5 +34,28 @@ jobs:
             KEY_PASSWORD=password
             EOF
 
+      # Flutter's test binding blocks HttpClient, so Isar cannot download
+      # libisar.so during the suite. On macOS the plugin dylib is already
+      # loaded; on Linux the test process has to find it via LD_LIBRARY_PATH.
+      - name: Install Isar core for Linux tests
+        run: |
+          version=$(awk '
+            $0 ~ /^  isar_community:$/ { in_block = 1; next }
+            in_block && $0 ~ /^  [^ ]/ { exit }
+            in_block && $1 == "version:" {
+              gsub(/"/, "", $2)
+              print $2
+              exit
+            }
+          ' pubspec.lock)
+          if [ -z "$version" ]; then
+            echo "Could not read isar_community version from pubspec.lock"
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/isar"
+          curl -fsSL "https://binaries.isar-community.dev/${version}/libisar_linux_x64.so" \
+            -o "$RUNNER_TEMP/isar/libisar.so"
+          echo "LD_LIBRARY_PATH=$RUNNER_TEMP/isar" >> "$GITHUB_ENV"
+
       - name: Run tests
         run: flutter test --concurrency=1
