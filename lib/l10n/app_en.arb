@@ -218,6 +218,25 @@
     },
     "settingsContact": "Help or feedback?",
     "settingsEmail": "E-mail",
+    "supportEmailSubject": "Support request: senseBox:bike app",
+    "supportEmailIntro": "Please describe the issue you are having:",
+    "supportEmailDetails": "Details about this installation (please keep them in the email):",
+    "supportEmailBox": "senseBox: {name}",
+    "@supportEmailBox": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "supportEmailCampaign": "Campaign and tags: {tags}",
+    "@supportEmailCampaign": {
+        "placeholders": {
+            "tags": {
+                "type": "String"
+            }
+        }
+    },
     "settingsGithub": "GitHub issue",
     "privacyZoneDescription": "Areas where no data will be recorded",
     "privacyZonesStart": "Tap on the map to start drawing a zone. Tap the checkmark to finish.",

@@ -864,6 +864,36 @@ abstract class AppLocalizations {
   /// **'E-mail'**
   String get settingsEmail;
 
+  /// No description provided for @supportEmailSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Support request: senseBox:bike app'**
+  String get supportEmailSubject;
+
+  /// No description provided for @supportEmailIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe the issue you are having:'**
+  String get supportEmailIntro;
+
+  /// No description provided for @supportEmailDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details about this installation (please keep them in the email):'**
+  String get supportEmailDetails;
+
+  /// No description provided for @supportEmailBox.
+  ///
+  /// In en, this message translates to:
+  /// **'senseBox: {name}'**
+  String supportEmailBox(String name);
+
+  /// No description provided for @supportEmailCampaign.
+  ///
+  /// In en, this message translates to:
+  /// **'Campaign and tags: {tags}'**
+  String supportEmailCampaign(String tags);
+
   /// No description provided for @settingsGithub.
   ///
   /// In en, this message translates to:

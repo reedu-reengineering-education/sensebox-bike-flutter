@@ -453,6 +453,27 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsEmail => 'E-Mail';
 
   @override
+  String get supportEmailSubject => 'Support-Anfrage: senseBox:bike App';
+
+  @override
+  String get supportEmailIntro =>
+      'Bitte beschreiben Sie das Problem, das bei Ihnen auftritt:';
+
+  @override
+  String get supportEmailDetails =>
+      'Angaben zu dieser Installation (bitte in der E-Mail lassen):';
+
+  @override
+  String supportEmailBox(String name) {
+    return 'senseBox: $name';
+  }
+
+  @override
+  String supportEmailCampaign(String tags) {
+    return 'Kampagne und Tags: $tags';
+  }
+
+  @override
   String get settingsGithub => 'GitHub issue';
 
   @override
