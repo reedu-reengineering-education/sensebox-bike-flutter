@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
+import 'package:sensebox_bike/ble/ble_uuids.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'package:sensebox_bike/blocs/geolocation_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
@@ -28,7 +28,7 @@ class SensorBloc with ChangeNotifier {
   final List<Sensor> _sensors = [];
   late final VoidCallback _recordingListener;
   Future<void> _sensorSync = Future.value();
-  List<BleCharacteristicRef>? _listeningTo;
+  List<BleUuid>? _listeningTo;
 
   SensorBloc(this.bleBloc, this.geolocationBloc, this.recordingBloc) {
     _initializeSensors();
@@ -146,9 +146,8 @@ class SensorBloc with ChangeNotifier {
   }
 
   Future<void> _syncSensorsWithConnection() async {
-    final session = bleBloc.selectedDevice != null && bleBloc.isConnected
-        ? bleBloc.availableCharacteristics.value
-        : null;
+    final session =
+        bleBloc.isConnected ? bleBloc.availableCharacteristics.value : null;
     if (identical(session, _listeningTo)) {
       return;
     }
@@ -198,7 +197,7 @@ class SensorBloc with ChangeNotifier {
 
   Set<String> get _characteristicUuids => {
         for (final characteristic in bleBloc.availableCharacteristics.value)
-          characteristic.uuidString,
+          '$characteristic',
       };
 
   List<Sensor> get _discoveredSensors => filterDiscoveredSensors(

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
 import 'package:sensebox_bike/ble/ble_constants.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/ble/ble_uuids.dart';
@@ -22,9 +21,6 @@ enum BleAdapterState {
   ready,
 }
 
-bool isBluetoothAdapterEnabled(BleAdapterState status) =>
-    status == BleAdapterState.ready;
-
 class BlePlatform {
   BlePlatform({
     FlutterReactiveBle? reactiveBle,
@@ -34,35 +30,19 @@ class BlePlatform {
   final FlutterReactiveBle _reactiveBle;
   final Duration dataStaleTimeout;
 
-  final Map<String, StreamSubscription<ConnectionStateUpdate>> _connectionSubs =
-      {};
-  final Map<String, StreamController<BleLinkState>> _linkStateControllers = {};
-  final Map<String, BleLinkState> _linkStates = {};
-  final Map<String, Set<String>> _characteristics = {};
-  final Map<String, Timer> _dataWatchdogs = {};
+  final StreamController<BleLinkState> _linkStates =
+      StreamController<BleLinkState>.broadcast();
+  BleLinkState _linkState = BleLinkState.disconnected;
+  String? _deviceId;
+  StreamSubscription<ConnectionStateUpdate>? _connection;
+  Timer? _dataWatchdog;
 
   Stream<BleAdapterState> get statusStream =>
       _reactiveBle.statusStream.map(_mapAdapterState);
 
-  Future<bool> isAdapterEnabled() async {
-    final status = await statusStream.firstWhere(
-      (state) => state != BleAdapterState.unknown,
-    );
-    return isBluetoothAdapterEnabled(status);
-  }
+  Stream<BleLinkState> get linkStates => _linkStates.stream;
 
-  Stream<BleLinkState> connectionState(String deviceId) {
-    return _linkStateControllers
-        .putIfAbsent(
-          deviceId,
-          () => StreamController<BleLinkState>.broadcast(),
-        )
-        .stream;
-  }
-
-  bool isConnected(String deviceId) {
-    return _linkStates[deviceId] == BleLinkState.connected;
-  }
+  bool get isConnected => _linkState == BleLinkState.connected;
 
   Stream<BleDevice> scanForDevices({List<BleUuid> withServices = const []}) =>
       _reactiveBle
@@ -82,33 +62,29 @@ class BlePlatform {
     String deviceId, {
     Duration timeout = bleDeviceConnectTimeout,
   }) async {
-    await _connectionSubs[deviceId]?.cancel();
-    _connectionSubs.remove(deviceId);
-
+    await _connection?.cancel();
+    _deviceId = deviceId;
     final connected = Completer<void>();
 
-    _connectionSubs[deviceId] = _reactiveBle
-        .connectToDevice(
-      id: deviceId,
-      connectionTimeout: timeout,
-    )
+    _connection = _reactiveBle
+        .connectToDevice(id: deviceId, connectionTimeout: timeout)
         .listen(
       (update) {
         final state = _mapConnectionState(update.connectionState);
-        _emitLinkState(deviceId, state, error: update.failure);
+        _emitLinkState(state, error: update.failure);
         if (state == BleLinkState.connected && !connected.isCompleted) {
           connected.complete();
         }
       },
       onError: (Object error, StackTrace stack) {
-        _emitLinkState(deviceId, BleLinkState.disconnected,
+        _emitLinkState(BleLinkState.disconnected,
             source: 'connect-error', error: error);
         if (!connected.isCompleted) {
           connected.completeError(error, stack);
         }
       },
       onDone: () {
-        _emitLinkState(deviceId, BleLinkState.disconnected,
+        _emitLinkState(BleLinkState.disconnected,
             source: 'connect-stream-closed');
         if (!connected.isCompleted) {
           connected.completeError(
@@ -118,142 +94,89 @@ class BlePlatform {
       },
     );
 
-    _emitLinkState(deviceId, BleLinkState.connecting, source: 'app-connect');
+    _emitLinkState(BleLinkState.connecting, source: 'app-connect');
     try {
       await connected.future.timeout(timeout);
     } catch (error) {
-      _emitLinkState(deviceId, BleLinkState.disconnected,
+      _emitLinkState(BleLinkState.disconnected,
           source: 'connect-failed', error: error);
       rethrow;
     }
   }
 
-  Future<void> disconnect(
-    String deviceId, {
-    String source = 'app-disconnect',
-  }) async {
-    _cancelDataWatchdog(deviceId);
-    _emitLinkState(deviceId, BleLinkState.disconnecting, source: source);
-
-    await _connectionSubs[deviceId]?.cancel();
-    _connectionSubs.remove(deviceId);
-
-    _characteristics.remove(deviceId);
-    _emitLinkState(deviceId, BleLinkState.disconnected, source: source);
+  Future<void> disconnect({String source = 'app-disconnect'}) async {
+    _emitLinkState(BleLinkState.disconnecting, source: source);
+    final connection = _connection;
+    _connection = null;
+    await connection?.cancel();
+    _emitLinkState(BleLinkState.disconnected, source: source);
   }
 
-  Future<List<BleService>> discoverServices(String deviceId) async {
+  Future<List<BleUuid>> discoverCharacteristics() async {
+    final deviceId = _connectedDeviceId();
     await _reactiveBle.discoverAllServices(deviceId);
     final services = await _reactiveBle.getDiscoveredServices(deviceId);
-    final discovered = _characteristics.putIfAbsent(deviceId, () => <String>{});
-    discovered.clear();
-
-    final result = <BleService>[];
-    for (final service in services) {
-      final characteristicUuids = <BleUuid>[];
-      for (final characteristic in service.characteristics) {
-        final uuid = BleUuid(characteristic.id.toString());
-        discovered.add(uuid.compact);
-        characteristicUuids.add(uuid);
-      }
-      result.add(
-        BleService(
-          serviceId: BleUuid(service.id.toString()),
-          characteristics: characteristicUuids,
-        ),
-      );
-    }
-    return result;
+    final senseBoxService = services.firstWhere(
+      (service) => BleUuid('${service.id}') == senseBoxServiceUuid,
+      orElse: () => throw StateError('senseBox service not found'),
+    );
+    return [
+      for (final characteristic in senseBoxService.characteristics)
+        BleUuid('${characteristic.id}'),
+    ];
   }
 
-  Stream<List<int>> subscribeToCharacteristic(
-    BleCharacteristicRef characteristic,
-  ) {
-    final discovered = _characteristics[characteristic.deviceId];
-    if (discovered == null ||
-        !discovered.contains(characteristic.characteristicUuid.compact)) {
-      return Stream<List<int>>.error(
-        StateError(
-          'Characteristic ${characteristic.uuidString} is not available '
-          'on device ${characteristic.deviceId}.',
-        ),
-      );
-    }
-
-    final deviceId = characteristic.deviceId;
+  Stream<List<int>> subscribeToCharacteristic(BleUuid characteristic) {
     return _reactiveBle
-        .subscribeToCharacteristic(
-      QualifiedCharacteristic(
-        serviceId: _toUuid(characteristic.serviceUuid),
-        characteristicId: _toUuid(characteristic.characteristicUuid),
-        deviceId: deviceId,
-      ),
-    )
+        .subscribeToCharacteristic(QualifiedCharacteristic(
+          serviceId: _toUuid(senseBoxServiceUuid),
+          characteristicId: _toUuid(characteristic),
+          deviceId: _connectedDeviceId(),
+        ))
         .map((value) {
-      _armDataWatchdog(deviceId);
+      _armDataWatchdog();
       return value;
     }).handleError((Object error) {
-      _emitLinkState(
-        deviceId,
-        BleLinkState.disconnected,
-        source: 'notify-error',
-        error: error,
-      );
+      _emitLinkState(BleLinkState.disconnected,
+          source: 'notify-error', error: error);
     });
   }
 
-  void _armDataWatchdog(String deviceId) {
-    _dataWatchdogs[deviceId]?.cancel();
-    _dataWatchdogs[deviceId] = Timer(dataStaleTimeout, () {
-      unawaited(disconnect(deviceId, source: 'watchdog'));
-    });
-  }
+  String _connectedDeviceId() =>
+      _deviceId ?? (throw StateError('No BLE device connected'));
 
-  void _cancelDataWatchdog(String deviceId) {
-    _dataWatchdogs.remove(deviceId)?.cancel();
+  void _armDataWatchdog() {
+    _dataWatchdog?.cancel();
+    _dataWatchdog = Timer(dataStaleTimeout, () {
+      unawaited(disconnect(source: 'watchdog'));
+    });
   }
 
   void _emitLinkState(
-    String deviceId,
     BleLinkState state, {
     String source = 'platform',
     Object? error,
   }) {
-    final previous = _linkStates[deviceId];
-    if (previous != state) {
+    if (_linkState != state) {
       ErrorService.logEvent('ble', 'link ${state.name}', data: {
-        'device': deviceId,
-        'from': previous?.name,
+        'device': _deviceId,
+        'from': _linkState.name,
         'source': source,
         if (error != null) 'error': error.toString(),
       });
     }
     if (state != BleLinkState.connected) {
-      _cancelDataWatchdog(deviceId);
+      _dataWatchdog?.cancel();
     }
-    _linkStates[deviceId] = state;
-    final controller = _linkStateControllers[deviceId];
-    if (controller != null && !controller.isClosed) {
-      controller.add(state);
+    _linkState = state;
+    if (!_linkStates.isClosed) {
+      _linkStates.add(state);
     }
   }
 
   Future<void> dispose() async {
-    final deviceIds = _connectionSubs.keys.toList();
-    for (final deviceId in deviceIds) {
-      await disconnect(deviceId);
-    }
-    for (final timer in _dataWatchdogs.values) {
-      timer.cancel();
-    }
-    for (final controller in _linkStateControllers.values) {
-      await controller.close();
-    }
-
-    _dataWatchdogs.clear();
-    _linkStateControllers.clear();
-    _characteristics.clear();
-    _linkStates.clear();
+    await disconnect();
+    await _linkStates.close();
   }
 
   static Uuid _toUuid(BleUuid uuid) => Uuid.parse(uuid.value);

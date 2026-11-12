@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -12,6 +14,7 @@ class MockBleBloc extends Mock implements BleBloc {}
 void main() {
   late MockBleBloc bleBloc;
   late MockSettingsBloc settingsBloc;
+  const device = BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'TestDevice');
 
   setUpAll(() {
     registerFallbackValue(const BleDevice(id: 'fallback', name: 'fallback'));
@@ -24,11 +27,18 @@ void main() {
     settingsBloc = MockSettingsBloc();
     when(() => settingsBloc.rememberedDeviceId).thenReturn(null);
     when(() => bleBloc.settingsBloc).thenReturn(settingsBloc);
-    when(() => bleBloc.devicesList).thenReturn([]);
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([]));
-    when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(false));
-    when(() => bleBloc.startScanning()).thenAnswer((_) async {});
+    when(() => bleBloc.scanForDevices()).thenAnswer((_) => Stream.value([]));
   });
+
+  Future<void> pumpSheet(WidgetTester tester) async {
+    await tester.pumpWidget(
+      createLocalizedTestApp(
+        locale: const Locale('en'),
+        child: Material(child: DeviceSelectionSheet(bleBloc: bleBloc)),
+      ),
+    );
+    await tester.pump();
+  }
 
   testWidgets('shows dialog title', (tester) async {
     await tester.pumpWidget(
@@ -50,94 +60,61 @@ void main() {
   });
 
   testWidgets('shows scan error', (tester) async {
-    when(() => bleBloc.devicesListStream)
+    when(() => bleBloc.scanForDevices())
         .thenAnswer((_) => Stream.error('Test error'));
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: Material(
-          child: DeviceSelectionSheet(bleBloc: bleBloc),
-        ),
-      ),
-    );
-    await tester.pump();
+
+    await pumpSheet(tester);
 
     expect(find.textContaining('Test error'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
   });
 
   testWidgets('shows loading spinner while scanning', (tester) async {
-    when(() => bleBloc.isScanningNotifier).thenReturn(ValueNotifier(true));
+    final scan = StreamController<List<BleDevice>>();
+    addTearDown(scan.close);
+    when(() => bleBloc.scanForDevices()).thenAnswer((_) => scan.stream);
 
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: Material(
-          child: DeviceSelectionSheet(bleBloc: bleBloc),
-        ),
-      ),
-    );
+    await pumpSheet(tester);
 
-    await tester.pump();
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
   });
 
-  testWidgets('shows no devices found message', (tester) async {
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: Material(
-          child: DeviceSelectionSheet(bleBloc: bleBloc),
-        ),
-      ),
-    );
+  testWidgets('shows no devices found once the scan ends', (tester) async {
+    await pumpSheet(tester);
 
-    await tester.pump();
     expect(find.textContaining('No senseBoxes found'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets('retry starts a new scan', (tester) async {
+    await pumpSheet(tester);
+
+    await tester.tap(find.text('Retry'));
+    await tester.pump();
+
+    verify(() => bleBloc.scanForDevices()).called(2);
   });
 
   testWidgets('shows list of devices and taps to connect', (tester) async {
-    const device = BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'TestDevice');
-    when(() => bleBloc.devicesList).thenReturn([device]);
-    when(() => bleBloc.devicesListStream).thenAnswer((_) => Stream.value([device]));
-    var connectCalled = false;
-    when(() => bleBloc.connectToDevice(device)).thenAnswer((_) async {
-      connectCalled = true;
-    });
+    when(() => bleBloc.scanForDevices())
+        .thenAnswer((_) => Stream.value([device]));
+    when(() => bleBloc.connectToDevice(device)).thenAnswer((_) async {});
 
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: Material(
-          child: DeviceSelectionSheet(bleBloc: bleBloc),
-        ),
-      ),
-    );
-
-    await tester.pump();
+    await pumpSheet(tester);
     expect(find.text('TestDevice'), findsOneWidget);
 
     await tapElement(find.text('TestDevice'), tester);
-    expect(connectCalled, isTrue);
+    verify(() => bleBloc.connectToDevice(device)).called(1);
   });
 
   testWidgets('remembers a device via the row menu', (tester) async {
-    const device = BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'TestDevice');
-    when(() => bleBloc.devicesList).thenReturn([device]);
-    when(() => bleBloc.devicesListStream)
+    when(() => bleBloc.scanForDevices())
         .thenAnswer((_) => Stream.value([device]));
     when(() => settingsBloc.rememberDevice(any(), any()))
         .thenAnswer((_) async {});
 
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: Material(
-          child: DeviceSelectionSheet(bleBloc: bleBloc),
-        ),
-      ),
-    );
-    await tester.pump();
-
+    await pumpSheet(tester);
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     expect(find.text('Remember & auto-connect'), findsOneWidget);
@@ -151,24 +128,13 @@ void main() {
 
   testWidgets('offers to forget the remembered device via the row menu',
       (tester) async {
-    const device = BleDevice(id: 'AA:BB:CC:DD:EE:01', name: 'TestDevice');
-    when(() => bleBloc.devicesList).thenReturn([device]);
-    when(() => bleBloc.devicesListStream)
+    when(() => bleBloc.scanForDevices())
         .thenAnswer((_) => Stream.value([device]));
     when(() => settingsBloc.rememberedDeviceId).thenReturn(device.id);
     when(() => settingsBloc.forgetRememberedDevice())
         .thenAnswer((_) async {});
 
-    await tester.pumpWidget(
-      createLocalizedTestApp(
-        locale: const Locale('en'),
-        child: Material(
-          child: DeviceSelectionSheet(bleBloc: bleBloc),
-        ),
-      ),
-    );
-    await tester.pump();
-
+    await pumpSheet(tester);
     expect(find.text('Auto-connects'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.more_vert));
