@@ -1,15 +1,19 @@
 name: Build APK
 
 on:
-  release:
-    types: [published]
   issue_comment:
     types: [created]
+
+concurrency:
+  group: build-apk-${{ github.event.issue.number }}
+  cancel-in-progress: true
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
     permissions:
+      actions: write
+      contents: read
       pull-requests: write
     env:
       MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
@@ -19,11 +23,28 @@ jobs:
       KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
       KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
     if: |
-      github.event_name == 'release' ||
-      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '/build-apk'))
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/build-apk') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
     steps:
+      - name: Reject fork pull requests
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            const headRepo = pullRequest.head.repo && pullRequest.head.repo.full_name;
+            if (headRepo !== `${context.repo.owner}/${context.repo.repo}`) {
+              core.setFailed('Refusing to sign an APK from a fork pull request.');
+            }
+
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
 
       - name: Set up Java
         uses: actions/setup-java@v6
@@ -42,9 +63,13 @@ jobs:
         run: flutter pub get
 
       - name: Decode keystore file
-        if: env.KEYSTORE_PASSWORD != ''
         run: |
-          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > ${{ github.workspace }}/android/app/release.keystore
+          if [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "Release signing secrets are missing."
+            exit 1
+          fi
+          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > "${{ github.workspace }}/android/app/release.keystore"
+          test -s "${{ github.workspace }}/android/app/release.keystore"
 
       - name: Create key.properties file
         run: |
@@ -68,16 +93,24 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Reply to /build-apk comment with APK link
-        if: github.event_name == 'issue_comment'
         uses: peter-evans/create-or-update-comment@v5
         with:
           issue-number: ${{ github.event.issue.number }}
           comment-id: ${{ github.event.comment.id }}
           body: |
-            📱 [Download the latest APK built for this PR from the Actions artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            The APK is attached to this workflow run as the `app-release-apk` artifact: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-      - name: Upload APK to GitHub Release
-        if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v3
+  reject-untrusted:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    if: |
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/build-apk') &&
+      !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+    steps:
+      - name: Reply that the command is limited to collaborators
+        uses: peter-evans/create-or-update-comment@v5
         with:
-          files: build/app/outputs/flutter-apk/app-release.apk
+          issue-number: ${{ github.event.issue.number }}
+          body: Only organization members and collaborators can run `/build-apk`.

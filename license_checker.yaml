@@ -1,0 +1,23 @@
+# SPDX licenses accepted for packages in pubspec.lock.
+# Any other license fails the check unless the package is listed below.
+permittedLicenses:
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - MIT
+  - MPL-2.0
+
+# The Mapbox SDK license is the Mapbox Terms of Service. The detector
+# misreads that file because it also embeds third-party notices.
+packageLicenseOverride:
+  mapbox_maps_flutter: Mapbox-TOS
+
+approvedPackages:
+  Mapbox-TOS:
+    - mapbox_maps_flutter
+  # Flutter SDK libraries have no LICENSE file. The SDK itself is BSD-3-Clause.
+  no-file:
+    - flutter_localizations
+    - flutter_test
+    - flutter_web_plugins

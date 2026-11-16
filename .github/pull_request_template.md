@@ -25,4 +25,4 @@ Closes #
     *   Links to external resources or documentation
 -->
 
-> **Note:** To trigger a build of the APK for this pull request, add a comment with `/build-apk`.
+> **Note:** Organization members and collaborators can build an APK for this pull request by commenting `/build-apk`.

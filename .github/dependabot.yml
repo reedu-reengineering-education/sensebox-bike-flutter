@@ -7,6 +7,13 @@ updates:
     commit-message:
       prefix: "[dependabot]"
     open-pull-requests-limit: 5
+    groups:
+      github-actions-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: "pub"
     directory: "/"
     schedule:
@@ -14,3 +21,10 @@ updates:
     commit-message:
       prefix: "[dependabot]"
     open-pull-requests-limit: 5
+    groups:
+      pub-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"

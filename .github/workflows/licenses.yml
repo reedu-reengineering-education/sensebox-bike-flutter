@@ -1,0 +1,32 @@
+name: Licenses
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+concurrency:
+  group: flutter-licenses-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  licenses:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          flutter-version: "3.47.9"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install license checker
+        run: dart pub global activate license_checker 1.6.2
+
+      - name: Check dependency licenses
+        run: "$HOME/.pub-cache/bin/lic_ck" --config license_checker.yaml check-licenses --problematic
