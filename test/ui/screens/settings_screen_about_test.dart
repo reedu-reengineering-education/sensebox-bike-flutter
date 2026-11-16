@@ -126,7 +126,7 @@ void main() {
       expect(
         find.descendant(
           of: find.widgetWithText(ListTile, title),
-          matching: find.byIcon(Icons.open_in_new),
+          matching: find.byIcon(Icons.north_east),
         ),
         findsOneWidget,
       );

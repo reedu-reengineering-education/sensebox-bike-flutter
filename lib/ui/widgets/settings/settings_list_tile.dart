@@ -98,7 +98,7 @@ class SettingsExternalLinkTile extends StatelessWidget {
       leading: Icon(icon),
       title: Text(title),
       trailing: Icon(
-        Icons.open_in_new,
+        Icons.north_east,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       onTap: onTap,
