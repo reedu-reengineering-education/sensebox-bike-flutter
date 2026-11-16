@@ -21,6 +21,9 @@ import 'package:sensebox_bike/ui/widgets/common/hint.dart';
 import 'package:sensebox_bike/ui/widgets/common/modal_sheet_style.dart';
 import 'package:sensebox_bike/ui/widgets/common/screen_wrapper.dart';
 import 'package:sensebox_bike/ui/widgets/settings/app_info_section.dart';
+import 'package:sensebox_bike/ui/widgets/settings/installation_id_tile.dart';
+import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
+import 'package:sensebox_bike/utils/url_launch_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
@@ -337,7 +340,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionHeader(context, localizations.accountManagement),
+            SettingsSectionHeader(title: localizations.accountManagement),
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -428,8 +431,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(
-            context, AppLocalizations.of(context)!.settingsGeneral),
+        SettingsSectionHeader(
+            title: AppLocalizations.of(context)!.settingsGeneral),
         ListTile(
           leading: const Icon(Icons.vibration),
           title:
@@ -456,16 +459,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context, _) {
         final controller = TextEditingController(text: settingsBloc.apiUrl);
 
-        return ListTile(
-          leading: const Icon(Icons.settings_ethernet_outlined),
-          title: Text(AppLocalizations.of(context)!.settingsApiUrl),
-          subtitle: Text(
-            settingsBloc.apiUrl,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-          ),
+        return SettingsValueTile(
+          icon: Icons.settings_ethernet_outlined,
+          title: AppLocalizations.of(context)!.settingsApiUrl,
+          value: settingsBloc.apiUrl,
           onTap: () async {
             if (configurationBloc.apiUrls == null &&
                 !configurationBloc.isLoadingApiUrls) {
@@ -512,7 +509,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(context, localizations.settingsAbout),
+        SettingsSectionHeader(title: localizations.settingsAbout),
         AppInfoSection(launchUrlFunction: widget.launchUrlFunction),
       ],
     );
@@ -520,40 +517,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // Help Section
   Widget _buildHelpSection(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(
-            context, AppLocalizations.of(context)!.settingsContact),
-        _buildUrlTile(
-          context,
+        SettingsSectionHeader(title: localizations.settingsContact),
+        const InstallationIdTile(),
+        SettingsExternalLinkTile(
           icon: Icons.menu_book,
-          title: AppLocalizations.of(context)!.settingsKnowledgeBase,
-          url: knowledgeBaseUrl,
+          title: localizations.settingsKnowledgeBase,
+          onTap: () => launchExternalUrl(
+            knowledgeBaseUrl,
+            launchUrlFunction: widget.launchUrlFunction,
+          ),
         ),
-        ListTile(
-          leading: const Icon(Icons.contact_mail),
-          title: Text(AppLocalizations.of(context)!.settingsEmail),
+        SettingsExternalLinkTile(
+          icon: Icons.contact_mail,
+          title: localizations.settingsEmail,
           onTap: () => _openSupportEmail(context),
         ),
-        _buildUrlTile(
-          context,
+        SettingsExternalLinkTile(
           icon: Icons.bug_report,
-          title: AppLocalizations.of(context)!.settingsGithub,
-          url: gitHubNewIssueUrl,
+          title: localizations.settingsGithub,
+          onTap: () => launchExternalUrl(
+            gitHubNewIssueUrl,
+            launchUrlFunction: widget.launchUrlFunction,
+          ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(
-          top: spacing * 3, bottom: spacing, left: spacing, right: spacing),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
     );
   }
 
@@ -566,30 +558,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         localizations,
         installationId: InstallationIdService.id,
         appVersion: await loadAppVersionLabel(),
-        storageDetails:
-            storage == null ? null : formatStorageDetails(localizations, storage),
+        storageDetails: storage == null
+            ? null
+            : formatStorageDetails(localizations, storage),
         senseBox: senseBox,
       );
       await widget.launchUrlFunction(uri, mode: LaunchMode.externalApplication);
     } catch (error, stack) {
       ErrorService.handleError(error, stack);
     }
-  }
-
-  Widget _buildUrlTile(BuildContext context,
-      {required IconData icon, required String title, required String url}) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: () async {
-        try {
-          await widget.launchUrlFunction(Uri.parse(url),
-              mode: LaunchMode.externalApplication);
-        } catch (error, stack) {
-          ErrorService.handleError(error, stack);
-        }
-      },
-    );
   }
 }
 

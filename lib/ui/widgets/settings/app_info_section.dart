@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
-import 'package:sensebox_bike/services/installation_id_service.dart';
 import 'package:sensebox_bike/ui/widgets/common/changelog_modal.dart';
 import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
 import 'package:sensebox_bike/utils/app_version.dart';
@@ -52,7 +50,7 @@ class _AppInfoSectionState extends State<AppInfoSection> {
                 localizations.settingsVersion(snapshot.data!),
             };
 
-            return SettingsInfoTile(
+            return SettingsNavigationTile(
               icon: Icons.info_outline,
               title: versionText,
               onTap: () => showChangelogModalForCurrentVersion(context),
@@ -60,8 +58,7 @@ class _AppInfoSectionState extends State<AppInfoSection> {
           },
         ),
         const _StorageUsageTile(),
-        const _InstallationIdTile(),
-        SettingsNavigationTile(
+        SettingsExternalLinkTile(
           icon: Icons.privacy_tip_outlined,
           title: localizations.settingsPrivacyPolicy,
           onTap: () => launchExternalUrl(
@@ -70,30 +67,6 @@ class _AppInfoSectionState extends State<AppInfoSection> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _InstallationIdTile extends StatelessWidget {
-  const _InstallationIdTile();
-
-  @override
-  Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
-    final installationId = InstallationIdService.id;
-
-    return SettingsInfoTile(
-      icon: Icons.fingerprint,
-      title: localizations.settingsInstallationId,
-      subtitle: Text(installationId, style: settingsInfoSubtitleStyle(context)),
-      trailing: Icon(Icons.copy, color: settingsInfoColor(context)),
-      onTap: () async {
-        final messenger = ScaffoldMessenger.of(context);
-        await Clipboard.setData(ClipboardData(text: installationId));
-        messenger.showSnackBar(
-          SnackBar(content: Text(localizations.settingsInstallationIdCopied)),
-        );
-      },
     );
   }
 }
