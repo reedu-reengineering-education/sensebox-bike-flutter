@@ -94,12 +94,9 @@ void main() {
       expect(statusInfo.text, equals(testLocalizations.trackStatusUploadFailed));
     });
 
-    test('direct upload track with null values shows direct upload status', () {
-      final directUploadTrack = TestTrackBuilder.createTrack(
-        isDirectUpload: 1,
-        uploaded: null,
-        uploadAttempts: null,
-      );
+    test('direct upload track without attempts shows direct upload status',
+        () {
+      final directUploadTrack = TestTrackBuilder.createTrack(isDirectUpload: 1);
       
       final statusInfo = testTrackBloc.getEstimatedTrackStatusInfo(
           directUploadTrack, testTheme, testLocalizations);

@@ -8,7 +8,6 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/services/error_service.dart';
-import 'package:sensebox_bike/ui/widgets/common/error_message.dart';
 
 class SenseBoxSelectionWidget extends StatefulWidget {
   final ConfigurationBloc configurationBloc;
@@ -24,42 +23,20 @@ class SenseBoxSelectionWidget extends StatefulWidget {
 }
 
 class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
-  static const _errorIcon = Icons.error_outline;
-  static const int _initialPage = 0;
-
-  late final OpenSenseMapBloc _bloc;
-  late ScrollController _scrollController;
-  int page = _initialPage;
-  bool isLoading = false;
-  bool hasMore = true;
-  String? _fetchError;
+  final _scrollController = ScrollController();
+  int _page = 0;
+  bool _isLoading = false;
+  bool _hasMore = true;
 
   @override
   void initState() {
     super.initState();
-    _bloc = context.read<OpenSenseMapBloc>();
-    _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _bloc.senseBoxes.isEmpty) {
-        _resetPagination();
+      if (mounted && context.read<OpenSenseMapBloc>().senseBoxes.isEmpty) {
         _fetchSenseBoxes();
       }
     });
-  }
-
-  void _resetPagination() {
-    page = _initialPage;
-    hasMore = true;
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    if (_scrollController.position.pixels ==
-        _scrollController.position.maxScrollExtent) {
-      _fetchSenseBoxes();
-    }
   }
 
   @override
@@ -68,115 +45,57 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     super.dispose();
   }
 
-  bool _isAuthenticationError(String error) {
-    return error.contains('Not authenticated') ||
-        error.contains('Authentication failed') ||
-        error.contains('No refresh token found') ||
-        error.contains('Refresh token is expired');
+  void _onScroll() {
+    final position = _scrollController.position;
+    if (position.pixels == position.maxScrollExtent) {
+      _fetchSenseBoxes();
+    }
   }
 
-  void _fetchSenseBoxes() {
-    if (isLoading || !hasMore) return;
+  Future<void> _fetchSenseBoxes() async {
+    if (_isLoading || !_hasMore) return;
+    setState(() => _isLoading = true);
+
+    final boxes =
+        await context.read<OpenSenseMapBloc>().fetchSenseBoxes(page: _page);
+    if (!mounted) return;
 
     setState(() {
-      isLoading = true;
-      _fetchError = null;
-    });
-
-    _bloc.fetchSenseBoxes(page: page).then((values) {
-      if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-        page++;
-        if (values.isEmpty) {
-          hasMore = false;
-        }
-      });
-    }).catchError((error) {
-      if (!mounted) return;
-
-      if (_isAuthenticationError(error.toString())) {
-        _bloc.logout();
-      }
-
-      setState(() {
-        isLoading = false;
-        _fetchError = error.toString();
-      });
-      ErrorService.handleError(
-          'Error fetching senseBoxes: $error', StackTrace.current);
+      _isLoading = false;
+      _page++;
+      _hasMore = boxes.isNotEmpty;
     });
   }
 
-  Widget _buildContent(BuildContext context, OpenSenseMapBloc bloc) {
+  @override
+  Widget build(BuildContext context) {
+    final bloc = context.watch<OpenSenseMapBloc>();
+    final boxes = bloc.senseBoxes.map((e) => SenseBox.fromJson(e)).toList();
+
+    if (boxes.isEmpty) {
+      return _isLoading
+          ? _buildLoadingSkeleton()
+          : _buildEmptyState(isAuthenticated: bloc.isAuthenticated);
+    }
+    return _buildBoxList(bloc, boxes);
+  }
+
+  Widget _buildBoxList(OpenSenseMapBloc bloc, List<SenseBox> boxes) {
     final localizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final configurationBloc = widget.configurationBloc;
-
-    if (isLoading && bloc.senseBoxes.isEmpty) {
-      return _buildLoadingSkeleton(theme);
-    }
-
-    if (_fetchError != null && bloc.senseBoxes.isEmpty) {
-      return ErrorMessage(
-        icon: _errorIcon,
-        title: localizations.openSenseMapBoxSelectionNoBoxes,
-        detail: _fetchError,
-      );
-    }
-
-    if (bloc.senseBoxes.isEmpty && !isLoading) {
-      return _buildEmptyState(
-        localizations,
-        theme,
-        configurationBloc,
-        isAuthenticated: bloc.isAuthenticated,
-      );
-    }
-
-    return _buildBoxList(
-        context, bloc, localizations, theme, configurationBloc);
-  }
-
-  Widget _buildBoxList(
-      BuildContext context,
-      OpenSenseMapBloc bloc,
-      AppLocalizations localizations,
-      ThemeData theme,
-      ConfigurationBloc configurationBloc) {
-    final colorScheme = theme.colorScheme;
-    final onTileColor = colorScheme.onTertiaryContainer;
-
-    // Parse raw JSON list into SenseBox objects. Compatibility gating was
-    // dropped upstream along with the new box configurations.
-    final List<SenseBox> compatibleBoxes =
-        bloc.senseBoxes.map((e) => SenseBox.fromJson(e)).toList();
-
-    // If there are no boxes and we're not currently loading, show empty state
-    if (compatibleBoxes.isEmpty && !isLoading) {
-      return _buildEmptyState(
-        localizations,
-        theme,
-        configurationBloc,
-        isAuthenticated: bloc.isAuthenticated,
-      );
-    }
+    final onTileColor = theme.colorScheme.onTertiaryContainer;
 
     return ListView.builder(
       controller: _scrollController,
-      itemCount: compatibleBoxes.length + (isLoading ? 1 : 0),
+      itemCount: boxes.length + (_isLoading ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == compatibleBoxes.length && isLoading) {
+        if (index == boxes.length) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (index == compatibleBoxes.length) {
-          return const SizedBox();
-        }
-
-        final senseBox = compatibleBoxes[index];
+        final senseBox = boxes[index];
         final isSelected = senseBox.id == bloc.selectedSenseBox?.id;
+        final grouptags = senseBox.grouptag ?? [];
 
         return Material(
           color: Colors.transparent,
@@ -185,37 +104,28 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
               senseBox.name ?? localizations.openSenseMapBoxSelectionUnnamedBox,
               style: theme.textTheme.bodyLarge?.copyWith(color: onTileColor),
             ),
-            subtitle: senseBox.grouptag != null && senseBox.grouptag!.isNotEmpty
-                ? Wrap(
+            subtitle: grouptags.isEmpty
+                ? null
+                : Wrap(
                     spacing: 8,
-                    children: senseBox.grouptag!
-                        .map((tag) => Badge(
-                              label: Text(tag),
-                              textColor: colorScheme.onTertiaryContainer,
-                              backgroundColor:
-                                  colorScheme.onTertiaryContainer.withValues(
-                                alpha: 0.14,
-                              ),
-                            ))
-                        .toList(),
-                  )
-                : null,
+                    children: [
+                      for (final tag in grouptags)
+                        Badge(
+                          label: Text(tag),
+                          textColor: onTileColor,
+                          backgroundColor: onTileColor.withValues(alpha: 0.14),
+                        ),
+                    ],
+                  ),
             trailing: isSelected ? Icon(Icons.check, color: onTileColor) : null,
             onTap: () {
               HapticFeedback.selectionClick();
               Navigator.pop(context);
-
-              final targetBox = isSelected ? null : senseBox;
-              unawaited(
-                bloc.setSelectedSenseBox(targetBox).catchError(
-                      (error, stackTrace) => ErrorService.handleError(
-                        'Error selecting senseBox: $error',
-                        stackTrace is StackTrace
-                            ? stackTrace
-                            : StackTrace.current,
-                      ),
-                    ),
-              );
+              unawaited(bloc
+                  .setSelectedSenseBox(isSelected ? null : senseBox)
+                  .catchError((Object error, StackTrace stackTrace) =>
+                      ErrorService.handleError(
+                          'Error selecting senseBox: $error', stackTrace)));
             },
           ),
         );
@@ -223,27 +133,18 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<OpenSenseMapBloc>(
-      builder: (context, bloc, child) => _buildContent(context, _bloc),
-    );
-  }
-
-  Widget _buildEmptyState(
-    AppLocalizations localizations,
-    ThemeData theme,
-    ConfigurationBloc configurationBloc, {
-    required bool isAuthenticated,
-  }) {
+  Widget _buildEmptyState({required bool isAuthenticated}) {
+    final localizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final configurationBloc = widget.configurationBloc;
     final isConfigurationLoaded = configurationBloc.boxConfigurations != null &&
         !configurationBloc.isLoadingBoxConfigurations;
-    final colorScheme = theme.colorScheme;
     final hintText = !isAuthenticated
         ? localizations.trackUploadLoginSelectHint
-        : (isConfigurationLoaded
+        : isConfigurationLoaded
             ? localizations.openSenseMapBoxSelectionCreateHint
-            : null);
+            : null;
 
     return Center(
       child: Padding(
@@ -251,16 +152,12 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.directions_bike,
-              size: 48,
-              color: colorScheme.onSurface,
-            ),
+            Icon(Icons.directions_bike, size: 48, color: onSurface),
             const SizedBox(height: 16),
             Text(
               localizations.openSenseMapBoxSelectionNoBoxes,
               style: theme.textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface,
+                color: onSurface,
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
@@ -271,9 +168,7 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
                 padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Text(
                   hintText,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: onSurface),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -284,46 +179,38 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
     );
   }
 
-  Widget _buildLoadingSkeleton(ThemeData theme) {
-    final base = theme.colorScheme.surfaceContainerHighest;
-    final line = theme.colorScheme.onSurface.withValues(alpha: 0.10);
+  Widget _buildLoadingSkeleton() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final lineColor = colorScheme.onSurface.withValues(alpha: 0.10);
+
+    Widget line(double width, double height) => Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(
+            color: lineColor,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        );
 
     return ListView.separated(
       itemCount: 6,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, _) {
-        return Container(
-          key: const ValueKey('sensebox-loading-skeleton-item'),
-          // margin: const EdgeInsets.symmetric(horizontal: 8),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: base,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 14,
-                width: 180,
-                decoration: BoxDecoration(
-                  color: line,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                height: 10,
-                width: 120,
-                decoration: BoxDecoration(
-                  color: line,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      itemBuilder: (_, __) => Container(
+        key: const ValueKey('sensebox-loading-skeleton-item'),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            line(180, 14),
+            const SizedBox(height: 10),
+            line(120, 10),
+          ],
+        ),
+      ),
     );
   }
 }

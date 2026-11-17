@@ -9,16 +9,12 @@ import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/blocs/track_bloc.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:sensebox_bike/blocs/recording_bloc.dart';
-import 'package:sensebox_bike/blocs/sensor_bloc.dart';
 import 'package:sensebox_bike/models/sensor_data.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/isar_service.dart';
 import 'package:sensebox_bike/services/isar_service/geolocation_service.dart';
-import 'package:sensebox_bike/services/isar_service/isar_provider.dart';
 import 'package:sensebox_bike/services/isar_service/sensor_service.dart';
 import 'package:sensebox_bike/services/isar_service/track_service.dart';
-import 'package:sensebox_bike/services/remote_data_service.dart';
-import 'package:sensebox_bike/services/error_service.dart';
 import 'package:sensebox_bike/ble/ble_characteristic_streams.dart';
 import 'package:sensebox_bike/blocs/ble_bloc.dart';
 import 'ble/mock_ble_platform.dart';
@@ -29,12 +25,6 @@ import 'package:sensebox_bike/models/geolocation_data.dart';
 import 'package:sensebox_bike/models/data_collection_mode.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
-
-class MockIsarProvider extends Mock implements IsarProvider {}
-
-class MockRemoteDataService extends Mock implements RemoteDataService {}
-
-class MockErrorService extends Mock implements ErrorService {}
 
 class MockIsarService extends Mock implements IsarService {
   final MockTrackService mockTrackService = MockTrackService();
@@ -53,17 +43,6 @@ class _TestBleCharacteristicStreams extends BleCharacteristicStreams {
   _TestBleCharacteristicStreams() : super(platform: MockBlePlatform());
 
   final Map<String, StreamController<List<double>>> _testStreams = {};
-  final Set<String> _testLivePayloadUuids = {};
-
-  @override
-  bool hasLivePayload(String characteristicUuid) =>
-      _testLivePayloadUuids.contains(characteristicUuid);
-
-  void markLive(String characteristicUuid) {
-    if (_testLivePayloadUuids.add(characteristicUuid)) {
-      livePayloadVersion.value++;
-    }
-  }
 
   @override
   Stream<List<double>> characteristicStream(String characteristicUuid) {
@@ -79,8 +58,7 @@ class _TestBleCharacteristicStreams extends BleCharacteristicStreams {
   Future<void> clear({
     Iterable<BleCharacteristicRef> characteristics = const [],
   }) async {
-    _testLivePayloadUuids.clear();
-    livePayloadVersion.value++;
+    await super.clear();
     final controllers = _testStreams.values.toList();
     _testStreams.clear();
     for (final controller in controllers) {
@@ -89,9 +67,7 @@ class _TestBleCharacteristicStreams extends BleCharacteristicStreams {
   }
 }
 
-class MockBleBloc extends Mock implements BleBloc {
-  final List<VoidCallback> _listeners = [];
-
+class MockBleBloc extends Mock with ChangeNotifier implements BleBloc {
   @override
   final ValueNotifier<bool> isBluetoothEnabledNotifier = ValueNotifier(false);
 
@@ -105,8 +81,7 @@ class MockBleBloc extends Mock implements BleBloc {
   final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
 
   @override
-  final ValueNotifier<BleDevice?> selectedDeviceNotifier =
-      ValueNotifier(null);
+  final ValueNotifier<BleDevice?> selectedDeviceNotifier = ValueNotifier(null);
 
   @override
   final ValueNotifier<List<BleCharacteristicRef>> availableCharacteristics =
@@ -145,7 +120,6 @@ class MockBleBloc extends Mock implements BleBloc {
   }) async {
     if (reason != BleDisconnectReason.retryRelease) {
       selectedDevice = null;
-      selectedDeviceNotifier.value = null;
     }
   }
 
@@ -175,29 +149,6 @@ class MockBleBloc extends Mock implements BleBloc {
   @override
   final BleCharacteristicStreams characteristicStreams =
       _TestBleCharacteristicStreams();
-
-  @override
-  void addListener(VoidCallback listener) {
-    _listeners.add(listener);
-  }
-
-  @override
-  void removeListener(VoidCallback listener) {
-    _listeners.remove(listener);
-  }
-
-  @override
-  void dispose() {}
-
-  @override
-  void notifyListeners() {
-    for (final listener in _listeners) {
-      listener();
-    }
-  }
-
-  ValueNotifier<bool> get permanentConnectionLossNotifier =>
-      ValueNotifier<bool>(false);
 }
 
 class MockTrackBloc extends Mock with ChangeNotifier implements TrackBloc {}
@@ -234,48 +185,6 @@ class MockOpenSenseMapBloc extends Mock
   Future<List> fetchSenseBoxes({int page = 0}) async => [];
 }
 
-class TestableMockOpenSenseMapBloc extends MockOpenSenseMapBloc {
-  Future<List<dynamic>>? _fetchSenseBoxesFuture;
-  Exception? _fetchSenseBoxesError;
-  List<dynamic>? _fetchSenseBoxesResult;
-  List<dynamic> _senseBoxes = [];
-
-  void setFetchSenseBoxesFuture(Future<List<dynamic>> future) {
-    _fetchSenseBoxesFuture = future;
-  }
-
-  void setFetchSenseBoxesError(Exception error) {
-    _fetchSenseBoxesError = error;
-  }
-
-  void setFetchSenseBoxesResult(List<dynamic> result) {
-    _fetchSenseBoxesResult = result;
-  }
-
-  void setSenseBoxes(List<dynamic> boxes) {
-    _senseBoxes = boxes;
-  }
-
-  @override
-  List<dynamic> get senseBoxes => _senseBoxes;
-
-  @override
-  Future<List> fetchSenseBoxes({int page = 0}) async {
-    if (_fetchSenseBoxesError != null) {
-      throw _fetchSenseBoxesError!;
-    }
-    if (_fetchSenseBoxesFuture != null) {
-      return await _fetchSenseBoxesFuture!;
-    }
-    if (_fetchSenseBoxesResult != null) {
-      _senseBoxes = _fetchSenseBoxesResult!;
-      notifyListeners();
-      return _fetchSenseBoxesResult!;
-    }
-    return [];
-  }
-}
-
 class MockConfigurationBloc extends Mock implements ConfigurationBloc {}
 
 class MockSettingsBloc extends Mock
@@ -283,50 +192,27 @@ class MockSettingsBloc extends Mock
     implements SettingsBloc {}
 
 class MockRecordingBloc extends Mock implements RecordingBloc {
-  bool _isRecording = false;
-  DataCollectionMode _activeCollectionMode = DataCollectionMode.gpsDriven;
-  int _collectionIntervalSeconds = defaultCollectionIntervalSeconds;
-  late final ValueNotifier<bool> _isRecordingNotifier;
-  late final ValueNotifier<DataCollectionMode> _activeCollectionModeNotifier;
-
-  MockRecordingBloc() {
-    _isRecordingNotifier = ValueNotifier<bool>(_isRecording);
-    _activeCollectionModeNotifier = ValueNotifier<DataCollectionMode>(_activeCollectionMode);
-  }
+  @override
+  final ValueNotifier<bool> isRecordingNotifier = ValueNotifier(false);
 
   @override
-  bool get isRecording => _isRecording;
-
-  void setRecording(bool value) {
-    _isRecording = value;
-    _isRecordingNotifier.value = value;
-  }
+  final ValueNotifier<DataCollectionMode> activeCollectionModeNotifier =
+      ValueNotifier(DataCollectionMode.gpsDriven);
 
   @override
-  DataCollectionMode get activeCollectionMode => _activeCollectionMode;
-
-  void setActiveCollectionMode(DataCollectionMode mode) {
-    _activeCollectionMode = mode;
-    _activeCollectionModeNotifier.value = mode;
-  }
+  int collectionIntervalSeconds = defaultCollectionIntervalSeconds;
 
   @override
-  int get collectionIntervalSeconds => _collectionIntervalSeconds;
+  bool get isRecording => isRecordingNotifier.value;
 
-  void setCollectionIntervalSeconds(int seconds) {
-    _collectionIntervalSeconds = seconds;
-  }
+  void setRecording(bool value) => isRecordingNotifier.value = value;
 
   @override
-  ValueNotifier<bool> get isRecordingNotifier => _isRecordingNotifier;
+  DataCollectionMode get activeCollectionMode =>
+      activeCollectionModeNotifier.value;
 
-  @override
-  ValueNotifier<DataCollectionMode> get activeCollectionModeNotifier =>
-      _activeCollectionModeNotifier;
-}
-
-class MockSensorBloc extends Mock implements SensorBloc {
-  Map<String, List<SensorData>> get sensorData => {};
+  void setActiveCollectionMode(DataCollectionMode mode) =>
+      activeCollectionModeNotifier.value = mode;
 }
 
 class MockGeolocator extends Mock
@@ -337,46 +223,38 @@ class MockSensor extends Mock implements sensors.Sensor {}
 
 class FakeSensorData extends Fake implements SensorData {}
 
-// Track creation helpers for tests
 class TestTrackBuilder {
   static TrackData createTrack({
-    int? id,
-    int? isDirectUpload,
-    int? uploaded,
-    int? uploadAttempts,
+    int id = 1,
+    int isDirectUpload = 1,
+    int uploaded = 0,
+    int uploadAttempts = 0,
     DateTime? lastUploadAttempt,
     String? dataCollectionMode,
     int? collectionIntervalSeconds,
-    List<GeolocationData>? geolocations,
-  }) {
-    final track = TrackData()
-      ..id = id ?? 1
-      ..isDirectUpload = isDirectUpload ?? 1
-      ..uploaded = uploaded ?? 0
-      ..uploadAttempts = uploadAttempts ?? 0
-      ..lastUploadAttempt = lastUploadAttempt
-      ..dataCollectionMode = dataCollectionMode
-      ..collectionIntervalSeconds = collectionIntervalSeconds;
-
-    if (geolocations != null) {
-      track.geolocations.addAll(geolocations);
-    }
-
-    return track;
-  }
+    List<GeolocationData> geolocations = const [],
+  }) =>
+      TrackData()
+        ..id = id
+        ..isDirectUpload = isDirectUpload
+        ..uploaded = uploaded
+        ..uploadAttempts = uploadAttempts
+        ..lastUploadAttempt = lastUploadAttempt
+        ..dataCollectionMode = dataCollectionMode
+        ..collectionIntervalSeconds = collectionIntervalSeconds
+        ..geolocations.addAll(geolocations);
 
   static GeolocationData createGeolocation({
-    int? id,
-    double? latitude,
-    double? longitude,
+    int id = 1,
+    double latitude = 52.5200,
+    double longitude = 13.4050,
     DateTime? timestamp,
-    double? speed,
-  }) {
-    return GeolocationData()
-      ..id = id ?? 1
-      ..latitude = latitude ?? 52.5200
-      ..longitude = longitude ?? 13.4050
-      ..timestamp = timestamp ?? DateTime.now()
-      ..speed = speed ?? 0.0;
-  }
+    double speed = 0.0,
+  }) =>
+      GeolocationData()
+        ..id = id
+        ..latitude = latitude
+        ..longitude = longitude
+        ..timestamp = timestamp ?? DateTime.now()
+        ..speed = speed;
 }
