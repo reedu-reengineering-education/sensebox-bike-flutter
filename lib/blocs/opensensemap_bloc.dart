@@ -13,7 +13,6 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 
 class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   final OpenSenseMapService _service;
-  StreamSubscription<String>? _apiUrlChangedSubscription;
   bool _isAuthenticated = false;
   final ValueNotifier<bool> _isAuthenticatingNotifier =
       ValueNotifier<bool>(false);
@@ -41,8 +40,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     OpenSenseMapService? service,
   }) : _service = service ?? OpenSenseMapService(settingsBloc: settingsBloc) {
     WidgetsBinding.instance.addObserver(this);
-    _apiUrlChangedSubscription =
-        settingsBloc?.apiUrlChangedStream.listen((_) => logout());
+    settingsBloc?.apiUrlChangedStream.listen((_) => logout());
   }
 
   Future<void> _whileAuthenticating(Future<void> Function() action) async {
@@ -242,7 +240,6 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _apiUrlChangedSubscription?.cancel();
     _senseBoxController.close();
     _isAuthenticatingNotifier.dispose();
     super.dispose();
