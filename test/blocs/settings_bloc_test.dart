@@ -42,7 +42,8 @@ void main() {
 
       final prefs = await SharedPreferences.getInstance();
       expect(
-        prefs.getInt(SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds),
+        prefs.getInt(
+            SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds),
         30,
       );
     });
@@ -62,7 +63,8 @@ void main() {
         'periodic',
       );
       expect(
-        prefs.getInt(SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds),
+        prefs.getInt(
+            SharedPreferencesKeys.lastResolvedCollectionIntervalSeconds),
         120,
       );
     });
@@ -119,6 +121,41 @@ void main() {
       expect(restored.rememberedDeviceName, 'senseBox:bike restored');
 
       restored.dispose();
+    });
+
+    test('apiUrl defaults to the standard URL', () {
+      expect(settingsBloc.apiUrl, standardOpenSenseMapApiUrl);
+    });
+
+    test('setApiUrl persists across reloads', () async {
+      const customUrl = 'https://custom-api.example.com';
+      await settingsBloc.setApiUrl(customUrl);
+
+      final restored = SettingsBloc();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(restored.apiUrl, customUrl);
+      restored.dispose();
+    });
+
+    test('empty apiUrl falls back to the standard URL', () async {
+      await settingsBloc.setApiUrl('https://custom-api.example.com');
+      await settingsBloc.setApiUrl('');
+
+      expect(settingsBloc.apiUrl, standardOpenSenseMapApiUrl);
+    });
+
+    test('apiUrlChangedStream emits only when the URL changes', () async {
+      final emitted = <String>[];
+      final subscription = settingsBloc.apiUrlChangedStream.listen(emitted.add);
+
+      await settingsBloc.setApiUrl(standardOpenSenseMapApiUrl);
+      await settingsBloc.setApiUrl('https://custom-api.example.com');
+      await settingsBloc.setApiUrl('https://custom-api.example.com');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(emitted, ['https://custom-api.example.com']);
+      await subscription.cancel();
     });
   });
 

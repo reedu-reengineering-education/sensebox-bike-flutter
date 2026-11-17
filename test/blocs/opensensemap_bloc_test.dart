@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
+import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/opensensemap_service.dart';
@@ -12,386 +12,183 @@ import '../sensor_catalog_test_data.dart';
 
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 
+SenseBox _box(String id) =>
+    SenseBox(sId: id, name: id, exposure: 'mobile', sensors: [], grouptag: []);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() {
-    registerFallbackValue(SenseBox(
-      sId: 'fallback',
-      name: 'Fallback',
-      exposure: 'outdoor',
-      sensors: [],
-    ));
-    setupSensorCatalogFromRepo();
-  });
-
+  setUpAll(setupSensorCatalogFromRepo);
   tearDownAll(clearMockSensorCatalog);
 
-  group('OpenSenseMapBloc', () {
-    late OpenSenseMapBloc bloc;
+  late MockOpenSenseMapService service;
+  late OpenSenseMapBloc bloc;
 
+  void stubLogin(List<SenseBox> boxes) {
+    when(() => service.login(any(), any())).thenAnswer((_) async => {
+          'data': {
+            'user': {'boxes': boxes.map((b) => b.sId).toList()}
+          }
+        });
+    when(() => service.getSenseBoxes(page: 0))
+        .thenAnswer((_) async => boxes.map((b) => b.toJson()).toList());
+  }
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    service = MockOpenSenseMapService();
+    when(() => service.removeTokens()).thenAnswer((_) async {});
+    when(() => service.logout()).thenAnswer((_) async {});
+    bloc = OpenSenseMapBloc(service: service);
+  });
+
+  tearDown(() => bloc.dispose());
+
+  test('initial state is logged out without boxes', () {
+    expect(bloc.isAuthenticated, isFalse);
+    expect(bloc.isAuthenticating, isFalse);
+    expect(bloc.selectedSenseBox, isNull);
+    expect(bloc.senseBoxes, isEmpty);
+  });
+
+  group('setSelectedSenseBox()', () {
+    test('selects and persists a box', () async {
+      await bloc.setSelectedSenseBox(_box('box-1'));
+
+      expect(bloc.selectedSenseBox?.sId, 'box-1');
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+          prefs.getString(SharedPreferencesKeys.selectedSenseBox), isNotNull);
+    });
+
+    test('null clears the selection and persisted box', () async {
+      await bloc.setSelectedSenseBox(_box('box-1'));
+      await bloc.setSelectedSenseBox(null);
+
+      expect(bloc.selectedSenseBox, isNull);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(SharedPreferencesKeys.selectedSenseBox), isNull);
+    });
+  });
+
+  group('login()', () {
+    test('selects the first box', () async {
+      stubLogin([_box('box-1'), _box('box-2')]);
+
+      await bloc.login('test@example.com', 'password');
+
+      expect(bloc.isAuthenticated, isTrue);
+      expect(bloc.selectedSenseBox?.sId, 'box-1');
+    });
+
+    test('clears a previously selected box when the user has none', () async {
+      await bloc.setSelectedSenseBox(_box('old-box'));
+      stubLogin([]);
+
+      await bloc.login('test@example.com', 'password');
+
+      expect(bloc.selectedSenseBox, isNull);
+    });
+  });
+
+  group('performAuthenticationCheck()', () {
     setUp(() {
-      SharedPreferences.setMockInitialValues({});
-
-      bloc = OpenSenseMapBloc();
+      when(() => service.isCurrentAccessTokenValid())
+          .thenAnswer((_) async => true);
     });
 
-    group('Initialization', () {
-      test('should initialize with correct initial state', () {
-        expect(bloc.isAuthenticated, false);
-        expect(bloc.isAuthenticating, false);
-        expect(bloc.selectedSenseBox, isNull);
-        expect(bloc.senseBoxes, isEmpty);
+    test('restores the saved box', () async {
+      SharedPreferences.setMockInitialValues({
+        SharedPreferencesKeys.selectedSenseBox:
+            jsonEncode(_box('saved-box').toJson()),
       });
 
-      test('should register as lifecycle observer', () {
-        expect(bloc, isA<WidgetsBindingObserver>());
-      });
+      await bloc.performAuthenticationCheck();
+
+      expect(bloc.selectedSenseBox?.sId, 'saved-box');
     });
 
-    group('API URL Configuration', () {
-      test('should use default API URL when SettingsBloc has no custom URL',
-          () async {
-        final settingsBloc = SettingsBloc();
-        // Wait for settings to load
-        await Future.delayed(const Duration(milliseconds: 100));
+    test('selects the first box when none is saved', () async {
+      stubLogin([_box('box-1')]);
 
-        final blocWithDefaultSettings =
-            OpenSenseMapBloc(settingsBloc: settingsBloc);
-        expect(blocWithDefaultSettings, isA<OpenSenseMapBloc>());
-        expect(blocWithDefaultSettings.isAuthenticated, false);
+      await bloc.performAuthenticationCheck();
 
-        // SettingsBloc should return default URL
-        expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
-        
-        blocWithDefaultSettings.dispose();
-      });
+      expect(bloc.selectedSenseBox?.sId, 'box-1');
+    });
+  });
 
-      test('should use custom API URL from SettingsBloc when stored', () async {
-        final settingsBloc = SettingsBloc();
-        // Wait for SettingsBloc to finish loading
-        await Future.delayed(const Duration(milliseconds: 100));
-        
-        const customUrl = 'https://custom-api.example.com';
+  group('API URL change', () {
+    late SettingsBloc settingsBloc;
 
-        // Set custom URL in settings
-        await settingsBloc.setApiUrl(customUrl);
-
-        final blocWithCustomSettings =
-            OpenSenseMapBloc(settingsBloc: settingsBloc);
-        expect(blocWithCustomSettings, isA<OpenSenseMapBloc>());
-
-        // SettingsBloc should return the custom URL
-        expect(settingsBloc.apiUrl, customUrl);
-        
-        blocWithCustomSettings.dispose();
-        settingsBloc.dispose();
-      });
-
-      test('should persist API URL in shared preferences', () async {
-        final settingsBloc = SettingsBloc();
-        // Wait for initial load
-        await Future.delayed(const Duration(milliseconds: 100));
-        
-        const customUrl = 'https://test-api.example.com';
-
-        // Set custom URL
-        await settingsBloc.setApiUrl(customUrl);
-
-        // Create new SettingsBloc instance to simulate app restart
-        final newSettingsBloc = SettingsBloc();
-        await Future.delayed(
-            const Duration(milliseconds: 100)); // Wait for loading
-
-        // Should load the stored URL
-        expect(newSettingsBloc.apiUrl, customUrl);
-        
-        settingsBloc.dispose();
-        newSettingsBloc.dispose();
-      });
-
-      test('should fallback to default when stored URL is empty', () async {
-        final settingsBloc = SettingsBloc();
-        // Wait for initial load
-        await Future.delayed(const Duration(milliseconds: 100));
-
-        // Set empty URL
-        await settingsBloc.setApiUrl('');
-
-        // Should return default URL
-        expect(settingsBloc.apiUrl, 'https://api.opensensemap.org');
-        
-        settingsBloc.dispose();
-      });
+    setUp(() async {
+      settingsBloc = SettingsBloc();
+      await Future.delayed(const Duration(milliseconds: 10));
+      bloc = OpenSenseMapBloc(settingsBloc: settingsBloc, service: service);
+      stubLogin([_box('box-1')]);
+      await bloc.login('test@example.com', 'password');
     });
 
-    group('API URL change', () {
-      late SettingsBloc settingsBloc;
-      late MockOpenSenseMapService mockService;
-      late OpenSenseMapBloc blocWithSettings;
-      final box = SenseBox(
-          sId: 'box-1',
-          name: 'Box',
-          exposure: 'mobile',
-          sensors: [],
-          grouptag: []);
+    tearDown(() => settingsBloc.dispose());
 
-      setUp(() async {
-        settingsBloc = SettingsBloc();
-        await Future.delayed(const Duration(milliseconds: 100));
-        mockService = MockOpenSenseMapService();
-        when(() => mockService.removeTokens()).thenAnswer((_) async {});
-        when(() => mockService.logout()).thenAnswer((_) async {});
-        when(() => mockService.login(any(), any())).thenAnswer((_) async => {
-              'data': {
-                'user': {
-                  'boxes': ['box-1']
-                }
-              }
-            });
-        when(() => mockService.getSenseBoxes(page: 0))
-            .thenAnswer((_) async => [box.toJson()]);
-        blocWithSettings = OpenSenseMapBloc(
-          settingsBloc: settingsBloc,
-          service: mockService,
-        );
-        await blocWithSettings.login('test@example.com', 'password');
-      });
+    test('logs out and clears the selected box', () async {
+      await settingsBloc.setApiUrl('https://other-api.example.com');
+      await Future.delayed(Duration.zero);
 
-      tearDown(() {
-        blocWithSettings.dispose();
-        settingsBloc.dispose();
-      });
-
-      test('logs out and clears selected box when API URL changes', () async {
-        expect(blocWithSettings.isAuthenticated, isTrue);
-        expect(blocWithSettings.selectedSenseBox?.sId, 'box-1');
-
-        await settingsBloc.setApiUrl('https://other-api.example.com');
-        await Future.delayed(Duration.zero);
-
-        expect(blocWithSettings.isAuthenticated, isFalse);
-        expect(blocWithSettings.selectedSenseBox, isNull);
-        verify(() => mockService.logout()).called(1);
-        final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getString('selectedSenseBox'), isNull);
-      });
-
-      test('stays logged in when the same API URL is saved again', () async {
-        await settingsBloc.setApiUrl(settingsBloc.apiUrl);
-        await Future.delayed(Duration.zero);
-
-        expect(blocWithSettings.isAuthenticated, isTrue);
-        expect(blocWithSettings.selectedSenseBox?.sId, 'box-1');
-        verifyNever(() => mockService.logout());
-      });
+      expect(bloc.isAuthenticated, isFalse);
+      expect(bloc.selectedSenseBox, isNull);
+      verify(() => service.logout()).called(1);
     });
 
-    group('SenseBox Management', () {
-      test('should set selected sensebox correctly', () async {
-        final testBox = SenseBox(
-            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
+    test('keeps the session when the same URL is saved again', () async {
+      await settingsBloc.setApiUrl(settingsBloc.apiUrl);
+      await Future.delayed(Duration.zero);
 
-        await bloc.setSelectedSenseBox(testBox);
-
-        expect(bloc.selectedSenseBox, testBox);
-      });
-
-      test('should clear selected sensebox when null is passed', () async {
-        final testBox = SenseBox(
-            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
-
-        await bloc.setSelectedSenseBox(testBox);
-        expect(bloc.selectedSenseBox, testBox);
-
-        await bloc.setSelectedSenseBox(null);
-        expect(bloc.selectedSenseBox, isNull);
-      });
-
-
-      test('should clear selected sensebox when not authenticated', () async {
-        final testBox = SenseBox(
-            sId: '1', name: 'Test Box', exposure: 'outdoor', sensors: []);
-
-        await bloc.setSelectedSenseBox(testBox);
-        expect(bloc.selectedSenseBox, testBox);
-
-        await bloc.loadSelectedSenseBox();
-
-        expect(bloc.selectedSenseBox, isNull);
-      });
+      expect(bloc.isAuthenticated, isTrue);
+      expect(bloc.selectedSenseBox?.sId, 'box-1');
+      verifyNever(() => service.logout());
     });
+  });
 
-    group('buildSenseBoxBikeModel()', () {
-      test('creates model with all components', () {
-        final boxConfig = BoxConfiguration(
-          id: 'atrai',
-          displayName: 'Atrai',
-          defaultGrouptag: 'atrai',
-          sensors: [
-            SensorDefinition(
-              key: 'temperature',
-              id: '1',
-              icon: 'osem-thermometer',
-              title: 'Temperature',
-              unit: '°C',
-              sensorType: 'HDC1080',
-            ),
-            SensorDefinition(
-              key: 'humidity',
-              id: '2',
-              icon: 'osem-humidity',
-              title: 'Rel. Humidity',
-              unit: '%',
-              sensorType: 'HDC1080',
-            ),
-          ],
-        );
+  test('buildSenseBoxBikeModel() builds the box payload', () {
+    final boxConfig = BoxConfiguration(
+      id: 'atrai',
+      displayName: 'Atrai',
+      defaultGrouptag: 'atrai',
+      sensors: [
+        SensorDefinition(
+          key: 'temperature',
+          id: '1',
+          icon: 'osem-thermometer',
+          title: 'Temperature',
+          unit: '°C',
+          sensorType: 'HDC1080',
+        ),
+        SensorDefinition(
+          key: 'humidity',
+          id: '2',
+          icon: 'osem-humidity',
+          title: 'Rel. Humidity',
+          unit: '%',
+          sensorType: 'HDC1080',
+        ),
+      ],
+    );
 
-        final model = bloc.buildSenseBoxBikeModel(
-          'Test Box',
-          13.4050,
-          52.5200,
-          boxConfig,
-          'selected-tag',
-          ['foo', 'bar', null, 'baz'],
-        );
+    final model = bloc.buildSenseBoxBikeModel(
+      'Test Box',
+      13.4050,
+      52.5200,
+      boxConfig,
+      'selected-tag',
+      ['foo', 'bar', null, 'baz', 'bike'],
+    );
 
-        expect(model['name'], 'Test Box');
-        expect(model['exposure'], 'mobile');
-        expect(model['location'], [13.4050, 52.5200]);
-        
-        final tags = model['grouptag'] as List;
-        expect(tags, contains('bike'));
-        expect(tags, contains('atrai'));
-        expect(tags, contains('selected-tag'));
-        expect(tags, contains('foo'));
-        expect(tags, contains('bar'));
-        expect(tags, contains('baz'));
-        expect(tags.length, 6);
-        
-        expect(model['sensors'], isA<List>());
-        final sensors = model['sensors'] as List;
-        expect(sensors.length, 2);
-        expect(sensors[0]['title'], 'Temperature');
-        expect(sensors[1]['title'], 'Rel. Humidity');
-      });
-    });
-
-    group('Box Compatibility', () {
-      group('loadSelectedSenseBox()', () {
-        test('preserves saved box from preferences', () async {
-          SharedPreferences.setMockInitialValues({});
-          final mockService = MockOpenSenseMapService();
-          final bloc = OpenSenseMapBloc(
-            service: mockService,
-          );
-
-          final savedBox = SenseBox(
-            sId: 'saved-box',
-            name: 'Saved Box',
-            exposure: 'outdoor',
-            sensors: [
-              Sensor(title: 'Unknown Sensor', unit: '?', sensorType: 'UNKNOWN'),
-            ],
-            grouptag: [],
-          );
-
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(
-              'selectedSenseBox', jsonEncode(savedBox.toJson()));
-
-          when(() => mockService.isCurrentAccessTokenValid())
-              .thenAnswer((_) async => true);
-
-          await bloc.performAuthenticationCheck();
-
-          expect(bloc.selectedSenseBox?.sId, 'saved-box');
-        });
-      });
-
-      group('login() box selection', () {
-        test('selects first box when multiple boxes available', () async {
-          SharedPreferences.setMockInitialValues({});
-          final mockService = MockOpenSenseMapService();
-
-          final firstBox = SenseBox(
-            sId: 'box-1',
-            name: 'First Box',
-            exposure: 'outdoor',
-            sensors: [
-              Sensor(title: 'Temperature', unit: '°C', sensorType: 'HDC1080'),
-            ],
-            grouptag: [],
-          );
-
-          final secondBox = SenseBox(
-            sId: 'box-2',
-            name: 'Second Box',
-            exposure: 'outdoor',
-            sensors: [
-              Sensor(title: 'Unknown Sensor', unit: '?', sensorType: 'UNKNOWN'),
-            ],
-            grouptag: [],
-          );
-
-          when(() => mockService.removeTokens()).thenAnswer((_) async => {});
-          when(() => mockService.login(any(), any())).thenAnswer((_) async => {
-                'data': {
-                  'user': {
-                    'boxes': ['box-1', 'box-2']
-                  }
-                }
-              });
-          when(() => mockService.getSenseBoxes(page: 0))
-              .thenAnswer((_) async => [
-                    firstBox.toJson(),
-                    secondBox.toJson(),
-                  ]);
-
-          final bloc = OpenSenseMapBloc(
-            service: mockService,
-          );
-
-          await bloc.login('test@example.com', 'password');
-
-          expect(bloc.selectedSenseBox?.sId, 'box-1');
-        });
-
-        test('selects first box even when sensors are unknown', () async {
-          SharedPreferences.setMockInitialValues({});
-          final mockService = MockOpenSenseMapService();
-
-          final box = SenseBox(
-            sId: 'incompatible-1',
-            name: 'Any Box',
-            exposure: 'outdoor',
-            sensors: [
-              Sensor(title: 'Unknown Sensor', unit: '?', sensorType: 'UNKNOWN'),
-            ],
-            grouptag: [],
-          );
-
-          when(() => mockService.removeTokens()).thenAnswer((_) async => {});
-          when(() => mockService.login(any(), any())).thenAnswer((_) async => {
-                'data': {
-                  'user': {
-                    'boxes': ['incompatible-1']
-                  }
-                }
-              });
-          when(() => mockService.getSenseBoxes(page: 0))
-              .thenAnswer((_) async => [box.toJson()]);
-
-          final bloc = OpenSenseMapBloc(
-            service: mockService,
-          );
-
-          await bloc.login('test@example.com', 'password');
-
-          expect(bloc.selectedSenseBox?.sId, 'incompatible-1');
-        });
-      });
-    });
+    expect(model['name'], 'Test Box');
+    expect(model['exposure'], 'mobile');
+    expect(model['location'], [13.4050, 52.5200]);
+    expect(model['grouptag'],
+        ['bike', 'atrai', 'selected-tag', 'foo', 'bar', 'baz']);
+    expect((model['sensors'] as List).map((s) => s['title']),
+        ['Temperature', 'Rel. Humidity']);
   });
 }

@@ -45,49 +45,48 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
         settingsBloc?.apiUrlChangedStream.listen((_) => logout());
   }
 
-  Future<void> performAuthenticationCheck() async {
+  Future<void> _whileAuthenticating(Future<void> Function() action) async {
     _isAuthenticatingNotifier.value = true;
     notifyListeners();
-
     try {
-      if (!await _service.isCurrentAccessTokenValid()) {
-        final refreshToken = await _service.getRefreshTokenFromPreferences();
-        if (refreshToken == null ||
-            refreshToken.isEmpty ||
-            _service.isPermanentlyDisabled) {
-          _isAuthenticated = false;
-          return;
-        }
-        await _service.refreshToken();
-      }
-      _isAuthenticated = true;
-      await loadSelectedSenseBox();
-      if (_selectedSenseBox == null) {
-        await _selectFirstBox();
-      }
-    } catch (e) {
-      _handleAuthenticationError(e);
+      await action();
     } finally {
       _isAuthenticatingNotifier.value = false;
       notifyListeners();
     }
   }
 
-  Future<void> loadSelectedSenseBox() async {
-    if (!_isAuthenticated) {
-      return setSelectedSenseBox(null);
-    }
+  Future<void> performAuthenticationCheck() => _whileAuthenticating(() async {
+        try {
+          if (!await _service.isCurrentAccessTokenValid()) {
+            final refreshToken =
+                await _service.getRefreshTokenFromPreferences();
+            if (refreshToken == null ||
+                refreshToken.isEmpty ||
+                _service.isPermanentlyDisabled) {
+              _isAuthenticated = false;
+              return;
+            }
+            await _service.refreshToken();
+          }
+          _isAuthenticated = true;
+          await _restoreSelectedSenseBox();
+        } catch (e) {
+          _handleAuthenticationError(e);
+        }
+      });
 
+  Future<void> _restoreSelectedSenseBox() async {
     final prefs = await SharedPreferences.getInstance();
     final savedJson = prefs.getString(SharedPreferencesKeys.selectedSenseBox);
-    final savedSenseBox =
-        savedJson == null ? null : SenseBox.fromJson(jsonDecode(savedJson));
-
-    if (savedSenseBox == null || savedSenseBox.id != _selectedSenseBox?.id) {
+    if (savedJson == null) {
+      return _selectFirstBox();
+    }
+    final savedSenseBox = SenseBox.fromJson(jsonDecode(savedJson));
+    if (savedSenseBox.id != _selectedSenseBox?.id) {
       _selectedSenseBox = savedSenseBox;
       _senseBoxController.add(savedSenseBox);
     }
-    notifyListeners();
   }
 
   Future<void> _selectFirstBox() async {
@@ -98,9 +97,9 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
+  void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      await performAuthenticationCheck();
+      performAuthenticationCheck();
     }
   }
 
@@ -111,40 +110,31 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       _authenticate(() => _service.login(email, password));
 
   Future<void> _authenticate(
-      Future<Map<String, dynamic>> Function() request) async {
-    _isAuthenticatingNotifier.value = true;
-    notifyListeners();
-    try {
-      await _service.removeTokens();
-      final responseData = await request();
-      _isAuthenticated = true;
-      await _clearSenseBoxes();
-      if (extractBoxIds(responseData).isNotEmpty) {
-        await _selectFirstBox();
-      }
-    } catch (e) {
-      _isAuthenticated = false;
-      rethrow;
-    } finally {
-      _isAuthenticatingNotifier.value = false;
-      notifyListeners();
-    }
-  }
+          Future<Map<String, dynamic>> Function() request) =>
+      _whileAuthenticating(() async {
+        try {
+          await _service.removeTokens();
+          final responseData = await request();
+          _isAuthenticated = true;
+          await _clearSenseBoxes();
+          if (extractBoxIds(responseData).isNotEmpty) {
+            await _selectFirstBox();
+          }
+        } catch (e) {
+          _isAuthenticated = false;
+          rethrow;
+        }
+      });
 
-  Future<void> logout() async {
-    _isAuthenticatingNotifier.value = true;
-    notifyListeners();
-    try {
-      await _service.logout();
-      _isAuthenticated = false;
-      await _clearSenseBoxes();
-    } catch (e, stack) {
-      ErrorService.handleError(e, stack);
-    } finally {
-      _isAuthenticatingNotifier.value = false;
-      notifyListeners();
-    }
-  }
+  Future<void> logout() => _whileAuthenticating(() async {
+        try {
+          await _service.logout();
+          _isAuthenticated = false;
+          await _clearSenseBoxes();
+        } catch (e, stack) {
+          ErrorService.handleError(e, stack);
+        }
+      });
 
   Future<void> createSenseBoxBike(
       String name,
@@ -154,15 +144,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       String? selectedTag,
       List<String?> additionalTags) async {
     try {
-      final model = buildSenseBoxBikeModel(
-        name,
-        longitude,
-        latitude,
-        boxConfiguration,
-        selectedTag,
-        additionalTags,
-      );
-      await _service.createSenseBoxBike(model);
+      await _service.createSenseBoxBike(buildSenseBoxBikeModel(name, longitude,
+          latitude, boxConfiguration, selectedTag, additionalTags));
       await fetchSenseBoxes(page: 0);
     } catch (e, stack) {
       if (!_handleAuthenticationError(e)) {
