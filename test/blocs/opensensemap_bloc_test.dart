@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
@@ -10,8 +9,6 @@ import 'package:sensebox_bike/services/opensensemap_service.dart';
 import 'package:sensebox_bike/blocs/settings_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 import '../sensor_catalog_test_data.dart';
-
-class MockConfigurationBloc extends Mock implements ConfigurationBloc {}
 
 class MockOpenSenseMapService extends Mock implements OpenSenseMapService {}
 
@@ -128,6 +125,68 @@ void main() {
       });
     });
 
+    group('API URL change', () {
+      late SettingsBloc settingsBloc;
+      late MockOpenSenseMapService mockService;
+      late OpenSenseMapBloc blocWithSettings;
+      final box = SenseBox(
+          sId: 'box-1',
+          name: 'Box',
+          exposure: 'mobile',
+          sensors: [],
+          grouptag: []);
+
+      setUp(() async {
+        settingsBloc = SettingsBloc();
+        await Future.delayed(const Duration(milliseconds: 100));
+        mockService = MockOpenSenseMapService();
+        when(() => mockService.removeTokens()).thenAnswer((_) async {});
+        when(() => mockService.logout()).thenAnswer((_) async {});
+        when(() => mockService.login(any(), any())).thenAnswer((_) async => {
+              'data': {
+                'user': {
+                  'boxes': ['box-1']
+                }
+              }
+            });
+        when(() => mockService.getSenseBoxes(page: 0))
+            .thenAnswer((_) async => [box.toJson()]);
+        blocWithSettings = OpenSenseMapBloc(
+          settingsBloc: settingsBloc,
+          service: mockService,
+        );
+        await blocWithSettings.login('test@example.com', 'password');
+      });
+
+      tearDown(() {
+        blocWithSettings.dispose();
+        settingsBloc.dispose();
+      });
+
+      test('logs out and clears selected box when API URL changes', () async {
+        expect(blocWithSettings.isAuthenticated, isTrue);
+        expect(blocWithSettings.selectedSenseBox?.sId, 'box-1');
+
+        await settingsBloc.setApiUrl('https://other-api.example.com');
+        await Future.delayed(Duration.zero);
+
+        expect(blocWithSettings.isAuthenticated, isFalse);
+        expect(blocWithSettings.selectedSenseBox, isNull);
+        verify(() => mockService.logout()).called(1);
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getString('selectedSenseBox'), isNull);
+      });
+
+      test('stays logged in when the same API URL is saved again', () async {
+        await settingsBloc.setApiUrl(settingsBloc.apiUrl);
+        await Future.delayed(Duration.zero);
+
+        expect(blocWithSettings.isAuthenticated, isTrue);
+        expect(blocWithSettings.selectedSenseBox?.sId, 'box-1');
+        verifyNever(() => mockService.logout());
+      });
+    });
+
     group('SenseBox Management', () {
       test('should set selected sensebox correctly', () async {
         final testBox = SenseBox(
@@ -220,18 +279,11 @@ void main() {
     });
 
     group('Box Compatibility', () {
-      late MockConfigurationBloc mockConfigurationBloc;
-
-      setUp(() {
-        mockConfigurationBloc = MockConfigurationBloc();
-      });
-
       group('loadSelectedSenseBox()', () {
         test('preserves saved box from preferences', () async {
           SharedPreferences.setMockInitialValues({});
           final mockService = MockOpenSenseMapService();
           final bloc = OpenSenseMapBloc(
-            configurationBloc: mockConfigurationBloc,
             service: mockService,
           );
 
@@ -248,30 +300,6 @@ void main() {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString(
               'selectedSenseBox', jsonEncode(savedBox.toJson()));
-
-          when(() => mockService.isCurrentAccessTokenValid())
-              .thenAnswer((_) async => true);
-
-          await bloc.performAuthenticationCheck();
-
-          expect(bloc.selectedSenseBox?.sId, 'saved-box');
-        });
-
-        test('loads saved box when ConfigurationBloc is null', () async {
-          SharedPreferences.setMockInitialValues({});
-          final mockService = MockOpenSenseMapService();
-          final bloc = OpenSenseMapBloc(service: mockService);
-
-          final box = SenseBox(
-            sId: 'saved-box',
-            name: 'Saved Box',
-            exposure: 'outdoor',
-            sensors: [],
-            grouptag: [],
-          );
-
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('selectedSenseBox', jsonEncode(box.toJson()));
 
           when(() => mockService.isCurrentAccessTokenValid())
               .thenAnswer((_) async => true);
@@ -322,7 +350,6 @@ void main() {
                   ]);
 
           final bloc = OpenSenseMapBloc(
-            configurationBloc: mockConfigurationBloc,
             service: mockService,
           );
 
@@ -357,44 +384,12 @@ void main() {
               .thenAnswer((_) async => [box.toJson()]);
 
           final bloc = OpenSenseMapBloc(
-            configurationBloc: mockConfigurationBloc,
             service: mockService,
           );
 
           await bloc.login('test@example.com', 'password');
 
           expect(bloc.selectedSenseBox?.sId, 'incompatible-1');
-        });
-
-        test('falls back to first box when ConfigurationBloc is null',
-            () async {
-          SharedPreferences.setMockInitialValues({});
-          final mockService = MockOpenSenseMapService();
-
-          final box = SenseBox(
-            sId: 'box-1',
-            name: 'Test Box',
-            exposure: 'outdoor',
-            sensors: [],
-            grouptag: [],
-          );
-
-          when(() => mockService.removeTokens()).thenAnswer((_) async => {});
-          when(() => mockService.login(any(), any())).thenAnswer((_) async => {
-                'data': {
-                  'user': {
-                    'boxes': ['box-1']
-                  }
-                }
-              });
-          when(() => mockService.getSenseBoxes(page: 0))
-              .thenAnswer((_) async => [box.toJson()]);
-
-          final bloc = OpenSenseMapBloc(service: mockService);
-
-          await bloc.login('test@example.com', 'password');
-
-          expect(bloc.selectedSenseBox?.sId, 'box-1');
         });
       });
     });

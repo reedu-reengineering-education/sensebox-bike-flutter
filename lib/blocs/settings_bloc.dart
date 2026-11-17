@@ -12,6 +12,8 @@ class SettingsBloc with ChangeNotifier {
       StreamController<List<String>>.broadcast();
   final StreamController<bool> _directUploadModeController =
       StreamController<bool>.broadcast();
+  final StreamController<String> _apiUrlChangedController =
+      StreamController<String>.broadcast();
 
   bool _vibrateOnDisconnect = false;
   List<String> _privacyZones = [];
@@ -57,6 +59,8 @@ class SettingsBloc with ChangeNotifier {
 
   // Stream for upload mode updates
   Stream<bool> get directUploadModeStream => _directUploadModeController.stream;
+
+  Stream<String> get apiUrlChangedStream => _apiUrlChangedController.stream;
 
   static DataCollectionMode _parseStoredCollectionMode(String? value) {
     if (value == null) {
@@ -147,10 +151,15 @@ class SettingsBloc with ChangeNotifier {
   }
 
   Future<void> setApiUrl(String value) async {
+    final previousApiUrl = apiUrl;
     _apiUrl = value;
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('apiUrl', value);
+
+    if (apiUrl != previousApiUrl) {
+      _apiUrlChangedController.add(apiUrl);
+    }
 
     notifyListeners();
   }
@@ -218,6 +227,7 @@ class SettingsBloc with ChangeNotifier {
     _vibrateOnDisconnectController.close();
     _privacyZonesController.close();
     _directUploadModeController.close();
+    _apiUrlChangedController.close();
     super.dispose();
   }
 }

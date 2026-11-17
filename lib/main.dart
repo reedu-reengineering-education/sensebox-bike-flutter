@@ -72,7 +72,6 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
     _bleBloc = BleBloc(_settingsBloc!);
     _configurationBloc = ConfigurationBloc();
     _openSenseMapBloc = OpenSenseMapBloc(
-      configurationBloc: _configurationBloc,
       settingsBloc: _settingsBloc,
     );
     _trackBloc = TrackBloc(_isarService!);

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
 import 'package:sensebox_bike/models/sensebox.dart';
 import 'package:sensebox_bike/services/error_service.dart';
@@ -13,7 +12,7 @@ import 'package:sensebox_bike/blocs/settings_bloc.dart';
 
 class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   final OpenSenseMapService _service;
-  final ConfigurationBloc? _configurationBloc;
+  StreamSubscription<String>? _apiUrlChangedSubscription;
   bool _isAuthenticated = false;
   final ValueNotifier<bool> _isAuthenticatingNotifier =
       ValueNotifier<bool>(false);
@@ -31,11 +30,11 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   bool get isAuthenticated => _isAuthenticated;
   bool get hasAuthAndSelectedSenseBox =>
       _isAuthenticated && _selectedSenseBox != null;
-  
+
   Future<Map<String, dynamic>?> get userData => _service.getUserData();
 
   OpenSenseMapService get openSenseMapService => _service;
-  
+
   Future<void> markAuthenticationFailed() async {
     _isAuthenticated = false;
     _selectedSenseBox = null;
@@ -61,19 +60,19 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   }
 
   OpenSenseMapBloc({
-    ConfigurationBloc? configurationBloc,
     SettingsBloc? settingsBloc,
     OpenSenseMapService? service,
-  })  : _configurationBloc = configurationBloc,
-        _service = service ?? OpenSenseMapService(settingsBloc: settingsBloc) {
+  }) : _service = service ?? OpenSenseMapService(settingsBloc: settingsBloc) {
     WidgetsBinding.instance.addObserver(this);
+    _apiUrlChangedSubscription =
+        settingsBloc?.apiUrlChangedStream.listen((_) => logout());
   }
 
   /// Core authentication logic that can be reused
   Future<void> performAuthenticationCheck() async {
     _isAuthenticatingNotifier.value = true;
     notifyListeners();
-    
+
     try {
       // First, check if we have a valid access token
       final isTokenValid = await _service.isCurrentAccessTokenValid();
@@ -104,20 +103,12 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
       }
 
       // Attempt token refresh directly
-      final tokens = await _service.refreshToken();
-      final refreshSuccess = tokens != null;
-
-      if (refreshSuccess) {
-        _isAuthenticated = true;
-        if (_service.isPermanentlyDisabled) {
-          _service.resetPermanentDisable();
-        }
-        await loadSelectedSenseBox();
-        if (_selectedSenseBox == null) {
-          await _findAndSetCompatibleReplacement();
-        }
-      } else {
-        _isAuthenticated = false;
+      await _service.refreshToken();
+      _isAuthenticated = true;
+      _service.resetPermanentDisable();
+      await loadSelectedSenseBox();
+      if (_selectedSenseBox == null) {
+        await _findAndSetCompatibleReplacement();
       }
     } catch (e) {
       _handleAuthenticationError(e);
@@ -178,13 +169,13 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       // Clear any existing tokens before fresh registration
       await _service.removeTokens();
-      
+
       // Get the full response data from registration
       final responseData = await _service.register(name, email, password);
-      
+
       _isAuthenticated = true;
       _clearSenseBoxes();
-      
+
       // User data is already saved by service.saveUserData()
 
       // Only fetch boxes if there are box IDs in the response
@@ -213,10 +204,10 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       // Clear any existing tokens before fresh login
       await _service.removeTokens();
-      
+
       // Get the full response data from login
       final responseData = await _service.login(email, password);
-      
+
       _isAuthenticated = true;
 
       // User data is already saved by service.saveUserData()
@@ -253,8 +244,8 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
     try {
       await _service.logout();
       _isAuthenticated = false;
-      _clearSenseBoxes();
-      notifyListeners();
+      _senseBoxes.clear();
+      await setSelectedSenseBox(null);
     } catch (e, stack) {
       ErrorService.handleError(e, stack);
     } finally {
@@ -406,6 +397,7 @@ class OpenSenseMapBloc with ChangeNotifier, WidgetsBindingObserver {
   void dispose() {
     // Remove observer first to prevent any further lifecycle callbacks
     WidgetsBinding.instance.removeObserver(this);
+    _apiUrlChangedSubscription?.cancel();
 
     // Close stream controller
     _senseBoxController.close();
