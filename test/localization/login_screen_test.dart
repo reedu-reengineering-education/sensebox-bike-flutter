@@ -36,8 +36,6 @@ void main() {
     // Mock the login method to return a Future<void>
     when(() => mockBloc.login(any(), any()))
         .thenAnswer((_) async => Future.value());
-    // Mock the getUserData method
-    when(() => mockBloc.getUserData()).thenAnswer((_) async => null);
   });
 
   Widget buildTestWidget(Widget child, Locale locale) {

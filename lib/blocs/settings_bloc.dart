@@ -39,8 +39,7 @@ class SettingsBloc with ChangeNotifier {
   bool get directUploadMode => _directUploadMode;
 
   // Getter for the current API URL
-  String get apiUrl =>
-      _apiUrl.isEmpty ? 'https://api.opensensemap.org' : _apiUrl;
+  String get apiUrl => _apiUrl.isEmpty ? standardOpenSenseMapApiUrl : _apiUrl;
 
   DataCollectionMode get dataCollectionMode => _dataCollectionMode;
 
@@ -89,7 +88,8 @@ class SettingsBloc with ChangeNotifier {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _vibrateOnDisconnect =
         prefs.getBool(SharedPreferencesKeys.vibrateOnDisconnect) ?? false;
-    _privacyZones = prefs.getStringList('privacyZones') ?? [];
+    _privacyZones =
+        prefs.getStringList(SharedPreferencesKeys.privacyZones) ?? [];
     _directUploadMode = prefs.getBool('directUploadMode') ?? false;
     _apiUrl = prefs.getString('apiUrl') ?? '';
     // Prefs keys keep legacy "lastResolved*" names for migration compatibility.
@@ -129,7 +129,7 @@ class SettingsBloc with ChangeNotifier {
     _privacyZones = zones;
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('privacyZones', zones);
+    await prefs.setStringList(SharedPreferencesKeys.privacyZones, zones);
 
     // Emit the new privacy zones to the stream
     _privacyZonesController.add(_privacyZones);

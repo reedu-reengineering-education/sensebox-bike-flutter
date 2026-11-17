@@ -116,8 +116,7 @@ class BatchUploadService {
 
     final kind = UploadErrorClassifier.failureKindOf(error);
     if (kind == UploadFailureKind.authentication) {
-      await _openSenseMapBloc.markAuthenticationFailed().catchError(
-          (Object e, StackTrace s) => ErrorService.reportToSentry(e, s));
+      await _openSenseMapBloc.logout();
     }
 
     _emit(

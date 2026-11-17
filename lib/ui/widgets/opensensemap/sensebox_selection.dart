@@ -97,7 +97,7 @@ class _SenseBoxSelectionWidgetState extends State<SenseBoxSelectionWidget> {
       if (!mounted) return;
 
       if (_isAuthenticationError(error.toString())) {
-        _bloc.markAuthenticationFailed();
+        _bloc.logout();
       }
 
       setState(() {
