@@ -30,7 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_reactive_ble: ^5.6.0
+  flutter_reactive_ble: 5.5.0
+  reactive_ble_mobile: 5.5.0
   app_settings: ^9.0.1
   geolocator: ^14.1.2
   provider: ^6.1.5+1

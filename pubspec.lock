@@ -439,10 +439,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_reactive_ble
-      sha256: f343785fd824c3e08706e5d0f2327b3c1b03ada9505dae491fcb25ef8fbc42b9
+      sha256: "5db17abd4afe5e0803098e2270fa41f39682e8bd75a6928508ee0d7112b0d813"
       url: "https://pub.dev"
     source: hosted
-    version: "5.6.0"
+    version: "5.5.0"
   flutter_svg:
     dependency: "direct main"
     description:
@@ -1006,13 +1006,13 @@ packages:
     source: hosted
     version: "1.1.1"
   reactive_ble_mobile:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: reactive_ble_mobile
-      sha256: "1af5ff867926ff104fab763734db33fa18ac6c9d05e58988dc43879a56168d56"
+      sha256: "53c1e589d352690be8441960c00fb006dcf77baeb0f7414be4d9764454fcecf9"
       url: "https://pub.dev"
     source: hosted
-    version: "5.6.0"
+    version: "5.5.0"
   reactive_ble_platform_interface:
     dependency: transitive
     description:
