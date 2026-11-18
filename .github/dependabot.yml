@@ -21,11 +21,6 @@ updates:
     commit-message:
       prefix: "[dependabot]"
     open-pull-requests-limit: 5
-    ignore:
-      - dependency-name: "flutter_reactive_ble"
-        versions: [">=5.6.0"]
-      - dependency-name: "reactive_ble_mobile"
-        versions: [">=5.6.0"]
     groups:
       pub-minor-and-patch:
         patterns:

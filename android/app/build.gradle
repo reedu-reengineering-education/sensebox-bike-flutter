@@ -1,7 +1,6 @@
 plugins {
     id "com.android.application"
-    id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // The Flutter Gradle Plugin must be applied after the Android Gradle plugin.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -13,19 +12,15 @@ dependencies {
 
 android {
     namespace = "de.reedu.senseboxbike"
-    // Floor at API 36 so Play builds stay compliant even if an older Flutter
-    // SDK still defaults lower; follow Flutter when it goes higher.
-    compileSdk = Math.max(flutter.compileSdkVersion as Integer, 36)
+    // Floor at API 37 because reactive_ble_mobile 5.6+ compiles against it;
+    // follow Flutter when it goes higher.
+    compileSdk = Math.max(flutter.compileSdkVersion as Integer, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
         coreLibraryDesugaringEnabled true
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_21
     }
 
     defaultConfig {
@@ -66,6 +61,12 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.release
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
     }
 }
 
