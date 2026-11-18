@@ -45,7 +45,7 @@ dependencies:
   mapbox_maps_flutter: ^2.31.1
   isar_community: ^3.4.1
   isar_community_flutter_libs: ^3.4.1
-  csv: ^6.0.0
+  csv: ^8.0.0
   share_plus: ^13.3.1
   shared_preferences: ^2.5.6
   http: ^1.2.2
