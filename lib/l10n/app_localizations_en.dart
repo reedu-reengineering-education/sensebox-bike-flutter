@@ -430,6 +430,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsStorageUsed => 'Storage used';
 
   @override
+  String get settingsInstallationId => 'Installation ID';
+
+  @override
+  String get settingsInstallationIdCopied =>
+      'Installation ID copied to clipboard';
+
+  @override
   String settingsStorageDetails(String databaseSize, String totalSize) {
     return 'App data: $totalSize (database: $databaseSize)';
   }
@@ -439,6 +446,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsEmail => 'E-mail';
+
+  @override
+  String get supportEmailSubject => 'Support request: senseBox:bike app';
+
+  @override
+  String get supportEmailIntro => 'Please describe the issue you are having:';
+
+  @override
+  String get supportEmailDetails =>
+      'Details about this installation (please keep them in the email):';
+
+  @override
+  String supportEmailBox(String name) {
+    return 'senseBox: $name';
+  }
+
+  @override
+  String supportEmailCampaign(String tags) {
+    return 'Campaign and tags: $tags';
+  }
 
   @override
   String get settingsGithub => 'GitHub issue';
@@ -599,10 +626,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorLocationAlwaysRequired =>
       'Background recording requires Location access set to \"Always\". Open System Settings, find this app, and change Location to \"Always\".';
-
-  @override
-  String get errorNoScanAccess =>
-      'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.';
 
   @override
   String get errorNoSenseBoxSelected =>

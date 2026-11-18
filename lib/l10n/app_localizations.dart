@@ -834,6 +834,18 @@ abstract class AppLocalizations {
   /// **'Storage used'**
   String get settingsStorageUsed;
 
+  /// No description provided for @settingsInstallationId.
+  ///
+  /// In en, this message translates to:
+  /// **'Installation ID'**
+  String get settingsInstallationId;
+
+  /// No description provided for @settingsInstallationIdCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Installation ID copied to clipboard'**
+  String get settingsInstallationIdCopied;
+
   /// No description provided for @settingsStorageDetails.
   ///
   /// In en, this message translates to:
@@ -851,6 +863,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'E-mail'**
   String get settingsEmail;
+
+  /// No description provided for @supportEmailSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Support request: senseBox:bike app'**
+  String get supportEmailSubject;
+
+  /// No description provided for @supportEmailIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe the issue you are having:'**
+  String get supportEmailIntro;
+
+  /// No description provided for @supportEmailDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details about this installation (please keep them in the email):'**
+  String get supportEmailDetails;
+
+  /// No description provided for @supportEmailBox.
+  ///
+  /// In en, this message translates to:
+  /// **'senseBox: {name}'**
+  String supportEmailBox(String name);
+
+  /// No description provided for @supportEmailCampaign.
+  ///
+  /// In en, this message translates to:
+  /// **'Campaign and tags: {tags}'**
+  String supportEmailCampaign(String tags);
 
   /// No description provided for @settingsGithub.
   ///
@@ -1157,12 +1199,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Background recording requires Location access set to \"Always\". Open System Settings, find this app, and change Location to \"Always\".'**
   String get errorLocationAlwaysRequired;
-
-  /// No description provided for @errorNoScanAccess.
-  ///
-  /// In en, this message translates to:
-  /// **'To connect with senseBox, please allow the app to scan for nearby devices in the phone settings.'**
-  String get errorNoScanAccess;
 
   /// No description provided for @errorNoSenseBoxSelected.
   ///

@@ -27,8 +27,7 @@ void main() {
       locale: const Locale('en'),
       child: Scaffold(
         body: AppInfoSection(
-          launchUrlFunction:
-              launchUrlFunction ??
+          launchUrlFunction: launchUrlFunction ??
               (Uri url, {LaunchMode mode = LaunchMode.platformDefault}) async =>
                   true,
         ),
@@ -61,8 +60,8 @@ void main() {
 
       await tester.pumpWidget(
         buildTestWidget(
-          launchUrlFunction:
-              (url, {LaunchMode mode = LaunchMode.platformDefault}) async {
+          launchUrlFunction: (url,
+              {LaunchMode mode = LaunchMode.platformDefault}) async {
             launchedUrl = url;
             return true;
           },

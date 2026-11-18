@@ -99,4 +99,37 @@ void main() {
 
     expect(launchedUrl, Uri.parse(senseBoxBikePrivacyPolicyUrl));
   });
+
+  testWidgets('shows installation ID in the contact section, not in About',
+      (tester) async {
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('About'));
+    await tester.pumpAndSettle();
+    expect(find.text('Installation ID'), findsNothing);
+
+    await tester.tap(find.text('Help or feedback?'));
+    await tester.pumpAndSettle();
+    expect(find.text('Installation ID'), findsOneWidget);
+  });
+
+  testWidgets('marks links that leave the app with an external icon',
+      (tester) async {
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Help or feedback?'));
+    await tester.pumpAndSettle();
+
+    for (final title in ['Knowledge Base', 'E-mail', 'GitHub issue']) {
+      expect(
+        find.descendant(
+          of: find.widgetWithText(ListTile, title),
+          matching: find.byIcon(Icons.north_east),
+        ),
+        findsOneWidget,
+      );
+    }
+  });
 }

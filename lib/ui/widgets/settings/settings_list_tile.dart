@@ -80,6 +80,32 @@ class SettingsNavigationTile extends StatelessWidget {
   }
 }
 
+class SettingsExternalLinkTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const SettingsExternalLinkTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      trailing: Icon(
+        Icons.north_east,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      onTap: onTap,
+    );
+  }
+}
+
 class SettingsValueTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -100,6 +126,36 @@ class SettingsValueTile extends StatelessWidget {
       leading: Icon(icon),
       title: Text(title),
       subtitle: Text(value, style: settingsValueSubtitleStyle(context)),
+      trailing: settingsNavigationChevron(context),
+      onTap: onTap,
+    );
+  }
+}
+
+class SettingsCopyTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final VoidCallback onTap;
+
+  const SettingsCopyTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(value, style: settingsInfoSubtitleStyle(context)),
+      trailing: Icon(
+        Icons.copy,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
       onTap: onTap,
     );
   }
@@ -109,14 +165,12 @@ class SettingsInfoTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget? subtitle;
-  final VoidCallback? onTap;
 
   const SettingsInfoTile({
     super.key,
     required this.icon,
     required this.title,
     this.subtitle,
-    this.onTap,
   });
 
   @override
@@ -127,8 +181,6 @@ class SettingsInfoTile extends StatelessWidget {
       leading: Icon(icon, color: infoColor),
       title: Text(title, style: TextStyle(color: infoColor)),
       subtitle: subtitle,
-      trailing: onTap == null ? null : settingsNavigationChevron(context),
-      onTap: onTap,
     );
   }
 }

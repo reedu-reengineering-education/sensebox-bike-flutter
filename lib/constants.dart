@@ -19,6 +19,7 @@ class SharedPreferencesKeys {
   static const String lastSeenAppVersion = 'lastSeenAppVersion';
   static const String rememberedDeviceId = 'rememberedDeviceId';
   static const String rememberedDeviceName = 'rememberedDeviceName';
+  static const String installationId = 'installationId';
 }
 
 
@@ -27,6 +28,7 @@ const openSenseMapWebsiteUrl = 'https://opensensemap.org/';
 const senseBoxBikePrivacyPolicyUrl =
     'https://sensebox.de/sensebox-bike-privacy-policy';
 const contactEmail = 'kontakt@reedu.de';
+const bikeGrouptag = 'bike';
 const gitHubNewIssueUrl =
     'https://github.com/reedu-reengineering-education/sensebox-bike-flutter/issues/new/choose';
 const privacyPolicyUrl =

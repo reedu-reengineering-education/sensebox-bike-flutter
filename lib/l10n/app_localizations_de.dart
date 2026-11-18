@@ -435,6 +435,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsStorageUsed => 'Speichernutzung';
 
   @override
+  String get settingsInstallationId => 'Installations-ID';
+
+  @override
+  String get settingsInstallationIdCopied =>
+      'Installations-ID in die Zwischenablage kopiert';
+
+  @override
   String settingsStorageDetails(String databaseSize, String totalSize) {
     return 'App-Daten: $totalSize (Datenbank: $databaseSize)';
   }
@@ -444,6 +451,27 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settingsEmail => 'E-Mail';
+
+  @override
+  String get supportEmailSubject => 'Support-Anfrage: senseBox:bike App';
+
+  @override
+  String get supportEmailIntro =>
+      'Bitte beschreiben Sie das Problem, das bei Ihnen auftritt:';
+
+  @override
+  String get supportEmailDetails =>
+      'Angaben zu dieser Installation (bitte in der E-Mail lassen):';
+
+  @override
+  String supportEmailBox(String name) {
+    return 'senseBox: $name';
+  }
+
+  @override
+  String supportEmailCampaign(String tags) {
+    return 'Kampagne und Tags: $tags';
+  }
 
   @override
   String get settingsGithub => 'GitHub issue';
@@ -607,10 +635,6 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get errorLocationAlwaysRequired =>
       'Für Aufzeichnungen im Hintergrund muss der Standortzugriff auf \"Immer\" gesetzt sein. Öffnen Sie die Systemeinstellungen, wählen Sie diese App aus und stellen Sie den Standortzugriff auf \"Immer\".';
-
-  @override
-  String get errorNoScanAccess =>
-      'Um eine Verbindung mit senseBox herzustellen, erlauben Sie bitte der App in den Telefoneinstellungen, nach Geräten in der Nähe zu scannen.';
 
   @override
   String get errorNoSenseBoxSelected =>

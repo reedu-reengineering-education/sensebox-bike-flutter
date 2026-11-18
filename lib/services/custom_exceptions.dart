@@ -13,12 +13,6 @@ class LocationPermissionDenied implements Exception {
   'Background recording requires Location access set to "Always". Open System Settings, find this app, and change Location to "Always".';
 }
 
-class ScanPermissionDenied implements Exception {
-  @override
-  String toString() =>
-      'Please allow the current app to scan nearby devices in the phone settings.';
-}
-
 enum BleConnectionFailurePhase { initialConnect, reconnection }
 
 class BleConnectionFailed implements Exception {

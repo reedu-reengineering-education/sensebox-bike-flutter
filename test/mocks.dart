@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sensebox_bike/ble/ble_characteristic_ref.dart';
+import 'package:sensebox_bike/ble/ble_uuids.dart';
 import 'package:sensebox_bike/ble/ble_device.dart';
 import 'package:sensebox_bike/blocs/configuration_bloc.dart';
 import 'package:sensebox_bike/blocs/opensensemap_bloc.dart';
@@ -53,17 +53,9 @@ class _TestBleCharacteristicStreams extends BleCharacteristicStreams {
   _TestBleCharacteristicStreams() : super(platform: MockBlePlatform());
 
   final Map<String, StreamController<List<double>>> _testStreams = {};
-  final Set<String> _testLivePayloadUuids = {};
 
   @override
-  bool hasLivePayload(String characteristicUuid) =>
-      _testLivePayloadUuids.contains(characteristicUuid);
-
-  void markLive(String characteristicUuid) {
-    if (_testLivePayloadUuids.add(characteristicUuid)) {
-      livePayloadVersion.value++;
-    }
-  }
+  bool hasLivePayload(String characteristicUuid) => false;
 
   @override
   Stream<List<double>> characteristicStream(String characteristicUuid) {
@@ -76,11 +68,7 @@ class _TestBleCharacteristicStreams extends BleCharacteristicStreams {
   }
 
   @override
-  Future<void> clear({
-    Iterable<BleCharacteristicRef> characteristics = const [],
-  }) async {
-    _testLivePayloadUuids.clear();
-    livePayloadVersion.value++;
+  Future<void> clear() async {
     final controllers = _testStreams.values.toList();
     _testStreams.clear();
     for (final controller in controllers) {
@@ -96,36 +84,25 @@ class MockBleBloc extends Mock implements BleBloc {
   final ValueNotifier<bool> isBluetoothEnabledNotifier = ValueNotifier(false);
 
   @override
-  final ValueNotifier<bool> isScanningNotifier = ValueNotifier(false);
-
-  @override
-  final ValueNotifier<bool> isConnectingNotifier = ValueNotifier(false);
-
-  @override
-  final ValueNotifier<bool> isReconnectingNotifier = ValueNotifier(false);
+  final ValueNotifier<BleConnectionPhase> phaseNotifier =
+      ValueNotifier(BleConnectionPhase.idle);
 
   @override
   final ValueNotifier<BleDevice?> selectedDeviceNotifier =
       ValueNotifier(null);
 
   @override
-  final ValueNotifier<List<BleCharacteristicRef>> availableCharacteristics =
-      ValueNotifier([]);
-
-  @override
-  final ValueNotifier<int> characteristicStreamsVersion = ValueNotifier(0);
+  final ValueNotifier<List<BleUuid>> availableCharacteristics =
+      ValueNotifier(const []);
 
   @override
   final ValueNotifier<bool> connectionErrorNotifier = ValueNotifier(false);
 
   @override
-  bool get isConnected => false;
+  bool isConnected = false;
 
   @override
-  List<BleDevice> get devicesList => [];
-
-  @override
-  Stream<List<BleDevice>> get devicesListStream => Stream.value([]);
+  BleConnectionPhase get phase => phaseNotifier.value;
 
   @override
   BleDevice? get selectedDevice => selectedDeviceNotifier.value;
@@ -136,26 +113,14 @@ class MockBleBloc extends Mock implements BleBloc {
   }
 
   @override
+  Stream<List<BleDevice>> scanForDevices() => Stream.value(const []);
+
+  @override
   Future<void> connectToDevice(BleDevice device) async {}
 
   @override
-  Future<void> disconnectDevice({
-    BleDevice? device,
-    BleDisconnectReason reason = BleDisconnectReason.userRequested,
-  }) async {
-    if (reason != BleDisconnectReason.retryRelease) {
-      selectedDevice = null;
-      selectedDeviceNotifier.value = null;
-    }
-  }
-
-  @override
-  Future<void> startScanning() async {}
-
-  @override
-  Future<void> scanForNewDevices() async {
-    await disconnectDevice(reason: BleDisconnectReason.userRequested);
-    await startScanning();
+  Future<void> disconnectDevice() async {
+    selectedDevice = null;
   }
 
   @override
@@ -195,9 +160,6 @@ class MockBleBloc extends Mock implements BleBloc {
       listener();
     }
   }
-
-  ValueNotifier<bool> get permanentConnectionLossNotifier =>
-      ValueNotifier<bool>(false);
 }
 
 class MockTrackBloc extends Mock with ChangeNotifier implements TrackBloc {}

@@ -85,7 +85,6 @@ abstract class Sensor {
   VoidCallback? _recordingListener;
   bool _isFlushing = false;
   bool _isListening = false;
-  bool _isStartingListening = false;
 
   // Track pending aggregations (geolocations waiting for lookback window to close)
   // Key: geoId, Value: Completer that can be used to cancel the future
@@ -383,23 +382,8 @@ abstract class Sensor {
     if (_isListening) {
       return;
     }
-    if (_isStartingListening) {
-      while (_isStartingListening) {
-        await Future.delayed(Duration(milliseconds: 10));
-      }
-    }
-    _isStartingListening = true;
 
     try {
-      if (_subscription != null) {
-        await _subscription?.cancel();
-        _subscription = null;
-      }
-      if (_geoSubscription != null) {
-        await _geoSubscription?.cancel();
-        _geoSubscription = null;
-      }
-
       final stream = bleBloc.characteristicStreams
           .characteristicStream(characteristicUuid);
       _subscription = stream.listen((data) {
@@ -454,8 +438,6 @@ abstract class Sensor {
     } catch (e, stack) {
       _isListening = false;
       ErrorService.handleError(e, stack);
-    } finally {
-      _isStartingListening = false;
     }
   }
 

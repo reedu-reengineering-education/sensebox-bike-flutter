@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sensebox_bike/constants.dart';
 import 'package:sensebox_bike/l10n/app_localizations.dart';
 import 'package:sensebox_bike/ui/widgets/common/changelog_modal.dart';
 import 'package:sensebox_bike/ui/widgets/settings/settings_list_tile.dart';
+import 'package:sensebox_bike/utils/app_version.dart';
 import 'package:sensebox_bike/utils/storage_utils.dart';
 import 'package:sensebox_bike/utils/url_launch_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -26,16 +26,7 @@ class _AppInfoSectionState extends State<AppInfoSection> {
   @override
   void initState() {
     super.initState();
-    _versionFuture = _loadVersionLabel();
-  }
-
-  Future<String?> _loadVersionLabel() async {
-    try {
-      final packageInfo = await PackageInfo.fromPlatform();
-      return '${packageInfo.version} (${packageInfo.buildNumber})';
-    } catch (_) {
-      return null;
-    }
+    _versionFuture = loadAppVersionLabel();
   }
 
   @override
@@ -59,7 +50,7 @@ class _AppInfoSectionState extends State<AppInfoSection> {
                 localizations.settingsVersion(snapshot.data!),
             };
 
-            return SettingsInfoTile(
+            return SettingsNavigationTile(
               icon: Icons.info_outline,
               title: versionText,
               onTap: () => showChangelogModalForCurrentVersion(context),
@@ -67,7 +58,7 @@ class _AppInfoSectionState extends State<AppInfoSection> {
           },
         ),
         const _StorageUsageTile(),
-        SettingsNavigationTile(
+        SettingsExternalLinkTile(
           icon: Icons.privacy_tip_outlined,
           title: localizations.settingsPrivacyPolicy,
           onTap: () => launchExternalUrl(
@@ -96,17 +87,9 @@ class _StorageUsageTileState extends State<_StorageUsageTile> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       setState(() {
-        _storageFuture = _loadStorageInfo();
+        _storageFuture = tryGetAppStorageInfo();
       });
     });
-  }
-
-  Future<AppStorageInfo?> _loadStorageInfo() async {
-    try {
-      return await getAppStorageInfo();
-    } catch (_) {
-      return null;
-    }
   }
 
   @override
@@ -122,13 +105,11 @@ class _StorageUsageTileState extends State<_StorageUsageTile> {
           ConnectionState.waiting ||
           ConnectionState.active =>
             Text('...', style: subtitleStyle),
-          ConnectionState.done when snapshot.hasError || snapshot.data == null =>
+          ConnectionState.done
+              when snapshot.hasError || snapshot.data == null =>
             Text('—', style: subtitleStyle),
           ConnectionState.done => Text(
-              localizations.settingsStorageDetails(
-                formatStorageSize(snapshot.data!.isarSize),
-                formatStorageSize(snapshot.data!.totalAppDataSize),
-              ),
+              formatStorageDetails(localizations, snapshot.data!),
               style: subtitleStyle,
             ),
         };
