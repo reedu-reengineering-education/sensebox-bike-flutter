@@ -1,45 +1,21 @@
 PODS:
   - Flutter (1.0.0)
-  - geolocator_apple (1.2.0):
-    - Flutter
   - permission_handler_apple (9.3.0):
     - Flutter
-  - Protobuf (3.29.6)
-  - reactive_ble_mobile (0.0.1):
-    - Flutter
-    - FlutterMacOS
-    - Protobuf (~> 3.5)
-    - SwiftProtobuf (~> 1.0)
-  - SwiftProtobuf (1.38.0)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
-  - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
-  - reactive_ble_mobile (from `.symlinks/plugins/reactive_ble_mobile/darwin`)
-
-SPEC REPOS:
-  trunk:
-    - Protobuf
-    - SwiftProtobuf
 
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
-  geolocator_apple:
-    :path: ".symlinks/plugins/geolocator_apple/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
-  reactive_ble_mobile:
-    :path: ".symlinks/plugins/reactive_ble_mobile/darwin"
 
 SPEC CHECKSUMS:
   Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
-  geolocator_apple: 9bcea1918ff7f0062d98345d238ae12718acfbc1
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
-  Protobuf: 8d5596f7468be5400861a6bbfb2dfe9d0d1cde34
-  reactive_ble_mobile: 856183aeda09f2a676bbaecbea8915c3cb1d33df
-  SwiftProtobuf: d724b5145bfc609d9a49c1e3e3a3dabb07273ffb
 
 PODFILE CHECKSUM: f8a62fa80e372aa5e78fa1d3d26892f69bdeaa81
 

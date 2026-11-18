@@ -221,10 +221,10 @@ packages:
     dependency: "direct main"
     description:
       name: csv
-      sha256: c6aa2679b2a18cb57652920f674488d89712efaf4d3fdf2e537215b35fc19d6c
+      sha256: "2e0a52fb729f2faacd19c9c0c954ff450bba37aa8ab999410309e2342e7013a2"
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.0"
+    version: "8.0.0"
   cupertino_icons:
     dependency: "direct main"
     description:
@@ -439,10 +439,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_reactive_ble
-      sha256: f343785fd824c3e08706e5d0f2327b3c1b03ada9505dae491fcb25ef8fbc42b9
+      sha256: "5db17abd4afe5e0803098e2270fa41f39682e8bd75a6928508ee0d7112b0d813"
       url: "https://pub.dev"
     source: hosted
-    version: "5.6.0"
+    version: "5.5.0"
   flutter_svg:
     dependency: "direct main"
     description:
@@ -709,14 +709,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.0"
-  listen:
-    dependency: transitive
-    description:
-      name: listen
-      sha256: "47501a08016a43fcad79252439d723f50f14f88fa7bfd8a177e0a417e5c9e1f2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
   logging:
     dependency: transitive
     description:
@@ -1014,13 +1006,13 @@ packages:
     source: hosted
     version: "1.1.1"
   reactive_ble_mobile:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: reactive_ble_mobile
-      sha256: "1af5ff867926ff104fab763734db33fa18ac6c9d05e58988dc43879a56168d56"
+      sha256: "53c1e589d352690be8441960c00fb006dcf77baeb0f7414be4d9764454fcecf9"
       url: "https://pub.dev"
     source: hosted
-    version: "5.6.0"
+    version: "5.5.0"
   reactive_ble_platform_interface:
     dependency: transitive
     description:
@@ -1286,10 +1278,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: "0a10344e901e5b2e63819567951cb6a06673ed6b84f40462188ff5a0c41f371f"
+      sha256: "2a122cbe059f8b610d3a5415f42e255b6c17b1f21eee1d960f31080237fb4f11"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.14"
+    version: "0.7.12"
   time:
     dependency: transitive
     description:

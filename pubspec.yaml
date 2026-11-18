@@ -30,7 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_reactive_ble: ^5.6.0
+  flutter_reactive_ble: 5.5.0
+  reactive_ble_mobile: 5.5.0
   app_settings: ^9.0.1
   geolocator: ^14.1.2
   provider: ^6.1.5+1
@@ -45,7 +46,7 @@ dependencies:
   mapbox_maps_flutter: ^2.31.1
   isar_community: ^3.4.1
   isar_community_flutter_libs: ^3.4.1
-  csv: ^6.0.0
+  csv: ^8.0.0
   share_plus: ^13.3.1
   shared_preferences: ^2.5.6
   http: ^1.2.2

@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mapbox/mapbox-common-ios.git",
       "state" : {
-        "revision" : "909028ebf1329a30301dac6a2da061966074da5b",
-        "version" : "24.27.0"
+        "revision" : "c00b5eef6a2ec81930d915730c6dbd92c83d874c",
+        "version" : "24.31.1"
       }
     },
     {
@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mapbox/mapbox-core-maps-ios.git",
       "state" : {
-        "revision" : "c71450c0f5ad1fd28ed238cb332217d7802c9bb5",
-        "version" : "11.27.0"
+        "revision" : "03fc876d19072637689a465ff9a2be64ba447439",
+        "version" : "11.31.1"
       }
     },
     {
@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mapbox/mapbox-maps-ios.git",
       "state" : {
-        "revision" : "187cc7fdef044a64eeea4359be5cd69617936ac1",
-        "version" : "11.27.0"
+        "revision" : "6be7a1608d70c6d64eb9c57acb45f982f3953d09",
+        "version" : "11.31.1"
       }
     },
     {
@@ -34,6 +34,15 @@
       "state" : {
         "revision" : "f196cbb98e0388381d57908f2f5a9bdc385cde68",
         "version" : "8.58.4"
+      }
+    },
+    {
+      "identity" : "swift-protobuf",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-protobuf.git",
+      "state" : {
+        "revision" : "fed2f76413026cb0ae90999a8c9116949dfe6aa6",
+        "version" : "1.41.0"
       }
     },
     {
