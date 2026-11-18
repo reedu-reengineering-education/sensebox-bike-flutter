@@ -105,7 +105,7 @@ class IsarService {
       geolocationDataList,
       formatSuffix: 'standard',
     );
-    const converter = ListToCsvConverter();
+    const converter = CsvEncoder();
     final sensorDataByGeolocation = <int, List<SensorData>>{};
 
     // Load sensor data once and reuse for both header discovery and row writing.
@@ -232,7 +232,7 @@ class IsarService {
 
   int _flushRowBufferIfNeeded(
     IOSink sink,
-    ListToCsvConverter converter,
+    CsvEncoder converter,
     List<List<String>> rowBuffer,
   ) {
     var flushedChunks = 0;
@@ -247,7 +247,7 @@ class IsarService {
 
   int _flushRowBuffer(
     IOSink sink,
-    ListToCsvConverter converter,
+    CsvEncoder converter,
     List<List<String>> rowBuffer,
   ) {
     if (rowBuffer.isEmpty) return 0;
