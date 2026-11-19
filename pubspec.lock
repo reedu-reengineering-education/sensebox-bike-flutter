@@ -573,14 +573,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  haptic_feedback:
-    dependency: "direct main"
-    description:
-      name: haptic_feedback
-      sha256: "45a71951590d594c11d4eabd6bea04ad6cb69811c434b935d0159ecbf2717c3f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.9.0"
   http:
     dependency: "direct main"
     description:
