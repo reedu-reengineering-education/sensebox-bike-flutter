@@ -57,7 +57,7 @@ void main() {
     );
     final body = uri.queryParameters['body']!;
 
-    expect(uri.queryParameters['subject'], 'Support-Anfrage: senseBox:bike App');
+    expect(uri.queryParameters['subject'], 'Support-Anfrage: senseBox:logger App');
     expect(body, startsWith(german.supportEmailIntro));
     expect(body, contains('Installations-ID: abcd-1234'));
     expect(body, contains('Kampagne und Tags: classic, muenster-2026'));

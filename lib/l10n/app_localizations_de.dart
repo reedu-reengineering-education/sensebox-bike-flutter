@@ -347,7 +347,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get openSenseMapBoxSelectionIncompatible =>
-      'Nicht kompatibel mit senseBox:bike';
+      'Nicht kompatibel mit senseBox:logger';
 
   @override
   String get settingsGeneral => 'Allgemeine';
@@ -480,7 +480,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsEmail => 'E-Mail';
 
   @override
-  String get supportEmailSubject => 'Support-Anfrage: senseBox:bike App';
+  String get supportEmailSubject => 'Support-Anfrage: senseBox:logger App';
 
   @override
   String get supportEmailIntro =>
@@ -903,7 +903,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get openSenseMapInfoText =>
-      'Deine senseBox:bike-Daten werden auf openSenseMap geteilt und tragen zur Bürgerwissenschaft und Umweltüberwachung bei.';
+      'Deine senseBox-Daten werden auf openSenseMap geteilt und tragen zur Bürgerwissenschaft und Umweltüberwachung bei.';
 
   @override
   String get openSenseMapInfoLink => 'Besuche openSenseMap.org';

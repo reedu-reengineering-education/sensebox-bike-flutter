@@ -1,6 +1,6 @@
 # Changelog
 
-What's new for senseBox:bike riders, version by version.
+What's new in senseBox:logger (formerly senseBox:bike), version by version.
 
 ## 3.5.0
 

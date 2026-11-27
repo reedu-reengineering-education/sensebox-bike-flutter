@@ -567,7 +567,7 @@ abstract class AppLocalizations {
   /// No description provided for @selectOrCreateBox.
   ///
   /// In en, this message translates to:
-  /// **'Select or create senseBox:bike'**
+  /// **'Select or create senseBox'**
   String get selectOrCreateBox;
 
   /// No description provided for @createBoxTitle.
@@ -681,7 +681,7 @@ abstract class AppLocalizations {
   /// No description provided for @openSenseMapBoxSelectionIncompatible.
   ///
   /// In en, this message translates to:
-  /// **'Not compatible with senseBox:bike'**
+  /// **'Not compatible with senseBox:logger'**
   String get openSenseMapBoxSelectionIncompatible;
 
   /// No description provided for @settingsGeneral.
@@ -903,7 +903,7 @@ abstract class AppLocalizations {
   /// No description provided for @supportEmailSubject.
   ///
   /// In en, this message translates to:
-  /// **'Support request: senseBox:bike app'**
+  /// **'Support request: senseBox:logger app'**
   String get supportEmailSubject;
 
   /// No description provided for @supportEmailIntro.
@@ -1647,7 +1647,7 @@ abstract class AppLocalizations {
   /// No description provided for @openSenseMapInfoText.
   ///
   /// In en, this message translates to:
-  /// **'Your senseBox:bike data will be shared on openSenseMap, contributing to citizen science and environmental monitoring.'**
+  /// **'Your senseBox data will be shared on openSenseMap, contributing to citizen science and environmental monitoring.'**
   String get openSenseMapInfoText;
 
   /// No description provided for @openSenseMapInfoLink.

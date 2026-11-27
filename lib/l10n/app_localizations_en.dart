@@ -273,7 +273,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bleDeviceAutoConnectBadge => 'Auto-connects';
 
   @override
-  String get selectOrCreateBox => 'Select or create senseBox:bike';
+  String get selectOrCreateBox => 'Select or create senseBox';
 
   @override
   String get createBoxTitle => 'Create senseBox:bike';
@@ -343,7 +343,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openSenseMapBoxSelectionIncompatible =>
-      'Not compatible with senseBox:bike';
+      'Not compatible with senseBox:logger';
 
   @override
   String get settingsGeneral => 'General';
@@ -475,7 +475,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsEmail => 'E-mail';
 
   @override
-  String get supportEmailSubject => 'Support request: senseBox:bike app';
+  String get supportEmailSubject => 'Support request: senseBox:logger app';
 
   @override
   String get supportEmailIntro => 'Please describe the issue you are having:';
@@ -891,7 +891,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openSenseMapInfoText =>
-      'Your senseBox:bike data will be shared on openSenseMap, contributing to citizen science and environmental monitoring.';
+      'Your senseBox data will be shared on openSenseMap, contributing to citizen science and environmental monitoring.';
 
   @override
   String get openSenseMapInfoLink => 'Visit openSenseMap.org';

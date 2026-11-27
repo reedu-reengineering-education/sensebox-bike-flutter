@@ -24,7 +24,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
-        android:label="senseBox:bike"
+        android:label="senseBox:logger"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <service android:name="de.reedu.senseboxbike" android:exported="true" />

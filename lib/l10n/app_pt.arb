@@ -150,7 +150,7 @@
     "openSenseMapBoxSelectionAvailableBoxes": "senseBoxes disponíveis",
     "openSenseMapBoxSelectionCreateHint": "Crie um usando o botão '+'",
     "openSenseMapBoxSelectionUnnamedBox": "senseBox sem nome",
-    "openSenseMapBoxSelectionIncompatible": "Não compatível com senseBox:bike",
+    "openSenseMapBoxSelectionIncompatible": "Não compatível com senseBox:logger",
     "settingsGeneral": "Geral",
     "settingsOther": "Outros",
     "settingsVibrateOnDisconnect": "Vibrar ao desconectar",
@@ -225,7 +225,7 @@
     },
     "settingsContact": "Ajuda ou feedback?",
     "settingsEmail": "E-mail",
-    "supportEmailSubject": "Pedido de suporte: aplicação senseBox:bike",
+    "supportEmailSubject": "Pedido de suporte: aplicação senseBox:logger",
     "supportEmailIntro": "Descreva o problema que está a ter:",
     "supportEmailDetails": "Informações sobre esta instalação (por favor mantenha-as no e-mail):",
     "supportEmailBox": "senseBox: {name}",
@@ -364,7 +364,7 @@
     "trackFilterAll": "Todos",
     "trackFilterUnuploaded": "Não enviados",
     "errorTrackNoGeolocations": "Trajeto não possui dados de geolocalização e não pode ser enviado.",
-    "openSenseMapInfoText": "Os dados da sua senseBox:bike serão compartilhados no openSenseMap, contribuindo para a ciência cidadã e o monitoramento ambiental.",
+    "openSenseMapInfoText": "Os dados da sua senseBox serão compartilhados no openSenseMap, contribuindo para a ciência cidadã e o monitoramento ambiental.",
     "openSenseMapInfoLink": "Visite openSenseMap.org",
     "loginForgotPasswordInfo": "Se você esqueceu sua senha, navegue até o openSenseMap, clique em \"Login\" e \"Forgot it?\"."
 }
