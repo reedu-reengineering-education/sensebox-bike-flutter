@@ -134,7 +134,7 @@
     "openSenseMapBoxSelectionAvailableBoxes": "Verfügbare senseBoxes",
     "openSenseMapBoxSelectionCreateHint": "Erstelle eine mit dem '+' Button",
     "openSenseMapBoxSelectionUnnamedBox": "Unbenannte senseBox",
-    "openSenseMapBoxSelectionIncompatible": "Nicht kompatibel mit senseBox:bike",
+    "openSenseMapBoxSelectionIncompatible": "Nicht kompatibel mit senseBox:logger",
     "openSenesMapRegisterAcceptTermsPrefix": "Ich akzeptiere die",
     "openSenseMapRegisterAcceptTermsPrivacy": "Datenschutzbestimmungen",
     "openSenseMapRegisterAcceptTermsError": "Sie müssen die Datenschutzbestimmungen akzeptieren",
@@ -212,7 +212,7 @@
     },
     "settingsContact": "Hilfe oder Feedback?",
     "settingsEmail": "E-Mail",
-    "supportEmailSubject": "Support-Anfrage: senseBox:bike App",
+    "supportEmailSubject": "Support-Anfrage: senseBox:logger App",
     "supportEmailIntro": "Bitte beschreiben Sie das Problem, das bei Ihnen auftritt:",
     "supportEmailDetails": "Angaben zu dieser Installation (bitte in der E-Mail lassen):",
     "supportEmailBox": "senseBox: {name}",
@@ -351,7 +351,7 @@
     "trackFilterAll": "Alle",
     "trackFilterUnuploaded": "Nicht hochgeladen",
     "errorTrackNoGeolocations": "Track hat keine Geolokationsdaten und kann nicht hochgeladen werden.",
-    "openSenseMapInfoText": "Deine senseBox:bike-Daten werden auf openSenseMap geteilt und tragen zur Bürgerwissenschaft und Umweltüberwachung bei.",
+    "openSenseMapInfoText": "Deine senseBox-Daten werden auf openSenseMap geteilt und tragen zur Bürgerwissenschaft und Umweltüberwachung bei.",
     "openSenseMapInfoLink": "Besuche openSenseMap.org",
     "loginForgotPasswordInfo": "Wenn du dein Passwort vergessen hast, gehe bitte zu openSenseMap, klicke auf \"Anmelden\" und \"Vergessen?\"."
 }

@@ -1,4 +1,4 @@
-# sensebox Bike Flutter App
+# senseBox:logger Flutter App (formerly senseBox:bike)
 
 ## Overview
 

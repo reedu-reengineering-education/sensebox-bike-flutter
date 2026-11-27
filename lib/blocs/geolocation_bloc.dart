@@ -128,7 +128,7 @@ class GeolocationBloc with ChangeNotifier {
               distanceFilter: 0,
               foregroundNotificationConfig: const ForegroundNotificationConfig(
                   notificationText:
-                      "senseBox:bike will record your location in the background",
+                      "senseBox:logger will record your location in the background",
                   notificationTitle: "Running in the background",
                   enableWakeLock: true,
                   notificationIcon: AndroidResource(

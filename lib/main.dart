@@ -248,7 +248,7 @@ class _SenseBoxBikeAppState extends State<SenseBoxBikeApp> {
       ],
       child: MaterialApp(
         scaffoldMessengerKey: ErrorService.scaffoldKey,
-        title: 'senseBox:bike',
+        title: 'senseBox:logger',
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         localeResolutionCallback: (locale, supportedLocales) {
