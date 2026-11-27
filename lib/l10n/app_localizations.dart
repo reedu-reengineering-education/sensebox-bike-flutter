@@ -150,16 +150,10 @@ abstract class AppLocalizations {
   /// **'Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please select or create a senseBox on the Home page.'**
   String get uploadBlockNoBox;
 
-  /// No description provided for @createBoxAddCustomTag.
-  ///
-  /// In en, this message translates to:
-  /// **'Add custom group tag'**
-  String get createBoxAddCustomTag;
-
   /// No description provided for @createBoxCustomTag.
   ///
   /// In en, this message translates to:
-  /// **'Custom group tag'**
+  /// **'Group tags (optional)'**
   String get createBoxCustomTag;
 
   /// No description provided for @createBoxCustomTagHelper.
@@ -167,12 +161,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You can separate tags with commas'**
   String get createBoxCustomTagHelper;
-
-  /// No description provided for @createBoxDataRecording.
-  ///
-  /// In en, this message translates to:
-  /// **'Advanced data recording'**
-  String get createBoxDataRecording;
 
   /// No description provided for @generalLoading.
   ///
@@ -599,6 +587,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please select a model'**
   String get createBoxModelErrorEmpty;
+
+  /// No description provided for @createBoxModelCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get createBoxModelCustom;
+
+  /// No description provided for @createBoxModelCustomDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your sensors'**
+  String get createBoxModelCustomDescription;
+
+  /// No description provided for @createBoxMoreModels.
+  ///
+  /// In en, this message translates to:
+  /// **'More models'**
+  String get createBoxMoreModels;
+
+  /// No description provided for @createBoxSensorCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 sensor} other{{count} sensors}}'**
+  String createBoxSensorCount(int count);
+
+  /// No description provided for @createBoxCampaign.
+  ///
+  /// In en, this message translates to:
+  /// **'Campaign (optional)'**
+  String get createBoxCampaign;
+
+  /// No description provided for @createBoxCampaignNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No campaign'**
+  String get createBoxCampaignNone;
+
+  /// No description provided for @createBoxCustomSensors.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensors'**
+  String get createBoxCustomSensors;
+
+  /// No description provided for @createBoxCustomSensorsErrorEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select at least one sensor'**
+  String get createBoxCustomSensorsErrorEmpty;
 
   /// No description provided for @createBoxName.
   ///

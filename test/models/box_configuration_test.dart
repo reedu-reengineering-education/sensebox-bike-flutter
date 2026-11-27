@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensebox_bike/models/box_configuration.dart';
+import 'package:sensebox_bike/models/sensor_catalog_entry.dart';
 import '../sensor_catalog_test_data.dart';
 
 void main() {
@@ -138,6 +142,101 @@ void main() {
           contains('no catalog entry'),
         )),
       );
+    });
+  });
+
+  group('BoxConfiguration.custom', () {
+    final catalog =
+        (jsonDecode(File('data/sensors.json').readAsStringSync()) as List)
+            .map((e) => SensorCatalogEntry.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+    test('selectableSensorKeys lists each key once in catalog order', () {
+      expect(BoxConfiguration.selectableSensorKeys(catalog), [
+        'temperature',
+        'humidity',
+        'finedust',
+        'distance',
+        'distance_right',
+        'overtaking',
+        'surface_classification',
+        'surface_anomaly',
+        'acceleration',
+        'gps',
+      ]);
+    });
+
+    test('includes all attributes of a selected multi-value sensor', () {
+      final config = BoxConfiguration.custom(
+        catalog: catalog,
+        sensorKeys: {'temperature', 'finedust'},
+      );
+
+      expect(config.id, BoxConfiguration.customId);
+      expect(config.defaultGrouptag, BoxConfiguration.customId);
+      expect(config.sensors.map((s) => s.title), [
+        'Temperature',
+        'Finedust PM1',
+        'Finedust PM2.5',
+        'Finedust PM4',
+        'Finedust PM10',
+      ]);
+      expect(config.sensors.map((s) => s.id), ['0', '1', '2', '3', '4']);
+    });
+
+    test('adds a single "Distance Left" sensor for the distance key', () {
+      final config = BoxConfiguration.custom(
+        catalog: catalog,
+        sensorKeys: {'distance', 'distance_right'},
+      );
+
+      expect(config.sensors.map((s) => s.title),
+          ['Distance Left', 'Distance Right']);
+    });
+
+    test('ignores unknown keys and keeps catalog order', () {
+      final config = BoxConfiguration.custom(
+        catalog: catalog,
+        sensorKeys: {'gps', 'humidity', 'does_not_exist'},
+      );
+
+      expect(config.sensors.map((s) => s.title), ['Rel. Humidity', 'Speed']);
+      expect(config.sensorsAsMap.first.keys,
+          containsAll(['id', 'icon', 'title', 'unit', 'sensorType']));
+    });
+  });
+
+  group('BoxConfiguration featured flag', () {
+    Map<String, dynamic> json({Object? featured}) => {
+          'id': 'atrai',
+          'displayName': 'senseBox:bike',
+          'defaultGrouptag': 'atrai',
+          if (featured != null) 'featured': featured,
+          'sensors': [
+            {'key': 'temperature'},
+          ],
+        };
+
+    test('defaults to false when missing', () {
+      expect(BoxConfiguration.fromJson(json()).featured, isFalse);
+    });
+
+    test('parses true and round-trips through toJson', () {
+      final config = BoxConfiguration.fromJson(json(featured: true));
+      expect(config.featured, isTrue);
+      expect(config.toJson()['featured'], isTrue);
+      expect(BoxConfiguration.fromJson(json()).toJson(),
+          isNot(contains('featured')));
+    });
+
+    test('bundled config features the senseBox:bike model', () {
+      final configs = (jsonDecode(
+                  File('data/box_configurations_v2.json').readAsStringSync())
+              as List)
+          .cast<Map<String, dynamic>>();
+      final featured = configs.where((c) => c['featured'] == true).toList();
+      expect(featured.map((c) => c['id']), ['atrai']);
+      expect(featured.single['displayName'], 'senseBox:bike');
     });
   });
 }

@@ -12,10 +12,8 @@
     "settingsKnowledgeBase": "Knowledge Base",
         "uploadBlockNotAuthenticated": "Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please login or register an account on the Settings page.",
         "uploadBlockNoBox": "Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please select or create a senseBox on the Home page.",
-    "createBoxAddCustomTag": "Add custom group tag",
-    "createBoxCustomTag": "Custom group tag",
+    "createBoxCustomTag": "Group tags (optional)",
     "createBoxCustomTagHelper": "You can separate tags with commas",
-    "createBoxDataRecording": "Advanced data recording",
     "@@locale": "en",
     "generalLoading": "Loading...",
     "generalError": "Error",
@@ -136,6 +134,21 @@
     "createBoxTitle": "Create senseBox:bike",
     "createBoxModel": "Model",
     "createBoxModelErrorEmpty": "Please select a model",
+    "createBoxModelCustom": "Custom",
+    "createBoxModelCustomDescription": "Pick your sensors",
+    "createBoxMoreModels": "More models",
+    "createBoxSensorCount": "{count, plural, =1{1 sensor} other{{count} sensors}}",
+    "@createBoxSensorCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "createBoxCampaign": "Campaign (optional)",
+    "createBoxCampaignNone": "No campaign",
+    "createBoxCustomSensors": "Sensors",
+    "createBoxCustomSensorsErrorEmpty": "Please select at least one sensor",
     "createBoxName": "Name",
     "createBoxNameError": "Name must be between 2 and 50 characters",
     "createBoxGeolocationCurrentPosition": "Your current position will be used",

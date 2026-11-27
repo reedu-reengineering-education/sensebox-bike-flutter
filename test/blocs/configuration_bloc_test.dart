@@ -267,5 +267,21 @@ void main() {
         expect(bloc.getBoxConfigurationById('unknown_nonexistent_id'), isNull);
       });
     });
+
+    test('preferBundledData loads bundled files without the network',
+        () async {
+      final bundledBloc = ConfigurationBloc(
+        remoteDataService: remote,
+        loadBundledJson: _loadTestBundledJson,
+        preferBundledData: true,
+      );
+
+      await bundledBloc.loadBoxConfigurations();
+
+      verifyNever(() => remote.fetchJson(any()));
+      final featured =
+          bundledBloc.boxConfigurations!.where((c) => c.featured).toList();
+      expect(featured.map((c) => c.displayName), ['senseBox:bike']);
+    });
   });
 }

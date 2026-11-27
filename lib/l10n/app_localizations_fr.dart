@@ -40,18 +40,11 @@ class AppLocalizationsFr extends AppLocalizations {
       'Le trajet actuel n\'a pas été téléversé automatiquement. Vous pouvez toujours l\'envoyer sur openSenseMap depuis la page d\'aperçu des parcours.\n\nPour téléverser votre trajet, veuillez sélectionner ou créer une senseBox sur la page d\'accueil.';
 
   @override
-  String get createBoxAddCustomTag =>
-      'Ajouter une étiquette de groupe personnalisée';
-
-  @override
-  String get createBoxCustomTag => 'Étiquette de groupe personnalisée';
+  String get createBoxCustomTag => 'Étiquettes de groupe (facultatif)';
 
   @override
   String get createBoxCustomTagHelper =>
       'Vous pouvez séparer les étiquettes par des virgules';
-
-  @override
-  String get createBoxDataRecording => 'Enregistrement des données avancé';
 
   @override
   String get generalLoading => 'Chargement...';
@@ -295,6 +288,39 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get createBoxModelErrorEmpty => 'Veuillez sélectionner un modèle';
+
+  @override
+  String get createBoxModelCustom => 'Personnalisé';
+
+  @override
+  String get createBoxModelCustomDescription => 'Capteurs au choix';
+
+  @override
+  String get createBoxMoreModels => 'Autres modèles';
+
+  @override
+  String createBoxSensorCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count capteurs',
+      one: '1 capteur',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get createBoxCampaign => 'Campagne (facultatif)';
+
+  @override
+  String get createBoxCampaignNone => 'Aucune campagne';
+
+  @override
+  String get createBoxCustomSensors => 'Capteurs';
+
+  @override
+  String get createBoxCustomSensorsErrorEmpty =>
+      'Veuillez sélectionner au moins un capteur';
 
   @override
   String get createBoxName => 'Nom';

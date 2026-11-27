@@ -39,16 +39,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Current ride was not automatically uploaded. You can still upload it to openSenseMap from the track overview page.\n\nTo upload your ride, please select or create a senseBox on the Home page.';
 
   @override
-  String get createBoxAddCustomTag => 'Add custom group tag';
-
-  @override
-  String get createBoxCustomTag => 'Custom group tag';
+  String get createBoxCustomTag => 'Group tags (optional)';
 
   @override
   String get createBoxCustomTagHelper => 'You can separate tags with commas';
-
-  @override
-  String get createBoxDataRecording => 'Advanced data recording';
 
   @override
   String get generalLoading => 'Loading...';
@@ -289,6 +283,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createBoxModelErrorEmpty => 'Please select a model';
+
+  @override
+  String get createBoxModelCustom => 'Custom';
+
+  @override
+  String get createBoxModelCustomDescription => 'Pick your sensors';
+
+  @override
+  String get createBoxMoreModels => 'More models';
+
+  @override
+  String createBoxSensorCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sensors',
+      one: '1 sensor',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get createBoxCampaign => 'Campaign (optional)';
+
+  @override
+  String get createBoxCampaignNone => 'No campaign';
+
+  @override
+  String get createBoxCustomSensors => 'Sensors';
+
+  @override
+  String get createBoxCustomSensorsErrorEmpty =>
+      'Please select at least one sensor';
 
   @override
   String get createBoxName => 'Name';
