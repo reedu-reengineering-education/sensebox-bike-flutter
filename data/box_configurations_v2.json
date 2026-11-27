@@ -22,7 +22,8 @@
   },
   {
     "id": "atrai",
-    "displayName": "2025",
+    "displayName": "senseBox:bike",
+    "featured": true,
     "defaultGrouptag": "atrai",
     "sensors": [
       { "key": "distance", "title": "Overtaking Distance" },

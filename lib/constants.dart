@@ -38,6 +38,11 @@ const knowledgeBaseUrl =
 const githubDataBaseUrl =
     'https://raw.githubusercontent.com/reedu-reengineering-education/sensebox-bike-flutter/main/data';
 
+/// Load sensor catalog and box configurations from the bundled `data/`
+/// files instead of GitHub `main`, so a branch can try data changes before
+/// they are merged. Opt-in: `flutter run --dart-define=USE_BUNDLED_DATA=true`.
+const useBundledData = bool.fromEnvironment('USE_BUNDLED_DATA');
+
 const apiUrlsPath = '/api_urls.json';
 const campaignsPath = '/locations.json';
 // Legacy inline format kept at /box_configurations.json for older app releases.

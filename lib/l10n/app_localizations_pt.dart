@@ -40,18 +40,11 @@ class AppLocalizationsPt extends AppLocalizations {
       'O trajeto atual não foi enviado automaticamente. Você ainda pode enviá-lo para o openSenseMap na página de visão geral dos trajetos.\n\nPara enviar sua pedalada, selecione ou crie uma senseBox na página inicial.';
 
   @override
-  String get createBoxAddCustomTag =>
-      'Adicionar etiqueta de grupo personalizada';
-
-  @override
-  String get createBoxCustomTag => 'Etiqueta de grupo personalizada';
+  String get createBoxCustomTag => 'Etiquetas de grupo (opcional)';
 
   @override
   String get createBoxCustomTagHelper =>
       'Você pode separar etiquetas com vírgulas';
-
-  @override
-  String get createBoxDataRecording => 'Gravação avançada de dados';
 
   @override
   String get generalLoading => 'Carregando...';
@@ -293,6 +286,39 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get createBoxModelErrorEmpty => 'Por favor, selecione um modelo';
+
+  @override
+  String get createBoxModelCustom => 'Personalizado';
+
+  @override
+  String get createBoxModelCustomDescription => 'Sensores à escolha';
+
+  @override
+  String get createBoxMoreModels => 'Mais modelos';
+
+  @override
+  String createBoxSensorCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sensores',
+      one: '1 sensor',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get createBoxCampaign => 'Campanha (opcional)';
+
+  @override
+  String get createBoxCampaignNone => 'Nenhuma campanha';
+
+  @override
+  String get createBoxCustomSensors => 'Sensores';
+
+  @override
+  String get createBoxCustomSensorsErrorEmpty =>
+      'Por favor, selecione pelo menos um sensor';
 
   @override
   String get createBoxName => 'Nome';

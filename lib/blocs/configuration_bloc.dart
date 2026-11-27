@@ -17,6 +17,7 @@ Future<dynamic> _defaultLoadBundledJson(String assetPath) async {
 class ConfigurationBloc extends ChangeNotifier {
   final RemoteDataService _remoteDataService;
   final Future<dynamic> Function(String assetPath) _loadBundledJson;
+  final bool _preferBundledData;
 
   List<SensorCatalogEntry>? _sensorCatalog;
   List<BoxConfiguration>? _boxConfigurations;
@@ -34,8 +35,10 @@ class ConfigurationBloc extends ChangeNotifier {
   ConfigurationBloc({
     RemoteDataService? remoteDataService,
     Future<dynamic> Function(String assetPath)? loadBundledJson,
+    bool preferBundledData = useBundledData,
   })  : _remoteDataService = remoteDataService ?? RemoteDataService(),
-        _loadBundledJson = loadBundledJson ?? _defaultLoadBundledJson;
+        _loadBundledJson = loadBundledJson ?? _defaultLoadBundledJson,
+        _preferBundledData = preferBundledData;
 
   List<SensorCatalogEntry>? get sensorCatalog => _sensorCatalog;
   List<BoxConfiguration>? get boxConfigurations => _boxConfigurations;
@@ -102,6 +105,9 @@ class ConfigurationBloc extends ChangeNotifier {
     }
 
     try {
+      if (_preferBundledData && assetPath != null) {
+        return parseList(await _loadBundledJson(assetPath));
+      }
       final dynamic data = await _remoteDataService.fetchJson(url);
       final parsed = parseList(data);
       setError(null);

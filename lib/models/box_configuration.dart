@@ -3,17 +3,68 @@ import 'package:sensebox_bike/services/sensor_catalog_registry.dart';
 import 'package:sensebox_bike/utils/json_validation.dart';
 
 class BoxConfiguration {
+  /// Id (and default grouptag) of a box assembled by the user from the
+  /// sensor catalog instead of a predefined template.
+  static const String customId = 'custom';
+
   final String id;
   final String displayName;
   final String defaultGrouptag;
   final List<SensorDefinition> sensors;
+
+  /// Featured models are offered up front when creating a box; the others
+  /// are tucked away behind "More models".
+  final bool featured;
 
   BoxConfiguration({
     required this.id,
     required this.displayName,
     required this.defaultGrouptag,
     required this.sensors,
+    this.featured = false,
   });
+
+  /// Sensor keys the user can pick for a custom box, in catalog order.
+  ///
+  /// Selection works per key, not per catalog entry: multi-value sensors
+  /// (finedust, surface classification, acceleration) are uploaded by
+  /// position, so a box must contain all of their attributes or none.
+  static List<String> selectableSensorKeys(List<SensorCatalogEntry> catalog) {
+    return catalog.map((entry) => entry.key).toSet().toList(growable: false);
+  }
+
+  /// Builds a box containing every catalog entry whose key is in
+  /// [sensorKeys].
+  ///
+  /// The catalog lists `distance` twice (legacy "Overtaking Distance" and
+  /// "Distance Left"); the later entry wins so the left sensor is named
+  /// consistently with "Distance Right". Upload matching accepts both titles.
+  factory BoxConfiguration.custom({
+    required List<SensorCatalogEntry> catalog,
+    required Set<String> sensorKeys,
+    String displayName = 'Custom',
+  }) {
+    final selected = <String, SensorCatalogEntry>{};
+    for (final entry in catalog) {
+      if (!sensorKeys.contains(entry.key)) continue;
+      selected['${entry.key}|${entry.attribute ?? ''}'] = entry;
+    }
+
+    final sensors = selected.values.toList().asMap().entries.map((entry) {
+      return SensorDefinition.fromCatalog(
+        catalogEntry: entry.value,
+        titleOverride: entry.value.title,
+        id: entry.key.toString(),
+      );
+    }).toList();
+
+    return BoxConfiguration(
+      id: customId,
+      displayName: displayName,
+      defaultGrouptag: customId,
+      sensors: sensors,
+    );
+  }
 
   factory BoxConfiguration.fromJson(Map<String, dynamic> json) {
     final sensorsJson = requireList<dynamic>(
@@ -26,7 +77,9 @@ class BoxConfiguration {
     return BoxConfiguration(
       id: requireString(json, 'id', 'BoxConfiguration'),
       displayName: requireString(json, 'displayName', 'BoxConfiguration'),
-      defaultGrouptag: requireString(json, 'defaultGrouptag', 'BoxConfiguration'),
+      defaultGrouptag:
+          requireString(json, 'defaultGrouptag', 'BoxConfiguration'),
+      featured: json['featured'] == true,
       sensors: sensorsJson.asMap().entries.map((entry) {
         return SensorDefinition.fromJsonRef(
           entry.value as Map<String, dynamic>,
@@ -41,6 +94,7 @@ class BoxConfiguration {
       'id': id,
       'displayName': displayName,
       'defaultGrouptag': defaultGrouptag,
+      if (featured) 'featured': true,
       'sensors': sensors.map((sensor) => sensor.toRefJson()).toList(),
     };
   }

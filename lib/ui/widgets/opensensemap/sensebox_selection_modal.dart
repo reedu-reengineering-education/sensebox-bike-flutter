@@ -745,6 +745,7 @@ class _SenseBoxManagementModalState extends State<_SenseBoxManagementModal> {
           campaignsError: configurationBloc.campaignsError,
           getBoxConfigurationById: (id) =>
               configurationBloc.getBoxConfigurationById(id),
+          sensorCatalog: configurationBloc.sensorCatalog,
         );
       },
     );
